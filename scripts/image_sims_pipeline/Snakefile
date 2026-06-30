@@ -11,9 +11,21 @@ import os
 configfile: "config.yaml"
 
 BASE         = config["base"]
+SAMPLE       = str(config["sample"])
+NUM          = config["num"]
+TYPE         = config["sims_type"]
 
 # Load tile IDs from file (always a file path)
-_tile_ids_file = config.get("tile_IDs", "tile_numbers.txt")
+# If tile_IDs not specified, construct path with num-specific file
+if "tile_IDs" in config:
+    _tile_ids_file = config["tile_IDs"].replace("{num}", str(NUM))
+else:
+    # Try num-specific tile file first
+    _tile_ids_file = f"{os.path.expanduser('~')}/shapepipe/auxdir/CFIS/im_sims_202606/tile_numbers_{NUM}.txt"
+    if not os.path.exists(_tile_ids_file):
+        # Fall back to default
+        _tile_ids_file = f"{os.path.expanduser('~')}/shapepipe/auxdir/CFIS/im_sims_202606/tile_numbers.txt"
+
 with open(_tile_ids_file) as f:
     TILE_IDs = [line.strip() for line in f if line.strip()]
 
@@ -21,10 +33,6 @@ with open(_tile_ids_file) as f:
 _exclusive = config.get("tile_IDs_exclusive")
 if _exclusive and isinstance(_exclusive, list) and _exclusive:  # Non-empty list
     TILE_IDs = _exclusive
-
-SAMPLE       = str(config["sample"])
-NUM          = config["num"]
-TYPE         = config["type"]
 FORCE        = "--force" if config.get("force", 0) else ""
 N_SMP        = config.get("n_smp", -1)
 
@@ -40,10 +48,9 @@ PSF          = "psfex"
 STR_TYPE = f"_{TYPE}" if TYPE == "grid" else ""
 SIMS = [
     f"1{dg1}2{dg2}{STR_TYPE}_{NUM}"
-    for dg1, dg2 in zip(["m", "p", "z", "z", "z"],
-                         ["z", "z", "m", "p", "z"])
+    for dg1, dg2 in zip(["m", "p", "z", "z"],
+                         ["z", "z", "m", "p"])
 ]
-GRIDS = f"{BASE}/{TYPE}s"
 
 HOME     = os.path.expanduser("~")
 PATH_SH  = f"{HOME}/astro/repositories/github/shapepipe/scripts/sh"
@@ -51,8 +58,9 @@ PATH_PY  = f"{HOME}/astro/repositories/github/shapepipe/scripts/python"
 PATH_NB  = f"{HOME}/astro/repositories/github/sp_validation/notebooks"
 PATH_SPV = f"{HOME}/astro/repositories/github/sp_validation"
 
-SP_SIF      = "/n17data/mkilbing/shapepipe_im_sims.sif"
 SPV_SIF     = "/n17data/mkilbing/sp_validation_im_sims.sif"
+# The same container holds shapepipe and sp_validation code
+SP_SIF = SPV_SIF
 SPV_SRC     = f"{HOME}/astro/repositories/github/sp_validation/src"
 
 # ShapePipe pipeline stages (uses shapepipe_im_sims.sif — correct MPI build)
@@ -65,7 +73,7 @@ SPV_CMD     = (
     f" --env PYTHONPATH={SPV_SRC}"
     f" {SPV_SIF}"
 )
-MBIAS_OUT   = f"{GRIDS}/results/m_bias_results.yaml"
+MBIAS_OUT   = f"{BASE}/results/m_bias_results.yaml"
 
 # ---------- helper functions ----------
 def validate_output_files(output_files):
@@ -87,7 +95,56 @@ def validate_output_files(output_files):
 # ---------- targets ----------
 rule all:
     input:
-        expand(f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
+        expand(f"{BASE}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
+
+# Individual job bit targets (run without config filtering)
+rule job_1_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_1.txt", sim=SIMS, tile=TILE_IDs)
+
+rule job_2_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_2.txt", sim=SIMS, tile=TILE_IDs)
+
+rule job_4_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_4.txt", sim=SIMS, tile=TILE_IDs)
+
+rule job_8_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_8.txt", sim=SIMS, tile=TILE_IDs)
+
+rule job_16_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_16.txt", sim=SIMS, tile=TILE_IDs)
+
+rule job_32_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_32.txt", sim=SIMS, tile=TILE_IDs)
+
+rule job_64_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_64.txt", sim=SIMS, tile=TILE_IDs)
+
+rule job_128_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_128.txt", sim=SIMS, tile=TILE_IDs)
+
+rule job_256_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_256.txt", sim=SIMS, tile=TILE_IDs)
+
+rule job_512_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_512.txt", sim=SIMS, tile=TILE_IDs)
+
+rule job_1024_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_1024.txt", sim=SIMS, tile=TILE_IDs)
+
+rule job_2048_only:
+    input:
+        expand(f"{BASE}/{{sim}}/logs/log_job_{{tile}}_2048.txt", sim=SIMS, tile=TILE_IDs)
 
 # ---------- convenience targets (run in order) ----------
 # 1. init_all
@@ -101,9 +158,9 @@ rule all:
 rule generate_tile_list:
     """Generate tile_numbers.txt from config's tile_IDs."""
     output:
-        f"{GRIDS}/tile_numbers.txt"
+        f"{BASE}/tile_numbers.txt"
     run:
-        os.makedirs(f"{GRIDS}", exist_ok=True)
+        os.makedirs(f"{BASE}", exist_ok=True)
         with open(output[0], "w") as f:
             for tile in TILE_IDs:
                 f.write(f"{tile}\n")
@@ -111,38 +168,39 @@ rule generate_tile_list:
 
 rule init_all:
     input:
-        expand(f"{GRIDS}/{{sim}}/params.py", sim=SIMS)
+        expand(f"{BASE}/{{sim}}/params.py", sim=SIMS)
 
 rule pipeline_all:
     input:
         expand(
-            f"{GRIDS}/{{sim}}/logs/log_job_{{tile}}_{JOB_SEQUENCE[-1]}.txt",
+            f"{BASE}/{{sim}}/logs/log_job_{{tile}}_{JOB_SEQUENCE[-1]}.txt",
             sim=SIMS, tile=TILE_IDs
         )
 
 rule merge_all:
     input:
-        expand(f"{GRIDS}/{{sim}}/final_cat_{{sim}}.hdf5", sim=SIMS)
+        expand(f"{BASE}/{{sim}}/final_cat_{{sim}}.hdf5", sim=SIMS)
 
 rule extract_all:
     input:
-        expand(f"{GRIDS}/{{sim}}/shape_catalog_comprehensive_ngmix.hdf5", sim=SIMS)
+        expand(f"{BASE}/{{sim}}/shape_catalog_comprehensive_ngmix.hdf5", sim=SIMS)
 
 rule calibrate_all:
     input:
-        expand(f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
+        expand(f"{BASE}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
 
 # ---------- rules ----------
 rule init:
     input:
-        tiles = f"{GRIDS}/tile_numbers.txt"
+        config_file = f"{BASE}/config.yaml"
     output:
-        params = f"{GRIDS}/{{sim}}/params.py",
-        mask   = f"{GRIDS}/{{sim}}/config_mask.yaml",
+        params = f"{BASE}/{{sim}}/params.py",
+        mask   = f"{BASE}/{{sim}}/config_mask.yaml",
+        tiles  = f"{BASE}/{{sim}}/tile_numbers.txt",
+        cfis   = directory(f"{BASE}/{{sim}}/cfis"),
     shell:
-        f"{APP_CMD} {PATH_SH}/init_run_v2.0.sh"
-        f" -t image_sims -d {GRIDS} -s {{wildcards.sim}} -S {SAMPLE}"
-        f" -T {input.tiles}"
+        f"python3 {PATH_PY}/init_run_v2.0.py"
+        f" -c {input.config_file} -s {{wildcards.sim}} -q"
 
 def _shapepipe_job_input(wildcards):
     bit      = int(wildcards.bit)
@@ -154,25 +212,25 @@ def _shapepipe_job_input(wildcards):
         if tile_idx == 0:
             # First tile, first bit: wait for init
             return [
-                f"{GRIDS}/{wildcards.sim}/params.py",
-                f"{GRIDS}/{wildcards.sim}/config_mask.yaml",
+                f"{BASE}/{wildcards.sim}/params.py",
+                f"{BASE}/{wildcards.sim}/config_mask.yaml",
             ]
         else:
             # Later tile, first bit: wait for last bit of previous tile
             prev_tile = TILE_IDs[tile_idx - 1]
-            return f"{GRIDS}/{wildcards.sim}/logs/log_job_{prev_tile}_{JOB_SEQUENCE[-1]}.txt"
+            return f"{BASE}/{wildcards.sim}/logs/log_job_{prev_tile}_{JOB_SEQUENCE[-1]}.txt"
     else:
         # Same tile, previous bit
-        return f"{GRIDS}/{wildcards.sim}/logs/log_job_{tile}_{JOB_SEQUENCE[bit_idx - 1]}.txt"
+        return f"{BASE}/{wildcards.sim}/logs/log_job_{tile}_{JOB_SEQUENCE[bit_idx - 1]}.txt"
 
 rule shapepipe_job:
     input:  _shapepipe_job_input
-    output: f"{GRIDS}/{{sim}}/logs/log_job_{{tile}}_{{bit}}.txt"
+    output: f"{BASE}/{{sim}}/logs/log_job_{{tile}}_{{bit}}.txt"
     wildcard_constraints:
         bit  = "|".join(str(b) for b in JOB_SEQUENCE),
         tile = "|".join(t.replace(".", r"\.") for t in TILE_IDs),
     shell:
-        f"cd {GRIDS}/{{wildcards.sim}} &&"
+        f"cd {BASE}/{{wildcards.sim}} &&"
         f" {APP_CMD} {PATH_SH}/run_job_sp_canfar_v2.0.bash"
         f" {FORCE} -N {N_SMP} -e {{wildcards.tile}} -t image_sims -j {{wildcards.bit}} &&"
         f" python3 -c \"import os; f='{output}'; "
@@ -181,13 +239,13 @@ rule shapepipe_job:
 rule merge:
     input:
         expand(
-            f"{GRIDS}/{{{{sim}}}}/logs/log_job_{{tile}}_{JOB_SEQUENCE[-1]}.txt",
+            f"{BASE}/{{{{sim}}}}/logs/log_job_{{tile}}_{JOB_SEQUENCE[-1]}.txt",
             tile=TILE_IDs
         )
     output:
-        f"{GRIDS}/{{sim}}/final_cat_{{sim}}.hdf5"
+        f"{BASE}/{{sim}}/final_cat_{{sim}}.hdf5"
     shell:
-        f"cd {GRIDS}/{{wildcards.sim}} &&"
+        f"cd {BASE}/{{wildcards.sim}} &&"
         f" {SPV_CMD} python {PATH_PY}/create_final_cat.py"
         f" -I -m final_cat_{{wildcards.sim}}.hdf5"
         f" -i .. -p cfis/final_cat.param -P {{wildcards.sim}}"
@@ -195,62 +253,62 @@ rule merge:
 
 rule extract:
     input:
-        cat    = f"{GRIDS}/{{sim}}/final_cat_{{sim}}.hdf5",
-        params = f"{GRIDS}/{{sim}}/params.py",
+        cat    = f"{BASE}/{{sim}}/final_cat_{{sim}}.hdf5",
+        params = f"{BASE}/{{sim}}/params.py",
     output:
-        f"{GRIDS}/{{sim}}/shape_catalog_comprehensive_ngmix.hdf5"
+        f"{BASE}/{{sim}}/shape_catalog_comprehensive_ngmix.hdf5"
     shell:
-        f"cd {GRIDS}/{{wildcards.sim}} &&"
+        f"cd {BASE}/{{wildcards.sim}} &&"
         f" {SPV_CMD} python {PATH_NB}/extract_info.py"
 
 rule calibrate:
     input:
-        cat  = f"{GRIDS}/{{sim}}/shape_catalog_comprehensive_ngmix.hdf5",
-        mask = f"{GRIDS}/{{sim}}/config_mask.yaml",
+        cat  = f"{BASE}/{{sim}}/shape_catalog_comprehensive_ngmix.hdf5",
+        mask = f"{BASE}/{{sim}}/config_mask.yaml",
     output:
-        f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits"
+        f"{BASE}/{{sim}}/shape_catalog_cut_ngmix.fits"
     shell:
-        f"cd {GRIDS}/{{wildcards.sim}} &&"
+        f"cd {BASE}/{{wildcards.sim}} &&"
         f" {SPV_CMD} python {PATH_SPV}/notebooks/calibrate_comprehensive_cat.py -s calibrate"
 
 rule mbias:
     input:
-        expand(f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
+        expand(f"{BASE}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
     output:
         MBIAS_OUT,
-        f"{GRIDS}/results/mbias_cumulative.yaml",
+        f"{BASE}/results/mbias_cumulative.yaml",
     shell:
-        f"mkdir -p {GRIDS}/results && cat > /tmp/mbias_cfg.yaml << 'EOF'\n"
-        f"grids_dir: {GRIDS}\n"
+        f"mkdir -p {BASE}/results && cat > /tmp/mbias_cfg.yaml << 'EOF'\n"
+        f"grids_dir: {BASE}\n"
         f"num: {NUM}\n"
         f"catalog_name: shape_catalog_cut_ngmix.fits\n"
         f"shear_amplitude: 0.02\n"
         f"match_radius_deg: 0.0002\n"
         f"w_col: w_des\n"
         f"n_bootstrap: 500\n"
-        f"output_path: {GRIDS}/results/m_bias_results.yaml\n"
-        f"results_dir: {GRIDS}/results\n"
+        f"output_path: {BASE}/results/m_bias_results.yaml\n"
+        f"results_dir: {BASE}/results\n"
         f"EOF\n"
         f"{SPV_CMD} python {PATH_SPV}/scripts/compute_m_bias_image_sims.py"
         f" -c /tmp/mbias_cfg.yaml -v --cumulative"
 
 rule diagnostics:
     input:
-        expand(f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
+        expand(f"{BASE}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
     output:
-        f"{GRIDS}/results/footprint.png",
+        f"{BASE}/results/footprint.png",
     shell:
-        f"mkdir -p {GRIDS}/results && cat > /tmp/diag_cfg.yaml << 'EOF'\n"
-        f"grids_dir: {GRIDS}\n"
+        f"mkdir -p {BASE}/results && cat > /tmp/diag_cfg.yaml << 'EOF'\n"
+        f"grids_dir: {BASE}\n"
         f"num: {NUM}\n"
         f"catalog_name: shape_catalog_cut_ngmix.fits\n"
         f"shear_amplitude: 0.02\n"
         f"match_radius_deg: 0.0002\n"
         f"w_col: w_des\n"
         f"n_bootstrap: 500\n"
-        f"output_path: {GRIDS}/results/m_bias_results.yaml\n"
-        f"results_dir: {GRIDS}/results\n"
-        f"diagnostics_dir: {GRIDS}/results\n"
+        f"output_path: {BASE}/results/m_bias_results.yaml\n"
+        f"results_dir: {BASE}/results\n"
+        f"diagnostics_dir: {BASE}/results\n"
         f"EOF\n"
         f"{SPV_CMD} python {PATH_SPV}/scripts/diagnostics_image_sims.py"
         f" -c /tmp/diag_cfg.yaml -v"

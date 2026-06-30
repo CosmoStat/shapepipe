@@ -15,26 +15,46 @@ The image simulations calibration pipeline derives multiplicative (m) and additi
 ## Quick Start
 
 ### Prerequisites
-- ShapePipe container: `/n17data/mkilbing/shapepipe_im_sims.sif`
-- SP Validation container: `/n17data/mkilbing/sp_validation_im_sims.sif`
-- Pipeline scripts: `~/astro/repositories/github/shapepipe/scripts/image_sims_pipeline/`
+- container: `/n17data/mkilbing/sp_validation_im_sims.sif`
+- Pipeline scripts: `/path/to/shapepipe/scripts/image_sims_pipeline/`
 
 ### Setup (one time)
 
 ```bash
-# Copy template config to run directory
-cp ~/astro/repositories/github/shapepipe/scripts/image_sims_pipeline/config.yaml.template \
-   /n17data/mkilbing/astro/Runs/shapepipe/CFIS/v2.0/image_sims/config.yaml
+# Copy template config to run directory and rename to config.yaml
+cp /path/to/shapepipe/scripts/image_sims_pipeline/config.yaml.template <run_dir>/config.yaml
 
 # Edit config.yaml with your tile IDs, grid number, etc.
 ```
 
-### Run from the run directory
+### Run (fully automatic, snakemake)
 
-**All snakemake commands run from the image_sims run directory:**
+To get help on how to run snakemake, and the different targets and options, type
+```bash
+python ~/shapepipe/scripts/image_sims_pipeline/info.py -h
+```
+
+To monitor the status of the run and completed number of tiles, type
+```bash
+python ~/shapepipe/scripts/image_sims_pipeline/info.py -m [-v]
+```
+
+First, for convenience define the short cut
+```bash
+alias sn_ims="snakemake -s ~/shapepipe/scripts/image_sims_pipeline/Snakefile --configfile config.yaml -j $OMP_NUM_THREADS'
+```
+
+To go step by step (one target at a time), do
 
 ```bash
-cd /n17data/mkilbing/astro/Runs/shapepipe/CFIS/v2.0/image_sims/
+# Initialise subdirs (one for each sheared verions)
+sn_ims init_all
+
+# Run shapepipe
+sn_ims pipeline_all
+```
+
+```bash
 
 # Full pipeline to calibrated catalogues
 snakemake -s ~/astro/repositories/github/shapepipe/scripts/image_sims_pipeline/Snakefile \
@@ -51,7 +71,43 @@ snakemake -s ~/astro/repositories/github/shapepipe/scripts/image_sims_pipeline/S
 ~/astro/repositories/github/shapepipe/scripts/image_sims_pipeline/monitor_mbias.py -v
 ```
 
----
+### Run (non-automatic)
+
+Activate Docker container with
+```bash
+app_gen --bind /n09data /n17data/mkilbing/shapepipe_im_sims.sif
+```
+
+Get config file
+```bash
+cp /path/to/shapepipe/scripts/image_sims_pipeline/config.yaml.template ./config.yaml
+```
+
+Edit config file.
+
+Initialise subdir:
+```bash
+init_run_v2.0.py [-s <subdir>]
+```
+with e.g. `subdir=1p2z_grid_1`.
+
+Start pipeline runs
+
+```bash
+cd <subdir>
+run_job_sp_canfar_v2.0.bash -t image_sims -j 1
+```
+
+This will run the first job (`-j 1`) for all tiles found in `tile_numbers.txt`.
+
+To get help on the options, use the flag `-h`.
+
+To test it one a single tile for testing, add the option `-e ID`, e.g. `-e 272.281`.
+
+To run all pipeline jobs, either call `run_job_sp_canfar_v2.0.bash` for each subsequent job,
+e.g. `-j 1`, `-j 2`, `-j 4`, or group them by (bit-)adding the job numbers. The entire pipeline
+will be run with `-j 4095`.
+
 
 ## Configuration
 

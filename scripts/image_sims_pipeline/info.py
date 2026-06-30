@@ -20,9 +20,18 @@ def load_config():
 
 def load_tile_ids(cfg):
     """Load tile IDs from config, handling both lists and file paths."""
-    tile_ids = cfg.get("tile_IDs", [cfg.get("tile_ID", ["?"])])
+    num = cfg.get("num", "")
+    tile_ids = cfg.get("tile_IDs", None)
+
+    if tile_ids is None:
+        # Auto-construct from num
+        tile_ids = os.path.expanduser(
+            f"~/shapepipe/auxdir/CFIS/im_sims_202606/tile_numbers_{num}.txt"
+        )
 
     if isinstance(tile_ids, str):
+        # Expand {num} placeholder
+        tile_ids = tile_ids.replace("{num}", str(num))
         if os.path.isfile(tile_ids):
             with open(tile_ids) as f:
                 tile_ids = [line.strip() for line in f if line.strip()]
@@ -90,7 +99,7 @@ def get_extract_tile_count(sim_path):
 def monitor(cfg, verbose=0):
     base      = cfg["base"]
     num       = cfg["num"]
-    sim_type  = cfg["type"]
+    sim_type  = cfg["sims_type"]
     tile_ids  = load_tile_ids(cfg)
     n_tiles   = len(tile_ids)
     job_seq   = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
@@ -99,9 +108,9 @@ def monitor(cfg, verbose=0):
     str_type = f"_{sim_type}" if sim_type == "grid" else ""
     sims = [
         f"1{d1}2{d2}{str_type}_{num}"
-        for d1, d2 in zip(["m","p","z","z","z"], ["z","z","m","p","z"])
+        for d1, d2 in zip(["m","p","z","z"], ["z","z","m","p"])
     ]
-    grids = f"{base}/{sim_type}s"
+    grids = base
 
     col_w = max(len(s) for s in sims) + 2
     downstream = [
@@ -177,15 +186,15 @@ def main():
     tile_ids  = load_tile_ids(cfg)
     sample    = cfg["sample"]
     num       = cfg["num"]
-    sim_type  = cfg["type"]
+    sim_type  = cfg["sims_type"]
     job_seq   = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
 
     str_type = f"_{sim_type}" if sim_type == "grid" else ""
     sims = [
         f"1{d1}2{d2}{str_type}_{num}"
-        for d1, d2 in zip(["m","p","z","z","z"], ["z","z","m","p","z"])
+        for d1, d2 in zip(["m","p","z","z"], ["z","z","m","p"])
     ]
-    grids = f"{base}/{sim_type}s"
+    grids = base
 
     print("=" * 70)
     print("  Image simulations pipeline")
