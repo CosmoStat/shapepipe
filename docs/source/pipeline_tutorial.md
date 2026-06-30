@@ -289,16 +289,15 @@ job_sp TILE_ID -j 16
 is the selection of galaxies as extended objects compared to the PSF.
 First, the PSF model is interpolated to galaxy positions, according to the PSF model
 with `psfex_interp` or `mccd_interp`. Next, postage stamps around galaxies
-of the weights maps are created via `vignetmaker`. Then, the spread model
-is computed by the `spread_model` module. Finally, postage stamps
+of the weights maps are created via `vignetmaker`. Finally, postage stamps
 around galaxies of single-exposure data is extracted with another call
 to `vignetmaker`.
 
 The output directory is
-- `run_sp_MiViSmVi` if the PSF model is `mccd`;
-- `run_sp_tile_PsViSmVi` for the `PSFEx` PSF model.
+- `run_sp_MiViVi` if the PSF model is `mccd`;
+- `run_sp_tile_PsViVi` for the `PSFEx` PSF model.
 
-This corresponds to the MCCD/PSFex interpolation (`Mi`/`Pi`), `vignetmaker` (`Vi`), `spread_model` (`Sm`), and the
+This corresponds to the MCCD/PSFex interpolation (`Mi`/`Pi`), `vignetmaker` (`Vi`), and the
 second call to `vignetmaker` (`Vi`).
 
 
@@ -325,7 +324,7 @@ job_sp TILE_ID -j 64
 This task first merges the `NJOB` parallel `ngmix` output files from the previous step into
 one output file. Then, previously obtained information are pasted into a _final_ shape catalogue via `make_cat`.
 Included are galaxy detection and basic measurement parameters, the PSF model at
-galaxy positions, the spread-model classification, and the shape measurement.
+galaxy positions, and the shape measurement.
 
 Two output directories are created.
 The first one is `run_sp_Ms` for the `merge_sep` run.
