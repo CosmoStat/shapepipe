@@ -975,15 +975,28 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
     return sig_noise
 
 def uberseg_weight(weight, seg, object_number):
-    """Zero a stamp's weight on neighbour-side pixels (Sheldon/MEDS UberSeg).
+    """Zero a stamp's weight on neighbour-side pixels — the UberSeg treatment.
 
-    Each pixel is assigned to the object whose segmentation footprint it is
-    nearest to — a nearest-segment Voronoi partition — and only pixels
-    assigned to the central object keep their weight. This is the algorithm
-    behind ``meds.MEDS.get_uberseg`` / ``meds._uberseg.uberseg_tree``,
-    reimplemented here (the C extension lives in ``meds``, whose import drags
-    the full ``fitsio``/``esutil`` stack) with a ``cKDTree`` nearest-neighbour
-    query in place of the C k-d tree.
+    UberSeg is Erin Sheldon's MEDS/ngmix neighbour mask (``esheldon/meds``,
+    https://github.com/esheldon/meds — ``MEDS.get_uberseg`` /
+    ``meds._uberseg.uberseg_tree``, in MEDS itself "adapted from Niall MacCrann
+    and Joe Zuntz", and used in the DES shear pipeline). Each stamp pixel is
+    assigned to the object whose segmentation footprint it lies nearest to — a
+    nearest-segment Voronoi partition — and only pixels assigned to the central
+    object keep their weight.
+
+    This function **reimplements** the partition rather than depending on
+    ``meds``: it is a five-line ``scipy.spatial.cKDTree`` nearest-neighbour
+    query, and pulling in the whole MEDS-file library — plus ``esutil`` and a
+    C-extension build (``fitsio`` is already in the ShapePipe stack; ``esutil``
+    is not) — for one standard geometric operation is disproportionate. The
+    reimplementation was validated bit-for-bit against Sheldon's own reference
+    ``get_uberseg`` over a battery of synthetic and random multi-object seg
+    maps: the two masks agree on every pixel except exact Voronoi-boundary ties
+    (a measure-zero tie-break convention — ``argmin`` first-min vs cKDTree
+    order — scientifically inert). See the ``uberseg`` fiber's ``validation/``
+    harness for the equivalence proof and figures. The cKDTree stands in for
+    the C k-d tree; results are identical up to that boundary convention.
 
     Because the partition is by distance to the nearest footprint, the pixels
     surviving around a compact central object form a single connected,
