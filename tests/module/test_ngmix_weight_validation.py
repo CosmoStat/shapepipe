@@ -331,8 +331,9 @@ def test_metacal_ivar_beats_binary_under_noise_gradient(
 # With the column grammar (#761) this corrupts the *_psf_orig diagnostic
 # columns, fit from the original image PSF by average_original_psf. A finite
 # flat weight = 1/PSF_NOISE**2 restores the likelihood. The fix touches only
-# the diagnostic original-PSF fit; metacal builds its own high-weight
-# reconvolution-kernel PSF observation, so the calibrated shear is unchanged.
+# the diagnostic original-PSF fit (run with the galaxy prior); metacal fits the
+# same psf_obs with a prior-free AdmomFitter, which is insensitive to a flat
+# weight's scale, so the calibrated shear is unchanged.
 # ---------------------------------------------------------------------------
 
 PSF_SHEAR = (0.05, -0.03)  # injected PSF ellipticity for the recovery test
@@ -416,10 +417,11 @@ def test_psf_weight_recovers_original_psf_ellipticity():
 def test_psf_weight_leaves_metacal_shear_invariant():
     """The fix must not move the calibration: metacal shear flat in PSF_NOISE.
 
-    Metacal rebuilds the reconvolution-kernel PSF observation at its own high
-    weight, independent of the diagnostic psf_obs, so every metacal-type shear
-    is invariant to the diagnostic weight. Asserted bit-for-bit between the
-    unit weight (pre-fix) and the shipped PSF_NOISE.
+    Metacal fits the same psf_obs with a prior-free AdmomFitter (then dilates
+    to a round reconvolution kernel); a prior-free moment fit is insensitive to
+    a flat weight's absolute scale, so every metacal-type shear is invariant to
+    the diagnostic weight. Asserted bit-for-bit between the unit weight
+    (pre-fix) and the shipped PSF_NOISE.
     """
     _, _, res_w = _psf_orig_via_metacal(PSF_NOISE)
     _, _, res_u = _psf_orig_via_metacal(1.0)
