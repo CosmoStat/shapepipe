@@ -139,77 +139,6 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     return cat_size
 
 
-def save_sm_data(
-    final_cat_file,
-    sexcat_sm_path,
-    do_classif=True,
-    star_thresh=0.003,
-    gal_thresh=0.01,
-    n_obj=-1,
-):
-    r"""Save Spread-Model Data.
-
-    Save the spread-model data into the final catalogue.
-
-    Parameters
-    ----------
-    final_cat_file : file_io.FITSCatalogue
-        Final catalogue
-    sexcat_sm_path : str
-        Path to spread-model catalogue to save. If ``None``, spread_model is
-        set to 99
-    do_classif : bool
-        If ``True`` objects will be classified into stars, galaxies, and other,
-        using the classifier
-        :math:`{\rm class} = {\rm sm} + 2 * {\rm sm}_{\rm err}`
-    star_thresh : float
-        Threshold for star selection; object is classified as star if
-        :math:`|{\rm class}| <` ``star_thresh``
-    gal_thresh : float
-        Threshold for galaxy selection; object is classified as galaxy if
-        :math:`{\rm class} >` ``gal_thresh``
-    nobj : int, optional
-        Number of objects, only used if sexcat_sm_path is ``-1``
-
-    Returns
-    -------
-    int
-        Number of objects saved
-    """
-    final_cat_file.open()
-
-    if sexcat_sm_path is not None:
-        sexcat_sm_file = file_io.FITSCatalogue(
-            sexcat_sm_path,
-            SEx_catalogue=True,
-        )
-        sexcat_sm_file.open()
-
-        sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
-        sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
-
-        sexcat_sm_file.close()
-
-    else:
-        sm = np.ones(n_obj) * 99
-        sm_err = np.ones(n_obj) * 99
-
-    final_cat_file.add_col("SPREAD_MODEL", sm)
-    final_cat_file.add_col("SPREADERR_MODEL", sm_err)
-
-    if do_classif:
-        obj_flag = np.ones_like(sm, dtype="int16") * 2
-        classif = sm + 2.0 * sm_err
-        obj_flag[np.where(np.abs(classif) < star_thresh)] = 0
-        obj_flag[np.where(classif > gal_thresh)] = 1
-
-        final_cat_file.add_col("SPREAD_CLASS", obj_flag)
-
-    final_cat_file.close()
-
-    return n_obj
-
-
 class SaveCatalogue:
     """Save Catalogue.
 
@@ -329,12 +258,15 @@ class SaveCatalogue:
 
         Save the NGMIX catalogue into the final one.
 
-        Column grammar: ``NGMIX[m]_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>``, plus
-        three OBJECT/SHEAR-less per-object metadata columns
+        Column grammar: ``NGMIX[m]_<COMPONENT>[_ERR][_<OBJECT>]_<SHEAR>``,
+        plus three OBJECT/SHEAR-less per-object metadata columns
         (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
-        ``NGMIX_MCAL_TYPES_FAIL``). ``OBJECT`` is one of ``GAL`` (galaxy),
-        ``PSF_ORIG`` (the original image PSF, fit by
-        :func:`ngmix.average_original_psf`), or ``PSF_RECONV`` (the metacal
+        ``NGMIX_MCAL_TYPES_FAIL``). The galaxy is the implicit default object
+        and carries NO ``OBJECT`` token (``NGMIX_G1_NOSHEAR``, dropping the
+        ``GAL`` segment carried by the pre-#761 names). The explicit PSF
+        objects are ``PSF_ORIG``
+        (the original image PSF, fit by
+        :func:`ngmix.average_original_psf`) and ``PSF_RECONV`` (the metacal
         reconvolution kernel, fit by :func:`ngmix.average_multiepoch_psf`);
         see those functions for what each PSF family IS. ``PSF_ORIG`` and
         ``PSF_RECONV`` are independent fits of different PSFs, no longer the
@@ -387,32 +319,32 @@ class SaveCatalogue:
 
         prefix = f"NGMIX{m}"
 
-        # Galaxy (GAL), original image PSF (PSF_ORIG) and metacal
+        # Galaxy (no object token), original image PSF (PSF_ORIG) and metacal
         # reconvolution kernel (PSF_RECONV); see ngmix.average_original_psf /
         # average_multiepoch_psf for what each PSF family is. G1/G2 are scalar
         # reduced-shear components, not a 2-vector. Sentinels:
         # sizes/fluxes/mags/flags 0, *_ERR fluxes/mags -1, ellipticities -10,
         # *_ERR sizes 1e30.
         for key_str in (
-            f"{prefix}_T_GAL_",
-            f"{prefix}_SNR_GAL_",
-            f"{prefix}_FLUX_GAL_",
-            f"{prefix}_MAG_GAL_",
-            f"{prefix}_FLAGS_GAL_",
+            f"{prefix}_T_",
+            f"{prefix}_SNR_",
+            f"{prefix}_FLUX_",
+            f"{prefix}_MAG_",
+            f"{prefix}_FLAGS_",
             f"{prefix}_T_PSF_ORIG_",
             f"{prefix}_T_PSF_RECONV_",
         ):
             self._update_dict(key_str, np.zeros(n_obj))
         for key_str in (
-            f"{prefix}_FLUX_ERR_GAL_",
-            f"{prefix}_MAG_ERR_GAL_",
+            f"{prefix}_FLUX_ERR_",
+            f"{prefix}_MAG_ERR_",
         ):
             self._update_dict(key_str, np.ones(n_obj) * -1)
         for key_str in (
-            f"{prefix}_G1_GAL_",
-            f"{prefix}_G2_GAL_",
-            f"{prefix}_G1_ERR_GAL_",
-            f"{prefix}_G2_ERR_GAL_",
+            f"{prefix}_G1_",
+            f"{prefix}_G2_",
+            f"{prefix}_G1_ERR_",
+            f"{prefix}_G2_ERR_",
             f"{prefix}_G1_PSF_ORIG_",
             f"{prefix}_G2_PSF_ORIG_",
             f"{prefix}_G1_ERR_PSF_ORIG_",
@@ -424,7 +356,7 @@ class SaveCatalogue:
         ):
             self._update_dict(key_str, np.ones(n_obj) * -10.0)
         for key_str in (
-            f"{prefix}_T_ERR_GAL_",
+            f"{prefix}_T_ERR_",
             f"{prefix}_T_ERR_PSF_ORIG_",
             f"{prefix}_T_ERR_PSF_RECONV_",
         ):
@@ -441,46 +373,46 @@ class SaveCatalogue:
 
                     # Galaxy shape, size and photometry.
                     self._add2dict(
-                        f"{prefix}_G1_GAL_{key}", ncf_data["g1"][ind[0]], idx
+                        f"{prefix}_G1_{key}", ncf_data["g1"][ind[0]], idx
                     )
                     self._add2dict(
-                        f"{prefix}_G2_GAL_{key}", ncf_data["g2"][ind[0]], idx
+                        f"{prefix}_G2_{key}", ncf_data["g2"][ind[0]], idx
                     )
                     self._add2dict(
-                        f"{prefix}_G1_ERR_GAL_{key}",
+                        f"{prefix}_G1_ERR_{key}",
                         ncf_data["g1_err"][ind[0]], idx
                     )
                     self._add2dict(
-                        f"{prefix}_G2_ERR_GAL_{key}",
+                        f"{prefix}_G2_ERR_{key}",
                         ncf_data["g2_err"][ind[0]], idx
                     )
                     self._add2dict(
-                        f"{prefix}_T_GAL_{key}", ncf_data["T"][ind[0]], idx
+                        f"{prefix}_T_{key}", ncf_data["T"][ind[0]], idx
                     )
                     self._add2dict(
-                        f"{prefix}_T_ERR_GAL_{key}",
+                        f"{prefix}_T_ERR_{key}",
                         ncf_data["T_err"][ind[0]], idx
                     )
                     self._add2dict(
-                        f"{prefix}_SNR_GAL_{key}", ncf_data["s2n"][ind[0]], idx
+                        f"{prefix}_SNR_{key}", ncf_data["s2n"][ind[0]], idx
                     )
                     self._add2dict(
-                        f"{prefix}_FLUX_GAL_{key}",
+                        f"{prefix}_FLUX_{key}",
                         ncf_data["flux"][ind[0]], idx
                     )
                     self._add2dict(
-                        f"{prefix}_FLUX_ERR_GAL_{key}",
+                        f"{prefix}_FLUX_ERR_{key}",
                         ncf_data["flux_err"][ind[0]], idx
                     )
                     self._add2dict(
-                        f"{prefix}_MAG_GAL_{key}", ncf_data["mag"][ind[0]], idx
+                        f"{prefix}_MAG_{key}", ncf_data["mag"][ind[0]], idx
                     )
                     self._add2dict(
-                        f"{prefix}_MAG_ERR_GAL_{key}",
+                        f"{prefix}_MAG_ERR_{key}",
                         ncf_data["mag_err"][ind[0]], idx
                     )
                     self._add2dict(
-                        f"{prefix}_FLAGS_GAL_{key}",
+                        f"{prefix}_FLAGS_{key}",
                         ncf_data["flags"][ind[0]], idx
                     )
 
@@ -559,21 +491,25 @@ class SaveCatalogue:
         galsim_id = galsim_cat_file.get_data()["id"]
 
         for key_str in (
-            "GALSIM_GAL_SIGMA_",
-            "GALSIM_PSF_SIGMA_",
+            "GALSIM_T_",
+            "GALSIM_T_PSF_",
             "GALSIM_FLUX_",
             "GALSIM_MAG_",
         ):
             self._update_dict(key_str, np.zeros(len(self._obj_id)))
         for key_str in ("GALSIM_FLUX_ERR_", "GALSIM_MAG_ERR_", "GALSIM_RES_"):
-            self._update_dict(key_str, np.ones(n_obj) * -1)
+            self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
         for key_str in (
-            "GALSIM_GAL_ELL_",
-            "GALSIM_GAL_ELL_ERR_",
-            "GALSIM_GAL_ELL_UNCORR_",
-            "GALSIM_PSF_ELL_",
+            "GALSIM_G1_",
+            "GALSIM_G2_",
+            "GALSIM_G1_ERR_",
+            "GALSIM_G2_ERR_",
+            "GALSIM_G1_UNCORR_",
+            "GALSIM_G2_UNCORR_",
+            "GALSIM_G1_PSF_",
+            "GALSIM_G2_PSF_",
         ):
-            self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
+            self._update_dict(key_str, np.ones(len(self._obj_id)) * -10.0)
         self._update_dict(
             "GALSIM_FLAGS_",
             np.ones(len(self._obj_id), dtype="int16"),
@@ -589,50 +525,66 @@ class SaveCatalogue:
 
                     if key == "ORIGINAL_PSF":
 
-                        uncorr_g = (
-                            gcf_data["gal_uncorr_g1"][ind[0]],
-                            gcf_data["gal_uncorr_g2"][ind[0]],
+                        # PSF columns sourced from the galaxy uncorr fields
+                        # for this special extension (asymmetry preserved).
+                        self._add2dict(
+                            f"GALSIM_G1_PSF_{key}",
+                            gcf_data["gal_uncorr_g1"][ind[0]], idx
                         )
-                        psf_sig = gcf_data["gal_sigma"][ind[0]]
-                        self._add2dict(f"GALSIM_PSF_ELL_{key}", uncorr_g, idx)
-                        self._add2dict(f"GALSIM_PSF_SIGMA_{key}", psf_sig, idx)
+                        self._add2dict(
+                            f"GALSIM_G2_PSF_{key}",
+                            gcf_data["gal_uncorr_g2"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"GALSIM_T_PSF_{key}",
+                            cs_size.sigma_to_T(gcf_data["gal_sigma"][ind[0]]),
+                            idx
+                        )
 
                     else:
 
-                        g = (
-                            gcf_data["gal_g1"][ind[0]],
-                            gcf_data["gal_g2"][ind[0]],
-                        )
-                        g_err = (
-                            gcf_data["gal_g1_err"][ind[0]],
-                            gcf_data["gal_g2_err"][ind[0]],
-                        )
-                        self._add2dict(f"GALSIM_GAL_ELL_{key}", g, idx)
-                        self._add2dict(f"GALSIM_GAL_ELL_ERR_{key}", g_err, idx)
-
-                        uncorr_g = (
-                            gcf_data["gal_uncorr_g1"][ind[0]],
-                            gcf_data["gal_uncorr_g2"][ind[0]],
+                        self._add2dict(
+                            f"GALSIM_G1_{key}", gcf_data["gal_g1"][ind[0]], idx
                         )
                         self._add2dict(
-                            f"GALSIM_GAL_ELL_UNCORR_{key}",
-                            uncorr_g,
-                            idx,
+                            f"GALSIM_G2_{key}", gcf_data["gal_g2"][ind[0]], idx
                         )
-
-                        sigma = gcf_data["gal_sigma"][ind[0]]
-                        self._add2dict(f"GALSIM_GAL_SIGMA_{key}", sigma, idx)
-
-                        psf_g = (
-                            gcf_data["psf_g1"][ind[0]],
-                            gcf_data["psf_g2"][ind[0]],
-                        )
-                        psf_sigma = gcf_data["psf_sigma"][ind[0]]
-                        self._add2dict(f"GALSIM_PSF_ELL_{key}", psf_g, idx)
                         self._add2dict(
-                            f"GALSIM_PSF_SIGMA_{key}",
-                            psf_sigma,
-                            idx,
+                            f"GALSIM_G1_ERR_{key}",
+                            gcf_data["gal_g1_err"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"GALSIM_G2_ERR_{key}",
+                            gcf_data["gal_g2_err"][ind[0]], idx
+                        )
+
+                        self._add2dict(
+                            f"GALSIM_G1_UNCORR_{key}",
+                            gcf_data["gal_uncorr_g1"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"GALSIM_G2_UNCORR_{key}",
+                            gcf_data["gal_uncorr_g2"][ind[0]], idx
+                        )
+
+                        self._add2dict(
+                            f"GALSIM_T_{key}",
+                            cs_size.sigma_to_T(gcf_data["gal_sigma"][ind[0]]),
+                            idx
+                        )
+
+                        self._add2dict(
+                            f"GALSIM_G1_PSF_{key}",
+                            gcf_data["psf_g1"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"GALSIM_G2_PSF_{key}",
+                            gcf_data["psf_g2"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"GALSIM_T_PSF_{key}",
+                            cs_size.sigma_to_T(gcf_data["psf_sigma"][ind[0]]),
+                            idx
                         )
 
                         flux = gcf_data["gal_flux"][ind[0]]
@@ -669,20 +621,29 @@ class SaveCatalogue:
         max_epoch = np.max(self._final_cat_file.get_data()["N_EPOCH"]) + 1
 
         self._output_dict = {
-            f"PSF_ELL_{idx + 1}": np.ones((len(self._obj_id), 2)) * -10.0
+            f"HSM_E1_PSF_{idx + 1}": np.ones(len(self._obj_id)) * -10.0
             for idx in range(max_epoch)
         }
         self._output_dict = {
             **self._output_dict,
             **{
-                f"PSF_FWHM_{idx + 1}": np.zeros(len(self._obj_id))
+                f"HSM_E2_PSF_{idx + 1}": np.ones(len(self._obj_id)) * -10.0
                 for idx in range(max_epoch)
             },
         }
         self._output_dict = {
             **self._output_dict,
             **{
-                f"PSF_FLAG_{idx + 1}": np.ones(len(self._obj_id), dtype="int16")
+                f"HSM_T_PSF_{idx + 1}": np.zeros(len(self._obj_id))
+                for idx in range(max_epoch)
+            },
+        }
+        self._output_dict = {
+            **self._output_dict,
+            **{
+                f"HSM_FLAG_PSF_{idx + 1}": np.ones(
+                    len(self._obj_id), dtype="int16"
+                )
                 for idx in range(max_epoch)
             },
         }
@@ -696,21 +657,28 @@ class SaveCatalogue:
 
                 gpc_data = galaxy_psf_cat[str(id_tmp)][key]
 
-                if gpc_data["SHAPES"]["FLAG_PSF_HSM"] != 0:
+                if gpc_data["SHAPES"]["HSM_FLAG_PSF"] != 0:
                     continue
 
-                e_psf = (
-                    gpc_data["SHAPES"]["E1_PSF_HSM"],
-                    gpc_data["SHAPES"]["E2_PSF_HSM"],
+                self._add2dict(
+                    f"HSM_E1_PSF_{epoch + 1}",
+                    gpc_data["SHAPES"]["HSM_E1_PSF"], idx
                 )
-                self._add2dict(f"PSF_ELL_{epoch + 1}", e_psf, idx)
-
-                psf_fwhm = cs_size.sigma_to_fwhm(
-                    gpc_data["SHAPES"]["SIGMA_PSF_HSM"]
+                self._add2dict(
+                    f"HSM_E2_PSF_{epoch + 1}",
+                    gpc_data["SHAPES"]["HSM_E2_PSF"], idx
                 )
-                self._add2dict(f"PSF_FWHM_{epoch + 1}", psf_fwhm, idx)
 
-                flag_psf = gpc_data["SHAPES"]["FLAG_PSF_HSM"]
-                self._add2dict(f"PSF_FLAG_{epoch + 1}", flag_psf, idx)
+                # HSM_T_PSF already holds T (sigma_to_T applied at the
+                # producer's _interpolate_me); read straight through.
+                self._add2dict(
+                    f"HSM_T_PSF_{epoch + 1}",
+                    gpc_data["SHAPES"]["HSM_T_PSF"], idx
+                )
+
+                self._add2dict(
+                    f"HSM_FLAG_PSF_{epoch + 1}",
+                    gpc_data["SHAPES"]["HSM_FLAG_PSF"], idx
+                )
 
         galaxy_psf_cat.close()

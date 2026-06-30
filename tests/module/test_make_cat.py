@@ -1,12 +1,16 @@
 """UNIT TESTS FOR MODULE PACKAGE: MAKE_CAT.
 
 Drives ``SaveCatalogue._save_ngmix_data`` against a synthetic ngmix catalogue
-to lock in the renamed PSF-column grammar
-``NGMIX[m]_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>`` (shapepipe#749), plus the three
-OBJECT/SHEAR-less metadata columns (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
-``NGMIX_MCAL_TYPES_FAIL``): the original image PSF (``PSF_ORIG``) and the metacal
-reconvolution kernel (``PSF_RECONV``) are independent fits of *different* PSFs,
-no longer the single aliased value of the pre-fix code.
+to lock in the column grammar ``ESTIMATOR_COMPONENT[_ERR]_OBJECT[_SHEAR]``
+(shapepipe#749, #761): galaxy is the implicit default object and carries no
+``GAL`` token (``NGMIX_G1_NOSHEAR``, never ``NGMIX_G1_GAL_NOSHEAR``), while
+the PSF families keep an explicit object token —
+``NGMIX_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>`` for ``PSF_ORIG``/``PSF_RECONV`` —
+plus the three OBJECT/SHEAR-less metadata columns (``NGMIX[m]_MCAL_FLAGS``,
+``NGMIX_N_EPOCH``, ``NGMIX_MCAL_TYPES_FAIL``). The original image PSF
+(``PSF_ORIG``) and the metacal reconvolution kernel (``PSF_RECONV``) are
+independent fits of *different* PSFs, no longer the single aliased value of
+the pre-#749 code.
 """
 
 import numpy as np
@@ -130,13 +134,13 @@ def test_save_ngmix_data_uses_new_grammar_and_no_old_names(tmp_path):
     # Every per-shear family is present under the new grammar.
     for shear in SHEAR_EXTS:
         for col in (
-            f"NGMIX_G1_GAL_{shear}", f"NGMIX_G2_GAL_{shear}",
-            f"NGMIX_G1_ERR_GAL_{shear}", f"NGMIX_G2_ERR_GAL_{shear}",
-            f"NGMIX_T_GAL_{shear}", f"NGMIX_T_ERR_GAL_{shear}",
-            f"NGMIX_SNR_GAL_{shear}",
-            f"NGMIX_FLUX_GAL_{shear}", f"NGMIX_FLUX_ERR_GAL_{shear}",
-            f"NGMIX_MAG_GAL_{shear}", f"NGMIX_MAG_ERR_GAL_{shear}",
-            f"NGMIX_FLAGS_GAL_{shear}",
+            f"NGMIX_G1_{shear}", f"NGMIX_G2_{shear}",
+            f"NGMIX_G1_ERR_{shear}", f"NGMIX_G2_ERR_{shear}",
+            f"NGMIX_T_{shear}", f"NGMIX_T_ERR_{shear}",
+            f"NGMIX_SNR_{shear}",
+            f"NGMIX_FLUX_{shear}", f"NGMIX_FLUX_ERR_{shear}",
+            f"NGMIX_MAG_{shear}", f"NGMIX_MAG_ERR_{shear}",
+            f"NGMIX_FLAGS_{shear}",
             f"NGMIX_G1_PSF_ORIG_{shear}", f"NGMIX_G2_PSF_ORIG_{shear}",
             f"NGMIX_T_PSF_ORIG_{shear}",
             f"NGMIX_G1_PSF_RECONV_{shear}", f"NGMIX_G2_PSF_RECONV_{shear}",
@@ -154,6 +158,8 @@ def test_save_ngmix_data_uses_new_grammar_and_no_old_names(tmp_path):
         assert "_Tpsf" not in col and "TPSF" not in col, col
         assert not col.startswith("NGMIX_ELL_"), col
         assert "NGMIXm" not in col, col  # moments branch off by default
+        # Galaxy is the implicit default object — no GAL token (shapepipe#761).
+        assert "_GAL_" not in col and not col.endswith("_GAL"), col
 
 
 def test_save_ngmix_data_psf_families_trace_distinct_sources(tmp_path):
@@ -228,11 +234,11 @@ def test_save_ngmix_data_fills_sentinels_for_absent_objects(tmp_path):
     npt.assert_allclose(t_orig[present], row["T_psf_orig"])
     npt.assert_allclose(t_orig[absent], [0.0, 0.0])
 
-    t_err_gal = np.asarray(out["NGMIX_T_ERR_GAL_NOSHEAR"])
+    t_err_gal = np.asarray(out["NGMIX_T_ERR_NOSHEAR"])
     npt.assert_allclose(t_err_gal[present], row["T_err"])
     npt.assert_allclose(t_err_gal[absent], [1e30, 1e30])
 
-    flux_err = np.asarray(out["NGMIX_FLUX_ERR_GAL_NOSHEAR"])
+    flux_err = np.asarray(out["NGMIX_FLUX_ERR_NOSHEAR"])
     npt.assert_allclose(flux_err[present], row["flux_err"])
     npt.assert_allclose(flux_err[absent], [-1.0, -1.0])
 

@@ -2,7 +2,9 @@
 
 Drives ``SaveCatalogue._save_ngmix_data`` (the make_cat writer) under
 hypothesis to pin three invariants of the renamed grammar
-``NGMIX[m]_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>`` (shapepipe#749), plus the three
+``NGMIX[m]_<COMPONENT>[_ERR][_<OBJECT>]_<SHEAR>`` (shapepipe#749, #761): the
+galaxy is the implicit default object and carries NO ``OBJECT`` token
+(``NGMIX_G1_NOSHEAR``, never ``NGMIX_G1_GAL_NOSHEAR``), plus the three
 OBJECT/SHEAR-less metadata columns (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
 ``NGMIX_MCAL_TYPES_FAIL``), where the ORIGINAL image PSF (``PSF_ORIG``) and the
 metacal RECONVOLUTION kernel (``PSF_RECONV``) are independent fits of
@@ -12,14 +14,25 @@ metacal RECONVOLUTION kernel (``PSF_RECONV``) are independent fits of
     orig vs reconv ngmix source columns, every emitted ``*_PSF_ORIG_*`` column
     traces to its orig source and every ``*_PSF_RECONV_*`` to its reconv
     source, and the two families are never crossed;
-(b) every column name the writer emits matches the grammar regex;
+(b) every column name the writer emits matches the grammar regex (the OBJECT
+    group is optional, so a regressed ``GAL`` token is rejected, not
+    absorbed);
 (c) every ``NGMIX_*`` token the shipped param file
     (``example/cfis/final_cat.param``) names is a column the writer can
-    produce — writer/param-file consistency.
+    produce — writer/param-file consistency;
+(d) the FULL frozen grammar (shapepipe#761) — ``ESTIMATOR_COMPONENT[_ERR]_
+    OBJECT[_metacaltype]`` — holds across all three estimator families: ngmix
+    and galsim split ellipticity into ``G1``/``G2`` (g-type), HSM into
+    ``E1``/``E2`` (e-type); every family stores exactly one size, ``T``; HSM
+    keeps the singular ``FLAG`` token, ngmix/galsim keep plural ``FLAGS``.
+    This part is a static example-based check (not writer-driven), so it
+    covers galsim/HSM without depending on those producer modules — see
+    ``test_galsim_grammar_properties.py`` and ``test_psfex_interp.py`` for
+    the writer-driven coverage of those families.
 
-Setup mirrors ``tests/module/test_make_cat.py``: a synthetic ngmix FITS with
-the five shear-type extensions carrying the exact ``compile_results`` key set,
-read back through ``_save_ngmix_data``.
+Setup for (a)-(c) mirrors ``tests/module/test_make_cat.py``: a synthetic
+ngmix FITS with the five shear-type extensions carrying the exact
+``compile_results`` key set, read back through ``_save_ngmix_data``.
 """
 
 import re
@@ -151,11 +164,18 @@ def _run_save_ngmix(ngmix_path, obj_ids, cat_size_target=None):
 # NGMIX[m]_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>, plus the three per-object
 # metadata columns that carry neither OBJECT nor SHEAR. Anchored so a stray
 # legacy token (_PSFo, _Tpsf, NGMIX_ELL_*) fails to match.
+# Galaxy is the implicit default object — no token (shapepipe#761), so the
+# OBJECT group is OPTIONAL: ``NGMIX_G1_NOSHEAR`` (galaxy, no object token)
+# matches alongside ``NGMIX_G1_PSF_ORIG_NOSHEAR`` (explicit PSF object). This
+# also makes the regex auto-reject any future ``GAL``-token regression: a
+# stray ``_GAL_`` between COMPONENT and SHEAR cannot be absorbed by the
+# optional group (``GAL`` is not one of its alternatives) and there is no
+# other slot for it to land in.
 _COMPONENT = "G1|G2|T|SNR|FLUX|MAG|FLAGS"
-_OBJECT = "GAL|PSF_ORIG|PSF_RECONV"
+_OBJECT = "PSF_ORIG|PSF_RECONV"
 _SHEAR = "NOSHEAR|1P|1M|2P|2M"
 GRAMMAR_RE = re.compile(
-    rf"^NGMIXm?_(?:{_COMPONENT})(?:_ERR)?_(?:{_OBJECT})_(?:{_SHEAR})$"
+    rf"^NGMIXm?_(?:{_COMPONENT})(?:_ERR)?(?:_(?:{_OBJECT}))?_(?:{_SHEAR})$"
     rf"|^NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH)$"
 )
 
@@ -317,6 +337,10 @@ def test_emitted_column_names_match_grammar(obj_ids, tmp_path_factory):
     assert out, "writer produced no columns"
     for col in out:
         assert GRAMMAR_RE.match(col), f"off-grammar column emitted: {col!r}"
+        # Galaxy is the implicit default object — a regressed GAL token would
+        # match neither the optional OBJECT group nor any other slot, but
+        # assert it directly so the failure message names the real defect.
+        assert "_GAL_" not in col and not col.endswith("_GAL"), col
 
 
 # ---------------------------------------------------------------------------
@@ -363,3 +387,89 @@ def test_param_file_ngmix_tokens_are_producible(param_path, obj_ids):
     # Non-vacuous: the writer DOES cover real grammar tokens from the param
     # file (so the assertion above is exercised against a non-empty set).
     assert (param_tokens - NON_WRITER_PARAM_TOKENS) & produced
+
+
+# ---------------------------------------------------------------------------
+# (d) The FULL frozen grammar, across all three estimator families
+# ---------------------------------------------------------------------------
+#
+# ``ESTIMATOR_COMPONENT[_ERR]_OBJECT[_metacaltype]`` (shapepipe#761). This
+# section encodes the grammar itself as a static property — example column
+# names, not a driven writer — so it covers ngmix, galsim, and HSM together
+# without depending on the galsim/HSM producer modules (covered by their own
+# writer-driving tests: ``test_galsim_grammar_properties.py``,
+# ``test_psfex_interp.py``). What it pins:
+#
+# - galaxy is the implicit default object, no token, for BOTH g-type writers
+#   (ngmix, galsim);
+# - ellipticity is split into named scalar components, never a packed
+#   2-vector: ``G1``/``G2`` for g-type (ngmix, galsim), ``E1``/``E2`` for
+#   e-type (HSM);
+# - exactly one stored size, ``T`` (no ``SIGMA``/``FWHM``/``r50``);
+# - HSM keeps the singular ``FLAG`` token; ngmix/galsim keep plural ``FLAGS``.
+
+FROZEN_GRAMMAR_RE = re.compile(
+    r"^(?:"
+    # ngmix: galaxy (no object token) or explicit PSF_ORIG/PSF_RECONV.
+    r"NGMIXm?_(?:G1|G2|T|SNR|FLUX|MAG|FLAGS)(?:_ERR)?"
+    r"(?:_(?:PSF_ORIG|PSF_RECONV))?_(?:NOSHEAR|1P|1M|2P|2M)"
+    r"|NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH)"
+    # galsim: galaxy (no object token) or explicit PSF object; <K> is a
+    # data-driven FITS extension name, so left as a generic uppercase token.
+    r"|GALSIM_(?:G1|G2|T)(?:_ERR|_UNCORR)?(?:_PSF)?_[A-Z0-9_]+"
+    r"|GALSIM_(?:FLUX|FLUX_ERR|MAG|MAG_ERR|FLAGS|RES)_[A-Z0-9_]+"
+    # HSM: e-type, explicit PSF/STAR object, singular FLAG; the multi-epoch
+    # sink in make_cat._save_psf_data appends a bare epoch index.
+    r"|HSM_(?:E1|E2|T)_(?:PSF|STAR)(?:_\d+)?"
+    r"|HSM_FLAG_(?:PSF|STAR)(?:_\d+)?"
+    r")$"
+)
+
+# Representative columns the new grammar PRODUCES — one or more per family,
+# chosen to exercise every rule above (GAL-drop, G1/G2 vs E1/E2, single T,
+# FLAG vs FLAGS).
+_GRAMMAR_VALID_EXAMPLES = [
+    "NGMIX_G1_NOSHEAR",  # galaxy, no object token
+    "NGMIX_T_ERR_PSF_ORIG_1M",
+    "NGMIX_FLAGS_2P",
+    "NGMIXm_G1_PSF_RECONV_NOSHEAR",
+    "NGMIX_MCAL_FLAGS",
+    "GALSIM_G1_NOSHEAR",  # galaxy, no object token
+    "GALSIM_G2_UNCORR_NOSHEAR",
+    "GALSIM_T_PSF_ORIGINAL_PSF",
+    "GALSIM_FLAGS_NOSHEAR",
+    "HSM_E1_PSF",
+    "HSM_T_STAR",
+    "HSM_FLAG_PSF",
+    "HSM_E1_PSF_3",  # make_cat multi-epoch sink
+    "HSM_T_PSF_2",
+    "HSM_FLAG_STAR_1",
+]
+
+# Pre-#761 / off-grammar columns the rename REMOVES — each violates exactly
+# one rule, named so a failure here points at the specific regression.
+_GRAMMAR_INVALID_EXAMPLES = [
+    "NGMIX_G1_GAL_NOSHEAR",  # GAL token regression
+    "NGMIX_ELL_NOSHEAR",  # packed ellipticity
+    "E1_PSF_HSM",  # pre-rename HSM naming (not HSM_-prefixed)
+    "SIGMA_PSF_HSM",  # raw sigma, not T
+    "HSM_SIGMA_PSF",  # stored sigma instead of T
+    "HSM_FLAGS_PSF",  # plural — HSM is singular FLAG
+    "GALSIM_GAL_ELL_NOSHEAR",  # GAL token + packed ellipticity
+    "GALSIM_GAL_SIGMA_NOSHEAR",  # GAL token + raw sigma
+    "GALSIM_PSF_ELL_NOSHEAR",  # packed ellipticity
+    "GALSIM_FWHM_NOSHEAR",  # FWHM, not T
+    "SPREAD_MODEL",  # removed entirely, not renamed
+]
+
+
+@pytest.mark.parametrize("col", _GRAMMAR_VALID_EXAMPLES)
+def test_frozen_grammar_accepts_new_grammar_examples(col):
+    """One representative column per family/rule matches the frozen grammar."""
+    assert FROZEN_GRAMMAR_RE.match(col), f"should match grammar: {col!r}"
+
+
+@pytest.mark.parametrize("col", _GRAMMAR_INVALID_EXAMPLES)
+def test_frozen_grammar_rejects_legacy_examples(col):
+    """Each pre-#761 / removed column is rejected, not silently absorbed."""
+    assert not FROZEN_GRAMMAR_RE.match(col), f"should NOT match grammar: {col!r}"
