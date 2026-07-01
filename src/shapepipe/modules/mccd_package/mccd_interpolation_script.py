@@ -244,8 +244,8 @@ class MCCDinterpolator(object):
         if self._compute_shape:
             data = {
                 "VIGNET": self.interp_PSFs,
-                "HSM_E1_PSF": self.psf_shapes[:, 0],
-                "HSM_E2_PSF": self.psf_shapes[:, 1],
+                "HSM_G1_PSF": self.psf_shapes[:, 0],
+                "HSM_G2_PSF": self.psf_shapes[:, 1],
                 "HSM_T_PSF": cs_size.sigma_to_T(self.psf_shapes[:, 2]),
                 "HSM_FLAG_PSF": self.psf_shapes[:, 3].astype(int),
             }
