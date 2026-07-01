@@ -163,7 +163,7 @@ def test_write_output_uses_hsm_grammar_and_routes_size_to_T(
     """``_write_output`` writes the HSM grammar names and stores T, not sigma.
 
     Captures the dict handed to ``save_as_fits`` and asserts the frozen
-    grammar (``HSM_E1_PSF`` / ``HSM_E2_PSF`` / ``HSM_T_PSF`` / ``HSM_FLAG_PSF``,
+    grammar (``HSM_G1_PSF`` / ``HSM_G2_PSF`` / ``HSM_T_PSF`` / ``HSM_FLAG_PSF``,
     no legacy ``*_PSF_HSM``) and that the size column is routed through
     ``cs_util.size.sigma_to_T`` (``T = 2 sigma^2``) at the producer.
     """
@@ -193,17 +193,17 @@ def test_write_output_uses_hsm_grammar_and_routes_size_to_T(
 
     assert {
         "VIGNET",
-        "HSM_E1_PSF",
-        "HSM_E2_PSF",
+        "HSM_G1_PSF",
+        "HSM_G2_PSF",
         "HSM_T_PSF",
         "HSM_FLAG_PSF",
     } <= set(data)
     for legacy in ("E1_PSF_HSM", "E2_PSF_HSM", "SIGMA_PSF_HSM", "FLAG_PSF_HSM"):
         assert legacy not in data
 
-    # e-type distortion stored straight through from _get_psfshapes ...
-    npt.assert_array_equal(data["HSM_E1_PSF"], interp.psf_shapes[:, 0])
-    npt.assert_array_equal(data["HSM_E2_PSF"], interp.psf_shapes[:, 1])
+    # g-type distortion stored straight through from _get_psfshapes ...
+    npt.assert_array_equal(data["HSM_G1_PSF"], interp.psf_shapes[:, 0])
+    npt.assert_array_equal(data["HSM_G2_PSF"], interp.psf_shapes[:, 1])
     # ... and the size column is T = 2 sigma^2 (sigma_to_T), not raw sigma.
     npt.assert_allclose(data["HSM_T_PSF"], 2.0 * interp.psf_shapes[:, 2] ** 2)
     assert not np.allclose(data["HSM_T_PSF"], interp.psf_shapes[:, 2])
