@@ -419,8 +419,8 @@ def mccd_interpolation_pipeline(
             PSF_shapes = np.array(
                 [
                     [
-                        moms.observed_shape.e1,
-                        moms.observed_shape.e2,
+                        moms.observed_shape.g1,
+                        moms.observed_shape.g2,
                         moms.moments_sigma,
                         int(bool(moms.error_message)),
                     ]
