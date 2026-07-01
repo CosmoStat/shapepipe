@@ -41,6 +41,7 @@ import numpy.testing as npt
 import pytest
 
 from shapepipe.modules.ngmix_package.ngmix import (
+    PSF_NOISE,
     Postage_stamp,
     do_ngmix_metacal,
     get_prior,
@@ -318,3 +319,114 @@ def test_metacal_ivar_beats_binary_under_noise_gradient(
         f"metacal ivar/binary shape-scatter ratio {ratio:.3f} >= 0.9: the"
         " rms-weight advantage does not survive the metacal/fixnoise path"
     )
+
+
+# ---------------------------------------------------------------------------
+# PSF-observation weight (#749 / #774)
+#
+# make_ngmix_observation built the PSF observation weightless, so ngmix
+# defaulted to unit weight on the unit-flux PSF stamp and the galaxy
+# GPriorBA(0.4) prior shared with the PSF fitter swamped the likelihood. The
+# recovered PSF *shape* then collapsed toward the prior (zero ellipticity).
+# With the column grammar (#761) this corrupts the *_psf_orig diagnostic
+# columns, fit from the original image PSF by average_original_psf. A finite
+# flat weight = 1/PSF_NOISE**2 restores the likelihood. The fix touches only
+# the diagnostic original-PSF fit (run with the galaxy prior); metacal fits the
+# same psf_obs with a prior-free AdmomFitter, which is insensitive to a flat
+# weight's scale, so the calibrated shear is unchanged.
+# ---------------------------------------------------------------------------
+
+PSF_SHEAR = (0.05, -0.03)  # injected PSF ellipticity for the recovery test
+
+
+def _psf_orig_via_metacal(psf_noise, psf_shear=PSF_SHEAR, seed=7):
+    """Run the real production path and return (HSM truth, psf_orig, resdict).
+
+    Builds a sheared-PSF stamp with the module's own ``make_data`` simulator,
+    pushes it through ``do_ngmix_metacal`` (which fits the original image PSF
+    via ``average_original_psf`` into the ``*_psf_orig`` columns), under a
+    given ``PSF_NOISE``. ``psf_noise=1.0`` reproduces the pre-fix unit weight.
+    """
+    import shapepipe.modules.ngmix_package.ngmix as ngm
+    from shapepipe.testing.simulate import make_data
+
+    old = ngm.PSF_NOISE
+    ngm.PSF_NOISE = psf_noise
+    try:
+        rng = np.random.RandomState(seed)
+        prior = get_prior(PIX_SCALE, rng)
+        gals, psfs, _, weights, flags, jacobs = make_data(
+            rng=np.random.RandomState(123), shear=(0.0, 0.0), noise=1e-5,
+            n_epochs=2, img_size=51, psf_shear=psf_shear,
+        )
+        hsm = galsim.hsm.FindAdaptiveMom(galsim.Image(psfs[0], scale=PIX_SCALE))
+        g_truth = np.array([hsm.observed_shape.g1, hsm.observed_shape.g2])
+        stamp = Postage_stamp(bkg_sub=False, megacam_flip=False)
+        (stamp.gals, stamp.psfs, stamp.weights, stamp.flags, stamp.jacobs) = (
+            gals, psfs, weights, flags, jacobs,
+        )
+        resdict, _psf_reconv, psf_orig = do_ngmix_metacal(
+            stamp, prior, 1.0, rng,
+        )
+        return g_truth, psf_orig, resdict
+    finally:
+        ngm.PSF_NOISE = old
+
+
+def test_make_ngmix_observation_psf_obs_is_weighted():
+    """Structural guard: psf_obs carries the finite 1/PSF_NOISE**2 weight.
+
+    The whole #749 fix is this weight; a regression to the weightless build
+    (unit weight) is what we must never ship again.
+    """
+    from shapepipe.testing.simulate import make_data
+
+    gals, psfs, _, weights, flags, jacobs = make_data(
+        rng=np.random.RandomState(123), shear=(0.0, 0.0), noise=1e-5,
+        n_epochs=1, img_size=51, psf_shear=PSF_SHEAR,
+    )
+    obs = make_ngmix_observation(
+        gals[0], weights[0], flags[0], psfs[0], jacobs[0],
+        np.random.RandomState(0),
+    )
+    npt.assert_allclose(obs.psf.weight, 1.0 / PSF_NOISE ** 2)
+    assert (obs.psf.weight > 1.0).all(), "PSF obs fell back to unit weight"
+
+
+def test_psf_weight_recovers_original_psf_ellipticity():
+    """#749 done-condition, end to end: *_psf_orig recovers the PSF shape.
+
+    Through the real ``do_ngmix_metacal`` / ``average_original_psf`` path, the
+    original-PSF ellipticity matches the injected PSF moment shape with the
+    weight, and collapses toward the prior (zero) without it — the contrast
+    that proves the weight is load-bearing for the diagnostic columns.
+    """
+    g_truth, psf_orig_w, _ = _psf_orig_via_metacal(PSF_NOISE)
+    _, psf_orig_u, _ = _psf_orig_via_metacal(1.0)  # pre-fix unit weight
+
+    # The fix: original-PSF column recovers the PSF moment shape.
+    npt.assert_allclose(psf_orig_w["g_psf"], g_truth, atol=1e-3)
+
+    # The bug it cures: weightless collapses the shape toward the prior.
+    assert np.linalg.norm(psf_orig_u["g_psf"]) < 0.1 * np.linalg.norm(g_truth), (
+        "weightless original-PSF fit did not collapse -- the #749 contrast is"
+        " gone, so this test no longer proves the weight is load-bearing"
+    )
+
+
+def test_psf_weight_leaves_metacal_shear_invariant():
+    """The fix must not move the calibration: metacal shear flat in PSF_NOISE.
+
+    Metacal fits the same psf_obs with a prior-free AdmomFitter (then dilates
+    to a round reconvolution kernel); a prior-free moment fit is insensitive to
+    a flat weight's absolute scale, so every metacal-type shear is invariant to
+    the diagnostic weight. Asserted bit-for-bit between the unit weight
+    (pre-fix) and the shipped PSF_NOISE.
+    """
+    _, _, res_w = _psf_orig_via_metacal(PSF_NOISE)
+    _, _, res_u = _psf_orig_via_metacal(1.0)
+    for mtype in ("noshear", "1p", "1m", "2p", "2m"):
+        npt.assert_allclose(
+            res_w[mtype]["g"], res_u[mtype]["g"], rtol=0, atol=1e-6,
+            err_msg=f"PSF-obs weight moved the metacal {mtype} shear",
+        )

@@ -23,6 +23,15 @@ from shapepipe.pipeline import file_io
 
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
 
+# Noise budget for the PSF observation's flat weight map (psf_wt =
+# 1/PSF_NOISE**2). Mirrors the esheldon/aguinot pattern (sigma ~ 1e-5/1e-6);
+# 1e-5 is the value Axel Guinot's #749 reproduction used. The fit is driven
+# by the *relative* weighting of the likelihood vs the prior, so the exact
+# value is non-critical once it is finite (validated on the digital twin: the
+# recovered PSF shape/size are flat across 1e-4..1e-6). See
+# make_ngmix_observation.
+PSF_NOISE = 1e-5
+
 
 class MetacalResult(NamedTuple):
     """Return of :func:`do_ngmix_metacal`: the metacal fit plus both PSFs.
@@ -1091,7 +1100,19 @@ def make_ngmix_observation(
         col=(psf.shape[1] - 1) / 2,
         wcs=wcs,
     )
-    psf_obs = Observation(psf, jacobian=psf_jacob)
+    # A model fit always needs a weight: without one ngmix defaults to unit
+    # weights on a unit-flux PSF stamp, so the galaxy GPriorBA(0.4) prior
+    # handed to the diagnostic PSF fitter swamps the (tiny) likelihood and the
+    # recovered PSF shape collapses toward the prior (#749). PSFEx/MCCD models
+    # already carry a little noise, so a finite flat weight matching the
+    # esheldon/aguinot noise budget (psf_noise ~ 1e-5) suffices to restore the
+    # likelihood — no explicit stamp-noise injection needed (#774). This is the
+    # PSF analogue of the galaxy weight built just below; force float so an
+    # integer-typed stamp cannot truncate the weight (matching that build).
+    # Metacal's own PSF fit is prior-free (AdmomFitter) and so is insensitive
+    # to this flat weight's scale, leaving the calibration untouched.
+    psf_wt = np.full_like(psf, 1.0 / PSF_NOISE ** 2, dtype=float)
+    psf_obs = Observation(psf, weight=psf_wt, jacobian=psf_jacob)
 
     gal_masked, weight_map, noise_img = prepare_ngmix_weights(
         gal, weight, flag, rng, bkg_rms=bkg_rms
