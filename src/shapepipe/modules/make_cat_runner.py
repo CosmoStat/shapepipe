@@ -77,10 +77,8 @@ def make_cat_runner(
         "SHAPE_MEASUREMENT_TYPE",
     )
     for shape_type in shape_type_list:
-        if shape_type.lower() not in ["ngmix", "galsim"]:
-            raise ValueError(
-                "SHAPE_MEASUREMENT_TYPE must be in [ngmix, galsim]"
-            )
+        if shape_type.lower() != "ngmix":
+            raise ValueError("SHAPE_MEASUREMENT_TYPE must be ngmix")
 
     # Fetch PSF data option
     if config.has_option(module_config_sec, "SAVE_PSF_DATA"):
@@ -125,11 +123,7 @@ def make_cat_runner(
     w_log.info("Save shape measurement data")
     for shape_type in shape_type_list:
         w_log.info(f"Save {shape_type.lower()} data")
-        cat_path = (
-            shape2_cat_path if shape_type == "galsim" else shape1_cat_path
-        )
-        err_msg = sc_inst.process(shape_type.lower(), cat_path)
-
+        err_msg = sc_inst.process(shape_type.lower(), shape1_cat_path)
 
         # If error message: delete (incomplete) output file and raise error
         if err_msg is not None:
