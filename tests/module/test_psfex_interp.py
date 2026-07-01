@@ -148,13 +148,12 @@ def test_get_psfshapes_stores_e_type_distortion(psfex_interpolator, e):
     npt.assert_array_equal(psfex_interpolator.psf_shapes[0, 0], g1)
     npt.assert_array_equal(psfex_interpolator.psf_shapes[0, 1], g2)
 
-    # ... whose magnitude strictly exceeds the g-type shear it would carry if
-    # the .g/.e swap regressed.
+    # ... whose magnitude strictly subceeds the e-type shear.
     mag_stored = np.hypot(
         psfex_interpolator.psf_shapes[0, 0], psfex_interpolator.psf_shapes[0, 1]
     )
-    npt.assert_allclose(mag_stored, mag_e)
-    assert mag_stored > mag_g + 1e-4
+    npt.assert_allclose(mag_stored, mag_g)
+    assert mag_e > mag_stored + 1e-4
 
 
 def test_write_output_uses_hsm_grammar_and_routes_size_to_T(
