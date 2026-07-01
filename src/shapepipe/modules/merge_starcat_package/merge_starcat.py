@@ -490,11 +490,11 @@ class MergeStarCatMCCD(object):
             "Y": y,
             "RA": ra,
             "DEC": dec,
-            "HSM_E1_PSF": g1_psf,
-            "HSM_E2_PSF": g2_psf,
+            "HSM_G1_PSF": g1_psf,
+            "HSM_G2_PSF": g2_psf,
             "HSM_T_PSF": size_psf,
-            "HSM_E1_STAR": g1,
-            "HSM_E2_STAR": g2,
+            "HSM_G1_STAR": g1,
+            "HSM_G2_STAR": g2,
             "HSM_T_STAR": size,
             "HSM_FLAG_PSF": flag_psf,
             "HSM_FLAG_STAR": flag_star,
@@ -585,11 +585,11 @@ class MergeStarCatPSFEX(object):
             dec += list(data_j["DEC"])
 
             # shapes (size column already holds T = 2 sigma^2)
-            g1_psf += list(data_j["HSM_E1_PSF"])
-            g2_psf += list(data_j["HSM_E2_PSF"])
+            g1_psf += list(data_j["HSM_G1_PSF"])
+            g2_psf += list(data_j["HSM_G2_PSF"])
             size_psf += list(data_j["HSM_T_PSF"])
-            g1 += list(data_j["HSM_E1_STAR"])
-            g2 += list(data_j["HSM_E2_STAR"])
+            g1 += list(data_j["HSM_G1_STAR"])
+            g2 += list(data_j["HSM_G2_STAR"])
             size += list(data_j["HSM_T_STAR"])
 
             # flags
@@ -633,11 +633,11 @@ class MergeStarCatPSFEX(object):
             "Y": y,
             "RA": ra,
             "DEC": dec,
-            "HSM_E1_PSF": g1_psf,
-            "HSM_E2_PSF": g2_psf,
+            "HSM_G1_PSF": g1_psf,
+            "HSM_G2_PSF": g2_psf,
             "HSM_T_PSF": size_psf,
-            "HSM_E1_STAR": g1,
-            "HSM_E2_STAR": g2,
+            "HSM_G1_STAR": g1,
+            "HSM_G2_STAR": g2,
             "HSM_T_STAR": size,
             "HSM_FLAG_PSF": flag_psf,
             "HSM_FLAG_STAR": flag_star,

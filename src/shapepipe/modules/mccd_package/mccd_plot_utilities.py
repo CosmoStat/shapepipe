@@ -261,15 +261,15 @@ def plot_meanshapes(
     # size column already holds T = 2 sigma^2
     all_star_shapes = np.array(
         [
-            starcat[hdu_no].data["HSM_E1_STAR"],
-            starcat[hdu_no].data["HSM_E2_STAR"],
+            starcat[hdu_no].data["HSM_G1_STAR"],
+            starcat[hdu_no].data["HSM_G2_STAR"],
             starcat[hdu_no].data["HSM_T_STAR"],
         ]
     )
     all_psf_shapes = np.array(
         [
-            starcat[hdu_no].data["HSM_E1_PSF"],
-            starcat[hdu_no].data["HSM_E2_PSF"],
+            starcat[hdu_no].data["HSM_G1_PSF"],
+            starcat[hdu_no].data["HSM_G2_PSF"],
             starcat[hdu_no].data["HSM_T_PSF"],
         ]
     )

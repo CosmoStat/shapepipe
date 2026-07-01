@@ -472,8 +472,8 @@ def shapepipe_write_output(
     if get_shapes:
         data = {
             "VIGNET": interp_PSFs,
-            "HSM_E1_PSF": PSF_shapes[:, 0],
-            "HSM_E2_PSF": PSF_shapes[:, 1],
+            "HSM_G1_PSF": PSF_shapes[:, 0],
+            "HSM_G2_PSF": PSF_shapes[:, 1],
             "HSM_T_PSF": cs_size.sigma_to_T(PSF_shapes[:, 2]),
             "HSM_FLAG_PSF": PSF_shapes[:, 3].astype(int),
         }

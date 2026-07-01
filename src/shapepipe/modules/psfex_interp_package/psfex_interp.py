@@ -347,8 +347,8 @@ class PSFExInterpolator(object):
         if self._compute_shape:
             data = {
                 "VIGNET": self.interp_PSFs,
-                "HSM_E1_PSF": self.psf_shapes[:, 0],
-                "HSM_E2_PSF": self.psf_shapes[:, 1],
+                "HSM_G1_PSF": self.psf_shapes[:, 0],
+                "HSM_G2_PSF": self.psf_shapes[:, 1],
                 "HSM_T_PSF": cs_size.sigma_to_T(self.psf_shapes[:, 2]),
                 "HSM_FLAG_PSF": self.psf_shapes[:, 3].astype(int),
             }
@@ -500,12 +500,12 @@ class PSFExInterpolator(object):
         )
 
         data = {
-            "HSM_E1_PSF": self.psf_shapes[:, 0],
-            "HSM_E2_PSF": self.psf_shapes[:, 1],
+            "HSM_G1_PSF": self.psf_shapes[:, 0],
+            "HSM_G2_PSF": self.psf_shapes[:, 1],
             "HSM_T_PSF": cs_size.sigma_to_T(self.psf_shapes[:, 2]),
             "HSM_FLAG_PSF": self.psf_shapes[:, 3].astype(int),
-            "HSM_E1_STAR": self.star_shapes[:, 0],
-            "HSM_E2_STAR": self.star_shapes[:, 1],
+            "HSM_G1_STAR": self.star_shapes[:, 0],
+            "HSM_G2_STAR": self.star_shapes[:, 1],
             "HSM_T_STAR": cs_size.sigma_to_T(self.star_shapes[:, 2]),
             "HSM_FLAG_STAR": self.star_shapes[:, 3].astype(int),
         }
@@ -755,10 +755,10 @@ class PSFExInterpolator(object):
                     ] = final_list[j][1][where_res[0]]
                     if self._compute_shape:
                         shape_dict = {}
-                        shape_dict["HSM_E1_PSF"] = final_list[j][2][
+                        shape_dict["HSM_G1_PSF"] = final_list[j][2][
                             where_res[0]
                         ][0]
-                        shape_dict["HSM_E2_PSF"] = final_list[j][2][
+                        shape_dict["HSM_G2_PSF"] = final_list[j][2][
                             where_res[0]
                         ][1]
                         shape_dict["HSM_T_PSF"] = cs_size.sigma_to_T(
