@@ -144,9 +144,9 @@ def test_get_psfshapes_stores_e_type_distortion(psfex_interpolator, e):
     mag_g = np.hypot(g1, g2)
     assume(mag_e - mag_g > 1e-3)  # ensure a non-degenerate e-vs-g distinction
 
-    # Stored values are exactly the e-type distortion components ...
-    npt.assert_array_equal(psfex_interpolator.psf_shapes[0, 0], e1)
-    npt.assert_array_equal(psfex_interpolator.psf_shapes[0, 1], e2)
+    # Stored values are exactly the g-type distortion components ...
+    npt.assert_array_equal(psfex_interpolator.psf_shapes[0, 0], g1)
+    npt.assert_array_equal(psfex_interpolator.psf_shapes[0, 1], g2)
 
     # ... whose magnitude strictly exceeds the g-type shear it would carry if
     # the .g/.e swap regressed.
