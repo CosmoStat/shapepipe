@@ -13,7 +13,6 @@ import numpy as np
 from astropy import coordinates as coords
 from astropy import units as u
 from astropy.wcs import WCS
-from cs_util import size as cs_size
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
@@ -172,7 +171,7 @@ class SaveCatalogue:
         Parameters
         ----------
         mode : str
-            Run mode, options are ``ngmix``, ``galsim`` or ``psf``
+            Run mode, options are ``ngmix`` or ``psf``
         cat_path : str
             Path to input catalogue
         moments : bool
@@ -192,15 +191,13 @@ class SaveCatalogue:
         err_msg = None
         if mode == "ngmix":
             err_msg = self._save_ngmix_data(cat_path, moments)
-        elif mode == "galsim":
-            self._save_galsim_shapes(cat_path)
         elif mode == "psf":
             self._save_psf_data(cat_path)
         else:
             err_msg = (
                 f"Invalid process mode ({mode}) for "
-                + '``make_cat.Savecatalogue``. Options are "ngmix", '
-                + '"galsim" or "psf".'
+                + '``make_cat.Savecatalogue``. Options are "ngmix" '
+                + 'or "psf".'
             )
 
         if err_msg is None:
@@ -471,139 +468,6 @@ class SaveCatalogue:
         ngmix_cat_file.close()
 
         return None
-
-    def _save_galsim_shapes(self, galsim_cat_path):
-        """Save GalSim Shapes.
-
-        Save the GalSim catalogue into the final one.
-
-        Parameters
-        ----------
-        galsim_cat_path : str
-            Path to GalSim catalogue to save
-
-        """
-        galsim_cat_file = file_io.FITSCatalogue(galsim_cat_path)
-        galsim_cat_file.open()
-
-        self._key_ends = galsim_cat_file.get_ext_name()[1:]
-
-        galsim_id = galsim_cat_file.get_data()["id"]
-
-        for key_str in (
-            "GALSIM_T_",
-            "GALSIM_T_PSF_",
-            "GALSIM_FLUX_",
-            "GALSIM_MAG_",
-        ):
-            self._update_dict(key_str, np.zeros(len(self._obj_id)))
-        for key_str in ("GALSIM_FLUX_ERR_", "GALSIM_MAG_ERR_", "GALSIM_RES_"):
-            self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
-        for key_str in (
-            "GALSIM_G1_",
-            "GALSIM_G2_",
-            "GALSIM_G1_ERR_",
-            "GALSIM_G2_ERR_",
-            "GALSIM_G1_UNCORR_",
-            "GALSIM_G2_UNCORR_",
-            "GALSIM_G1_PSF_",
-            "GALSIM_G2_PSF_",
-        ):
-            self._update_dict(key_str, np.ones(len(self._obj_id)) * -10.0)
-        self._update_dict(
-            "GALSIM_FLAGS_",
-            np.ones(len(self._obj_id), dtype="int16"),
-        )
-
-        for idx, id_tmp in enumerate(self._obj_id):
-            ind = np.where(id_tmp == galsim_id)[0]
-            if len(ind) > 0:
-
-                for key in self._key_ends:
-
-                    gcf_data = galsim_cat_file.get_data(key)
-
-                    if key == "ORIGINAL_PSF":
-
-                        # PSF columns sourced from the galaxy uncorr fields
-                        # for this special extension (asymmetry preserved).
-                        self._add2dict(
-                            f"GALSIM_G1_PSF_{key}",
-                            gcf_data["gal_uncorr_g1"][ind[0]], idx
-                        )
-                        self._add2dict(
-                            f"GALSIM_G2_PSF_{key}",
-                            gcf_data["gal_uncorr_g2"][ind[0]], idx
-                        )
-                        self._add2dict(
-                            f"GALSIM_T_PSF_{key}",
-                            cs_size.sigma_to_T(gcf_data["gal_sigma"][ind[0]]),
-                            idx
-                        )
-
-                    else:
-
-                        self._add2dict(
-                            f"GALSIM_G1_{key}", gcf_data["gal_g1"][ind[0]], idx
-                        )
-                        self._add2dict(
-                            f"GALSIM_G2_{key}", gcf_data["gal_g2"][ind[0]], idx
-                        )
-                        self._add2dict(
-                            f"GALSIM_G1_ERR_{key}",
-                            gcf_data["gal_g1_err"][ind[0]], idx
-                        )
-                        self._add2dict(
-                            f"GALSIM_G2_ERR_{key}",
-                            gcf_data["gal_g2_err"][ind[0]], idx
-                        )
-
-                        self._add2dict(
-                            f"GALSIM_G1_UNCORR_{key}",
-                            gcf_data["gal_uncorr_g1"][ind[0]], idx
-                        )
-                        self._add2dict(
-                            f"GALSIM_G2_UNCORR_{key}",
-                            gcf_data["gal_uncorr_g2"][ind[0]], idx
-                        )
-
-                        self._add2dict(
-                            f"GALSIM_T_{key}",
-                            cs_size.sigma_to_T(gcf_data["gal_sigma"][ind[0]]),
-                            idx
-                        )
-
-                        self._add2dict(
-                            f"GALSIM_G1_PSF_{key}",
-                            gcf_data["psf_g1"][ind[0]], idx
-                        )
-                        self._add2dict(
-                            f"GALSIM_G2_PSF_{key}",
-                            gcf_data["psf_g2"][ind[0]], idx
-                        )
-                        self._add2dict(
-                            f"GALSIM_T_PSF_{key}",
-                            cs_size.sigma_to_T(gcf_data["psf_sigma"][ind[0]]),
-                            idx
-                        )
-
-                        flux = gcf_data["gal_flux"][ind[0]]
-                        flux_err = gcf_data["gal_flux_err"][ind[0]]
-                        self._add2dict(f"GALSIM_FLUX_{key}", flux, idx)
-                        self._add2dict(f"GALSIM_FLUX_ERR_{key}", flux_err, idx)
-
-                        mag = gcf_data["gal_mag"][ind[0]]
-                        mag_err = gcf_data["gal_mag_err"][ind[0]]
-                        self._add2dict(f"GALSIM_MAG_{key}", mag, idx)
-                        self._add2dict(f"GALSIM_MAG_ERR_{key}", mag_err, idx)
-
-                        flags = gcf_data["gal_flag"][ind[0]]
-                        self._add2dict(f"GALSIM_FLAGS_{key}", flags, idx)
-
-                        res = gcf_data["gal_resolution"][ind[0]]
-                        self._add2dict(f"GALSIM_RES_{key}", res, idx)
-
-        galsim_cat_file.close()
 
     def _save_psf_data(self, galaxy_psf_path):
         """Save PSF data.
