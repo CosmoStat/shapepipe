@@ -2,7 +2,6 @@
 
 import sys
 import os
-import math
 import yaml
 import subprocess
 
@@ -74,12 +73,13 @@ def get_hdf5_tile_count(hdf5_path):
 
 
 def get_extract_tile_count(sim_path):
-    """Read tile count from shape_catalog_comprehensive_ngmix.hdf5 attributes.
+    """Count unique tile IDs in shape_catalog_comprehensive_ngmix.hdf5.
 
     Returns the count as a string, or "." if file doesn't exist or count not found.
     """
     try:
         import h5py
+        import numpy as np
     except ImportError:
         return "?"
 
@@ -89,9 +89,23 @@ def get_extract_tile_count(sim_path):
 
     try:
         with h5py.File(hdf5_path, 'r') as hf:
-            if 'n_tiles' in hf.attrs:
-                return str(hf.attrs['n_tiles'])
+            tile_ids = hf['data']['TILE_ID'][:]
+            return str(len(np.unique(tile_ids)))
+    except Exception:
+        return "?"
+
+
+def get_bias_tile_count(results_dir):
+    """Return max n_tiles from mbias_cumulative.yaml, or '.' if absent."""
+    path = os.path.join(results_dir, "mbias_cumulative.yaml")
+    if not os.path.isfile(path):
         return "."
+    try:
+        with open(path) as f:
+            data = yaml.safe_load(f) or {}
+        if not data:
+            return "."
+        return str(max(int(k) for k in data.keys()))
     except Exception:
         return "?"
 
@@ -102,8 +116,10 @@ def monitor(cfg, verbose=0):
     sim_type  = cfg["sims_type"]
     tile_ids  = load_tile_ids(cfg)
     n_tiles   = len(tile_ids)
-    job_seq   = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
-    job_hex   = [format(int(math.log2(j)), 'X') for j in job_seq]
+    job_seq    = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+    job_labels = ["1","2","4","8","16","32","64","1h","2h","5h","1k","2k"]
+    job_names  = ["Gt","Uz","Fe","Ge","Sp","Ma","Ps","Mh","Sx","Vi","Ng","Mc"]
+    job_widths = [max(len(h), 2) for h in job_labels]
 
     str_type = f"_{sim_type}" if sim_type == "grid" else ""
     sims = [
@@ -117,23 +133,23 @@ def monitor(cfg, verbose=0):
         ("merge",  "final_cat_{sim}.hdf5"),
         ("extr",   "shape_catalog_comprehensive_ngmix.hdf5"),
         ("calib",  "shape_catalog_cut_ngmix.fits"),
-        ("diag",   "results/diagnostics.log"),
-        ("bias",   "results/m_bias_results.yaml"),
+        ("diag",   "results/footprint.png"),
+        ("bias",   "results/mbias_cumulative.yaml"),
     ]
     ds_w = max(len(s) for s, _ in downstream)
 
     tile_label = f"({n_tiles} tile{'s' if n_tiles > 1 else ''})"
-    if verbose >= 1:
-        mid_head = " ".join(f"{h:>2}" for h in job_hex)
-    else:
-        mid_head = "".join(job_hex)
+    mid_head  = " ".join(f"{h:>{w}}" for h, w in zip(job_labels, job_widths))
+    name_head = " ".join(f"{n:>{w}}" for n, w in zip(job_names,  job_widths))
     bits_w    = len(mid_head)
-    header1   = f"  {'sim':<{col_w}}  {'#jobs':>12}  {'2^n':<{bits_w}}  " + \
+    header1   = f"  {'sim':<{col_w}}  {'n':<{bits_w}}  " + \
                 "  ".join(f"{s:<{ds_w}}" for s, _ in downstream)
-    header2   = f"  {'':^{col_w}}  {'':>12}  {mid_head}"
+    header2   = f"  {'':^{col_w}}  {mid_head}"
+    header3   = f"  {'':^{col_w}}  {name_head}"
     print(f"  {tile_label}")
     print(header1)
     print(header2)
+    print(header3)
     print("-" * len(header1))
 
     for sim in sims:
@@ -147,26 +163,44 @@ def monitor(cfg, verbose=0):
                 if os.path.isfile(os.path.join(logs_dir, f"log_job_{t}_{j}.txt"))
             )
 
-        jobs_sum  = sum(1 for j in job_seq if tile_counts[j] == n_tiles)
-        bits_str  = "".join("o" if tile_counts[j] == n_tiles else "." for j in job_seq)
+        bits_str  = " ".join(
+            f"{'o' if tile_counts[j] == n_tiles else '.':>{w}}"
+            for j, w in zip(job_seq, job_widths)
+        )
 
         ds_status = []
+        n_tiles_extr = None
         for idx, (name, pattern) in enumerate(downstream):
-            path = os.path.join(grids, sim, pattern.format(sim=sim))
             sim_path = os.path.join(grids, sim)
+            if name in ("diag", "bias"):
+                # global outputs, not per-sim
+                path = os.path.join(grids, pattern.format(sim=sim))
+            else:
+                path = os.path.join(grids, sim, pattern.format(sim=sim))
             if name == "merge":
                 ds_status.append(get_hdf5_tile_count(path))
             elif name == "extr":
-                ds_status.append(get_extract_tile_count(sim_path))
+                n_tiles_extr = get_extract_tile_count(sim_path)
+                ds_status.append(n_tiles_extr)
+            elif name == "calib":
+                if os.path.isfile(path):
+                    ds_status.append(n_tiles_extr if n_tiles_extr is not None else "o")
+                else:
+                    ds_status.append(".")
+            elif name == "bias":
+                ds_status.append(get_bias_tile_count(os.path.join(grids, "results")))
             else:
-                ds_status.append("o" if os.path.isfile(path) else "")
+                ds_status.append("o" if os.path.isfile(path) else ".")
 
         if verbose >= 1:
-            counts_str = " ".join(f"{tile_counts[j]:>2}" for j in job_seq)
-            row = f"  {sim:<{col_w}}  {jobs_sum:>12}  {counts_str}  " + \
+            counts_str = " ".join(
+                f"{tile_counts[j]:>{w}}"
+                for j, w in zip(job_seq, job_widths)
+            )
+            row = f"  {sim:<{col_w}}  {counts_str}  " + \
                   "  ".join(f"{s:>{ds_w}}" for s in ds_status)
         else:
-            row = f"  {sim:<{col_w}}  {jobs_sum:>12}  {bits_str}  " + \
+            row = f"  {sim:<{col_w}}  {bits_str}  " + \
                   "  ".join(f"{s:>{ds_w}}" for s in ds_status)
         print(row)
 

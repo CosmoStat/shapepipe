@@ -268,6 +268,12 @@ function run_exp_job() {
     # Create exp_numbers-000-000.txt and cfis link if not existent
     init_exp_work_dir "$exp_id" "$exp_work_dir"
 
+    # Acquire a per-exposure lock so parallel tiles that share this exposure
+    # don't race: one runs, the other waits and then finds it already complete.
+    local lock_fd
+    exec {lock_fd}>"${exp_work_dir}/.sp_lock"
+    flock -x "$lock_fd"
+
     # Check completeness of existing run output (main prefix)
     local run_dir=$(ls -dt "$exp_work_dir/output/run_sp_exp_${main_prefix}"* 2>/dev/null | head -1)
     local is_complete=1
@@ -340,6 +346,7 @@ function run_exp_job() {
     if [ "$force" != "1" ] && [ "$is_complete" == "1" ]; then
       message "Complete $exp_id_disp: run_sp_exp_${main_prefix} ( $check_desc)" "$debug_out" -1
       (( n_complete++ ))
+      exec {lock_fd}>&-
       continue
     fi
 
@@ -351,6 +358,7 @@ function run_exp_job() {
         message "  missing: $exp_id_disp" "$debug_out" -1
       fi
       (( n_incomplete++ ))
+      exec {lock_fd}>&-
       continue
     fi
 
@@ -365,6 +373,7 @@ function run_exp_job() {
     [ "$quiet" == "0" ] && echo "pwd=`pwd`"
     command "job_sp_canfar_v2.0.bash -c $config_dir -p $psf -r $retrieve --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
     [ "$quiet" == "0" ] && echo "Done with job_sp_canfar_v2.0.bash"
+    exec {lock_fd}>&-
 
   done < "$exp_numbers_file"
 

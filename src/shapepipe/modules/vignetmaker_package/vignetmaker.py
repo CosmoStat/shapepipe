@@ -364,7 +364,8 @@ class VignetMaker(object):
             else:
                 self._w_log.info(
                     f"All CCDs skipped for exposure {exp_name} "
-                    + "(ccd == -1 for all); epoch excluded from output"
+                    + f"[{image_pattern}]"
+                    + " (ccd == -1 for all); epoch excluded from output"
                 )
 
         cat.close()
@@ -421,6 +422,7 @@ class VignetMaker(object):
             else:
                 index = idx
 
+            self._w_log.info(f"Processing {image_pattern[idx]} vignets")
             output_dict = self._get_stamp_me(
                 image_dirs[index],
                 image_pattern[idx],

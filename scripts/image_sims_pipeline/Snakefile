@@ -35,12 +35,18 @@ if _exclusive and isinstance(_exclusive, list) and _exclusive:  # Non-empty list
     TILE_IDs = _exclusive
 FORCE        = "--force" if config.get("force", 0) else ""
 N_SMP        = config.get("n_smp", -1)
+SHEAR_AMP    = config.get("shear_amplitude", 0.02)
+MATCH_RAD    = config.get("match_radius_deg", 0.0002)
+W_COL        = config.get("w_col", "w_des")
+N_BOOT       = config.get("n_bootstrap", 500)
 
-JOB_SEQUENCE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
-# Filter to single job if specified via --config "job=N"
+FULL_JOB_SEQUENCE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+# Filter by bitmask if specified via --config "job=N" (N may combine multiple bits)
 if config.get("job"):
     target_job = int(config["job"])
-    JOB_SEQUENCE = [j for j in JOB_SEQUENCE if j == target_job]
+    JOB_SEQUENCE = [j for j in FULL_JOB_SEQUENCE if j & target_job]
+else:
+    JOB_SEQUENCE = list(FULL_JOB_SEQUENCE)
 JOB          = sum(JOB_SEQUENCE)
 
 PSF          = "psfex"
@@ -62,10 +68,16 @@ SPV_SIF     = "/n17data/mkilbing/sp_validation_im_sims.sif"
 # The same container holds shapepipe and sp_validation code
 SP_SIF = SPV_SIF
 SPV_SRC     = f"{HOME}/astro/repositories/github/sp_validation/src"
+SP_SRC      = f"{HOME}/astro/repositories/github/shapepipe/src"
 
 # ShapePipe pipeline stages (uses shapepipe_im_sims.sif — correct MPI build)
 _APPTAINER  = f"{PATH_SH}/apptainer_noslurm.sh"
-APP_CMD     = f"{_APPTAINER} --bind /n17data,/n09data,/home {SP_SIF}"
+APP_CMD     = (
+    f"{_APPTAINER} --bind /n17data,/n09data,/home"
+    f" --env PYTHONPATH={SP_SRC}"
+    f" --env PYTHONWARNINGS=ignore::SyntaxWarning"
+    f" {SP_SIF}"
+)
 
 # sp_validation stages (uses sp_validation_im_sims.sif with local src override)
 SPV_CMD     = (
@@ -203,25 +215,22 @@ rule init:
         f" -c {input.config_file} -s {{wildcards.sim}} -q"
 
 def _shapepipe_job_input(wildcards):
-    bit      = int(wildcards.bit)
-    tile     = wildcards.tile
-    bit_idx  = JOB_SEQUENCE.index(bit)
-    tile_idx = TILE_IDs.index(tile)
+    bit     = int(wildcards.bit)
+    tile    = wildcards.tile
+    bit_idx = JOB_SEQUENCE.index(bit)
 
-    if bit_idx == 0:
-        if tile_idx == 0:
-            # First tile, first bit: wait for init
-            return [
-                f"{BASE}/{wildcards.sim}/params.py",
-                f"{BASE}/{wildcards.sim}/config_mask.yaml",
-            ]
-        else:
-            # Later tile, first bit: wait for last bit of previous tile
-            prev_tile = TILE_IDs[tile_idx - 1]
-            return f"{BASE}/{wildcards.sim}/logs/log_job_{prev_tile}_{JOB_SEQUENCE[-1]}.txt"
-    else:
-        # Same tile, previous bit
+    if bit_idx > 0:
+        # Previous bit in the filtered sequence
         return f"{BASE}/{wildcards.sim}/logs/log_job_{tile}_{JOB_SEQUENCE[bit_idx - 1]}.txt"
+
+    # First bit in the filtered sequence: find predecessor in the full sequence
+    full_idx = FULL_JOB_SEQUENCE.index(bit)
+    if full_idx == 0:
+        return [
+            f"{BASE}/{wildcards.sim}/params.py",
+            f"{BASE}/{wildcards.sim}/config_mask.yaml",
+        ]
+    return f"{BASE}/{wildcards.sim}/logs/log_job_{tile}_{FULL_JOB_SEQUENCE[full_idx - 1]}.txt"
 
 rule shapepipe_job:
     input:  _shapepipe_job_input
@@ -282,10 +291,10 @@ rule mbias:
         f"grids_dir: {BASE}\n"
         f"num: {NUM}\n"
         f"catalog_name: shape_catalog_cut_ngmix.fits\n"
-        f"shear_amplitude: 0.02\n"
-        f"match_radius_deg: 0.0002\n"
-        f"w_col: w_des\n"
-        f"n_bootstrap: 500\n"
+        f"shear_amplitude: {SHEAR_AMP}\n"
+        f"match_radius_deg: {MATCH_RAD}\n"
+        f"w_col: {W_COL}\n"
+        f"n_bootstrap: {N_BOOT}\n"
         f"output_path: {BASE}/results/m_bias_results.yaml\n"
         f"results_dir: {BASE}/results\n"
         f"EOF\n"
@@ -302,10 +311,10 @@ rule diagnostics:
         f"grids_dir: {BASE}\n"
         f"num: {NUM}\n"
         f"catalog_name: shape_catalog_cut_ngmix.fits\n"
-        f"shear_amplitude: 0.02\n"
-        f"match_radius_deg: 0.0002\n"
-        f"w_col: w_des\n"
-        f"n_bootstrap: 500\n"
+        f"shear_amplitude: {SHEAR_AMP}\n"
+        f"match_radius_deg: {MATCH_RAD}\n"
+        f"w_col: {W_COL}\n"
+        f"n_bootstrap: {N_BOOT}\n"
         f"output_path: {BASE}/results/m_bias_results.yaml\n"
         f"results_dir: {BASE}/results\n"
         f"diagnostics_dir: {BASE}/results\n"
