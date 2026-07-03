@@ -16,7 +16,7 @@ source $HOME/shapepipe/scripts/sh/job_list_help.bash
 ## Default values
 job=255
 config_dir=$HOME/shapepipe/example/cfis
-psf='psfex'
+psf='mccd'
 retrieve='vos'
 star_cat_for_mask='onthefly'
 tile_det='sx'
@@ -124,8 +124,8 @@ while [ $# -gt 0 ]; do
 done
 
 ## Check options
-if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ] && [ "$psf" != "psf" ]; then
-  echo "PSF (option -p) needs to be 'psfex', 'mccd', or 'psf' (image sims)"
+if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
+  echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
   exit 2
 fi
 
@@ -134,8 +134,9 @@ if [ "$star_cat_for_mask" != "onthefly" ] && [ "$star_cat_for_mask" != "save" ];
   exit 4
 fi
 
-if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
-  echo "Invalid method to retrieve images $retrieve (option -r), needs to be 'vos' or 'symlink'"
+#if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
+if [ "$retrieve" != "vos" ]; then
+  echo "method to retrieve images (option -r) needs to be 'vos' for v2.0"
   exit 5
 fi
 
@@ -161,19 +162,17 @@ fi
 # Run path and location of input image directories
 export SP_RUN=`pwd`
 
-# Config file path — use value exported by run_job_sp_canfar_v2.0.bash if set,
-# otherwise fall back to the cfis symlink in the run directory.
-export SP_CONFIG=${SP_CONFIG:-$SP_RUN/cfis}
+# Config file path
+export SP_CONFIG=$SP_RUN/cfis
 
 # Path for updated (per-job) config file copies
 export SP_CONFIG_MOD=$SP_RUN/cfis_mod
 
 # Root directory for per-exposure work directories.
-# Set SP_EXP in the environment to override; otherwise use SP_DIR (the run
-# root, always exported by run_job_sp_canfar_v2.0.bash for both data and
-# image_sims) so exp/ is always a sibling of tiles/ under the same root.
+# Set SP_EXP in the environment to override; otherwise falls back to the
+# conventional layout (SP_RUN = .../v2.0/tiles/IDra/ID, three levels up + exp).
 if [ -z "${SP_EXP}" ]; then
-  export SP_EXP="$SP_DIR/exp"
+  export SP_EXP=$(realpath "$SP_RUN/../../../exp")
   echo "Setting SP_EXP to $SP_EXP"
 fi
 
@@ -238,10 +237,10 @@ function command () {
       else
          echo -e "${RED}error, return value = $res${NC}"
          if [ $STOP == 1 ]; then
-            echo "${RED}exiting '$(basename "$0")', error in command '$cmd'${NC}"
+            echo "${RED}exiting 'canfar_sp.bash', error in command '$cmd'${NC}"
             exit $res
          else
-            echo "${RED}continuing '$(basename "$0")', error in command '$cmd'${NC}"
+            echo "${RED}continuing 'canfar_sp.bash', error in command '$cmd'${NC}"
          fi
       fi
    fi
@@ -292,7 +291,7 @@ function command_cfg_shapepipe() {
       batch_flag="--batch_size $_n_smp"
     fi
 
-    local cmd="shapepipe_run -c $config $batch_flag"
+    local cmd="shapepipe_run.py -c $config $batch_flag"
     command "$cmd" "$str"
 }
 
@@ -348,12 +347,12 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Retrieve exposure images (online if retrieve=vos)
+## Retrieve exposure images (online, vos)
 (( do_job = $job & 8 ))
 if [[ $do_job != 0 ]]; then
 
   command_cfg_shapepipe \
-    "config_exp_Gie_$retrieve.ini" \
+    "config_exp_Gie_vos.ini" \
     "Run shapepipe (get exposure images)" \
     $n_smp \
     $exclusive
@@ -420,7 +419,7 @@ if [[ $do_job != 0 ]]; then
 
     ### Download external catalogue from vos
     command_cfg_shapepipe \
-      "config_tile_Git_cat_$retrieve.ini" \
+      "config_tile_Git_cat_vos.ini" \
       "Run shapepipe (download external tile catalogue)" \
       -1 \
       $exclusive
@@ -496,9 +495,11 @@ fi
 (( do_job = $job & 2048 ))
 if [[ $do_job != 0 ]]; then
 
+  suff_sm="_nosm"
+
   ### Merge all relevant information into final catalogue
   command_cfg_shapepipe \
-    "config_tile_Mc_$psf.ini" \
+    "config_tile_make_cat_$psf${suff_sm}.ini" \
     "Run shapepipe (tile: create final cat $psf)" \
     $n_smp \
     $exclusive

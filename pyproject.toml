@@ -78,11 +78,11 @@ fitsio = ["fitsio"]
 dev = ["shapepipe[doc,jupyter,lint,release,test,fitsio]"]
 
 [project.scripts]
-shapepipe_run = "shapepipe.shapepipe_run:main"
-summary_run = "shapepipe.summary_run:main"
-canfar_submit_job = "shapepipe.canfar_run:run_job"
-canfar_monitor = "shapepipe.canfar_run:run_log"
-canfar_monitor_log = "shapepipe.canfar_run:run_monitor_log"
+shapepipe_run       = "shapepipe.shapepipe_run:main"
+summary_run         = "shapepipe.summary_run:main"
+canfar_submit_job   = "shapepipe.canfar_run:run_job"
+canfar_monitor      = "shapepipe.canfar_run:run_log"
+canfar_monitor_log  = "shapepipe.canfar_run:run_monitor_log"
 
 [tool.uv]
 # shapepipe targets Linux only; skip Windows/macOS wheel resolution
