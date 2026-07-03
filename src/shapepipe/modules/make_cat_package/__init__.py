@@ -27,7 +27,7 @@ Module-specific config file entries
 ===================================
 
 SHAPE_MEASUREMENT_TYPE : list
-    Shape measurement method; the only supported option is ``ngmix``
+    Shape measurement method, valid options are ``ngmix`` and/or ``galsim``
 SAVE_PSF_DATA : bool, optional
     Save PSF information if ``True``; default value is ``False``
 TILE_LIST : str, optional
