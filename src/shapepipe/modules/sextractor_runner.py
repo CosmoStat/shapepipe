@@ -13,11 +13,15 @@ from shapepipe.modules.sextractor_package import sextractor_script as ss
 from shapepipe.pipeline.execute import execute
 
 
+# The trailing log_exp_headers input (merged WCS headers from
+# merge_headers_runner) is only consumed when MAKE_POST_PROCESS is True;
+# configs without post-processing override FILE_PATTERN/FILE_EXT with the
+# first three entries only.
 @module_runner(
     version="1.0.1",
-    input_module="mask_runner",
-    file_pattern=["image", "weight", "flag"],
-    file_ext=[".fits", ".fits", ".fits"],
+    input_module=["mask_runner", "merge_headers_runner"],
+    file_pattern=["image", "weight", "flag", "log_exp_headers"],
+    file_ext=[".fits", ".fits", ".fits", ".sqlite"],
     executes=["source-extractor"],
     depends=["numpy"],
 )

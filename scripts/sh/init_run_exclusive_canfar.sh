@@ -144,6 +144,29 @@ function message() {
   fi
 }
 
+# Write an updated copy of a shapepipe config with NUMBER_LIST set to the
+# given image ID, expressed in the numbering scheme (leading dash, dots ->
+# dashes). Replaces the retired shapepipe_run -e/--exclusive flag (#746).
+function set_config_number_list() {
+  local config_orig=$1
+  local config_upd=$2
+  local _id=$3
+
+  local number="-$(echo $_id | tr '.' '-')"
+  local config_tmp="${config_upd}.tmp"
+
+  if grep -q "^NUMBER_LIST" "$config_orig"; then
+    perl -pe 's/^NUMBER_LIST\s*=.*/NUMBER_LIST = '$number'/' "$config_orig" > "$config_tmp"
+  else
+    perl -pe 's/^\[FILE\][ \t]*$/[FILE]\nNUMBER_LIST = '$number'/' "$config_orig" > "$config_tmp"
+  fi
+  if ! grep -q "^NUMBER_LIST = $number$" "$config_tmp"; then
+    echo "set_config_number_list: failed to set NUMBER_LIST in $config_orig" >&2
+    exit 1
+  fi
+  mv "$config_tmp" "$config_upd"
+}
+
 
 # Init message
 message "test=$test_only" $debug_out -1
@@ -165,7 +188,7 @@ if [ "$job" == "-1" ]; then
   message "No job indicated, use option -j" $debug_out 2
 fi
 
-if [ "$exclusive" == "-1" ]; then
+if [ "$ID" == "-1" ]; then
   message "No image ID indicated, use option -e" $debug_out 3
 fi
 
@@ -267,7 +290,8 @@ if [ "$fix" == "1" ]; then
   message "Unzip weight ($dry_run)" $debug_out -1
   command "cd tile_runs/$ID" $dry_run
   export SP_RUN=`pwd`
-  command "shapepipe_run -c cfis/config_tile_Uz.ini -e $ID" $dry_run
+  command "set_config_number_list cfis/config_tile_Uz.ini config_tile_Uz_upd.ini $ID" $dry_run
+  command "shapepipe_run -c config_tile_Uz_upd.ini" $dry_run
 
   cd $dir
 else
@@ -384,7 +408,8 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   fi
   command "update_runs_log_file.py" $dry_run
   export SP_RUN=`pwd`
-  command "shapepipe_run -c cfis/config_exp_Sp.ini -e $exp_ID" $dry_run
+  command "set_config_number_list cfis/config_exp_Sp.ini config_exp_Sp_upd.ini $exp_ID" $dry_run
+  command "shapepipe_run -c config_exp_Sp_upd.ini" $dry_run
 
   # Only keep CCD of this ID 
   command "mkdir -p output/run_sp_exp_Sp_shdu/split_exp_runner/output" $dry_run

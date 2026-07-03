@@ -21,6 +21,7 @@ def make_data(
     psf_fwhm=0.55,
     pixel_scale=0.1857,
     img_size=201,
+    psf_shear=(0.0, 0.0),
 ):
     """Simulate an exponential galaxy with Moffat PSF.
 
@@ -30,8 +31,9 @@ def make_data(
         Random number generator.
     shear : tuple of float
         True shear (g1, g2).
-    noise : float, optional
-        Per-pixel noise sigma. Default 1e-5.
+    noise : float or numpy.ndarray, optional
+        Noise sigma — a scalar, or a per-pixel map of shape
+        ``(img_size, img_size)`` for spatially-varying noise. Default 1e-5.
     n_epochs : int, optional
         Number of epochs. Default 1.
     share_shift : bool, optional
@@ -47,6 +49,12 @@ def make_data(
         Pixel scale in arcsec/pixel. Default 0.1857.
     img_size : int, optional
         Stamp size in pixels (square). Default 201.
+    psf_shear : tuple of float, optional
+        Ellipticity (g1, g2) applied to the Moffat PSF. Default (0, 0), a
+        round PSF. A non-round PSF is what the PSF-leakage / additive-bias
+        guardrail needs: the PSF carries a shape that an unbiased deconvolution
+        must remove from a round galaxy. The same sheared PSF is used both to
+        convolve the object and as the PSF model stamp.
 
     Returns
     -------
@@ -70,7 +78,9 @@ def make_data(
         if not share_shift:
             dy, dx = rng.uniform(low=-scale / 2, high=scale / 2, size=2)
 
-        psf = galsim.Moffat(beta=2.5, fwhm=psf_fwhm)
+        psf = galsim.Moffat(beta=2.5, fwhm=psf_fwhm).shear(
+            g1=psf_shear[0], g2=psf_shear[1]
+        )
         obj = galsim.Convolve(
             psf,
             galsim.Exponential(half_light_radius=gal_hlr, flux=gal_flux).shear(

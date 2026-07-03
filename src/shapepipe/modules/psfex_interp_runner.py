@@ -68,6 +68,13 @@ def psfex_interp_runner(
             exp_base_dir = config.getexpanded(
                 module_config_sec, "ME_DOT_PSF_EXP_DIR"
             )
+            if len(input_file_list) < 3:
+                raise ValueError(
+                    "ME_DOT_PSF_EXP_DIR requires the exposure-numbers file"
+                    + " as a third input; add 'exp_numbers' to FILE_PATTERN"
+                    + f" and FILE_EXT in the [{module_config_sec}] config"
+                    + " section."
+                )
             exp_numbers_file = input_file_list[2]
             dot_psf_dirs = get_exp_output_dirs(
                 exp_base_dir, exp_numbers_file, "psfex_runner", w_log
@@ -92,8 +99,15 @@ def psfex_interp_runner(
             module_config_sec,
             "ME_DOT_PSF_PATTERN",
         )
-        # Set input paths
+        # Set input paths. The WCS log is a positional input (via
+        # FILE_PATTERN) in MULTI-EPOCH mode, not a decorator default.
         galcat_path = input_file_list[0]
+        if len(input_file_list) < 2:
+            raise ValueError(
+                "MULTI-EPOCH mode requires the WCS log file as a second"
+                + " input; add 'log_exp_headers' to FILE_PATTERN and"
+                + f" FILE_EXT in the [{module_config_sec}] config section."
+            )
         f_wcs_path = input_file_list[1]
 
         # Create instance of PSFExInterpolator

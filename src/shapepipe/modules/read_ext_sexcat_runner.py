@@ -61,6 +61,14 @@ def read_ext_sexcat_runner(
     )
 
     if config.getboolean(module_config_sec, "MAKE_POST_PROCESS"):
+        # The WCS log is supplied as a positional input (via FILE_PATTERN)
+        # when post-processing is enabled, not by the decorator default.
+        if len(input_file_list) < 3:
+            raise ValueError(
+                "MAKE_POST_PROCESS requires the WCS log file as a third"
+                + " input; add 'log_exp_headers' to FILE_PATTERN and"
+                + f" FILE_EXT in the [{module_config_sec}] config section."
+            )
         f_wcs_path = input_file_list[2]
         pos_params = config.getlist(module_config_sec, "WORLD_POSITION")
         ccd_size = config.getlist(module_config_sec, "CCD_SIZE")

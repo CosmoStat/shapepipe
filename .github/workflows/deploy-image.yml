@@ -123,7 +123,7 @@ jobs:
       - name: Test dev — pytest suite
         run: |
           IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
-          docker run --rm -e HYPOTHESIS_PROFILE=ci "$IMAGE" pytest -rX
+          docker run --rm -e HYPOTHESIS_PROFILE=ci -e SHAPEPIPE_ON_CANDIDE=0 "$IMAGE" pytest -rX
 
       # ----------------------------------------------------------------
       # Publish (push events only — never on pull_request, incl. forks).

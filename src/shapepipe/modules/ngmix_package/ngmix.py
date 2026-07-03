@@ -8,16 +8,75 @@ This module contains a class for ngmix shape measurement.
 
 import os
 import re
+from typing import NamedTuple
+
 import ngmix
 import galsim
 import numpy as np
-from shutil import copyfile
 from astropy.io import fits
+from cs_util import size as cs_size
 from modopt.math.stats import sigma_mad
 from ngmix.observation import Observation, ObsList
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
+
+METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
+
+# Noise budget for the PSF observation's flat weight map (psf_wt =
+# 1/PSF_NOISE**2). Mirrors the esheldon/aguinot pattern (sigma ~ 1e-5/1e-6);
+# 1e-5 is the value Axel Guinot's #749 reproduction used. The fit is driven
+# by the *relative* weighting of the likelihood vs the prior, so the exact
+# value is non-critical once it is finite (validated on the digital twin: the
+# recovered PSF shape/size are flat across 1e-4..1e-6). See
+# make_ngmix_observation.
+PSF_NOISE = 1e-5
+
+
+class MetacalResult(NamedTuple):
+    """Return of :func:`do_ngmix_metacal`: the metacal fit plus both PSFs.
+
+    A NamedTuple so the two PSF families are named, not positional — guarding
+    against a reconv/orig transposition at call sites. Still a plain tuple, so
+    ``resdict, psf_res, psf_orig_res = do_ngmix_metacal(...)`` keeps working.
+
+    Attributes
+    ----------
+    resdict : dict
+        MetacalBootstrapper result dict (one entry per metacal type).
+    reconv : dict
+        Averaged metacal *reconvolution*-kernel PSF (round, enlarged):
+        :func:`average_multiepoch_psf`.
+    orig : dict
+        Averaged *original* image-PSF (psfex/mccd, its true shape and size):
+        :func:`average_original_psf`.
+    """
+
+    resdict: dict
+    reconv: dict
+    orig: dict
+
+
+def get_mcal_flags(res):
+    """Get Metacal Flags.
+
+    Bitwise OR of the per-type metacal fit flags, the v1 contract for the
+    downstream NGMIX_MCAL_FLAGS column: nonzero whenever any metacal
+    type's galaxy fit failed.
+
+    Parameters
+    ----------
+    res : dict
+        MetacalBootstrapper result dict with one entry per metacal type.
+
+    Returns
+    -------
+    int
+        OR of all per-type ``flags``.
+    """
+    return int(np.bitwise_or.reduce(
+        [res.get(name, {}).get('flags', 0) for name in METACAL_TYPES]
+    ))
 
 
 def get_prior(pixel_scale, rng, T_range=None, F_range=None):
@@ -60,7 +119,6 @@ def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     )
 
 
-# I still don't know how to handle this
 class Tile_cat():
     """Tile_cat.
 
@@ -95,9 +153,6 @@ class Tile_cat():
         # Optional columns — may be absent in external (non-SExtractor) catalogs
         self.flux = np.copy(data['FLUX_AUTO']) if 'FLUX_AUTO' in cols else None
         self.vign = np.copy(data['VIGNET']) if 'VIGNET' in cols else None
-        self.size = np.copy(data['FWHM_WORLD']) if 'FWHM_WORLD' in cols else None
-        self.e = np.copy(data['ELLIPTICITY']) if 'ELLIPTICITY' in cols else None
-        self.theta = np.copy(data['THETA_WIN_WORLD']) if 'THETA_WIN_WORLD' in cols else None
 
         tile_cat.close()
 
@@ -124,7 +179,13 @@ class Postage_stamp():
         self.psfs = []
         self.weights = []
         self.flags = []
+        self.bkg_rms = []
         self.jacobs = []
+        # Per-epoch full WCS and the object's sky position, used only by the
+        # "wcs" centroid source (skipped for the default "hsm" path).
+        self.wcs = []
+        self.ra = []
+        self.dec = []
         self.bkg_sub = bkg_sub
         self.megacam_flip = megacam_flip
 
@@ -141,6 +202,7 @@ class Vignet():
     weight_vignet_path
     flag_vignet_path
     f_wcs_path
+    bkg_rms_vignet_path
     """
     def __init__(
         self,
@@ -150,6 +212,7 @@ class Vignet():
         weight_vignet_path,
         flag_vignet_path,
         f_wcs_path,
+        bkg_rms_vignet_path=None,
     ):
         self.f_wcs_file = SqliteDict(f_wcs_path)
         self.gal_vign_cat = SqliteDict(gal_vignet_path)
@@ -157,6 +220,11 @@ class Vignet():
         self.psf_vign_cat = SqliteDict(psf_vignet_path)
         self.weight_vign_cat = SqliteDict(weight_vignet_path)
         self.flag_vign_cat = SqliteDict(flag_vignet_path)
+        self.bkg_rms_vign_cat = (
+            SqliteDict(bkg_rms_vignet_path)
+            if bkg_rms_vignet_path is not None
+            else None
+        )
 
     def close(self):
         self.f_wcs_file.close()
@@ -166,6 +234,8 @@ class Vignet():
         self.flag_vign_cat.close()
         self.weight_vign_cat.close()
         self.psf_vign_cat.close()
+        if self.bkg_rms_vign_cat is not None:
+            self.bkg_rms_vign_cat.close()
 
 class Ngmix(object):
     """Ngmix.
@@ -188,8 +258,6 @@ class Ngmix(object):
         Path to merged single-exposure single-HDU headers
     w_log : logging.Logger
         Logging instance
-    check_existing_dir : str, optional
-        Directory or previous run, default is ``None``
     save_batch : int, optional
         Save output catalogue in batches of this size; detaul is ``-1`` (no
         batch save)
@@ -199,6 +267,12 @@ class Ngmix(object):
     id_obj_max : int, optional
         Last galaxy ID to process, not used if the value is set to ``-1``;
         the default is ``-1``
+    centroid_source : {"hsm", "wcs"}, optional
+        How to place the galaxy Jacobian origin for the centroid prior. The
+        default ``"hsm"`` re-centers on the HSM adaptive-moment centroid
+        (robust for galaxies); ``"wcs"`` uses the catalog sky position
+        projected through the WCS (better for stars, whose HSM moments are
+        noisy). See :func:`make_ngmix_observation`.
 
     Raises
     ------
@@ -216,18 +290,22 @@ class Ngmix(object):
         pixel_scale,
         f_wcs_path,
         w_log,
-        check_existing_dir=None,
         save_batch=-1,
         id_obj_min=-1,
         id_obj_max=-1,
         bkg_sub=True,
+        centroid_source="hsm",
     ):
 
-        n_expected = 6 if bkg_sub else 5
-        if len(input_file_list) != n_expected:
+        # Base count = catalogue + vignets, excluding the f_wcs headers (passed
+        # separately). One fewer when the background vignet is absent
+        # (``bkg_sub=False``, image sims). An extra trailing slot may carry the
+        # optional background-rms vignet (#779), so both counts are valid.
+        n_base = 6 if bkg_sub else 5
+        if len(input_file_list) not in {n_base, n_base + 1}:
             raise IndexError(
                 f"Input file list has length {len(input_file_list)},"
-                + f" required is {n_expected}"
+                + f" required is {n_base} or {n_base + 1}"
             )
 
         self._tile_cat_path = input_file_list[0]
@@ -241,6 +319,11 @@ class Ngmix(object):
                 None, input_file_list[2],
                 input_file_list[3], input_file_list[4],
             )
+        bkg_rms_vignet_path = (
+            input_file_list[n_base]
+            if len(input_file_list) == n_base + 1
+            else None
+        )
         self._vignet_cat = Vignet(
             input_file_list[1],
             bkg_path,
@@ -248,9 +331,8 @@ class Ngmix(object):
             weight_path,
             flag_path,
             f_wcs_path,
+            bkg_rms_vignet_path,
         )
-
-      
 
         self._output_dir = output_dir
         self._file_number_string = file_number_string
@@ -258,14 +340,13 @@ class Ngmix(object):
         self._zero_point = zero_point
         self._pixel_scale = pixel_scale
 
-        # MKDEBUG check whether still used 
         self._f_wcs_path = f_wcs_path
 
-        self._check_existing_dir = check_existing_dir
         self._save_batch = save_batch
         self._id_obj_min = id_obj_min
         self._id_obj_max = id_obj_max
         self._bkg_sub = bkg_sub
+        self._centroid_source = centroid_source
 
         self._w_log = w_log
 
@@ -298,7 +379,6 @@ class Ngmix(object):
         if ccd_nb < 18 or ccd_nb in [36, 37]:
             # swap x axis so origin is on top-right
             return np.rot90(vign, k=2)
-            print('rotating megapipe image')
         else:
             # swap y axis so origin is on bottom-left
             return vign
@@ -328,8 +408,16 @@ class Ngmix(object):
         Returns
         -------
         dict
-            Compiled results ready to be written to a file
-            note: psfo is the original image psf from psfex or mccd
+            Compiled results ready to be written to a file.
+
+            Two PSF column families — each carrying ellipticity *and* size,
+            for *different* PSFs (shapepipe#749). See the function docstrings
+            for what each family IS:
+
+            * ``*_psf_orig`` (``g1``/``g2`` + ``*_err``, ``T``) — the original
+              image PSF, fit by :func:`average_original_psf`.
+            * ``*_psf_reconv`` — the metacal reconvolution kernel, fit by
+              :func:`average_multiepoch_psf`.
 
         Raises
         ------
@@ -337,113 +425,121 @@ class Ngmix(object):
             If SNR key not found
 
         """
+        # Output HDU order. Same set as METACAL_TYPES, but kept in this
+        # fixed order so output catalogues stay byte-reproducible; the check
+        # below guards against the two lists silently diverging.
         names = ["1m", "1p", "2m", "2p", "noshear"]
+        if set(names) != set(METACAL_TYPES):
+            raise ValueError(
+                "compile_results metacal type list is out of sync with"
+                + " METACAL_TYPES"
+            )
         names2 = [
             'id',
             'n_epoch_model',
-            'moments_fail',
-            'ntry_fit',
-            'g1_psfo_ngmix',
-            'g2_psfo_ngmix',
-            'T_psfo_ngmix',
-            'T_err_psfo_ngmix',
-            'r50_psfo_ngmix',
-            'g1_err_psfo_ngmix',
-            'g2_err_psfo_ngmix',
-            'r50_err_psfo_ngmix',
+            'mcal_types_fail',
+            'nfev_fit',
+            # galaxy
             'g1',
             'g1_err',
             'g2',
             'g2_err',
             'T',
             'T_err',
-            'Tpsf',
-            'r50',
-            'r50_err',
-            'r50psf',
-            'g1_psf',
-            'g2_psf',
             'flux',
             'flux_err',
             's2n',
             'mag',
             'mag_err',
             'flags',
-            'mcal_flags'
+            'mcal_flags',
+            # original image PSF (psfex/mccd), fit by average_original_psf
+            'g1_psf_orig',
+            'g2_psf_orig',
+            'g1_err_psf_orig',
+            'g2_err_psf_orig',
+            'T_psf_orig',
+            'T_err_psf_orig',
+            # metacal reconvolution kernel, fit by average_multiepoch_psf
+            'g1_psf_reconv',
+            'g2_psf_reconv',
+            'g1_err_psf_reconv',
+            'g2_err_psf_reconv',
+            'T_psf_reconv',
+            'T_err_psf_reconv',
         ]
         output_dict = {k: {kk: [] for kk in names2} for k in names}
         for idx in range(len(results)):
             for name in names:
+                fit = results[idx][name]
 
-                mag = (
-                    -2.5 * np.log10(results[idx][name]["flux"])
-                    + self._zero_point
+                # ngmix 2.x does not raise on fit failure: after ntry the
+                # result keeps flags != 0 and carries none of the
+                # measurement keys (g, g_cov, T, T_err, flux, flux_err,
+                # s2n).  NaN-fill those so failed types are recorded with
+                # their flags instead of crashing the tile on a KeyError.
+                flux = fit.get("flux", np.nan)
+                flux_err = fit.get("flux_err", np.nan)
+                g = np.asarray(fit.get("g", (np.nan, np.nan)))
+                g_cov = np.asarray(
+                    fit.get("g_cov", np.full((2, 2), np.nan))
                 )
-                mag_err = np.abs(
-                    -2.5
-                    * results[idx][name]["flux_err"]
-                    / (results[idx][name]["flux"] * np.log(10))
-                )
+                T_gal = fit.get("T", np.nan)
+                T_gal_err = fit.get("T_err", np.nan)
+
+                mag = -2.5 * np.log10(flux) + self._zero_point
+                mag_err = np.abs(-2.5 * flux_err / (flux * np.log(10)))
 
                 output_dict[name]["id"].append(results[idx]["obj_id"])
                 output_dict[name]["n_epoch_model"].append(
                     results[idx]["n_epoch_model"]
                 )
-                output_dict[name]["moments_fail"].append(
-                    results[idx]["moments_fail"]
+                output_dict[name]["mcal_types_fail"].append(
+                    results[idx]["mcal_types_fail"]
                 )
-                output_dict[name]["ntry_fit"].append(results[idx][name]["nfev"])
-                output_dict[name]["g1_psfo_ngmix"].append(
-                    results[idx]["g_PSFo"][0]
+                # ngmix 2.x reports the solver's function-evaluation count
+                # (nfev, ~tens-hundreds; -1 on some failures), not the v1
+                # 1-5 retry count, so the column is named accordingly.
+                output_dict[name]["nfev_fit"].append(
+                    fit.get("nfev", np.nan)
                 )
-                output_dict[name]["g2_psfo_ngmix"].append(
-                    results[idx]["g_PSFo"][1]
-                )
-                output_dict[name]["g1_err_psfo_ngmix"].append(
-                    results[idx]["g_err_PSFo"][0]
-                )
-                output_dict[name]["g2_err_psfo_ngmix"].append(
-                    results[idx]["g_err_PSFo"][1]
-                )
-                output_dict[name]["T_psfo_ngmix"].append(results[idx]["T_PSFo"])
-                output_dict[name]["T_err_psfo_ngmix"].append(
-                    results[idx]["T_err_PSFo"]
-                )
-                output_dict[name]['r50_psfo_ngmix'].append(
-                    results[idx]['r50_PSFo']
-                )
-                output_dict[name]['r50_err_psfo_ngmix'].append(
-                    results[idx]['r50_err_PSFo']
-                )
-                output_dict[name]["T"].append(results[idx][name]["T"])
-                output_dict[name]["T_err"].append(results[idx][name]["T_err"])
-                output_dict[name]["Tpsf"].append(results[idx]["T_PSFo"])
-                output_dict[name]["g1_psf"].append(results[idx]["g_PSFo"][0])
-                output_dict[name]["g2_psf"].append(results[idx]["g_PSFo"][1])
-                output_dict[name]['r50'].append(results[idx][name]['pars'][4])
-                output_dict[name]['r50_err'].append(results[idx][name]['pars_err'][4])
-                output_dict[name]['r50psf'].append(results[idx]["r50_PSFo"])
-                output_dict[name]["g1"].append(results[idx][name]["g"][0])
-                output_dict[name]["g2"].append(results[idx][name]["g"][1])
-                output_dict[name]["g1_err"].append(
-                    np.sqrt(results[idx][name]["g_cov"][0, 0])
-                )
-                output_dict[name]["g2_err"].append(
-                    np.sqrt(results[idx][name]["g_cov"][1, 1])
-                )
-                output_dict[name]["flux"].append(results[idx][name]["flux"])
-                output_dict[name]["flux_err"].append(results[idx][name]["flux_err"])
+                # The two PSF families are object-level (one value per
+                # object, not per shear type) and self-named: every key
+                # below is copied straight through from compile-loop input to
+                # output, so the column name *is* the value's provenance.
+                #   *_psf_orig   = original image PSF (average_original_psf)
+                #   *_psf_reconv = reconvolution kernel (average_multiepoch_psf)
+                for psf_key in (
+                    'g1_psf_orig', 'g2_psf_orig',
+                    'g1_err_psf_orig', 'g2_err_psf_orig',
+                    'T_psf_orig', 'T_err_psf_orig',
+                    'g1_psf_reconv', 'g2_psf_reconv',
+                    'g1_err_psf_reconv', 'g2_err_psf_reconv',
+                    'T_psf_reconv', 'T_err_psf_reconv',
+                ):
+                    output_dict[name][psf_key].append(results[idx][psf_key])
+
+                output_dict[name]["g1"].append(g[0])
+                output_dict[name]["g2"].append(g[1])
+                output_dict[name]["g1_err"].append(np.sqrt(g_cov[0, 0]))
+                output_dict[name]["g2_err"].append(np.sqrt(g_cov[1, 1]))
+                output_dict[name]["T"].append(T_gal)
+                output_dict[name]["T_err"].append(T_gal_err)
+                output_dict[name]["flux"].append(flux)
+                output_dict[name]["flux_err"].append(flux_err)
                 output_dict[name]["mag"].append(mag)
                 output_dict[name]["mag_err"].append(mag_err)
 
-                if "s2n" in results[idx][name]:
-                    output_dict[name]["s2n"].append(results[idx][name]["s2n"])
-                elif "s2n_r" in results[idx][name]:
-                    output_dict[name]["s2n"].append(results[idx][name]["s2n_r"])
+                if "s2n" in fit:
+                    output_dict[name]["s2n"].append(fit["s2n"])
+                elif "s2n_r" in fit:
+                    output_dict[name]["s2n"].append(fit["s2n_r"])
+                elif fit["flags"] != 0:
+                    output_dict[name]["s2n"].append(np.nan)
                 else:
                     raise KeyError("No SNR key (s2n, s2n_r) found in results")
 
-                output_dict[name]["flags"].append(results[idx][name]["flags"])
+                output_dict[name]["flags"].append(fit["flags"])
                 output_dict[name]["mcal_flags"].append(
                     results[idx].get("mcal_flags", 0)
                 )
@@ -467,52 +563,6 @@ class Ngmix(object):
 
         """
         return f"{directory}/ngmix{self._file_number_string}.fits"
-
-
-    def get_last_id(self, cat_path):
-        """Get Last ID.
-
-        Return ID of last projessed objects found in input catalogue file.
-
-        Parameters
-        ----------
-        cat_path: str
-            input catalogue file path
-
-        Returns
-        --------
-        int
-            object ID
-
-        """
-        cat = file_io.FITSCatalogue(
-            cat_path,
-            SEx_catalogue=True,
-            open_mode=file_io.BaseCatalogue.OpenMode.ReadOnly,
-        )
-        cat.open()
-
-        if len(cat._cat_data) != 6:
-            raise IndexError(
-                f"Found {len(cat._cat_data)} HDUs instead of 6 in catalogue"
-                + f" {cat_path}"
-            )
-
-        ids = cat._cat_data[1].data["id"]
-
-        # No object foun
-        if len(ids) == 0:
-            return -1
-
-        id_last = ids[-1]
-        for hdu_no in range(2, 6):
-            if id_last != cat._cat_data[hdu_no].data["id"][-1]:
-                raise ValueError(
-                    f"Last ID {cat._cat_data[hdu_no].data['id'][-1]} in HDU"
-                    + f" #{hdu_no} inconsistent with {id_last}"
-                )
-
-        return id_last
 
 
     def save_results(self, output_dict):
@@ -552,8 +602,8 @@ class Ngmix(object):
                     ext_name = hdu.name.lower()
                     if ext_name not in output_dict:
                         raise ValueError(
-                            "HDU extension {ext_name} from existing FITS file"
-                            + f" not found in data"
+                            f"HDU extension {ext_name} from existing FITS"
+                            + " file not found in data"
                         )
 
                     # Existing data
@@ -569,10 +619,10 @@ class Ngmix(object):
                         colname in new_data
                         for colname in existing_dtype.names
                     ):
-                        print("output_dict", [col for col in new_data])
-                        print("existing_da", existing_data.dtype.names)
                         raise ValueError(
-                            "Mismatch between existing columns and new data columns."
+                            "Mismatch between existing columns"
+                            + f" ({existing_dtype.names}) and new data"
+                            + f" columns ({list(new_data)})."
                         )
 
                     # New data to be appended
@@ -717,11 +767,12 @@ class Ngmix(object):
                     if tile_cat.flux is not None
                     else 1.0
                 )
-                res, psf_res = do_ngmix_metacal(
+                res, psf_res, psf_orig_res = do_ngmix_metacal(
                     stamp,
                     prior,
                     flux_guess,
                     self._rng,
+                    centroid_source=self._centroid_source,
                 )
             except Exception as ee:
                 self._w_log.info(
@@ -731,21 +782,31 @@ class Ngmix(object):
                 continue
 
             res['obj_id'] = obj_id
-            res['n_epoch_model'] = len(stamp.gals)
-            res['moments_fail'] = sum(
-                1 for k in ['noshear', '1p', '1m', '2p', '2m']
+            # epochs that survived the PSF fit and entered the model,
+            # not the number of epochs submitted (v1 contract)
+            res['n_epoch_model'] = psf_res['n_epoch']
+            # Count of metacal fit types (0-5) with nonzero fit flags.
+            # (In ngmix v1 the same-named column counted moments-initial-guess
+            # failures from get_guess, which no longer exists — hence the
+            # rename to mcal_types_fail / NGMIX_MCAL_TYPES_FAIL.)
+            res['mcal_types_fail'] = sum(
+                1 for k in METACAL_TYPES
                 if res.get(k, {}).get('flags', 0) != 0
             )
-            r50_psfo = np.sqrt(max(psf_res['T_psf'], 0) / 2)
-            res['g_PSFo'] = psf_res['g_psf']
-            res['g_err_PSFo'] = psf_res['g_psf_err']
-            res['T_PSFo'] = psf_res['T_psf']
-            res['T_err_PSFo'] = psf_res['T_psf_err']
-            res['r50_PSFo'] = r50_psfo
-            res['r50_err_PSFo'] = (
-                psf_res['T_psf_err'] / (2 * r50_psfo) if r50_psfo > 0 else np.nan
-            )
-            res['mcal_flags'] = 0
+            res['mcal_flags'] = get_mcal_flags(res)
+            # Two distinct PSF families (shapepipe#749), each carrying its own
+            # ellipticity AND size: the metacal reconvolution kernel (psf_res)
+            # and the original image PSF (psf_orig_res). Tag both into res from
+            # ONE template so the families stay symmetric — same quantities,
+            # parallel ``*_psf_{family}`` names — and cannot drift apart by a
+            # hand-edit to one and not the other.
+            for family, psf in (("reconv", psf_res), ("orig", psf_orig_res)):
+                res[f"g1_psf_{family}"] = psf["g_psf"][0]
+                res[f"g2_psf_{family}"] = psf["g_psf"][1]
+                res[f"g1_err_psf_{family}"] = psf["g_psf_err"][0]
+                res[f"g2_err_psf_{family}"] = psf["g_psf_err"][1]
+                res[f"T_psf_{family}"] = psf["T_psf"]
+                res[f"T_err_psf_{family}"] = psf["T_psf_err"]
             final_res.append(res)
             n_fitted += 1
             count_batch += 1
@@ -829,15 +890,19 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
             flag_vign[np.where(tile_vign == -1e30)] = 2**10
         v_flag_tmp = flag_vign.ravel()
         # remove objects that are more than 1/3 masked
-        if len(np.where(v_flag_tmp != 0)[0]) / (51 * 51) > 1 / 3.0:
+        if len(np.where(v_flag_tmp != 0)[0]) / v_flag_tmp.size > 1 / 3.0:
             continue
 
-        weight_vign = (
-            vignet.weight_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+        weight_vign = vignet.weight_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+        bkg_rms_vign = (
+            vignet.bkg_rms_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+            if vignet.bkg_rms_vign_cat is not None
+            else None
         )
 
+        epoch_wcs = vignet.f_wcs_file[exp_name][int(ccd_n)]['WCS']
         jacob = get_galsim_jacobian(
-            vignet.f_wcs_file[exp_name][int(ccd_n)]['WCS'],
+            epoch_wcs,
             tile_cat.ra[i_tile],
             tile_cat.dec[i_tile]
         )
@@ -847,11 +912,16 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
         )
 
         # rescale by relative zero-points
-        gal_vign_scaled, weight_vign_scaled = rescale_epoch_fluxes(
+        (
+            gal_vign_scaled,
+            weight_vign_scaled,
+            bkg_rms_vign_scaled,
+        ) = rescale_epoch_fluxes(
             gal_vign_sub_bkg,
             weight_vign,
-            header
-            )
+            header,
+            bkg_rms_vign,
+        )
 
         # gather postage stamps in all of the epochs
         stamp.gals.append(gal_vign_scaled)
@@ -860,8 +930,13 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
         )
         stamp.weights.append(weight_vign_scaled)
         stamp.flags.append(flag_vign)
+        stamp.bkg_rms.append(bkg_rms_vign_scaled)
         stamp.jacobs.append(jacob)
-                
+        # For the "wcs" centroid source (see make_ngmix_observation).
+        stamp.wcs.append(epoch_wcs)
+        stamp.ra.append(tile_cat.ra[i_tile])
+        stamp.dec.append(tile_cat.dec[i_tile])
+
     return stamp
 
 def background_subtract(gal,bkg):
@@ -885,7 +960,7 @@ def background_subtract(gal,bkg):
 
     return gal_vign_sub_bkg
 
-def rescale_epoch_fluxes(gal,weight,header):
+def rescale_epoch_fluxes(gal, weight, header, bkg_rms=None):
     """rescale epochs by relative zeropoints to be on the same flux scale
         
     Parameters
@@ -896,6 +971,8 @@ def rescale_epoch_fluxes(gal,weight,header):
         weight image
     header : 
         image header
+    bkg_rms : numpy.ndarray, optional
+        Background RMS image
         
     Returns
     -------
@@ -903,13 +980,16 @@ def rescale_epoch_fluxes(gal,weight,header):
         rescaled galaxy image
     numpy.ndarray
         rescaled weight image
+    numpy.ndarray or None
+        rescaled background RMS image
     """
     Fscale = header['FSCALE']
 
     gal_scaled = gal * Fscale
     weight_scaled = weight * 1 / Fscale ** 2
+    bkg_rms_scaled = bkg_rms * Fscale if bkg_rms is not None else None
 
-    return gal_scaled, weight_scaled
+    return gal_scaled, weight_scaled, bkg_rms_scaled
 
 def get_galsim_jacobian(wcs, ra, dec):
     """Get local wcs.
@@ -956,7 +1036,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
         Weight image
     guess : list
         Gaussian parameters fot the window function
-        ``[x0, y0, g1, g2, r50, flux]``
+        ``[x0, y0, g1, g2, T, flux]``
     pixel_scale : float
         Pixel scale of the galaxy image
     thresh : float, optional
@@ -974,7 +1054,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
 
     sig_tmp = sigma_mad(gal[m_weight])
 
-    gauss_win = galsim.Gaussian(sigma=np.sqrt(guess[4] / 2), flux=guess[5])
+    gauss_win = galsim.Gaussian(sigma=cs_size.T_to_sigma(guess[4]), flux=guess[5])
     gauss_win = gauss_win.shear(g1=guess[2], g2=guess[3])
     gauss_win = gauss_win.drawImage(
         nx=img_shape[0], ny=img_shape[1], scale=pixel_scale
@@ -986,7 +1066,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
 
     return sig_noise
 
-def prepare_ngmix_weights(gal, weight, flag):
+def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
     """bookkeeping for ngmix weights. runs on a single galaxy and epoch
         pixel scale and galaxy guess
         TO DO: decide if we want galaxy guess stuff
@@ -996,6 +1076,12 @@ def prepare_ngmix_weights(gal, weight, flag):
     gal : numpy.ndarray
     weight : numpy.ndarray
     flag : numpy.ndarray
+    rng : numpy.random.RandomState
+        Random state for the noise realisations (seeded per tile for
+        reproducibility).
+    bkg_rms : numpy.ndarray, optional
+        Per-pixel background RMS map. If supplied, unmasked pixels use
+        ``1 / bkg_rms**2`` as the ngmix inverse variance.
 
     Returns
     -------
@@ -1006,27 +1092,62 @@ def prepare_ngmix_weights(gal, weight, flag):
     numpy.ndarray
         Noise image.
     """
-    weight_map = np.copy(weight)
-    weight_map[flag != 0] = 0.0
+    mask = np.copy(weight) != 0
+    mask[flag != 0] = False
 
-    sig_noise = sigma_mad(gal)
+    if bkg_rms is None:
+        sig_noise = sigma_mad(gal)
+        # Guard the degenerate constant stamp (sigma_mad == 0): 0 * inf
+        # would otherwise put NaN in a fully-masked weight map.
+        weight_map = (
+            mask.astype(float) / sig_noise ** 2
+            if sig_noise > 0
+            else np.zeros_like(gal, dtype=float)
+        )
+    else:
+        valid_rms = np.isfinite(bkg_rms) & (bkg_rms > 0)
+        mask &= valid_rms
+        weight_map = np.zeros_like(gal, dtype=float)
+        weight_map[mask] = 1.0 / bkg_rms[mask] ** 2
+        # Per-pixel noise sigma for the realisations below: metacal's
+        # fixnoise bookkeeping (1/w + 1/w_noise) assumes the noise image
+        # is a faithful realisation of the per-pixel variance the weights
+        # claim; a scalar sigma there mis-reports errors and erodes the
+        # inverse-variance advantage whenever the RMS map actually varies.
+        sig_noise = (
+            np.where(valid_rms, bkg_rms, np.median(bkg_rms[mask]))
+            if mask.any()
+            else sigma_mad(gal)
+        )
 
-    noise_img = np.random.randn(*gal.shape) * sig_noise
-    noise_img_gal = np.random.randn(*gal.shape) * sig_noise
+    noise_img = rng.standard_normal(gal.shape) * sig_noise
+    noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
 
     gal_masked = np.copy(gal)
-    if (weight_map == 0).any():
-        gal_masked[weight_map == 0] = noise_img_gal[weight_map == 0]
-
-    weight_map *= 1 / sig_noise ** 2
+    if (~mask).any():
+        gal_masked[~mask] = noise_img_gal[~mask]
 
     return gal_masked, weight_map, noise_img
 
-def make_ngmix_observation(gal, weight, flag, psf, wcs):
+def make_ngmix_observation(
+    gal, weight, flag, psf, wcs, rng,
+    bkg_rms=None, centroid_source="hsm", wcs_full=None, ra=None, dec=None,
+):
     """Build an ngmix Observation for a single galaxy epoch.
 
-    The galaxy Jacobian is re-centered on the HSM centroid so that the
-    centroid prior (centered at the Jacobian origin) does not bias the fit.
+    The galaxy Jacobian origin sets where the centroid prior is centered, so
+    it must sit on the object. Two ways to place it, selected by
+    ``centroid_source``:
+
+    * ``"hsm"`` (default) — re-center on the HSM adaptive-moment centroid
+      measured from the stamp. Robust for **galaxies**: it follows the actual
+      light and so the centroid prior (centered at the Jacobian origin) does
+      not bias an object that is offset from the stamp center.
+    * ``"wcs"`` — place the origin at the object's catalog sky position,
+      projected through the WCS to a sub-pixel pixel offset from the stamp
+      center, with no shape measurement. Better for **stars**: their HSM
+      moments are noisy, so trusting the astrometry is more stable than
+      re-measuring the centroid.
 
     Parameters
     ----------
@@ -1036,6 +1157,19 @@ def make_ngmix_observation(gal, weight, flag, psf, wcs):
     psf : numpy.ndarray
     wcs : galsim.BaseWCS
         Local WCS Jacobian at the object position.
+    rng : numpy.random.RandomState
+        Random state for the noise realisations (seeded per tile for
+        reproducibility).
+    bkg_rms : numpy.ndarray, optional
+        Per-pixel background RMS map.
+    centroid_source : {"hsm", "wcs"}, optional
+        How to place the galaxy Jacobian origin; the default is ``"hsm"``.
+    wcs_full : astropy.wcs.WCS, optional
+        Full exposure WCS for the object's CCD. Required for
+        ``centroid_source="wcs"`` (ignored for ``"hsm"``).
+    ra, dec : float, optional
+        Object sky position in degrees. Required for
+        ``centroid_source="wcs"`` (ignored for ``"hsm"``).
 
     Returns
     -------
@@ -1046,22 +1180,54 @@ def make_ngmix_observation(gal, weight, flag, psf, wcs):
         col=(psf.shape[1] - 1) / 2,
         wcs=wcs,
     )
-    psf_obs = Observation(psf, jacobian=psf_jacob)
+    # A model fit always needs a weight: without one ngmix defaults to unit
+    # weights on a unit-flux PSF stamp, so the galaxy GPriorBA(0.4) prior
+    # handed to the diagnostic PSF fitter swamps the (tiny) likelihood and the
+    # recovered PSF shape collapses toward the prior (#749). PSFEx/MCCD models
+    # already carry a little noise, so a finite flat weight matching the
+    # esheldon/aguinot noise budget (psf_noise ~ 1e-5) suffices to restore the
+    # likelihood — no explicit stamp-noise injection needed (#774). This is the
+    # PSF analogue of the galaxy weight built just below; force float so an
+    # integer-typed stamp cannot truncate the weight (matching that build).
+    # Metacal's own PSF fit is prior-free (AdmomFitter) and so is insensitive
+    # to this flat weight's scale, leaving the calibration untouched.
+    psf_wt = np.full_like(psf, 1.0 / PSF_NOISE ** 2, dtype=float)
+    psf_obs = Observation(psf, weight=psf_wt, jacobian=psf_jacob)
 
-    gal_masked, weight_map, noise_img = prepare_ngmix_weights(gal, weight, flag)
+    gal_masked, weight_map, noise_img = prepare_ngmix_weights(
+        gal, weight, flag, rng, bkg_rms=bkg_rms
+    )
 
-    # Re-center Jacobian on HSM centroid (pixel offset from stamp center).
-    # Fixes: centroid prior biases fit when galaxy is offset from stamp center.
-    try:
-        _hsm = galsim.hsm.FindAdaptiveMom(
-            galsim.Image(gal, scale=1.0), strict=False
+    if centroid_source == "hsm":
+        # Re-center Jacobian on HSM centroid (pixel offset from stamp center).
+        # Fixes: centroid prior biases fit when galaxy is offset from stamp
+        # center. Robust for galaxies; noisy for stars (use "wcs" there).
+        try:
+            _hsm = galsim.hsm.FindAdaptiveMom(
+                galsim.Image(gal, scale=1.0), strict=False
+            )
+            if _hsm.error_message != "":
+                raise galsim.hsm.GalSimHSMError(_hsm.error_message)
+            _cen = _hsm.moments_centroid - galsim.Image(gal, scale=1.0).center
+            cen_row, cen_col = _cen.y, _cen.x
+        except Exception:
+            cen_row, cen_col = 0.0, 0.0
+    elif centroid_source == "wcs":
+        # Place the origin at the catalog sky position projected through the
+        # WCS — no shape measurement. Stars have noisy HSM moments, so trust
+        # the astrometry instead of re-measuring the centroid.
+        g_wcs = galsim.fitswcs.AstropyWCS(wcs=wcs_full)
+        world_pos = galsim.CelestialCoord(
+            ra * galsim.degrees, dec * galsim.degrees
         )
-        if _hsm.error_message != "":
-            raise galsim.hsm.GalSimHSMError(_hsm.error_message)
-        _cen = _hsm.moments_centroid - galsim.Image(gal, scale=1.0).center
-        cen_row, cen_col = _cen.y, _cen.x
-    except Exception:
-        cen_row, cen_col = 0.0, 0.0
+        pos = g_wcs.toImage(world_pos)
+        cen_col = pos.x - np.round(pos.x).astype(int)
+        cen_row = pos.y - np.round(pos.y).astype(int)
+    else:
+        raise ValueError(
+            f"Unknown centroid_source '{centroid_source}'; expected"
+            + " 'hsm' or 'wcs'"
+        )
 
     gal_jacob = ngmix.Jacobian(
         row=(gal.shape[0] - 1) / 2 + cen_row,
@@ -1077,9 +1243,66 @@ def make_ngmix_observation(gal, weight, flag, psf, wcs):
         noise=noise_img,
     )
 
+def _average_psf_fits(results_and_weights):
+    """Weight-average a set of per-epoch ngmix PSF-fit results.
+
+    Shared core for both PSF families this module exports: the metacal
+    reconvolution kernel (:func:`average_multiepoch_psf`) and the original
+    image PSF (:func:`average_original_psf`). Epochs whose PSF fit failed
+    (``flags != 0``, carrying only flags/pars and no T/g) are dropped.
+
+    Parameters
+    ----------
+    results_and_weights : iterable of (dict, float)
+        Per-epoch ``(result, weight)`` pairs, where ``result`` is an ngmix
+        Fitter result with keys ``flags``, ``g``, ``g_err``, ``T``,
+        ``T_err`` and ``weight`` is the epoch's averaging weight.
+
+    Returns
+    -------
+    dict
+        Keys ``g_psf``, ``g_psf_err``, ``T_psf``, ``T_psf_err`` (weighted
+        averages over the surviving epochs) and ``n_epoch`` (their count).
+    """
+    n_epoch_used = 0
+    wsum = 0
+    g_psf_sum = np.array([0., 0.])
+    g_psf_err_sum = np.array([0., 0.])
+    T_psf_sum = 0
+    T_psf_err_sum = 0
+    for result, weight in results_and_weights:
+        if result['flags'] != 0:
+            continue
+        n_epoch_used += 1
+        wsum += weight
+        g_psf_sum += result['g'] * weight
+        g_psf_err_sum += result['g_err'] * weight
+        T_psf_sum += result['T'] * weight
+        T_psf_err_sum += result['T_err'] * weight
+
+    if wsum == 0:
+        raise ZeroDivisionError('Sum of weights = 0, division by zero')
+
+    return {
+        'g_psf': g_psf_sum / wsum,
+        'g_psf_err': g_psf_err_sum / wsum,
+        'T_psf': T_psf_sum / wsum,
+        'T_psf_err': T_psf_err_sum / wsum,
+        'n_epoch': n_epoch_used,
+    }
+
+
 def average_multiepoch_psf(obsdict):
-    """ averages psf information over multiple epochs
-    we may need to do this for original psf as well
+    """Average the metacal *reconvolution* PSF over epochs.
+
+    The PSF carried by each metacal observation (``obs.psf``) is the
+    Gaussian reconvolution kernel that metacal fit and convolved back in —
+    round by construction and slightly enlarged relative to the original
+    PSF. This is the kernel defining the sheared galaxy images, exported to
+    the reconvolution-kernel columns
+    (``NGMIX_G1/G2_PSF_RECONV``, ``NGMIX_T_PSF_RECONV``). The independent fit
+    of the *original* image PSF is :func:`average_original_psf`.
+
     Parameters
     ----------
     obsdict : dict
@@ -1088,42 +1311,109 @@ def average_multiepoch_psf(obsdict):
     Returns
     -------
     dict
-        Keys: 'g_psf', 'g_psf_err', 'T_psf', 'T_psf_err' (weighted averages).
+        Keys: 'g_psf', 'g_psf_err', 'T_psf', 'T_psf_err' (weighted
+        averages over the epochs whose PSF fit succeeded) and 'n_epoch'
+        (the number of those surviving epochs).
     """
-    # create dictionary
-    names = ['T_psf', 'T_psf_err', 'g_psf', 'g_psf_err']
-    psf_dict = {k: [] for k in names}
-    nepoch = len(obsdict['noshear'])
-    wsum = 0
-    g_psf_sum = np.array([0., 0.])
-    g_psf_err_sum = np.array([0., 0.])
-    T_psf_sum = 0
-    T_psf_err_sum = 0
-    for n_e in np.arange(nepoch):
-        T_psf=obsdict['noshear'][n_e].psf.meta['result']['T']
-        T_psf_err=obsdict['noshear'][n_e].psf.meta['result']['T_err']
-        g_psf=obsdict['noshear'][n_e].psf.meta['result']['g']
-        g_psf_err=obsdict['noshear'][n_e].psf.meta['result']['g_err']
-        ne_wsum = obsdict['noshear'][n_e].weight.sum()
-
-        wsum += ne_wsum
-        g_psf_sum += g_psf * ne_wsum
-        g_psf_err_sum += g_psf_err * ne_wsum
-        T_psf_sum += T_psf * ne_wsum
-        T_psf_err_sum += T_psf_err * ne_wsum
-
-    if wsum == 0:
-        raise ZeroDivisionError('Sum of weights = 0, division by zero')
-
-    psf_dict['g_psf'] = g_psf_sum / wsum
-    psf_dict['g_psf_err'] = g_psf_err_sum / wsum
-    psf_dict['T_psf'] = T_psf_sum / wsum
-    psf_dict['T_psf_err'] = T_psf_err_sum / wsum
-
-    return psf_dict
+    # ignore_failed_psf=True drops failed-PSF epochs from the galaxy fit but
+    # keeps them in obsdict; _average_psf_fits skips them on flags != 0.
+    return _average_psf_fits(
+        (obs.psf.meta['result'], obs.weight.sum())
+        for obs in obsdict['noshear']
+    )
 
 
-def do_ngmix_metacal(stamp, prior, flux_guess, rng):
+def average_original_psf(gal_obs_list, psf_runner):
+    """Fit and average the *original* image PSF over epochs.
+
+    The original PSF is the psfex/mccd model stamp handed to ngmix
+    (``gal_obs.psf``), fit here with the same ``psf_runner`` (hence the same
+    fit prior and guesser) used inside metacal, but on the PSF *before*
+    metacal's reconvolution. Exported to the original-PSF columns
+    (``NGMIX_G1/G2_PSF_ORIG``, ``NGMIX_T_PSF_ORIG``). Distinct from the
+    reconvolution-kernel fit (:func:`average_multiepoch_psf`): the original
+    PSF retains its true ellipticity and size, whereas the reconvolution
+    kernel is round and enlarged by construction. This is the PSF whose true
+    shape and size enter object-wise PSF-leakage diagnostics.
+
+    Weighted by the raw galaxy inverse variance (``gal_obs.weight.sum()`` per
+    epoch); :func:`average_multiepoch_psf` uses the same scheme but the
+    fixnoise-combined metacal-image weight instead.
+
+    The fit runs on a *copy* of each PSF observation so ``gal_obs.psf`` —
+    the object metacal later deep-copies and consumes via
+    ``boot.go(gal_obs_list)`` — is never mutated. ``PSFRunner.go`` sets both
+    ``.meta['result']`` and, on success, the ``.gmix`` attribute of the
+    observation it fits; were that ``gal_obs.psf`` itself, the stray gmix
+    would survive metacal's deep copy and be reused as the
+    ``MetacalFitGaussPSF`` fallback when its own admom+ML PSF fits both fail,
+    silently rescuing objects the base branch dropped (``BootPSFFailure``) and
+    changing the galaxy/shear result set. Fitting a copy closes this
+    PSF-aliasing channel; combined with :func:`do_ngmix_metacal` seeding this
+    pre-fit from a *snapshot* of the metacal RNG (so the pre-fit does not
+    advance it), the add-column refactor stays bit-identical on the galaxy
+    results.
+
+    Parameters
+    ----------
+    gal_obs_list : ngmix.observation.ObsList
+        Per-epoch galaxy observations; each ``gal_obs.psf`` is the original
+        (pre-metacal) PSF observation to fit, with no further ``.psf`` of
+        its own so the runner fits the stamp itself. Left pristine.
+    psf_runner : ngmix.runners.PSFRunner
+        The module's PSF runner (built by :func:`make_runners` from the
+        shared ``prior``).
+
+    Returns
+    -------
+    dict
+        Same keys as :func:`average_multiepoch_psf`.
+    """
+    def fit(gal_obs):
+        # Fit a COPY so gal_obs.psf stays pristine for metacal — see docstring.
+        # Failed fits keep flags != 0 and are dropped by _average_psf_fits.
+        psf_obs = gal_obs.psf.copy()
+        psf_runner.go(psf_obs)
+        return psf_obs.meta['result'], gal_obs.weight.sum()
+
+    return _average_psf_fits(fit(gal_obs) for gal_obs in gal_obs_list)
+
+
+def make_runners(prior, flux_guess, rng):
+    """Build the module's galaxy and PSF runners.
+
+    Single source of truth for the fitter configuration (Gaussian galaxy
+    and PSF models, guessers, retry counts), shared by the metacal
+    bootstrap below and by validation tests that fit module-built
+    observations directly.
+
+    Parameters
+    ----------
+    prior : ngmix.joint_prior.PriorSimpleSep
+        Priors for the fitting parameters.
+    flux_guess : float
+        Initial flux guess.
+    rng : numpy.random.RandomState
+        Random state for the guessers.
+
+    Returns
+    -------
+    tuple
+        (runner, psf_runner) : ngmix.runners.Runner, ngmix.runners.PSFRunner
+    """
+    fitter = ngmix.fitting.Fitter(model='gauss', prior=prior)
+    guesser = ngmix.guessers.TPSFFluxAndPriorGuesser(rng=rng, T=0.25, prior=prior)
+
+    psf_fitter = ngmix.fitting.Fitter(model='gauss', prior=prior)
+    psf_guesser = ngmix.guessers.TFluxGuesser(rng=rng, T=0.25, prior=prior, flux=flux_guess)
+
+    return (
+        ngmix.runners.Runner(fitter=fitter, guesser=guesser, ntry=5),
+        ngmix.runners.PSFRunner(fitter=psf_fitter, guesser=psf_guesser, ntry=2),
+    )
+
+
+def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
     """Do Ngmix Metacal.
 
     Performs metacalibration on a single multi-epoch object and returns the
@@ -1139,39 +1429,56 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng):
         Initial flux guess.
     rng : numpy.random.RandomState
         Random state for guesses and priors.
+    centroid_source : {"hsm", "wcs"}, optional
+        How to place the galaxy Jacobian origin; passed through to
+        :func:`make_ngmix_observation`. The default is ``"hsm"`` (HSM
+        adaptive-moment centroid); ``"wcs"`` uses the catalog sky position
+        projected through the WCS — see that function for the star-vs-galaxy
+        rationale.
 
     Returns
     -------
-    tuple
-        (resdict, psf_res) where resdict is the MetacalBootstrapper result
-        dict and psf_res is the averaged PSF dict from average_multiepoch_psf.
+    MetacalResult
+        Named 3-tuple ``(resdict, reconv, orig)``: the MetacalBootstrapper
+        result dict, the averaged metacal *reconvolution*-kernel PSF dict
+        (:func:`average_multiepoch_psf`), and the averaged *original* image-PSF
+        dict (:func:`average_original_psf`). The two PSF dicts share keys but
+        describe different PSFs; the named fields guard against transposing
+        them. Unpacks positionally as ``resdict, psf_res, psf_orig_res``.
     """
     n_epoch = len(stamp.gals)
     if n_epoch == 0:
         raise ValueError("0 epoch to process")
 
-    psf_model = 'gauss'
-    gal_model = 'gauss'
-
     gal_obs_list = ObsList()
     for n_e in range(n_epoch):
+        bkg_rms = stamp.bkg_rms[n_e] if len(stamp.bkg_rms) > n_e else None
         gal_obs = make_ngmix_observation(
             stamp.gals[n_e],
             stamp.weights[n_e],
             stamp.flags[n_e],
             stamp.psfs[n_e],
             stamp.jacobs[n_e],
+            rng,
+            bkg_rms=bkg_rms,
+            centroid_source=centroid_source,
+            wcs_full=stamp.wcs[n_e] if n_e < len(stamp.wcs) else None,
+            ra=stamp.ra[n_e] if n_e < len(stamp.ra) else None,
+            dec=stamp.dec[n_e] if n_e < len(stamp.dec) else None,
         )
         gal_obs_list.append(gal_obs)
 
-    fitter = ngmix.fitting.Fitter(model=gal_model, prior=prior)
-    guesser = ngmix.guessers.TPSFFluxAndPriorGuesser(rng=rng, T=0.25, prior=prior)
+    runner, psf_runner = make_runners(prior, flux_guess, rng)
 
-    psf_fitter = ngmix.fitting.Fitter(model=psf_model, prior=prior)
-    psf_guesser = ngmix.guessers.TFluxGuesser(rng=rng, T=0.25, prior=prior, flux=flux_guess)
-
-    psf_runner = ngmix.runners.PSFRunner(fitter=psf_fitter, guesser=psf_guesser, ntry=2)
-    runner = ngmix.runners.Runner(fitter=fitter, guesser=guesser, ntry=5)
+    # Fit the ORIGINAL (psfex/mccd) PSF before metacal reconvolves it. Use a
+    # psf_runner seeded from a snapshot of rng's state so this prefit does NOT
+    # advance the rng that boot.go consumes below — keeping the galaxy/shear
+    # results bit-identical to the no-prefit branch. average_original_psf fits a
+    # COPY of each gal_obs.psf, so gal_obs_list also reaches boot.go pristine.
+    prefit_rng = np.random.RandomState()
+    prefit_rng.set_state(rng.get_state())
+    _, prefit_psf_runner = make_runners(prior, flux_guess, prefit_rng)
+    psf_orig_res = average_original_psf(gal_obs_list, prefit_psf_runner)
 
     metacal_pars = {
         'types': ['noshear', '1p', '1m', '2p', '2m'],
@@ -1190,35 +1497,4 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng):
     )
     resdict, obsdict = boot.go(gal_obs_list)
     psf_res = average_multiepoch_psf(obsdict)
-    return resdict, psf_res
-
-
-# Define the SExtractor parameters for a galaxy
-def sextractor_e1e2(e,theta):
-    """sextractor_e1e2
-
-    computes ellipticity from sextrator quantities
-    Parameters
-    ----------
-    stamp : Postage_stamp
-        List of the galaxy vignets.  List indices run over epochs
-    prior : ngmix.priors
-        Priors for the fitting parameters
-    flux_guess : np.ndarray
-        guess for flux
-    pixel_scale : float
-        pixel scale in arcsec
-    rng : numpy.random.RandomState
-        Random state for guesses and priors    
-
-    Returns
-    -------
-    np.ndarray
-        ellipticity
-
-    """
-    # Convert the position angle from degrees to radians
-    phi = np.radians(theta) - np.pi/2
-    # Calculate the ellipticity vector
-    e_vec = e * np.array([np.cos(2*phi), np.sin(2*phi)])
-    return e_vec
+    return MetacalResult(resdict=resdict, reconv=psf_res, orig=psf_orig_res)
