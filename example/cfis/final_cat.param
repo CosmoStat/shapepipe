@@ -15,6 +15,13 @@ NGMIX_MCAL_FLAGS
 NGMIX_G1_PSF_ORIG_NOSHEAR
 NGMIX_G2_PSF_ORIG_NOSHEAR
 
+# spread class
+#SPREAD_CLASS
+
+# spread model flag and error
+#SPREAD_MODEL
+#SPREADERR_MODEL
+
 # Number of epochs (exposures)
 N_EPOCH
 NGMIX_N_EPOCH

@@ -139,6 +139,77 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     return cat_size
 
 
+def save_sm_data(
+    final_cat_file,
+    sexcat_sm_path,
+    do_classif=True,
+    star_thresh=0.003,
+    gal_thresh=0.01,
+    n_obj=-1,
+):
+    r"""Save Spread-Model Data.
+
+    Save the spread-model data into the final catalogue.
+
+    Parameters
+    ----------
+    final_cat_file : file_io.FITSCatalogue
+        Final catalogue
+    sexcat_sm_path : str
+        Path to spread-model catalogue to save. If ``None``, spread_model is
+        set to 99
+    do_classif : bool
+        If ``True`` objects will be classified into stars, galaxies, and other,
+        using the classifier
+        :math:`{\rm class} = {\rm sm} + 2 * {\rm sm}_{\rm err}`
+    star_thresh : float
+        Threshold for star selection; object is classified as star if
+        :math:`|{\rm class}| <` ``star_thresh``
+    gal_thresh : float
+        Threshold for galaxy selection; object is classified as galaxy if
+        :math:`{\rm class} >` ``gal_thresh``
+    nobj : int, optional
+        Number of objects, only used if sexcat_sm_path is ``-1``
+
+    Returns
+    -------
+    int
+        Number of objects saved
+    """
+    final_cat_file.open()
+
+    if sexcat_sm_path is not None:
+        sexcat_sm_file = file_io.FITSCatalogue(
+            sexcat_sm_path,
+            SEx_catalogue=True,
+        )
+        sexcat_sm_file.open()
+
+        sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
+        sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
+
+        sexcat_sm_file.close()
+
+    else:
+        sm = np.ones(n_obj) * 99
+        sm_err = np.ones(n_obj) * 99
+
+    final_cat_file.add_col("SPREAD_MODEL", sm)
+    final_cat_file.add_col("SPREADERR_MODEL", sm_err)
+
+    if do_classif:
+        obj_flag = np.ones_like(sm, dtype="int16") * 2
+        classif = sm + 2.0 * sm_err
+        obj_flag[np.where(np.abs(classif) < star_thresh)] = 0
+        obj_flag[np.where(classif > gal_thresh)] = 1
+
+        final_cat_file.add_col("SPREAD_CLASS", obj_flag)
+
+    final_cat_file.close()
+
+    return n_obj
+
+
 class SaveCatalogue:
     """Save Catalogue.
 
