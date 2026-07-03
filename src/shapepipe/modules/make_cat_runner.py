@@ -22,7 +22,7 @@ from shapepipe.modules.module_decorator import module_runner
     ],
     file_pattern=[
         "tile_sexcat",
-        "sexcat",
+        "sexcat_sm",
         "galaxy_psf",
         "ngmix",
     ],
@@ -46,10 +46,30 @@ def make_cat_runner(
             galaxy_psf_path,
             shape1_cat_path,
         ) = input_file_list
+        sexcat_sm_path = None
     else:
-        raise IndexError(
-            f"Invalid number of input files {len(input_file_List)}, expected 3."
-        )
+        # With spread model input
+        (
+            tile_sexcat_path,
+            sexcat_sm_path,
+            galaxy_psf_path,
+            shape1_cat_path,
+        ) = input_file_list[0:4]
+        if len(input_file_list) == 5:
+            # With second shape catalogue input
+            shape2_cat_path = input_file_list[4]
+
+    # Fetch classification options
+    do_classif = config.getboolean(
+        module_config_sec,
+        "SM_DO_CLASSIFICATION",
+    )
+    if do_classif:
+        star_thresh = config.getfloat(module_config_sec, "SM_STAR_THRESH")
+        gal_thresh = config.getfloat(module_config_sec, "SM_GAL_THRESH")
+    else:
+        star_thresh = None
+        gal_thresh = None
 
     # Fetch shape measurement type
     shape_type_list = config.getlist(
@@ -78,6 +98,27 @@ def make_cat_runner(
     w_log.info("Save SExtractor data")
     n_obj = make_cat.save_sextractor_data(final_cat_file, tile_sexcat_path)
     cat_size_sextractor = n_obj
+
+    # Save spread-model data
+    if sexcat_sm_path is None:
+        w_log.info("No sm cat input, setting spread model to 99")
+    else:
+        w_log.info("Save spread-model data")
+        cat_size_sm = make_cat.save_sm_data(
+            final_cat_file,
+            sexcat_sm_path,
+            do_classif,
+            star_thresh,
+            gal_thresh,
+            n_obj=n_obj
+        )
+
+        if cat_size_sextractor != cat_size_sm:
+            w_log(
+                f"Warnign: SExtractor catalogue {tile_sexcat_path} has different size"
+                + f" ({cat_size_sextractor} than spread_model catalogue"
+                + f" {sexcat_sm_path} ({cat_size_sm})"
+            )
 
     # Save shape data
     sc_inst = make_cat.SaveCatalogue(final_cat_file, cat_size_sextractor, w_log)

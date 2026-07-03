@@ -106,8 +106,9 @@ class Mask(object):
         # Search path for existing mask files
         self._check_existing_dir = check_existing_dir
 
-        # External star catalogue path, if given (None otherwise)
-        self._star_cat_path = star_cat_path
+        # Set external star catalogue path if given
+        if star_cat_path is not None:
+            self._star_cat_path = star_cat_path
 
         self._hdu = hdu
 
@@ -171,8 +172,17 @@ class Mask(object):
         self._config["PATH"]["WW_configfile"] = conf.getexpanded(
             "PROGRAM_PATH", "WW_CONFIG_FILE"
         )
-        if self._star_cat_path is not None:
+        if conf.has_option("PROGRAM_PATH", "CDSCLIENT_PATH"):
+            self._config["PATH"]["CDSclient"] = conf.getexpanded(
+                "PROGRAM_PATH", "CDSCLIENT_PATH"
+            )
+        elif self._star_cat_path is not None:
             self._config["PATH"]["star_cat"] = self._star_cat_path
+        else:
+            raise ValueError(
+                "Either [PROGRAM_PATH]:CDSCLIENT_PATH in the mask config file "
+                + " or a star catalogue as module input needs to be present"
+            )
 
         self._config["PATH"]["temp_dir"] = self._get_temp_dir_path(
             conf.getexpanded("OTHER", "TEMP_DIRECTORY")
@@ -419,11 +429,9 @@ class Mask(object):
                 )
 
         # Handle stdout / stderr
-        general_stdout = ""
+        general_stdout = f"\nCDSClient\n{self._CDS_stdout}"
         general_stderr = ""
-        if hasattr(self, "_CDS_stdout"):
-            general_stdout += f"\nCDSClient\n{self._CDS_stdout}"
-        if hasattr(self, "_CDS_stderr") and self._CDS_stderr != "":
+        if self._CDS_stderr != "":
             general_stderr += f"\nCDSClient\n{self._CDS_stderr}"
         if hasattr(self, "_WW_stdout") or hasattr(self, "_WW_stdout"):
             general_stdout += f"\n\nWeightWatcher\n{self._WW_stdout}"

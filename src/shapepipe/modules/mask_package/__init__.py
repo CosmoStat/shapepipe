@@ -83,6 +83,8 @@ WW_PATH : str, optional
     environment will be used
 WW_CONFIG_FILE : str
     Path to the WeightWatcher configuration file
+CDSCLIENT_PATH : str, optional
+    Path to CDS client executable; required if ``USE_EXT_STAR = False``
 
 [BORDER_PARAMETERS]
 -------------------
