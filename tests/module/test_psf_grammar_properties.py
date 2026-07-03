@@ -21,9 +21,9 @@ metacal RECONVOLUTION kernel (``PSF_RECONV``) are independent fits of
     (``example/cfis/final_cat.param``) names is a column the writer can
     produce — writer/param-file consistency;
 (d) the FULL frozen grammar (shapepipe#761) — ``ESTIMATOR_COMPONENT[_ERR]_
-    OBJECT[_metacaltype]`` — holds across all three estimator families: ngmix
-    and galsim split ellipticity into ``G1``/``G2`` (g-type), HSM into
-    ``E1``/``E2`` (e-type); every family stores exactly one size, ``T``; HSM
+    OBJECT[_metacaltype]`` — holds across all three estimator families: all three
+    families split ellipticity into ``G1``/``G2`` (g-type, HSM included since
+    the return to reduced shear); every family stores exactly one size, ``T``; HSM
     keeps the singular ``FLAG`` token, ngmix/galsim keep plural ``FLAGS``.
     This part is a static example-based check (not writer-driven), so it
     covers galsim/HSM without depending on those producer modules — see
@@ -418,9 +418,9 @@ FROZEN_GRAMMAR_RE = re.compile(
     # data-driven FITS extension name, so left as a generic uppercase token.
     r"|GALSIM_(?:G1|G2|T)(?:_ERR|_UNCORR)?(?:_PSF)?_[A-Z0-9_]+"
     r"|GALSIM_(?:FLUX|FLUX_ERR|MAG|MAG_ERR|FLAGS|RES)_[A-Z0-9_]+"
-    # HSM: e-type, explicit PSF/STAR object, singular FLAG; the multi-epoch
+    # HSM: g-type, explicit PSF/STAR object, singular FLAG; the multi-epoch
     # sink in make_cat._save_psf_data appends a bare epoch index.
-    r"|HSM_(?:E1|E2|T)_(?:PSF|STAR)(?:_\d+)?"
+    r"|HSM_(?:G1|G2|T)_(?:PSF|STAR)(?:_\d+)?"
     r"|HSM_FLAG_(?:PSF|STAR)(?:_\d+)?"
     r")$"
 )
@@ -438,10 +438,10 @@ _GRAMMAR_VALID_EXAMPLES = [
     "GALSIM_G2_UNCORR_NOSHEAR",
     "GALSIM_T_PSF_ORIGINAL_PSF",
     "GALSIM_FLAGS_NOSHEAR",
-    "HSM_E1_PSF",
+    "HSM_G1_PSF",
     "HSM_T_STAR",
     "HSM_FLAG_PSF",
-    "HSM_E1_PSF_3",  # make_cat multi-epoch sink
+    "HSM_G1_PSF_3",  # make_cat multi-epoch sink
     "HSM_T_PSF_2",
     "HSM_FLAG_STAR_1",
 ]
@@ -452,6 +452,7 @@ _GRAMMAR_INVALID_EXAMPLES = [
     "NGMIX_G1_GAL_NOSHEAR",  # GAL token regression
     "NGMIX_ELL_NOSHEAR",  # packed ellipticity
     "E1_PSF_HSM",  # pre-rename HSM naming (not HSM_-prefixed)
+    "HSM_E1_PSF",  # e-type leftover: HSM stores g-type G1/G2 since #761
     "SIGMA_PSF_HSM",  # raw sigma, not T
     "HSM_SIGMA_PSF",  # stored sigma instead of T
     "HSM_FLAGS_PSF",  # plural — HSM is singular FLAG

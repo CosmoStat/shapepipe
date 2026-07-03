@@ -121,15 +121,15 @@ _e_complex = st.complex_numbers(
 
 @settings(deadline=None, max_examples=25)
 @given(e=_e_complex)
-def test_get_psfshapes_stores_e_type_distortion(psfex_interpolator, e):
-    """The stored HSM PSF shapes are e-type distortion, not g-type shear.
+def test_get_psfshapes_stores_g_type_shear(psfex_interpolator, e):
+    """The stored HSM PSF shapes are g-type reduced shear, not e-type distortion.
 
-    ``_get_psfshapes`` reads ``moms.observed_shape.e1/.e2``; this pins it to the
-    galsim *distortion* accessor and away from the reduced-shear ``.g1/.g2``.
+    ``_get_psfshapes`` reads ``moms.observed_shape.g1/.g2``; this pins it to the
+    galsim *reduced-shear* accessor and away from the distortion ``.e1/.e2``.
     The check is exact against the same image's ``observed_shape`` (independent
     of how well HSM recovers the input), and the magnitude inequality is the
-    tooth: for any non-round shape ``|e| > |g|`` strictly, so storing ``.g``
-    instead (the pre-fix bug) would fail it.
+    tooth: for any non-round shape ``|e| > |g|`` strictly, so storing ``.e``
+    instead would fail it.
     """
     psfex_interpolator.interp_PSFs = _elliptical_psf_stamps([(e.real, e.imag)])
     psfex_interpolator._get_psfshapes()
@@ -144,11 +144,11 @@ def test_get_psfshapes_stores_e_type_distortion(psfex_interpolator, e):
     mag_g = np.hypot(g1, g2)
     assume(mag_e - mag_g > 1e-3)  # ensure a non-degenerate e-vs-g distinction
 
-    # Stored values are exactly the g-type distortion components ...
+    # Stored values are exactly the g-type reduced-shear components ...
     npt.assert_array_equal(psfex_interpolator.psf_shapes[0, 0], g1)
     npt.assert_array_equal(psfex_interpolator.psf_shapes[0, 1], g2)
 
-    # ... whose magnitude strictly subceeds the e-type shear.
+    # ... whose magnitude strictly subceeds the e-type distortion.
     mag_stored = np.hypot(
         psfex_interpolator.psf_shapes[0, 0], psfex_interpolator.psf_shapes[0, 1]
     )

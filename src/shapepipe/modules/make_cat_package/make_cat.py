@@ -692,13 +692,13 @@ class SaveCatalogue:
         max_epoch = np.max(self._final_cat_file.get_data()["N_EPOCH"]) + 1
 
         self._output_dict = {
-            f"HSM_E1_PSF_{idx + 1}": np.ones(len(self._obj_id)) * -10.0
+            f"HSM_G1_PSF_{idx + 1}": np.ones(len(self._obj_id)) * -10.0
             for idx in range(max_epoch)
         }
         self._output_dict = {
             **self._output_dict,
             **{
-                f"HSM_E2_PSF_{idx + 1}": np.ones(len(self._obj_id)) * -10.0
+                f"HSM_G2_PSF_{idx + 1}": np.ones(len(self._obj_id)) * -10.0
                 for idx in range(max_epoch)
             },
         }
@@ -732,12 +732,12 @@ class SaveCatalogue:
                     continue
 
                 self._add2dict(
-                    f"HSM_E1_PSF_{epoch + 1}",
-                    gpc_data["SHAPES"]["HSM_E1_PSF"], idx
+                    f"HSM_G1_PSF_{epoch + 1}",
+                    gpc_data["SHAPES"]["HSM_G1_PSF"], idx
                 )
                 self._add2dict(
-                    f"HSM_E2_PSF_{epoch + 1}",
-                    gpc_data["SHAPES"]["HSM_E2_PSF"], idx
+                    f"HSM_G2_PSF_{epoch + 1}",
+                    gpc_data["SHAPES"]["HSM_G2_PSF"], idx
                 )
 
                 # HSM_T_PSF already holds T (sigma_to_T applied at the
