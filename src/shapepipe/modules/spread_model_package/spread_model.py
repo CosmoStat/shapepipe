@@ -213,7 +213,11 @@ class SpreadModel(object):
 
             for expccd_name_tmp in psf_expccd_name:
                 psf_cat_id_ccd = psf_cat[str(id_tmp)][expccd_name_tmp]
-                sigma_list.append(psf_cat_id_ccd["SHAPES"]["SIGMA_PSF_HSM"])
+                # The HSM grammar stores PSF size as T = 2 sigma^2 under
+                # HSM_T_PSF; spread model needs the Gaussian sigma (pixels).
+                sigma_list.append(
+                    cs_size.T_to_sigma(psf_cat_id_ccd["SHAPES"]["HSM_T_PSF"])
+                )
 
             obj_sigma_tmp = np.mean(sigma_list)
             if obj_sigma_tmp > 0:
