@@ -56,7 +56,7 @@ def _recover_g1_with_response(seed=42):
     stamp.gals, stamp.psfs, stamp.weights, stamp.flags, stamp.jacobs = (
         gals, psfs, weights, flags, jacobs,
     )
-    res, _ = do_ngmix_metacal(stamp, prior, 1.0, rng)
+    res, _, _ = do_ngmix_metacal(stamp, prior, 1.0, rng)
 
     g1_noshear = res["noshear"]["g"][0]
     R11 = (res["1p"]["g"][0] - res["1m"]["g"][0]) / (2 * METACAL_STEP)

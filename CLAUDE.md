@@ -36,6 +36,30 @@ way to get all of that is the container.
   sandbox with a host clone of the repo bind-mounted in and `pip install -e`
   pointed at it, so edits on the host are live inside the container.
 
+**Shadow a library build with `PYTHONPATH` (no image rebuild).** When you need
+the container to run a *different* build of a pure-Python library than the one
+baked into its venv — a feature worktree, an unreleased branch, this repo's own
+`src/` against a stale image — prepend the host checkout to `PYTHONPATH`. Python
+resolves the prepended path first, so the on-disk version shadows
+`/app/.venv/...` without touching the image. This is the local-testing
+counterpart of a git-ref dependency (e.g. `cs_util @ develop` in
+`pyproject.toml`): the dep change makes CI build the right version; the shadow
+lets you test that version *now*, before any rebuild. The recipe:
+
+```bash
+apptainer exec --bind /n17data,/automnt <image.sif> bash -c \
+  "cd <repo-worktree> && \
+   PYTHONPATH=/path/to/libfoo-checkout:<repo-worktree>/src \
+   python -m pytest <targets> -o addopts='' -q"
+```
+
+Notes: the checkout path is the **parent** of the importable package dir (the
+dir containing `foo/`, not `foo/` itself); list several `:`-separated to stack
+shadows; `-o addopts=''` clears `pyproject.toml`'s pytest defaults when a plugin
+they reference (e.g. `pytest-cov`) isn't in the image. Use this for a quick
+verify; land the real fix as the `pyproject.toml` / `uv.lock` dep change so CI
+and the next image agree.
+
 **Testing container changes: build remotely, pull locally.** Don't
 `apptainer build` images on a cluster — quotas are tight and the build is slow.
 The loop for any change to `Dockerfile` / `pyproject.toml` / `uv.lock` is: edit
