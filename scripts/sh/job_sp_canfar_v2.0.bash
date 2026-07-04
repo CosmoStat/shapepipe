@@ -9,13 +9,17 @@
 #              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
+# Repository root, derived from this script's location (scripts/sh/ -> repo
+# root) so the runner is relocatable: no hardcoded ~/shapepipe clone layout.
+SP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
 # Shared job-list description
-source $HOME/shapepipe/scripts/sh/job_list_help.bash
+source "$SP_ROOT/scripts/sh/job_list_help.bash"
 
 # Command line arguments
 ## Default values
 job=255
-config_dir=$HOME/shapepipe/example/cfis
+config_dir="$SP_ROOT/example/cfis"
 psf='mccd'
 retrieve='vos'
 star_cat_for_mask='onthefly'
@@ -134,9 +138,8 @@ if [ "$star_cat_for_mask" != "onthefly" ] && [ "$star_cat_for_mask" != "save" ];
   exit 4
 fi
 
-#if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
-if [ "$retrieve" != "vos" ]; then
-  echo "method to retrieve images (option -r) needs to be 'vos' for v2.0"
+if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
+  echo "method to retrieve images (option -r) needs to be 'vos' (data) or 'symlink' (image sims)"
   exit 5
 fi
 
@@ -291,7 +294,7 @@ function command_cfg_shapepipe() {
       batch_flag="--batch_size $_n_smp"
     fi
 
-    local cmd="shapepipe_run.py -c $config $batch_flag"
+    local cmd="shapepipe_run -c $config $batch_flag"
     command "$cmd" "$str"
 }
 
@@ -347,12 +350,12 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Retrieve exposure images (online, vos)
+## Retrieve exposure images (online if retrieve=vos, symlinked if image sims)
 (( do_job = $job & 8 ))
 if [[ $do_job != 0 ]]; then
 
   command_cfg_shapepipe \
-    "config_exp_Gie_vos.ini" \
+    "config_exp_Gie_$retrieve.ini" \
     "Run shapepipe (get exposure images)" \
     $n_smp \
     $exclusive
@@ -495,11 +498,13 @@ fi
 (( do_job = $job & 2048 ))
 if [[ $do_job != 0 ]]; then
 
-  suff_sm="_nosm"
-
-  ### Merge all relevant information into final catalogue
+  ### Merge all relevant information into final catalogue.
+  ### Config name matches run_job's job-2048 "Mc_${psf}" completeness check and
+  ### the config present in example/cfis_image_sims. (The data path uses a
+  ### differently-named make_cat config; harmonizing the two dirs is a separate
+  ### #766 reconciliation item, not needed for the image-sims rerun.)
   command_cfg_shapepipe \
-    "config_tile_make_cat_$psf${suff_sm}.ini" \
+    "config_tile_Mc_$psf.ini" \
     "Run shapepipe (tile: create final cat $psf)" \
     $n_smp \
     $exclusive
