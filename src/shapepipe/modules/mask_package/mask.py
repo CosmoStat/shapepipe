@@ -429,10 +429,14 @@ class Mask(object):
                 )
 
         # Handle stdout / stderr
-        general_stdout = f"\nCDSClient\n{self._CDS_stdout}"
+        # _CDS_stdout/_CDS_stderr are only set when find_stars ran, i.e.
+        # when HALO_MAKE or SPIKE_MAKE is True (False for image sims)
+        general_stdout = ""
         general_stderr = ""
-        if self._CDS_stderr != "":
-            general_stderr += f"\nCDSClient\n{self._CDS_stderr}"
+        if hasattr(self, "_CDS_stdout"):
+            general_stdout += f"\nCDSClient\n{self._CDS_stdout}"
+            if self._CDS_stderr != "":
+                general_stderr += f"\nCDSClient\n{self._CDS_stderr}"
         if hasattr(self, "_WW_stdout") or hasattr(self, "_WW_stdout"):
             general_stdout += f"\n\nWeightWatcher\n{self._WW_stdout}"
             if self._WW_stderr != "":
