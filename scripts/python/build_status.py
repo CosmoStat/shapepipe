@@ -185,17 +185,24 @@ def verdict_row(label: str, colour: str, vlabel: str, vval: str, vn: str) -> str
 
 
 def panel(anchor: str, mark: str, srcbtns: str, level: str, title: str,
-          spec: str, figure: str, verdict: str = "", note: str = "") -> str:
-    """The one template every subsection is built from: a mark row (tier label +
-    source buttons + level chip), a title, a spec block, exactly one figure, an
-    optional muted note, and at most one verdict row."""
+          spec: str, figure: str, verdict: str = "", note: str = "",
+          badge_label: str = "", badge_colour: str = "", summary_val: str = "",
+          force_open: bool = False) -> str:
+    """The one template every subsection is built from, as a collapse-when-green
+    ``<details>``. The ``<summary>`` carries the title, level chip, verdict badge
+    and one-line value so a collapsed row still shows the number. Open state:
+    ``force_open`` (Tier-2 panels, always shown) OR a non-PASS verdict."""
+    is_open = force_open or (badge_label and badge_label != "PASS")
+    open_attr = " open" if is_open else ""
+    summ_badge = badge(badge_label, badge_colour) if badge_label else ""
+    summ_val = f'<span class="sv">{summary_val}</span>' if summary_val else ""
     return f"""\
-  <section id="{anchor}">
-    <div class="section-mark"><span>{mark}</span>{srcbtns}{level_chip(level)}</div>
-    <h3>{title}</h3>
+  <details id="{anchor}"{open_attr}>
+    <summary><span class="caret"></span><span class="sm-title">{title}</span>{level_chip(level)}{summ_badge}{summ_val}</summary>
+    <div class="section-mark"><span>{mark}</span>{srcbtns}</div>
     {spec}
     {figure}{note}{verdict}
-  </section>"""
+  </details>"""
 
 
 # --------------------------------------------------------------------------- #
@@ -255,12 +262,24 @@ CSS = """
     font-size:32px; line-height:1.12; margin:0 0 6px; }
   .tier-scope { color:var(--ink-muted); font-size:16px; margin:0; max-width:78ch; }
 
-  section { margin-top:40px; scroll-margin-top:20px; }
+  /* ---- collapse-when-green panels ---- */
+  details { margin-top:30px; scroll-margin-top:20px;
+    border-top:1px solid var(--tooth); padding-top:20px; }
+  summary { list-style:none; cursor:pointer; display:flex; align-items:center;
+    gap:12px; flex-wrap:wrap; }
+  summary::-webkit-details-marker { display:none; }
+  .caret { width:0; height:0; border-left:6px solid var(--ink-muted);
+    border-top:5px solid transparent; border-bottom:5px solid transparent;
+    transition:transform .15s; flex-shrink:0; }
+  details[open] > summary .caret { transform:rotate(90deg); }
+  .sm-title { font-family:var(--serif); font-style:italic; font-weight:500;
+    font-size:24px; line-height:1.15; color:var(--ink); }
+  summary:hover .sm-title { color:var(--cobalt); }
+  .sv { font-family:var(--mono); font-size:13px; color:var(--ink-muted);
+    margin-left:auto; text-align:right; }
   .section-mark { font-family:var(--mono); font-size:11px; letter-spacing:.13em;
-    text-transform:uppercase; color:var(--ink-muted); margin-bottom:8px;
+    text-transform:uppercase; color:var(--ink-muted); margin:12px 0 8px;
     display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-  h3 { font-family:var(--serif); font-style:italic; font-weight:500;
-    font-size:25px; line-height:1.18; margin:0 0 4px; }
 
   hr { border:none; border-top:1px solid var(--rule); margin:36px 0; }
 
@@ -390,12 +409,13 @@ def render_mbias(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
         "t1-mbias", "&sect; Tier 1 &mdash; m-bias",
         _src(f"{REPO_BLOB}/tests/science/test_mbias.py", "test_mbias.py"),
         "in-memory", "Multiplicative bias on injected shear.", spec, fig, verdict,
+        badge_label=label, badge_colour=colour, summary_val=f"m = {sci(m)}",
     )
     return sec, strip_chip("t1-mbias", "m-bias", label, colour)
 
 
 def render_psf_prior(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
-    """Tier-1 PSF-fit-prior robustness tripwire (#749)."""
+    """Tier-1 regression guard for the #779 PSF weight-map fix (closes #749)."""
     v = d["psf_fit_prior_verdict"]
     e1_gal = v["psf_fit_e1_galaxy"]
     e1_none = v["psf_fit_e1_none"]
@@ -407,20 +427,21 @@ def render_psf_prior(d: dict, b64: str | None, render_ts: str) -> tuple[str, str
     colour, label = (TEAL, "PASS") if robust else (CINNABAR, "FAIL")
     fig = figure_block(
         b64, "psf_fit_prior sweep",
-        "<b>Left:</b> the fitted PSF ellipticity is entirely the prior&rsquo;s doing &mdash; "
+        "<b>Left:</b> the fitted PSF ellipticity still tracks the prior &mdash; "
         "<code>galaxy</code> and <code>psf</code> round it to zero, <code>none</code> recovers the "
-        "injected <code>0.05</code>. <b>Right:</b> the recovered shear <code>m</code> is flat across all "
-        "three priors.",
+        "injected <code>0.05</code>. <b>Right:</b> with the #779 weight-map fix in place, the recovered "
+        "shear <code>m</code> is flat across all three priors.",
         "run_star_response.py", render_ts,
     )
     spec = (
-        '<div class="spec"><span class="mark">&sect; the test</span>'
+        '<div class="spec"><span class="mark">&sect; the guard</span>'
+        "<p><b>What it guards.</b> The #779 fix &mdash; the PSF observation now carries a finite weight map, "
+        "so the PSF fit is not prior-dominated. This test is its regression guard.</p>"
         f"<p><b>What it is.</b> An in-memory sim injecting a known elliptical PSF "
         f"(<code>e1<sub>true</sub> = {d['psf_e1_true']}</code>) and sweeping <code>psf_fit_prior</code> over "
-        "<code>galaxy / none / psf</code>.</p>"
-        "<p><b>What it measures.</b> The fitted PSF ellipticity and the recovered shear (c, m) under each prior.</p>"
+        "<code>galaxy / none / psf</code>, asserting the recovered shear is unchanged across the prior choices.</p>"
         f"<p><b>Pass criteria.</b> Recovered <code>|c| &lt; {sci(C_TOL)}</code> and "
-        f"<code>|m| &lt; {sci(M_TOL)}</code>, unchanged across the prior choices.</p></div>"
+        f"<code>|m| &lt; {sci(M_TOL)}</code>, flat across the priors. A red here means the fix regressed.</p></div>"
     )
     verdict = verdict_row(
         label, colour, "shear robust to psf_fit_prior",
@@ -428,12 +449,15 @@ def render_psf_prior(d: dict, b64: str | None, render_ts: str) -> tuple[str, str
         f"PSF fit e1 swings {e1_gal:.4f} &rarr; {e1_none:.4f}; shear does not",
     )
     sec = panel(
-        "t1-psf", "&sect; Tier 1 &mdash; psf_fit_prior",
-        _src("https://github.com/CosmoStat/shapepipe/issues/749", "shapepipe#749")
+        "t1-psf", "&sect; Tier 1 &mdash; psf weight-map fix guard",
+        _src("https://github.com/CosmoStat/shapepipe/pull/779", "shapepipe#779")
+        + _src("https://github.com/CosmoStat/shapepipe/issues/749", "shapepipe#749")
         + _src(f"{REPO_BLOB}/tests/science/test_star_response.py", "test_star_response.py"),
-        "in-memory", "Does the PSF-fit prior bias the recovered shear?", spec, fig, verdict,
+        "in-memory", "PSF weight-map fix guard (#749/#779).", spec, fig, verdict,
+        badge_label=label, badge_colour=colour,
+        summary_val=f"|c| = {sci(abs(c))} &middot; |m| = {sci(abs(m))}",
     )
-    return sec, strip_chip("t1-psf", "psf-prior", label, colour)
+    return sec, strip_chip("t1-psf", "psf-fix", label, colour)
 
 
 def _grid_verdict(r1_mean: float, tol: float) -> tuple[str, str]:
@@ -516,6 +540,9 @@ def render_grid(arms: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
         _src(f"{REPO_BLOB}/tests/cluster/test_star_shear_response.py", "test_star_shear_response.py")
         + _src(f"{REPO_BLOB}/tests/helpers/star_response.py", "star_response.py"),
         "SKiLLS", "Star metacal shear response on the SKiLLS grid.", spec, fig, verdict, note,
+        badge_label=label, badge_colour=colour,
+        summary_val=f"&langle;R1&rangle; {signed(g_r1['mean'])} / &langle;R2&rangle; {signed(g_r2['mean'])}",
+        force_open=True,
     )
     return sec, strip_chip("t2-grid", "star-grid R", label, colour)
 
@@ -546,6 +573,7 @@ def render_magprofile(d: dict, b64: str | None, render_ts: str) -> tuple[str, st
     sec = panel(
         "t2-magprofile", "&sect; Tier 2 &mdash; star response vs magnitude", "",
         "SKiLLS", "Star shear response as a function of magnitude.", spec, fig,
+        summary_val="inspection panel &mdash; no verdict", force_open=True,
     )
     return sec, ""
 
@@ -593,6 +621,9 @@ def render_galaxy_question(d: dict, b64: str | None, render_ts: str) -> tuple[st
     sec = panel(
         "t2-galaxy", "&sect; Tier 2 &mdash; galaxy question (S/N vs response)", "",
         "SKiLLS", "Does the bright-star response climb reach the shear sample?", spec, fig, verdict,
+        badge_label=label, badge_colour=colour,
+        summary_val=f"&langle;R1&rangle; {signed(r1)} / &langle;R2&rangle; {signed(r2)}",
+        force_open=True,
     )
     return sec, strip_chip("t2-galaxy", "galaxy R", label, colour)
 
@@ -663,24 +694,24 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
     strip_html = "".join(strip)
 
     tiers_html = ""
-    if tier1:
-        tiers_html += f"""\
-  <div class="tier">
-    <div class="tier-mark">&sect; Tier 1</div>
-    <h2>CI tripwires.</h2>
-    <p class="tier-scope">Fast in-memory sims that run on every commit: a single injected shear through the controlled <code>make_data / do_ngmix_metacal</code> path. Algorithmic checks, no image simulation.</p>
-  </div>
-{chr(10).join(tier1)}
-"""
     if tier2:
         tiers_html += f"""\
   <div class="tier">
     <div class="tier-mark">&sect; Tier 2</div>
     <h2>Vetted image-sim panels.</h2>
-    <p class="tier-scope">Metacal behaviour on Fabian Hervas&rsquo;s SKiLLS 1z2z star grid &mdash; realistic images with a fake PSF injected mid-chain, only the ngmix stage re-run.</p>
+    <p class="tier-scope">Metacal behaviour on Fabian Hervas&rsquo;s SKiLLS 1z2z star grid &mdash; realistic images with a fake PSF injected mid-chain, only the ngmix stage re-run. These are what you come to inspect; panels open by default.</p>
   </div>
 {testdata_html}
 {chr(10).join(tier2)}
+"""
+    if tier1:
+        tiers_html += f"""\
+  <div class="tier">
+    <div class="tier-mark">&sect; Tier 1</div>
+    <h2>CI tripwires.</h2>
+    <p class="tier-scope">Fast in-memory sims that run on every commit: a single injected shear through the controlled <code>make_data / do_ngmix_metacal</code> path. Algorithmic checks, no image simulation &mdash; collapsed to a one-line row while green, expanded on any red.</p>
+  </div>
+{chr(10).join(tier1)}
 """
 
     return f"""<!doctype html>
@@ -705,11 +736,12 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
 
   <h1>ShapePipe &mdash; shape-measurement status.</h1>
   <p class="lede">A live, auto-generated status page for the ngmix metacal shape
-  measurement, organised by <b>tier of check</b>: fast CI tripwires that gate
-  every commit (Tier&nbsp;1), then vetted image-sim panels on the SKiLLS star
-  grid (Tier&nbsp;2). Real-data checks on UNIONS catalogues are coming. Every
-  number is read straight from a results JSON and shown as a plot with its
-  provenance; the page re-renders on each run.</p>
+  measurement, organised by <b>tier of check</b>: the vetted image-sim panels on
+  the SKiLLS star grid come first (Tier&nbsp;2, open for inspection), then the
+  fast CI tripwires that gate every commit (Tier&nbsp;1, collapsed while green).
+  Real-data checks on UNIONS catalogues are coming. Every number is read straight
+  from a results JSON and shown as a plot with its provenance; the page
+  re-renders on each run.</p>
 
   <div class="disclaimer">
     <b>&#9888; Preliminary</b>
