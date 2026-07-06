@@ -776,9 +776,10 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
 </main>
 <script>
   // Auto-open a collapsed <details> when its anchor is targeted from the verdict
-  // strip (on load and on hashchange), walking up so an inner-id target still opens.
-  function openTarget(){{var el=document.getElementById((location.hash||"").slice(1));while(el){{if(el.tagName==="DETAILS"){{el.open=true;}}el=el.parentElement;}}}}
-  addEventListener("DOMContentLoaded",openTarget);addEventListener("hashchange",openTarget);
+  // strip (on load and on hashchange).
+  function openTarget(){{var el=location.hash&&document.querySelector(location.hash);
+  if(el){{var d=el.closest("details")||el.querySelector("details");if(d)d.open=true;}}}}
+  addEventListener("hashchange",openTarget);openTarget();
 </script>
 </body>
 </html>"""
