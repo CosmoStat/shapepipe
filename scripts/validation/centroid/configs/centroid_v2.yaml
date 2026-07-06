@@ -1,0 +1,5 @@
+conda_env: sp_centroid_v2
+description: ngmix_v2.0 branch + ngmix v2.4+ (GalsimFitter, new prior API)
+name: centroid_v2
+shapepipe_branch: ngmix_v2.0
+test_script: scripts/validation/centroid/centroid_bias_v2.py

@@ -2,9 +2,12 @@
 
 Module runner for ``merge_headers``.
 
-:Author: Axel Guinot
+:Authors: Axel Guinot, Martin Kilbinger
 
 """
+
+import os
+import re
 
 from shapepipe.modules.merge_headers_package.merge_headers import merge_headers
 from shapepipe.modules.module_decorator import module_runner
@@ -48,7 +51,11 @@ def merge_headers_runner(
             ".npy",
             w_log=w_log,
         )
-        merge_headers(headers_file_list, output_dir)
+        # Extract tile number from the exp_numbers filename, e.g.
+        # "exp_numbers-284.272-1.000.txt" -> "-284.272-1.000"
+        base = os.path.splitext(os.path.basename(exp_numbers_file))[0]
+        tile_number = re.sub(r"^exp_numbers", "", base)
+        merge_headers(headers_file_list, output_dir, tile_number)
         w_log.info(f"Merged {len(headers_file_list)} exposure header files")
     else:
         # Per-exposure mode: input_file_list already contains the header files.

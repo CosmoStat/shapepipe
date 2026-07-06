@@ -6,22 +6,26 @@ the bundled example pipeline.
 
 ## The automated test suite
 
-The test suite runs with [pytest](https://docs.pytest.org/) and lives in two
-trees:
+The test suite runs with [pytest](https://docs.pytest.org/) under a single
+discovery root, `tests/`, with one tier per subdirectory:
 
-- `tests/unit/` — **structural** tests, one parametrized case per file: every
-  shell script parses (`bash -n`), every example config parses, every
-  `shapepipe.*` submodule imports, every `[project.scripts]` entry handles
-  `-h`, and every `*_runner.py` carries its `@module_runner` metadata. Cheap,
-  broad, and good at catching the dumb-but-real regressions (a syntax error, a
-  broken import, a renamed entry point).
-- `src/shapepipe/tests/` — **unit, property-based, and integration** tests for
+- `tests/module/` — **unit, property-based, and integration** tests for
   the analytic surface: pure helpers and geometry (coordinate round-trips,
   postage-stamp shapes, the MegaCam CCD flip), tested both by example and with
   [Hypothesis](https://hypothesis.readthedocs.io/) property tests where a
   function has a clear invariant. Integration tests that need the astromatic
   binaries (Source Extractor, PSFEx) build synthetic FITS on the fly rather
   than requiring survey data.
+- `tests/unit/` — **structural** tests, one parametrized case per file: every
+  shell script parses (`bash -n`), every example config parses, every
+  `shapepipe.*` submodule imports, every `[project.scripts]` entry handles
+  `-h`, and every `*_runner.py` carries its `@module_runner` metadata. Cheap,
+  broad, and good at catching the dumb-but-real regressions (a syntax error, a
+  broken import, a renamed entry point).
+- `tests/science/` — **fast scientific guardrails** (controlled simulations
+  with a known answer) and `tests/cluster/` — **candide guardrails** that read
+  real on-disk catalogs; the latter are marked `candide` and auto-skip off the
+  cluster. See `tests/README.md` for the full layout and markers.
 
 **CI is the single gate.** On every pull request and every push to `develop`,
 `.github/workflows/deploy-image.yml` builds the dev image and runs the suite

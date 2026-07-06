@@ -3,7 +3,7 @@
 ## Paths to executables
 [PROGRAM_PATH]
 
-WW_PATH = ww 
+WW_PATH = weightwatcher 
 WW_CONFIG_FILE = $SP_CONFIG/mask_default/default.ww
 
 # Indicate cds client executable if no external star catalogue is available

@@ -9,6 +9,7 @@ Module runner for ``vignetmaker``.
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.vignetmaker_package import vignetmaker as vm
 
+from shapepipe.pipeline.exp_utils import get_exp_output_dirs
 from shapepipe.pipeline.run_log import get_last_dir, get_all_dirs
 
 
@@ -104,29 +105,60 @@ def vignetmaker_runner(
         elif mode == "MULTI-EPOCH":
             # Multi-epoch exposures
 
-            # Get input image directory and file patterns
-            modules = config.getlist(module_config_sec, "ME_IMAGE_DIR")
-            image_dirs = []
-            for module in modules:
-                module_name = module.split(":")[-1]
-                if "last" in module:
-                    dirs = [get_last_dir(run_dirs["run_log"], module_name)]
-                elif "all" in module:
-                    dirs = get_all_dirs(run_dirs["run_log"], module_name)
-                else:
+            if config.has_option(module_config_sec, "ME_IMAGE_EXP_DIR"):
+                # v2.0: locate runner output dirs via the $SP_EXP tree
+                exp_base_dir = config.getexpanded(
+                    module_config_sec, "ME_IMAGE_EXP_DIR"
+                )
+                if len(input_file_list) < 3:
                     raise ValueError(
-                        "Expected qualifier 'last:' or 'all' before module"
-                        + f" '{module}' in config entry 'ME_IMAGE_DIR'"
+                        "ME_IMAGE_EXP_DIR requires the exposure-numbers"
+                        + " file as a third input; add 'exp_numbers' to"
+                        + " FILE_PATTERN and FILE_EXT in the"
+                        + f" [{module_config_sec}] config section."
                     )
-                image_dirs.append(dirs)
+                exp_numbers_file = input_file_list[2]
+                exp_runner_names = config.getlist(
+                    module_config_sec, "ME_IMAGE_EXP_RUNNERS"
+                )
+                image_dirs = []
+                for runner_name in exp_runner_names:
+                    dirs = get_exp_output_dirs(
+                        exp_base_dir, exp_numbers_file, runner_name, w_log
+                    )
+                    image_dirs.append(dirs)
+            else:
+                # v1: run-log based lookup via symlinked exposure run dirs
+                modules = config.getlist(module_config_sec, "ME_IMAGE_DIR")
+                image_dirs = []
+                for module in modules:
+                    module_name = module.split(":")[-1]
+                    if "last" in module:
+                        dirs = [get_last_dir(run_dirs["run_log"], module_name)]
+                    elif "all" in module:
+                        dirs = get_all_dirs(run_dirs["run_log"], module_name)
+                    else:
+                        raise ValueError(
+                            "Expected qualifier 'last:' or 'all' before module"
+                            + f" '{module}' in config entry 'ME_IMAGE_DIR'"
+                        )
+                    image_dirs.append(dirs)
 
             image_pattern = config.getlist(
                 module_config_sec,
                 "ME_IMAGE_PATTERN",
             )
 
-            # Get WCS log file path
-            f_wcs_path = config.getexpanded(module_config_sec, "ME_LOG_WCS")
+            # Get WCS log file path. The WCS log is a positional input (via
+            # FILE_PATTERN) in MULTI-EPOCH mode, not a decorator default.
+            if len(input_file_list) < 2:
+                raise ValueError(
+                    "MULTI-EPOCH mode requires the WCS log file as a second"
+                    + " input; add 'log_exp_headers' to FILE_PATTERN and"
+                    + f" FILE_EXT in the [{module_config_sec}] config"
+                    + " section."
+                )
+            f_wcs_path = input_file_list[1]
 
             # Process inputs
             vm_inst.process_me(image_dirs, image_pattern, f_wcs_path, radius)

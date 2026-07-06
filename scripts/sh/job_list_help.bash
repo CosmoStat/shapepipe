@@ -14,5 +14,7 @@ JOB_LIST_HELP="\
    \t  64: process stars on exposures, PSF model (offline)\n\
    \t 128: merge exposure WCS headers into tile-level sqlite log\n\
    \t 256: object selection on tiles (online if UNIONS catalogue or tar_cat_for_mask=onthefly)\n\
-   \t 512: create final catalogue\n\
-   \t1024: process tiles (PSF interp, vignet, shape measurement)\n"
+   \t 512: postage stamp creation\n\
+   \t1024: multi-epoch shape measurement\n\
+   \t2048: create final catalogue\n\
+"

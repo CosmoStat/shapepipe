@@ -90,9 +90,16 @@ def mccd_interp_runner(
         module = config.getexpanded(module_config_sec, "PSF_MODEL_DIR")
         psf_model_dir = get_last_dir(run_dirs["run_log"], module)
         psf_model_pattern = config.get(module_config_sec, "PSF_MODEL_PATTERN")
-        f_wcs_path = config.getexpanded(module_config_sec, "ME_LOG_WCS")
-
         galcat_path = input_file_list[0]
+        # The WCS log is supplied as a positional input (via FILE_PATTERN)
+        # in MULTI-EPOCH mode, not by the decorator default.
+        if len(input_file_list) < 2:
+            raise ValueError(
+                "MULTI-EPOCH mode requires the WCS log file as a second"
+                + " input; add 'log_exp_headers' to FILE_PATTERN and"
+                + f" FILE_EXT in the [{module_config_sec}] config section."
+            )
+        f_wcs_path = input_file_list[1]
 
         inst = mccd_interp.MCCDinterpolator(
             None,

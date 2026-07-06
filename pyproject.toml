@@ -8,7 +8,8 @@ authors = [
     { name = "Axel Guinot", email = "axel.guinot@cea.fr" },
     { name = "Martin Kilbinger", email = "martin.kilbinger@cea.fr" }
 ]
-license = { "file" = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 # Abstract runtime constraints. Exact versions live in `uv.lock` — pyproject
 # is the single source of truth for *what* shapepipe needs, the lockfile for
@@ -19,7 +20,7 @@ dependencies = [
     "astropy>=7.0",          # major 6 → 7
     "astroquery",
     "canfar",
-    "cs_util>=0.1.9",
+    "cs_util>=0.2.1",
     "galsim>=2.8",
     "h5py",
     "joblib>=1.4",
@@ -41,9 +42,7 @@ dependencies = [
     "termcolor",
     "tqdm>=4.68.1",
     "vos>=3.6",
-    # ngmix is pinned to Axel's stable_version branch until upstream ngmix
-    # absorbs the fixes — tracked separately, do not modernize this line.
-    "ngmix @ git+https://github.com/aguinot/ngmix@stable_version",
+    "ngmix>=2.4",
 ]
 
 
@@ -79,12 +78,51 @@ fitsio = ["fitsio"]
 dev = ["shapepipe[doc,jupyter,lint,release,test,fitsio]"]
 
 [project.scripts]
-shapepipe_run = "shapepipe.shapepipe_run:main"
-summary_run = "shapepipe.summary_run:main"
-canfar_submit_job = "shapepipe.canfar_run:run_job"
-canfar_monitor = "shapepipe.canfar_run:run_log"
-canfar_monitor_log = "shapepipe.canfar_run:run_monitor_log"
+shapepipe_run       = "shapepipe.shapepipe_run:main"
+summary_run         = "shapepipe.summary_run:main"
+canfar_submit_job   = "shapepipe.canfar_run:run_job"
+canfar_monitor      = "shapepipe.canfar_run:run_log"
+canfar_monitor_log  = "shapepipe.canfar_run:run_monitor_log"
+
+[tool.uv]
+# shapepipe targets Linux only; skip Windows/macOS wheel resolution
+environments = ["sys_platform == 'linux'"]
+
+[tool.uv.sources]
+ngmix = { git = "https://github.com/esheldon/ngmix", tag = "v2.4.0" }
+# Track cs_util's develop branch (a git ref, not a pinned release) so new
+# cs_util.size / cs_util.shape helpers are available without shipping a release
+# and rebuilding the image each time. shapepipe's column grammar sources size
+# (T = 2*sigma^2) and ellipticity conversions from cs_util.
+cs_util = { git = "https://github.com/CosmoStat/cs_util", branch = "develop" }
+
+[build-system]
+# Declaring a build backend makes shapepipe an installed package (not a uv
+# "virtual" project), so `uv sync` / `pip install -e .` put it on the path
+# rather than only its dependencies.
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+script-files = [
+    "scripts/python/update_runs_log_file.py",
+    "scripts/sh/init_run_v2.0.sh",
+    "scripts/sh/run_job_sp_canfar_v2.0.bash",
+    "scripts/sh/job_sp_canfar_v2.0.bash",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "--verbose --cov=shapepipe --cov-report=term-missing"
-testpaths = ["tests", "src/shapepipe/tests"]
+# One discovery root: everything lives under `tests/`. Tiers are
+# `module/` (per-module unit tests, import package internals directly),
+# `unit/` (structural), `science/` (fast guardrails), `cluster/` (candide,
+# marked `candide`+`slow`), with shared library code in `helpers/`. See
+# tests/README.md.
+addopts = "--verbose --strict-markers --cov=shapepipe --cov-report=term-missing"
+testpaths = ["tests"]
+markers = [
+    "slow: heavy compute (minutes); excluded from the fast inner loop.",
+    "candide: needs the candide cluster and/or its real data; auto-skipped elsewhere.",
+]
