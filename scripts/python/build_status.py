@@ -84,6 +84,7 @@ FIGURE_SLOTS = {
     "grid_forest": "star_response_forest.png",
     "grid_ab": "star_response_ab_tail.png",
     "grid_magprofile": "star_response_magprofile.png",
+    "galaxy_question": "galaxy_question_s2n.png",
 }
 
 
@@ -573,6 +574,55 @@ def render_grid(arms: dict, figs: dict, render_ts: str, magprof: dict | None = N
     return section, chip
 
 
+def render_galaxy_question(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
+    """Level 2 galaxy-response section: does the star R climb reach the shear
+    sample? Returns (section_html, ladder_chip_html).
+
+    The verdict is computed on-page from the science-like resolved-galaxy
+    aggregate against the recorded symmetry tolerance: PASS when <R1> and <R2>
+    agree (symmetric, not the star 2:1 split) AND the mean sits below 1 (away
+    from the point-source singularity where metacal's Jacobian diverges).
+    """
+    heads = {h["label"]: h for h in d["headline"]}
+    star_bright = next(h for k, h in heads.items() if k.startswith("stars bright"))
+    tol = d["tolerance_symmetry"]
+    # Verdict on the highest-S/N resolved-galaxy bin (res>0.4) — the plotted curve,
+    # and the exact locus where the star point-source climb appears (high S/N, where
+    # photon noise no longer masks the deterministic systematic). Both checks read
+    # straight off that bin: symmetry (R1~R2, not the star 2:1 split) and sub-unity
+    # (below the <R>=1 blow-up). A whole-sample mean is tail-driven and averages over
+    # S/N, so it would miss a high-S/N-only climb; the top bin will not.
+    top = max(d["gal_resolved_vs_s2n"], key=lambda b: b["mid"])
+    r1, r2 = top["R1_mean"], top["R2_mean"]
+    d_sym = abs(r1 - r2)
+    ok = d_sym < tol and max(r1, r2) < 1.0
+    colour, label = (TEAL, "PASS") if ok else (CINNABAR, "FAIL")
+
+    fig = figure_block(
+        b64, "mean metacal response vs S/N, stars vs resolved galaxies",
+        "Mean metacal response <code>&langle;R&rangle;</code> vs S/N on the SKiLLS sims. "
+        "<span style='color:#BC4538'><b>Point-source stars</b></span> (<code>res&lt;0.06</code>) "
+        "climb past <code>&langle;R&rangle;=1</code> toward high S/N and "
+        "split <code>R1&thinsp;&gg;&thinsp;R2</code>; "
+        "<span style='color:#3F8278'><b>resolved galaxies</b></span> (<code>res&gt;0.4</code>) "
+        "saturate near <code>&langle;R&rangle;&asymp;0.85</code> with <code>R1&thinsp;&asymp;&thinsp;R2</code> paired.",
+        "run_galaxy_question.py", render_ts,
+        fig_tool="plot_galaxy_question.py",
+    )
+    section = f"""\
+  <section id="l2gal">
+    <div class="section-mark">
+      <span>&sect; Level 2 &mdash; galaxy shear response vs S/N</span>
+    </div>
+    <h2>Does the bright-star response climb reach the shear sample?</h2>
+    <div class="spec"><span class="mark">&sect; the test</span><p><b>What it is.</b> The per-object metacal response <code>R = dg/d&gamma;</code> measured on the <b>same SKiLLS sims</b> for point-source stars (<code>res &lt; 0.06</code>) and resolved galaxies (<code>res &gt; 0.4</code>), binned in S/N. Resolution <code>res = T/(T+T<sub>psf</sub>)</code>: 0 at the point-source limit, 1 fully resolved.</p><p><b>What it measures.</b> Whether the resolved galaxies that carry the cosmic-shear signal inherit the star point-source-limit response climb, or sit in the well-behaved regime.</p><p><b>Pass criteria.</b> At the highest S/N &mdash; the saturated regime where the star climb appears &mdash; resolved-galaxy <code>&langle;R1&rangle; &asymp; &langle;R2&rangle;</code> (symmetric, <code>|&Delta;| &lt; {tol:g}</code>) and <code>&langle;R&rangle; &lt; 1</code> (below the <code>&langle;R&rangle;=1</code> point-source singularity).</p></div>
+    {fig}
+    <div class="verdict">{badge(label, colour)}<span class="vlabel">resolved-galaxy response symmetric &amp; sub-unity</span><span class="vval">&langle;R1&rangle; {signed(r1)} / &langle;R2&rangle; {signed(r2)}</span><span class="vn">highest-S/N resolved bin (res&gt;0.4, S/N&gt;{top['lo']:.0f}, {top['n']:,} objects) &middot; bright stars split {signed(star_bright['R1_mean'])} / {signed(star_bright['R2_mean'])}</span></div>
+  </section>"""
+    chip = f'<span class="lchip">galaxy R {badge(label, colour)}</span>'
+    return section, chip
+
+
 # --------------------------------------------------------------------------- #
 # Page assembly
 # --------------------------------------------------------------------------- #
@@ -614,6 +664,14 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
     if "wcs" in arms:
         sec, l2_chips = render_grid(arms, figs, render_ts, magprof)
         sections.append(sec)
+
+    # Level 2 companion: the galaxy question — does the star R climb reach the
+    # shear-carrying (resolved) population? Same SKiLLS sims, its own verdict.
+    galq = load(results, "galaxy_question", "galaxy_question.json")
+    if galq is not None:
+        sec, gchip = render_galaxy_question(galq, figs.get("galaxy_question"), render_ts)
+        sections.append(sec)
+        l2_chips += gchip
 
     if not sections:
         raise SystemExit(
