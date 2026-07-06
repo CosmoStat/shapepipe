@@ -1624,7 +1624,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_WW_stdout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_WW_stderr</span> <span class="o">=</span> <span class="n">execute</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Types must be in [&#39;HALO&#39;,&#39;SPIKE&#39;,&#39;ALL&#39;]&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Types must be in [&#39;HALO&#39;,&#39;SPIKE&#39;,&#39;ALL&#39;]&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_WW_stderr</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rm_reg_stderr</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_err</span> <span class="o">=</span> <span class="kc">True</span></div>
