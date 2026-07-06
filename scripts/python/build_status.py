@@ -415,7 +415,7 @@ def render_mbias(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
 
 
 def render_psf_prior(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
-    """Tier-1 regression guard for the #779 PSF weight-map fix (closes #749)."""
+    """Tier-1 PSF-fit prior-neutrality of the recovered shear (#749/#779)."""
     v = d["psf_fit_prior_verdict"]
     e1_gal = v["psf_fit_e1_galaxy"]
     e1_none = v["psf_fit_e1_none"]
@@ -426,38 +426,42 @@ def render_psf_prior(d: dict, b64: str | None, render_ts: str) -> tuple[str, str
     robust = abs(c) < C_TOL and abs(m) < M_TOL
     colour, label = (TEAL, "PASS") if robust else (CINNABAR, "FAIL")
     fig = figure_block(
-        b64, "psf_fit_prior sweep",
-        "<b>Left:</b> the fitted PSF ellipticity still tracks the prior &mdash; "
-        "<code>galaxy</code> and <code>psf</code> round it to zero, <code>none</code> recovers the "
-        "injected <code>0.05</code>. <b>Right:</b> with the #779 weight-map fix in place, the recovered "
-        "shear <code>m</code> is flat across all three priors.",
+        b64, "PSF-fit prior arms vs recovered shear",
+        "<b>Left:</b> the fitted PSF ellipticity depends on the PSF-fit prior &mdash; the prior-dominated arm "
+        f"is crushed toward round (<code>e1 &rarr; {e1_gal:.3f}</code>), the prior-free arm recovers truth "
+        f"(<code>e1 &rarr; {e1_none:.3f}</code> &asymp; injected <code>{d['psf_e1_true']}</code>). "
+        "<b>Right:</b> the recovered shear <code>m</code> is identical across the arms &mdash; metacal "
+        "deconvolves by the PSF image, not by any fitted model.",
         "run_star_response.py", render_ts,
     )
     spec = (
-        '<div class="spec"><span class="mark">&sect; the guard</span>'
-        "<p><b>What it guards.</b> The #779 fix &mdash; the PSF observation now carries a finite weight map, "
-        "so the PSF fit is not prior-dominated. This test is its regression guard.</p>"
-        f"<p><b>What it is.</b> An in-memory sim injecting a known elliptical PSF "
-        f"(<code>e1<sub>true</sub> = {d['psf_e1_true']}</code>) and sweeping <code>psf_fit_prior</code> over "
-        "<code>galaxy / none / psf</code>, asserting the recovered shear is unchanged across the prior choices.</p>"
-        f"<p><b>Pass criteria.</b> Recovered <code>|c| &lt; {sci(C_TOL)}</code> and "
-        f"<code>|m| &lt; {sci(M_TOL)}</code>, flat across the priors. A red here means the fix regressed.</p></div>"
+        '<div class="spec"><span class="mark">&sect; the test</span>'
+        "<p><b>What it is.</b> The galaxy ellipticity prior (<code>GPriorBA 0.4</code>, peak at round) is passed "
+        "to the PSF-stamp fitter; #779&rsquo;s finite PSF weight map keeps that fit likelihood-dominated. Probe: "
+        f"fit the elliptical PSF (<code>e1 = {d['psf_e1_true']}</code>) with prior + weak weight "
+        f"(prior-dominated arm, <code>e1 &rarr; {e1_gal:.3f}</code>) vs prior-free "
+        f"(<code>e1 &rarr; {e1_none:.3f}</code>).</p>"
+        "<p><b>What it measures.</b> Whether the recovered shear (c, m) is sensitive to the PSF-fit "
+        "configuration.</p>"
+        f"<p><b>Pass criteria.</b> Recovered <code>c</code>, <code>m</code> identical in both arms "
+        f"(<code>|c| &lt; {sci(C_TOL)}</code>, <code>|m| &lt; {sci(M_TOL)}</code>) &mdash; metacal deconvolves "
+        "by the PSF image, not a fitted model. Red = shear has become sensitive to the PSF-fit configuration.</p></div>"
     )
     verdict = verdict_row(
-        label, colour, "shear robust to psf_fit_prior",
+        label, colour, "shear neutral to PSF-fit prior",
         f"|c| = {sci(abs(c))} &middot; |m| = {sci(abs(m))}",
-        f"PSF fit e1 swings {e1_gal:.4f} &rarr; {e1_none:.4f}; shear does not",
+        f"PSF fit e1 spans {e1_gal:.4f} &rarr; {e1_none:.4f}; shear does not move",
     )
     sec = panel(
-        "t1-psf", "&sect; Tier 1 &mdash; psf weight-map fix guard",
+        "t1-psf", "&sect; Tier 1 &mdash; PSF-fit prior neutrality",
         _src("https://github.com/CosmoStat/shapepipe/pull/779", "shapepipe#779")
         + _src("https://github.com/CosmoStat/shapepipe/issues/749", "shapepipe#749")
         + _src(f"{REPO_BLOB}/tests/science/test_star_response.py", "test_star_response.py"),
-        "in-memory", "PSF weight-map fix guard (#749/#779).", spec, fig, verdict,
+        "in-memory", "PSF-fit prior neutrality (#749/#779).", spec, fig, verdict,
         badge_label=label, badge_colour=colour,
         summary_val=f"|c| = {sci(abs(c))} &middot; |m| = {sci(abs(m))}",
     )
-    return sec, strip_chip("t1-psf", "psf-fix", label, colour)
+    return sec, strip_chip("t1-psf", "psf-prior", label, colour)
 
 
 def _grid_verdict(r1_mean: float, tol: float) -> tuple[str, str]:
