@@ -127,3 +127,53 @@ def emit_star_response_artifacts(artifacts_dir, summary, R1=None, R2=None,
     )
 
     return {"json": str(json_path), "md": str(md_path), "png": plot_result}
+
+
+def emit_mbias_artifacts(artifacts_dir, summary, name="mbias"):
+    """Write the multiplicative-bias guardrail status (JSON + markdown).
+
+    The sibling of :func:`emit_star_response_artifacts` for the Level-1a m-bias
+    test. The metric is a single scalar per run (no per-object array), so this
+    emits the scalar status only — the status-board figure for this rung is drawn
+    separately from the recorded values. Same seam: files land in
+    ``tests/_artifacts/`` on pass *and* fail, and a later Pages step publishes.
+
+    Parameters
+    ----------
+    artifacts_dir : Path
+        Target directory (typically ``tests/_artifacts/``).
+    summary : dict
+        Must carry ``injected_g1``, ``recovered_g1``, ``metacal_response_R11``,
+        ``multiplicative_bias_m``, ``tolerance``, and ``status``
+        (``"PASS"``/``"FAIL"``).
+    name : str
+        Artifact basename.
+
+    Returns
+    -------
+    dict
+        Paths of the artifacts written (``json``, ``md``).
+    """
+    artifacts_dir = Path(artifacts_dir)
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    summary = {**summary, "generated_utc": datetime.now(timezone.utc).isoformat()}
+
+    json_path = artifacts_dir / f"{name}.json"
+    json_path.write_text(json.dumps(summary, indent=2, default=str) + "\n")
+
+    md_path = artifacts_dir / f"{name}.md"
+    md_path.write_text(
+        f"# Multiplicative-bias guardrail — {summary['status']}\n\n"
+        f"- generated: `{summary['generated_utc']}`\n"
+        f"- injected g1: {summary['injected_g1']}\n"
+        f"- metacal response R11: {summary['metacal_response_R11']:.6f}\n\n"
+        f"| metric | value | tolerance |\n"
+        f"|--------|-------|-----------|\n"
+        f"| `m` | {summary['multiplicative_bias_m']:+.6f} | "
+        f"|m| < {summary['tolerance']} |\n\n"
+        f"Ideal-limit multiplicative bias `m = g_rec/g_inj − 1` after the metacal "
+        f"response correction. Recovered g1 = {summary['recovered_g1']:.6f} vs "
+        f"injected {summary['injected_g1']}.\n"
+    )
+
+    return {"json": str(json_path), "md": str(md_path)}
