@@ -83,6 +83,7 @@ FIGURE_SLOTS = {
     "grid_hist": "star_response_hist.png",
     "grid_forest": "star_response_forest.png",
     "grid_ab": "star_response_ab_tail.png",
+    "grid_magprofile": "star_response_magprofile.png",
 }
 
 
@@ -125,8 +126,14 @@ def badge(label: str, colour: str) -> str:
     return f'<span class="badge" style="background:{bg}">{label}</span>'
 
 
-def figure_block(b64: str | None, alt: str, caption: str, data_prov: str, render_ts: str) -> str:
-    """A ``<figure>`` with an inlined PNG, or a pending placeholder."""
+def figure_block(b64: str | None, alt: str, caption: str, data_prov: str, render_ts: str,
+                 fig_tool: str = "build_status.py") -> str:
+    """A ``<figure>`` with an inlined PNG, or a pending placeholder.
+
+    ``fig_tool`` names the script that drew the PNG (default ``build_status.py``);
+    figures produced by a dedicated plotter (e.g. ``plot_mag_profile.py``) pass
+    their own so the provenance line credits the tool that actually rendered them.
+    """
     if b64 is None:
         body = (
             '<div class="plot" style="display:flex;align-items:center;'
@@ -138,7 +145,7 @@ def figure_block(b64: str | None, alt: str, caption: str, data_prov: str, render
     prov = (
         '<div class="prov">'
         f'<span class="pv"><span class="pk">data</span> {data_prov}</span>'
-        f'<span class="pv"><span class="pk">figure</span> build_status.py <span class="pt">{render_ts}</span></span>'
+        f'<span class="pv"><span class="pk">figure</span> {fig_tool} <span class="pt">{render_ts}</span></span>'
         "</div>"
     )
     return f"<figure>{body}<figcaption>{caption}</figcaption>{prov}</figure>"
@@ -389,7 +396,7 @@ def _grid_verdict(r1_mean: float, tol: float) -> tuple[str, str]:
     return (TEAL, "PASS") if abs(r1_mean) <= tol else (OCHRE, "MARGINAL")
 
 
-def render_grid(arms: dict, figs: dict, render_ts: str) -> tuple[str, str]:
+def render_grid(arms: dict, figs: dict, render_ts: str, magprof: dict | None = None) -> tuple[str, str]:
     """Level 2 SKiLLS-grid section with the fitgauss/gauss A/B.
 
     ``arms`` maps arm key -> JSON dict. The fitgauss-wcs arm is the baseline;
@@ -502,6 +509,33 @@ def render_grid(arms: dict, figs: dict, render_ts: str) -> tuple[str, str]:
         )
         fig_ab = "\n    " + figure_block(figs.get("grid_ab"), "fitgauss vs gauss R1 tail comparison", ab_cap, "run_star_response_grid.py", render_ts)
 
+    # Fabian's star-response-vs-magnitude profile: the point-source floor named in
+    # the A/B callout, resolved as R1(mag) with no magnitude cut. Numbers (n_obj,
+    # n_tiles, tolerance, the science-window mean) are read from its JSON so the
+    # caption tracks the data; the PNG is drawn by plot_mag_profile.py.
+    fig_mag = ""
+    if magprof is not None:
+        sci_r1 = magprof["windows"]["science_20_26"]["R1_mean"]
+        mag_cap = (
+            f"Shear response <code>R1</code> vs magnitude on the same <b>fitgauss&middot;wcs</b> arm "
+            f"({magprof['n_obj']:,} stars, {magprof['n_tiles']} tiles), no mag cut &mdash; the "
+            "<b>point-source floor named in the A/B callout, made visible</b>. Across the "
+            "<span style='color:#C49333'><b>20 &lt; mag &lt; 26 science window</b></span> the binned "
+            f"mean <code>&langle;R1&rangle; {signed(sci_r1)}</code> holds near <b>0</b> inside the "
+            f"<span style='color:#3F8278'><b>&plusmn;{magprof['tolerance']:g} band</b></span>; toward the "
+            "bright end it climbs to <code>&asymp;2</code> as stars approach the <b>point-source limit</b>, "
+            "where metacal&rsquo;s Jacobian <code>dg/d&gamma;</code> diverges as the pre-PSF size "
+            "<code>T&rarr;0</code>. The climb is a point-source singularity, <b>not a shear bias</b>: "
+            "resolved galaxies occupy the flat, symmetric-response regime, and a resolution cut excludes "
+            "exactly these bright point sources from the shear sample."
+        )
+        fig_mag = "\n    " + figure_block(
+            figs.get("grid_magprofile"),
+            "star shear-response R1 vs magnitude (bright-end point-source break)",
+            mag_cap, "run_star_response_magprofile.py", render_ts,
+            fig_tool="plot_mag_profile.py",
+        )
+
     section = f"""\
   <section id="l2">
     <div class="section-mark">
@@ -525,7 +559,7 @@ def render_grid(arms: dict, figs: dict, render_ts: str) -> tuple[str, str]:
     {fig_hist}
 
     {fig_forest}
-{abcallout}{fig_ab}
+{abcallout}{fig_ab}{fig_mag}
 
     {addbias}
 
@@ -575,9 +609,10 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
     }
     arms = {k: load(results, d, "star_response.json") for k, d in arm_dirs.items()}
     arms = {k: v for k, v in arms.items() if v is not None}
+    magprof = load(results, "star_response_magprofile", "magprofile.json")
     l2_chips = ""
     if "wcs" in arms:
-        sec, l2_chips = render_grid(arms, figs, render_ts)
+        sec, l2_chips = render_grid(arms, figs, render_ts, magprof)
         sections.append(sec)
 
     if not sections:
