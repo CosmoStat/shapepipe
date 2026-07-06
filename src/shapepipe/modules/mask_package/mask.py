@@ -1070,7 +1070,7 @@ class Mask(object):
                 self._WW_stdout, self._WW_stderr = execute(cmd)
 
         else:
-            ValueError("Types must be in ['HALO','SPIKE','ALL']")
+            raise ValueError("Types must be in ['HALO','SPIKE','ALL']")
 
         if (self._WW_stderr != "") or (self._rm_reg_stderr != ""):
             self._err = True
