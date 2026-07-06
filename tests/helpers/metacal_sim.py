@@ -50,6 +50,5 @@ def recover(seed, shear, psf_shear=(0.0, 0.0), gal_hlr=0.3, psf_fwhm=0.55,
         [(res["1p"]["g"][1] - res["1m"]["g"][1]) / (2 * step),
          (res["2p"]["g"][1] - res["2m"]["g"][1]) / (2 * step)]])
     g = np.array(res["noshear"]["g"])
-    g = g[::-1]  # FAULT-INJECTION: g1<->g2 swap
     return dict(g=g, R=R, g1=g[0], g2=g[1],
                 R11=R[0, 0], R12=R[0, 1], R21=R[1, 0], R22=R[1, 1])
