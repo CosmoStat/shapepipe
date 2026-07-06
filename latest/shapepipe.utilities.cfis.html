@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="20 Jun, 2026"/>
+    <meta name="docbuild:last-update" content="06 Jul, 2026"/>
   </head>
   
   
@@ -357,6 +357,10 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.testing.html">shapepipe.testing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.testing.simulate.html">shapepipe.testing.simulate</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2 current active has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
@@ -710,7 +714,7 @@ Choose name = ‘sys.stdout’ or ‘sys.stderr’ for output on sceen.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>argv</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Command line arguments</p></li>
+<li><p><strong>argv</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Command line arguments</p></li>
 <li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Output file name (default: ‘log_&lt;command&gt;’)</p></li>
 <li><p><strong>close_no_return</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True (default), close log file. If False, keep log file open
 and return file handler</p></li>
@@ -999,7 +1003,7 @@ This is the inverse to get_tile_number_from_coord.</p>
 <dd class="field-even"><p>array of sky coordinates (pairs ra, dec)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a> of SkyCoord</p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a> of SkyCoord</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1168,8 +1172,8 @@ if input image coordinates are already set</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>images</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a><em> of </em><a class="reference internal" href="#shapepipe.utilities.cfis.image" title="shapepipe.utilities.cfis.image"><em>image</em></a>) – images</p></li>
-<li><p><strong>angles</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a><em> (</em><em>SkyCoord</em><em>, </em><em>2</em><em>)</em>) – Corner coordinates of area rectangle</p></li>
+<li><p><strong>images</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference internal" href="#shapepipe.utilities.cfis.image" title="shapepipe.utilities.cfis.image"><em>image</em></a>) – images</p></li>
+<li><p><strong>angles</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> (</em><em>SkyCoord</em><em>, </em><em>2</em><em>)</em>) – Corner coordinates of area rectangle</p></li>
 <li><p><strong>image_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – image type (‘tile’, ‘exposure’, ‘cat’, weight’)</p></li>
 <li><p><strong>outbase</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – output file name base</p></li>
 <li><p><strong>interactive</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – show plot if True</p></li>
@@ -1351,7 +1355,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 20 Jun, 2026.
+  Last updated on 06 Jul, 2026.
   <br/>
 </p>
   </div>

@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="20 Jun, 2026"/>
+    <meta name="docbuild:last-update" content="06 Jul, 2026"/>
   </head>
   
   
@@ -359,6 +359,10 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
 </ul>
 </details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.testing.html">shapepipe.testing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.testing.simulate.html">shapepipe.testing.simulate</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
@@ -531,6 +535,7 @@
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.exp_utils.get_exp_output_files"><code class="docutils literal notranslate"><span class="pre">get_exp_output_files()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.exp_utils.get_exp_output_dirs"><code class="docutils literal notranslate"><span class="pre">get_exp_output_dirs()</span></code></a></li>
 </ul>
             </nav>
         </div>
@@ -599,6 +604,39 @@ file is absent for one or more exposures.</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.pipeline.exp_utils.get_exp_output_dirs">
+<span class="sig-name descname"><span class="pre">get_exp_output_dirs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_base_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exp_numbers_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runner_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/exp_utils.html#get_exp_output_dirs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.exp_utils.get_exp_output_dirs" title="Link to this definition">#</a></dt>
+<dd><p>Return the most-recent output directory of runner_name for each exposure.</p>
+<p>For each exposure ID listed in <code class="docutils literal notranslate"><span class="pre">exp_numbers_file</span></code>, the most recent
+runner output directory is located at:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">exp_base_dir</span><span class="o">&gt;/&lt;</span><span class="n">exp_prefix</span><span class="o">&gt;/&lt;</span><span class="n">exp_base</span><span class="o">&gt;/</span><span class="n">output</span><span class="o">/</span><span class="n">run_sp_</span><span class="o">*/&lt;</span><span class="n">runner_name</span><span class="o">&gt;/</span><span class="n">output</span><span class="o">/</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exp_base_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Root directory containing all per-exposure work directories.</p></li>
+<li><p><strong>exp_numbers_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to a text file listing one exposure ID per line.</p></li>
+<li><p><strong>runner_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Module runner directory name whose output directory is needed,
+e.g. <code class="docutils literal notranslate"><span class="pre">psfex_runner</span></code>.</p></li>
+<li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a><em>, </em><em>optional</em>) – Pipeline logger.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One output directory path per exposure, in the order they appear
+in <code class="docutils literal notranslate"><span class="pre">exp_numbers_file</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.14)"><strong>FileNotFoundError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">exp_numbers_file</span></code> does not exist or a runner output directory
+is absent for one or more exposures.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -649,6 +687,7 @@ file is absent for one or more exposures.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.exp_utils.get_exp_output_files"><code class="docutils literal notranslate"><span class="pre">get_exp_output_files()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.exp_utils.get_exp_output_dirs"><code class="docutils literal notranslate"><span class="pre">get_exp_output_dirs()</span></code></a></li>
 </ul>
   </nav></div>
 
@@ -682,7 +721,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 20 Jun, 2026.
+  Last updated on 06 Jul, 2026.
   <br/>
 </p>
   </div>

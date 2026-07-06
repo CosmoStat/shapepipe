@@ -43,7 +43,6 @@
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'shapepipe.modules.ngmix_package.ngmix';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -60,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="20 Jun, 2026"/>
+    <meta name="docbuild:last-update" content="06 Jul, 2026"/>
   </head>
   
   
@@ -360,6 +359,10 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
 </ul>
 </details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.testing.html">shapepipe.testing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.testing.simulate.html">shapepipe.testing.simulate</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
@@ -531,21 +534,52 @@
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult"><code class="docutils literal notranslate"><span class="pre">MetacalResult</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult.resdict"><code class="docutils literal notranslate"><span class="pre">MetacalResult.resdict</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult.reconv"><code class="docutils literal notranslate"><span class="pre">MetacalResult.reconv</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult.orig"><code class="docutils literal notranslate"><span class="pre">MetacalResult.orig</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id0"><code class="docutils literal notranslate"><span class="pre">MetacalResult.resdict</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1"><code class="docutils literal notranslate"><span class="pre">MetacalResult.reconv</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2"><code class="docutils literal notranslate"><span class="pre">MetacalResult.orig</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._asdict"><code class="docutils literal notranslate"><span class="pre">MetacalResult._asdict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._field_defaults"><code class="docutils literal notranslate"><span class="pre">MetacalResult._field_defaults</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._fields"><code class="docutils literal notranslate"><span class="pre">MetacalResult._fields</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._make"><code class="docutils literal notranslate"><span class="pre">MetacalResult._make()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._replace"><code class="docutils literal notranslate"><span class="pre">MetacalResult._replace()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_mcal_flags"><code class="docutils literal notranslate"><span class="pre">get_mcal_flags()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">get_prior()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat"><code class="docutils literal notranslate"><span class="pre">Tile_cat</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data"><code class="docutils literal notranslate"><span class="pre">Tile_cat.get_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp"><code class="docutils literal notranslate"><span class="pre">Postage_stamp</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Vignet"><code class="docutils literal notranslate"><span class="pre">Vignet</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Vignet.close"><code class="docutils literal notranslate"><span class="pre">Vignet.close()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix"><code class="docutils literal notranslate"><span class="pre">Ngmix</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip"><code class="docutils literal notranslate"><span class="pre">Ngmix.MegaCamFlip()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_prior()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results"><code class="docutils literal notranslate"><span class="pre">Ngmix.compile_results()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_output_path"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_output_path()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_last_id"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_last_id()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.save_results"><code class="docutils literal notranslate"><span class="pre">Ngmix.save_results()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.check_key"><code class="docutils literal notranslate"><span class="pre">Ngmix.check_key()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.process"><code class="docutils literal notranslate"><span class="pre">Ngmix.process()</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_guess"><code class="docutils literal notranslate"><span class="pre">get_guess()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.make_galsimfit"><code class="docutils literal notranslate"><span class="pre">make_galsimfit()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_jacob"><code class="docutils literal notranslate"><span class="pre">get_jacob()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps"><code class="docutils literal notranslate"><span class="pre">prepare_postage_stamps()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.background_subtract"><code class="docutils literal notranslate"><span class="pre">background_subtract()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.rescale_epoch_fluxes"><code class="docutils literal notranslate"><span class="pre">rescale_epoch_fluxes()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_galsim_jacobian"><code class="docutils literal notranslate"><span class="pre">get_galsim_jacobian()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_noise"><code class="docutils literal notranslate"><span class="pre">get_noise()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix._average_psf_fits"><code class="docutils literal notranslate"><span class="pre">_average_psf_fits()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.average_original_psf"><code class="docutils literal notranslate"><span class="pre">average_original_psf()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.make_runners"><code class="docutils literal notranslate"><span class="pre">make_runners()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal"><code class="docutils literal notranslate"><span class="pre">do_ngmix_metacal()</span></code></a></li>
 </ul>
             </nav>
@@ -563,13 +597,204 @@
 <p>NGMIX.</p>
 <p>This module contains a class for ngmix shape measurement.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Author<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Axel Guinot</p>
+<dt class="field-odd">Authors<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Lucie Baumont, Axel Guinot</p>
 </dd>
 </dl>
 <dl class="py class">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.MetacalResult">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">MetacalResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resdict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">reconv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">orig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#MetacalResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.NamedTuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedTuple</span></code></a></p>
+<p>Return of <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal" title="shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal"><code class="xref py py-func docutils literal notranslate"><span class="pre">do_ngmix_metacal()</span></code></a>: the metacal fit plus both PSFs.</p>
+<p>A NamedTuple so the two PSF families are named, not positional — guarding
+against a reconv/orig transposition at call sites. Still a plain tuple, so
+<code class="docutils literal notranslate"><span class="pre">resdict,</span> <span class="pre">psf_res,</span> <span class="pre">psf_orig_res</span> <span class="pre">=</span> <span class="pre">do_ngmix_metacal(...)</span></code> keeps working.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.MetacalResult.resdict">
+<span class="sig-name descname"><span class="pre">resdict</span></span><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult.resdict" title="Link to this definition">#</a></dt>
+<dd><p>MetacalBootstrapper result dict (one entry per metacal type).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.MetacalResult.reconv">
+<span class="sig-name descname"><span class="pre">reconv</span></span><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult.reconv" title="Link to this definition">#</a></dt>
+<dd><p>Averaged metacal <em>reconvolution</em>-kernel PSF (round, enlarged):
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.MetacalResult.orig">
+<span class="sig-name descname"><span class="pre">orig</span></span><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult.orig" title="Link to this definition">#</a></dt>
+<dd><p>Averaged <em>original</em> image-PSF (psfex/mccd, its true shape and size):
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_original_psf" title="shapepipe.modules.ngmix_package.ngmix.average_original_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_original_psf()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">resdict</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span><a class="headerlink" href="#id0" title="Link to this definition">#</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">reconv</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span><a class="headerlink" href="#id1" title="Link to this definition">#</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">orig</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span><a class="headerlink" href="#id2" title="Link to this definition">#</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.MetacalResult._asdict">
+<span class="sig-name descname"><span class="pre">_asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._asdict" title="Link to this definition">#</a></dt>
+<dd><p>Return a new dict which maps field names to their values.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.MetacalResult._field_defaults">
+<span class="sig-name descname"><span class="pre">_field_defaults</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._field_defaults" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.MetacalResult._fields">
+<span class="sig-name descname"><span class="pre">_fields</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('resdict',</span> <span class="pre">'reconv',</span> <span class="pre">'orig')</span></span><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._fields" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.MetacalResult._make">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">_make</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._make" title="Link to this definition">#</a></dt>
+<dd><p>Make a new MetacalResult object from a sequence or iterable</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.MetacalResult._replace">
+<span class="sig-name descname"><span class="pre">_replace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._replace" title="Link to this definition">#</a></dt>
+<dd><p>Return a new MetacalResult object replacing specified fields with new values</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.get_mcal_flags">
+<span class="sig-name descname"><span class="pre">get_mcal_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#get_mcal_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.get_mcal_flags" title="Link to this definition">#</a></dt>
+<dd><p>Get Metacal Flags.</p>
+<p>Bitwise OR of the per-type metacal fit flags, the v1 contract for the
+downstream NGMIX_MCAL_FLAGS column: nonzero whenever any metacal
+type’s galaxy fit failed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>res</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – MetacalBootstrapper result dict with one entry per metacal type.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>OR of all per-type <code class="docutils literal notranslate"><span class="pre">flags</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.get_prior">
+<span class="sig-name descname"><span class="pre">get_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#get_prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.get_prior" title="Link to this definition">#</a></dt>
+<dd><p>Build ngmix joint prior for a 6-parameter galaxy model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pixel_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Pixel scale in arcsec (sets centroid prior width).</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random state for all priors.</p></li>
+<li><p><strong>T_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – (min, max) for flat size prior; default (-1, 1e3).</p></li>
+<li><p><strong>F_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – (min, max) for flat flux prior; default (-100, 1e9).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>ngmix.joint_prior.PriorSimpleSep</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Tile_cat">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Tile_cat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Tile_cat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Tile_cat.</p>
+<p>catalog measured on a tile</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cat_path</strong></p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data">
+<span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Tile_cat.get_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Postage_stamp">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Postage_stamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bkg_sub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">megacam_flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Postage_stamp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Galaxy Postage Stamp.</p>
+<p>Class to hold catalog of postage stamps for a single galaxy</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bkg_sub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
+<li><p><strong>megacam_flip</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
+<li><p><strong>too</strong> (<em>We probably want to put weight and flag options here</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Vignet">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Vignet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal_vignet_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_vignet_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_vignet_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_vignet_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag_vignet_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_rms_vignet_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Vignet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Vignet" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Vignet.</p>
+<p>Class to hold catalog of postage stamps</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gal_vignet_path</strong></p></li>
+<li><p><strong>bkg_vignet_path</strong></p></li>
+<li><p><strong>psf_vignet_path</strong></p></li>
+<li><p><strong>weight_vignet_path</strong></p></li>
+<li><p><strong>flag_vignet_path</strong></p></li>
+<li><p><strong>f_wcs_path</strong></p></li>
+<li><p><strong>bkg_rms_vignet_path</strong></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Vignet.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Vignet.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Vignet.close" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Ngmix">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Ngmix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_existing_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Ngmix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hsm'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Ngmix.</p>
 <p>Class to handle NGMIX shapepe measurement.</p>
@@ -583,13 +808,17 @@
 <li><p><strong>pixel_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Pixel scale in arcsec</p></li>
 <li><p><strong>f_wcs_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to merged single-exposure single-HDU headers</p></li>
 <li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a>) – Logging instance</p></li>
-<li><p><strong>check_existing_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Directory or previous run, default is <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
 <li><p><strong>save_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Save output catalogue in batches of this size; detaul is <code class="docutils literal notranslate"><span class="pre">-1</span></code> (no
 batch save)</p></li>
 <li><p><strong>id_obj_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – First galaxy ID to process, not used if the value is set to <code class="docutils literal notranslate"><span class="pre">-1</span></code>;
 the default is <code class="docutils literal notranslate"><span class="pre">-1</span></code></p></li>
 <li><p><strong>id_obj_max</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Last galaxy ID to process, not used if the value is set to <code class="docutils literal notranslate"><span class="pre">-1</span></code>;
 the default is <code class="docutils literal notranslate"><span class="pre">-1</span></code></p></li>
+<li><p><strong>centroid_source</strong> (<em>{&quot;hsm&quot;</em><em>, </em><em>&quot;wcs&quot;}</em><em>, </em><em>optional</em>) – How to place the galaxy Jacobian origin for the centroid prior. The
+default <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code> re-centers on the HSM adaptive-moment centroid
+(robust for galaxies); <code class="docutils literal notranslate"><span class="pre">&quot;wcs&quot;</span></code> uses the catalog sky position
+projected through the WCS (better for stars, whose HSM moments are
+noisy). See <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
@@ -600,12 +829,13 @@ the default is <code class="docutils literal notranslate"><span class="pre">-1</
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip">
 <span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">MegaCamFlip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vign</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ccd_nb</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix.MegaCamFlip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip" title="Link to this definition">#</a></dt>
 <dd><p>Flip for MegaCam.</p>
-<p>MegaCam has CCDs that are upside down. This function flips the
-postage stamps in these CCDs.</p>
+<p>MegaPipe has CCDs that are upside down. This function flips the
+postage stamps in these CCDs. TO DO: This will give incorrect results
+when used with THELI ccds.  Fix this.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>vign</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Array containing the postage stamp to flip</p></li>
+<li><p><strong>vign</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Array containing the postage stamp to flip</p></li>
 <li><p><strong>ccd_nb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – ID of the CCD containing the postage stamp</p></li>
 </ul>
 </dd>
@@ -613,22 +843,18 @@ postage stamps in these CCDs.</p>
 <dd class="field-even"><p>The flipped postage stamp</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior">
-<span class="sig-name descname"><span class="pre">get_prior</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix.get_prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix.get_prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior" title="Link to this definition">#</a></dt>
 <dd><p>Get Prior.</p>
-<p>Return prior for the different parameters.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Priors for the different parameters</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>ngmix.priors</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ngmix.joint_prior.PriorSimpleSep</p>
 </dd>
 </dl>
 </dd></dl>
@@ -637,19 +863,29 @@ postage stamps in these CCDs.</p>
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results">
 <span class="sig-name descname"><span class="pre">compile_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix.compile_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results" title="Link to this definition">#</a></dt>
 <dd><p>Compile Results.</p>
-<p>Prepare the results of NGMIX before saving.</p>
+<p>Prepare the results of NGMIX before saving. TO DO: add snr_r and T_r
+This needs to be updated
+:param results: Results of NGMIX metacal
+:type results: dict</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>results</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Results of NGMIX metacal</p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>Compiled results ready to be written to a file.</p>
+<p>Two PSF column families — each carrying ellipticity <em>and</em> size,
+for <em>different</em> PSFs (shapepipe#749). See the function docstrings
+for what each family IS:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">*_psf_orig</span></code> (<code class="docutils literal notranslate"><span class="pre">g1</span></code>/<code class="docutils literal notranslate"><span class="pre">g2</span></code> + <code class="docutils literal notranslate"><span class="pre">*_err</span></code>, <code class="docutils literal notranslate"><span class="pre">T</span></code>) — the original
+image PSF, fit by <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_original_psf" title="shapepipe.modules.ngmix_package.ngmix.average_original_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_original_psf()</span></code></a>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">*_psf_reconv</span></code> — the metacal reconvolution kernel, fit by
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a>.</p></li>
+</ul>
+</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Compiled results ready to be written to a file</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
 </dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.14)"><strong>KeyError</strong></a> – If SNR key not found</p>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.14)"><strong>KeyError</strong></a> – If SNR key not found</p>
 </dd>
 </dl>
 </dd></dl>
@@ -668,24 +904,6 @@ postage stamps in these CCDs.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Ngmix.get_last_id">
-<span class="sig-name descname"><span class="pre">get_last_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix.get_last_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_last_id" title="Link to this definition">#</a></dt>
-<dd><p>Get Last ID.</p>
-<p>Return ID of last projessed objects found in input catalogue file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – input catalogue file path</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>object ID</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -711,7 +929,16 @@ postage stamps in these CCDs.</p>
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Ngmix.process">
 <span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.process" title="Link to this definition">#</a></dt>
 <dd><p>Process.</p>
-<p>Funcion to processs NGMIX.</p>
+<p>Funcion to processs NGMIX.
+organizes object cutouts from detection catalog in image,
+weight, and flag files
+per object:</p>
+<blockquote>
+<div><p>gathers wcs and psf info from exposures
+background subtracts (make this an option)
+scales by relative zeropoints
+runs metacal convolutions and ngmix fitting</p>
+</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Dictionary containing the NGMIX metacal results</p>
@@ -725,77 +952,60 @@ postage stamps in these CCDs.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.get_guess">
-<span class="sig-name descname"><span class="pre">get_guess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guess_flux_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'img'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guess_size_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'T'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guess_size_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sky'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guess_centroid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guess_centroid_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sky'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#get_guess"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.get_guess" title="Link to this definition">#</a></dt>
-<dd><p>Get Guess.</p>
-<p>Get the guess vector for the NGMIX shape measurement
-<code class="docutils literal notranslate"><span class="pre">[center_x,</span> <span class="pre">center_y,</span> <span class="pre">g1,</span> <span class="pre">g2,</span> <span class="pre">size_T,</span> <span class="pre">flux]</span></code>.
-No guesses are given for the ellipticity <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code>.</p>
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps">
+<span class="sig-name descname"><span class="pre">prepare_postage_stamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vignet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_tile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_cat</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#prepare_postage_stamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.background_subtract">
+<span class="sig-name descname"><span class="pre">background_subtract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#background_subtract"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.background_subtract" title="Link to this definition">#</a></dt>
+<dd><p>background subtraction.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>img</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Array containing the image</p></li>
-<li><p><strong>pixel_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Approximation of the pixel scale</p></li>
-<li><p><strong>guess_flux_unit</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – If <code class="docutils literal notranslate"><span class="pre">img</span></code> returns the flux in pixel units, otherwise if <code class="docutils literal notranslate"><span class="pre">sky</span></code>
-returns the flux in <span class="math notranslate nohighlight">\({\rm arcsec}^{-2}\)</span></p></li>
-<li><p><strong>guess_size_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – If <code class="docutils literal notranslate"><span class="pre">T</span></code> returns the size in quadrupole moments definition
-<span class="math notranslate nohighlight">\(2\sigma^2\)</span>, otherwise if <code class="docutils literal notranslate"><span class="pre">sigma</span></code> returns the moments
-<span class="math notranslate nohighlight">\(\sigma\)</span></p></li>
-<li><p><strong>guess_size_unit</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – If <code class="docutils literal notranslate"><span class="pre">img</span></code> returns the size in pixel units, otherwise if <code class="docutils literal notranslate"><span class="pre">sky</span></code>
-returns the size in arcsec</p></li>
-<li><p><strong>guess_centroid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, will return a guess on the object centroid, otherwise if
-<code class="docutils literal notranslate"><span class="pre">False</span></code>, will return the image centre</p></li>
-<li><p><strong>guess_centroid_unit</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – If <code class="docutils literal notranslate"><span class="pre">img</span></code> returns the centroid in pixel unit, otherwise if <code class="docutils literal notranslate"><span class="pre">sky</span></code>
-returns the centroid in arcsec</p></li>
+<li><p><strong>gal</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – galaxy image</p></li>
+<li><p><strong>bkg</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – background</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Return the guess array <code class="docutils literal notranslate"><span class="pre">[center_x,</span> <span class="pre">center_y,</span> <span class="pre">g1,</span> <span class="pre">g2,</span> <span class="pre">size_T,</span> <span class="pre">flux]</span></code></p>
+<dd class="field-even"><p>background subtracted galaxy</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>GalSimHSMError</strong> – For an error in the computation of adaptive moments</p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – For invalid unit guess types</p></li>
-</ul>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.make_galsimfit">
-<span class="sig-name descname"><span class="pre">make_galsimfit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guess0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#make_galsimfit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.make_galsimfit" title="Link to this definition">#</a></dt>
-<dd><p>Make GalSim Fit.</p>
-<p>Fit image using simple GalSim model.</p>
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.rescale_epoch_fluxes">
+<span class="sig-name descname"><span class="pre">rescale_epoch_fluxes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_rms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#rescale_epoch_fluxes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.rescale_epoch_fluxes" title="Link to this definition">#</a></dt>
+<dd><p>rescale epochs by relative zeropoints to be on the same flux scale</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>obs</strong> (<em>ngmix.observation.Observation</em>) – Image to fit</p></li>
-<li><p><strong>model</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Model for fit</p></li>
-<li><p><strong>guess0</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Parameters of first model guess</p></li>
-<li><p><strong>prior</strong> (<em>ngmix.prior</em><em>, </em><em>optional</em>) – Prior for fit paraemeters</p></li>
-<li><p><strong>ntry</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Number of tries for fit, the default is <code class="docutils literal notranslate"><span class="pre">5</span></code></p></li>
+<li><p><strong>gal</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – background subtracted galaxy image</p></li>
+<li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – weight image</p></li>
+<li><p><strong>header</strong> – image header</p></li>
+<li><p><strong>bkg_rms</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Background RMS image</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Results</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ngmix.BootGalFailure</strong> – Failure to bootstrap galaxy</p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray</em> – rescaled galaxy image</p></li>
+<li><p><em>numpy.ndarray</em> – rescaled weight image</p></li>
+<li><p><em>numpy.ndarray or None</em> – rescaled background RMS image</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.get_jacob">
-<span class="sig-name descname"><span class="pre">get_jacob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#get_jacob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.get_jacob" title="Link to this definition">#</a></dt>
-<dd><p>Get Jacobian.</p>
-<p>Return the Jacobian of the WCS at the required position.</p>
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.get_galsim_jacobian">
+<span class="sig-name descname"><span class="pre">get_galsim_jacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#get_galsim_jacobian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.get_galsim_jacobian" title="Link to this definition">#</a></dt>
+<dd><p>Get local wcs.
+This produces a galsim jacobian at a point.  We call it local_wcs because we convert to a ngmix object to create the jacobian later.
+TO DO: can we do this within ngmix?</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -816,20 +1026,21 @@ returns the centroid in arcsec</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.get_noise">
 <span class="sig-name descname"><span class="pre">get_noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#get_noise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.get_noise" title="Link to this definition">#</a></dt>
-<dd><p>Get Noise.</p>
-<p>Compute the sigma of the noise from an object postage stamp.
+<dd><p>Get Noise.
+TO DO: modify guess, pixel scale
+Compute the sigma of the noise from an object postage stamp.
 Use a guess on the object size, ellipticity and flux to create a window
 function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>gal</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Galaxy image</p></li>
-<li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Weight image</p></li>
+<li><p><strong>gal</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Galaxy image</p></li>
+<li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Weight image</p></li>
 <li><p><strong>guess</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – Gaussian parameters fot the window function
 <code class="docutils literal notranslate"><span class="pre">[x0,</span> <span class="pre">y0,</span> <span class="pre">g1,</span> <span class="pre">g2,</span> <span class="pre">T,</span> <span class="pre">flux]</span></code></p></li>
 <li><p><strong>pixel_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Pixel scale of the galaxy image</p></li>
 <li><p><strong>thresh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Threshold to cut the window function,
-cut = <code class="docutils literal notranslate"><span class="pre">thresh</span></code> * <span class="math notranslate nohighlight">\(\sigma_{\rm noise}\)</span>;  the default is <code class="docutils literal notranslate"><span class="pre">1.2</span></code></p></li>
+cut = <code class="docutils literal notranslate"><span class="pre">thresh</span></code> * sigma_noise;  the default is <code class="docutils literal notranslate"><span class="pre">1.2</span></code></p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -842,29 +1053,233 @@ cut = <code class="docutils literal notranslate"><span class="pre">thresh</span>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal">
-<span class="sig-name descname"><span class="pre">do_ngmix_metacal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psfs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psfs_sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jacob_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#do_ngmix_metacal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal" title="Link to this definition">#</a></dt>
-<dd><p>Do Ngmix Metacal.</p>
-<p>Perform the metacalibration on a multi-epoch object and return the joint
-shape measurement with NGMIX.</p>
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights">
+<span class="sig-name descname"><span class="pre">prepare_ngmix_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_rms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#prepare_ngmix_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="Link to this definition">#</a></dt>
+<dd><dl class="simple">
+<dt>bookkeeping for ngmix weights. runs on a single galaxy and epoch</dt><dd><p>pixel scale and galaxy guess
+TO DO: decide if we want galaxy guess stuff</p>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>gals</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of the galaxy vignets</p></li>
-<li><p><strong>psfs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of the PSF vignets</p></li>
-<li><p><strong>psfs_sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of the sigma PSFs</p></li>
-<li><p><strong>weights</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of the weight vignets</p></li>
-<li><p><strong>flags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of the flag vignets</p></li>
-<li><p><strong>jacob_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of the Jacobians</p></li>
-<li><p><strong>prior</strong> (<em>ngmix.priors</em>) – Priors for the fitting parameters</p></li>
-<li><p><strong>pixel_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – pixel scale in arcsec</p></li>
+<li><p><strong>gal</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
+<li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
+<li><p><strong>flag</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random state for the noise realisations (seeded per tile for
+reproducibility).</p></li>
+<li><p><strong>bkg_rms</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Per-pixel background RMS map. If supplied, unmasked pixels use
+<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">bkg_rms**2</span></code> as the ngmix inverse variance.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Dictionary containing the results of NGMIX metacal</p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray</em> – Galaxy image with masked pixels replaced by noise.</p></li>
+<li><p><em>numpy.ndarray</em> – Variance map for NGMIX.</p></li>
+<li><p><em>numpy.ndarray</em> – Noise image.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation">
+<span class="sig-name descname"><span class="pre">make_ngmix_observation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_rms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hsm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs_full</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#make_ngmix_observation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="Link to this definition">#</a></dt>
+<dd><p>Build an ngmix Observation for a single galaxy epoch.</p>
+<p>The galaxy Jacobian origin sets where the centroid prior is centered, so
+it must sit on the object. Two ways to place it, selected by
+<code class="docutils literal notranslate"><span class="pre">centroid_source</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code> (default) — re-center on the HSM adaptive-moment centroid
+measured from the stamp. Robust for <strong>galaxies</strong>: it follows the actual
+light and so the centroid prior (centered at the Jacobian origin) does
+not bias an object that is offset from the stamp center.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;wcs&quot;</span></code> — place the origin at the object’s catalog sky position,
+projected through the WCS to a sub-pixel pixel offset from the stamp
+center, with no shape measurement. Better for <strong>stars</strong>: their HSM
+moments are noisy, so trusting the astrometry is more stable than
+re-measuring the centroid.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gal</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
+<li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
+<li><p><strong>flag</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
+<li><p><strong>psf</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
+<li><p><strong>wcs</strong> (<em>galsim.BaseWCS</em>) – Local WCS Jacobian at the object position.</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random state for the noise realisations (seeded per tile for
+reproducibility).</p></li>
+<li><p><strong>bkg_rms</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Per-pixel background RMS map.</p></li>
+<li><p><strong>centroid_source</strong> (<em>{&quot;hsm&quot;</em><em>, </em><em>&quot;wcs&quot;}</em><em>, </em><em>optional</em>) – How to place the galaxy Jacobian origin; the default is <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code>.</p></li>
+<li><p><strong>wcs_full</strong> (<a class="reference external" href="https://docs.astropy.org/en/latest/api/astropy.wcs.WCS.html#astropy.wcs.WCS" title="(in Astropy v8.1)"><em>astropy.wcs.WCS</em></a><em>, </em><em>optional</em>) – Full exposure WCS for the object’s CCD. Required for
+<code class="docutils literal notranslate"><span class="pre">centroid_source=&quot;wcs&quot;</span></code> (ignored for <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code>).</p></li>
+<li><p><strong>ra</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Object sky position in degrees. Required for
+<code class="docutils literal notranslate"><span class="pre">centroid_source=&quot;wcs&quot;</span></code> (ignored for <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code>).</p></li>
+<li><p><strong>dec</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Object sky position in degrees. Required for
+<code class="docutils literal notranslate"><span class="pre">centroid_source=&quot;wcs&quot;</span></code> (ignored for <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>ngmix.observation.Observation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix._average_psf_fits">
+<span class="sig-name descname"><span class="pre">_average_psf_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_and_weights</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#_average_psf_fits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix._average_psf_fits" title="Link to this definition">#</a></dt>
+<dd><p>Weight-average a set of per-epoch ngmix PSF-fit results.</p>
+<p>Shared core for both PSF families this module exports: the metacal
+reconvolution kernel (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a>) and the original
+image PSF (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_original_psf" title="shapepipe.modules.ngmix_package.ngmix.average_original_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_original_psf()</span></code></a>). Epochs whose PSF fit failed
+(<code class="docutils literal notranslate"><span class="pre">flags</span> <span class="pre">!=</span> <span class="pre">0</span></code>, carrying only flags/pars and no T/g) are dropped.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>results_and_weights</strong> (<em>iterable</em><em> of </em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>)</em>) – Per-epoch <code class="docutils literal notranslate"><span class="pre">(result,</span> <span class="pre">weight)</span></code> pairs, where <code class="docutils literal notranslate"><span class="pre">result</span></code> is an ngmix
+Fitter result with keys <code class="docutils literal notranslate"><span class="pre">flags</span></code>, <code class="docutils literal notranslate"><span class="pre">g</span></code>, <code class="docutils literal notranslate"><span class="pre">g_err</span></code>, <code class="docutils literal notranslate"><span class="pre">T</span></code>,
+<code class="docutils literal notranslate"><span class="pre">T_err</span></code> and <code class="docutils literal notranslate"><span class="pre">weight</span></code> is the epoch’s averaging weight.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Keys <code class="docutils literal notranslate"><span class="pre">g_psf</span></code>, <code class="docutils literal notranslate"><span class="pre">g_psf_err</span></code>, <code class="docutils literal notranslate"><span class="pre">T_psf</span></code>, <code class="docutils literal notranslate"><span class="pre">T_psf_err</span></code> (weighted
+averages over the surviving epochs) and <code class="docutils literal notranslate"><span class="pre">n_epoch</span></code> (their count).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf">
+<span class="sig-name descname"><span class="pre">average_multiepoch_psf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obsdict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#average_multiepoch_psf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="Link to this definition">#</a></dt>
+<dd><p>Average the metacal <em>reconvolution</em> PSF over epochs.</p>
+<p>The PSF carried by each metacal observation (<code class="docutils literal notranslate"><span class="pre">obs.psf</span></code>) is the
+Gaussian reconvolution kernel that metacal fit and convolved back in —
+round by construction and slightly enlarged relative to the original
+PSF. This is the kernel defining the sheared galaxy images, exported to
+the reconvolution-kernel columns
+(<code class="docutils literal notranslate"><span class="pre">NGMIX_G1/G2_PSF_RECONV</span></code>, <code class="docutils literal notranslate"><span class="pre">NGMIX_T_PSF_RECONV</span></code>). The independent fit
+of the <em>original</em> image PSF is <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_original_psf" title="shapepipe.modules.ngmix_package.ngmix.average_original_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_original_psf()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>obsdict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Observation dict returned by MetacalBootstrapper.go().</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Keys: ‘g_psf’, ‘g_psf_err’, ‘T_psf’, ‘T_psf_err’ (weighted
+averages over the epochs whose PSF fit succeeded) and ‘n_epoch’
+(the number of those surviving epochs).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.average_original_psf">
+<span class="sig-name descname"><span class="pre">average_original_psf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal_obs_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_runner</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#average_original_psf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.average_original_psf" title="Link to this definition">#</a></dt>
+<dd><p>Fit and average the <em>original</em> image PSF over epochs.</p>
+<p>The original PSF is the psfex/mccd model stamp handed to ngmix
+(<code class="docutils literal notranslate"><span class="pre">gal_obs.psf</span></code>), fit here with the same <code class="docutils literal notranslate"><span class="pre">psf_runner</span></code> (hence the same
+fit prior and guesser) used inside metacal, but on the PSF <em>before</em>
+metacal’s reconvolution. Exported to the original-PSF columns
+(<code class="docutils literal notranslate"><span class="pre">NGMIX_G1/G2_PSF_ORIG</span></code>, <code class="docutils literal notranslate"><span class="pre">NGMIX_T_PSF_ORIG</span></code>). Distinct from the
+reconvolution-kernel fit (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a>): the original
+PSF retains its true ellipticity and size, whereas the reconvolution
+kernel is round and enlarged by construction. This is the PSF whose true
+shape and size enter object-wise PSF-leakage diagnostics.</p>
+<p>Weighted by the raw galaxy inverse variance (<code class="docutils literal notranslate"><span class="pre">gal_obs.weight.sum()</span></code> per
+epoch); <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a> uses the same scheme but the
+fixnoise-combined metacal-image weight instead.</p>
+<p>The fit runs on a <em>copy</em> of each PSF observation so <code class="docutils literal notranslate"><span class="pre">gal_obs.psf</span></code> —
+the object metacal later deep-copies and consumes via
+<code class="docutils literal notranslate"><span class="pre">boot.go(gal_obs_list)</span></code> — is never mutated. <code class="docutils literal notranslate"><span class="pre">PSFRunner.go</span></code> sets both
+<code class="docutils literal notranslate"><span class="pre">.meta['result']</span></code> and, on success, the <code class="docutils literal notranslate"><span class="pre">.gmix</span></code> attribute of the
+observation it fits; were that <code class="docutils literal notranslate"><span class="pre">gal_obs.psf</span></code> itself, the stray gmix
+would survive metacal’s deep copy and be reused as the
+<code class="docutils literal notranslate"><span class="pre">MetacalFitGaussPSF</span></code> fallback when its own admom+ML PSF fits both fail,
+silently rescuing objects the base branch dropped (<code class="docutils literal notranslate"><span class="pre">BootPSFFailure</span></code>) and
+changing the galaxy/shear result set. Fitting a copy closes this
+PSF-aliasing channel; combined with <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal" title="shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal"><code class="xref py py-func docutils literal notranslate"><span class="pre">do_ngmix_metacal()</span></code></a> seeding this
+pre-fit from a <em>snapshot</em> of the metacal RNG (so the pre-fit does not
+advance it), the add-column refactor stays bit-identical on the galaxy
+results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gal_obs_list</strong> (<em>ngmix.observation.ObsList</em>) – Per-epoch galaxy observations; each <code class="docutils literal notranslate"><span class="pre">gal_obs.psf</span></code> is the original
+(pre-metacal) PSF observation to fit, with no further <code class="docutils literal notranslate"><span class="pre">.psf</span></code> of
+its own so the runner fits the stamp itself. Left pristine.</p></li>
+<li><p><strong>psf_runner</strong> (<em>ngmix.runners.PSFRunner</em>) – The module’s PSF runner (built by <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.make_runners" title="shapepipe.modules.ngmix_package.ngmix.make_runners"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_runners()</span></code></a> from the
+shared <code class="docutils literal notranslate"><span class="pre">prior</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Same keys as <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.make_runners">
+<span class="sig-name descname"><span class="pre">make_runners</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#make_runners"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.make_runners" title="Link to this definition">#</a></dt>
+<dd><p>Build the module’s galaxy and PSF runners.</p>
+<p>Single source of truth for the fitter configuration (Gaussian galaxy
+and PSF models, guessers, retry counts), shared by the metacal
+bootstrap below and by validation tests that fit module-built
+observations directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prior</strong> (<em>ngmix.joint_prior.PriorSimpleSep</em>) – Priors for the fitting parameters.</p></li>
+<li><p><strong>flux_guess</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Initial flux guess.</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random state for the guessers.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(runner, psf_runner) : ngmix.runners.Runner, ngmix.runners.PSFRunner</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal">
+<span class="sig-name descname"><span class="pre">do_ngmix_metacal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hsm'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#do_ngmix_metacal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal" title="Link to this definition">#</a></dt>
+<dd><p>Do Ngmix Metacal.</p>
+<p>Performs metacalibration on a single multi-epoch object and returns the
+joint shape measurement with NGMIX.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stamp</strong> (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp" title="shapepipe.modules.ngmix_package.ngmix.Postage_stamp"><em>Postage_stamp</em></a>) – Postage stamps for all epochs of one galaxy.</p></li>
+<li><p><strong>prior</strong> (<em>ngmix.joint_prior.PriorSimpleSep</em>) – Priors for the fitting parameters.</p></li>
+<li><p><strong>flux_guess</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Initial flux guess.</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random state for guesses and priors.</p></li>
+<li><p><strong>centroid_source</strong> (<em>{&quot;hsm&quot;</em><em>, </em><em>&quot;wcs&quot;}</em><em>, </em><em>optional</em>) – How to place the galaxy Jacobian origin; passed through to
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a>. The default is <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code> (HSM
+adaptive-moment centroid); <code class="docutils literal notranslate"><span class="pre">&quot;wcs&quot;</span></code> uses the catalog sky position
+projected through the WCS — see that function for the star-vs-galaxy
+rationale.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Named 3-tuple <code class="docutils literal notranslate"><span class="pre">(resdict,</span> <span class="pre">reconv,</span> <span class="pre">orig)</span></code>: the MetacalBootstrapper
+result dict, the averaged metacal <em>reconvolution</em>-kernel PSF dict
+(<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a>), and the averaged <em>original</em> image-PSF
+dict (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_original_psf" title="shapepipe.modules.ngmix_package.ngmix.average_original_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_original_psf()</span></code></a>). The two PSF dicts share keys but
+describe different PSFs; the named fields guard against transposing
+them. Unpacks positionally as <code class="docutils literal notranslate"><span class="pre">resdict,</span> <span class="pre">psf_res,</span> <span class="pre">psf_orig_res</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult" title="shapepipe.modules.ngmix_package.ngmix.MetacalResult">MetacalResult</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -918,21 +1333,52 @@ shape measurement with NGMIX.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult"><code class="docutils literal notranslate"><span class="pre">MetacalResult</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult.resdict"><code class="docutils literal notranslate"><span class="pre">MetacalResult.resdict</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult.reconv"><code class="docutils literal notranslate"><span class="pre">MetacalResult.reconv</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult.orig"><code class="docutils literal notranslate"><span class="pre">MetacalResult.orig</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id0"><code class="docutils literal notranslate"><span class="pre">MetacalResult.resdict</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1"><code class="docutils literal notranslate"><span class="pre">MetacalResult.reconv</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2"><code class="docutils literal notranslate"><span class="pre">MetacalResult.orig</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._asdict"><code class="docutils literal notranslate"><span class="pre">MetacalResult._asdict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._field_defaults"><code class="docutils literal notranslate"><span class="pre">MetacalResult._field_defaults</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._fields"><code class="docutils literal notranslate"><span class="pre">MetacalResult._fields</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._make"><code class="docutils literal notranslate"><span class="pre">MetacalResult._make()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._replace"><code class="docutils literal notranslate"><span class="pre">MetacalResult._replace()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_mcal_flags"><code class="docutils literal notranslate"><span class="pre">get_mcal_flags()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">get_prior()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat"><code class="docutils literal notranslate"><span class="pre">Tile_cat</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data"><code class="docutils literal notranslate"><span class="pre">Tile_cat.get_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp"><code class="docutils literal notranslate"><span class="pre">Postage_stamp</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Vignet"><code class="docutils literal notranslate"><span class="pre">Vignet</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Vignet.close"><code class="docutils literal notranslate"><span class="pre">Vignet.close()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix"><code class="docutils literal notranslate"><span class="pre">Ngmix</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip"><code class="docutils literal notranslate"><span class="pre">Ngmix.MegaCamFlip()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_prior()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results"><code class="docutils literal notranslate"><span class="pre">Ngmix.compile_results()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_output_path"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_output_path()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_last_id"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_last_id()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.save_results"><code class="docutils literal notranslate"><span class="pre">Ngmix.save_results()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.check_key"><code class="docutils literal notranslate"><span class="pre">Ngmix.check_key()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.process"><code class="docutils literal notranslate"><span class="pre">Ngmix.process()</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_guess"><code class="docutils literal notranslate"><span class="pre">get_guess()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.make_galsimfit"><code class="docutils literal notranslate"><span class="pre">make_galsimfit()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_jacob"><code class="docutils literal notranslate"><span class="pre">get_jacob()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps"><code class="docutils literal notranslate"><span class="pre">prepare_postage_stamps()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.background_subtract"><code class="docutils literal notranslate"><span class="pre">background_subtract()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.rescale_epoch_fluxes"><code class="docutils literal notranslate"><span class="pre">rescale_epoch_fluxes()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_galsim_jacobian"><code class="docutils literal notranslate"><span class="pre">get_galsim_jacobian()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_noise"><code class="docutils literal notranslate"><span class="pre">get_noise()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix._average_psf_fits"><code class="docutils literal notranslate"><span class="pre">_average_psf_fits()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.average_original_psf"><code class="docutils literal notranslate"><span class="pre">average_original_psf()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.make_runners"><code class="docutils literal notranslate"><span class="pre">make_runners()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal"><code class="docutils literal notranslate"><span class="pre">do_ngmix_metacal()</span></code></a></li>
 </ul>
   </nav></div>
@@ -967,7 +1413,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 20 Jun, 2026.
+  Last updated on 06 Jul, 2026.
   <br/>
 </p>
   </div>

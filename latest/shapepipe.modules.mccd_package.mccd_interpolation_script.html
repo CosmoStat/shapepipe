@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="20 Jun, 2026"/>
+    <meta name="docbuild:last-update" content="06 Jul, 2026"/>
   </head>
   
   
@@ -359,6 +359,10 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
 </ul>
 </details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.testing.html">shapepipe.testing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.testing.simulate.html">shapepipe.testing.simulate</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
@@ -573,7 +577,7 @@
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>mccd_model_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the correct MCCD model</p></li>
-<li><p><strong>positions</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Positions for the PSF recovery in local coordinates with respect to
+<li><p><strong>positions</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Positions for the PSF recovery in local coordinates with respect to
 the <code class="docutils literal notranslate"><span class="pre">ccd</span></code>; array shape: <code class="docutils literal notranslate"><span class="pre">(n_pos,</span> <span class="pre">2)</span></code></p></li>
 <li><p><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – CCD from where the positions were taken</p></li>
 </ul>
@@ -584,7 +588,7 @@ shape: <code class="docutils literal notranslate"><span class="pre">(n_pos,</spa
 occurs</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -647,7 +651,7 @@ they are read directly from the <code class="docutils literal notranslate"><span
 <p>Compute shapes of stars at stars positions using HSM.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>star_vign</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Array containing the star’s vignets</p>
+<dd class="field-odd"><p><strong>star_vign</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Array containing the star’s vignets</p>
 </dd>
 </dl>
 </dd></dl>
@@ -829,7 +833,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 20 Jun, 2026.
+  Last updated on 06 Jul, 2026.
   <br/>
 </p>
   </div>

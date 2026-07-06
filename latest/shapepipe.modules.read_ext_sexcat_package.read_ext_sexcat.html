@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="20 Jun, 2026"/>
+    <meta name="docbuild:last-update" content="06 Jul, 2026"/>
   </head>
   
   
@@ -359,6 +359,10 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
 </ul>
 </details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.testing.html">shapepipe.testing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.testing.simulate.html">shapepipe.testing.simulate</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
@@ -587,7 +591,7 @@ padded with zeros, matching SExtractor behaviour.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>image_data</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – 2-D tile image array, shape <code class="docutils literal notranslate"><span class="pre">(ny,</span> <span class="pre">nx)</span></code></p></li>
+<li><p><strong>image_data</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – 2-D tile image array, shape <code class="docutils literal notranslate"><span class="pre">(ny,</span> <span class="pre">nx)</span></code></p></li>
 <li><p><strong>x_pos</strong> (<em>array_like</em>) – X pixel positions, 1-based (SExtractor convention)</p></li>
 <li><p><strong>y_pos</strong> (<em>array_like</em>) – Y pixel positions, 1-based (SExtractor convention)</p></li>
 <li><p><strong>stamp_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Side length of the square postage stamp (should be odd)</p></li>
@@ -597,7 +601,7 @@ padded with zeros, matching SExtractor behaviour.</p>
 <dd class="field-even"><p>Array of shape <code class="docutils literal notranslate"><span class="pre">(n_obj,</span> <span class="pre">stamp_size,</span> <span class="pre">stamp_size)</span></code>, dtype float32</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -610,8 +614,8 @@ padded with zeros, matching SExtractor behaviour.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cat_data</strong> (<a class="reference external" href="https://docs.astropy.org/en/latest/api/astropy.table.Table.html#astropy.table.Table" title="(in Astropy v8.1)"><em>astropy.table.Table</em></a>) – Catalogue data read from the ASCII SExtractor file</p></li>
-<li><p><strong>unique_id</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – 1-D int64 array of per-object unique IDs across all tiles</p></li>
-<li><p><strong>vignets</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Array of shape <code class="docutils literal notranslate"><span class="pre">(n_obj,</span> <span class="pre">stamp_size,</span> <span class="pre">stamp_size)</span></code></p></li>
+<li><p><strong>unique_id</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – 1-D int64 array of per-object unique IDs across all tiles</p></li>
+<li><p><strong>vignets</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Array of shape <code class="docutils literal notranslate"><span class="pre">(n_obj,</span> <span class="pre">stamp_size,</span> <span class="pre">stamp_size)</span></code></p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -764,7 +768,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 20 Jun, 2026.
+  Last updated on 06 Jul, 2026.
   <br/>
 </p>
   </div>

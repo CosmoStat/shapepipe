@@ -15,6 +15,7 @@ Subpackages
 
    shapepipe.modules
    shapepipe.pipeline
+   shapepipe.testing
    shapepipe.utilities
 
 Submodules

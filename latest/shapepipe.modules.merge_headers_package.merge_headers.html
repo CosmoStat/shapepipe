@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="20 Jun, 2026"/>
+    <meta name="docbuild:last-update" content="06 Jul, 2026"/>
   </head>
   
   
@@ -359,6 +359,10 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
 </ul>
 </details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.testing.html">shapepipe.testing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.testing.simulate.html">shapepipe.testing.simulate</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
@@ -555,7 +559,7 @@ exposure.</p>
 </dl>
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.merge_headers_package.merge_headers.merge_headers">
-<span class="sig-name descname"><span class="pre">merge_headers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/merge_headers_package/merge_headers.html#merge_headers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.merge_headers_package.merge_headers.merge_headers" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">merge_headers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/merge_headers_package/merge_headers.html#merge_headers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.merge_headers_package.merge_headers.merge_headers" title="Link to this definition">#</a></dt>
 <dd><p>Merge Headers.</p>
 <p>This function opens the files in the input file list and merges them into
 a SqliteDict file provided they match the appropriate pattern.</p>
@@ -564,6 +568,7 @@ a SqliteDict file provided they match the appropriate pattern.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>input_file_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of input files</p></li>
 <li><p><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Output path</p></li>
+<li><p><strong>tile_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Tile number ID stored under the key <code class="docutils literal notranslate"><span class="pre">&quot;TILE_ID&quot;</span></code>, default is <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
@@ -655,7 +660,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 20 Jun, 2026.
+  Last updated on 06 Jul, 2026.
   <br/>
 </p>
   </div>
