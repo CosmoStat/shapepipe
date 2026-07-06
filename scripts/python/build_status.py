@@ -9,10 +9,8 @@ per run; history lives in the commits.
 
 The page is organised by **tier of check**, not by simulation fidelity:
 
-* **Tier 1 — CI tripwires** (``mbias_sim/``, ``star_response_sim/``): fast
-  in-memory sims that gate every commit. m-bias recovery (``|m| < M_TOL``) and
-  PSF-fit-prior robustness (shear unchanged across the prior, #749). Each carries
-  a level chip ``in-memory``.
+* **Tier 1 — CI tripwires** (``mbias_sim/``): fast in-memory sims that gate every
+  commit. m-bias recovery (``|m| < M_TOL``), with a level chip ``in-memory``.
 * **Tier 2 — vetted image-sim panels** (``star_response_grid_*/``,
   ``star_response_magprofile/``, ``galaxy_question/``): metacal behaviour on
   Fabian Hervas's SKiLLS 1z2z star grid. The star-grid metacal response A/B, the
@@ -61,7 +59,7 @@ Regenerate the status page from a run's outputs:
         --out status.html
 
 `--results` points at the directory holding the per-arm subdirs
-(`mbias_sim/`, `star_response_sim/`, `star_response_grid_*/`,
+(`mbias_sim/`, `star_response_grid_*/`,
 `star_response_magprofile/`, `galaxy_question/`); `--figures` (optional) points
 at a directory of PNGs to inline (see FIGURE_SLOTS).
 
@@ -77,19 +75,17 @@ TEAL = "#3F8278"      # PASS
 OCHRE = "#C49333"     # MARGINAL
 CINNABAR = "#BC4538"  # FAIL
 
-# Tier-1 pass-criterion tolerances. These are the *test* constants (M_TOL, C_TOL
-# asserted by test_mbias.py / test_star_response.py) — not present in the results
-# JSON — kept here as single-source Python constants and interpolated into both
-# the verdict computation and the printed criterion, never re-typed as literals.
+# Tier-1 pass-criterion tolerance. This is the *test* constant (M_TOL asserted by
+# test_mbias.py) — not present in the results JSON — kept here as a single-source
+# Python constant and interpolated into both the verdict computation and the
+# printed criterion, never re-typed as a literal.
 M_TOL = 5e-3
-C_TOL = 1e-3
 
 # Figure filenames looked for under --figures, keyed by the slot they fill.
 # A run that produced these PNGs gets them inlined; any that are missing fall
 # back to a "figure pending" placeholder so the render never hard-fails.
 FIGURE_SLOTS = {
     "mbias": "mbias.png",
-    "psf_fit_prior": "psf_fit_prior.png",
     "grid_forest": "star_response_forest.png",
     "grid_magprofile": "star_response_magprofile.png",
     "galaxy_question": "galaxy_question_s2n.png",
@@ -414,56 +410,6 @@ def render_mbias(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
     return sec, strip_chip("t1-mbias", "m-bias", label, colour)
 
 
-def render_psf_prior(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
-    """Tier-1 PSF-fit prior-neutrality of the recovered shear (#749/#779)."""
-    v = d["psf_fit_prior_verdict"]
-    e1_gal = v["psf_fit_e1_galaxy"]
-    e1_none = v["psf_fit_e1_none"]
-    c = d["additive_bias_c1"]
-    m = d["multiplicative_bias_m"]
-    # The page owns its pass/fail logic: recompute from the measured biases against
-    # the same C_TOL / M_TOL the tests assert, rather than trusting a pre-baked flag.
-    robust = abs(c) < C_TOL and abs(m) < M_TOL
-    colour, label = (TEAL, "PASS") if robust else (CINNABAR, "FAIL")
-    fig = figure_block(
-        b64, "PSF-fit prior arms vs recovered shear",
-        "<b>Left:</b> the fitted PSF ellipticity depends on the PSF-fit prior &mdash; the prior-dominated arm "
-        f"is crushed toward round (<code>e1 &rarr; {e1_gal:.3f}</code>), the prior-free arm recovers truth "
-        f"(<code>e1 &rarr; {e1_none:.3f}</code> &asymp; injected <code>{d['psf_e1_true']}</code>). "
-        "<b>Right:</b> the recovered shear <code>m</code> is identical across the arms &mdash; metacal "
-        "deconvolves by the PSF image, not by any fitted model.",
-        "run_star_response.py", render_ts,
-    )
-    spec = (
-        '<div class="spec"><span class="mark">&sect; the test</span>'
-        "<p><b>What it is.</b> The galaxy ellipticity prior (<code>GPriorBA 0.4</code>, peak at round) is passed "
-        "to the PSF-stamp fitter; #779&rsquo;s finite PSF weight map keeps that fit likelihood-dominated. Probe: "
-        f"fit the elliptical PSF (<code>e1 = {d['psf_e1_true']}</code>) with prior + weak weight "
-        f"(prior-dominated arm, <code>e1 &rarr; {e1_gal:.3f}</code>) vs prior-free "
-        f"(<code>e1 &rarr; {e1_none:.3f}</code>).</p>"
-        "<p><b>What it measures.</b> Whether the recovered shear (c, m) is sensitive to the PSF-fit "
-        "configuration.</p>"
-        f"<p><b>Pass criteria.</b> Recovered <code>c</code>, <code>m</code> identical in both arms "
-        f"(<code>|c| &lt; {sci(C_TOL)}</code>, <code>|m| &lt; {sci(M_TOL)}</code>) &mdash; metacal deconvolves "
-        "by the PSF image, not a fitted model. Red = shear has become sensitive to the PSF-fit configuration.</p></div>"
-    )
-    verdict = verdict_row(
-        label, colour, "shear neutral to PSF-fit prior",
-        f"|c| = {sci(abs(c))} &middot; |m| = {sci(abs(m))}",
-        f"PSF fit e1 spans {e1_gal:.4f} &rarr; {e1_none:.4f}; shear does not move",
-    )
-    sec = panel(
-        "t1-psf", "&sect; Tier 1 &mdash; PSF-fit prior neutrality",
-        _src("https://github.com/CosmoStat/shapepipe/pull/779", "shapepipe#779")
-        + _src("https://github.com/CosmoStat/shapepipe/issues/749", "shapepipe#749")
-        + _src(f"{REPO_BLOB}/tests/science/test_star_response.py", "test_star_response.py"),
-        "in-memory", "PSF-fit prior neutrality (#749/#779).", spec, fig, verdict,
-        badge_label=label, badge_colour=colour,
-        summary_val=f"|c| = {sci(abs(c))} &middot; |m| = {sci(abs(m))}",
-    )
-    return sec, strip_chip("t1-psf", "psf-prior", label, colour)
-
-
 def _grid_verdict(r1_mean: float, tol: float) -> tuple[str, str]:
     """PASS if |<R1>| within band, else MARGINAL (tail-driven, not a hard fail)."""
     return (TEAL, "PASS") if abs(r1_mean) <= tol else (OCHRE, "MARGINAL")
@@ -652,12 +598,6 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
     mbias = load(results, "mbias_sim", "mbias.json")
     if mbias is not None:
         sec, chip = render_mbias(mbias, figs.get("mbias"), render_ts)
-        tier1.append(sec)
-        strip.append(chip)
-
-    psf = load(results, "star_response_sim", "star_response.json")
-    if psf is not None:
-        sec, chip = render_psf_prior(psf, figs.get("psf_fit_prior"), render_ts)
         tier1.append(sec)
         strip.append(chip)
 
