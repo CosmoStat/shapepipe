@@ -530,7 +530,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">coordinates</span> <span class="k">as</span> <span class="n">coords</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.wcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">WCS</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cs_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">size</span> <span class="k">as</span> <span class="n">cs_size</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlitedict</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteDict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
@@ -779,7 +778,7 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        mode : str</span>
-<span class="sd">            Run mode, options are ``ngmix``, ``galsim`` or ``psf``</span>
+<span class="sd">            Run mode, options are ``ngmix`` or ``psf``</span>
 <span class="sd">        cat_path : str</span>
 <span class="sd">            Path to input catalogue</span>
 <span class="sd">        moments : bool</span>
@@ -799,15 +798,13 @@
         <span class="n">err_msg</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;ngmix&quot;</span><span class="p">:</span>
             <span class="n">err_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_save_ngmix_data</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">moments</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;galsim&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_save_galsim_shapes</span><span class="p">(</span><span class="n">cat_path</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;psf&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_save_psf_data</span><span class="p">(</span><span class="n">cat_path</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Invalid process mode (</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">) for &quot;</span>
-                <span class="o">+</span> <span class="s1">&#39;``make_cat.Savecatalogue``. Options are &quot;ngmix&quot;, &#39;</span>
-                <span class="o">+</span> <span class="s1">&#39;&quot;galsim&quot; or &quot;psf&quot;.&#39;</span>
+                <span class="o">+</span> <span class="s1">&#39;``make_cat.Savecatalogue``. Options are &quot;ngmix&quot; &#39;</span>
+                <span class="o">+</span> <span class="s1">&#39;or &quot;psf&quot;.&#39;</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">err_msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1087,142 +1084,6 @@
         <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="kc">None</span></div>
-
-
-<div class="viewcode-block" id="SaveCatalogue._save_galsim_shapes">
-<a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_galsim_shapes">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_save_galsim_shapes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">galsim_cat_path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save GalSim Shapes.</span>
-
-<span class="sd">        Save the GalSim catalogue into the final one.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        galsim_cat_path : str</span>
-<span class="sd">            Path to GalSim catalogue to save</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">galsim_cat_file</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="n">galsim_cat_path</span><span class="p">)</span>
-        <span class="n">galsim_cat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_key_ends</span> <span class="o">=</span> <span class="n">galsim_cat_file</span><span class="o">.</span><span class="n">get_ext_name</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]</span>
-
-        <span class="n">galsim_id</span> <span class="o">=</span> <span class="n">galsim_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
-
-        <span class="k">for</span> <span class="n">key_str</span> <span class="ow">in</span> <span class="p">(</span>
-            <span class="s2">&quot;GALSIM_T_&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;GALSIM_T_PSF_&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;GALSIM_FLUX_&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;GALSIM_MAG_&quot;</span><span class="p">,</span>
-        <span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_update_dict</span><span class="p">(</span><span class="n">key_str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">)))</span>
-        <span class="k">for</span> <span class="n">key_str</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;GALSIM_FLUX_ERR_&quot;</span><span class="p">,</span> <span class="s2">&quot;GALSIM_MAG_ERR_&quot;</span><span class="p">,</span> <span class="s2">&quot;GALSIM_RES_&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_update_dict</span><span class="p">(</span><span class="n">key_str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">))</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">key_str</span> <span class="ow">in</span> <span class="p">(</span>
-            <span class="s2">&quot;GALSIM_G1_&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;GALSIM_G2_&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;GALSIM_G1_ERR_&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;GALSIM_G2_ERR_&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;GALSIM_G1_UNCORR_&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;GALSIM_G2_UNCORR_&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;GALSIM_G1_PSF_&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;GALSIM_G2_PSF_&quot;</span><span class="p">,</span>
-        <span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_update_dict</span><span class="p">(</span><span class="n">key_str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">))</span> <span class="o">*</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_update_dict</span><span class="p">(</span>
-            <span class="s2">&quot;GALSIM_FLAGS_&quot;</span><span class="p">,</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int16&quot;</span><span class="p">),</span>
-        <span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">id_tmp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">):</span>
-            <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">id_tmp</span> <span class="o">==</span> <span class="n">galsim_id</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-
-                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key_ends</span><span class="p">:</span>
-
-                    <span class="n">gcf_data</span> <span class="o">=</span> <span class="n">galsim_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-
-                    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;ORIGINAL_PSF&quot;</span><span class="p">:</span>
-
-                        <span class="c1"># PSF columns sourced from the galaxy uncorr fields</span>
-                        <span class="c1"># for this special extension (asymmetry preserved).</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_G1_PSF_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_uncorr_g1&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
-                        <span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_G2_PSF_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_uncorr_g2&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
-                        <span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_T_PSF_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_T</span><span class="p">(</span><span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_sigma&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]]),</span>
-                            <span class="n">idx</span>
-                        <span class="p">)</span>
-
-                    <span class="k">else</span><span class="p">:</span>
-
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_G1_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_g1&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
-                        <span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_G2_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_g2&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
-                        <span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_G1_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_g1_err&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
-                        <span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_G2_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_g2_err&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
-                        <span class="p">)</span>
-
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_G1_UNCORR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_uncorr_g1&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
-                        <span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_G2_UNCORR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_uncorr_g2&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
-                        <span class="p">)</span>
-
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_T_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_T</span><span class="p">(</span><span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_sigma&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]]),</span>
-                            <span class="n">idx</span>
-                        <span class="p">)</span>
-
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_G1_PSF_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;psf_g1&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
-                        <span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_G2_PSF_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;psf_g2&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
-                        <span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;GALSIM_T_PSF_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_T</span><span class="p">(</span><span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;psf_sigma&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]]),</span>
-                            <span class="n">idx</span>
-                        <span class="p">)</span>
-
-                        <span class="n">flux</span> <span class="o">=</span> <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_flux&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-                        <span class="n">flux_err</span> <span class="o">=</span> <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_flux_err&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GALSIM_FLUX_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GALSIM_FLUX_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flux_err</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
-
-                        <span class="n">mag</span> <span class="o">=</span> <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_mag&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-                        <span class="n">mag_err</span> <span class="o">=</span> <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_mag_err&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GALSIM_MAG_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mag</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GALSIM_MAG_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mag_err</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
-
-                        <span class="n">flags</span> <span class="o">=</span> <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_flag&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GALSIM_FLAGS_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
-
-                        <span class="n">res</span> <span class="o">=</span> <span class="n">gcf_data</span><span class="p">[</span><span class="s2">&quot;gal_resolution&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GALSIM_RES_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
-
-        <span class="n">galsim_cat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="SaveCatalogue._save_psf_data">

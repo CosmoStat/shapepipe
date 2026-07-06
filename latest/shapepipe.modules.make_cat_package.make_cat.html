@@ -545,7 +545,6 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._update_dict"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._update_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._add2dict"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._add2dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_ngmix_data"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._save_ngmix_data()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_galsim_shapes"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._save_galsim_shapes()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_psf_data"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._save_psf_data()</span></code></a></li>
 </ul>
 </li>
@@ -706,7 +705,7 @@ using the classifier
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Run mode, options are <code class="docutils literal notranslate"><span class="pre">ngmix</span></code>, <code class="docutils literal notranslate"><span class="pre">galsim</span></code> or <code class="docutils literal notranslate"><span class="pre">psf</span></code></p></li>
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Run mode, options are <code class="docutils literal notranslate"><span class="pre">ngmix</span></code> or <code class="docutils literal notranslate"><span class="pre">psf</span></code></p></li>
 <li><p><strong>cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to input catalogue</p></li>
 <li><p><strong>moments</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Option to run <code class="docutils literal notranslate"><span class="pre">ngmix</span></code> mode with moments</p></li>
 </ul>
@@ -775,18 +774,6 @@ single aliased value of the pre-fix code (shapepipe#749).</p>
 <li><p><strong>ngmix_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to NGMIX catalogue</p></li>
 <li><p><strong>moments</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, write the parallel <code class="docutils literal notranslate"><span class="pre">NGMIXm_*</span></code> (moments-branch) columns.</p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_galsim_shapes">
-<span class="sig-name descname"><span class="pre">_save_galsim_shapes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">galsim_cat_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#SaveCatalogue._save_galsim_shapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_galsim_shapes" title="Link to this definition">#</a></dt>
-<dd><p>Save GalSim Shapes.</p>
-<p>Save the GalSim catalogue into the final one.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>galsim_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to GalSim catalogue to save</p>
 </dd>
 </dl>
 </dd></dl>
@@ -864,7 +851,6 @@ single aliased value of the pre-fix code (shapepipe#749).</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._update_dict"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._update_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._add2dict"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._add2dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_ngmix_data"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._save_ngmix_data()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_galsim_shapes"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._save_galsim_shapes()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_psf_data"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._save_psf_data()</span></code></a></li>
 </ul>
 </li>
