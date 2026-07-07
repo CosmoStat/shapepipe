@@ -86,6 +86,7 @@ M_TOL = 5e-3
 # back to a "figure pending" placeholder so the render never hard-fails.
 FIGURE_SLOTS = {
     "mbias": "mbias.png",
+    "breakdown": "breakdown_grid.png",
     "grid_forest": "star_response_forest.png",
     "grid_magprofile": "star_response_magprofile.png",
     "galaxy_question": "galaxy_question_s2n.png",
@@ -410,6 +411,43 @@ def render_mbias(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
     return sec, strip_chip("t1-mbias", "m-bias", label, colour)
 
 
+def render_breakdown(d: dict, b64: str | None, render_ts: str) -> str:
+    """Tier-1 inspection panel: where the metacal calibration breaks down across
+    the resolution x noise grid. An inspection shape, no verdict badge (the
+    m-bias CI dot already carries the scalar); force-open like the Tier-2 panels."""
+    fig = figure_block(
+        b64, "m, R11 and |c1| vs resolution ratio in three S/N bands",
+        "Multiplicative bias <code>m</code>, metacal response <code>R11</code> and "
+        "additive bias <code>|c1|</code> as a function of the resolution ratio "
+        "<code>r = gal&nbsp;hlr / psf&nbsp;fwhm</code>, in three "
+        "<span style='color:#3F8278'><b>signal-to-noise bands</b></span>. The shaded "
+        f"sliver on the top panel marks the <code>|m| &lt; {sci(M_TOL)}</code> tolerance.",
+        "run_breakdown_grid.py", render_ts, fig_tool="plot_breakdown_grid.py",
+    )
+    spec = (
+        '<div class="spec"><span class="mark">&sect; the method</span>'
+        "<p>Each grid cell is one self-contained GalSim simulation run in memory: an "
+        "exponential galaxy convolved with a Moffat (&beta; = 2.5) PSF, sampled at "
+        "0.1857&Prime; pixels, with a known shear injected. The stamp is passed through "
+        "the live pipeline shear estimator (<code>do_ngmix_metacal</code>), the same "
+        "code the real survey uses, and the recovered shear, the metacal response "
+        "<code>R</code>, and the additive bias <code>c</code> are read back out. "
+        "Repeating this over N random seeds per cell and averaging gives the "
+        "multiplicative bias <code>m</code>, the response <code>R11</code>, and the "
+        "additive bias <code>c1</code> for that cell. The grid sweeps two axes "
+        "independently: galaxy size relative to the PSF (the resolution ratio "
+        "<code>r</code>) and image noise (three signal-to-noise bands). The result is "
+        "a map of where the calibration stays within tolerance and where it breaks "
+        "down.</p></div>"
+    )
+    return panel(
+        "t1-breakdown", "&sect; Tier 1 &mdash; resolution &times; noise breakdown grid",
+        _src(f"{REPO_BLOB}/scripts/python/run_breakdown_grid.py", "run_breakdown_grid.py"),
+        "in-memory", "Where measurement breaks down.", spec, fig,
+        summary_val="inspection panel &mdash; no verdict", force_open=True,
+    )
+
+
 def _grid_verdict(r1_mean: float, tol: float) -> tuple[str, str]:
     """PASS if |<R1>| within band, else MARGINAL (tail-driven, not a hard fail)."""
     return (TEAL, "PASS") if abs(r1_mean) <= tol else (OCHRE, "MARGINAL")
@@ -595,6 +633,11 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
     tier2: list[str] = []
 
     # ---- Tier 1 — CI tripwires ----
+    # Inspection panel first (force-open figure), then the collapsed m-bias row.
+    breakdown = load(results, "breakdown_grid", "breakdown_grid.json")
+    if breakdown is not None:
+        tier1.append(render_breakdown(breakdown, figs.get("breakdown"), render_ts))
+
     mbias = load(results, "mbias_sim", "mbias.json")
     if mbias is not None:
         sec, chip = render_mbias(mbias, figs.get("mbias"), render_ts)
@@ -653,7 +696,7 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
   <div class="tier">
     <div class="tier-mark">&sect; Tier 1</div>
     <h2>CI tripwires.</h2>
-    <p class="tier-scope">Fast in-memory sims that run on every commit: a single injected shear through the controlled <code>make_data / do_ngmix_metacal</code> path. Algorithmic checks, no image simulation &mdash; collapsed to a one-line row while green, expanded on any red.</p>
+    <p class="tier-scope">Fast in-memory sims through the controlled <code>make_data / do_ngmix_metacal</code> path, no image simulation: the resolution &times; noise breakdown grid maps where the calibration holds and where it breaks down (open for inspection), and the single-point m-bias tripwire gates every commit (collapsed to a one-line row while green, expanded on any red).</p>
   </div>
 {chr(10).join(tier1)}
 """
