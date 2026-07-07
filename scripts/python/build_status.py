@@ -1,35 +1,36 @@
 #!/usr/bin/env python
-"""Render the ShapePipe shape-measurement *status board* from a run's JSON outputs.
+"""Render the ShapePipe shape-measurement *status page* from a run's JSON outputs.
 
-This is the renderer referenced in the status-board footer: the digital-twin
+This is the renderer referenced in the status-page footer: the digital-twin
 harvesters (``run_mbias.py``, ``run_star_response.py``,
 ``run_star_response_grid.py``) emit ``results/baseline/*/*.json``; this script
 reads those JSONs and renders a single self-contained ``status.html``. One render
 per run; history lives in the commits.
 
-The page is organised by a *fidelity ladder*:
+The page is organised by **tier of check**, not by simulation fidelity:
 
-* **Level 1a — m-bias** (``mbias_sim/mbias.json``): an in-memory sim injects a
-  known shear through the live ``make_data / do_ngmix_metacal`` path and recovers
-  it after the metacal response correction. Verdict: ``|m| < 5e-3``.
-* **Level 1b — psf_fit_prior** (``star_response_sim/star_response.json``): an
-  in-memory sim with an elliptical PSF checks that the recovered shear ``c`` is
-  unchanged across PSF-fit-prior choices. Verdict: shear robust to the prior.
-* **Level 2 — star shear response on the SKiLLS grid**
-  (``star_response_grid_<arm>/star_response.json``): per-object metacal response
-  ``R = dg/dgamma`` on Fabian Hervas's SKiLLS star grid, as an A/B over the
-  metacal reconvolution-kernel sizing (``fitgauss`` vs ``gauss``) crossed with the
-  centroid source (``wcs`` vs ``hsm``). Verdict: ``<R1>``, ``<R2>`` within
-  ``+/-0.03`` of 0.
+* **Tier 1 — CI tripwires** (``mbias_sim/``): fast in-memory sims that gate every
+  commit. m-bias recovery (``|m| < M_TOL``), with a level chip ``in-memory``.
+* **Tier 2 — vetted image-sim panels** (``star_response_grid_*/``,
+  ``star_response_magprofile/``, ``galaxy_question/``): metacal behaviour on
+  Fabian Hervas's SKiLLS 1z2z star grid. The star-grid metacal response A/B, the
+  star-response-vs-magnitude profile, and the galaxy question (S/N vs response).
+  A shared *test-data* block heads the tier; each panel carries a level chip
+  ``SKiLLS``.
 
 Design contract
 ---------------
 *Every number on the page is read straight from a results JSON.* The verdict
 badges (PASS / MARGINAL / FAIL) are **computed** from the recorded value against
-its recorded tolerance, never hard-coded — that is the live part of the board.
-The CSS and the explanatory prose are the template; the figures are optional PNGs
-taken from the run's outputs and inlined as base64 (a missing figure degrades to
-a "figure pending" note rather than crashing the render).
+its tolerance, never hard-coded — that is the live part of the page. Pass-
+criterion tolerances are interpolated from the single Python constant / JSON
+field that also drives the verdict, never re-typed as a literal in an HTML
+string. The CSS and the explanatory prose are the template; captions state what
+is shown, not why. Figures are optional PNGs inlined as base64 (a missing figure
+degrades to a "figure pending" note rather than crashing the render).
+
+One panel = one figure + at most one verdict. Every subsection is instantiated
+from the same ``panel()`` template.
 
 Stdlib only (``json``, ``base64``, ``argparse``, ``pathlib``, ``datetime``,
 ``html``) so it runs anywhere — inside the container, on a login node, or via
@@ -50,7 +51,7 @@ import json
 from pathlib import Path
 
 USAGE = """\
-Regenerate the status board from a run's outputs:
+Regenerate the status page from a run's outputs:
 
     python scripts/python/build_status.py \\
         --results <run>/results/baseline \\
@@ -58,8 +59,9 @@ Regenerate the status board from a run's outputs:
         --out status.html
 
 `--results` points at the directory holding the per-arm subdirs
-(`mbias_sim/`, `star_response_sim/`, `star_response_grid_*/`); `--figures`
-(optional) points at a directory of PNGs to inline (see FIGURE_SLOTS).
+(`mbias_sim/`, `star_response_grid_*/`,
+`star_response_magprofile/`, `galaxy_question/`); `--figures` (optional) points
+at a directory of PNGs to inline (see FIGURE_SLOTS).
 
 Deploy (Cail owns this step; not run by this script):
 
@@ -72,17 +74,20 @@ Deploy (Cail owns this step; not run by this script):
 TEAL = "#3F8278"      # PASS
 OCHRE = "#C49333"     # MARGINAL
 CINNABAR = "#BC4538"  # FAIL
-MUTED = "var(--ink-muted)"  # pending / soon
+
+# Tier-1 pass-criterion tolerance. This is the *test* constant (M_TOL asserted by
+# test_mbias.py) — not present in the results JSON — kept here as a single-source
+# Python constant and interpolated into both the verdict computation and the
+# printed criterion, never re-typed as a literal.
+M_TOL = 5e-3
 
 # Figure filenames looked for under --figures, keyed by the slot they fill.
 # A run that produced these PNGs gets them inlined; any that are missing fall
 # back to a "figure pending" placeholder so the render never hard-fails.
 FIGURE_SLOTS = {
     "mbias": "mbias.png",
-    "psf_fit_prior": "psf_fit_prior.png",
-    "grid_hist": "star_response_hist.png",
+    "breakdown": "breakdown_grid.png",
     "grid_forest": "star_response_forest.png",
-    "grid_ab": "star_response_ab_tail.png",
     "grid_magprofile": "star_response_magprofile.png",
     "galaxy_question": "galaxy_question_s2n.png",
 }
@@ -123,8 +128,22 @@ def load(results: Path, arm: str, fname: str) -> dict | None:
 
 
 def badge(label: str, colour: str) -> str:
-    bg = colour if colour.startswith("var(") else colour
-    return f'<span class="badge" style="background:{bg}">{label}</span>'
+    return f'<span class="badge" style="background:{colour}">{label}</span>'
+
+
+def level_chip(level: str) -> str:
+    """The small in-memory / SKiLLS provenance chip carried by every panel."""
+    return f'<span class="levelchip">{html.escape(level)}</span>'
+
+
+def strip_chip(anchor: str, name: str, label: str, colour: str) -> str:
+    """One entry in the top verdict strip: a coloured dot + name + badge, linking
+    to the panel's section anchor."""
+    return (
+        f'<a class="vchip" href="#{anchor}">'
+        f'<span class="vdot" style="background:{colour}"></span>'
+        f'<span class="vname">{name}</span>{badge(label, colour)}</a>'
+    )
 
 
 def figure_block(b64: str | None, alt: str, caption: str, data_prov: str, render_ts: str,
@@ -152,8 +171,39 @@ def figure_block(b64: str | None, alt: str, caption: str, data_prov: str, render
     return f"<figure>{body}<figcaption>{caption}</figcaption>{prov}</figure>"
 
 
+def verdict_row(label: str, colour: str, vlabel: str, vval: str, vn: str) -> str:
+    """The single verdict badge + value line that closes a panel."""
+    return (
+        f'<div class="verdict">{badge(label, colour)}'
+        f'<span class="vlabel">{vlabel}</span>'
+        f'<span class="vval">{vval}</span>'
+        f'<span class="vn">{vn}</span></div>'
+    )
+
+
+def panel(anchor: str, mark: str, srcbtns: str, level: str, title: str,
+          spec: str, figure: str, verdict: str = "", note: str = "",
+          badge_label: str = "", badge_colour: str = "", summary_val: str = "",
+          force_open: bool = False) -> str:
+    """The one template every subsection is built from, as a collapse-when-green
+    ``<details>``. The ``<summary>`` carries the title, level chip, verdict badge
+    and one-line value so a collapsed row still shows the number. Open state:
+    ``force_open`` (Tier-2 panels, always shown) OR a non-PASS verdict."""
+    is_open = force_open or (badge_label and badge_label != "PASS")
+    open_attr = " open" if is_open else ""
+    summ_badge = badge(badge_label, badge_colour) if badge_label else ""
+    summ_val = f'<span class="sv">{summary_val}</span>' if summary_val else ""
+    return f"""\
+  <details id="{anchor}"{open_attr}>
+    <summary><span class="caret"></span><span class="sm-title">{title}</span>{level_chip(level)}{summ_badge}{summ_val}</summary>
+    <div class="section-mark"><span>{mark}</span>{srcbtns}</div>
+    {spec}
+    {figure}{note}{verdict}
+  </details>"""
+
+
 # --------------------------------------------------------------------------- #
-# CSS (verbatim from the curated page; the page's visual identity)
+# CSS (curated page palette; verdict strip + level chip replace the old ladder)
 # --------------------------------------------------------------------------- #
 CSS = """
   :root {
@@ -186,38 +236,61 @@ CSS = """
     font-size:12.5px; letter-spacing:.02em; color:#8a6a1f; }
   .disclaimer b { color:var(--ochre); text-transform:uppercase; letter-spacing:.1em; }
 
-  /* ---- fidelity ladder: the spine, intro + live verdicts in one strip ---- */
-  .ladder { margin:30px 0 0; display:grid; grid-template-columns:1fr 1fr 1fr;
-    gap:16px; }
-  .rung { background:var(--rag); border:1px solid var(--rule); border-radius:10px;
-    padding:16px 18px 14px; font-size:14.5px; display:block; color:var(--ink);
-    transition:border-color .15s, transform .15s; }
-  a.rung:hover { border-color:var(--cobalt); text-decoration:none;
-    transform:translateY(-2px); }
-  .rung p { margin:0; color:var(--ink-muted); font-size:13.5px; line-height:1.45; }
-  .rung-head { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
-    text-transform:uppercase; margin-bottom:8px; font-weight:500; }
-  .rung-head.l1 { color:var(--teal); }
-  .rung-head.l2 { color:var(--cobalt); }
-  .rung-head.l3 { color:var(--ink-muted); }
-  .lchips { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
-  .lchip { font-family:var(--mono); font-size:11px; color:var(--ink-muted);
-    display:inline-flex; align-items:center; gap:6px; }
+  /* ---- verdict strip: every badge on the page, one row, each an anchor ---- */
+  .vstrip { margin:30px 0 0; padding:14px 16px; background:var(--rag);
+    border:1px solid var(--rule); border-radius:10px; display:flex; gap:10px;
+    flex-wrap:wrap; align-items:center; }
+  .vstrip-label { font-family:var(--mono); font-size:10px; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--ink-muted); margin-right:4px; }
+  a.vchip { display:inline-flex; align-items:center; gap:8px; color:var(--ink);
+    font-family:var(--mono); font-size:12px; background:var(--parchment);
+    border:1px solid var(--rule); border-radius:20px; padding:5px 11px 5px 9px;
+    transition:border-color .14s, transform .14s; }
+  a.vchip:hover { border-color:var(--cobalt); text-decoration:none;
+    transform:translateY(-1px); }
+  .vchip .vdot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .vchip .vname { color:var(--ink-muted); }
 
-  section { margin-top:46px; scroll-margin-top:20px; }
-  .section-mark { font-family:var(--mono); font-size:11px; letter-spacing:.15em;
-    text-transform:uppercase; color:var(--cinnabar); margin-bottom:10px;
+  /* ---- tier headers ---- */
+  .tier { margin-top:52px; }
+  .tier-mark { font-family:var(--mono); font-size:11px; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--cinnabar); margin-bottom:8px; }
+  .tier h2 { font-family:var(--serif); font-style:italic; font-weight:500;
+    font-size:32px; line-height:1.12; margin:0 0 6px; }
+  .tier-scope { color:var(--ink-muted); font-size:16px; margin:0; max-width:78ch; }
+
+  /* ---- collapse-when-green panels ---- */
+  details { margin-top:30px; scroll-margin-top:20px;
+    border-top:1px solid var(--tooth); padding-top:20px; }
+  summary { list-style:none; cursor:pointer; display:flex; align-items:center;
+    gap:12px; flex-wrap:wrap; }
+  summary::-webkit-details-marker { display:none; }
+  .caret { width:0; height:0; border-left:6px solid var(--ink-muted);
+    border-top:5px solid transparent; border-bottom:5px solid transparent;
+    transition:transform .15s; flex-shrink:0; }
+  details[open] > summary .caret { transform:rotate(90deg); }
+  .sm-title { font-family:var(--serif); font-style:italic; font-weight:500;
+    font-size:24px; line-height:1.15; color:var(--ink); }
+  summary:hover .sm-title { color:var(--cobalt); }
+  .sv { font-family:var(--mono); font-size:13px; color:var(--ink-muted);
+    margin-left:auto; text-align:right; }
+  .section-mark { font-family:var(--mono); font-size:11px; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--ink-muted); margin:12px 0 8px;
     display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-  h2 { font-family:var(--serif); font-style:italic; font-weight:500;
-    font-size:28px; line-height:1.18; margin:0 0 4px; }
 
   hr { border:none; border-top:1px solid var(--rule); margin:36px 0; }
+
+  /* ---- level chip (in-memory / SKiLLS provenance) ---- */
+  .levelchip { font-family:var(--mono); font-size:10px; letter-spacing:.08em;
+    color:var(--ink-muted); background:var(--rag); border:1px solid var(--rule);
+    border-radius:4px; padding:3px 8px; text-transform:none; }
 
   /* ---- prominent source buttons ---- */
   .srcbtn { display:inline-flex; align-items:center; gap:8px;
     font-family:var(--mono); font-size:12px; letter-spacing:.02em;
     color:var(--cobalt); background:var(--rag); border:1px solid var(--rule);
-    border-radius:7px; padding:7px 13px; transition:all .14s; line-height:1; }
+    border-radius:7px; padding:6px 12px; transition:all .14s; line-height:1;
+    text-transform:none; }
   .srcbtn:hover { background:var(--cobalt); color:#fff; border-color:var(--cobalt);
     text-decoration:none; }
   .srcbtn .gl { font-weight:500; opacity:.7; }
@@ -263,44 +336,21 @@ CSS = """
     line-height:1; padding:6px 10px; border-radius:4px; letter-spacing:.08em;
     white-space:nowrap; }
 
-  /* ---- reconvolution-PSF A/B callout (the headline lever) ---- */
-  .abcallout { margin:22px 0 0; padding:16px 22px; background:rgba(63,130,120,0.10);
-    border:1px solid var(--teal); border-left:4px solid var(--teal);
-    border-radius:0 8px 8px 0; }
-  .abcallout .abc-mark { font-family:var(--mono); font-size:10.5px;
-    letter-spacing:.13em; text-transform:uppercase; color:var(--teal);
-    margin-bottom:9px; display:block; }
-  .abcallout p { margin:0 0 8px; font-size:16px; line-height:1.55;
-    color:var(--ink); }
-  .abcallout p:last-child { margin:0; }
-  .abcallout .abc-mech { color:var(--ink-muted); font-size:15px; }
-  .abcallout .abc-mech b { color:var(--ink); }
-  .abcallout .abc-floor { color:var(--ink-muted); font-size:15px;
-    border-top:1px dashed var(--tooth); padding-top:10px; }
-  .abcallout .abc-floor b { color:var(--teal); }
-
-  /* ---- additive-bias companion line ---- */
-  .addbias { margin:16px 0 0; padding:11px 18px; background:var(--rag);
+  /* ---- muted panel note (demoted comparison arms, additive bias) ---- */
+  .note { margin:16px 0 0; padding:11px 18px; background:var(--rag);
     border:1px dashed var(--rule); border-radius:8px; font-family:var(--mono);
-    font-size:13px; color:var(--ink); display:flex; gap:12px; align-items:baseline;
-    flex-wrap:wrap; }
-  .ab-mark { font-size:10px; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--cinnabar); }
+    font-size:13px; color:var(--ink-muted); line-height:1.55; }
+  .note .nk { color:var(--cinnabar); font-size:10px; letter-spacing:.1em;
+    text-transform:uppercase; margin-right:8px; }
+  .note b { color:var(--ink); font-weight:500; }
 
-  /* ---- test-data block ---- */
-  .testdata { margin:16px 0 0; padding:13px 18px; background:var(--rag);
+  /* ---- shared test-data block (heads Tier 2) ---- */
+  .testdata { margin:20px 0 0; padding:14px 18px; background:var(--rag);
     border-left:3px solid var(--cobalt); border-radius:0 6px 6px 0;
     font-size:14.5px; line-height:1.55; color:var(--ink-muted); }
   .testdata-head { font-family:var(--mono); font-size:10px; letter-spacing:.13em;
     text-transform:uppercase; color:var(--cobalt); margin-bottom:7px; }
   .testdata-body b { color:var(--ink); font-weight:500; }
-
-  /* ---- pending ---- */
-  .pending { display:flex; align-items:flex-start; gap:16px; padding:20px 22px;
-    background:var(--rag); border:1px solid var(--rule); border-radius:8px;
-    margin-top:18px; font-size:16px; }
-  .pending-icon { font-size:28px; color:var(--ochre); flex-shrink:0; line-height:1; }
-  .pending b { color:var(--ink); }
 
   footer { margin-top:52px; border-top:1px solid var(--rule); padding-top:18px;
     color:var(--ink-muted); font-family:var(--mono); font-size:11px;
@@ -314,19 +364,23 @@ CSS = """
 REPO_BLOB = "https://github.com/CosmoStat/shapepipe/blob/ngmix_v2.0"
 
 
+def _src(href: str, text: str) -> str:
+    return (f'\n      <a class="srcbtn" href="{href}" target="_blank" rel="noopener">'
+            f'<span class="gl">&lt;/&gt;</span>{text}</a>')
+
+
 # --------------------------------------------------------------------------- #
-# Section renderers — each consumes one JSON dict and returns an HTML <section>
+# Panel renderers — each returns (panel_html, strip_chip). Inspection panels
+# (no verdict) return "" for the strip chip.
 # --------------------------------------------------------------------------- #
 def render_mbias(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
-    """Level 1a m-bias section. Returns (section_html, ladder_chip_html)."""
+    """Tier-1 m-bias tripwire."""
     m = d["multiplicative_bias_m"]
     r11 = d["metacal_response_R11"]
-    cfg = d.get("config", {})
     prov = d.get("provenance", {})
-    tol = 5e-3  # |m| < 5e-3 pass criterion (the test's M_TOL)
-    ok = abs(m) < tol
+    ok = abs(m) < M_TOL
     colour, label = (TEAL, "PASS") if ok else (CINNABAR, "FAIL")
-    centroid = cfg.get("centroid_source", "?")
+    centroid = d.get("config", {}).get("centroid_source", "?")
     vn = (
         f"ngmix {prov.get('ngmix_version', '?')} &middot; "
         f"galsim {prov.get('galsim_version', '?')} &middot; centroid {centroid}"
@@ -339,57 +393,59 @@ def render_mbias(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
         f"The recovered <code>R11</code> is <code>{r11:.3f}</code>.",
         "run_mbias.py", render_ts,
     )
-    section = f"""\
-  <section id="l1a">
-    <div class="section-mark">
-      <span>&sect; Level 1a &mdash; m-bias</span>
-      <a class="srcbtn" href="{REPO_BLOB}/tests/science/test_mbias.py" target="_blank" rel="noopener"><span class="gl">&lt;/&gt;</span>test_mbias.py</a>
-    </div>
-    <h2>Multiplicative bias on injected shear.</h2>
-    <div class="spec"><span class="mark">&sect; the test</span><p><b>What it is.</b> An in-memory sim injecting a known shear <code>g_inj = {d['injected_g1']}</code> through the controlled <code>make_data / do_ngmix_metacal</code> path and recovering it after the metacal response correction.</p><p><b>What it measures.</b> The multiplicative bias <code>m = g_obs/g_inj &minus; 1</code>.</p><p><b>Pass criteria.</b> <code>|m| &lt; 5&times;10&#8315;&sup3;</code>.</p></div>
-    {fig}
-    <div class="verdict">{badge(label, colour)}<span class="vlabel">multiplicative bias m</span><span class="vval">{sci(m)}</span><span class="vn">{vn}</span></div>
-  </section>"""
-    chip = f'<span class="lchip">m-bias {badge(label, colour)}</span>'
-    return section, chip
-
-
-def render_psf_prior(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
-    """Level 1b psf_fit_prior section. Returns (section_html, ladder_chip_html)."""
-    v = d["psf_fit_prior_verdict"]
-    e1_gal = v["psf_fit_e1_galaxy"]
-    e1_none = v["psf_fit_e1_none"]
-    c = d["additive_bias_c1"]
-    m = d["multiplicative_bias_m"]
-    # Recompute the verdict on-page from the measured biases against the same
-    # tolerances the tests assert (C_TOL = 1e-3, M_TOL = 5e-3) rather than
-    # trusting a pre-baked boolean from the harvester JSON: the page owns its
-    # pass/fail logic, so a stale or missing flag can't silently green-light it.
-    C_TOL, M_TOL = 1e-3, 5e-3
-    robust = abs(c) < C_TOL and abs(m) < M_TOL
-    colour, label = (TEAL, "PASS") if robust else (CINNABAR, "FAIL")
-    fig = figure_block(
-        b64, "psf_fit_prior sweep",
-        "<b>Left:</b> the fitted PSF ellipticity is entirely the prior&rsquo;s doing &mdash; "
-        "<code>galaxy</code> and <code>psf</code> round it to zero, <code>none</code> recovers the "
-        "injected <code>0.05</code>. <b>Right:</b> the recovered shear <code>m</code> is flat across all "
-        "three. Metacal absorbs the PSF-fit-prior bias; the shear is robust to it.",
-        "run_star_response.py", render_ts,
+    spec = (
+        '<div class="spec"><span class="mark">&sect; the test</span>'
+        f"<p><b>What it is.</b> An in-memory sim injecting a known shear <code>g_inj = {d['injected_g1']}</code> "
+        "through the controlled <code>make_data / do_ngmix_metacal</code> path and recovering it after the "
+        "metacal response correction.</p>"
+        "<p><b>What it measures.</b> The multiplicative bias <code>m = g_obs/g_inj &minus; 1</code>.</p>"
+        f"<p><b>Pass criteria.</b> <code>|m| &lt; {sci(M_TOL)}</code>.</p></div>"
     )
-    section = f"""\
-  <section id="l1b">
-    <div class="section-mark">
-      <span>&sect; Level 1b &mdash; psf_fit_prior sweep</span>
-      <a class="srcbtn" href="https://github.com/CosmoStat/shapepipe/issues/749" target="_blank" rel="noopener"><span class="gl">&lt;/&gt;</span>shapepipe#749</a>
-      <a class="srcbtn" href="{REPO_BLOB}/tests/science/test_star_response.py" target="_blank" rel="noopener"><span class="gl">&lt;/&gt;</span>test_star_response.py</a>
-    </div>
-    <h2>Does the PSF-fit prior bias the recovered shear?</h2>
-    <div class="spec"><span class="mark">&sect; the test</span><p><b>What it is.</b> An in-memory sim injecting a known elliptical PSF (<code>e1<sub>true</sub> = {d['psf_e1_true']}</code>) and sweeping <code>psf_fit_prior</code> over <code>galaxy / none / psf</code>.</p><p><b>What it measures.</b> The fitted PSF ellipticity and the recovered shear (c, m) under each prior.</p><p><b>Pass criteria.</b> Recovered shear <code>c</code> and <code>m</code> unchanged across the prior choices.</p></div>
-    {fig}
-    <div class="verdict">{badge(label, colour)}<span class="vlabel">shear robust to psf_fit_prior</span><span class="vval">|c| = {sci(abs(c))} &middot; |m| = {sci(abs(m))}</span><span class="vn">PSF fit e1 swings {e1_gal:.4f} &rarr; {e1_none:.4f}; shear does not</span></div>
-  </section>"""
-    chip = f'<span class="lchip">#749 {badge(label, colour)}</span>'
-    return section, chip
+    verdict = verdict_row(label, colour, "multiplicative bias m", sci(m), vn)
+    sec = panel(
+        "t1-mbias", "&sect; Tier 1 &mdash; m-bias",
+        _src(f"{REPO_BLOB}/tests/science/test_mbias.py", "test_mbias.py"),
+        "in-memory", "Multiplicative bias on injected shear.", spec, fig, verdict,
+        badge_label=label, badge_colour=colour, summary_val=f"m = {sci(m)}",
+    )
+    return sec, strip_chip("t1-mbias", "m-bias", label, colour)
+
+
+def render_breakdown(d: dict, b64: str | None, render_ts: str) -> str:
+    """Tier-1 inspection panel: where the metacal calibration breaks down across
+    the resolution x noise grid. An inspection shape, no verdict badge (the
+    m-bias CI dot already carries the scalar); force-open like the Tier-2 panels."""
+    fig = figure_block(
+        b64, "m, R11 and |c1| vs resolution ratio in three S/N bands",
+        "Multiplicative bias <code>m</code>, metacal response <code>R11</code> and "
+        "additive bias <code>|c1|</code> as a function of the resolution ratio "
+        "<code>r = gal&nbsp;hlr / psf&nbsp;fwhm</code>, in three "
+        "<span style='color:#3F8278'><b>signal-to-noise bands</b></span>. The shaded "
+        f"sliver on the top panel marks the <code>|m| &lt; {sci(M_TOL)}</code> tolerance.",
+        "run_breakdown_grid.py", render_ts, fig_tool="plot_breakdown_grid.py",
+    )
+    spec = (
+        '<div class="spec"><span class="mark">&sect; the method</span>'
+        "<p>Each grid cell is one self-contained GalSim simulation run in memory: an "
+        "exponential galaxy convolved with a Moffat (&beta; = 2.5) PSF, sampled at "
+        "0.1857&Prime; pixels, with a known shear injected. The stamp is passed through "
+        "the live pipeline shear estimator (<code>do_ngmix_metacal</code>), the same "
+        "code the real survey uses, and the recovered shear, the metacal response "
+        "<code>R</code>, and the additive bias <code>c</code> are read back out. "
+        "Repeating this over N random seeds per cell and averaging gives the "
+        "multiplicative bias <code>m</code>, the response <code>R11</code>, and the "
+        "additive bias <code>c1</code> for that cell. The grid sweeps two axes "
+        "independently: galaxy size relative to the PSF (the resolution ratio "
+        "<code>r</code>) and image noise (three signal-to-noise bands). The result is "
+        "a map of where the calibration stays within tolerance and where it breaks "
+        "down.</p></div>"
+    )
+    return panel(
+        "t1-breakdown", "&sect; Tier 1 &mdash; resolution &times; noise breakdown grid",
+        _src(f"{REPO_BLOB}/scripts/python/run_breakdown_grid.py", "run_breakdown_grid.py"),
+        "in-memory", "Where measurement breaks down.", spec, fig,
+        summary_val="inspection panel &mdash; no verdict", force_open=True,
+    )
 
 
 def _grid_verdict(r1_mean: float, tol: float) -> tuple[str, str]:
@@ -397,230 +453,167 @@ def _grid_verdict(r1_mean: float, tol: float) -> tuple[str, str]:
     return (TEAL, "PASS") if abs(r1_mean) <= tol else (OCHRE, "MARGINAL")
 
 
-def render_grid(arms: dict, figs: dict, render_ts: str, magprof: dict | None = None) -> tuple[str, str]:
-    """Level 2 SKiLLS-grid section with the fitgauss/gauss A/B.
+def render_testdata(td: dict) -> str:
+    """The shared Tier-2 test-data block: what is held fixed, what is re-run."""
+    return f"""\
+  <div class="testdata">
+    <div class="testdata-head">&sect; test data &mdash; held fixed across all Tier-2 panels, only ngmix re-run</div>
+    <div class="testdata-body">
+      <b>{html.escape(td['name'])}</b><br>
+      {html.escape(td['simulation'])} &middot; {html.escape(td['psf'])}<br>
+      {html.escape(td['stage_reused'])}
+    </div>
+  </div>"""
 
-    ``arms`` maps arm key -> JSON dict. The fitgauss-wcs arm is the baseline;
-    gauss-wcs is the A/B comparison. Returns (section_html, ladder_chip_html).
-    """
-    base = arms["wcs"]            # fitgauss-wcs baseline
-    gauss = arms.get("gauss_wcs")  # gauss-wcs A/B partner
-    hsm = arms.get("hsm")
-    gauss_hsm = arms.get("gauss_hsm")
 
+def render_grid(arms: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
+    """Tier-2 star-grid metacal response A/B. ONE figure (the forest of mean
+    responses on the +/-tol band), ONE verdict (the vetted gauss-wcs arm). The
+    fitgauss comparison arm is a demoted muted note, not a badge."""
+    base = arms["wcs"]              # fitgauss-wcs comparison arm
+    gauss = arms["gauss_wcs"]       # gauss-wcs vetted arm (the verdict)
     tol = base["tolerance_R"]
-    r1, r2 = base["R1"], base["R2"]
+    g_r1, g_r2 = gauss["R1"], gauss["R2"]
+    b_r1 = base["R1"]
     td = base["test_data"]
     fab = base["fabian_headline"]
     mag_lo, mag_hi = td["mag_range"]
 
-    colour_b, label_b = _grid_verdict(r1["mean"], tol)
+    colour, label = _grid_verdict(g_r1["mean"], tol)
 
-    # --- A/B deltas, all computed from JSON (the live levers) ---
-    ab_lines = ""
-    abcallout = ""
-    gauss_verdict = ""
-    if gauss is not None:
-        g_r1 = gauss["R1"]
-        wcs_drop = 100 * (g_r1["mean"] - r1["mean"]) / abs(r1["mean"]) if r1["mean"] else 0.0
-        cat_b = r1["frac_catastrophic"]
-        cat_g = g_r1["frac_catastrophic"]
-        hsm_txt = ""
-        if hsm is not None and gauss_hsm is not None:
-            h0, h1 = hsm["R1"]["mean"], gauss_hsm["R1"]["mean"]
-            hsm_drop = 100 * (h1 - h0) / abs(h0) if h0 else 0.0
-            hsm_txt = (
-                f', <span style="color:#3D5BA0"><b>hsm</b></span> '
-                f"<code>{signed(h0)}&nbsp;&rarr;&nbsp;{signed(h1)}</code> "
-                f"({signed(hsm_drop, 0)}%)"
-            )
-        abcallout = f"""\
-    <div class="abcallout">
-      <div class="abc-mark">&sect; reconvolution-PSF A/B &mdash; the largest lever</div>
-      <p>Switching the metacal reconvolution kernel from
-      <code>fitgauss</code> to <code>gauss</code> sizing brings
-      <code>&langle;R1&rangle;</code> <b>into the &plusmn;{tol:g} band</b>,
-      where fitgauss sat outside it:
-      <span style="color:#3F8278"><b>wcs</b></span>
-      <code>{signed(r1['mean'])}&nbsp;&rarr;&nbsp;{signed(g_r1['mean'])}</code>
-      ({signed(wcs_drop, 0)}%){hsm_txt}.
-      The catastrophic-fit tail (<code>|R|&gt;1</code>) shrinks in step:
-      <code>{cat_b:.0%}&nbsp;&rarr;&nbsp;{cat_g:.0%}</code>.</p>
-      <p class="abc-mech"><b>Mechanism.</b> Both arms build a <i>round</i>
-      reconvolution kernel; they differ only in how its <b>size</b> is set.
-      <code>fitgauss</code> sizes it from a per-object adaptive-moments (admom) fit
-      of the PSF stamp &mdash; fragile on noisy or tiny stamps, where the fit blows
-      up and the metacal response runs away. <code>gauss</code> sizes it from a
-      deterministic k-space match to the PSF image &mdash; robust, so the runaway
-      tail collapses. It is <b>not</b> a Bayesian-prior effect; it is the
-      kernel-sizing method.</p>
-      <p class="abc-floor"><b>The residual tail is the point-source floor.</b>
-      gauss removes the <i>fixable</i> fragility, but a <code>{cat_g:.0%}</code>
-      tail of catastrophic fits remains: the ellipticity response is singular as
-      the pre-PSF intrinsic size <code>T&rarr;0</code>, and stars <i>are</i> point
-      sources. It is exactly the regime a <b>resolution cut</b> excludes from a
-      shear sample, so a residual <code>&langle;R&rangle;</code> on a
-      <i>pure-star</i> sample is a diagnostic of metacal&rsquo;s point-source
-      behaviour, not a direct shear bias.</p>
-    </div>"""
-        colour_g, label_g = _grid_verdict(g_r1["mean"], tol)
-        gauss_verdict = (
-            f'\n    <div class="verdict">{badge(label_g, colour_g)}'
-            '<span class="vlabel">gauss &langle;R1&rangle; / &langle;R2&rangle; (wcs)</span>'
-            f'<span class="vval">{signed(g_r1["mean"])} / {signed(gauss["R2"]["mean"])}</span>'
-            f'<span class="vn">reconvolution gauss sizing &mdash; &langle;R1&rangle; inside '
-            f'&plusmn;{tol:g} band &middot; cat {cat_g:.0%} &middot; {gauss["n_obj"]:,} stars</span></div>'
-        )
-
-    # additive-bias companion line (mean star ellipticity, ideal 0)
-    add_hsm = ""
-    if hsm is not None:
-        add_hsm = f"<span><code>c1 {signed(hsm['c1'])}</code> &middot; <code>c2 {signed(hsm['c2'])}</code> &nbsp;hsm</span>"
-    addbias = (
-        '<div class=\'addbias\'><span class=\'ab-mark\'>&sect; additive bias &mdash; mean star ellipticity, ideal 0</span>'
-        f"<span><code>c1 {signed(base['c1'])}</code> &middot; <code>c2 {signed(base['c2'])}</code> &nbsp;wcs</span>"
-        f"{add_hsm}</div>"
+    cap = (
+        f"Mean per-object response <code>&langle;R1&rangle;</code> / <code>&langle;R2&rangle;</code> with "
+        "delete-one-tile jackknife errors for every arm, on the "
+        f"<span style='color:#3F8278'><b>&plusmn;{tol:g} target band</b></span>, plus the shapepipe-1.4 "
+        f"reference (<code>&langle;R1&rangle; {fab['R1_mean']:+.4f}</code> &plusmn; {fab['R1_err']:.4f}, "
+        f"{fab['n_obj']:,} stars). The <b>gauss</b> arms sit inside the band; the <b>fitgauss</b> arms sit "
+        "outside it. Centroid source (wcs vs hsm) moves the point far less than the kernel-sizing choice."
+    )
+    fig = figure_block(
+        b64, "forest plot of mean star response by reconvolution-PSF arm",
+        cap, "run_star_response_grid.py", render_ts,
     )
 
-    hist_cap = (
-        f"Per-object response across {base['n_obj']:,} stars, <b>fitgauss&middot;wcs baseline arm</b>. "
-        "The <span style='color:#3F8278'><b>target band</b></span> marks "
-        "<span style='color:#BC4538'><b>mean &plusmn; jackknife</b></span> and "
-        "<span style='color:#3D5BA0'><b>trimmed mean</b></span>. The mean is <b>tail-driven</b>: "
-        f"median (<code>R1 {signed(r1['median'])}</code>, <code>R2 {signed(r2['median'])}</code>) and "
-        f"trimmed mean (<code>{signed(r1['trimmed_mean'])}</code>, <code>{signed(r2['trimmed_mean'])}</code>) "
-        f"sit inside the band, but a <code>{r1['frac_catastrophic']:.0%}</code> tail of catastrophic "
-        f"metacal fits (<code>|R|&gt;1</code>, std &asymp; {r1['std']:.1f}) pulls the mean out."
+    note = (
+        '<div class="note">'
+        '<div><span class="nk">comparison arm</span>'
+        f"<b>fitgauss-wcs</b>: <code>&langle;R1&rangle; {signed(b_r1['mean'])}</code> &mdash; outside the "
+        f"&plusmn;{tol:g} band, tail-driven (<code>{b_r1['frac_catastrophic']:.0%}</code> catastrophic "
+        f"<code>|R|&gt;1</code> fits vs <code>{g_r1['frac_catastrophic']:.0%}</code> for gauss).</div>"
+        '<div style="margin-top:6px"><span class="nk">additive bias</span>'
+        f"mean star ellipticity (ideal 0): <code>c1 {signed(base['c1'])}</code> &middot; "
+        f"<code>c2 {signed(base['c2'])}</code>.</div></div>"
     )
-    forest_cap = (
-        f"Mean response with jackknife errors on the <span style='color:#3F8278'><b>&plusmn;{tol:g} band</b></span>, "
-        "arms plus the 1.4 reference. Reconvolution-kernel sizing dominates over the centroid source "
-        f"(wcs vs hsm). The shapepipe-1.4 fitgauss reference: <code>&langle;R1&rangle; {fab['R1_mean']:+.4f}</code> "
-        f"&plusmn; {fab['R1_err']:.4f} ({fab['n_obj']:,} stars, {fab['n_tiles']} tiles)."
+
+    spec = (
+        '<div class="spec"><span class="mark">&sect; the test</span>'
+        "<p><b>What it is.</b> The per-object metacal shear response <code>R = dg/d&gamma;</code> measured on "
+        f"stars over <code>{mag_lo:g} &lt; mag &lt; {mag_hi:g}</code>, across {base['n_tiles_ok']} tiles, with "
+        "delete-one-tile jackknife errors. A round PSF-like object should give <code>R = 0</code>. Run as an A/B "
+        "over the metacal reconvolution-PSF kernel sizing (<code>fitgauss</code> vs <code>gauss</code>), each "
+        "crossed with the centroid source (<code>wcs</code> vs <code>hsm</code>).</p>"
+        "<p><b>What it measures.</b> The mean per-object shear response of stars after metacal PSF deconvolution, "
+        "and how it responds to the reconvolution-kernel-sizing choice.</p>"
+        f"<p><b>Pass criteria.</b> <code>&langle;R1&rangle;</code> and <code>&langle;R2&rangle;</code> each within "
+        f"<code>&plusmn;{tol:g}</code> of <code>0</code> (jackknife error).</p></div>"
     )
-    fig_hist = figure_block(figs.get("grid_hist"), "star shear-response R1/R2 histograms", hist_cap, "run_star_response_grid.py", render_ts)
-    fig_forest = figure_block(figs.get("grid_forest"), "forest plot of mean response by reconvolution-PSF arm", forest_cap, "run_star_response_grid.py", render_ts)
-    fig_ab = ""
-    if gauss is not None:
-        ab_cap = (
-            "The same wcs arm, fitgauss (<span style='color:#BC4538'><b>cinnabar</b></span>) vs gauss "
-            "(<span style='color:#3F8278'><b>teal</b></span>), R1 overlaid. gauss sizing thins the "
-            "catastrophic-fit tail (<code>|R|&gt;1</code>), so the bulk tightens and the mean falls back "
-            f"inside the <span style='color:#3F8278'><b>&plusmn;{tol:g} band</b></span>."
-        )
-        fig_ab = "\n    " + figure_block(figs.get("grid_ab"), "fitgauss vs gauss R1 tail comparison", ab_cap, "run_star_response_grid.py", render_ts)
-
-    # Fabian's star-response-vs-magnitude profile: the point-source floor named in
-    # the A/B callout, resolved as R1(mag) with no magnitude cut. Numbers (n_obj,
-    # n_tiles, tolerance, the science-window mean) are read from its JSON so the
-    # caption tracks the data; the PNG is drawn by plot_mag_profile.py.
-    fig_mag = ""
-    if magprof is not None:
-        sci_r1 = magprof["windows"]["science_20_26"]["R1_mean"]
-        mag_cap = (
-            f"Shear response <code>R1</code> vs magnitude on the same <b>fitgauss&middot;wcs</b> arm "
-            f"({magprof['n_obj']:,} stars, {magprof['n_tiles']} tiles), no mag cut &mdash; the "
-            "<b>point-source floor named in the A/B callout, made visible</b>. Across the "
-            "<span style='color:#C49333'><b>20 &lt; mag &lt; 26 science window</b></span> the binned "
-            f"mean <code>&langle;R1&rangle; {signed(sci_r1)}</code> holds near <b>0</b> inside the "
-            f"<span style='color:#3F8278'><b>&plusmn;{magprof['tolerance']:g} band</b></span>; toward the "
-            "bright end it climbs to <code>&asymp;2</code> as stars approach the <b>point-source limit</b>, "
-            "where metacal&rsquo;s Jacobian <code>dg/d&gamma;</code> diverges as the pre-PSF size "
-            "<code>T&rarr;0</code>. The climb is a point-source singularity, <b>not a shear bias</b>: "
-            "resolved galaxies occupy the flat, symmetric-response regime, and a resolution cut excludes "
-            "exactly these bright point sources from the shear sample."
-        )
-        fig_mag = "\n    " + figure_block(
-            figs.get("grid_magprofile"),
-            "star shear-response R1 vs magnitude (bright-end point-source break)",
-            mag_cap, "run_star_response_magprofile.py", render_ts,
-            fig_tool="plot_mag_profile.py",
-        )
-
-    section = f"""\
-  <section id="l2">
-    <div class="section-mark">
-      <span>&sect; Level 2 &mdash; star shear response (SKiLLS grid)</span>
-      <a class="srcbtn" href="{REPO_BLOB}/tests/cluster/test_star_shear_response.py" target="_blank" rel="noopener"><span class="gl">&lt;/&gt;</span>test_star_shear_response.py</a>
-      <a class="srcbtn" href="{REPO_BLOB}/tests/helpers/star_response.py" target="_blank" rel="noopener"><span class="gl">&lt;/&gt;</span>star_response.py</a>
-    </div>
-    <h2>Star metacal shear response on the SKiLLS grid.</h2>
-    <div class="spec"><span class="mark">&sect; the test</span><p><b>What it is.</b> The per-object metacal shear response <code>R = dg/d&gamma;</code> measured on stars from Fabian Hervas&rsquo;s SKiLLS image grid, over <code>{mag_lo:g} &lt; mag &lt; {mag_hi:g}</code>, across {base['n_tiles_ok']} tiles, with delete-one-tile jackknife errors. A round PSF-like object should give <code>R = 0</code>. Run as an A/B over the metacal reconvolution-PSF kernel sizing (<code>fitgauss</code> vs <code>gauss</code>), each crossed with the centroid source (<code>wcs</code> vs <code>hsm</code>).</p><p><b>What it measures.</b> The mean per-object shear response of stars after metacal PSF deconvolution, and how it responds to the reconvolution-kernel-sizing choice.</p><p><b>Pass criteria.</b> <code>&langle;R1&rangle;</code> and <code>&langle;R2&rangle;</code> each within <code>&plusmn;{tol:g}</code> of <code>0</code> (jackknife error).</p></div>
-
-    <div class="testdata">
-      <div class="testdata-head">&sect; test data &mdash; held fixed, only ngmix re-run</div>
-      <div class="testdata-body">
-        <b>{html.escape(td['name'])}</b><br>
-        {html.escape(td['simulation'])} &middot;
-        {html.escape(td['psf'])}<br>
-        {html.escape(td['stage_reused'])}
-      </div>
-    </div>
-
-    {fig_hist}
-
-    {fig_forest}
-{abcallout}{fig_ab}{fig_mag}
-
-    {addbias}
-
-    <div class="verdict">{badge(label_b, colour_b)}<span class="vlabel">mean response &langle;R1&rangle; / &langle;R2&rangle;</span><span class="vval">{signed(r1['mean'])} / {signed(r2['mean'])}</span><span class="vn">fitgauss-wcs &mdash; mean tail-driven, outside band &middot; {base['n_obj']:,} stars &middot; {base['n_tiles_ok']} tiles</span></div>{gauss_verdict}
-
-  </section>"""
-    chip = (
-        f'<span class="lchip">fitgauss R {badge(label_b, colour_b)}</span>'
-        + (f'<span class="lchip">gauss R {badge(*reversed(_grid_verdict(gauss["R1"]["mean"], tol)))}</span>' if gauss else "")
+    verdict = verdict_row(
+        label, colour, "gauss-wcs &langle;R1&rangle; / &langle;R2&rangle;",
+        f"{signed(g_r1['mean'])} / {signed(g_r2['mean'])}",
+        f"vetted arm &mdash; inside &plusmn;{tol:g} band &middot; "
+        f"cat {g_r1['frac_catastrophic']:.0%} &middot; {gauss['n_obj']:,} stars",
     )
-    return section, chip
+    sec = panel(
+        "t2-grid", "&sect; Tier 2 &mdash; star-grid metacal response (A/B)",
+        _src(f"{REPO_BLOB}/tests/cluster/test_star_shear_response.py", "test_star_shear_response.py")
+        + _src(f"{REPO_BLOB}/tests/helpers/star_response.py", "star_response.py"),
+        "SKiLLS", "Star metacal shear response on the SKiLLS grid.", spec, fig, verdict, note,
+        badge_label=label, badge_colour=colour,
+        summary_val=f"&langle;R1&rangle; {signed(g_r1['mean'])} / &langle;R2&rangle; {signed(g_r2['mean'])}",
+        force_open=True,
+    )
+    return sec, strip_chip("t2-grid", "star-grid R", label, colour)
+
+
+def render_magprofile(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
+    """Tier-2 star-response-vs-magnitude inspection panel. No verdict."""
+    tol = d["tolerance"]
+    sci_r1 = d["windows"]["science_20_26"]["R1_mean"]
+    cap = (
+        f"Shear response <code>R1</code> vs magnitude on the <b>fitgauss&middot;wcs</b> arm "
+        f"({d['n_obj']:,} stars, {d['n_tiles']} tiles), no magnitude cut. Across the "
+        "<span style='color:#C49333'><b>20 &lt; mag &lt; 26 science window</b></span> the binned mean "
+        f"<code>&langle;R1&rangle; {signed(sci_r1)}</code> sits inside the "
+        f"<span style='color:#3F8278'><b>&plusmn;{tol:g} band</b></span>; toward the bright end it climbs to "
+        "<code>&asymp;2</code> as stars approach the point-source limit."
+    )
+    fig = figure_block(
+        b64, "star shear-response R1 vs magnitude (bright-end point-source break)",
+        cap, "run_star_response_magprofile.py", render_ts, fig_tool="plot_mag_profile.py",
+    )
+    spec = (
+        '<div class="spec"><span class="mark">&sect; the panel</span>'
+        "<p><b>What it is.</b> The per-object metacal response <code>R1 = dg1/d&gamma;1</code> on the "
+        "<code>fitgauss&middot;wcs</code> arm, binned in magnitude with no magnitude cut applied.</p>"
+        "<p><b>What it shows.</b> Where the mean response departs from 0 as a function of source brightness &mdash; "
+        "the point-source floor of the star-grid A/B, resolved against magnitude. Inspection panel, no verdict.</p></div>"
+    )
+    sec = panel(
+        "t2-magprofile", "&sect; Tier 2 &mdash; star response vs magnitude", "",
+        "SKiLLS", "Star shear response as a function of magnitude.", spec, fig,
+        summary_val="inspection panel &mdash; no verdict", force_open=True,
+    )
+    return sec, ""
 
 
 def render_galaxy_question(d: dict, b64: str | None, render_ts: str) -> tuple[str, str]:
-    """Level 2 galaxy-response section: does the star R climb reach the shear
-    sample? Returns (section_html, ladder_chip_html).
-
-    The verdict is computed on-page from the science-like resolved-galaxy
-    aggregate against the recorded symmetry tolerance: PASS when <R1> and <R2>
-    agree (symmetric, not the star 2:1 split) AND the mean sits below 1 (away
-    from the point-source singularity where metacal's Jacobian diverges).
-    """
+    """Tier-2 galaxy question: does the bright-star response climb reach the
+    resolved (shear-carrying) population? Verdict on the highest-S/N resolved bin."""
     heads = {h["label"]: h for h in d["headline"]}
     star_bright = next(h for k, h in heads.items() if k.startswith("stars bright"))
     tol = d["tolerance_symmetry"]
-    # Verdict on the highest-S/N resolved-galaxy bin (res>0.4) — the plotted curve,
-    # and the exact locus where the star point-source climb appears (high S/N, where
-    # photon noise no longer masks the deterministic systematic). Both checks read
-    # straight off that bin: symmetry (R1~R2, not the star 2:1 split) and sub-unity
-    # (below the <R>=1 blow-up). A whole-sample mean is tail-driven and averages over
-    # S/N, so it would miss a high-S/N-only climb; the top bin will not.
+    # Verdict on the highest-S/N resolved-galaxy bin (res>0.4) — the exact locus
+    # where the star point-source climb appears. Symmetry (R1~R2, not the star 2:1
+    # split) AND sub-unity (below the <R>=1 blow-up), both read off that bin.
     top = max(d["gal_resolved_vs_s2n"], key=lambda b: b["mid"])
     r1, r2 = top["R1_mean"], top["R2_mean"]
-    d_sym = abs(r1 - r2)
-    ok = d_sym < tol and max(r1, r2) < 1.0
+    ok = abs(r1 - r2) < tol and max(r1, r2) < 1.0
     colour, label = (TEAL, "PASS") if ok else (CINNABAR, "FAIL")
-
     fig = figure_block(
         b64, "mean metacal response vs S/N, stars vs resolved galaxies",
         "Mean metacal response <code>&langle;R&rangle;</code> vs S/N on the SKiLLS sims. "
         "<span style='color:#BC4538'><b>Point-source stars</b></span> (<code>res&lt;0.06</code>) "
-        "climb past <code>&langle;R&rangle;=1</code> toward high S/N and "
-        "split <code>R1&thinsp;&gg;&thinsp;R2</code>; "
+        "climb past <code>&langle;R&rangle;=1</code> toward high S/N and split <code>R1&thinsp;&gg;&thinsp;R2</code>; "
         "<span style='color:#3F8278'><b>resolved galaxies</b></span> (<code>res&gt;0.4</code>) "
         "saturate near <code>&langle;R&rangle;&asymp;0.85</code> with <code>R1&thinsp;&asymp;&thinsp;R2</code> paired.",
-        "run_galaxy_question.py", render_ts,
-        fig_tool="plot_galaxy_question.py",
+        "run_galaxy_question.py", render_ts, fig_tool="plot_galaxy_question.py",
     )
-    section = f"""\
-  <section id="l2gal">
-    <div class="section-mark">
-      <span>&sect; Level 2 &mdash; galaxy shear response vs S/N</span>
-    </div>
-    <h2>Does the bright-star response climb reach the shear sample?</h2>
-    <div class="spec"><span class="mark">&sect; the test</span><p><b>What it is.</b> The per-object metacal response <code>R = dg/d&gamma;</code> measured on the <b>same SKiLLS sims</b> for point-source stars (<code>res &lt; 0.06</code>) and resolved galaxies (<code>res &gt; 0.4</code>), binned in S/N. Resolution <code>res = T/(T+T<sub>psf</sub>)</code>: 0 at the point-source limit, 1 fully resolved.</p><p><b>What it measures.</b> Whether the resolved galaxies that carry the cosmic-shear signal inherit the star point-source-limit response climb, or sit in the well-behaved regime.</p><p><b>Pass criteria.</b> At the highest S/N &mdash; the saturated regime where the star climb appears &mdash; resolved-galaxy <code>&langle;R1&rangle; &asymp; &langle;R2&rangle;</code> (symmetric, <code>|&Delta;| &lt; {tol:g}</code>) and <code>&langle;R&rangle; &lt; 1</code> (below the <code>&langle;R&rangle;=1</code> point-source singularity).</p></div>
-    {fig}
-    <div class="verdict">{badge(label, colour)}<span class="vlabel">resolved-galaxy response symmetric &amp; sub-unity</span><span class="vval">&langle;R1&rangle; {signed(r1)} / &langle;R2&rangle; {signed(r2)}</span><span class="vn">highest-S/N resolved bin (res&gt;0.4, S/N&gt;{top['lo']:.0f}, {top['n']:,} objects) &middot; bright stars split {signed(star_bright['R1_mean'])} / {signed(star_bright['R2_mean'])}</span></div>
-  </section>"""
-    chip = f'<span class="lchip">galaxy R {badge(label, colour)}</span>'
-    return section, chip
+    spec = (
+        '<div class="spec"><span class="mark">&sect; the test</span>'
+        "<p><b>What it is.</b> The per-object metacal response <code>R = dg/d&gamma;</code> on the "
+        "<b>same SKiLLS sims</b> for point-source stars (<code>res &lt; 0.06</code>) and resolved galaxies "
+        "(<code>res &gt; 0.4</code>), binned in S/N. Resolution <code>res = T/(T+T<sub>psf</sub>)</code>: 0 at "
+        "the point-source limit, 1 fully resolved.</p>"
+        "<p><b>What it measures.</b> Whether the resolved galaxies that carry the cosmic-shear signal inherit the "
+        "star point-source-limit response climb, or sit in the well-behaved regime.</p>"
+        f"<p><b>Pass criteria.</b> At the highest S/N, resolved-galaxy <code>&langle;R1&rangle; &asymp; "
+        f"&langle;R2&rangle;</code> (symmetric, <code>|&Delta;| &lt; {tol:g}</code>) and "
+        "<code>&langle;R&rangle; &lt; 1</code> (below the point-source singularity).</p></div>"
+    )
+    verdict = verdict_row(
+        label, colour, "resolved-galaxy response symmetric &amp; sub-unity",
+        f"&langle;R1&rangle; {signed(r1)} / &langle;R2&rangle; {signed(r2)}",
+        f"highest-S/N resolved bin (res&gt;0.4, S/N&gt;{top['lo']:.0f}, {top['n']:,} objects) &middot; "
+        f"bright stars split {signed(star_bright['R1_mean'])} / {signed(star_bright['R2_mean'])}",
+    )
+    sec = panel(
+        "t2-galaxy", "&sect; Tier 2 &mdash; galaxy question (S/N vs response)", "",
+        "SKiLLS", "Does the bright-star response climb reach the shear sample?", spec, fig, verdict,
+        badge_label=label, badge_colour=colour,
+        summary_val=f"&langle;R1&rangle; {signed(r1)} / &langle;R2&rangle; {signed(r2)}",
+        force_open=True,
+    )
+    return sec, strip_chip("t2-galaxy", "galaxy R", label, colour)
 
 
 # --------------------------------------------------------------------------- #
@@ -635,22 +628,23 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
         for slot, fname in FIGURE_SLOTS.items():
             figs[slot] = b64_png(figures / fname)
 
-    sections: list[str] = []
-    chips: list[str] = []
+    strip: list[str] = []
+    tier1: list[str] = []
+    tier2: list[str] = []
+
+    # ---- Tier 1 — CI tripwires ----
+    # Inspection panel first (force-open figure), then the collapsed m-bias row.
+    breakdown = load(results, "breakdown_grid", "breakdown_grid.json")
+    if breakdown is not None:
+        tier1.append(render_breakdown(breakdown, figs.get("breakdown"), render_ts))
 
     mbias = load(results, "mbias_sim", "mbias.json")
     if mbias is not None:
         sec, chip = render_mbias(mbias, figs.get("mbias"), render_ts)
-        sections.append(sec)
-        chips.append(chip)
+        tier1.append(sec)
+        strip.append(chip)
 
-    psf = load(results, "star_response_sim", "star_response.json")
-    if psf is not None:
-        sec, chip = render_psf_prior(psf, figs.get("psf_fit_prior"), render_ts)
-        sections.append(sec)
-        chips.append(chip)
-
-    # Level 2 arms: any present subset of the 2x2 grid.
+    # ---- Tier 2 — vetted image-sim panels ----
     arm_dirs = {
         "wcs": "star_response_grid_wcs",
         "hsm": "star_response_grid_hsm",
@@ -659,31 +653,53 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
     }
     arms = {k: load(results, d, "star_response.json") for k, d in arm_dirs.items()}
     arms = {k: v for k, v in arms.items() if v is not None}
-    magprof = load(results, "star_response_magprofile", "magprofile.json")
-    l2_chips = ""
-    if "wcs" in arms:
-        sec, l2_chips = render_grid(arms, figs, render_ts, magprof)
-        sections.append(sec)
 
-    # Level 2 companion: the galaxy question — does the star R climb reach the
-    # shear-carrying (resolved) population? Same SKiLLS sims, its own verdict.
+    testdata_html = ""
+    if "wcs" in arms and "gauss_wcs" in arms:
+        testdata_html = render_testdata(arms["wcs"]["test_data"])
+        sec, chip = render_grid(arms, figs.get("grid_forest"), render_ts)
+        tier2.append(sec)
+        strip.append(chip)
+
+    magprof = load(results, "star_response_magprofile", "magprofile.json")
+    if magprof is not None:
+        sec, _ = render_magprofile(magprof, figs.get("grid_magprofile"), render_ts)
+        tier2.append(sec)
+
     galq = load(results, "galaxy_question", "galaxy_question.json")
     if galq is not None:
-        sec, gchip = render_galaxy_question(galq, figs.get("galaxy_question"), render_ts)
-        sections.append(sec)
-        l2_chips += gchip
+        sec, chip = render_galaxy_question(galq, figs.get("galaxy_question"), render_ts)
+        tier2.append(sec)
+        strip.append(chip)
 
-    if not sections:
+    if not tier1 and not tier2:
         raise SystemExit(
             f"no recognised result JSONs found under {results} "
             f"(expected e.g. mbias_sim/mbias.json, star_response_grid_wcs/star_response.json)"
         )
 
-    # Ladder strip — Level 1 chips from the sim arms, Level 2 chips from the grid.
-    l1_chips = "".join(chips) or '<span class="lchip">&mdash; <span class="badge" style="background:var(--ink-muted)">PENDING</span></span>'
-    l2_chips = l2_chips or '<span class="lchip">&mdash; <span class="badge" style="background:var(--ink-muted)">PENDING</span></span>'
+    strip_html = "".join(strip)
 
-    sections_html = "\n\n".join(sections)
+    tiers_html = ""
+    if tier2:
+        tiers_html += f"""\
+  <div class="tier">
+    <div class="tier-mark">&sect; Tier 2</div>
+    <h2>Vetted image-sim panels.</h2>
+    <p class="tier-scope">Metacal behaviour on Fabian Hervas&rsquo;s SKiLLS 1z2z star grid &mdash; realistic images with a fake PSF injected mid-chain, only the ngmix stage re-run. These are what you come to inspect; panels open by default.</p>
+  </div>
+{testdata_html}
+{chr(10).join(tier2)}
+"""
+    if tier1:
+        tiers_html += f"""\
+  <div class="tier">
+    <div class="tier-mark">&sect; Tier 1</div>
+    <h2>CI tripwires.</h2>
+    <p class="tier-scope">Fast in-memory sims through the controlled <code>make_data / do_ngmix_metacal</code> path, no image simulation: the resolution &times; noise breakdown grid maps where the calibration holds and where it breaks down (open for inspection), and the single-point m-bias tripwire gates every commit (collapsed to a one-line row while green, expanded on any red).</p>
+  </div>
+{chr(10).join(tier1)}
+"""
 
     return f"""<!doctype html>
 <html lang="en">
@@ -706,44 +722,26 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
   </div>
 
   <h1>ShapePipe &mdash; shape-measurement status.</h1>
-  <p class="lede">A live, auto-generated status board for the ngmix metacal shape
-  measurement, organised by a <b>fidelity ladder</b>: in-memory toy simulations
-  (Level&nbsp;1, the ideal limit) up through the realistic SKiLLS star grid
-  (Level&nbsp;2). Every number is read straight from a results JSON and shown as
-  a plot with its provenance; the page re-renders on each run.</p>
+  <p class="lede">A live, auto-generated status page for the ngmix metacal shape
+  measurement, organised by <b>tier of check</b>: the vetted image-sim panels on
+  the SKiLLS star grid come first (Tier&nbsp;2, open for inspection), then the
+  fast CI tripwires that gate every commit (Tier&nbsp;1, collapsed while green).
+  Real-data checks on UNIONS catalogues are coming. Every number is read straight
+  from a results JSON and shown as a plot with its provenance; the page
+  re-renders on each run.</p>
 
   <div class="disclaimer">
     <b>&#9888; Preliminary</b>
     <span>under rapid development &mdash; tests, numbers, and layout may change.</span>
   </div>
 
-
-  <div class="ladder">
-
-    <a class="rung l1" href="#l1a">
-      <div class="rung-head l1">Level 1 &mdash; in-memory sims</div>
-      <p>Ideal limit. A single injected shear runs through the controlled <code>make_data / do_ngmix_metacal</code> path in seconds &mdash; an algorithmic check, no image simulation.</p>
-      <div class="lchips">{l1_chips}</div>
-    </a>
-
-    <a class="rung l2" href="#l2">
-      <div class="rung-head l2">Level 2 &mdash; SKiLLS star grid</div>
-      <p>Realistic. SKiLLS 1z2z star images, fake PSF mid-chain; only the ngmix stage is re-run, all upstream intermediates byte-fixed.</p>
-      <div class="lchips">{l2_chips}</div>
-    </a>
-
-    <a class="rung l3" href="#l3">
-      <div class="rung-head l3">Level 3 &mdash; real UNIONS data</div>
-      <p>Future. Full UNIONS catalogue runs, end-to-end.</p>
-      <div class="lchips"><span class="lchip">&mdash; <span class="badge" style="background:var(--ink-muted)">SOON</span></span></div>
-    </a>
+  <div class="vstrip">
+    <span class="vstrip-label">verdicts</span>{strip_html}
   </div>
 
   <hr>
 
-
-{sections_html}
-
+{tiers_html}
   <footer>
     UPDATE MECHANISM &nbsp;&middot;&nbsp; the digital-twin harvesters
     (<b>run_mbias.py</b>, <b>run_star_response.py</b>,
@@ -759,6 +757,13 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
   </footer>
 
 </main>
+<script>
+  // Auto-open a collapsed <details> when its anchor is targeted from the verdict
+  // strip (on load and on hashchange).
+  function openTarget(){{var el=location.hash&&document.querySelector(location.hash);
+  if(el){{var d=el.closest("details")||el.querySelector("details");if(d)d.open=true;}}}}
+  addEventListener("hashchange",openTarget);openTarget();
+</script>
 </body>
 </html>"""
 
