@@ -8,14 +8,15 @@ tags:
     - future
     - refactor
 created-at: 2026-05-28T09:37:09.591626506+02:00
+updated-at: 2026-07-09T17:44:26.53771644+02:00
 outcome: Pickle-everywhere in SqliteDict storage (~10 modules) is dismissable today (trusted compute, no external write path) but a real smell. Revisit if shapepipe ever exposes a write path to untrusted .sqlite files.
 ---
 
 ## The vulnerability
 
-`GHSA-g4r7-86gm-pgqc` (high, CVE-2024-35515) — sqlitedict uses pickle as the default value encoding. An attacker who can write `.sqlite` files that shapepipe later reads gets arbitrary code execution on `dict[key]` access, via crafted pickle payloads.
+`GHSA-g4r7-86gm-pgqc` (high, CVE-2024-35515) — sqlitedict uses pickle as the default value encoding. An attacker who can write `.sqlite` files that shapepipe later reads gets arbitrary code execution on `dict[key]` access, via crafted pickle payloads. A second OSV advisory, `PYSEC-2026-1939`, covers the same root cause.
 
-`first_patched_version: null`. The maintainer considers pickle-by-default intended behavior; the [README's serialization section](https://github.com/piskvorky/sqlitedict?tab=readme-ov-file#serialization) tells users to pass `encode=`/`decode=` if they care. There will be no upstream fix.
+`first_patched_version: null`. The maintainer considers pickle-by-default intended behavior; the [README's serialization section](https://github.com/piskvorky/sqlitedict?tab=readme-ov-file#serialization) tells users to pass `encode=`/`decode=` if they care. There will be no upstream fix — confirmed again 2026-07-09 when Renovate's first live run (post #760 migration) surfaced both advisories via OSV but found no `>2.1.0` release to bump to, so no fix PR was possible. Renovate will keep re-surfacing this on every run (`osvVulnerabilityAlerts: true`); expect it to sit as a perpetual no-op until upstream ships a patch or this fiber's disposition changes.
 
 ## How shapepipe uses it
 
