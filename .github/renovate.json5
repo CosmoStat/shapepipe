@@ -1,0 +1,86 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+
+  // ── Renovate replaces Dependabot for shapepipe ──────────────────────────────
+  //
+  // Why the switch: Dependabot's only noise control is grouping, and its
+  // security channel bypasses even that — so a same-day burst of advisories
+  // arrives as N separate PRs that a human must merge by hand. Renovate gives a
+  // single Dependency Dashboard issue plus *branch automerge*: routine updates
+  // land silently on green CI with no PR at all. The supply-chain posture from
+  // the old dependabot.yml is carried over below and, via OSV, strengthened.
+  //
+  // Requires the Renovate GitHub App (or a self-hosted runner) — see the PR
+  // body for the one-time org-admin step.
+
+  extends: [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests", // keep GitHub Actions SHA-pinned, as before
+  ],
+
+  // One issue is the control surface: everything pending lives there, and
+  // nothing that needs a human decision becomes a PR until ticked.
+  dependencyDashboard: true,
+
+  // pyproject declares ABSTRACT minimums; uv.lock holds the EXACT pins. Routine
+  // updates therefore touch only the lockfile — abstract floors change solely by
+  // deliberate human edit, never by the bot. (This makes the old "floor bumps
+  // need maintainer sign-off" rule structural rather than a manual hold.)
+  rangeStrategy: "update-lockfile",
+
+  // Supply-chain cooldown (was 14d / 30d-major in dependabot.yml). 2025-26 saw a
+  // wave of maintainer-compromise attacks (Shai-Hulud, …); a release-age gate
+  // lets a malicious version be caught and yanked before it reaches us.
+  minimumReleaseAge: "14 days",
+  internalChecksFilter: "strict", // genuinely withhold updates until aged, not "surface as pending"
+
+  // Keep the queue calm.
+  prConcurrentLimit: 5,
+  prHourlyLimit: 2,
+
+  // Weekly batched lockfile refresh, merged on green CI — the routine
+  // "keep uv.lock current" job, fully hands-off.
+  lockFileMaintenance: {
+    enabled: true,
+    schedule: ["before 6am on monday"],
+    automerge: true,
+  },
+
+  // CVE fixes (GitHub alerts + OSV, which adds malicious-package detection) skip
+  // the long cooldown but keep a short 3-day window, then automerge on green CI —
+  // fast, not instant. Flip `automerge` to false here if you want eyes on every
+  // security fix.
+  osvVulnerabilityAlerts: true,
+  vulnerabilityAlerts: {
+    minimumReleaseAge: "3 days",
+    automerge: true,
+    labels: ["security"],
+  },
+
+  packageRules: [
+    {
+      // Routine minor / patch / digest: batch into ONE weekly branch and land
+      // silently on green CI — no PR, no noise. (One branch = one container-build
+      // CI run, which matters since that build is slow.)
+      matchUpdateTypes: ["minor", "patch", "pin", "digest"],
+      groupName: "all non-major",
+      schedule: ["before 6am on monday"],
+      automerge: true,
+      automergeType: "branch",
+    },
+    {
+      // Majors: never silent, never auto. 30-day age, then surface on the
+      // dashboard for explicit approval before a PR is even opened.
+      matchUpdateTypes: ["major"],
+      minimumReleaseAge: "30 days",
+      dependencyDashboardApproval: true,
+    },
+    {
+      // ngmix is intentionally pinned to a tag in [tool.uv.sources]
+      // (esheldon v2.4.0). Tag changes are a deliberate shape-measurement
+      // decision, not a dependency bump — Renovate must not touch it.
+      matchDepNames: ["ngmix"],
+      enabled: false,
+    },
+  ],
+}
