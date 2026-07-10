@@ -144,19 +144,17 @@ def response(d, i, j):
     return (gp[i - 1] - gm[i - 1]) / (2 * STEP)
 
 
-def _boot_means(values, weights=None, B=1000, rng=None):
-    """Bootstrap distribution of the (optionally weighted) mean over seeds.
+BOOTSTRAP_B = 1000
 
-    Returns the B resampled means; callers take mean/std or push them through a
-    ratio to propagate the paired-difference error to m and c."""
-    rng = rng or np.random.default_rng(0)
-    n = len(values)
-    idx = rng.integers(0, n, size=(B, n))
-    v = np.asarray(values)[idx]
-    if weights is None:
-        return v.mean(axis=1)
-    w = np.asarray(weights)[idx]
-    return (v * w).sum(axis=1) / w.sum(axis=1)
+
+def _boot_idx(n, B, rng):
+    """One seed-index array per bootstrap replicate.
+
+    Every quantity inside a replicate must be computed from the SAME resampled
+    seed set: resampling each arm independently silently destroys the ±γ
+    pairing and inflates the reported error to the unpaired level (the bug this
+    replaces read paired σ_m = 0.23 where the per-seed pairs give 0.009)."""
+    return rng.integers(0, n, size=(B, n))
 
 
 def harvest_cell(args):
@@ -203,40 +201,44 @@ def harvest_cell(args):
         mask = pair_mask(ap, am)
         npair = int(mask.sum())
         gp, gm = arr[ap][comp][mask], arr[am][comp][mask]
-        Rboth = np.concatenate([arr[ap][ri][mask], arr[am][ri][mask]])
-        Rbar, seR = float(np.mean(Rboth)), float(np.std(Rboth) / np.sqrt(2 * npair))
-        # Bootstrap: resample seeds, recompute (dg / (2 gamma Rbar)) - 1.
-        bp, bm = _boot_means(gp, rng=rng), _boot_means(gm, rng=rng)
-        bR = _boot_means(Rboth, rng=rng)
+        Rp, Rm = arr[ap][ri][mask], arr[am][ri][mask]
+        Rbar = float(0.5 * (Rp.mean() + Rm.mean()))
+        # Joint bootstrap: one seed resample per replicate, all arms together —
+        # the pairing (identical noise across ±γ) must survive the resampling.
+        idx = _boot_idx(npair, BOOTSTRAP_B, rng)
+        bR = 0.5 * (Rp[idx].mean(axis=1) + Rm[idx].mean(axis=1))
+        seR = float(np.std(bR))
         degenerate = abs(Rbar) < 5 * seR
+        bm_boot = (gp[idx].mean(axis=1) - gm[idx].mean(axis=1)) / (2 * gamma * bR) - 1.0
         m = None if degenerate else float((np.mean(gp) - np.mean(gm)) / (2 * gamma * Rbar) - 1.0)
-        m_err = None if degenerate else float(np.std((bp - bm) / (2 * gamma * bR) - 1.0))
+        m_err = None if degenerate else float(np.std(bm_boot))
         summary[f"m{axis}"] = m
         summary[f"m{axis}_err"] = m_err
         summary[f"m{axis}_degenerate"] = bool(degenerate)
         summary[f"m{axis}_n_pairs"] = npair
         summary[f"Rbar{axis}{axis}"] = Rbar
-        summary[f"Rbar{axis}{axis}_err"] = float(np.std(bR))
+        summary[f"Rbar{axis}{axis}_err"] = seR
 
     # --- additive bias c1/c2 from the PSF-shear pair, leakage alpha ---
     mask = pair_mask("psfp", "psfm")
     npair = int(mask.sum())
-    Rpsf = np.concatenate([arr["psfp"]["R11"][mask], arr["psfm"]["R11"][mask]])
-    Rbar_psf = float(np.mean(Rpsf))
-    seR_psf = float(np.std(Rpsf) / np.sqrt(2 * npair))
-    bRpsf = _boot_means(Rpsf, rng=rng)
+    Rpsf_p, Rpsf_m = arr["psfp"]["R11"][mask], arr["psfm"]["R11"][mask]
+    Rbar_psf = float(0.5 * (Rpsf_p.mean() + Rpsf_m.mean()))
+    idx_c = _boot_idx(npair, BOOTSTRAP_B, rng)
+    bRpsf = 0.5 * (Rpsf_p[idx_c].mean(axis=1) + Rpsf_m[idx_c].mean(axis=1))
+    seR_psf = float(np.std(bRpsf))
     degenerate_c = abs(Rbar_psf) < 5 * seR_psf
     for axis, comp in ((1, "g1"), (2, "g2")):
         gp, gm = arr["psfp"][comp][mask], arr["psfm"][comp][mask]
-        bp, bm = _boot_means(gp, rng=rng), _boot_means(gm, rng=rng)
+        bc = (gp[idx_c].mean(axis=1) - gm[idx_c].mean(axis=1)) / (2 * bRpsf)
         c = None if degenerate_c else float((np.mean(gp) - np.mean(gm)) / (2 * Rbar_psf))
-        c_err = None if degenerate_c else float(np.std((bp - bm) / (2 * bRpsf)))
+        c_err = None if degenerate_c else float(np.std(bc))
         summary[f"c{axis}"] = c
         summary[f"c{axis}_err"] = c_err
     summary["c_degenerate"] = bool(degenerate_c)
     summary["c_n_pairs"] = npair
     summary["Rbar_psf"] = Rbar_psf
-    summary["Rbar_psf_err"] = float(np.std(bRpsf))
+    summary["Rbar_psf_err"] = seR_psf
     summary["alpha"] = None if summary["c1"] is None else float(summary["c1"] / PSF_SHEAR)
     summary["alpha_err"] = None if summary["c1_err"] is None else float(summary["c1_err"] / PSF_SHEAR)
 
@@ -244,9 +246,10 @@ def harvest_cell(args):
     for axis, (ap, ri, comp) in {1: ("g1p", "R11", "g1"), 2: ("g2p", "R22", "g2")}.items():
         m = ok(ap)
         g, R = arr[ap][comp][m], arr[ap][ri][m]
-        bg, bR = _boot_means(g, rng=rng), _boot_means(R, rng=rng)
+        idx_l = _boot_idx(len(g), BOOTSTRAP_B, rng)  # joint: g and R share the seed resample
         summary[f"m{axis}_legacy"] = float(np.mean(g) / np.mean(R) / gamma - 1.0)
-        summary[f"m{axis}_legacy_err"] = float(np.std(bg / bR / gamma - 1.0))
+        summary[f"m{axis}_legacy_err"] = float(
+            np.std(g[idx_l].mean(axis=1) / R[idx_l].mean(axis=1) / gamma - 1.0))
 
     # --- diagnostics ---
     g1ok = ok("g1p")
