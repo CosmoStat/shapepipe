@@ -50,6 +50,14 @@ To go step by step (one target at a time), do
 # Initialise subdirs (one for each sheared verions)
 sn_ims init_all
 
+# Optional: scan input weight images for tile coverage. Tiles with a low
+fraction of non-zero weight pixels (<50%, can be set by the user) has a small
+number of detected galaxies. In some cases this number can be zero which would
+lead to a failure of the ShapePipe module vignet_maker_runner.
+
+This call creates a tile-by-tile coverage report and adds the below-threshold
+tiles to an exclusion list in config.yaml.
+
 # Run shapepipe
 sn_ims pipeline_all
 ```

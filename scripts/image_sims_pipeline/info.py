@@ -1,19 +1,17 @@
 """Info script for image-simulation Snakemake pipeline."""
 
-import sys
 import os
+import argparse
 import yaml
 import subprocess
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SNAKEFILE  = os.path.join(SCRIPT_DIR, "Snakefile")
-CONFIGFILE = "config.yaml"
-BASE_CMD   = f"snakemake -s {SNAKEFILE} --configfile {CONFIGFILE}"
 
 
-def load_config():
-    with open(CONFIGFILE) as f:
+def load_config(configfile):
+    with open(configfile) as f:
         return yaml.safe_load(f)
 
 
@@ -37,7 +35,28 @@ def load_tile_ids(cfg):
         else:
             tile_ids = [tile_ids]
 
-    return tile_ids if isinstance(tile_ids, list) else [tile_ids]
+    if not isinstance(tile_ids, list):
+        tile_ids = [tile_ids]
+
+    # Same filtering as in the Snakefile
+    exclusive = cfg.get("tile_IDs_exclusive")
+    if exclusive and isinstance(exclusive, list):
+        tile_ids = exclusive
+    exclude = cfg.get("tile_IDs_exclude")
+    if exclude and isinstance(exclude, list):
+        exclude_set = set(str(t) for t in exclude)
+        tile_ids = [t for t in tile_ids if t not in exclude_set]
+
+    # Low-coverage tiles from the coverage scan, if present
+    coverage_file = os.path.join(cfg["base"], f"tile_coverage_grid_{num}.yaml")
+    if os.path.isfile(coverage_file):
+        with open(coverage_file) as f:
+            cov_exclude = set(
+                str(t) for t in (yaml.safe_load(f) or {}).get("exclude", [])
+            )
+        tile_ids = [t for t in tile_ids if t not in cov_exclude]
+
+    return tile_ids
 
 
 def get_hdf5_tile_count(hdf5_path):
@@ -205,15 +224,34 @@ def monitor(cfg, verbose=0):
         print(row)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Info script for image-simulation Snakemake pipeline."
+    )
+    parser.add_argument(
+        "-c", "--config", default="config.yaml",
+        help="path to config file (default: %(default)s)"
+    )
+    parser.add_argument(
+        "-m", "--monitor", action="store_true",
+        help="monitor pipeline progress"
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="count", default=0,
+        help="increase verbosity (can be repeated)"
+    )
+    return parser.parse_args()
+
+
 def main():
-    monitor_mode = "-m" in sys.argv or "--monitor" in sys.argv
-    verbose = sys.argv.count("-v") + sys.argv.count("--verbose") + \
-              (1 if "-vv" in sys.argv else 0) * 2
+    args = parse_args()
 
-    cfg = load_config()
+    # config is only loaded after argument parsing, so -h works without it
+    cfg = load_config(args.config)
+    base_cmd = f"snakemake -s {SNAKEFILE} --configfile {args.config}"
 
-    if monitor_mode:
-        monitor(cfg, verbose=verbose)
+    if args.monitor:
+        monitor(cfg, verbose=args.verbose)
         return
 
     base      = cfg["base"]
@@ -234,7 +272,7 @@ def main():
     print("  Image simulations pipeline")
     print("=" * 70)
     print()
-    print(f"  Config   : {CONFIGFILE}")
+    print(f"  Config   : {args.config}")
     print(f"  Base     : {base}")
     print(f"  Tile IDs : {tile_ids}")
     print(f"  Sample   : {sample}  (mask config mask_v1.X.{sample}_im_sim.yaml)")
@@ -245,13 +283,14 @@ def main():
 
     print("# Basic command")
     print()
-    print(f"  {BASE_CMD} -j N_CPU <target>")
+    print(f"  {base_cmd} -j 4 --rerun-triggers=mtime -- <target>")
     print()
 
     print("# Target order")
     print()
     stages = [
         ("init_all", "initialise run directories"),
+        ("coverage", "scan input tiles, exclude (near-)empty ones (once per grid)"),
         ("pipeline_all", f"run full job sequence {job_seq} in order"),
         ("merge_all", "merge ShapePipe output into final_cat_<sim>.hdf5"),
         ("extract_all", "extract comprehensive shape catalogue (HDF5)"),
@@ -280,7 +319,7 @@ def main():
 
     print("# Run a single shapepipe job for one sim")
     print()
-    print(f"  {BASE_CMD} -j 1 \\")
+    print(f"  {base_cmd} -j 1 \\")
     print(f"    {grids}/<sim>/logs/log_job_J.txt")
     print()
 

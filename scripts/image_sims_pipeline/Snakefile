@@ -1,8 +1,26 @@
 """Snakemake workflow for image-simulation pipeline.
 
 Run from the run directory:
-    snakemake -s ~/astro/repositories/github/shapepipe/scripts/image_sims_pipeline/Snakefile --configfile config.yaml -j 5
-    snakemake -s ~/astro/repositories/github/shapepipe/scripts/image_sims_pipeline/Snakefile --configfile config.yaml -j 1 --dry-run
+    snakemake -s Snakefile --configfile config.yaml -j 1 -- coverage   # once per grid, runs init if needed
+    snakemake -s Snakefile --configfile config.yaml -j 4 --rerun-triggers=mtime -- pipeline_all
+    snakemake -s Snakefile --configfile config.yaml -j 1 --dry-run -- pipeline_all
+
+ShapePipe stages run in one-shot mode by default: one job per (sim, tile)
+covering the whole bit sequence (-j 4095); n_sims x n_tiles independent
+jobs. Use --config per_bit=1 (implied by job=N) for per-bit jobs.
+
+Cluster execution (SLURM, snakemake >= 8 with snakemake-executor-plugin-slurm):
+run from a login-node tmux; each job becomes its own sbatch submission:
+    snakemake -s Snakefile --configfile config.yaml --executor slurm -j 80 \
+        --default-resources slurm_partition=<partition> cpus_per_task=2 \
+        mem_mb=8000 runtime=1440 --rerun-triggers=mtime -- pipeline_all
+
+When running locally, use a small fixed -j (e.g. 4), not -j
+$OMP_NUM_THREADS: each job spawns MPI processes, and ulimit -u on candide
+is 1200 ("can't start new thread" crash).
+
+--rerun-triggers=mtime avoids re-running completed jobs after edits to this
+file or to config.yaml (default triggers include rule-code changes).
 """
 
 import os
@@ -33,11 +51,43 @@ with open(_tile_ids_file) as f:
 _exclusive = config.get("tile_IDs_exclusive")
 if _exclusive and isinstance(_exclusive, list) and _exclusive:  # Non-empty list
     TILE_IDs = _exclusive
+
+# Remove excluded tiles if provided (e.g. blank input images)
+_exclude = config.get("tile_IDs_exclude")
+if _exclude and isinstance(_exclude, list):
+    _exclude_set = set(str(t) for t in _exclude)
+    TILE_IDs = [t for t in TILE_IDs if t not in _exclude_set]
+
+# Remove low-coverage tiles found by check_tile_coverage.py, if the scan
+# has been run ("snakemake coverage"). Read at DAG-build time and kept out
+# of rule inputs so a rescan does not invalidate completed jobs.
+COVERAGE_FILE = f"{BASE}/tile_coverage_grid_{config['num']}.yaml"
+if os.path.isfile(COVERAGE_FILE):
+    import yaml as _yaml
+    with open(COVERAGE_FILE) as _f:
+        _cov_exclude = set(str(t) for t in _yaml.safe_load(_f).get("exclude", []))
+    _n_before = len(TILE_IDs)
+    TILE_IDs = [t for t in TILE_IDs if t not in _cov_exclude]
+    if len(TILE_IDs) < _n_before:
+        print(
+            f"Coverage scan: excluding {_n_before - len(TILE_IDs)} "
+            f"low-coverage tiles ({len(TILE_IDs)} remain), see {COVERAGE_FILE}"
+        )
+else:
+    print(
+        f"No coverage scan found ({COVERAGE_FILE}); "
+        f"run 'snakemake coverage' first to exclude (near-)empty input tiles"
+    )
 FORCE        = "--force" if config.get("force", 0) else ""
 N_SMP        = config.get("n_smp", -1)
 SHEAR_AMP    = config.get("shear_amplitude", 0.02)
 MATCH_RAD    = config.get("match_radius_deg", 0.0002)
-W_COL        = config.get("w_col", "w_des")
+PAIR_MATCH   = "true" if config.get("pair_match", True) else "false"
+# Weight schemes for m-bias; "none" means uniform weights, first is primary
+_w_cols      = config.get("w_cols") or (
+    [config["w_col"]] if config.get("w_col") else ["none", "w_iv"]
+)
+W_COLS       = "[" + ", ".join(f"'{w}'" for w in _w_cols) + "]"
 N_BOOT       = config.get("n_bootstrap", 500)
 
 FULL_JOB_SEQUENCE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
@@ -58,9 +108,10 @@ SIMS = [
                          ["z", "z", "m", "p"])
 ]
 
-HOME     = os.path.expanduser("~")
-PATH_SH  = f"{HOME}/astro/repositories/github/shapepipe/scripts/sh"
-PATH_PY  = f"{HOME}/astro/repositories/github/shapepipe/scripts/python"
+HOME       = os.path.expanduser("~")
+PATH_SH    = f"{HOME}/astro/repositories/github/shapepipe/scripts/sh"
+PATH_PY    = f"{HOME}/astro/repositories/github/shapepipe/scripts/python"
+PATH_IMSIM = f"{HOME}/astro/repositories/github/shapepipe/scripts/image_sims_pipeline"
 PATH_NB  = f"{HOME}/astro/repositories/github/sp_validation/notebooks"
 PATH_SPV = f"{HOME}/astro/repositories/github/sp_validation"
 
@@ -70,12 +121,20 @@ SP_SIF = SPV_SIF
 SPV_SRC     = f"{HOME}/astro/repositories/github/sp_validation/src"
 SP_SRC      = f"{HOME}/astro/repositories/github/shapepipe/src"
 
+# Cap threading libraries inside containers; the host OMP_NUM_THREADS would
+# otherwise leak in and N parallel jobs x N threads exhausts ulimit -u
+_THREAD_CAPS = (
+    "OMP_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,"
+    "MKL_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1"
+)
+
 # ShapePipe pipeline stages (uses shapepipe_im_sims.sif — correct MPI build)
 _APPTAINER  = f"{PATH_SH}/apptainer_noslurm.sh"
 APP_CMD     = (
     f"{_APPTAINER} --bind /n17data,/n09data,/home"
     f" --env PYTHONPATH={SP_SRC}"
     f" --env PYTHONWARNINGS=ignore::SyntaxWarning"
+    f" --env {_THREAD_CAPS}"
     f" {SP_SIF}"
 )
 
@@ -83,6 +142,7 @@ APP_CMD     = (
 SPV_CMD     = (
     f"{_APPTAINER} --bind /n17data,/n09data,/home"
     f" --env PYTHONPATH={SPV_SRC}"
+    f" --env {_THREAD_CAPS}"
     f" {SPV_SIF}"
 )
 MBIAS_OUT   = f"{BASE}/results/m_bias_results.yaml"
@@ -167,6 +227,28 @@ rule job_2048_only:
 # 6. mbias
 # 7. diagnostics
 
+# Pixel thinning for the coverage scan: read every Nth pixel per axis
+COVERAGE_SUBSAMPLE = 20
+# Weight-map location is read from this variant's get-images ini (from init)
+SIM_REF = f"1p2z{STR_TYPE}_{NUM}"
+
+rule coverage:
+    """Scan input weight maps; write low-coverage tile exclude list.
+
+    Run this once per grid, after init_all and BEFORE pipeline_all: the
+    exclude list is read at DAG-build time, so it only takes effect on
+    the next invocation. Rerun with -f after the input sims change
+    (e.g. tile regeneration).
+    """
+    input:
+        f"{BASE}/{SIM_REF}/params.py"
+    output:
+        COVERAGE_FILE
+    shell:
+        f"{SPV_CMD} python {PATH_IMSIM}/check_tile_coverage.py"
+        f" -c {BASE}/config.yaml -o {{output}}"
+        f" --subsample {COVERAGE_SUBSAMPLE} -v"
+
 rule generate_tile_list:
     """Generate tile_numbers.txt from config's tile_IDs."""
     output:
@@ -202,9 +284,10 @@ rule calibrate_all:
         expand(f"{BASE}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
 
 # ---------- rules ----------
+# config.yaml is deliberately not a tracked input: editing it (e.g. to
+# exclude tiles) must not invalidate init and cascade into a full re-run.
+# After config changes that require re-init, run: snakemake -f init_all
 rule init:
-    input:
-        config_file = f"{BASE}/config.yaml"
     output:
         params = f"{BASE}/{{sim}}/params.py",
         mask   = f"{BASE}/{{sim}}/config_mask.yaml",
@@ -212,38 +295,71 @@ rule init:
         cfis   = directory(f"{BASE}/{{sim}}/cfis"),
     shell:
         f"python3 {PATH_PY}/init_run_v2.0.py"
-        f" -c {input.config_file} -s {{wildcards.sim}} -q"
+        f" -c {BASE}/config.yaml -s {{wildcards.sim}} -q"
 
-def _shapepipe_job_input(wildcards):
-    bit     = int(wildcards.bit)
-    tile    = wildcards.tile
-    bit_idx = JOB_SEQUENCE.index(bit)
+# Two execution modes for the ShapePipe stages:
+# - one-shot (default): one job per (sim, tile) running the whole (filtered)
+#   bit sequence via a single -j {JOB} call. Ideal for cluster execution:
+#   n_sims x n_tiles independent jobs. Resume-safe: the run script skips
+#   bits whose existing run is complete.
+# - per-bit (--config per_bit=1, or implied by --config job=N): one job per
+#   (sim, tile, bit) with inter-bit dependencies; for surgical reruns.
+PER_BIT = bool(config.get("job")) or bool(config.get("per_bit", 0))
 
-    if bit_idx > 0:
-        # Previous bit in the filtered sequence
-        return f"{BASE}/{wildcards.sim}/logs/log_job_{tile}_{JOB_SEQUENCE[bit_idx - 1]}.txt"
+if PER_BIT:
+    def _shapepipe_job_input(wildcards):
+        bit     = int(wildcards.bit)
+        tile    = wildcards.tile
+        bit_idx = JOB_SEQUENCE.index(bit)
 
-    # First bit in the filtered sequence: find predecessor in the full sequence
-    full_idx = FULL_JOB_SEQUENCE.index(bit)
-    if full_idx == 0:
-        return [
-            f"{BASE}/{wildcards.sim}/params.py",
-            f"{BASE}/{wildcards.sim}/config_mask.yaml",
-        ]
-    return f"{BASE}/{wildcards.sim}/logs/log_job_{tile}_{FULL_JOB_SEQUENCE[full_idx - 1]}.txt"
+        if bit_idx > 0:
+            # Previous bit in the filtered sequence
+            return f"{BASE}/{wildcards.sim}/logs/log_job_{tile}_{JOB_SEQUENCE[bit_idx - 1]}.txt"
 
-rule shapepipe_job:
-    input:  _shapepipe_job_input
-    output: f"{BASE}/{{sim}}/logs/log_job_{{tile}}_{{bit}}.txt"
-    wildcard_constraints:
-        bit  = "|".join(str(b) for b in JOB_SEQUENCE),
-        tile = "|".join(t.replace(".", r"\.") for t in TILE_IDs),
-    shell:
-        f"cd {BASE}/{{wildcards.sim}} &&"
-        f" {APP_CMD} {PATH_SH}/run_job_sp_canfar_v2.0.bash"
-        f" {FORCE} -N {N_SMP} -e {{wildcards.tile}} -t image_sims -j {{wildcards.bit}} &&"
-        f" python3 -c \"import os; f='{output}'; "
-        f"os.path.getsize(f) > 0 or exit(1)\""
+        # First bit in the filtered sequence: find predecessor in the full sequence
+        full_idx = FULL_JOB_SEQUENCE.index(bit)
+        if full_idx == 0:
+            return [
+                f"{BASE}/{wildcards.sim}/params.py",
+                f"{BASE}/{wildcards.sim}/config_mask.yaml",
+            ]
+        return f"{BASE}/{wildcards.sim}/logs/log_job_{tile}_{FULL_JOB_SEQUENCE[full_idx - 1]}.txt"
+
+    rule shapepipe_job:
+        input:  _shapepipe_job_input
+        output: f"{BASE}/{{sim}}/logs/log_job_{{tile}}_{{bit}}.txt"
+        # log file keeps stdout/stderr; unlike output, it survives job failure
+        log:    f"{BASE}/{{sim}}/logs/err_job_{{tile}}_{{bit}}.txt"
+        wildcard_constraints:
+            bit  = "|".join(str(b) for b in JOB_SEQUENCE),
+            tile = "|".join(t.replace(".", r"\.") for t in TILE_IDs),
+        shell:
+            f"( cd {BASE}/{{wildcards.sim}} &&"
+            f" {APP_CMD} {PATH_SH}/run_job_sp_canfar_v2.0.bash"
+            f" {FORCE} -N {N_SMP} -e {{wildcards.tile}} -t image_sims -j {{wildcards.bit}} &&"
+            f" python3 -c \"import os; f='{{output}}'; "
+            f"os.path.getsize(f) > 0 or exit(1)\""
+            f" ) 2>&1 | tee {{log}}"
+else:
+    rule shapepipe_tile:
+        input:
+            f"{BASE}/{{sim}}/params.py",
+            f"{BASE}/{{sim}}/config_mask.yaml",
+        # Last bit's log marks the whole chain done; per-bit logs are still
+        # written along the way (info.py monitoring keeps working)
+        output:
+            f"{BASE}/{{sim}}/logs/log_job_{{tile}}_{JOB_SEQUENCE[-1]}.txt"
+        log:
+            f"{BASE}/{{sim}}/logs/err_job_{{tile}}_all.txt"
+        wildcard_constraints:
+            tile = "|".join(t.replace(".", r"\.") for t in TILE_IDs),
+        shell:
+            f"( cd {BASE}/{{wildcards.sim}} &&"
+            f" {APP_CMD} {PATH_SH}/run_job_sp_canfar_v2.0.bash"
+            f" {FORCE} -N {N_SMP} -e {{wildcards.tile}} -t image_sims -j {JOB} &&"
+            f" python3 -c \"import os; f='{{output}}'; "
+            f"os.path.getsize(f) > 0 or exit(1)\""
+            f" ) 2>&1 | tee {{log}}"
 
 rule merge:
     input:
@@ -283,17 +399,20 @@ rule calibrate:
 rule mbias:
     input:
         expand(f"{BASE}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
+    # mbias_cumulative.yaml is deliberately not declared as an output:
+    # it accumulates results across runs, and Snakemake deletes declared
+    # outputs before rerunning a rule
     output:
         MBIAS_OUT,
-        f"{BASE}/results/mbias_cumulative.yaml",
     shell:
         f"mkdir -p {BASE}/results && cat > /tmp/mbias_cfg.yaml << 'EOF'\n"
-        f"grids_dir: {BASE}\n"
+        f"base: {BASE}\n"
         f"num: {NUM}\n"
         f"catalog_name: shape_catalog_cut_ngmix.fits\n"
         f"shear_amplitude: {SHEAR_AMP}\n"
         f"match_radius_deg: {MATCH_RAD}\n"
-        f"w_col: {W_COL}\n"
+        f"pair_match: {PAIR_MATCH}\n"
+        f"w_cols: {W_COLS}\n"
         f"n_bootstrap: {N_BOOT}\n"
         f"output_path: {BASE}/results/m_bias_results.yaml\n"
         f"results_dir: {BASE}/results\n"
@@ -308,12 +427,13 @@ rule diagnostics:
         f"{BASE}/results/footprint.png",
     shell:
         f"mkdir -p {BASE}/results && cat > /tmp/diag_cfg.yaml << 'EOF'\n"
-        f"grids_dir: {BASE}\n"
+        f"base: {BASE}\n"
         f"num: {NUM}\n"
         f"catalog_name: shape_catalog_cut_ngmix.fits\n"
         f"shear_amplitude: {SHEAR_AMP}\n"
         f"match_radius_deg: {MATCH_RAD}\n"
-        f"w_col: {W_COL}\n"
+        f"pair_match: {PAIR_MATCH}\n"
+        f"w_cols: {W_COLS}\n"
         f"n_bootstrap: {N_BOOT}\n"
         f"output_path: {BASE}/results/m_bias_results.yaml\n"
         f"results_dir: {BASE}/results\n"

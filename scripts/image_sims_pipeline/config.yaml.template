@@ -17,6 +17,15 @@ config_dir: /home/mkilbing/shapepipe/example/cfis_image_sims
 ## Leave empty/commented out to use all tiles from tile_IDs
 # tile_IDs_exclusive: ["251.288", "251.289", "252.287"]
 
+## Optional: tiles to remove from the list (e.g. blank/corrupt input images)
+## Low-coverage tiles are excluded automatically via "snakemake coverage";
+## use this for manual exclusions on top of that
+# tile_IDs_exclude: ["281.281"]
+
+## Minimum input-tile coverage (nonzero weight fraction); tiles below are
+## excluded after running "snakemake coverage" (writes tile_coverage_grid_{num}.yaml)
+min_tile_coverage: 0.5
+
 ## Input simulation base dir (-i flag)
 input_sims_base_dir: /n09data/hervas/skills_out/
 
@@ -48,8 +57,11 @@ shear_amplitude: 0.025
 ## Position matching (for grids)
 match_radius_deg: 0.0002
 
-## Catalogue columns
-w_col: w_des
+## Pair-match objects between sheared catalogues; if false, use all objects
+pair_match: true
+
+## Weight schemes for m-bias; "none" = uniform weights; first entry is primary
+w_cols: ['none', 'w_iv']
 
 ## Bootstrap error estimation
 n_bootstrap: 500

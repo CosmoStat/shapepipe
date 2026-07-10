@@ -158,7 +158,7 @@ def run_mbias(mon_dir, num, verbose):
     cfg_path = os.path.join(mon_dir, "image_sims_m_bias_monitor.yaml")
     out_path = os.path.join(mon_dir, "m_bias_monitor.yaml")
     mbias_cfg = {
-        "grids_dir":        mon_dir,
+        "base":             mon_dir,
         "num":              num,
         "catalog_name":     "shape_catalog_cut_ngmix.fits",
         "shear_amplitude":  0.02,
