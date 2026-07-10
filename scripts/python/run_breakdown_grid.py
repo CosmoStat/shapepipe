@@ -26,6 +26,20 @@ by pairing signed arms that share an identical noise realisation:
   ``degenerate: true`` rather than dividing by a response consistent with zero.
 * **Legacy estimator** (v1's ratio-of-averages) carried alongside for continuity.
 
+**Production-parity knobs (S4).** Three CLI knobs turn the clean-room grid into
+production-settings ablations, each defaulting to the clean baseline:
+
+* ``--centroid-source {hsm,wcs}`` — "wcs" is the production default since
+  ``31ae736c``: the ngmix jacobian centre comes from the catalogue sky position
+  projected through the epoch WCS instead of HSM re-centering. The harness
+  fabricates the astrometry truth (a TAN WCS whose CD is the drawing jacobian;
+  ra/dec evaluated through that same WCS at the object's true pixel position) —
+  the toy analogue of coadd (x,y) -> (ra,dec) -> epoch pixel.
+* ``--wcs-g1/--wcs-g2/--wcs-theta-deg`` — shear/rotate the drawing WCS jacobian
+  away from a pure pixel scale (the esheldon/ngmix#72 sensitivity axis, where a
+  mishandled jacobian produced m ~ -0.2 at wcs_g1=0.1).
+* ``--n-epochs`` — pre-existing; n_epochs=2 matches the old CI operating point.
+
 Estimator math is exact; the finite-difference response step is hardcoded to
 ``do_ngmix_metacal``'s mainline value (Spec-Code Invariant: if that line moves,
 ``STEP`` moves with it).
@@ -57,6 +71,7 @@ import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
 
+import astropy.wcs
 import galsim
 import ngmix
 import numpy as np
@@ -75,6 +90,8 @@ from shapepipe.testing.simulate import make_data
 STEP = 0.01
 # PSF-shear amplitude for the additive-bias (leakage) arms; c1 = dgn / (2*this).
 PSF_SHEAR = 0.05
+# MegaCam pixel scale (arcsec/pixel): make_data's default and the prior width.
+PIXEL_SCALE = 0.1857
 # The three noise levels map to nominal S/N ~ 1000 / 50 / 15, calibrated at the
 # grid midpoint (r = 0.5). S/N drifts with galaxy size, so mean_s2n is recorded
 # per cell rather than trusted from the label.
@@ -94,31 +111,76 @@ RECORD_KEYS = ["g1", "g2", "R11", "R12", "R21", "R22", "s2n", "T", "T_psf_orig",
                "flags", "finite", "sigma_mad_est", "noise_true"]
 
 
+def build_wcs(g1, g2, theta_deg):
+    """Uniform drawing WCS from the S4 parity knobs.
+
+    All-zero knobs return None -> make_data's bit-identical legacy PixelScale
+    path. Otherwise: shear the pixel scale (area-preserving, det = scale**2 --
+    the esheldon/ngmix#72 construction), then rotate by theta_deg."""
+    if g1 == g2 == theta_deg == 0.0:
+        return None
+    jac = galsim.ShearWCS(PIXEL_SCALE, galsim.Shear(g1=g1, g2=g2)).jacobian()
+    th = np.deg2rad(theta_deg)
+    rot = np.array([[np.cos(th), -np.sin(th)], [np.sin(th), np.cos(th)]])
+    m = rot @ np.array([[jac.dudx, jac.dudy], [jac.dvdx, jac.dvdy]])
+    return galsim.JacobianWCS(m[0, 0], m[0, 1], m[1, 0], m[1, 1])
+
+
+def fabricate_astrometry(stamp, centers, jacob, img_size):
+    """Populate stamp.wcs/ra/dec -- the truth the "wcs" centroid path consumes.
+
+    Production reads the catalogue sky position and projects it through the
+    epoch WCS; the toy analogue is a TAN WCS whose CD matrix IS the drawing
+    jacobian (deg/pixel), with ra/dec evaluated through that same WCS at the
+    object's true pixel position. The round trip toWorld -> toImage is then
+    exact by construction, so the centroid the estimator recovers is the truth
+    -- modulo the same round-to-nearest-pixel logic production applies. Epochs
+    get independent sub-pixel shifts, so per-epoch ra/dec differ; the estimator
+    reads each epoch independently, making this equivalent to one sky position
+    seen through slightly different epoch WCSs, as in production."""
+    w = astropy.wcs.WCS(naxis=2)
+    w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+    w.wcs.crpix = [(img_size + 1) / 2, (img_size + 1) / 2]
+    w.wcs.crval = [150.0, 0.0]
+    w.wcs.cd = np.array(
+        [[jacob.dudx, jacob.dudy], [jacob.dvdx, jacob.dvdy]]
+    ) / 3600.0
+    g_wcs = galsim.fitswcs.AstropyWCS(wcs=w)
+    for cen in centers:
+        world = g_wcs.toWorld(cen)
+        stamp.wcs.append(w)
+        stamp.ra.append(world.ra / galsim.degrees)
+        stamp.dec.append(world.dec / galsim.degrees)
+
+
 def one_stamp(noise, gal_hlr, psf_fwhm, img_size, n_epochs, shear, psf_shear,
-              seed, true_noise):
+              seed, true_noise, wcs=None, centroid_source="hsm"):
     """One injected-truth realisation -> per-arm record dict.
 
     Uses ``RandomState(seed)`` for the fit rng and ``RandomState(seed+1000)`` for
     make_data, so every arm of a given seed sees the IDENTICAL noise draw and
     sub-pixel shift (galsim ``.shear()`` consumes no rng) -- the property the
     paired estimator rests on. ``true_noise`` routes the per-pixel true-inverse-
-    variance path (see ``--true-noise``)."""
+    variance path (see ``--true-noise``). ``wcs``/``centroid_source`` are the
+    S4 parity knobs (see module docstring)."""
     rng = np.random.RandomState(seed)
-    prior = get_prior(0.1857, rng)
-    gals, psfs, _, weights, flags, jacobs = make_data(
+    prior = get_prior(PIXEL_SCALE, rng)
+    gals, psfs, _, weights, flags, jacobs, centers = make_data(
         rng=np.random.RandomState(seed + 1000), shear=shear, noise=noise,
         n_epochs=n_epochs, gal_hlr=gal_hlr, psf_fwhm=psf_fwhm, img_size=img_size,
-        psf_shear=psf_shear,
+        psf_shear=psf_shear, wcs=wcs, return_centers=True,
     )
     stamp = Postage_stamp(bkg_sub=False, megacam_flip=False)
     stamp.gals, stamp.psfs, stamp.weights, stamp.flags, stamp.jacobs = (
         gals, psfs, weights, flags, jacobs,
     )
+    if centroid_source == "wcs":
+        fabricate_astrometry(stamp, centers, jacobs[0], img_size)
     if true_noise:
         # True per-pixel sigma into bkg_rms -> prepare_ngmix_weights takes the
         # inverse-variance path and metacal fixnoise gets the true sigma.
         stamp.bkg_rms = [np.full((img_size, img_size), noise) for _ in gals]
-    res = do_ngmix_metacal(stamp, prior, 1.0, rng)
+    res = do_ngmix_metacal(stamp, prior, 1.0, rng, centroid_source=centroid_source)
     d, orig = res.resdict, res.orig
     ns = d["noshear"]
     finite = bool(np.all(np.isfinite(ns["g"])))
@@ -163,7 +225,10 @@ def harvest_cell(args):
     ``args`` is a flat tuple so the cell is a single ProcessPoolExecutor task.
     Returns (summary dict, raw per-(seed,arm) arrays for the .npz)."""
     (cell_index, res_ratio, band, noise, gal_hlr, psf_fwhm, img_size, n_epochs,
-     gamma, n_seeds, true_noise) = args
+     gamma, n_seeds, true_noise, wcs_g1, wcs_g2, wcs_theta_deg,
+     centroid_source) = args
+    # Built per worker process: galsim WCS objects stay out of the task tuple.
+    wcs = build_wcs(wcs_g1, wcs_g2, wcs_theta_deg)
     # Seeds independent per cell, never recycled across cells.
     seeds = [10_000_000 + cell_index * 100_000 + s for s in range(n_seeds)]
 
@@ -172,7 +237,8 @@ def harvest_cell(args):
     for seed in seeds:
         for arm, (shear, psf_shear) in ARMS.items():
             rec = one_stamp(noise, gal_hlr, psf_fwhm, img_size, n_epochs,
-                            shear, psf_shear, seed, true_noise)
+                            shear, psf_shear, seed, true_noise,
+                            wcs=wcs, centroid_source=centroid_source)
             for k in RECORD_KEYS:
                 cols[arm][k].append(rec[k])
     arr = {arm: {k: np.asarray(v) for k, v in cols[arm].items()} for arm in ARMS}
@@ -292,6 +358,16 @@ def main():
                    help="subset of resolution-grid indices to run (default all).")
     p.add_argument("--true-noise", action="store_true",
                    help="route the per-pixel true-inverse-variance weight path.")
+    p.add_argument("--centroid-source", choices=["hsm", "wcs"], default="hsm",
+                   help='ngmix jacobian centre: "hsm" (legacy re-centering) or '
+                        '"wcs" (production default since 31ae736c; the harness '
+                        "fabricates the astrometry truth).")
+    p.add_argument("--wcs-g1", type=float, default=0.0,
+                   help="drawing-WCS jacobian shear g1 (ngmix#72 axis).")
+    p.add_argument("--wcs-g2", type=float, default=0.0,
+                   help="drawing-WCS jacobian shear g2.")
+    p.add_argument("--wcs-theta-deg", type=float, default=0.0,
+                   help="drawing-WCS jacobian rotation (degrees).")
     p.add_argument("--jobs", type=int, default=4, help="parallel cells (ProcessPoolExecutor).")
     a = p.parse_args()
 
@@ -312,7 +388,8 @@ def main():
             gal_hlr = float(res_grid[ri] * a.psf_fwhm)
             tasks.append((cell_index, res_grid[ri], band, NOISE[band], gal_hlr,
                           a.psf_fwhm, a.img_size, a.n_epochs, a.gamma,
-                          n_seeds[band], a.true_noise))
+                          n_seeds[band], a.true_noise, a.wcs_g1, a.wcs_g2,
+                          a.wcs_theta_deg, a.centroid_source))
 
     os.makedirs(os.path.join(a.output, "cells"), exist_ok=True)
     cells, t0 = [], time.time()
@@ -338,6 +415,8 @@ def main():
             psf_fwhm=a.psf_fwhm, img_size=a.img_size, n_epochs=a.n_epochs,
             n_seeds=n_seeds, res_grid=res_grid.tolist(), noise_map=NOISE,
             bands=a.bands, res_index=res_idx, true_noise=a.true_noise,
+            centroid_source=a.centroid_source,
+            wcs_shear=[a.wcs_g1, a.wcs_g2], wcs_theta_deg=a.wcs_theta_deg,
             bootstrap_B=1000, degeneracy_k=5, m_tol_resolved=5e-3,
             runtime_s=time.time() - t0, args=vars(a),
         ),
