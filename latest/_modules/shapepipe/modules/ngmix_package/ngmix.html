@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="09 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="10 Jul, 2026"/>
   </head>
   
   
@@ -1028,9 +1028,13 @@
                 <span class="p">)</span>
                 <span class="c1"># ngmix 2.x reports the solver&#39;s function-evaluation count</span>
                 <span class="c1"># (nfev, ~tens-hundreds; -1 on some failures), not the v1</span>
-                <span class="c1"># 1-5 retry count, so the column is named accordingly.</span>
+                <span class="c1"># 1-5 retry count, so the column is named accordingly. Fits</span>
+                <span class="c1"># that fail before nfev is ever set (e.g. the NaN-filled</span>
+                <span class="c1"># branch above) fall back to the same -1 sentinel, keeping</span>
+                <span class="c1"># the column int64 (FITS &#39;K&#39;) across every batch: nfev_fit</span>
+                <span class="c1"># is int64 with -1 meaning failed/absent.</span>
                 <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;nfev_fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="n">fit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nfev&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+                    <span class="n">fit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nfev&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
                 <span class="p">)</span>
                 <span class="c1"># The two PSF families are object-level (one value per</span>
                 <span class="c1"># object, not per shear type) and self-named: every key</span>
@@ -2066,7 +2070,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 09 Jul, 2026.
+  Last updated on 10 Jul, 2026.
   <br/>
 </p>
   </div>
