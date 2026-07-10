@@ -76,6 +76,7 @@ import galsim
 import ngmix
 import numpy as np
 from modopt.math.stats import sigma_mad
+from ngmix.gexceptions import BootGalFailure, BootPSFFailure
 
 from shapepipe.modules.ngmix_package.ngmix import (
     Postage_stamp,
@@ -186,7 +187,20 @@ def one_stamp(noise, gal_hlr, psf_fwhm, img_size, n_epochs, shear, psf_shear,
         # True per-pixel sigma into bkg_rms -> prepare_ngmix_weights takes the
         # inverse-variance path and metacal fixnoise gets the true sigma.
         stamp.bkg_rms = [np.full((img_size, img_size), noise) for _ in gals]
-    res = do_ngmix_metacal(stamp, prior, 1.0, rng, centroid_source=centroid_source)
+    try:
+        res = do_ngmix_metacal(stamp, prior, 1.0, rng,
+                               centroid_source=centroid_source)
+    except (BootPSFFailure, BootGalFailure):
+        # Production treats a bootstrap failure as a flagged object; the
+        # pair-drop policy drops the seed and fail_frac records the rate (a
+        # SYSTEMATIC failure mode still surfaces loudly there). Without this,
+        # one unlucky fit in ~1e5 kills the entire grid (job 808259).
+        return dict(
+            g1=np.nan, g2=np.nan, R11=np.nan, R12=np.nan, R21=np.nan,
+            R22=np.nan, s2n=np.nan, T=np.nan, T_psf_orig=np.nan,
+            flags=-1, finite=False,
+            sigma_mad_est=float(sigma_mad(gals[0])), noise_true=float(noise),
+        )
     d, orig = res.resdict, res.orig
     ns = d["noshear"]
     finite = bool(np.all(np.isfinite(ns["g"])))
