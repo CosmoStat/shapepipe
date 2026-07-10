@@ -29,6 +29,12 @@ debug_out=""
 # Input type: data or image_sims
 type="data"
 
+# Config directory override (-c). Empty means "self-compute from --type" (the
+# historical behavior); when set, it overrides the computed config_dir for any
+# --type, so a caller (e.g. the sp_validation workflow) can point every stage at
+# an explicit .ini tree.
+config_dir_override=""
+
 #scratch="/scratch/$USER/shapepipe/v${version}"
 scratch=""
 test_only=0
@@ -53,6 +59,8 @@ ${JOB_LIST_HELP}   -e, --exclusive ID\timage ID\n
    --tile_det DET\t\ttile detection mode, one in ['sx'|'uc'], default='$tile_det'\n
    --tile_mask MASK\ttile masking, default='$tile_mask'\n
    -t, --type TYPE input type, allowed are 'data', 'image_sims', default='$type'\n
+   -c, --config_dir DIR\tconfig file directory; overrides the default computed\n
+   \t\t\tfrom --type (default: computed per --type)\n
    -N, --N_SMP N_SMP\tnumber of SMP jobs, default from original config files\n
    -d, --directory DIR\trun directory, default is pwd ($dir)\n
    -S, --scratch DIR\tprocessing scratch directory, default=none\n
@@ -93,6 +101,10 @@ while [ $# -gt 0 ]; do
       ;;
     -t|--type)
       type="$2"
+      shift
+      ;;
+    -c|--config_dir)
+      config_dir_override="$2"
       shift
       ;;
     --tile_det)
@@ -579,6 +591,14 @@ else
 
     echo "Invalid input type $type" 
 
+fi
+
+# -c overrides the config_dir computed from --type (uniformly, any type). Kept
+# after the type branch so that when unset the computed default is byte-for-byte
+# unchanged; SP_CONFIG (exported per-type above) is re-exported to match.
+if [ -n "$config_dir_override" ]; then
+    config_dir="$config_dir_override"
+    export SP_CONFIG=$config_dir
 fi
 
 [ "$quiet" == "0" ] && echo "config_dir=$config_dir"
