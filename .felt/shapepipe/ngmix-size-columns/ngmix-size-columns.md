@@ -7,11 +7,14 @@ tags:
     - shapepipe
     - ngmix
 created-at: 2026-06-05T22:30:50.004535516+02:00
-outcome: 'Delivered end-to-end and FULLY MERGED 2026-06-11: cs_util#65-67 (v0.2.1 on PyPI with cs_util.size), shapepipe#743 (honest r50, merged into ngmix_v2.0), shear_psf_leakage#23 (cs-util cap relaxation), sp_validation#198 (T_to_fwhm fix + galaxy smoke test) — the whole dependency chain closed in one night. The T_to_fwhm fix moves α(size) leakage results; regenerate where it mattered. Deferred (stated in #743): wiring honest r50/r50psf into make_cat so paper-convention r_h reaches the science catalogue.'
+updated-at: 2026-07-09T10:49:05.511810013+02:00
+closed-at: 2026-06-30T09:46:25.557072068Z
+outcome: 'Delivered end-to-end and FULLY MERGED 2026-06-11: cs_util#65-67 (v0.2.1 on PyPI with cs_util.size), shapepipe#743 (honest r50, merged into ngmix_v2.0), shear_psf_leakage#23 (cs-util cap relaxation), sp_validation#198 (T_to_fwhm fix + galaxy smoke test) — the whole dependency chain closed in one night. The T_to_fwhm fix moves α(size) leakage results; regenerate where it mattered. SUPERSEDED 2026-07-09: the deferred ''wire r50 into make_cat'' item is now moot — #761''s column-grammar decision (2026-06-30) settled on T as the ONLY stored size column (''T everywhere — nothing hand-coded''), with r50/FWHM/sigma as on-demand cs_util.size conversions, never stored. Confirmed zero r50/r_h references anywhere in src/. ShapePipe v2''s ellipticity-sensitive ngmix T (= Ixx+Iyy, matches DES convention) is the catalog''s one size quantity; no further make_cat work needed here.'
 shuttle:
     kind: oneshot
     host: candide
     agent: claude-fable
+tempered: true
 ---
 
 # ngmix size columns: honest r50 + cs_util converter web

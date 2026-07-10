@@ -7,5 +7,6 @@ tags:
     - collaboration
     - future
 created-at: 2026-04-27T11:26:52.878118978+02:00
-outcome: 'Fabian: 1-line fix in shapepipe needs porting; first need him to put image-sim code/configs on github so it''s testable. Beg if necessary.'
+updated-at: 2026-06-30T10:10:39.663019273+02:00
+outcome: 'Image-sim code is now on GitHub — published to branch galaxy_pos-unions on UNIONS-WL/MultiBand_ImSim and tracked by [[science/unions/image-sims-to-github]] (tracking issue #1). Remaining: port Fabian''s 1-line shapepipe coord-propagation fix once the sims are runnable/testable there (a sub-issue under the tracker).'
 ---
