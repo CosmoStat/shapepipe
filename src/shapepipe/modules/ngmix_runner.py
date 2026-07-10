@@ -8,6 +8,8 @@ Module runner for ``ngmix``.
 
 import os
 
+from sqlitedict import SqliteDict
+
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.ngmix_package.ngmix import Ngmix
 
@@ -107,6 +109,34 @@ def ngmix_runner(
         )
     else:
         seed_from_position = False
+
+    # Check PSF vignets first: if all are empty dicts {}, the exposures for this
+    # tile are absent from the PSF dictionary and no shape measurement is possible.
+    # This check must come before reading image vignets to avoid a C-level malloc
+    # crash that occurs when large numbers of numpy arrays are allocated then freed.
+    psf_idx = 3 if bkg_sub else 2
+    psf_vignet_path = input_file_list[psf_idx]
+    with SqliteDict(psf_vignet_path) as db:
+        psf_keys = list(db.keys())
+        n_empty_psf = sum(1 for k in psf_keys if len(db[k]) == 0)
+    if psf_keys and n_empty_psf == len(psf_keys):
+        w_log.warning(
+            f"All {len(psf_keys)} PSF vignet entries are empty in "
+            f"{psf_vignet_path} — no PSF coverage for this tile. Skipping ngmix."
+        )
+        return None, None
+
+    # Check that image vignets are not all empty before initialising ngmix
+    image_vignet_path = input_file_list[1]
+    with SqliteDict(image_vignet_path) as db:
+        keys = list(db.keys())
+        n_empty = sum(1 for k in keys if db[k] == "empty")
+    if keys and n_empty == len(keys):
+        w_log.warning(
+            f"All {len(keys)} image vignets are 'empty' in {image_vignet_path} "
+            "— no valid CCD coverage for this tile. Skipping ngmix."
+        )
+        return None, None
 
     # Initialise class instance
     ngmix_inst = Ngmix(

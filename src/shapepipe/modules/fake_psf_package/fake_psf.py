@@ -37,13 +37,36 @@ class FakePsf:
     def process(self):
         """Run fake PSF creation."""
         self._w_log.info(f"Reading sexcat: {self._sexcat_path}")
-        sex = fits.open(self._sexcat_path, ignore_missing_simple=True)
+        try:
+            sex = fits.open(self._sexcat_path, ignore_missing_simple=True)
+        except Exception as e:
+            self._w_log.error(f"Error opening FITS file {self._sexcat_path}: {e}")
+            raise
+
+        self._w_log.info(f"Catalogue has {len(sex)} HDUs")
+
+        if len(sex) < 4:
+            self._w_log.error(
+                f"Catalogue file has insufficient HDUs: expected ≥4, got {len(sex)} "
+                f"(file: {self._sexcat_path})"
+            )
+            raise ValueError(f"Invalid catalogue: only {len(sex)} HDUs (need ≥4)")
 
         self._w_log.info(f"Loading PSF dictionary: {self._psf_dict_path}")
-        with open(self._psf_dict_path, "rb") as f:
-            psf_dict = pickle.load(f)
+        try:
+            with open(self._psf_dict_path, "rb") as f:
+                psf_dict = pickle.load(f)
+        except Exception as e:
+            self._w_log.error(f"Error loading PSF dictionary {self._psf_dict_path}: {e}")
+            raise
 
-        n_gal = len(sex[3].data.field("NUMBER"))
+        try:
+            n_gal = len(sex[3].data.field("NUMBER"))
+        except Exception as e:
+            self._w_log.error(
+                f"Error reading catalogue data from HDU 3 in {self._sexcat_path}: {e}"
+            )
+            raise
         n_exp = len(sex) - 3
 
         self._w_log.info(f"Processing {n_gal} galaxies over {n_exp} epochs")

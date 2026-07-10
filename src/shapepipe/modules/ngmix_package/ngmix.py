@@ -974,6 +974,13 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
         else:
             gal_vign_sub_bkg = gal_vign
 
+        # Skip epochs where sigma_mad=0 (CCD edge: mostly-zero stamp).
+        # prepare_ngmix_weights divides by sig_noise; zero sigma causes NaN/inf
+        # weights that corrupt GalSim's C-level FFT allocations.
+        # MKDEBUG TODO this needs to be checked!
+        if not sigma_mad(gal_vign_sub_bkg) > 0:
+            continue
+
         tile_vign = (
             np.copy(tile_cat.vign[i_tile])
             if tile_cat.vign is not None
@@ -1223,6 +1230,14 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
             if mask.any()
             else sigma_mad(gal)
         )
+
+    # Guard: sig_noise=0 means galaxy is at the CCD edge (mostly-zero stamp).
+    # Division by zero would make weight_map NaN/inf, crashing GalSim C code.
+    # np.all keeps the guard valid for the per-pixel bkg_rms path (any zero
+    # pixel would produce the same NaN weight the scalar case guards against).
+    # MKDEBUG TODO this needs to be checked!
+    if not np.all(sig_noise > 0):
+        return np.zeros_like(gal), np.zeros_like(weight_map), np.zeros_like(gal)
 
     noise_img = rng.standard_normal(gal.shape) * sig_noise
     noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
