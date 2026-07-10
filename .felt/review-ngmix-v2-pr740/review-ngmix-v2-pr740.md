@@ -18,6 +18,7 @@ shuttle:
     host: candide
     project_dir: /automnt/n17data/cdaley/unions/shapepipe
     agent: claude-opus
+tempered: true
 ---
 
 # Review + work: ngmix v2.0 (PR #740)

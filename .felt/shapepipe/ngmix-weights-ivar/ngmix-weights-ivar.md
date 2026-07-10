@@ -14,6 +14,7 @@ shuttle:
     kind: oneshot
     host: candide
     agent: codex
+tempered: true
 ---
 
 # ngmix weight map: fix v2.0 regressions + inverse-variance (#604)
