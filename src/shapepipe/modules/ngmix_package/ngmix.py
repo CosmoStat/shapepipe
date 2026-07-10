@@ -477,9 +477,13 @@ class Ngmix(object):
                 )
                 # ngmix 2.x reports the solver's function-evaluation count
                 # (nfev, ~tens-hundreds; -1 on some failures), not the v1
-                # 1-5 retry count, so the column is named accordingly.
+                # 1-5 retry count, so the column is named accordingly. Fits
+                # that fail before nfev is ever set (e.g. the NaN-filled
+                # branch above) fall back to the same -1 sentinel, keeping
+                # the column int64 (FITS 'K') across every batch: nfev_fit
+                # is int64 with -1 meaning failed/absent.
                 output_dict[name]["nfev_fit"].append(
-                    fit.get("nfev", np.nan)
+                    fit.get("nfev", -1)
                 )
                 # The two PSF families are object-level (one value per
                 # object, not per shear type) and self-named: every key
