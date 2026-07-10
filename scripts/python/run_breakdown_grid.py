@@ -133,11 +133,17 @@ def fabricate_astrometry(stamp, centers, jacob, img_size):
     epoch WCS; the toy analogue is a TAN WCS whose CD matrix IS the drawing
     jacobian (deg/pixel), with ra/dec evaluated through that same WCS at the
     object's true pixel position. The round trip toWorld -> toImage is then
-    exact by construction, so the centroid the estimator recovers is the truth
-    -- modulo the same round-to-nearest-pixel logic production applies. Epochs
+    self-cancelling (TAN nonlinearity over half a stamp ~ 5e-9 px), so the
+    centroid the estimator recovers is the truth -- modulo the same
+    round-to-nearest-pixel logic production applies. Epochs
     get independent sub-pixel shifts, so per-epoch ra/dec differ; the estimator
     reads each epoch independently, making this equivalent to one sky position
     seen through slightly different epoch WCSs, as in production."""
+    # Even stamps put the galsim centre on a half-integer, so np.round() in the
+    # consumer (ngmix.py "wcs" path) lands one pixel off for EVERY object -- a
+    # systematic half-pixel origin error that would read as a production
+    # pathology. Production VIGNETs are odd; hold the harness to it.
+    assert img_size % 2 == 1, "--centroid-source wcs requires odd --img-size"
     w = astropy.wcs.WCS(naxis=2)
     w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
     w.wcs.crpix = [(img_size + 1) / 2, (img_size + 1) / 2]
