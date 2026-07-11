@@ -3430,6 +3430,7 @@ dependencies = [
     { name = "cs-util", marker = "sys_platform == 'linux'" },
     { name = "galsim", marker = "sys_platform == 'linux'" },
     { name = "h5py", marker = "sys_platform == 'linux'" },
+    { name = "healsparse", marker = "sys_platform == 'linux'" },
     { name = "joblib", marker = "sys_platform == 'linux'" },
     { name = "matplotlib", marker = "sys_platform == 'linux'" },
     { name = "mccd", marker = "sys_platform == 'linux'" },
@@ -3446,6 +3447,7 @@ dependencies = [
     { name = "reproject", marker = "sys_platform == 'linux'" },
     { name = "sf-tools", marker = "sys_platform == 'linux'" },
     { name = "skaha", marker = "sys_platform == 'linux'" },
+    { name = "skyproj", marker = "sys_platform == 'linux'" },
     { name = "sqlitedict", marker = "sys_platform == 'linux'" },
     { name = "termcolor", marker = "sys_platform == 'linux'" },
     { name = "tqdm", marker = "sys_platform == 'linux'" },
@@ -3461,12 +3463,14 @@ dev = [
     { name = "ipython", marker = "sys_platform == 'linux'" },
     { name = "isort", marker = "sys_platform == 'linux'" },
     { name = "jupyterlab", marker = "sys_platform == 'linux'" },
+    { name = "matplotlib", marker = "sys_platform == 'linux'" },
     { name = "myst-parser", marker = "sys_platform == 'linux'" },
     { name = "numpydoc", marker = "sys_platform == 'linux'" },
     { name = "pytest", marker = "sys_platform == 'linux'" },
     { name = "pytest-cov", marker = "sys_platform == 'linux'" },
     { name = "pytest-pycodestyle", marker = "sys_platform == 'linux'" },
     { name = "pytest-pydocstyle", marker = "sys_platform == 'linux'" },
+    { name = "skyproj", marker = "sys_platform == 'linux'" },
     { name = "snakemake", marker = "sys_platform == 'linux'" },
     { name = "sphinx", marker = "sys_platform == 'linux'" },
     { name = "sphinx-book-theme", marker = "sys_platform == 'linux'" },
@@ -3492,6 +3496,10 @@ lint = [
     { name = "black", marker = "sys_platform == 'linux'" },
     { name = "isort", marker = "sys_platform == 'linux'" },
 ]
+plot = [
+    { name = "matplotlib", marker = "sys_platform == 'linux'" },
+    { name = "skyproj", marker = "sys_platform == 'linux'" },
+]
 release = [
     { name = "build", marker = "sys_platform == 'linux'" },
     { name = "twine", marker = "sys_platform == 'linux'" },
@@ -3515,12 +3523,14 @@ requires-dist = [
     { name = "fitsio", marker = "extra == 'fitsio'" },
     { name = "galsim", specifier = ">=2.8" },
     { name = "h5py" },
+    { name = "healsparse" },
     { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.155.2" },
     { name = "ipython", marker = "extra == 'jupyter'", specifier = ">=9.14.1" },
     { name = "isort", marker = "extra == 'lint'" },
     { name = "joblib", specifier = ">=1.4" },
     { name = "jupyterlab", marker = "extra == 'jupyter'", specifier = ">=4.5.9" },
     { name = "matplotlib", specifier = ">=3.10" },
+    { name = "matplotlib", marker = "extra == 'plot'", specifier = ">=3.10" },
     { name = "mccd", specifier = ">=1.2.4" },
     { name = "modopt", specifier = ">=1.6" },
     { name = "mpi4py", specifier = ">=4.1.2" },
@@ -3540,8 +3550,10 @@ requires-dist = [
     { name = "python-pysap", specifier = ">=0.3" },
     { name = "reproject", specifier = ">=0.19" },
     { name = "sf-tools", specifier = ">=2.0.4" },
-    { name = "shapepipe", extras = ["doc", "jupyter", "lint", "release", "test", "fitsio"], marker = "extra == 'dev'" },
+    { name = "shapepipe", extras = ["doc", "jupyter", "lint", "plot", "release", "test", "fitsio"], marker = "extra == 'dev'" },
     { name = "skaha", specifier = ">=1.7" },
+    { name = "skyproj" },
+    { name = "skyproj", marker = "extra == 'plot'" },
     { name = "snakemake", marker = "extra == 'jupyter'", specifier = ">=9.22.0" },
     { name = "sphinx", marker = "extra == 'doc'" },
     { name = "sphinx-book-theme", marker = "extra == 'doc'" },
@@ -3552,7 +3564,7 @@ requires-dist = [
     { name = "twine", marker = "extra == 'release'" },
     { name = "vos", specifier = ">=3.6" },
 ]
-provides-extras = ["doc", "jupyter", "lint", "release", "test", "fitsio", "dev"]
+provides-extras = ["doc", "jupyter", "lint", "plot", "release", "test", "fitsio", "dev"]
 
 [[package]]
 name = "shellingham"
@@ -3588,6 +3600,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/76/62/a733508ff88200c41459f5cdb72a797eb8795c833b4e9d51d31b5efe4073/skaha-1.7.0.tar.gz", hash = "sha256:ef9d69e7a4da8653cdbde3e62f18caef137130064ccb6fabed57c7c6f8bf8ef9", size = 54414, upload-time = "2025-05-28T21:17:03.631Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/d3/a3c1d569ae714ed9985adccefdfe2d6dd9f8ad7a297bd8fa4c7ed30c587b/skaha-1.7.0-py3-none-any.whl", hash = "sha256:68b0d3c925b98bf145c5f695237474fe1cea07cf9b69b4a9bae9910375dfa01a", size = 40795, upload-time = "2025-05-28T21:17:02.296Z" },
+]
+
+[[package]]
+name = "skyproj"
+version = "2.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "astropy", marker = "sys_platform == 'linux'" },
+    { name = "healsparse", marker = "sys_platform == 'linux'" },
+    { name = "hpgeom", marker = "sys_platform == 'linux'" },
+    { name = "matplotlib", marker = "sys_platform == 'linux'" },
+    { name = "numpy", marker = "sys_platform == 'linux'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/90/cf/5158151ae6fc60459f430451b612a4bf2da07ebff2a9f52a37e73715a5ee/skyproj-2.5.0.tar.gz", hash = "sha256:cb8d5115927ca43cacdb6d92f00bb4fcc8563ee71028f755203ce1752e67c140", size = 8521587, upload-time = "2026-06-26T19:51:15.378Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a8/b1/1d86ee4ae4ae7a47e31cc770dc83057388ef16311498283ca90046b3bd04/skyproj-2.5.0-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4cbfcbd4d3d600557ab19bb5cf79b750ec552da054e3be781bce88e996b9955d", size = 4146686, upload-time = "2026-06-26T19:51:04.011Z" },
+    { url = "https://files.pythonhosted.org/packages/6e/e9/f2dd235dcb9f6c3b2fec36ef04d7dd36aef4daf9afc4ab4390d6230c96dc/skyproj-2.5.0-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:78618084c9362b62ddbfd336ca1864c94d99e2a1f26d2fbf3466fd19dc702c58", size = 4146630, upload-time = "2026-06-26T19:51:10.552Z" },
 ]
 
 [[package]]
