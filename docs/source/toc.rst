@@ -15,6 +15,7 @@
 
   dependencies
   installation
+  container
 
 .. toctree::
   :hidden:
@@ -25,6 +26,14 @@
   configuration
   testing
   pipeline_tutorial
+
+.. toctree::
+  :hidden:
+  :titlesonly:
+  :caption: Running on a cluster
+
+  clusters
+  pipeline_canfar
 
 .. toctree::
   :hidden:

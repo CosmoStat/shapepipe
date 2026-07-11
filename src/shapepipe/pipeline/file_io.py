@@ -1389,7 +1389,7 @@ class FITSCatalogue(BaseCatalogue):
             )
 
         if type(col_data) != np.ndarray:
-            TypeError("col_data must be a numpy.ndarray")
+            raise TypeError("col_data must be a numpy.ndarray")
 
         if hdu_no is None:
             hdu_no = self.hdu_no
@@ -1570,7 +1570,7 @@ class FITSCatalogue(BaseCatalogue):
             col_type = "D"
         elif type(col_data[0]) is bool:
             col_type = "L"
-        elif type(col_data[0]) in [str, np.str_, np.str0]:
+        elif type(col_data[0]) in [str, np.str_]:
             col_type = "A"
         else:
             col_type = "D"

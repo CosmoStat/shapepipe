@@ -8,18 +8,43 @@ authors = [
     { name = "Axel Guinot", email = "axel.guinot@cea.fr" },
     { name = "Martin Kilbinger", email = "martin.kilbinger@cea.fr" }
 ]
-license = { "file" = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
+# Abstract runtime constraints. Exact versions live in `uv.lock` — pyproject
+# is the single source of truth for *what* shapepipe needs, the lockfile for
+# *which versions*. Minimums signal the major-version target; uv.lock pins
+# the actual installed versions. Bump minimums only when crossing a major
+# version line or when a feature actually requires a specific release.
 dependencies = [
-    "joblib>=0.13",
-    "modopt>=1.2",
-    "numpy>=1.14",
-    "pandas",
+    "astropy>=7.0",          # major 6 → 7
+    "astroquery",
     "canfar",
-    "sf_tools",
+    "cs_util>=0.2.1",
+    "galsim>=2.8",
     "h5py",
     "healsparse",
+    "joblib>=1.4",
+    "matplotlib>=3.10",
+    "mccd>=1.2.4",
+    "modopt>=1.6",
+    "mpi4py>=4.1.2",
+    "numba>=0.59",           # numpy 2 support
+    "numpy>=2.4.6",            # major 1 → 2
+    "pandas>=3.0.3",           # major 2 → 3
+    "python-dateutil",
+    "python-pysap>=0.3",
+    "PyQt5",
+    "pyqtgraph",
+    "reproject>=0.19",
+    "sf_tools>=2.0.4",
+    "skaha>=1.7",
     "skyproj",
+    "sqlitedict>=2.0",
+    "termcolor",
+    "tqdm>=4.68.1",
+    "vos>=3.6",
+    "ngmix>=2.4",
 ]
 
 
@@ -31,40 +56,85 @@ doc = [
     "sphinxcontrib-bibtex",
     "sphinx-book-theme"
 ]
+jupyter = [
+    "ipython>=9.14.1",
+    "jupyterlab>=4.5.9",
+    "snakemake>=9.22.0",
+]
 lint = [
     "black",
     "isort"
 ]
 plot = [
     "skyproj",
-    "matplotlib"
+    "matplotlib>=3.10",
 ]
 release = [
     "build",
     "twine",
 ]
 test = [
-    "pytest",
-    "pytest-cov",
-    "pytest-pycodestyle",
-    "pytest-pydocstyle"
+    "hypothesis>=6.155.2",
+    "pytest>=8.3",
+    "pytest-cov>=5.0",
+    "pytest-pycodestyle>=2.4",
+    "pytest-pydocstyle>=2.4",
 ]
 fitsio = ["fitsio"]
-dev = ["shapepipe[doc,lint,plot,release,test]"]
+dev = ["shapepipe[doc,jupyter,lint,plot,release,test,fitsio]"]
 
 [project.scripts]
-shapepipe_run = "shapepipe.shapepipe_run:main"
-summary_run = "shapepipe.summary_run:main"
-canfar_submit_job = "shapepipe.canfar_run:run_job"
-canfar_monitor = "shapepipe.canfar_run:run_log"
-canfar_monitor_log = "shapepipe.canfar_run:run_monitor_log"
-get_ccd_with_psfs = "shapepipe.get_ccds_run:run_ccd_psf_handler"
-download_headers = "shapepipe.coverage_run:run_download_headers"
+shapepipe_run       = "shapepipe.shapepipe_run:main"
+summary_run         = "shapepipe.summary_run:main"
+canfar_submit_job   = "shapepipe.canfar_run:run_job"
+canfar_monitor      = "shapepipe.canfar_run:run_log"
+canfar_monitor_log  = "shapepipe.canfar_run:run_monitor_log"
+get_ccd_with_psfs   = "shapepipe.get_ccds_run:run_ccd_psf_handler"
+download_headers    = "shapepipe.coverage_run:run_download_headers"
 extract_field_corners = "shapepipe.coverage_run:run_extract_corners"
-build_coverage_map = "shapepipe.coverage_run:run_build_coverage"
-plot_coverage_map = "shapepipe.coverage_run:run_plot_coverage"
-coverage_pipeline = "shapepipe.coverage_run:run_pipeline"
+build_coverage_map  = "shapepipe.coverage_run:run_build_coverage"
+plot_coverage_map   = "shapepipe.coverage_run:run_plot_coverage"
+coverage_pipeline   = "shapepipe.coverage_run:run_pipeline"
+
+[tool.uv]
+# shapepipe targets Linux only; skip Windows/macOS wheel resolution
+environments = ["sys_platform == 'linux'"]
+
+[tool.uv.sources]
+ngmix = { git = "https://github.com/esheldon/ngmix", tag = "v2.4.0" }
+# Track cs_util's develop branch (a git ref, not a pinned release) so new
+# cs_util.size / cs_util.shape helpers are available without shipping a release
+# and rebuilding the image each time. shapepipe's column grammar sources size
+# (T = 2*sigma^2) and ellipticity conversions from cs_util.
+cs_util = { git = "https://github.com/CosmoStat/cs_util", branch = "develop" }
+
+[build-system]
+# Declaring a build backend makes shapepipe an installed package (not a uv
+# "virtual" project), so `uv sync` / `pip install -e .` put it on the path
+# rather than only its dependencies.
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+script-files = [
+    "scripts/python/update_runs_log_file.py",
+    "scripts/sh/init_run_v2.0.sh",
+    "scripts/sh/run_job_sp_canfar_v2.0.bash",
+    "scripts/sh/job_sp_canfar_v2.0.bash",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "--verbose --cov=shapepipe"
-testpaths = ["shapepipe"]
+# One discovery root: everything lives under `tests/`. Tiers are
+# `module/` (per-module unit tests, import package internals directly),
+# `unit/` (structural), `science/` (fast guardrails), `cluster/` (candide,
+# marked `candide`+`slow`), with shared library code in `helpers/`. See
+# tests/README.md.
+addopts = "--verbose --strict-markers --cov=shapepipe --cov-report=term-missing"
+testpaths = ["tests"]
+markers = [
+    "slow: heavy compute (minutes); excluded from the fast inner loop.",
+    "candide: needs the candide cluster and/or its real data; auto-skipped elsewhere.",
+]

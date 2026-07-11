@@ -1,6 +1,6 @@
 # Configuration
 
-The pipeline requires a configuration file (by default called `conifg.ini`)
+The pipeline requires a configuration file (by default called `config.ini`)
 in order to be run. Example configuration files are provided in the
 [example](https://github.com/CosmoStat/shapepipe/tree/develop/example)
 directory.
@@ -84,7 +84,10 @@ The following options can be added to the `[FILE]` section of the config file
   (*e.g.* `.`, `-`, `:`, *etc.*). *optional*ly a regular expression can also be
   passed if it is preceded by `RE:` (*e.g.* `RE:-\d{9}`).
 - `NUMBER_LIST` : (`str` or `list`, *optional*) A list of number strings
-  matching the numbering scheme or a file name.
+  matching the numbering scheme or a file name. Restricts the run to these
+  numbers; every entry must match an input file found on disk, otherwise the
+  run fails at start-up. This is also how a single image is processed per
+  job (formerly the `-e`/`--exclusive` command-line flag).
 - `CORRECT_FILE_PATTERN` : (`bool`, *optional*) Option to allow substring file
   patterns. Default value is `True`.
 
@@ -114,7 +117,7 @@ INPUT_DIR = last:psfex_runner
 OUTPUT_DIR = /home/username/my_output_dir
 FILE_PATTERN = psf
 FILE_EXT = fits
-NUMBERING_LIST = -001, -002
+NUMBER_LIST = -001, -002
 ```
 
 ShapePipe will look for the specific files `psf-001.fits` and `psf-002.fits`

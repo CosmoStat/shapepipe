@@ -15,7 +15,7 @@ import numpy as np
 from sqlitedict import SqliteDict
 
 
-def merge_headers(input_file_list, output_dir):
+def merge_headers(input_file_list, output_dir, tile_number=None):
     """Merge Headers.
 
     This function opens the files in the input file list and merges them into
@@ -27,6 +27,8 @@ def merge_headers(input_file_list, output_dir):
         List of input files
     output_dir : str
         Output path
+    tile_number : str, optional
+        Tile number ID stored under the key ``"TILE_ID"``, default is ``None``
 
     Raises
     ------
@@ -41,9 +43,13 @@ def merge_headers(input_file_list, output_dir):
         )
 
     # Open SqliteDict file
-    final_file = SqliteDict(f"{output_dir}/log_exp_headers.sqlite")
+    suffix = tile_number if tile_number else ""
+    final_file = SqliteDict(f"{output_dir}/log_exp_headers{suffix}.sqlite")
     # Set matching pattern
     pattern = "headers-"
+
+    if tile_number:
+        final_file["TILE_ID"] = tile_number
 
     for file_path in input_file_list:
         # Extract file path

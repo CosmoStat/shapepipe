@@ -457,6 +457,16 @@ ln -s ..//unions_shapepipe_comprehensive_struct_2024_v1.6.c.hdf5 unions_shapepip
 calibrate_comprehensive
 
 
+```{note}
+The matched-star-catalogue and coverage-mask diagnostics in the next two
+sections have largely moved out of ShapePipe into
+[`sp_validation`](https://github.com/CosmoStat/sp_validation) / `cosmo_val`.
+Several helpers referenced below — `merge_psf_cat.py`, `download_headers`,
+`extract_field_corners`, `build_coverage_map`, `plot_coverage_map` — are no
+longer shipped in this repository; see `sp_validation` for their current
+equivalents. (`get_ccds_with_psf` and `summary_run` are still part of ShapePipe.)
+```
+
 ### Create matched star catalogue
 
 For diagnostics, a catalogue with multi-epoch shapes measured by ngmix matched with the validation star catalogue is used.

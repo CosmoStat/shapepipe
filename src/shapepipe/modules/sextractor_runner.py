@@ -13,12 +13,16 @@ from shapepipe.modules.sextractor_package import sextractor_script as ss
 from shapepipe.pipeline.execute import execute
 
 
+# The trailing log_exp_headers input (merged WCS headers from
+# merge_headers_runner) is only consumed when MAKE_POST_PROCESS is True;
+# configs without post-processing override FILE_PATTERN/FILE_EXT with the
+# first three entries only.
 @module_runner(
     version="1.0.1",
-    input_module="mask_runner",
-    file_pattern=["image", "weight", "flag"],
-    file_ext=[".fits", ".fits", ".fits"],
-    executes=["sex"],
+    input_module=["mask_runner", "merge_headers_runner"],
+    file_pattern=["image", "weight", "flag", "log_exp_headers"],
+    file_ext=[".fits", ".fits", ".fits", ".sqlite"],
+    executes=["source-extractor"],
     depends=["numpy"],
 )
 def sextractor_runner(
@@ -68,6 +72,12 @@ def sextractor_runner(
     else:
         prefix = None
 
+    # When post-processing is enabled the sqlite WCS file is the last input;
+    # remove it before passing the image files to SExtractorCaller.
+    if config.getboolean(module_config_sec, "MAKE_POST_PROCESS"):
+        f_wcs_path = input_file_list[-1]
+        input_file_list = list(input_file_list[:-1])
+
     # Create sextractor caller class instance
     ss_inst = ss.SExtractorCaller(
         input_file_list,
@@ -101,7 +111,6 @@ def sextractor_runner(
 
     # Run sextractor post processing
     if config.getboolean(module_config_sec, "MAKE_POST_PROCESS"):
-        f_wcs_path = config.getexpanded(module_config_sec, "LOG_WCS")
         pos_params = config.getlist(module_config_sec, "WORLD_POSITION")
         ccd_size = config.getlist(module_config_sec, "CCD_SIZE")
         ss.make_post_process(ss_inst.path_output_file, f_wcs_path, pos_params, ccd_size)

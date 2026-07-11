@@ -6,6 +6,15 @@ masks, and combined randoms and masks for a selection of tiles.
 The masked regions are obtained on input from ShapePipe pixel mask ("pipeline flag")
 files.
 
+```{note}
+Parts of this procedure use the legacy canfar-VM / `vos` retrieval workflow (see
+[VOSpace retrieval](vos_retrieve.md)) and the obsolete `prepare_tiles_for_final`
+helper, which is no longer shipped. The `random_cat` module itself is current;
+the input-staging and joint-mask steps now overlap with
+[`sp_validation`](https://github.com/CosmoStat/sp_validation). The steps are
+retained for reference.
+```
+
 ## Set up
 
 ### ID file and shell variables
@@ -64,7 +73,7 @@ while read p; do tar xvf pipeline_flag_$p.tgz; done <missing_mask.txt
 ### Prepare combined mask input directory
 
 To combine all mask files into one input directory, easy to find by the subsequent ``ShapePipe`` module
-``random_runner``, type
+``random_cat_runner``, type
 ```bash
 prepare_tiles_for_final -c flag
 ```

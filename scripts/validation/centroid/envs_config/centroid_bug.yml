@@ -1,0 +1,19 @@
+name: sp_centroid_bug
+# Minimal environment for the centroid bias test script.
+# Only packages directly needed by test_centroid_shift.py and the
+# shapepipe ngmix module it imports.
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.10
+  - astropy
+  - galsim
+  - numba
+  - numpy
+  - tqdm
+  - pip:
+    - cs_util==0.1
+    - modopt
+    - sqlitedict
+    - git+https://github.com/aguinot/ngmix@stable_version

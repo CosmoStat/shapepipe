@@ -32,14 +32,12 @@ class FileHandler(object):
         List of modules to be run
     config : CustomParser
         Configuaration parser instance
-    exclusive : str, optional
-        Run this file number string exclusively if given, the default is None
     verbose : bool, optional
         Verbose setting, default is True
 
     """
 
-    def __init__(self, run_name, modules, config, exclusive=None, verbose=True):
+    def __init__(self, run_name, modules, config, verbose=True):
 
         self._run_name = run_name
 
@@ -48,7 +46,6 @@ class FileHandler(object):
             raise ValueError("Invalid module list, check for a trailing comma")
 
         self._config = config
-        self._exclusive = exclusive
         self._verbose = verbose
 
         self.module_runners = get_module_runners(self._module_list)
@@ -795,7 +792,7 @@ class FileHandler(object):
 
         """
         if not isinstance(match_pattern, str):
-            TypeError("Match pattern must be a string.")
+            raise TypeError("Match pattern must be a string.")
 
         chars = [char for char in match_pattern if not char.isalnum()]
         split_pattern = "|".join(chars).replace(".", r"\.")
@@ -1089,7 +1086,20 @@ class FileHandler(object):
         if isinstance(self._number_list, type(None)):
             number_list = np.load(memory_map, mmap_mode="r")
         else:
+            # NUMBER_LIST comes from the config on faith; check every
+            # entry against the numbers actually found on disk so that a
+            # wrong ID fails here, at start-up, rather than when a module
+            # first tries to open the (non-existent) files (#746).
             number_list = self._number_list
+            scanned = set(np.load(memory_map, mmap_mode="r"))
+            missing = [num for num in number_list if num not in scanned]
+            if missing:
+                raise ValueError(
+                    f"No input file found matching NUMBER_LIST "
+                    f"entr{'ies' if len(missing) > 1 else 'y'} "
+                    f"{missing}; {len(scanned)} input file number(s) "
+                    f"found on disk."
+                )
 
         if len(number_list) == 0:
             msg = "Empty number list"
@@ -1107,20 +1117,6 @@ class FileHandler(object):
                     + f'numbering scheme "{num_scheme}".'
                 )
 
-            # If "exclusive" options is set: discard all non-matching IDs
-            if self._exclusive is not None:
-                id_to_test = f"-{self._exclusive.replace('.', '-')}"
-                if number == id_to_test:
-                    if self._verbose:
-                        print(
-                            f"-- Using exclusive number {self._exclusive} ({id_to_test})"
-                        )
-                else:
-                    if self._verbose:
-                        # print(f"Skipping {number}, not equal to {self._exclusive} ({id_to_test})")
-                        pass
-                    continue
-
             if run_method == "serial":
                 process_items = []
             else:
@@ -1134,11 +1130,7 @@ class FileHandler(object):
             process_list.append(process_items)
 
         if len(process_list) == 0:
-            msg = "Empty process list"
-            if self._exclusive is not None:
-                if len(number_list) > 0:
-                    msg = f"{msg}. No input file found matching exclusive ID"
-            raise ValueError(msg)
+            raise ValueError("Empty process list")
 
         return process_list
 

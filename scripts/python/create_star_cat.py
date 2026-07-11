@@ -12,9 +12,12 @@ bright star halos and diffraction spikes
 """
 
 
-import re
 import os
+import re
 import sys
+
+from cs_util import args as cs_args
+from cs_util import logging as cs_logging
 
 import numpy as np
 
@@ -22,8 +25,13 @@ from astropy.coordinates import SkyCoord
 from astropy.wcs import WCS
 from astropy.io import fits
 from astropy import units as u
+from astropy.table import Table
 
-from shapepipe.pipeline.execute import execute
+from shapepipe.utilities.vizier import query_vizier as _query_vizier
+
+
+# GSC 2.3 catalog ID
+CDS_CAT_ID = "I/305/out"
 
 
 def _get_wcs(header):
@@ -60,105 +68,54 @@ def _get_wcs(header):
     return final_wcs
 
 
-def _get_image_radius(center, wcs):
-    """Get Image Radius.
-
-    Compute the diagonal distance of the image in arcmin.
-
-    Parameters
-    ----------
-    center : numpy.ndarray
-        Coordinates of the center of the image (in pixel)
-    wcs : astropy.wcs.WCS
-        WCS object
-
-    Returns
-    -------
-    float
-        The diagonal distance of the image in arcmin.
-
-    """
-    if center is None:
-        raise ValueError("center cannot be None")
-    else:
-        if type(center) is np.ndarray:
-            return SphereDist(center, np.zeros(2), wcs) / 60.0
-        else:
-            raise TypeError("center has to be a numpy.ndarray")
+def _sphere_dist_arcmin(ra1, dec1, ra2, dec2):
+    """Compute angular distance between two sky positions in arcmin."""
+    c1 = SkyCoord(ra=ra1 * u.deg, dec=dec1 * u.deg)
+    c2 = SkyCoord(ra=ra2 * u.deg, dec=dec2 * u.deg)
+    return c1.separation(c2).arcmin
 
 
-def SphereDist(position1, position2, wcs):
-    """Sphere Dist.
-
-    Compute distance between two points on the sphere.
-
-    Parameters
-    ----------
-    position1 : numpy.ndarray
-        [x,y], first point (in pixels)
-    position2 : numpy.ndarray
-        [x,y], second point (in pixels)
-
-    Returns
-    -------
-    float
-        distance (in degrees)
-    """
-
-    if (type(position1) is not np.ndarray) & (
-        type(position2) is not np.ndarray
-    ):
-        raise ValueError("Positions need to be of type numpy.ndarray")
-
-    rad2deg = np.pi / 180.0
-    p1 = rad2deg * np.hstack(wcs.all_pix2world(position1[0], position1[1], 1))
-    p2 = rad2deg * np.hstack(wcs.all_pix2world(position2[0], position2[1], 1))
-
-    dTheta = p1 - p2
-    dLong = dTheta[0]
-    dLat = dTheta[1]
-
-    dist = 2 * np.arcsin(
-        np.sqrt(
-            np.sin(dLat / 2.0) ** 2
-            + np.cos(p1[1]) * np.cos(p2[1]) * np.sin(dLong / 2.0) ** 2
-        )
-    )
-
-    return dist * (180.0 / np.pi) * 3600.0
+def _ccd_center_and_radius(header):
+    """Return (ra, dec, radius_arcmin) for a single CCD."""
+    w = _get_wcs(header)
+    nx, ny = header["NAXIS1"], header["NAXIS2"]
+    cx, cy = nx / 2.0, ny / 2.0
+    ra_c, dec_c = w.all_pix2world([[cx, cy]], 1)[0]
+    # radius = half-diagonal to CCD corner
+    ra_corner, dec_corner = w.all_pix2world([[0, 0]], 1)[0]
+    radius = _sphere_dist_arcmin(ra_c, dec_c, ra_corner, dec_corner)
+    return ra_c, dec_c, radius
 
 
-def find_stars(position, output_name, radius=None):
-    """Find Stars.
+def _focal_plane_center_and_radius(f, n_ccd=40):
+    """Return (ra, dec, radius_arcmin) covering all CCDs of an exposure."""
+    ras, decs, radii = [], [], []
+    for ind in range(1, n_ccd + 1):
+        h = fits.getheader(f, ind)
+        ra, dec, r = _ccd_center_and_radius(h)
+        ras.append(ra)
+        decs.append(dec)
+        radii.append(r)
 
-    Return GSC (Guide Star Catalog) objects for a field with center
-    (ra,dec) and radius r.
+    ras = np.array(ras)
+    decs = np.array(decs)
+    radii = np.array(radii)
 
-    Parameters
-    ----------
-    position : numpy.ndarray
-        Position of the center of the field
-    radius : float
-        Radius in which the query is done (in arcmin)
+    ra_center = np.mean(ras)
+    dec_center = np.mean(decs)
 
-    """
-    ra = position[0]
-    dec = position[1]
+    # Radius = max distance from focal plane center to any CCD center + that CCD's half-diagonal
+    dists = np.array([
+        _sphere_dist_arcmin(ra_center, dec_center, ras[i], decs[i])
+        for i in range(len(ras))
+    ])
+    radius = np.max(dists + radii)
 
-    # check ra dec types
+    return ra_center, dec_center, radius
 
-    if dec > 0.0:
-        sign = "+"
-    else:
-        sign = ""
 
-    cmd_line = f"findgsc2.2 {ra} {sign}{dec} -r {radius} -n 1000000"
-
-    CDS_stdout, CDS_stderr = execute(cmd_line)
-
-    output_file = open(output_name, "w")
-    output_file.write(CDS_stdout)
-    output_file.close()
+def query_vizier(ra, dec, radius_arcmin):
+    return _query_vizier(ra, dec, radius_arcmin, CDS_CAT_ID)
 
 
 def main(input_dir, output_dir, kind):
@@ -169,63 +126,73 @@ def main(input_dir, output_dir, kind):
         if "image" not in f:
             continue
 
+        img_number = re.split("image", os.path.splitext(f)[0])[1]
+        fpath = os.path.join(input_dir, f)
+
         if kind == "exp":
-            list_ind = range(1, 41)
-        else:
-            list_ind = [0]
-
-        for ind in list_ind:
-
-            if kind == "exp":
-                exp_suff = "-{}".format(ind - 1)
-            else:
-                exp_suff = ""
-
-            img_number = re.split("image", os.path.splitext(f)[0])[1]
-            output_name = f"{output_dir}/star_cat{img_number}{exp_suff}.cat"
-
+            # One query covering the full MegaCam focal plane
+            output_name = f"{output_dir}/star_cat{img_number}.fits"
             if os.path.isfile(output_name):
                 continue
 
-            h = fits.getheader(input_dir + "/" + f, ind)
+            ra, dec, radius = _focal_plane_center_and_radius(fpath)
+            print(
+                f"Focal plane center: ra={ra:.4f}, dec={dec:.4f}, radius={radius:.2f} arcmin"
+            )
+            table = query_vizier(ra, dec, radius)
+            table.write(output_name, overwrite=True)
 
+        else:
+            h = fits.getheader(fpath, 0)
             w = _get_wcs(h)
+            nx, ny = h["NAXIS1"], h["NAXIS2"]
+            cx, cy = nx / 2.0, ny / 2.0
+            ra, dec = w.all_pix2world([[cx, cy]], 1)[0]
+            ra_corner, dec_corner = w.all_pix2world([[0, 0]], 1)[0]
+            radius = _sphere_dist_arcmin(ra, dec, ra_corner, dec_corner)
 
-            img_shape = (h["NAXIS2"], h["NAXIS1"])
-            img_center = np.array([img_shape[1] / 2.0, img_shape[0] / 2.0])
-            wcs_center = w.all_pix2world([img_center], 1)[0]
-            astropy_center = SkyCoord(
-                ra=wcs_center[0], dec=wcs_center[1], unit="deg"
-            )
+            output_name = f"{output_dir}/star_cat{img_number}.fits"
+            if os.path.isfile(output_name):
+                continue
 
-            rad = _get_image_radius(img_center, w)
-
-            find_stars(
-                np.array([astropy_center.ra.value, astropy_center.dec.value]),
-                output_name,
-                rad,
-            )
+            table = query_vizier(ra, dec, radius)
+            table.write(output_name, overwrite=True)
 
     return 0
 
 
+def params_default():
+    """Return default parameters, short options, types, and help strings."""
+    _params = {
+        "input_dir": ".",
+        "output_dir": ".",
+        "kind": "exp",
+    }
+    _short_options = {
+        "input_dir": "-i",
+        "output_dir": "-o",
+        "kind": "-k",
+    }
+    _types = {}
+    _help_strings = {
+        "input_dir": "input directory containing image files; default is {}",
+        "output_dir": "output directory for star catalogues; default is {}",
+        "kind": "processing kind, 'exp' for full MegaCam focal plane, 'tile' for single image; default is {}",
+    }
+    return _params, _short_options, _types, _help_strings
+
+
 if __name__ == "__main__":
 
-    argv = sys.argv
+    _params, _short_options, _types, _help_strings = params_default()
 
-    try:
-        input_path = argv[1]
-    except:
-        input_path = "."
+    options = cs_args.parse_options(
+        _params,
+        _short_options,
+        _types,
+        _help_strings,
+    )
 
-    try:
-        output_path = argv[2]
-    except:
-        output_path = "."
+    cs_logging.log_command(sys.argv)
 
-    try:
-        kind = argv[3]
-    except:
-        kind = ""
-
-    main(input_path, output_path, kind)
+    main(options["input_dir"], options["output_dir"], options["kind"])

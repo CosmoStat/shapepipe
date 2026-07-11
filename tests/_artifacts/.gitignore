@@ -1,0 +1,7 @@
+# Guardrail tests emit plots + status (JSON/markdown) here at run time.
+# This is the publish SEAM: a later GitHub Pages step reads this directory.
+# The directory is tracked (so the seam exists on a clean checkout); the
+# generated artifacts themselves are not.
+*
+!.gitignore
+!README.md

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import sys
 import os
 
@@ -8,16 +9,7 @@ from shapepipe.utilities import summary
 from shapepipe.utilities import summary_params_pre_v2 as summary_params
 
 
-def run(*args):
-
-    patch = args[0]
-
-    if len(args) >= 2:
-        job_exclusive = args[1]
-    else:
-        job_exclusive = None
-
-    verbose = len(args) == 3
+def run(patch, job_exclusive=None, verbose=False):
 
     jobs, list_tile_IDs_dot = summary_params.set_jobs_v2_pre_v2(patch, verbose)
 
@@ -73,11 +65,37 @@ def run(*args):
     return 0
 
 
-def main(args=None):
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        description=(
+            'Print summary of ShapePipe job status for a given UNIONS patch.'
+        ),
+    )
+    parser.add_argument(
+        'patch',
+        help='Patch identifier (e.g. P3, P9).',
+    )
+    parser.add_argument(
+        'job_exclusive',
+        nargs='?',
+        default=None,
+        help=(
+            'Bitmask selecting which jobs to run; '
+            + 'if omitted, all jobs run.'
+        ),
+    )
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        action='store_true',
+        help='Verbose output.',
+    )
+    return parser.parse_args(argv)
 
-    if args is None:
-        args = sys.argv[1:]  # skip script name
-    run(*args)
+
+def main(argv=None):
+    args = parse_args(argv)
+    run(args.patch, args.job_exclusive, args.verbose)
 
 
 if __name__ == "__main__":

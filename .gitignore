@@ -130,7 +130,12 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Ignore example output
-*shapepipe_run_*
-*shapepipe_runs*
+# Ignore example output (generated under example/output/ by shapepipe_run)
+example/output/shapepipe_run_*
+example/output/shapepipe_runs*
 code
+
+# felt fiber store: canonical copy lives in ~/loom (git-synced privately);
+# .felt here is a machine-local symlink into it. Never track it in this repo.
+/.felt/
+/.felt

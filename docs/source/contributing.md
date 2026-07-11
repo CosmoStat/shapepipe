@@ -2,7 +2,7 @@
 
 ShapePipe is a fully open-source project and we welcome contributions.
 
-Pleas read our
+Please read our
 [contribution guidelines](https://github.com/CosmoStat/shapepipe/blob/develop/CONTRIBUTING.md).
 for details on how to contribute to the development of this package.
 

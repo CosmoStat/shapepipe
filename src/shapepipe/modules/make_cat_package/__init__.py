@@ -43,7 +43,8 @@ SM_GAL_THRESH : float, optional
     spread model and :math:`\sigma_s` is the spread model error; default value
     is ``0.01``
 SHAPE_MEASUREMENT_TYPE : list
-    Shape measurement method, valid options are ``ngmix`` and/or ``galsim``
+    Shape measurement method; the only valid option is ``ngmix`` (the knob is
+    retained as the extension point for a future estimator family)
 SAVE_PSF_DATA : bool, optional
     Save PSF information if ``True``; default value is ``False``
 TILE_LIST : str, optional

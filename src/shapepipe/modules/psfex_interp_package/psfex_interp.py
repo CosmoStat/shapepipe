@@ -11,6 +11,7 @@ import re
 
 import numpy as np
 from astropy.io import fits
+from cs_util import size as cs_size
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
@@ -346,10 +347,10 @@ class PSFExInterpolator(object):
         if self._compute_shape:
             data = {
                 "VIGNET": self.interp_PSFs,
-                "E1_PSF_HSM": self.psf_shapes[:, 0],
-                "E2_PSF_HSM": self.psf_shapes[:, 1],
-                "SIGMA_PSF_HSM": self.psf_shapes[:, 2],
-                "FLAG_PSF_HSM": self.psf_shapes[:, 3].astype(int),
+                "HSM_G1_PSF": self.psf_shapes[:, 0],
+                "HSM_G2_PSF": self.psf_shapes[:, 1],
+                "HSM_T_PSF": cs_size.sigma_to_T(self.psf_shapes[:, 2]),
+                "HSM_FLAG_PSF": self.psf_shapes[:, 3].astype(int),
             }
         else:
             data = {"VIGNET": self.interp_PSFs}
@@ -499,14 +500,14 @@ class PSFExInterpolator(object):
         )
 
         data = {
-            "E1_PSF_HSM": self.psf_shapes[:, 0],
-            "E2_PSF_HSM": self.psf_shapes[:, 1],
-            "SIGMA_PSF_HSM": self.psf_shapes[:, 2],
-            "FLAG_PSF_HSM": self.psf_shapes[:, 3].astype(int),
-            "E1_STAR_HSM": self.star_shapes[:, 0],
-            "E2_STAR_HSM": self.star_shapes[:, 1],
-            "SIGMA_STAR_HSM": self.star_shapes[:, 2],
-            "FLAG_STAR_HSM": self.star_shapes[:, 3].astype(int),
+            "HSM_G1_PSF": self.psf_shapes[:, 0],
+            "HSM_G2_PSF": self.psf_shapes[:, 1],
+            "HSM_T_PSF": cs_size.sigma_to_T(self.psf_shapes[:, 2]),
+            "HSM_FLAG_PSF": self.psf_shapes[:, 3].astype(int),
+            "HSM_G1_STAR": self.star_shapes[:, 0],
+            "HSM_G2_STAR": self.star_shapes[:, 1],
+            "HSM_T_STAR": cs_size.sigma_to_T(self.star_shapes[:, 2]),
+            "HSM_FLAG_STAR": self.star_shapes[:, 3].astype(int),
         }
         data = {**data, **star_dict}
 
@@ -625,6 +626,8 @@ class PSFExInterpolator(object):
             array_id = None
             array_shape = None
             array_exp_name = None
+            n_ccd_valid = 0
+            n_ccd_total = sum(1 for c in ccd_list if c != -1)
             for ccd in ccd_list:
                 if ccd == -1:
                     continue
@@ -718,9 +721,22 @@ class PSFExInterpolator(object):
                 else:
                     array_exp_name = np.concatenate((array_exp_name, exp_name_tmp))
 
-            final_list.append(
-                [array_id, array_psf, array_shape, array_exp_name]
-            )
+                n_ccd_valid += 1
+
+            if array_id is not None:
+                n_psf = len(array_id)
+                self._w_log.info(
+                    f"Exposure {exp_name}: {n_psf} PSFs from"
+                    + f" {n_ccd_valid}/{n_ccd_total} CCDs"
+                )
+                final_list.append(
+                    [array_id, array_psf, array_shape, array_exp_name]
+                )
+            else:
+                self._w_log.info(
+                    f"All CCDs skipped for exposure {exp_name} "
+                    + "(no valid PSF model); epoch excluded from output"
+                )
 
         self._f_wcs_file.close()
         cat.close()
@@ -739,16 +755,16 @@ class PSFExInterpolator(object):
                     ] = final_list[j][1][where_res[0]]
                     if self._compute_shape:
                         shape_dict = {}
-                        shape_dict["E1_PSF_HSM"] = final_list[j][2][
+                        shape_dict["HSM_G1_PSF"] = final_list[j][2][
                             where_res[0]
                         ][0]
-                        shape_dict["E2_PSF_HSM"] = final_list[j][2][
+                        shape_dict["HSM_G2_PSF"] = final_list[j][2][
                             where_res[0]
                         ][1]
-                        shape_dict["SIGMA_PSF_HSM"] = final_list[j][2][
-                            where_res[0]
-                        ][2]
-                        shape_dict["FLAG_PSF_HSM"] = final_list[j][2][
+                        shape_dict["HSM_T_PSF"] = cs_size.sigma_to_T(
+                            final_list[j][2][where_res[0]][2]
+                        )
+                        shape_dict["HSM_FLAG_PSF"] = final_list[j][2][
                             where_res[0]
                         ][3]
                         output_dict[id_tmp][final_list[j][3][where_res[0]]][
