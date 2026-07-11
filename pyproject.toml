@@ -24,6 +24,7 @@ dependencies = [
     "galsim>=2.8",
     "h5py",
     "healsparse",
+    "hpgeom",
     "joblib>=1.4",
     "matplotlib>=3.10",
     "mccd>=1.2.4",
@@ -94,7 +95,6 @@ download_headers    = "shapepipe.coverage_run:run_download_headers"
 extract_field_corners = "shapepipe.coverage_run:run_extract_corners"
 build_coverage_map  = "shapepipe.coverage_run:run_build_coverage"
 plot_coverage_map   = "shapepipe.coverage_run:run_plot_coverage"
-coverage_pipeline   = "shapepipe.coverage_run:run_pipeline"
 
 [tool.uv]
 # shapepipe targets Linux only; skip Windows/macOS wheel resolution

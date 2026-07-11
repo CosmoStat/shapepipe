@@ -285,7 +285,7 @@ class CoveragePlotter(object):
 
         """
         if args is None:
-            args = sys.argv
+            args = sys.argv[1:]
 
         # Set parameters from command line
         self.set_params_from_command_line(args)
