@@ -103,12 +103,12 @@ Full detail: `docs/source/installation.md` and `docs/source/container.md`.
 - **Style**: PEP 8; numpydoc docstrings on public modules, classes, and methods.
   Match the surrounding code.
 
-## Project knowledge — felt
+## Project knowledge
 
-This repo carries a version-controlled `.felt/` store: the team's shared notes on
-decisions, architecture, and plans, written as markdown "fibers" (readable
-directly; the `felt` CLI indexes and searches them). It's where the *why* lives,
-for humans and AI agents alike. Start at the `shapepipe` root fiber; the
-container/CI architecture and the in-progress test-suite work each have their
-own. When you make a durable decision or learn something worth keeping, leave a
-fiber so the next person finds it.
+Durable project knowledge — decisions, architecture, plans — lives in this repo's
+pull requests, issues, docstrings, and `docs/`, alongside notes some maintainers
+keep in their own stores outside it. A `.felt/` directory (a markdown "fiber" note
+store used with the `felt` CLI) is **not tracked here**: it's gitignored, and where
+it exists it's a machine-local symlink into a private, separately git-synced store,
+so a fresh clone won't have one. Record durable decisions in the PR, issue, or docs
+where the change lives.
