@@ -156,6 +156,39 @@ def test_get_stamps_raises_out_of_bounds(positions):
         get_stamps(image, positions, 2)
 
 
+def test_get_stamps_golden():
+    """Pin the extraction behavior with hand-derived expected values.
+
+    The bit-identity test against sf_tools below self-skips once sf_tools is
+    uninstalled (it is dropped as a dependency by this code), so this golden
+    test is what keeps the extraction pinned in CI: expected stamps are built
+    by arithmetic (``value = 10 * row + col``), independent of the pad/slice
+    implementation, and cover the two behaviors that matter — numpy's
+    round-half-to-even at a ``.5`` tie, and zero-padding past the image edge.
+    """
+    image = np.arange(100, dtype=float).reshape(10, 10)  # value = 10*r + c
+    rad = 2
+
+    # (4.5, 6.5) ties round half-to-even -> (4, 6); (3.5, 2.5) -> (4, 2).
+    positions = np.array([[4.5, 6.5], [3.5, 2.5], [0.4, 0.6]])
+    stamps, int_pos, offsets = get_stamps(image, positions, rad)
+
+    npt.assert_array_equal(int_pos, [[4, 6], [4, 2], [0, 1]])
+    npt.assert_allclose(offsets, [[0.5, 0.5], [-0.5, 0.5], [0.4, -0.4]])
+
+    def expected(r0, c0):
+        return [
+            [
+                10.0 * r + c if 0 <= r < 10 and 0 <= c < 10 else 0.0
+                for c in range(c0 - rad, c0 + rad + 1)
+            ]
+            for r in range(r0 - rad, r0 + rad + 1)
+        ]
+
+    for stamp, (r0, c0) in zip(stamps, int_pos):
+        npt.assert_array_equal(stamp, expected(r0, c0))
+
+
 @pytest.mark.parametrize("rad", [2, 3, 5])
 def test_get_stamps_matches_fetchstamps(rad):
     """Bit-identical to sf_tools FetchStamps for in-bounds objects.
