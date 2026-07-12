@@ -20,7 +20,9 @@ import pytest
 from scipy import ndimage
 
 from shapepipe.modules.ngmix_package.ngmix import (
+    central_seg_label,
     prepare_ngmix_weights,
+    seg_has_neighbour,
     uberseg_weight,
 )
 
@@ -101,6 +103,98 @@ def test_uberseg_no_neighbour_is_passthrough():
     npt.assert_array_equal(uberseg_weight(weight, empty, object_number=1), weight)
 
 
+# --- central_seg_label: centre-pixel identification (#776 decision 3) -------
+
+def test_central_seg_label_is_the_centre_pixel():
+    """The central label is read from the centre pixel, not assumed to be 1."""
+    seg, centre, _ = two_object_seg()
+    assert central_seg_label(seg) == 1
+
+    # Slide the neighbour footprint onto the stamp centre: the centre-pixel
+    # label is now 2, proving the id comes from geometry, not "label 1".
+    npix = seg.shape[0]
+    c = npix // 2
+    yy, xx = np.indices((npix, npix))
+    shifted = np.zeros_like(seg)
+    shifted[(yy - c) ** 2 + (xx - c) ** 2 <= 3 ** 2] = 2
+    assert central_seg_label(shifted) == 2
+
+
+def test_central_seg_label_sky_centre_raises():
+    """A seg stamp whose centre pixel is sky (label 0) fails fast."""
+    empty = np.zeros((21, 21), dtype=np.int32)
+    with pytest.raises(ValueError, match="centre pixel is sky"):
+        central_seg_label(empty)
+
+
+# --- seg_has_neighbour: the per-object blend flag (#776 decision 4) ---------
+
+def test_seg_has_neighbour():
+    """True iff a non-central, non-zero label is present."""
+    seg, _, _ = two_object_seg()
+    assert seg_has_neighbour(seg, 1) is True
+
+    # Only the central object present -> not blended.
+    solo = np.zeros((21, 21), dtype=np.int32)
+    solo[8:13, 8:13] = 1
+    assert seg_has_neighbour(solo, 1) is False
+
+    # Empty seg -> not blended.
+    assert seg_has_neighbour(np.zeros((21, 21), dtype=np.int32), 1) is False
+
+    # A lone footprint that *is* the central object -> not blended, even
+    # though its label differs from a nominal "1".
+    assert seg_has_neighbour(solo * 7, 7) is False
+
+
+# --- uberseg dilation: additive neighbour-mask enlargement (#776 dec. 2) ----
+
+def test_uberseg_dilation_grows_neighbour_mask():
+    """dilate_neighbour>0 zeros a strict superset of the base (dilate=0) mask,
+    and every base-masked pixel stays masked (additive-only).
+
+    Geometric subtlety: for well-separated objects the base Voronoi cut (the
+    perpendicular bisector) already masks the whole neighbour-side half-plane,
+    so dilating the neighbour footprint bites only when its grown boundary
+    crosses the bisector into the central Voronoi cell. A few iterations
+    guarantee that crossing here (sep=8, r=3 -> ~2px footprint gap)."""
+    seg, _, _ = two_object_seg(npix=41, sep=8)
+    weight = np.ones_like(seg, dtype=float)
+
+    out0 = uberseg_weight(weight, seg, object_number=1, dilate_neighbour=0)
+    out3 = uberseg_weight(weight, seg, object_number=1, dilate_neighbour=3)
+
+    # dilate=0 reproduces the validated no-dilation result byte-for-byte.
+    npt.assert_array_equal(
+        out0, uberseg_weight(weight, seg, object_number=1)
+    )
+    # Every pixel masked at dilate=0 is still masked at dilate=3 (additive).
+    assert np.all(out3[out0 == 0.0] == 0.0)
+    # And strictly more pixels are masked once the dilation crosses the
+    # bisector into the central cell.
+    assert (out3 == 0.0).sum() > (out0 == 0.0).sum()
+
+
+def test_uberseg_dilation_zero_is_pure_sheldon():
+    """dilate_neighbour=0 is bit-identical to the default (no-kwarg) call and
+    to the O(N^2) brute-force nearest-segment rule."""
+    seg, _, _ = two_object_seg(npix=25, sep=8)
+    weight = np.ones_like(seg, dtype=float)
+
+    out = uberseg_weight(weight, seg, object_number=1, dilate_neighbour=0)
+    npt.assert_array_equal(out, uberseg_weight(weight, seg, object_number=1))
+
+    obj = np.argwhere(seg != 0)
+    labels = seg[seg != 0]
+    brute = np.ones_like(weight)
+    for i in range(seg.shape[0]):
+        for j in range(seg.shape[1]):
+            d2 = (i - obj[:, 0]) ** 2 + (j - obj[:, 1]) ** 2
+            if labels[np.argmin(d2)] != 1:
+                brute[i, j] = 0.0
+    npt.assert_array_equal(out, brute)
+
+
 def test_uberseg_matches_bruteforce_nearest_segment():
     """The cKDTree result equals the O(N^2) brute-force nearest-segment rule
     (Sheldon's non-C fallback) it stands in for."""
@@ -157,6 +251,23 @@ def test_noisefill_default_is_byte_identical_to_legacy():
     npt.assert_array_equal(gal_out, gal_exp)
     npt.assert_array_equal(w_out, w_exp)
     npt.assert_array_equal(noise_out, noise_exp)
+
+
+def test_noisefill_ignores_seg_and_dilate_kwargs():
+    """Under noisefill, passing seg / dilate_neighbour changes nothing: the
+    result matches the plain default call on the same RNG stream."""
+    gal, flag, weight = _gal_flag_weight()
+    seg, _, _ = two_object_seg(npix=gal.shape[0], sep=12)
+
+    base = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(321),
+    )
+    with_kwargs = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(321),
+        seg=seg, object_number=1, dilate_neighbour=3,
+    )
+    for a, b in zip(with_kwargs, base):
+        npt.assert_array_equal(a, b)
 
 
 def test_uberseg_hard_masks_weight_and_leaves_image_untouched():

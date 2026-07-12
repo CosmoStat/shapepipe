@@ -175,6 +175,7 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
         "obj_id": 1,
         "n_epoch_model": 1,
         "mcal_types_fail": 0,
+        "neighbour_flag": 0,
         # original image PSF (psfex/mccd) family
         "g1_psf_orig": ORIG_PSF_G[0],
         "g2_psf_orig": ORIG_PSF_G[1],
