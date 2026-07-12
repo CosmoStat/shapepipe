@@ -750,6 +750,15 @@ class PSFExInterpolator(object):
                         0,
                     )
                 ).T
+                # 1-indexed (FITS) positions for local_wcs_list, which wraps
+                # galsim.AstropyWCS; gal_pos (origin 0) stays for PSFEx interp.
+                gal_pos_wcs = np.array(
+                    self._f_wcs_file[exp_name][ccd]["WCS"].all_world2pix(
+                        self.gal_pos[:, 0][ind_obj],
+                        self.gal_pos[:, 1][ind_obj],
+                        1,
+                    )
+                ).T
 
                 self.interp_PSFs = self.interpsfex(
                     dot_psf_path,
@@ -796,7 +805,7 @@ class PSFExInterpolator(object):
                 if self._compute_shape:
                     self._get_psfshapes(
                         local_wcs_list(
-                            self._f_wcs_file[exp_name][ccd]["WCS"], gal_pos
+                            self._f_wcs_file[exp_name][ccd]["WCS"], gal_pos_wcs
                         )
                     )
                     if array_shape is None:
