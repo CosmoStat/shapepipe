@@ -1,5 +1,23 @@
 #! /usr/bin/env python3
 
+"""CONVERT PSF CATALOGUE.
+
+Collate the per-exposure PSF validation catalogues into per-patch star
+catalogues: gather positions (X/Y/RA/DEC), assign the MCCD focal-plane CCD id,
+and merge into ``validation_psf_conv-<patch>-<idx>.fits``.
+
+HSM ellipticities and sizes are no longer rotated here. PSFEx and the in-repo
+MCCD interpolation now measure adaptive moments directly in world coordinates
+(galsim ``FindAdaptiveMom(use_sky_coords=True)``), so the WCS-Jacobian shape
+rotation this script used to perform is redundant and has been removed.
+
+Caveat: the MCCD ``PSF_MOM_LIST``/``STAR_MOM_LIST`` columns are produced by the
+external ``mccd`` fit-validation code, which still measures in the pixel frame;
+those shapes are passed through unrotated here. If the MCCD validation branch is
+revived, its moments must be measured in sky coordinates upstream (as the PSFEx
+and MCCD interpolation paths now are).
+"""
+
 import sys
 import os
 import re
@@ -10,44 +28,9 @@ import gc
 
 import numpy as np
 from astropy.io import fits
-import galsim
 
 from cs_util import args as cs_args
 from cs_util import logging
-
-
-def transform_shape(mom_list, jac):
-    """Transform Shape.
-
-    Transform shape (ellipticity and size) using a Jacobian.
-
-    Parameters
-    ----------
-    mom_list : list
-        input moment measurements; each list element contains
-        first and second ellipticity component and size
-    jac : galsim.JacobianWCS
-        Jacobian transformation matrix information
-
-    Returns
-    -------
-    list
-        transformed shape parameters, which are
-        first and second ellipticity component and size
-
-    """
-    scale, shear, theta, flip = jac.getDecomposition()
-
-    sig_tmp = mom_list[2] * scale
-    shape = galsim.Shear(g1=mom_list[0], g2=mom_list[1])
-    if flip:
-        # The following output is not observed
-        print("FLIP!")
-        shape = galsim.Shear(g1=-shape.g1, g2=shape.g2)
-    shape = galsim.Shear(g=shape.g, beta=shape.beta + theta)
-    shape = shear + shape
-
-    return shape.g1, shape.g2, sig_tmp
 
 
 class Loc2Glob(object):
@@ -555,7 +538,6 @@ class Convert(object):
                 if self._params["psf"] == "psfex":
                     psf_file_hdus = fits.open(psf_file_path, memmap=False)
                     psf_file = psf_file_hdus[2].data
-                    header_file = psf_file_hdus[1].data
                     psf_file_hdus.close()
                     mod = "RA"
                 else:
@@ -564,60 +546,10 @@ class Convert(object):
             except Exception:
                 continue
 
-            new_e1_psf = np.zeros_like(psf_file[mod])
-            new_e2_psf = np.zeros_like(psf_file[mod])
-            new_sig_psf = np.zeros_like(psf_file[mod])
-            new_e1_star = np.zeros_like(psf_file[mod])
-            new_e2_star = np.zeros_like(psf_file[mod])
-            new_sig_star = np.zeros_like(psf_file[mod])
-
             if self._params["psf"] == "psfex":
-                header = fits.Header.fromstring(
-                    "\n".join(header_file[0][0]), sep="\n"
-                )
-                wcs = galsim.AstropyWCS(header=header)
-
-                k = 0
-                for ind, obj in enumerate(psf_file):
-                    try:
-                        # jac = wcs.jacobian(world_pos=galsim.CelestialCoord(
-                        #     ra=obj["RA"]*galsim.degrees,
-                        #     dec=obj["DEC"]*galsim.degrees
-                        # ))
-                        jac = wcs.jacobian(
-                            image_pos=galsim.PositionD(
-                                obj["X"],
-                                obj["Y"],
-                            )
-                        )
-                    except Exception:
-                        continue
-                    g1_psf_tmp, g2_psf_tmp, sig_psf_tmp = transform_shape(
-                        [
-                            obj["E1_PSF_HSM"],
-                            obj["E2_PSF_HSM"],
-                            obj["SIGMA_PSF_HSM"],
-                        ],
-                        jac,
-                    )
-
-                    new_e1_psf[ind] = g1_psf_tmp
-                    new_e2_psf[ind] = g2_psf_tmp
-                    new_sig_psf[ind] = sig_psf_tmp
-
-                    g1_star_tmp, g2_star_tmp, sig_star_tmp = transform_shape(
-                        [
-                            obj["E1_STAR_HSM"],
-                            obj["E2_STAR_HSM"],
-                            obj["SIGMA_STAR_HSM"],
-                        ],
-                        jac,
-                    )
-                    new_e1_star[ind] = g1_star_tmp
-                    new_e2_star[ind] = g2_star_tmp
-                    new_sig_star[ind] = sig_star_tmp
-                    k += 1
-
+                # HSM ellipticities and sizes are measured directly in world
+                # coordinates upstream (FindAdaptiveMom use_sky_coords=True), so
+                # they are passed straight through; only positions are collated.
                 exp_cat = np.array(
                     list(
                         map(
@@ -628,13 +560,13 @@ class Convert(object):
                                     psf_file["Y"],
                                     psf_file["RA"],
                                     psf_file["DEC"],
-                                    new_e1_psf,
-                                    new_e2_psf,
-                                    new_sig_psf,
+                                    psf_file["E1_PSF_HSM"],
+                                    psf_file["E2_PSF_HSM"],
+                                    psf_file["SIGMA_PSF_HSM"],
                                     psf_file["FLAG_PSF_HSM"],
-                                    new_e1_star,
-                                    new_e2_star,
-                                    new_sig_star,
+                                    psf_file["E1_STAR_HSM"],
+                                    psf_file["E2_STAR_HSM"],
+                                    psf_file["SIGMA_STAR_HSM"],
                                     psf_file["FLAG_STAR_HSM"],
                                     np.ones_like(psf_file["RA"], dtype=int)
                                     * ccd_id,
@@ -661,10 +593,9 @@ class Convert(object):
                     ]
                 )
 
+                # Local-to-CCD position: subtract each CCD's focal-plane shift.
                 new_x = np.zeros_like(psf_file[mod])
                 new_y = np.zeros_like(psf_file[mod])
-                new_flag_psf = np.zeros_like(psf_file[mod])
-                new_flag_star = np.zeros_like(psf_file[mod])
                 for ccd_id in range(40):
                     m_ccd_id = new_ccd_id == ccd_id
                     if sum(m_ccd_id) == 0:
@@ -681,73 +612,8 @@ class Convert(object):
                         - y_shift
                     )
 
-                    header_file_path = (
-                        self._params["sub_dir_setools"]
-                        + self._params["file_pattern_psfint"]
-                        + f"{exp_name}-{ccd_id}.fits"
-                    )
-                    try:
-                        header_file = fits.getdata(header_file_path, 1)
-                    except Exception:
-                        continue
-                    header = fits.Header.fromstring(
-                        "\n".join(header_file[0][0]), sep="\n"
-                    )
-                    wcs = galsim.AstropyWCS(header=header)
-
-                    g1_psf_tmp_l = []
-                    g2_psf_tmp_l = []
-                    sig_psf_tmp_l = []
-                    g1_star_tmp_l = []
-                    g2_star_tmp_l = []
-                    sig_star_tmp_l = []
-                    flag_psf_tmp_l = []
-                    flag_star_tmp_l = []
-
-                    for obj in psf_file[m_ccd_id]:
-                        try:
-                            jac = wcs.jacobian(
-                                world_pos=galsim.CelestialCoord(
-                                    ra=obj["RA_LIST"] * galsim.degrees,
-                                    dec=obj["DEC_LIST"] * galsim.degrees,
-                                )
-                            )
-                        except Exception:
-                            flag_star_tmp_l.append(16)
-                            flag_psf_tmp_l.append(16)
-                            g1_psf_tmp_l.append(0)
-                            g2_psf_tmp_l.append(0)
-                            sig_psf_tmp_l.append(0)
-                            g1_star_tmp_l.append(0)
-                            g2_star_tmp_l.append(0)
-                            sig_star_tmp_l.append(0)
-                            continue
-                        g1_psf_tmp, g2_psf_tmp, sig_psf_tmp = transform_shape(
-                            obj["PSF_MOM_LIST"], jac
-                        )
-
-                        g1_psf_tmp_l.append(g1_psf_tmp)
-                        g2_psf_tmp_l.append(g2_psf_tmp)
-                        sig_psf_tmp_l.append(sig_psf_tmp)
-                        flag_psf_tmp_l.append(obj["PSF_MOM_LIST"][3])
-
-                        g1_star_tmp, g2_star_tmp, sig_star_tmp = (
-                            transform_shape(obj["STAR_MOM_LIST"], jac)
-                        )
-                        g1_star_tmp_l.append(g1_star_tmp)
-                        g2_star_tmp_l.append(g2_star_tmp)
-                        sig_star_tmp_l.append(sig_star_tmp)
-                        flag_star_tmp_l.append(obj["STAR_MOM_LIST"][3])
-
-                    new_e1_psf[m_ccd_id] = g1_psf_tmp_l
-                    new_e2_psf[m_ccd_id] = g2_psf_tmp_l
-                    new_sig_psf[m_ccd_id] = sig_psf_tmp_l
-                    new_flag_psf[m_ccd_id] = flag_psf_tmp_l
-                    new_e1_star[m_ccd_id] = g1_star_tmp_l
-                    new_e2_star[m_ccd_id] = g2_star_tmp_l
-                    new_sig_star[m_ccd_id] = sig_star_tmp_l
-                    new_flag_star[m_ccd_id] = flag_star_tmp_l
-
+                # MCCD moment lists carry [e1, e2, sigma, flag]; ellipticities
+                # and sizes are passed through unrotated (see note above).
                 exp_cat = np.array(
                     list(
                         map(
@@ -758,13 +624,13 @@ class Convert(object):
                                     new_y,
                                     psf_file["RA_LIST"],
                                     psf_file["DEC_LIST"],
-                                    new_e1_psf,
-                                    new_e2_psf,
-                                    new_sig_psf,
+                                    psf_file["PSF_MOM_LIST"][:, 0],
+                                    psf_file["PSF_MOM_LIST"][:, 1],
+                                    psf_file["PSF_MOM_LIST"][:, 2],
                                     psf_file["PSF_MOM_LIST"][:, 3],
-                                    new_e1_star,
-                                    new_e2_star,
-                                    new_sig_star,
+                                    psf_file["STAR_MOM_LIST"][:, 0],
+                                    psf_file["STAR_MOM_LIST"][:, 1],
+                                    psf_file["STAR_MOM_LIST"][:, 2],
                                     psf_file["STAR_MOM_LIST"][:, 3],
                                     new_ccd_id,
                                     psf_file["GLOB_POSITION_IMG_LIST"][:, 0],

@@ -333,10 +333,16 @@ shapepipe_run -c $SP_CONFIG/config_Ms_$psf.ini
 shapepipe_run -c $SP_CONFIG/config_Pl_$psf.ini
 ```
 
-#### Convert star catalogue to wCS
+#### Collate star catalogues per patch
 
-Convert all input validation PSF files and create directories per patch `P?`.
-Create files `validation_psf_conv-<patchnum>-<idx>.fits` (for the v1.4 setup only one file):
+Collate all input validation PSF files and create directories per patch `P?`,
+producing files `validation_psf_conv-<patchnum>-<idx>.fits` (for the v1.4 setup
+only one file). This gathers positions (X/Y/RA/DEC) and the MCCD CCD id.
+
+Note: HSM shapes are no longer rotated into world coordinates at this step. The
+PSF/star ellipticities and sizes are now measured directly in sky coordinates
+during PSF interpolation (galsim `FindAdaptiveMom(use_sky_coords=True)`), so
+`convert_psf_pix2world.py` only collates and passes the shapes through.
 
 ```bash
 cd /path/to/version
