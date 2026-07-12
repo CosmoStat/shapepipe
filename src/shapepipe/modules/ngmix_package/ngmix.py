@@ -181,11 +181,10 @@ class Postage_stamp():
         self.flags = []
         self.bkg_rms = []
         self.jacobs = []
-        # Per-epoch full WCS and the object's sky position, used only by the
-        # "wcs" centroid source (skipped for the default "hsm" path).
-        self.wcs = []
-        self.ra = []
-        self.dec = []
+        # Per-epoch sub-pixel [row, col] coadd-centroid offset propagated from
+        # the stamp extractor, used only by the "wcs" centroid source (skipped
+        # for the default "hsm" path).
+        self.offsets = []
         self.bkg_sub = bkg_sub
         self.megacam_flip = megacam_flip
 
@@ -856,10 +855,12 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
         stamp.flags.append(flag_vign)
         stamp.bkg_rms.append(bkg_rms_vign_scaled)
         stamp.jacobs.append(jacob)
-        # For the "wcs" centroid source (see make_ngmix_observation).
-        stamp.wcs.append(epoch_wcs)
-        stamp.ra.append(tile_cat.ra[i_tile])
-        stamp.dec.append(tile_cat.dec[i_tile])
+        # Coadd-centroid offset the stamp extractor used, propagated on the
+        # galaxy vignette. Consumed only by the "wcs" centroid source (see
+        # make_ngmix_observation); harmless to carry for the "hsm" path.
+        stamp.offsets.append(
+            vignet.gal_vign_cat[str(obj_id)][expccd_name]['OFFSET']
+        )
 
     return stamp
 
@@ -1055,7 +1056,7 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
 
 def make_ngmix_observation(
     gal, weight, flag, psf, wcs, rng,
-    bkg_rms=None, centroid_source="hsm", wcs_full=None, ra=None, dec=None,
+    bkg_rms=None, centroid_source="hsm", offset=None,
 ):
     """Build an ngmix Observation for a single galaxy epoch.
 
@@ -1067,11 +1068,15 @@ def make_ngmix_observation(
       measured from the stamp. Robust for **galaxies**: it follows the actual
       light and so the centroid prior (centered at the Jacobian origin) does
       not bias an object that is offset from the stamp center.
-    * ``"wcs"`` — place the origin at the object's catalog sky position,
-      projected through the WCS to a sub-pixel pixel offset from the stamp
+    * ``"wcs"`` — the **coadd centroid** (Axel, #767): place the origin at the
+      object's catalog sky position as a sub-pixel offset from the stamp
       center, with no shape measurement. Better for **stars**: their HSM
       moments are noisy, so trusting the astrometry is more stable than
-      re-measuring the centroid.
+      re-measuring the centroid. The offset is not recomputed here — it is the
+      value the stamp extractor already used to round the extraction pixel
+      (:func:`shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps`),
+      propagated on the vignette. One projection, one rounding: the extraction
+      and the centroid prior cannot disagree near a rounding tie.
 
     Parameters
     ----------
@@ -1088,12 +1093,10 @@ def make_ngmix_observation(
         Per-pixel background RMS map.
     centroid_source : {"hsm", "wcs"}, optional
         How to place the galaxy Jacobian origin; the default is ``"hsm"``.
-    wcs_full : astropy.wcs.WCS, optional
-        Full exposure WCS for the object's CCD. Required for
-        ``centroid_source="wcs"`` (ignored for ``"hsm"``).
-    ra, dec : float, optional
-        Object sky position in degrees. Required for
-        ``centroid_source="wcs"`` (ignored for ``"hsm"``).
+    offset : array_like, optional
+        Sub-pixel ``[row, col]`` coadd-centroid offset propagated from the
+        stamp extractor. Required for ``centroid_source="wcs"`` (ignored for
+        ``"hsm"``).
 
     Returns
     -------
@@ -1137,16 +1140,20 @@ def make_ngmix_observation(
         except Exception:
             cen_row, cen_col = 0.0, 0.0
     elif centroid_source == "wcs":
-        # Place the origin at the catalog sky position projected through the
-        # WCS — no shape measurement. Stars have noisy HSM moments, so trust
-        # the astrometry instead of re-measuring the centroid.
-        g_wcs = galsim.fitswcs.AstropyWCS(wcs=wcs_full)
-        world_pos = galsim.CelestialCoord(
-            ra * galsim.degrees, dec * galsim.degrees
-        )
-        pos = g_wcs.toImage(world_pos)
-        cen_col = pos.x - np.round(pos.x).astype(int)
-        cen_row = pos.y - np.round(pos.y).astype(int)
+        # Coadd centroid: use the sub-pixel offset the stamp extractor already
+        # computed and rounded against (propagated on the vignette), rather
+        # than re-projecting the sky position through the WCS and re-rounding.
+        # This is the fix for #767 — one projection, one rounding, so a
+        # milli-pixel WCS disagreement can no longer flip a rounding tie and
+        # put the prior a whole pixel off.
+        if offset is None:
+            raise ValueError(
+                "centroid_source='wcs' requires the coadd-centroid offset "
+                + "propagated from the stamp extractor, but none was found on "
+                + "the vignette (were the stamps made before in-house "
+                + "extraction landed?)"
+            )
+        cen_row, cen_col = float(offset[0]), float(offset[1])
     else:
         raise ValueError(
             f"Unknown centroid_source '{centroid_source}'; expected"
@@ -1386,9 +1393,7 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
             rng,
             bkg_rms=bkg_rms,
             centroid_source=centroid_source,
-            wcs_full=stamp.wcs[n_e] if n_e < len(stamp.wcs) else None,
-            ra=stamp.ra[n_e] if n_e < len(stamp.ra) else None,
-            dec=stamp.dec[n_e] if n_e < len(stamp.dec) else None,
+            offset=stamp.offsets[n_e] if n_e < len(stamp.offsets) else None,
         )
         gal_obs_list.append(gal_obs)
 

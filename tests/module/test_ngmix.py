@@ -5,6 +5,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 import numpy as np
 import numpy.testing as npt
+import pytest
 from sqlitedict import SqliteDict
 
 from shapepipe.modules.ngmix_package.ngmix import Ngmix
@@ -719,3 +720,52 @@ def test_constant_stamp_fallback_yields_finite_zero_weights():
         )
 
     npt.assert_array_equal(weight_map, 0.0)
+
+
+def _one_epoch_stamp():
+    """One-epoch (gal, weight, flag, psf, galsim-jacobian) for centroid tests."""
+    from shapepipe.testing.simulate import make_data
+
+    gals, psfs, _, weights, flags, jacobs = make_data(
+        rng=np.random.RandomState(1),
+        shear=(0.0, 0.0),
+        noise=1e-5,
+        n_epochs=1,
+        img_size=51,
+        psf_shear=(0.0, 0.0),
+    )
+    return gals[0], weights[0], flags[0], psfs[0], jacobs[0]
+
+
+def test_wcs_centroid_uses_stored_offset():
+    """``centroid_source='wcs'`` places the galaxy Jacobian origin at the stamp
+    center plus the propagated coadd-centroid offset — it does not re-derive
+    the centroid by re-projecting through the WCS (the #767 fix)."""
+    from shapepipe.modules.ngmix_package.ngmix import make_ngmix_observation
+
+    gal, weight, flag, psf, jacob = _one_epoch_stamp()
+    offset = np.array([0.3, -0.2])  # [row, col]
+
+    obs = make_ngmix_observation(
+        gal, weight, flag, psf, jacob, np.random.RandomState(7),
+        centroid_source="wcs", offset=offset,
+    )
+
+    row0, col0 = obs.jacobian.get_cen()
+    center = (gal.shape[0] - 1) / 2
+    npt.assert_allclose(
+        [row0, col0], [center + offset[0], center + offset[1]]
+    )
+
+
+def test_wcs_centroid_requires_offset():
+    """``centroid_source='wcs'`` with no propagated offset fails fast."""
+    from shapepipe.modules.ngmix_package.ngmix import make_ngmix_observation
+
+    gal, weight, flag, psf, jacob = _one_epoch_stamp()
+
+    with pytest.raises(ValueError, match="requires the coadd-centroid offset"):
+        make_ngmix_observation(
+            gal, weight, flag, psf, jacob, np.random.RandomState(7),
+            centroid_source="wcs", offset=None,
+        )
