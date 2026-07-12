@@ -14,6 +14,7 @@ from cs_util import size as cs_size
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
+from shapepipe.modules.psfex_interp_package.psfex_interp import local_wcs_list
 
 try:
     import galsim.hsm as hsm
@@ -204,18 +205,34 @@ class MCCDinterpolator(object):
             raise KeyError(pos_param_err)
         galcat.close()
 
-    def _get_psfshapes(self):
+    def _get_psfshapes(self, wcs_list=None):
         """Get PSF Shapes.
 
         Compute shapes of PSF at galaxy positions using HSM.
+
+        Parameters
+        ----------
+        wcs_list : list of galsim.BaseWCS, optional
+            Local WCS at each object position. When provided, HSM adaptive
+            moments are measured in world coordinates (``use_sky_coords=True``),
+            so the returned shapes and sizes are already in sky coordinates.
 
         """
         if import_fail:
             raise ImportError("Galsim is required to get shapes information")
 
-        psf_moms = [
-            hsm.FindAdaptiveMom(Image(psf), strict=False) for psf in self.interp_PSFs
-        ]
+        if wcs_list is not None:
+            psf_moms = [
+                hsm.FindAdaptiveMom(
+                    Image(psf, wcs=wcs), strict=False, use_sky_coords=True
+                )
+                for psf, wcs in zip(self.interp_PSFs, wcs_list)
+            ]
+        else:
+            psf_moms = [
+                hsm.FindAdaptiveMom(Image(psf), strict=False)
+                for psf in self.interp_PSFs
+            ]
 
         self.psf_shapes = np.array(
             [
@@ -253,7 +270,7 @@ class MCCDinterpolator(object):
             data = {"VIGNET": self.interp_PSFs}
         output.save_as_fits(data, sex_cat_path=self._galcat_path)
 
-    def _get_starshapes(self, star_vign):
+    def _get_starshapes(self, star_vign, wcs_list=None):
         """Get Star Shapes.
 
         Compute shapes of stars at stars positions using HSM.
@@ -262,6 +279,10 @@ class MCCDinterpolator(object):
         ----------
         star_vign : numpy.ndarray
             Array containing the star's vignets
+        wcs_list : list of galsim.BaseWCS, optional
+            Local WCS at each star position; see :meth:`_get_psfshapes`. When
+            provided, moments are measured in world coordinates
+            (``use_sky_coords=True``).
 
         """
         if import_fail:
@@ -270,10 +291,23 @@ class MCCDinterpolator(object):
         masks = np.zeros_like(star_vign)
         masks[np.where(star_vign == -1e30)] = 1
 
-        star_moms = [
-            hsm.FindAdaptiveMom(Image(star), badpix=Image(mask), strict=False)
-            for star, mask in zip(star_vign, masks)
-        ]
+        if wcs_list is not None:
+            star_moms = [
+                hsm.FindAdaptiveMom(
+                    Image(star, wcs=wcs),
+                    badpix=Image(mask),
+                    strict=False,
+                    use_sky_coords=True,
+                )
+                for star, mask, wcs in zip(star_vign, masks, wcs_list)
+            ]
+        else:
+            star_moms = [
+                hsm.FindAdaptiveMom(
+                    Image(star), badpix=Image(mask), strict=False
+                )
+                for star, mask in zip(star_vign, masks)
+            ]
 
         self.star_shapes = np.array(
             [
@@ -497,7 +531,11 @@ class MCCDinterpolator(object):
                     array_id = np.concatenate((array_id, np.copy(obj_id)))
 
                 if self._compute_shape:
-                    self._get_psfshapes()
+                    self._get_psfshapes(
+                        local_wcs_list(
+                            self._f_wcs_file[exp_name][ccd]["WCS"], gal_pos
+                        )
+                    )
                     if array_shape is None:
                         array_shape = np.copy(self.psf_shapes)
                     else:

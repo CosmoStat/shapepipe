@@ -17,6 +17,7 @@ from sqlitedict import SqliteDict
 from shapepipe.pipeline import file_io
 
 try:
+    import galsim
     import galsim.hsm as hsm
     from galsim import Image
 except ImportError:
@@ -28,6 +29,37 @@ else:
 NOT_ENOUGH_STARS = "Fail_stars"
 BAD_CHI2 = "Fail_chi2"
 FILE_NOT_FOUND = "File_not_found"
+
+
+def local_wcs_list(wcs, positions):
+    """Local WCS List.
+
+    Build a list of local (Jacobian) WCS from an astropy/galsim WCS, one per
+    object position. Attaching the local WCS to an object-centred stamp lets
+    ``FindAdaptiveMom(use_sky_coords=True)`` measure moments directly in world
+    coordinates: at the stamp's ``true_center`` galsim evaluates this local WCS,
+    which must therefore be the linearisation of the full WCS *at the object's
+    position in the original image*, not at the stamp centre.
+
+    Parameters
+    ----------
+    wcs : galsim.BaseWCS or astropy.wcs.WCS
+        Full (celestial) WCS for the CCD.
+    positions : numpy.ndarray
+        Object positions ``(N, 2)`` in image (pixel) coordinates.
+
+    Returns
+    -------
+    list of galsim.JacobianWCS
+        One local WCS per object position.
+
+    """
+    if not isinstance(wcs, galsim.BaseWCS):
+        wcs = galsim.AstropyWCS(wcs=wcs)
+    return [
+        wcs.local(image_pos=galsim.PositionD(float(x), float(y)))
+        for x, y in positions
+    ]
 
 
 class PSFExInterpolator(object):
@@ -145,7 +177,9 @@ class PSFExInterpolator(object):
             self._w_log.info(f"Psf model file {self._dotpsf_path} not found.")
         else:
             if self._compute_shape:
-                self._get_psfshapes()
+                self._get_psfshapes(
+                    local_wcs_list(self._galcat_wcs(), self.gal_pos)
+                )
 
             self._write_output()
 
@@ -307,18 +341,36 @@ class PSFExInterpolator(object):
             self.gal_pos,
         )
 
-    def _get_psfshapes(self):
+    def _get_psfshapes(self, wcs_list=None):
         """Get PSF Shapes.
 
         Compute shapes of PSF at galaxy positions using HSM.
+
+        Parameters
+        ----------
+        wcs_list : list of galsim.BaseWCS, optional
+            Local WCS at each object position (see :func:`local_wcs_list`). When
+            provided, HSM adaptive moments are measured directly in world
+            coordinates (``use_sky_coords=True``), so the ``g1``/``g2``/``sigma``
+            returned are already in sky coordinates and need no post-hoc
+            rotation. When ``None``, moments are measured in the pixel frame.
 
         """
         if import_fail:
             raise ImportError("Galsim is required to get shapes information")
 
-        psf_moms = [
-            hsm.FindAdaptiveMom(Image(psf), strict=False) for psf in self.interp_PSFs
-        ]
+        if wcs_list is not None:
+            psf_moms = [
+                hsm.FindAdaptiveMom(
+                    Image(psf, wcs=wcs), strict=False, use_sky_coords=True
+                )
+                for psf, wcs in zip(self.interp_PSFs, wcs_list)
+            ]
+        else:
+            psf_moms = [
+                hsm.FindAdaptiveMom(Image(psf), strict=False)
+                for psf in self.interp_PSFs
+            ]
 
         self.psf_shapes = np.array(
             [
@@ -407,21 +459,30 @@ class PSFExInterpolator(object):
             star_dict["SNR"] = np.copy(star_cat.get_data()["SNR_WIN"])
             star_cat.close()
 
-            self._get_psfshapes()
-            self._get_starshapes(star_vign)
+            wcs_list = local_wcs_list(
+                self._galcat_wcs(),
+                np.column_stack((star_dict["X"], star_dict["Y"])),
+            )
+
+            self._get_psfshapes(wcs_list)
+            self._get_starshapes(star_vign, wcs_list)
             psfex_cat_dict = self._get_psfexcatdict(psfex_cat_path)
 
             self._write_output_validation(star_dict, psfex_cat_dict)
 
-    def _get_starshapes(self, star_vign):
+    def _get_starshapes(self, star_vign, wcs_list=None):
         """Get Star Shapes.
 
         Compute shapes of stars at stars positions using HSM.
 
         Parameters
         ----------
-        numpy.ndarray
+        star_vign : numpy.ndarray
             Array containing the star's vignets.
+        wcs_list : list of galsim.BaseWCS, optional
+            Local WCS at each star position; see :meth:`_get_psfshapes`. When
+            provided, moments are measured in world coordinates
+            (``use_sky_coords=True``).
 
         """
         if import_fail:
@@ -430,10 +491,23 @@ class PSFExInterpolator(object):
         masks = np.zeros_like(star_vign)
         masks[np.where(star_vign == -1e30)] = 1
 
-        star_moms = [
-            hsm.FindAdaptiveMom(Image(star), badpix=Image(mask), strict=False)
-            for star, mask in zip(star_vign, masks)
-        ]
+        if wcs_list is not None:
+            star_moms = [
+                hsm.FindAdaptiveMom(
+                    Image(star, wcs=wcs),
+                    badpix=Image(mask),
+                    strict=False,
+                    use_sky_coords=True,
+                )
+                for star, mask, wcs in zip(star_vign, masks, wcs_list)
+            ]
+        else:
+            star_moms = [
+                hsm.FindAdaptiveMom(
+                    Image(star), badpix=Image(mask), strict=False
+                )
+                for star, mask in zip(star_vign, masks)
+            ]
 
         self.star_shapes = np.array(
             [
@@ -446,6 +520,26 @@ class PSFExInterpolator(object):
                 for moms in star_moms
             ]
         )
+
+    def _galcat_wcs(self):
+        """Galaxy Catalogue WCS.
+
+        Read the CCD image WCS from the SExtractor FITS_LDAC galaxy catalogue.
+        The original image header is stored as a card list in the ``LDAC_IMHEAD``
+        HDU (HDU 1); this is the same header the (now retired) pixel-to-world
+        conversion reconstructed to rotate shapes.
+
+        Returns
+        -------
+        galsim.AstropyWCS
+            WCS of the CCD the stars/PSFs live on.
+
+        """
+        with fits.open(self._galcat_path, memmap=False) as hdu_list:
+            header = fits.Header.fromstring(
+                "\n".join(hdu_list[1].data[0][0]), sep="\n"
+            )
+        return galsim.AstropyWCS(header=header)
 
     def _get_psfexcatdict(self, psfex_cat_path):
         """Get PSFEx Catalogue Dictionary.
@@ -700,7 +794,11 @@ class PSFExInterpolator(object):
                     array_id = np.concatenate((array_id, np.copy(obj_id)))
 
                 if self._compute_shape:
-                    self._get_psfshapes()
+                    self._get_psfshapes(
+                        local_wcs_list(
+                            self._f_wcs_file[exp_name][ccd]["WCS"], gal_pos
+                        )
+                    )
                     if array_shape is None:
                         array_shape = np.copy(self.psf_shapes)
                     else:
