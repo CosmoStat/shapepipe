@@ -181,7 +181,26 @@ class Tile_cat():
                 SEx_catalogue=True,
             )
             seg_cat.open()
-            self.seg = np.copy(seg_cat.get_data()['VIGNET'])
+            seg_data = seg_cat.get_data()
+            # The seg VIGNETs are indexed by tile-catalogue row (self.seg[i]),
+            # so the two catalogues MUST be row-aligned. Fail loud at load if
+            # they are not — a silent length/order mismatch would hand every
+            # object the wrong footprint and quietly corrupt every mask.
+            if len(seg_data) != len(self.obj_id):
+                raise ValueError(
+                    f"SEG_VIGNET_PATH '{self.seg_cat_path}' has"
+                    + f" {len(seg_data)} rows but the tile catalogue has"
+                    + f" {len(self.obj_id)}; the segmentation vignets must be"
+                    + " row-aligned to the tile catalogue."
+                )
+            if 'NUMBER' in seg_data.dtype.names:
+                if not np.array_equal(seg_data['NUMBER'], self.obj_id):
+                    raise ValueError(
+                        f"SEG_VIGNET_PATH '{self.seg_cat_path}' NUMBER column"
+                        + " does not match the tile catalogue NUMBER; the"
+                        + " segmentation vignets are misaligned or reordered."
+                    )
+            self.seg = np.copy(seg_data['VIGNET'])
             seg_cat.close()
 
 class Postage_stamp():
@@ -706,6 +725,46 @@ class Ngmix(object):
                 + f" file '{vignet_path}'"
             )
 
+    def _check_central_seg_label(self, seg, obj_id):
+        """Cross-check the seg stamp's centre pixel against the object's NUMBER.
+
+        The authoritative central label is ``obj_id`` (the SExtractor NUMBER);
+        this is a diagnostic on the coadd-vs-epoch overlay registration, not a
+        gate. Two outcomes:
+
+        * The seg stamp does not contain ``obj_id`` anywhere — the object's own
+          footprint fell outside the cutout (bad centroid / dropped detection),
+          so uberseg has no central object to keep. Raise; the per-object
+          ``try/except`` in :meth:`process` drops it, loud in the log.
+        * The centre-pixel label is nonzero and ``!= obj_id`` — a few-pixel
+          registration offset put a neighbour on the centre pixel. Harmless for
+          the mask (which keys off ``obj_id``), but a signal worth surfacing:
+          log a warning and proceed.
+
+        Parameters
+        ----------
+        seg : numpy.ndarray
+            Coadd segmentation stamp for this object (integer labels).
+        obj_id : int
+            The object's SExtractor NUMBER — the authoritative central label.
+        """
+        if not np.any(seg == obj_id):
+            raise ValueError(
+                f"seg stamp for object NUMBER={obj_id} contains that label"
+                + " nowhere; the object's footprint fell outside the cutout"
+                + " (bad centroid / registration). Cannot define the central"
+                + " object for uberseg."
+            )
+        cy, cx = seg.shape[0] // 2, seg.shape[1] // 2
+        centre_label = int(seg[cy, cx])
+        if centre_label != 0 and centre_label != obj_id:
+            self._w_log.info(
+                f"uberseg: object NUMBER={obj_id} but seg centre pixel carries"
+                + f" label {centre_label}; a coadd-vs-epoch registration offset"
+                + " is placing a neighbour on the centre. Proceeding with the"
+                + " NUMBER (authoritative)."
+            )
+
     def process(self):
         """Process.
 
@@ -767,14 +826,17 @@ class Ngmix(object):
                     if tile_cat.flux is not None
                     else 1.0
                 )
-                # Central object's seg label from the centre pixel (uberseg),
-                # else the SExtractor NUMBER (noisefill ignores it). Fails loud
-                # on a mis-centred seg stamp — the object is then dropped below.
-                central_label = (
-                    central_seg_label(tile_cat.seg[i_tile])
-                    if self._blend_handling == "uberseg"
-                    else obj_id
-                )
+                # The central object's segmentation label IS its SExtractor
+                # NUMBER (obj_id): seg labels are the NUMBERs of the same SE run
+                # that produced the tile catalogue, so obj_id is authoritative
+                # and is used for both the uberseg mask and the neighbour flag.
+                # The centre pixel is only a diagnostic: a few-pixel coadd-vs-
+                # epoch overlay offset can put a NEIGHBOUR's label there, which
+                # would invert the mask — so we never trust it to define the
+                # central object. Cross-check it and warn on a mismatch (a
+                # registration signal), but proceed with obj_id (shapepipe#776).
+                if self._blend_handling == "uberseg":
+                    self._check_central_seg_label(tile_cat.seg[i_tile], obj_id)
                 res, psf_res, psf_orig_res = do_ngmix_metacal(
                     stamp,
                     prior,
@@ -782,7 +844,7 @@ class Ngmix(object):
                     self._rng,
                     centroid_source=self._centroid_source,
                     blend_handling=self._blend_handling,
-                    object_number=central_label,
+                    object_number=obj_id,
                     dilate_neighbour=self._dilate_neighbour,
                 )
             except Exception as ee:
@@ -797,7 +859,7 @@ class Ngmix(object):
             # non-zero label? Systematics-test hook (shapepipe#776); computed
             # from the raw coadd seg, 0 when uberseg is off / seg absent.
             res['neighbour_flag'] = int(
-                seg_has_neighbour(tile_cat.seg[i_tile], central_label)
+                seg_has_neighbour(tile_cat.seg[i_tile], obj_id)
                 if getattr(tile_cat, "seg", None) is not None
                 else 0
             )
@@ -1096,14 +1158,16 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
     return sig_noise
 
 def central_seg_label(seg):
-    """Central object's label — the value at the seg stamp's centre pixel.
+    """Centre-pixel label of a seg stamp — a *diagnostic*, not the central id.
 
-    The central object is identified geometrically, from the centre pixel of
-    the coadd segmentation stamp, rather than by plumbing the SExtractor
-    ``NUMBER`` through the pipeline (shapepipe#776). The stamp is cut centred
-    on the object, so its central pixel lies in that object's footprint; this
-    keeps the seg stamp self-describing and robust to a few-pixel coadd-vs-
-    epoch registration offset that could otherwise mismatch a plumbed NUMBER.
+    The authoritative central label is the object's SExtractor ``NUMBER``
+    (``obj_id``), which is plumbed straight through: segmentation labels ARE
+    the NUMBERs of the same SE run, so ``obj_id`` names the central footprint
+    directly (shapepipe#776). This helper reads the centre pixel only as a
+    registration cross-check — a few-pixel coadd-vs-epoch overlay offset can
+    put a NEIGHBOUR's label on the centre pixel, which is exactly why the
+    centre pixel must NOT define the central object (trusting it there would
+    invert the uberseg mask). See :meth:`Ngmix._check_central_seg_label`.
 
     Parameters
     ----------
@@ -1195,8 +1259,10 @@ def uberseg_weight(weight, seg, object_number, dilate_neighbour=0):
         Segmentation map on the same grid as ``weight``: 0 for sky, the
         SExtractor object number for each detected object's footprint.
     object_number : int
-        Segmentation label of the central object (the centre-pixel label from
-        :func:`central_seg_label`, not necessarily the SExtractor ``NUMBER``).
+        Segmentation label of the central object — its SExtractor ``NUMBER``
+        (``obj_id``), authoritative because seg labels are the NUMBERs of the
+        same SE run. Not the centre-pixel label, which a few-pixel coadd-vs-
+        epoch offset can steal for a neighbour and so invert this mask.
     dilate_neighbour : int, optional
         Enlarge the neighbour mask by this many binary-dilation iterations
         (4-connected, ~one pixel per iteration) on top of the base Voronoi
@@ -1681,10 +1747,10 @@ def do_ngmix_metacal(
         historical behaviour. ``"uberseg"`` consumes ``stamp.segs`` and
         ``object_number``.
     object_number : int, optional
-        Central object's segmentation label — the centre-pixel label from
-        :func:`central_seg_label` (not the SExtractor ``NUMBER``, which is no
-        longer plumbed through; shapepipe#776). Required for
-        ``blend_handling="uberseg"`` (ignored otherwise).
+        Central object's segmentation label — its SExtractor ``NUMBER``
+        (``obj_id``), authoritative because seg labels are the NUMBERs of the
+        same SE run (shapepipe#776). Required for ``blend_handling="uberseg"``
+        (ignored otherwise).
     dilate_neighbour : int, optional
         Neighbour-mask dilation iterations passed through to
         :func:`make_ngmix_observation` under ``blend_handling="uberseg"``.

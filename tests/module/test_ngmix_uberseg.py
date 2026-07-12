@@ -18,13 +18,25 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 from scipy import ndimage
+from sqlitedict import SqliteDict
 
 from shapepipe.modules.ngmix_package.ngmix import (
+    Ngmix,
     central_seg_label,
     prepare_ngmix_weights,
     seg_has_neighbour,
     uberseg_weight,
 )
+
+
+class _RecordingLogger:
+    """Minimal logger that records the messages passed to ``info``."""
+
+    def __init__(self):
+        self.messages = []
+
+    def info(self, msg, *_args, **_kwargs):
+        self.messages.append(msg)
 
 
 def two_object_seg(npix=41, sep=12, r_central=3, r_neighbour=3):
@@ -306,4 +318,104 @@ def test_unknown_blend_handling_raises():
         prepare_ngmix_weights(
             gal, weight, flag, np.random.RandomState(0),
             blend_handling="bogus",
+        )
+
+
+# --- _check_central_seg_label: obj_id authoritative, centre pixel diagnostic -
+
+def _make_ngmix(tmp_path):
+    """Minimal Ngmix instance (empty sqlite vignets) with a recording logger."""
+    names = ("gal", "bkg", "psf", "weight", "flag", "headers")
+    paths = [tmp_path / f"{name}.sqlite" for name in names]
+    for path in paths:
+        SqliteDict(str(path)).close()
+    log = _RecordingLogger()
+    ngmix = Ngmix(
+        ["tile_cat.fits"] + [str(p) for p in paths[:5]],
+        str(tmp_path), "-001-001", 30.0, 0.186, str(paths[5]), log,
+    )
+    return ngmix, log
+
+
+def test_check_central_seg_label_matching_number_is_silent(tmp_path):
+    """obj_id present and on the centre pixel: no warning, no raise."""
+    ngmix, log = _make_ngmix(tmp_path)
+    seg, _, _ = two_object_seg()  # central footprint has label 1
+    log.messages.clear()  # drop the __init__ seed log
+    ngmix._check_central_seg_label(seg, obj_id=1)
+    assert log.messages == []
+
+
+def test_check_central_seg_label_offset_centre_warns_but_proceeds(tmp_path):
+    """A neighbour's label on the centre pixel (registration offset) warns but
+    does not raise, as long as obj_id's footprint is present somewhere."""
+    ngmix, log = _make_ngmix(tmp_path)
+    seg, centre, _ = two_object_seg()
+    # Overwrite the centre pixel with the neighbour label 2; obj_id=1 still
+    # has its footprint elsewhere on the stamp.
+    seg[centre] = 2
+    ngmix._check_central_seg_label(seg, obj_id=1)
+    assert any("registration offset" in m for m in log.messages)
+
+
+def test_check_central_seg_label_missing_number_raises(tmp_path):
+    """obj_id's footprint absent from the stamp entirely: fail fast."""
+    ngmix, _ = _make_ngmix(tmp_path)
+    seg, _, _ = two_object_seg()  # labels {0, 1, 2}; 99 is nowhere
+    with pytest.raises(ValueError, match="contains that label"):
+        ngmix._check_central_seg_label(seg, obj_id=99)
+
+
+# --- FIX 3a: uberseg without seg_cat_path fails at construction -------------
+
+def test_ngmix_init_uberseg_without_seg_cat_raises(tmp_path):
+    """blend_handling='uberseg' with seg_cat_path=None raises at __init__."""
+    names = ("gal", "bkg", "psf", "weight", "flag", "headers")
+    paths = [tmp_path / f"{name}.sqlite" for name in names]
+    for path in paths:
+        SqliteDict(str(path)).close()
+    with pytest.raises(ValueError, match="requires SEG_VIGNET_PATH"):
+        Ngmix(
+            ["tile_cat.fits"] + [str(p) for p in paths[:5]],
+            str(tmp_path), "-001-001", 30.0, 0.186, str(paths[5]),
+            _RecordingLogger(),
+            blend_handling="uberseg",
+            seg_cat_path=None,
+        )
+
+
+# --- FIX 3b: runner raises when SEG_VIGNET_PATH is set but missing ----------
+
+class _FakeConfig:
+    """Config stub: SEG_VIGNET_PATH is the only present option, and it resolves
+    to ``seg_path`` (a path the test leaves nonexistent)."""
+
+    def __init__(self, seg_path):
+        self._seg_path = seg_path
+
+    def getfloat(self, _sec, _key):
+        return 30.0 if _key == "MAG_ZP" else 0.186
+
+    def has_option(self, _sec, key):
+        return key == "SEG_VIGNET_PATH"
+
+    def getexpanded(self, _sec, _key):
+        return self._seg_path
+
+
+def test_runner_missing_seg_vignet_file_raises(tmp_path):
+    """SEG_VIGNET_PATH configured but the resolved file is absent -> the runner
+    fails fast with FileNotFoundError, before constructing Ngmix."""
+    from shapepipe.modules.ngmix_runner import ngmix_runner
+
+    input_file_list = ["tile_cat.fits"] + [f"in{i}.sqlite" for i in range(6)]
+    seg_path = str(tmp_path / "does_not_exist.fits")
+    with pytest.raises(FileNotFoundError, match="Segmentation vignet file"):
+        ngmix_runner(
+            input_file_list,
+            {"output": str(tmp_path)},
+            "-001-001",
+            _FakeConfig(seg_path),
+            "NGMIX_RUNNER",
+            _RecordingLogger(),
         )
