@@ -28,7 +28,6 @@ Scientific stack:
 | [mpi4py](https://mpi4py.readthedocs.io/en/stable/) | {cite:p}`dalcin:05,dalcin:08,dalcin:11` |
 | [reproject](https://reproject.readthedocs.io/) | |
 | [h5py](https://www.h5py.org/) | |
-| [sf_tools](https://github.com/sfarrens/sf_tools) | |
 
 Data access &amp; infrastructure (CANFAR / UNIONS):
 

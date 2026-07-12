@@ -857,9 +857,11 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
         stamp.jacobs.append(jacob)
         # Coadd-centroid offset the stamp extractor used, propagated on the
         # galaxy vignette. Consumed only by the "wcs" centroid source (see
-        # make_ngmix_observation); harmless to carry for the "hsm" path.
+        # make_ngmix_observation), which raises if it is missing; the "hsm"
+        # path ignores it, so read it leniently rather than coupling hsm to a
+        # field it never uses.
         stamp.offsets.append(
-            vignet.gal_vign_cat[str(obj_id)][expccd_name]['OFFSET']
+            vignet.gal_vign_cat[str(obj_id)][expccd_name].get('OFFSET')
         )
 
     return stamp
