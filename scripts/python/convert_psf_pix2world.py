@@ -12,10 +12,12 @@ MCCD interpolation now measure adaptive moments directly in world coordinates
 rotation this script used to perform is redundant and has been removed.
 
 Caveat: the MCCD ``PSF_MOM_LIST``/``STAR_MOM_LIST`` columns are produced by the
-external ``mccd`` fit-validation code, which still measures in the pixel frame;
-those shapes are passed through unrotated here. If the MCCD validation branch is
-revived, its moments must be measured in sky coordinates upstream (as the PSFEx
-and MCCD interpolation paths now are).
+external ``mccd`` fit-validation code (``mccd.auxiliary_fun.mccd_validation``),
+which still measures HSM moments in the pixel frame. Those shapes are therefore
+still rotated into world coordinates here, via the WCS-Jacobian rotation, until
+``mccd`` itself adopts ``use_sky_coords``. This is the one branch that keeps the
+rotation; the in-repo PSFEx and MCCD-interpolation paths measure adaptive
+moments directly in world coordinates upstream and pass them straight through.
 """
 
 import sys
@@ -28,9 +30,44 @@ import gc
 
 import numpy as np
 from astropy.io import fits
+import galsim
 
 from cs_util import args as cs_args
 from cs_util import logging
+
+
+def transform_shape(mom_list, jac):
+    """Transform Shape.
+
+    Transform shape (ellipticity and size) using a Jacobian.
+
+    Parameters
+    ----------
+    mom_list : list
+        input moment measurements; each list element contains
+        first and second ellipticity component and size
+    jac : galsim.JacobianWCS
+        Jacobian transformation matrix information
+
+    Returns
+    -------
+    list
+        transformed shape parameters, which are
+        first and second ellipticity component and size
+
+    """
+    scale, shear, theta, flip = jac.getDecomposition()
+
+    sig_tmp = mom_list[2] * scale
+    shape = galsim.Shear(g1=mom_list[0], g2=mom_list[1])
+    if flip:
+        # The following output is not observed
+        print("FLIP!")
+        shape = galsim.Shear(g1=-shape.g1, g2=shape.g2)
+    shape = galsim.Shear(g=shape.g, beta=shape.beta + theta)
+    shape = shear + shape
+
+    return shape.g1, shape.g2, sig_tmp
 
 
 class Loc2Glob(object):
@@ -596,6 +633,22 @@ class Convert(object):
                 # Local-to-CCD position: subtract each CCD's focal-plane shift.
                 new_x = np.zeros_like(psf_file[mod])
                 new_y = np.zeros_like(psf_file[mod])
+
+                # The MCCD PSF_MOM_LIST/STAR_MOM_LIST columns come from the
+                # external mccd fit-validation code, which still measures HSM
+                # moments in the pixel frame; rotate them into world coordinates
+                # via the per-CCD WCS Jacobian. This rotation stays until mccd
+                # itself adopts use_sky_coords (see the module docstring). The
+                # in-repo PSFEx / MCCD-interpolation paths are already in world
+                # coordinates and are passed through unrotated.
+                new_e1_psf = np.zeros_like(psf_file[mod])
+                new_e2_psf = np.zeros_like(psf_file[mod])
+                new_sig_psf = np.zeros_like(psf_file[mod])
+                new_e1_star = np.zeros_like(psf_file[mod])
+                new_e2_star = np.zeros_like(psf_file[mod])
+                new_sig_star = np.zeros_like(psf_file[mod])
+                new_flag_psf = np.zeros_like(psf_file[mod])
+                new_flag_star = np.zeros_like(psf_file[mod])
                 for ccd_id in range(40):
                     m_ccd_id = new_ccd_id == ccd_id
                     if sum(m_ccd_id) == 0:
@@ -612,8 +665,73 @@ class Convert(object):
                         - y_shift
                     )
 
-                # MCCD moment lists carry [e1, e2, sigma, flag]; ellipticities
-                # and sizes are passed through unrotated (see note above).
+                    header_file_path = (
+                        self._params["sub_dir_setools"]
+                        + self._params["file_pattern_psfint"]
+                        + f"{exp_name}-{ccd_id}.fits"
+                    )
+                    try:
+                        header_file = fits.getdata(header_file_path, 1)
+                    except Exception:
+                        continue
+                    header = fits.Header.fromstring(
+                        "\n".join(header_file[0][0]), sep="\n"
+                    )
+                    wcs = galsim.AstropyWCS(header=header)
+
+                    g1_psf_tmp_l = []
+                    g2_psf_tmp_l = []
+                    sig_psf_tmp_l = []
+                    g1_star_tmp_l = []
+                    g2_star_tmp_l = []
+                    sig_star_tmp_l = []
+                    flag_psf_tmp_l = []
+                    flag_star_tmp_l = []
+
+                    for obj in psf_file[m_ccd_id]:
+                        try:
+                            jac = wcs.jacobian(
+                                world_pos=galsim.CelestialCoord(
+                                    ra=obj["RA_LIST"] * galsim.degrees,
+                                    dec=obj["DEC_LIST"] * galsim.degrees,
+                                )
+                            )
+                        except Exception:
+                            flag_star_tmp_l.append(16)
+                            flag_psf_tmp_l.append(16)
+                            g1_psf_tmp_l.append(0)
+                            g2_psf_tmp_l.append(0)
+                            sig_psf_tmp_l.append(0)
+                            g1_star_tmp_l.append(0)
+                            g2_star_tmp_l.append(0)
+                            sig_star_tmp_l.append(0)
+                            continue
+                        g1_psf_tmp, g2_psf_tmp, sig_psf_tmp = transform_shape(
+                            obj["PSF_MOM_LIST"], jac
+                        )
+
+                        g1_psf_tmp_l.append(g1_psf_tmp)
+                        g2_psf_tmp_l.append(g2_psf_tmp)
+                        sig_psf_tmp_l.append(sig_psf_tmp)
+                        flag_psf_tmp_l.append(obj["PSF_MOM_LIST"][3])
+
+                        g1_star_tmp, g2_star_tmp, sig_star_tmp = (
+                            transform_shape(obj["STAR_MOM_LIST"], jac)
+                        )
+                        g1_star_tmp_l.append(g1_star_tmp)
+                        g2_star_tmp_l.append(g2_star_tmp)
+                        sig_star_tmp_l.append(sig_star_tmp)
+                        flag_star_tmp_l.append(obj["STAR_MOM_LIST"][3])
+
+                    new_e1_psf[m_ccd_id] = g1_psf_tmp_l
+                    new_e2_psf[m_ccd_id] = g2_psf_tmp_l
+                    new_sig_psf[m_ccd_id] = sig_psf_tmp_l
+                    new_flag_psf[m_ccd_id] = flag_psf_tmp_l
+                    new_e1_star[m_ccd_id] = g1_star_tmp_l
+                    new_e2_star[m_ccd_id] = g2_star_tmp_l
+                    new_sig_star[m_ccd_id] = sig_star_tmp_l
+                    new_flag_star[m_ccd_id] = flag_star_tmp_l
+
                 exp_cat = np.array(
                     list(
                         map(
@@ -624,13 +742,13 @@ class Convert(object):
                                     new_y,
                                     psf_file["RA_LIST"],
                                     psf_file["DEC_LIST"],
-                                    psf_file["PSF_MOM_LIST"][:, 0],
-                                    psf_file["PSF_MOM_LIST"][:, 1],
-                                    psf_file["PSF_MOM_LIST"][:, 2],
+                                    new_e1_psf,
+                                    new_e2_psf,
+                                    new_sig_psf,
                                     psf_file["PSF_MOM_LIST"][:, 3],
-                                    psf_file["STAR_MOM_LIST"][:, 0],
-                                    psf_file["STAR_MOM_LIST"][:, 1],
-                                    psf_file["STAR_MOM_LIST"][:, 2],
+                                    new_e1_star,
+                                    new_e2_star,
+                                    new_sig_star,
                                     psf_file["STAR_MOM_LIST"][:, 3],
                                     new_ccd_id,
                                     psf_file["GLOB_POSITION_IMG_LIST"][:, 0],
