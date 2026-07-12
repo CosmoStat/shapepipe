@@ -65,6 +65,24 @@ def ngmix_runner(
     else:
         input_file_list = input_file_list[:6]
 
+    # SEG_VIGNET_PATH (optional): coadd-frame SExtractor segmentation vignets
+    # (a CLASSIC-mode vignetmaker output), row-aligned to the tile catalogue.
+    # Required for BLEND_HANDLING = uberseg; when set, the file must exist for
+    # every tile (missing file -> error). Read on Tile_cat, not via Vignet, so
+    # it is threaded to Ngmix as its own argument rather than into
+    # input_file_list.
+    if config.has_option(module_config_sec, "SEG_VIGNET_PATH"):
+        seg_vignet_path = config.getexpanded(
+            module_config_sec,
+            "SEG_VIGNET_PATH",
+        ).format(file_number_string=file_number_string)
+        if not os.path.exists(seg_vignet_path):
+            raise FileNotFoundError(
+                f"Segmentation vignet file not found: {seg_vignet_path}"
+            )
+    else:
+        seg_vignet_path = None
+
     # Batch save option
     if config.has_option(module_config_sec, "SAVE_BATCH"):
         save_batch = config.getint(
@@ -97,6 +115,14 @@ def ngmix_runner(
     else:
         blend_handling = "noisefill"
 
+    # DILATE_NEIGHBOUR (optional): binary-dilation iterations enlarging the
+    # uberseg neighbour mask, to absorb the few-pixel coadd-vs-epoch seg-overlay
+    # offset. Ignored unless BLEND_HANDLING = uberseg. Default 1 (~one pixel).
+    if config.has_option(module_config_sec, "DILATE_NEIGHBOUR"):
+        dilate_neighbour = config.getint(module_config_sec, "DILATE_NEIGHBOUR")
+    else:
+        dilate_neighbour = 1
+
     # Initialise class instance
     ngmix_inst = Ngmix(
         input_file_list,
@@ -111,6 +137,8 @@ def ngmix_runner(
         id_obj_max=id_obj_max,
         centroid_source=centroid_source,
         blend_handling=blend_handling,
+        seg_cat_path=seg_vignet_path,
+        dilate_neighbour=dilate_neighbour,
     )
 
     # Process ngmix shape measurement and metacalibration
