@@ -150,7 +150,7 @@ def psfex_interp_runner(
 
     else:
         # Raise error for invalid run mode
-        ValueError("MODE has to be in : [CLASSIC, MULTI-EPOCH, VALIDATION]")
+        raise ValueError("MODE has to be in : [CLASSIC, MULTI-EPOCH, VALIDATION]")
 
     # No return objects
     return None, None

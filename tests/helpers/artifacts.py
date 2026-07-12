@@ -127,3 +127,164 @@ def emit_star_response_artifacts(artifacts_dir, summary, R1=None, R2=None,
     )
 
     return {"json": str(json_path), "md": str(md_path), "png": plot_result}
+
+
+def emit_mbias_artifacts(artifacts_dir, summary, name="mbias"):
+    """Write the multiplicative-bias guardrail status (JSON + markdown).
+
+    The sibling of :func:`emit_star_response_artifacts` for the Level-1a m-bias
+    test. The metric is a single scalar per run (no per-object array), so this
+    emits the scalar status only — the status-board figure for this rung is drawn
+    separately from the recorded values. Same seam: files land in
+    ``tests/_artifacts/`` on pass *and* fail, and a later Pages step publishes.
+
+    Parameters
+    ----------
+    artifacts_dir : Path
+        Target directory (typically ``tests/_artifacts/``).
+    summary : dict
+        Must carry ``injected_g1``, ``recovered_g1``, ``metacal_response_R11``,
+        ``multiplicative_bias_m``, ``tolerance``, and ``status``
+        (``"PASS"``/``"FAIL"``).
+    name : str
+        Artifact basename.
+
+    Returns
+    -------
+    dict
+        Paths of the artifacts written (``json``, ``md``).
+    """
+    artifacts_dir = Path(artifacts_dir)
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    summary = {**summary, "generated_utc": datetime.now(timezone.utc).isoformat()}
+
+    json_path = artifacts_dir / f"{name}.json"
+    json_path.write_text(json.dumps(summary, indent=2, default=str) + "\n")
+
+    md_path = artifacts_dir / f"{name}.md"
+    md_path.write_text(
+        f"# Multiplicative-bias guardrail — {summary['status']}\n\n"
+        f"- generated: `{summary['generated_utc']}`\n"
+        f"- injected g1: {summary['injected_g1']}\n"
+        f"- metacal response R11: {summary['metacal_response_R11']:.6f}\n\n"
+        f"| metric | value | tolerance |\n"
+        f"|--------|-------|-----------|\n"
+        f"| `m` | {summary['multiplicative_bias_m']:+.6f} | "
+        f"|m| < {summary['tolerance']} |\n\n"
+        f"Ideal-limit multiplicative bias `m = g_rec/g_inj − 1` after the metacal "
+        f"response correction. Recovered g1 = {summary['recovered_g1']:.6f} vs "
+        f"injected {summary['injected_g1']}.\n"
+    )
+
+    return {"json": str(json_path), "md": str(md_path)}
+
+
+def _plot_resolution_ladder(png_path, summary):
+    """Two panels — m vs ratio, R11 vs ratio — with the resolved band. Best-effort."""
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        try:
+            import seaborn as sns
+
+            sns.set_theme(style="whitegrid")
+            sns.set_palette("husl", 2)
+        except ImportError:
+            pass
+
+        rungs = summary["rungs"]
+        ratio = np.array([r["ratio"] for r in rungs])
+        m = np.array([r["m"] for r in rungs])
+        R11 = np.array([r["R11"] for r in rungs])
+        thr = summary["resolved_ratio_threshold"]
+        tol = summary["m_tol_resolved"]
+
+        fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+        axes[0].axhspan(-tol, tol, color="C0", alpha=0.15,
+                        label=f"|m| < {tol}")
+        axes[0].axhline(0.0, color="k", lw=1, ls="--")
+        axes[0].plot(ratio, m, "o-", label="m")
+        axes[0].set_ylabel("multiplicative bias m")
+        axes[1].plot(ratio, R11, "o-", color="C1", label="R11")
+        axes[1].set_ylabel("metacal response R11")
+        for ax in axes:
+            ax.axvspan(thr, ratio.max() * 1.05, color="C2", alpha=0.08,
+                       label=f"resolved (ratio >= {thr})")
+            ax.set_xlabel("gal_hlr / psf_fwhm")
+            ax.legend(fontsize=8)
+        fig.suptitle(
+            f"Resolution ladder  (seed={summary['seed']}, "
+            f"g1={summary['injected_g1']})  -- {summary['status']}"
+        )
+        fig.tight_layout()
+        fig.savefig(png_path, dpi=120)
+        plt.close(fig)
+        return str(png_path)
+    except Exception as exc:  # noqa: BLE001 — emit must never crash the test
+        return f"plot skipped: {exc!r}"
+
+
+def emit_resolution_ladder_artifacts(artifacts_dir, summary,
+                                     name="resolution_ladder"):
+    """Write the resolution-ladder status (JSON + markdown + best-effort PNG).
+
+    Sibling of :func:`emit_star_response_artifacts`: scalar-only JSON body, a
+    graceful-degradation seaborn figure, and a short markdown table. Same seam —
+    files land in ``tests/_artifacts/`` on pass *and* fail, and a later Pages
+    step publishes.
+
+    Parameters
+    ----------
+    artifacts_dir : Path
+        Target directory (typically ``tests/_artifacts/``).
+    summary : dict
+        Must carry ``status``, ``injected_g1``, ``metacal_step``, ``psf_fwhm``,
+        ``seed``, ``resolved_ratio_threshold``, ``m_tol_resolved``, ``rungs``
+        (list of scalar-only rung dicts), and ``provenance``.
+    name : str
+        Artifact basename.
+
+    Returns
+    -------
+    dict
+        Paths of the artifacts written (``json``, ``md``, ``png``).
+    """
+    artifacts_dir = Path(artifacts_dir)
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    summary = {**summary, "generated_utc": datetime.now(timezone.utc).isoformat()}
+
+    json_path = artifacts_dir / f"{name}.json"
+    json_path.write_text(json.dumps(summary, indent=2, default=str) + "\n")
+
+    rows = "".join(
+        f"| {r['ratio']} | {r['gal_hlr']:.4f} | {r['m']:+.5f} | "
+        f"{r['R11']:.4f} | {r['g1_recovered']:.5f} | "
+        f"{'yes' if r['resolved'] else 'no'} | "
+        f"{'-' if r['within_tol'] is None else ('yes' if r['within_tol'] else 'NO')} |\n"
+        for r in summary["rungs"]
+    )
+    md_path = artifacts_dir / f"{name}.md"
+    md_path.write_text(
+        f"# Resolution-ladder guardrail — {summary['status']}\n\n"
+        f"- generated: `{summary['generated_utc']}`\n"
+        f"- injected g1: {summary['injected_g1']}, "
+        f"psf_fwhm: {summary['psf_fwhm']}, seed: {summary['seed']}\n"
+        f"- resolved threshold: ratio >= {summary['resolved_ratio_threshold']}, "
+        f"tolerance: |m| < {summary['m_tol_resolved']}\n\n"
+        f"| ratio | gal_hlr | m | R11 | g1_rec | resolved | within_tol |\n"
+        f"|-------|---------|---|-----|--------|----------|------------|\n"
+        f"{rows}\n"
+        f"As the galaxy shrinks toward the PSF, |m| grows negative (shear washes "
+        f"out) and R11 dips through a ~0.92 minimum then rises toward the "
+        f"point-source floor. Only resolved rungs (ratio >= "
+        f"{summary['resolved_ratio_threshold']}) are asserted.\n"
+    )
+
+    png_path = artifacts_dir / f"{name}.png"
+    plot_result = _plot_resolution_ladder(png_path, summary)
+
+    return {"json": str(json_path), "md": str(md_path), "png": plot_result}

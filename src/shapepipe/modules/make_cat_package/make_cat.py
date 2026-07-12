@@ -16,7 +16,6 @@ from astropy.wcs import WCS
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
-from shapepipe.utilities import galaxy
 
 
 def get_output_name(output_dir, file_number_string):
@@ -243,7 +242,7 @@ class SaveCatalogue:
         Parameters
         ----------
         mode : str
-            Run mode, options are ``ngmix``, ``galsim`` or ``psf``
+            Run mode, options are ``ngmix`` or ``psf``
         cat_path : str
             Path to input catalogue
         moments : bool
@@ -263,15 +262,13 @@ class SaveCatalogue:
         err_msg = None
         if mode == "ngmix":
             err_msg = self._save_ngmix_data(cat_path, moments)
-        elif mode == "galsim":
-            self._save_galsim_shapes(cat_path)
         elif mode == "psf":
             self._save_psf_data(cat_path)
         else:
             err_msg = (
                 f"Invalid process mode ({mode}) for "
-                + '``make_cat.Savecatalogue``. Options are "ngmix", '
-                + '"galsim" or "psf".'
+                + '``make_cat.Savecatalogue``. Options are "ngmix" '
+                + 'or "psf".'
             )
 
         if err_msg is None:
@@ -329,10 +326,26 @@ class SaveCatalogue:
 
         Save the NGMIX catalogue into the final one.
 
+        Column grammar: ``NGMIX[m]_<COMPONENT>[_ERR][_<OBJECT>]_<SHEAR>``,
+        plus three OBJECT/SHEAR-less per-object metadata columns
+        (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
+        ``NGMIX_MCAL_TYPES_FAIL``). The galaxy is the implicit default object
+        and carries NO ``OBJECT`` token (``NGMIX_G1_NOSHEAR``, dropping the
+        ``GAL`` segment carried by the pre-#761 names). The explicit PSF
+        objects are ``PSF_ORIG``
+        (the original image PSF, fit by
+        :func:`ngmix.average_original_psf`) and ``PSF_RECONV`` (the metacal
+        reconvolution kernel, fit by :func:`ngmix.average_multiepoch_psf`);
+        see those functions for what each PSF family IS. ``PSF_ORIG`` and
+        ``PSF_RECONV`` are independent fits of different PSFs, no longer the
+        single aliased value of the pre-fix code (shapepipe#749).
+
         Parameters
         ----------
         ngmix_cat_path : str
             Path to NGMIX catalogue
+        moments : bool, optional
+            If True, write the parallel ``NGMIXm_*`` (moments-branch) columns.
 
         """
         self._key_ends = ["1M", "1P", "2M", "2P", "NOSHEAR"]
@@ -374,29 +387,49 @@ class SaveCatalogue:
 
         prefix = f"NGMIX{m}"
 
+        # Galaxy (no object token), original image PSF (PSF_ORIG) and metacal
+        # reconvolution kernel (PSF_RECONV); see ngmix.average_original_psf /
+        # average_multiepoch_psf for what each PSF family is. G1/G2 are scalar
+        # reduced-shear components, not a 2-vector. Sentinels:
+        # sizes/fluxes/mags/flags 0, *_ERR fluxes/mags -1, ellipticities -10,
+        # *_ERR sizes 1e30.
         for key_str in (
             f"{prefix}_T_",
-            f"{prefix}_Tpsf_",
             f"{prefix}_SNR_",
             f"{prefix}_FLUX_",
             f"{prefix}_MAG_",
             f"{prefix}_FLAGS_",
-            f"{prefix}_T_PSFo_",
+            f"{prefix}_T_PSF_ORIG_",
+            f"{prefix}_T_PSF_RECONV_",
         ):
             self._update_dict(key_str, np.zeros(n_obj))
-        for key_str in (f"NGMIX{m}_FLUX_ERR_", f"NGMIX{m}_MAG_ERR_"):
-            self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
         for key_str in (
-            f"NGMIX{m}_ELL_",
-            f"NGMIX{m}_ELL_ERR_",
-            f"NGMIX{m}_ELL_PSFo_",
+            f"{prefix}_FLUX_ERR_",
+            f"{prefix}_MAG_ERR_",
         ):
-            self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
-        self._update_dict(
-            f"NGMIX{m}_T_ERR_",
-            np.ones(len(self._obj_id)) * 1e30,
-        )
-        self._add2dict(f"NGMIX{m}_MCAL_FLAGS", np.zeros(len(self._obj_id)))
+            self._update_dict(key_str, np.ones(n_obj) * -1)
+        for key_str in (
+            f"{prefix}_G1_",
+            f"{prefix}_G2_",
+            f"{prefix}_G1_ERR_",
+            f"{prefix}_G2_ERR_",
+            f"{prefix}_G1_PSF_ORIG_",
+            f"{prefix}_G2_PSF_ORIG_",
+            f"{prefix}_G1_ERR_PSF_ORIG_",
+            f"{prefix}_G2_ERR_PSF_ORIG_",
+            f"{prefix}_G1_PSF_RECONV_",
+            f"{prefix}_G2_PSF_RECONV_",
+            f"{prefix}_G1_ERR_PSF_RECONV_",
+            f"{prefix}_G2_ERR_PSF_RECONV_",
+        ):
+            self._update_dict(key_str, np.ones(n_obj) * -10.0)
+        for key_str in (
+            f"{prefix}_T_ERR_",
+            f"{prefix}_T_ERR_PSF_ORIG_",
+            f"{prefix}_T_ERR_PSF_RECONV_",
+        ):
+            self._update_dict(key_str, np.ones(n_obj) * 1e30)
+        self._add2dict(f"{prefix}_MCAL_FLAGS", np.zeros(n_obj))
 
         for idx, id_tmp in enumerate(self._obj_id):
             ind = np.where(id_tmp == ngmix_id)[0]
@@ -406,46 +439,84 @@ class SaveCatalogue:
 
                     ncf_data = ngmix_cat_file.get_data(key)
 
-                    g = (ncf_data["g1"][ind[0]], ncf_data["g2"][ind[0]])
-                    g_err = (
-                        ncf_data["g1_err"][ind[0]],
-                        ncf_data["g2_err"][ind[0]],
+                    # Galaxy shape, size and photometry.
+                    self._add2dict(
+                        f"{prefix}_G1_{key}", ncf_data["g1"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_G2_{key}", ncf_data["g2"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_G1_ERR_{key}",
+                        ncf_data["g1_err"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_G2_ERR_{key}",
+                        ncf_data["g2_err"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_T_{key}", ncf_data["T"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_T_ERR_{key}",
+                        ncf_data["T_err"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_SNR_{key}", ncf_data["s2n"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_FLUX_{key}",
+                        ncf_data["flux"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_FLUX_ERR_{key}",
+                        ncf_data["flux_err"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_MAG_{key}", ncf_data["mag"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_MAG_ERR_{key}",
+                        ncf_data["mag_err"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_FLAGS_{key}",
+                        ncf_data["flags"][ind[0]], idx
                     )
 
-                    self._add2dict(f"NGMIX{m}_ELL_{key}", g, idx)
-                    self._add2dict(f"NGMIX{m}_ELL_ERR_{key}", g_err, idx)
-
-                    t = ncf_data["T"][ind[0]]
-                    t_err = ncf_data["T_err"][ind[0]]
-                    tpsf = ncf_data["Tpsf"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_T_{key}", t, idx)
-                    self._add2dict(f"NGMIX{m}_T_ERR_{key}", t_err, idx)
-                    self._add2dict(f"NGMIX{m}_Tpsf_{key}", tpsf, idx)
-
-                    s2n = ncf_data["s2n"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_SNR_{key}", s2n, idx)
-
-                    flux = ncf_data["flux"][ind[0]]
-                    flux_err = ncf_data["flux_err"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_FLUX_{key}", flux, idx)
-                    self._add2dict(f"NGMIX{m}_FLUX_ERR_{key}", flux_err, idx)
-
-                    mag = ncf_data["mag"][ind[0]]
-                    mag_err = ncf_data["mag_err"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_MAG_{key}", mag, idx)
-                    self._add2dict(f"NGMIX{m}_MAG_ERR_{key}", mag_err, idx)
-
-                    flags = ncf_data["flags"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_FLAGS_{key}", flags, idx)
-
-                    g_psf = (
-                        ncf_data["g1_psfo_ngmix"][ind[0]],
-                        ncf_data["g2_psfo_ngmix"][ind[0]],
-                    )
-                    self._add2dict(f"NGMIX{m}_ELL_PSFo_{key}", g_psf, idx)
-
-                    t_psfo = ncf_data["Tpsf"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_T_PSFo_{key}", t_psfo, idx)
+                    # Original image PSF (average_original_psf) and metacal
+                    # reconvolution kernel (average_multiepoch_psf). Both PSF
+                    # families share ONE write template, so the FITS column
+                    # name (``{obj}``) and the res-key it reads (``{family}``)
+                    # are generated from the same pair and cannot drift apart.
+                    for family, obj in (
+                        ("orig", "PSF_ORIG"),
+                        ("reconv", "PSF_RECONV"),
+                    ):
+                        self._add2dict(
+                            f"{prefix}_G1_{obj}_{key}",
+                            ncf_data[f"g1_psf_{family}"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"{prefix}_G2_{obj}_{key}",
+                            ncf_data[f"g2_psf_{family}"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"{prefix}_G1_ERR_{obj}_{key}",
+                            ncf_data[f"g1_err_psf_{family}"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"{prefix}_G2_ERR_{obj}_{key}",
+                            ncf_data[f"g2_err_psf_{family}"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"{prefix}_T_{obj}_{key}",
+                            ncf_data[f"T_psf_{family}"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"{prefix}_T_ERR_{obj}_{key}",
+                            ncf_data[f"T_err_psf_{family}"][ind[0]], idx
+                        )
 
                 self._add2dict(
                     f"NGMIX{m}_MCAL_FLAGS",
@@ -469,119 +540,6 @@ class SaveCatalogue:
 
         return None
 
-    def _save_galsim_shapes(self, galsim_cat_path):
-        """Save GalSim Shapes.
-
-        Save the GalSim catalogue into the final one.
-
-        Parameters
-        ----------
-        galsim_cat_path : str
-            Path to GalSim catalogue to save
-
-        """
-        galsim_cat_file = file_io.FITSCatalogue(galsim_cat_path)
-        galsim_cat_file.open()
-
-        self._key_ends = galsim_cat_file.get_ext_name()[1:]
-
-        galsim_id = galsim_cat_file.get_data()["id"]
-
-        for key_str in (
-            "GALSIM_GAL_SIGMA_",
-            "GALSIM_PSF_SIGMA_",
-            "GALSIM_FLUX_",
-            "GALSIM_MAG_",
-        ):
-            self._update_dict(key_str, np.zeros(len(self._obj_id)))
-        for key_str in ("GALSIM_FLUX_ERR_", "GALSIM_MAG_ERR_", "GALSIM_RES_"):
-            self._update_dict(key_str, np.ones(n_obj) * -1)
-        for key_str in (
-            "GALSIM_GAL_ELL_",
-            "GALSIM_GAL_ELL_ERR_",
-            "GALSIM_GAL_ELL_UNCORR_",
-            "GALSIM_PSF_ELL_",
-        ):
-            self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
-        self._update_dict(
-            "GALSIM_FLAGS_",
-            np.ones(len(self._obj_id), dtype="int16"),
-        )
-
-        for idx, id_tmp in enumerate(self._obj_id):
-            ind = np.where(id_tmp == galsim_id)[0]
-            if len(ind) > 0:
-
-                for key in self._key_ends:
-
-                    gcf_data = galsim_cat_file.get_data(key)
-
-                    if key == "ORIGINAL_PSF":
-
-                        uncorr_g = (
-                            gcf_data["gal_uncorr_g1"][ind[0]],
-                            gcf_data["gal_uncorr_g2"][ind[0]],
-                        )
-                        psf_sig = gcf_data["gal_sigma"][ind[0]]
-                        self._add2dict(f"GALSIM_PSF_ELL_{key}", uncorr_g, idx)
-                        self._add2dict(f"GALSIM_PSF_SIGMA_{key}", psf_sig, idx)
-
-                    else:
-
-                        g = (
-                            gcf_data["gal_g1"][ind[0]],
-                            gcf_data["gal_g2"][ind[0]],
-                        )
-                        g_err = (
-                            gcf_data["gal_g1_err"][ind[0]],
-                            gcf_data["gal_g2_err"][ind[0]],
-                        )
-                        self._add2dict(f"GALSIM_GAL_ELL_{key}", g, idx)
-                        self._add2dict(f"GALSIM_GAL_ELL_ERR_{key}", g_err, idx)
-
-                        uncorr_g = (
-                            gcf_data["gal_uncorr_g1"][ind[0]],
-                            gcf_data["gal_uncorr_g2"][ind[0]],
-                        )
-                        self._add2dict(
-                            f"GALSIM_GAL_ELL_UNCORR_{key}",
-                            uncorr_g,
-                            idx,
-                        )
-
-                        sigma = gcf_data["gal_sigma"][ind[0]]
-                        self._add2dict(f"GALSIM_GAL_SIGMA_{key}", sigma, idx)
-
-                        psf_g = (
-                            gcf_data["psf_g1"][ind[0]],
-                            gcf_data["psf_g2"][ind[0]],
-                        )
-                        psf_sigma = gcf_data["psf_sigma"][ind[0]]
-                        self._add2dict(f"GALSIM_PSF_ELL_{key}", psf_g, idx)
-                        self._add2dict(
-                            f"GALSIM_PSF_SIGMA_{key}",
-                            psf_sigma,
-                            idx,
-                        )
-
-                        flux = gcf_data["gal_flux"][ind[0]]
-                        flux_err = gcf_data["gal_flux_err"][ind[0]]
-                        self._add2dict(f"GALSIM_FLUX_{key}", flux, idx)
-                        self._add2dict(f"GALSIM_FLUX_ERR_{key}", flux_err, idx)
-
-                        mag = gcf_data["gal_mag"][ind[0]]
-                        mag_err = gcf_data["gal_mag_err"][ind[0]]
-                        self._add2dict(f"GALSIM_MAG_{key}", mag, idx)
-                        self._add2dict(f"GALSIM_MAG_ERR_{key}", mag_err, idx)
-
-                        flags = gcf_data["gal_flag"][ind[0]]
-                        self._add2dict(f"GALSIM_FLAGS_{key}", flags, idx)
-
-                        res = gcf_data["gal_resolution"][ind[0]]
-                        self._add2dict(f"GALSIM_RES_{key}", res, idx)
-
-        galsim_cat_file.close()
-
     def _save_psf_data(self, galaxy_psf_path):
         """Save PSF data.
 
@@ -598,20 +556,29 @@ class SaveCatalogue:
         max_epoch = np.max(self._final_cat_file.get_data()["N_EPOCH"]) + 1
 
         self._output_dict = {
-            f"PSF_ELL_{idx + 1}": np.ones((len(self._obj_id), 2)) * -10.0
+            f"HSM_G1_PSF_{idx + 1}": np.ones(len(self._obj_id)) * -10.0
             for idx in range(max_epoch)
         }
         self._output_dict = {
             **self._output_dict,
             **{
-                f"PSF_FWHM_{idx + 1}": np.zeros(len(self._obj_id))
+                f"HSM_G2_PSF_{idx + 1}": np.ones(len(self._obj_id)) * -10.0
                 for idx in range(max_epoch)
             },
         }
         self._output_dict = {
             **self._output_dict,
             **{
-                f"PSF_FLAG_{idx + 1}": np.ones(len(self._obj_id), dtype="int16")
+                f"HSM_T_PSF_{idx + 1}": np.zeros(len(self._obj_id))
+                for idx in range(max_epoch)
+            },
+        }
+        self._output_dict = {
+            **self._output_dict,
+            **{
+                f"HSM_FLAG_PSF_{idx + 1}": np.ones(
+                    len(self._obj_id), dtype="int16"
+                )
                 for idx in range(max_epoch)
             },
         }
@@ -625,21 +592,28 @@ class SaveCatalogue:
 
                 gpc_data = galaxy_psf_cat[str(id_tmp)][key]
 
-                if gpc_data["SHAPES"]["FLAG_PSF_HSM"] != 0:
+                if gpc_data["SHAPES"]["HSM_FLAG_PSF"] != 0:
                     continue
 
-                e_psf = (
-                    gpc_data["SHAPES"]["E1_PSF_HSM"],
-                    gpc_data["SHAPES"]["E2_PSF_HSM"],
+                self._add2dict(
+                    f"HSM_G1_PSF_{epoch + 1}",
+                    gpc_data["SHAPES"]["HSM_G1_PSF"], idx
                 )
-                self._add2dict(f"PSF_ELL_{epoch + 1}", e_psf, idx)
-
-                psf_fwhm = galaxy.sigma_to_fwhm(
-                    gpc_data["SHAPES"]["SIGMA_PSF_HSM"]
+                self._add2dict(
+                    f"HSM_G2_PSF_{epoch + 1}",
+                    gpc_data["SHAPES"]["HSM_G2_PSF"], idx
                 )
-                self._add2dict(f"PSF_FWHM_{epoch + 1}", psf_fwhm, idx)
 
-                flag_psf = gpc_data["SHAPES"]["FLAG_PSF_HSM"]
-                self._add2dict(f"PSF_FLAG_{epoch + 1}", flag_psf, idx)
+                # HSM_T_PSF already holds T (sigma_to_T applied at the
+                # producer's _interpolate_me); read straight through.
+                self._add2dict(
+                    f"HSM_T_PSF_{epoch + 1}",
+                    gpc_data["SHAPES"]["HSM_T_PSF"], idx
+                )
+
+                self._add2dict(
+                    f"HSM_FLAG_PSF_{epoch + 1}",
+                    gpc_data["SHAPES"]["HSM_FLAG_PSF"], idx
+                )
 
         galaxy_psf_cat.close()

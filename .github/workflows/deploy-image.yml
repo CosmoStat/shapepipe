@@ -113,6 +113,21 @@ jobs:
           docker run --rm "$IMAGE" vim --version | head -n1
           docker run --rm "$IMAGE" rg --version | head -n1
 
+      # Fast science guardrails first (tests/science) — the tier of controlled
+      # simulations with a known answer (e.g. the m-bias check: inject g1=0.02,
+      # recover after the metacal response, assert |m| < 5e-3). These run in
+      # seconds and gate scientific correctness, so we fire them as their own
+      # named check *before* the full suite: a regression that breaks the
+      # response correction or deconvolution fails here in seconds, with a
+      # clear signal, instead of being buried minutes deep in the full run.
+      # `-m "not slow"` keeps this the fast lane (the science tier holds only
+      # fast tests today; the filter makes the intent explicit and future-proof).
+      - name: Test dev — science guardrails (fast)
+        run: |
+          IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
+          docker run --rm -e HYPOTHESIS_PROFILE=ci "$IMAGE" \
+            pytest -rX -m "not slow" --no-cov tests/science
+
       # The actual test suite, run inside the shipped image — replacing the
       # retired conda-based suite. pytest exercises the same wheels, binaries,
       # and Python (3.12) that production runs on, not a parallel environment.
@@ -123,7 +138,7 @@ jobs:
       - name: Test dev — pytest suite
         run: |
           IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
-          docker run --rm -e HYPOTHESIS_PROFILE=ci "$IMAGE" pytest -rX
+          docker run --rm -e HYPOTHESIS_PROFILE=ci -e SHAPEPIPE_ON_CANDIDE=0 "$IMAGE" pytest -rX
 
       # ----------------------------------------------------------------
       # Publish (push events only — never on pull_request, incl. forks).

@@ -654,8 +654,8 @@ wheels = [
 
 [[package]]
 name = "cs-util"
-version = "0.2"
-source = { registry = "https://pypi.org/simple" }
+version = "0.2.2"
+source = { git = "https://github.com/CosmoStat/cs_util?branch=develop#bedcdbf50ac57fc4d0b72a62b251373cd1807824" }
 dependencies = [
     { name = "astropy", marker = "sys_platform == 'linux'" },
     { name = "camb", marker = "sys_platform == 'linux'" },
@@ -669,10 +669,6 @@ dependencies = [
     { name = "scipy", marker = "sys_platform == 'linux'" },
     { name = "swig", marker = "sys_platform == 'linux'" },
     { name = "vos", marker = "sys_platform == 'linux'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5a/1d/068d7522652fed361d80502c958f37080a9f0cfee5ad201b9dea0197b562/cs_util-0.2.tar.gz", hash = "sha256:4cbe01556fb47e832b5d517af812a6cf4a94856ad134be8c21e74874b4d56de6", size = 24932, upload-time = "2026-04-07T07:59:21.174Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/63/9dcd114438db8b7be74dee98dc3841e43335b1c0cc6aba64ec4bd1de3c01/cs_util-0.2-py3-none-any.whl", hash = "sha256:e329ea5f2a4f3ea9b8f0649f5c9321bc18ddf4ad76bffc8152fb22e3f4168ef4", size = 29723, upload-time = "2026-04-07T07:59:19.764Z" },
 ]
 
 [[package]]
@@ -3515,7 +3511,7 @@ requires-dist = [
     { name = "black", marker = "extra == 'lint'" },
     { name = "build", marker = "extra == 'release'" },
     { name = "canfar" },
-    { name = "cs-util", specifier = ">=0.1.9" },
+    { name = "cs-util", git = "https://github.com/CosmoStat/cs_util?branch=develop" },
     { name = "fitsio", marker = "extra == 'fitsio'" },
     { name = "galsim", specifier = ">=2.8" },
     { name = "h5py" },
