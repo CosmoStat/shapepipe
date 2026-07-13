@@ -1,11 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
 
-  "//": "Repo-level overrides layered on top of the Mend-hosted defaults (grouping, automerge, schedule stay as configured there). Two knobs, both aimed at making dependency automerge reliable without hand-nudging.",
+  "//": "Repo-level overrides layered on the Mend-hosted defaults (grouping, automerge, schedule stay as configured there). Goal: KEEP the supply-chain release-age delay AND make dependency automerge reliable.",
 
-  "//rangeStrategy": "pyproject.toml carries FLOOR constraints (major-version signals); uv.lock is the real pin. For minor/patch updates, bump the lock and leave the pyproject floors alone. (Non-lock ecosystems — Dockerfile, github-actions — fall back to 'replace' automatically.)",
-  "rangeStrategy": "update-lockfile",
+  "//rangeStrategy": "Pin registry deps to exact versions. This is the only way Renovate can honor minimumReleaseAge with uv: given floor ranges (>=), `uv lock` resolves the floor to the NEWEST in-range release — which may still be too fresh — and Renovate cannot pin uv to an exact aged version (renovatebot/renovate#41624), so it fails the artifact update instead of waiting (this stalled #816). Pinning writes the exact aged version into pyproject.toml, so uv can't overshoot and the age gate is respected. shapepipe is deployed as a container and is not published to PyPI (an application, not a library with downstream installers), so pinning is the appropriate, standard choice; the abstract-floors design in CLAUDE.md targets libraries, which this isn't. Renovate opens a one-time 'Pin dependencies' PR. NOTE: this gates DIRECT deps only — transitive deps in uv.lock still float to latest via lockFileMaintenance.",
+  "rangeStrategy": "pin",
 
-  "//minimumReleaseAge": "Disable the minimum-release-age gate. With floor ranges, Renovate targets an aged version but `uv lock` resolves the floor to the NEWEST in-range release — which may still be inside the age window — and Renovate cannot pin uv to an exact version (renovatebot/renovate#41624). The result is a failed artifact update that stalls automerge (this blocked #816). ShapePipe CI (full test suite + the example pipeline, on every PR) is the real safety gate for a dependency bump, so gate on CI, not on a waiting period.",
-  "minimumReleaseAge": "0 days"
+  "//internalChecksFilter": "Only ever act on versions that have passed the internal checks (release age) — never pin to a too-fresh release.",
+  "internalChecksFilter": "strict",
+
+  "//minimumReleaseAge": "Supply-chain delay: don't adopt a release until it is this old, so a hijacked-but-legitimate package (compromised maintainer / malicious release) has time to be detected and yanked before it auto-merges. Set explicitly here (owned in git, not an invisible Mend toggle). Tune up for a longer detection window.",
+  "minimumReleaseAge": "3 days"
 }
