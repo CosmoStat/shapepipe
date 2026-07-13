@@ -1,12 +1,16 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": [
-    "Repo overrides on the Mend defaults. Goal: keep the supply-chain minimum-release-age delay AND make dependency automerge reliable.",
-    "rangeStrategy=pin is the only way Renovate can honor minimumReleaseAge with uv: given floor ranges (>=), uv resolves to the newest in-range release (possibly too fresh) and Renovate cannot pin uv to an exact aged version (renovatebot/renovate#41624), so the artifact update fails instead of waiting. Pinning writes the exact aged version into pyproject.toml so uv cannot overshoot. shapepipe ships as a container and is not on PyPI (an application, not a library), so pinning is the appropriate choice.",
-    "internalChecksFilter=strict: only ever act on versions past the age gate.",
-    "minimumReleaseAge=3 days: supply-chain delay so a hijacked-but-legitimate release has time to be caught before it auto-merges. Tunable. NOTE: gates direct deps only; transitives in uv.lock still float via lockFileMaintenance."
+    "Repo overrides on the Mend org/inherited config. Goal: keep the supply-chain minimum-release-age delay AND make dependency automerge reliable.",
+    "The org config sets rangeStrategy=update-lockfile via a packageRule, which outranks a top-level repo rangeStrategy (packageRules always beat top-level keys). So we set rangeStrategy=pin in a packageRule too — repo packageRules are merged LAST, so this wins. Pinning is the only way Renovate honors minimumReleaseAge with uv: floor ranges let uv resolve to a too-fresh version it can't pin (renovatebot/renovate#41624). shapepipe ships as a container, not a PyPI library, so pinning is appropriate. Scoped to PyPI datasource, so the git-sourced ngmix/cs_util are left untouched.",
+    "internalChecksFilter=strict: only act on versions past the age gate. minimumReleaseAge=3 days: supply-chain detection window; tunable."
   ],
-  "rangeStrategy": "pin",
   "internalChecksFilter": "strict",
-  "minimumReleaseAge": "3 days"
+  "minimumReleaseAge": "3 days",
+  "packageRules": [
+    {
+      "matchDatasources": ["pypi"],
+      "rangeStrategy": "pin"
+    }
+  ]
 }
