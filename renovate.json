@@ -1,0 +1,11 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+
+  "//": "Repo-level overrides layered on top of the Mend-hosted defaults (grouping, automerge, schedule stay as configured there). Two knobs, both aimed at making dependency automerge reliable without hand-nudging.",
+
+  "//rangeStrategy": "pyproject.toml carries FLOOR constraints (major-version signals); uv.lock is the real pin. For minor/patch updates, bump the lock and leave the pyproject floors alone. (Non-lock ecosystems — Dockerfile, github-actions — fall back to 'replace' automatically.)",
+  "rangeStrategy": "update-lockfile",
+
+  "//minimumReleaseAge": "Disable the minimum-release-age gate. With floor ranges, Renovate targets an aged version but `uv lock` resolves the floor to the NEWEST in-range release — which may still be inside the age window — and Renovate cannot pin uv to an exact version (renovatebot/renovate#41624). The result is a failed artifact update that stalls automerge (this blocked #816). ShapePipe CI (full test suite + the example pipeline, on every PR) is the real safety gate for a dependency bump, so gate on CI, not on a waiting period.",
+  "minimumReleaseAge": "0 days"
+}
