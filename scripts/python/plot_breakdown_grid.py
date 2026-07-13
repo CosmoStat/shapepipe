@@ -95,7 +95,11 @@ def main():
     ax_c.set_yscale("symlog", linthresh=1e-4)
     ax_c.set_ylabel(r"additive bias  $|c_1|$")
     ax_c.set_title("Additive bias")
-    ax_c.set_xlabel("resolution ratio  $r = \\mathrm{gal\\ hlr}\\,/\\,\\mathrm{psf\\ fwhm}$")
+    # "intrinsic (pre-seeing)" is load-bearing: r is the simulation-input truth
+    # knob (r -> 0 is the star limit), NOT the convolved observed size ratio
+    # (which is floored at 1) nor metacal's deconvolved T_gal/T_psf.
+    ax_c.set_xlabel("intrinsic (pre-seeing) resolution ratio  "
+                    "$r = \\mathrm{gal\\ hlr}\\,/\\,\\mathrm{psf\\ fwhm}$")
 
     for ax in (ax_m1, ax_m2, ax_c):
         ax.margins(x=0.04)
