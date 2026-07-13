@@ -2,7 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": [
     "Low-noise dependency updates with mild supply-chain hygiene, layered on the Mend org config.",
-    "Pins: ShapePipe ships as a container, not a PyPI library, so per the Renovate dependency-pinning doc we pin app dependencies exactly. The pin lives in a packageRule (scoped to PyPI, leaving git-sourced deps like ngmix/cs_util alone) because repo packageRules merge after the org's rangeStrategy=update-lockfile rule. Exact pins are also what lets minimumReleaseAge work with uv (renovatebot/renovate#41624).",
+    "Pins: ShapePipe ships as a container, not a PyPI library, so per the Renovate dependency-pinning doc we pin app dependencies exactly. The pins are written directly in pyproject.toml (== versions), so nothing depends on rangeStrategy resolution against the org config; the packageRule (scoped to PyPI, leaving git-sourced deps like ngmix/cs_util alone) just keeps future deps pinned. Exact pins are also what lets minimumReleaseAge work with uv (renovatebot/renovate#41624).",
+    "Python base-image bumps (3.12 -> 3.14 rides as 'minor' in Renovate's python versioning) never automerge — a Python upgrade gets human eyes.",
     "Noise: all non-major updates grouped into one weekly PR that automerges when CI (full suite in the container) is green; majors surface individually for review; lockFileMaintenance refreshes transitive deps.",
     "minimumReleaseAge=7 days: supply-chain detection window, sized per the Renovate docs' automerge guidance and Astral's uv guide."
   ],
@@ -11,6 +12,7 @@
   "lockFileMaintenance": { "enabled": true },
   "packageRules": [
     { "matchDatasources": ["pypi"], "rangeStrategy": "pin" },
-    { "matchUpdateTypes": ["minor", "patch", "pin", "digest"], "automerge": true }
+    { "matchUpdateTypes": ["minor", "patch", "pin", "digest"], "automerge": true },
+    { "matchPackageNames": ["python"], "automerge": false }
   ]
 }
