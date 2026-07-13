@@ -29,8 +29,6 @@ __installs__ = ["joblib>=0.13", "modopt>=1.2", "numpy>=1.14"]
 __tests__ = [
     "pytest",
     "pytest-cov",
-    "pytest-pycodestyle",
-    "pytest-pydocstyle",
 ]
 __scripts_dir__ = "scripts"
 __scripts_ext__ = (".py", ".sh", ".bash")
