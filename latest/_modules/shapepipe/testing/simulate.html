@@ -541,6 +541,8 @@
     <span class="n">pixel_scale</span><span class="o">=</span><span class="mf">0.1857</span><span class="p">,</span>
     <span class="n">img_size</span><span class="o">=</span><span class="mi">201</span><span class="p">,</span>
     <span class="n">psf_shear</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+    <span class="n">wcs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">return_centers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate an exponential galaxy with Moffat PSF.</span>
 
@@ -574,6 +576,23 @@
 <span class="sd">        guardrail needs: the PSF carries a shape that an unbiased deconvolution</span>
 <span class="sd">        must remove from a round galaxy. The same sheared PSF is used both to</span>
 <span class="sd">        convolve the object and as the PSF model stamp.</span>
+<span class="sd">    wcs : galsim.BaseWCS, optional</span>
+<span class="sd">        Uniform drawing WCS. Default None means ``galsim.PixelScale</span>
+<span class="sd">        (pixel_scale)`` with the legacy world-space sub-pixel shift draw —</span>
+<span class="sd">        bit-identical rng consumption and values to earlier versions of this</span>
+<span class="sd">        function. A non-trivial jacobian (rotation/shear — the ngmix#72</span>
+<span class="sd">        sensitivity axis) switches the shift draw to PIXEL space (uniform</span>
+<span class="sd">        ±0.5 pixel per axis), guaranteeing the object lands within half a</span>
+<span class="sd">        pixel of the stamp centre — the contract that round-to-nearest-pixel</span>
+<span class="sd">        centroid logic (e.g. ngmix ``centroid_source=&quot;wcs&quot;``) depends on.</span>
+<span class="sd">        Note ``psfs_sigmas`` are HSM pixel-unit sigmas of the *WCS-drawn*</span>
+<span class="sd">        PSF stamp; under a sheared WCS they are not circularly symmetric</span>
+<span class="sd">        measures.</span>
+<span class="sd">    return_centers : bool, optional</span>
+<span class="sd">        If True, also return per-epoch true object centres as</span>
+<span class="sd">        ``galsim.PositionD`` in galsim image coordinates (1-based; stamp</span>
+<span class="sd">        centre is ``(img_size + 1) / 2``). Default False keeps the legacy</span>
+<span class="sd">        6-tuple return.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -583,19 +602,44 @@
 <span class="sd">    weights : list of numpy.ndarray</span>
 <span class="sd">    flags : list of numpy.ndarray</span>
 <span class="sd">    jacob_lists : list of galsim.BaseWCS</span>
+<span class="sd">    centers : list of galsim.PositionD, only if ``return_centers``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">psf_noise</span> <span class="o">=</span> <span class="mf">1.0e-6</span>
     <span class="n">scale</span> <span class="o">=</span> <span class="n">pixel_scale</span>
-    <span class="n">wcs</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">PixelScale</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">wcs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">wcs</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">PixelScale</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">draw_shift</span><span class="p">():</span>
+            <span class="c1"># Legacy world-space draw — these exact lines (incl. dy-then-dx</span>
+            <span class="c1"># order) keep rng consumption and values bit-identical to the</span>
+            <span class="c1"># pre-wcs version of this function.</span>
+            <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">/</span> <span class="n">scale</span><span class="p">,</span> <span class="n">dy</span> <span class="o">/</span> <span class="n">scale</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">jac</span> <span class="o">=</span> <span class="n">wcs</span><span class="o">.</span><span class="n">jacobian</span><span class="p">()</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">jac</span><span class="o">.</span><span class="n">dudx</span><span class="p">,</span> <span class="n">jac</span><span class="o">.</span><span class="n">dudy</span><span class="p">],</span> <span class="p">[</span><span class="n">jac</span><span class="o">.</span><span class="n">dvdx</span><span class="p">,</span> <span class="n">jac</span><span class="o">.</span><span class="n">dvdy</span><span class="p">]])</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">draw_shift</span><span class="p">():</span>
+            <span class="c1"># Pixel-space draw (same dy-then-dx order): under a sheared</span>
+            <span class="c1"># jacobian a world-space ±scale/2 box maps to a pixel-space</span>
+            <span class="c1"># parallelogram exceeding ±0.5 pixel, which would silently break</span>
+            <span class="c1"># rounded-centroid logic with off-by-one-pixel centres.</span>
+            <span class="n">dpy</span><span class="p">,</span> <span class="n">dpx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">=</span> <span class="n">transform</span> <span class="o">@</span> <span class="p">(</span><span class="n">dpx</span><span class="p">,</span> <span class="n">dpy</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">dx</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">dy</span><span class="p">),</span> <span class="n">dpx</span><span class="p">,</span> <span class="n">dpy</span>
 
     <span class="k">if</span> <span class="n">share_shift</span><span class="p">:</span>
-        <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dpx</span><span class="p">,</span> <span class="n">dpy</span> <span class="o">=</span> <span class="n">draw_shift</span><span class="p">()</span>
 
-    <span class="n">gals</span><span class="p">,</span> <span class="n">psfs</span><span class="p">,</span> <span class="n">psfs_sigmas</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">jacob_lists</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="n">gals</span><span class="p">,</span> <span class="n">psfs</span><span class="p">,</span> <span class="n">psfs_sigmas</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">jacob_lists</span><span class="p">,</span> <span class="n">centers</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">share_shift</span><span class="p">:</span>
-            <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dpx</span><span class="p">,</span> <span class="n">dpy</span> <span class="o">=</span> <span class="n">draw_shift</span><span class="p">()</span>
 
         <span class="n">psf</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">Moffat</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="n">psf_fwhm</span><span class="p">)</span><span class="o">.</span><span class="n">shear</span><span class="p">(</span>
             <span class="n">g1</span><span class="o">=</span><span class="n">psf_shear</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">g2</span><span class="o">=</span><span class="n">psf_shear</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -620,7 +664,12 @@
         <span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">im</span> <span class="o">*</span> <span class="mi">0</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">noise</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">im</span> <span class="o">*</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">jacob_lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wcs</span><span class="o">.</span><span class="n">jacobian</span><span class="p">())</span>
+        <span class="n">centers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">galsim</span><span class="o">.</span><span class="n">PositionD</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">img_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">dpx</span><span class="p">,</span> <span class="p">(</span><span class="n">img_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">dpy</span>
+        <span class="p">))</span>
 
+    <span class="k">if</span> <span class="n">return_centers</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">gals</span><span class="p">,</span> <span class="n">psfs</span><span class="p">,</span> <span class="n">psfs_sigmas</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">jacob_lists</span><span class="p">,</span> <span class="n">centers</span>
     <span class="k">return</span> <span class="n">gals</span><span class="p">,</span> <span class="n">psfs</span><span class="p">,</span> <span class="n">psfs_sigmas</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">jacob_lists</span></div>
 
 </pre></div>
