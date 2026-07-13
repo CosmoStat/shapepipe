@@ -56,17 +56,25 @@ Regenerate the status page from a run's outputs:
     python scripts/python/build_status.py \\
         --results <run>/results/baseline \\
         --figures <run>/figures \\
-        --out status.html
+        --out status.html \\
+        --history <run>/history.json
 
 `--results` points at the directory holding the per-arm subdirs
 (`mbias_sim/`, `star_response_grid_*/`,
 `star_response_magprofile/`, `galaxy_question/`); `--figures` (optional) points
-at a directory of PNGs to inline (see FIGURE_SLOTS).
+at a directory of PNGs to inline (see FIGURE_SLOTS); `--history` (optional)
+points at the `history.json` written by `build_history.py`, inlined into the
+Trends panel.
+
+Every build writes **two** surfaces from the same scalars: the HTML page and a
+`status.json` beside it (``--json`` to override the path; default is next to
+``--out``). Emitting both here is deliberate — the JSON used to come from a
+separate step and drift stale behind the page.
 
 Deploy (Cail owns this step; not run by this script):
 
-    cp status.html <gh-pages-clone>/shapepipe/status.html
-    cd <gh-pages-clone> && git add shapepipe/status.html \\
+    cp status.html status.json <gh-pages-clone>/shapepipe/
+    cd <gh-pages-clone> && git add shapepipe/status.html shapepipe/status.json \\
         && git commit -m 'status: re-render <date>' && git push
 """
 
@@ -74,6 +82,7 @@ Deploy (Cail owns this step; not run by this script):
 TEAL = "#3F8278"      # PASS
 OCHRE = "#C49333"     # MARGINAL
 CINNABAR = "#BC4538"  # FAIL
+COBALT = "#3D5BA0"    # neutral accent (trends, testdata rail)
 
 # Tier-1 pass-criterion tolerance. This is the *test* constant (M_TOL asserted by
 # test_mbias.py) — not present in the results JSON — kept here as a single-source
@@ -90,6 +99,7 @@ FIGURE_SLOTS = {
     "grid_forest": "star_response_forest.png",
     "grid_magprofile": "star_response_magprofile.png",
     "galaxy_question": "galaxy_question_s2n.png",
+    "trends": "trends.png",
 }
 
 
@@ -616,10 +626,93 @@ def render_galaxy_question(d: dict, b64: str | None, render_ts: str) -> tuple[st
     return sec, strip_chip("t2-galaxy", "galaxy R", label, colour)
 
 
+def render_trends(b64: str | None, render_ts: str, history: dict | None) -> str:
+    """Trends panel: the board's scalar metrics tracked commit-to-commit.
+
+    A collapsed ``<details>`` (no verdict — the current-commit numbers already
+    carry their badges above) holding one small-multiple figure of every metric
+    with an uncertainty, plotted over time. Placed last, before the footer.
+    The figure is drawn by ``plot_trends.py`` off ``history.json``; this panel
+    only inlines it and states, from the history record, what span it covers."""
+    n_rows = len(history["rows"]) if history else 0
+    dates = sorted({r["date"] for r in history["rows"]}) if history else []
+    commits = {(r["date"], r["commit"]) for r in history["rows"]} if history else set()
+    span = (
+        f"{len(commits)} builds across {dates[0]}&ndash;{dates[-1]}"
+        if dates else "no history yet"
+    )
+    cap = (
+        "Board scalar metrics tracked from one ShapePipe commit to the next: "
+        "m-bias, the per-band breakdown-grid <code>m1</code>/<code>m2</code> on "
+        "resolved rungs, and the four star-response arms. Each point is a value "
+        "with its uncertainty; shaded bands mark the recorded tolerance where one "
+        "is defined. <b>Only metrics that carry an uncertainty are plotted</b> "
+        "(history.json also stores older err-less snapshots, not shown). The "
+        "<span style='color:#3D5BA0'><b>SKiLLS &middot; preliminary</b></span> "
+        "series is a preview image-sim reference tile, not a board verdict."
+    )
+    fig = figure_block(
+        b64, "board scalar metrics over time, with tolerance bands",
+        cap, "history.json", render_ts, fig_tool="plot_trends.py",
+    )
+    spec = (
+        '<div class="spec"><span class="mark">&sect; what this is</span>'
+        "<p>A machine-readable record (<code>history.json</code>, sitting beside "
+        "<code>status.json</code>) upserts a key set of scalar metrics on every "
+        "build, keyed by <code>(commit, metric)</code> &mdash; rebuilding a commit "
+        "updates in place, a new commit appends, history is never truncated. This "
+        "panel plots that record: stable-performance monitoring, and the numbers "
+        "to hill-climb.</p>"
+        f"<p><b>Covering.</b> {span}.</p></div>"
+    )
+    return panel(
+        "trends", "&sect; Trends &mdash; board metrics over time", "",
+        "record", "Trends", spec, fig,
+        summary_val="board scalar metrics tracked commit-to-commit",
+    )
+
+
+def status_scalars(results: Path, now: _dt.datetime) -> dict:
+    """The machine-readable ``status.json`` payload, computed from the SAME result
+    JSONs the HTML panels read. Emitted alongside the page so one build refreshes
+    both surfaces (historically the JSON was written by a separate step and drifted
+    stale behind the HTML). Scalars mirror the board; verdicts are value-vs-tol."""
+    payload: dict = {
+        "stamp": now.strftime("%Y-%m-%d %H:%M") + " · ngmix_v2.0 · candide",
+        "note": "Scalars mirror the status board; verdicts computed from value vs recorded tolerance.",
+    }
+    mbias = load(results, "mbias_sim", "mbias.json")
+    if mbias is not None:
+        m = mbias["multiplicative_bias_m"]
+        payload["level1a_mbias"] = {
+            "m": m, "R11": mbias["metacal_response_R11"], "tol": M_TOL,
+            "verdict": "PASS" if abs(m) < M_TOL else "FAIL",
+            "centroid_source": mbias.get("config", {}).get("centroid_source", "?"),
+        }
+    arm_dirs = {"wcs": "star_response_grid_wcs", "hsm": "star_response_grid_hsm",
+                "gauss_wcs": "star_response_grid_gauss_wcs", "gauss_hsm": "star_response_grid_gauss_hsm"}
+    grid = {}
+    for arm, d in arm_dirs.items():
+        s = load(results, d, "star_response.json")
+        if s is None:
+            continue
+        tol = s["tolerance_R"]
+        grid[arm] = {
+            "R1_mean": s["R1"]["mean"], "R2_mean": s["R2"]["mean"], "tol": tol,
+            "n_obj": s["n_obj"], "n_tiles_ok": s["n_tiles_ok"],
+            "frac_catastrophic": s["R1"]["frac_catastrophic"],
+            "verdict": "PASS" if abs(s["R1"]["mean"]) <= tol else "MARGINAL",
+        }
+    if grid:
+        payload["level2_grid"] = grid
+    return payload
+
+
 # --------------------------------------------------------------------------- #
 # Page assembly
 # --------------------------------------------------------------------------- #
-def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
+def build_page(results: Path, figures: Path | None, now: _dt.datetime,
+               history_path: Path | None = None) -> str:
     render_ts = now.strftime("%Y-%m-%d %H:%M")
     stamp_date = now.strftime("%Y &middot; %m &middot; %d")
 
@@ -627,6 +720,8 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
     if figures is not None:
         for slot, fname in FIGURE_SLOTS.items():
             figs[slot] = b64_png(figures / fname)
+
+    history = json.loads(history_path.read_text()) if history_path and history_path.is_file() else None
 
     strip: list[str] = []
     tier1: list[str] = []
@@ -742,6 +837,7 @@ def build_page(results: Path, figures: Path | None, now: _dt.datetime) -> str:
   <hr>
 
 {tiers_html}
+{render_trends(figs.get("trends"), render_ts, history)}
   <footer>
     UPDATE MECHANISM &nbsp;&middot;&nbsp; the digital-twin harvesters
     (<b>run_mbias.py</b>, <b>run_star_response.py</b>,
@@ -788,14 +884,31 @@ def main(argv: list[str] | None = None) -> int:
         "--out", type=Path, default=Path("status.html"),
         help="output HTML path (default: status.html)",
     )
+    ap.add_argument(
+        "--json", type=Path, default=None,
+        help="machine-readable status.json output path (default: <out-dir>/status.json). "
+             "Written on every build so the JSON never drifts stale behind the HTML.",
+    )
+    ap.add_argument(
+        "--history", type=Path, default=None,
+        help="history.json to inline into the Trends panel (build_history.py writes it). "
+             "Absent → the Trends panel renders with a 'figure pending' placeholder.",
+    )
     args = ap.parse_args(argv)
 
     if not args.results.is_dir():
         raise SystemExit(f"--results dir not found: {args.results}")
 
-    html_str = build_page(args.results, args.figures, _dt.datetime.now())
+    now = _dt.datetime.now()
+    html_str = build_page(args.results, args.figures, now, args.history)
     args.out.write_text(html_str)
     print(f"wrote {args.out} ({len(html_str) // 1024} KB) from {args.results}")
+
+    # Emit status.json from the same scalars, alongside the HTML — one build,
+    # both surfaces. (Previously the JSON came from a separate step and drifted.)
+    json_path = args.json or args.out.with_name("status.json")
+    json_path.write_text(json.dumps(status_scalars(args.results, now), indent=1, ensure_ascii=False))
+    print(f"wrote {json_path} from {args.results}")
     return 0
 
 
