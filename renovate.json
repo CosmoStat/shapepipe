@@ -1,16 +1,18 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": [
-    "Repo overrides on the Mend org/inherited config. Goal: keep the supply-chain minimum-release-age delay AND make dependency automerge reliable.",
-    "The org config sets rangeStrategy=update-lockfile via a packageRule, which outranks a top-level repo rangeStrategy (packageRules always beat top-level keys). So we set rangeStrategy=pin in a packageRule too — repo packageRules are merged LAST, so this wins. Pinning is the only way Renovate honors minimumReleaseAge with uv: floor ranges let uv resolve to a too-fresh version it can't pin (renovatebot/renovate#41624). shapepipe ships as a container, not a PyPI library, so pinning is appropriate. Scoped to PyPI datasource, so the git-sourced ngmix/cs_util are left untouched.",
-    "internalChecksFilter=strict: only act on versions past the age gate. minimumReleaseAge=3 days: supply-chain detection window; tunable."
+    "Low-noise dependency updates with mild supply-chain hygiene, layered on the Mend org config.",
+    "Pins: ShapePipe ships as a container, not a PyPI library, so per the Renovate dependency-pinning doc we pin app dependencies exactly. The pins are written directly in pyproject.toml (== versions), so nothing depends on rangeStrategy resolution against the org config; the packageRule (scoped to PyPI, leaving git-sourced deps like ngmix/cs_util alone) just keeps future deps pinned. Exact pins are also what lets minimumReleaseAge work with uv (renovatebot/renovate#41624).",
+    "Python base-image bumps (3.12 -> 3.14 rides as 'minor' in Renovate's python versioning) never automerge — a Python upgrade gets human eyes.",
+    "Noise: all non-major updates grouped into one weekly PR that automerges when CI (full suite in the container) is green; majors surface individually for review; lockFileMaintenance refreshes transitive deps.",
+    "minimumReleaseAge=7 days: supply-chain detection window, sized per the Renovate docs' automerge guidance and Astral's uv guide."
   ],
-  "internalChecksFilter": "strict",
-  "minimumReleaseAge": "3 days",
+  "extends": ["config:recommended", "group:allNonMajor", "schedule:weekly"],
+  "minimumReleaseAge": "7 days",
+  "lockFileMaintenance": { "enabled": true },
   "packageRules": [
-    {
-      "matchDatasources": ["pypi"],
-      "rangeStrategy": "pin"
-    }
+    { "matchDatasources": ["pypi"], "rangeStrategy": "pin" },
+    { "matchUpdateTypes": ["minor", "patch", "pin", "digest"], "automerge": true },
+    { "matchPackageNames": ["python"], "automerge": false }
   ]
 }
