@@ -11,11 +11,13 @@ authors = [
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.12"
-# Abstract runtime constraints. Exact versions live in `uv.lock` — pyproject
-# is the single source of truth for *what* shapepipe needs, the lockfile for
-# *which versions*. Minimums signal the major-version target; uv.lock pins
-# the actual installed versions. Bump minimums only when crossing a major
-# version line or when a feature actually requires a specific release.
+# Dependencies are PINNED to exact versions and kept current by Renovate (see
+# renovate.json). shapepipe ships as a container, not a published library, so
+# there are no downstream installers to keep flexible — pinning is what lets
+# Renovate honor a supply-chain release-age delay before adopting a new release
+# (it can't hold uv back to an aged version through a floor range;
+# renovatebot/renovate#41624). `uv.lock` is the reproducible manifest generated
+# by uv (never hand-edited).
 dependencies = [
     "astropy>=7.0",          # major 6 → 7
     "astroquery",
