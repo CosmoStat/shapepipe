@@ -11,9 +11,14 @@ jobs. Use --config per_bit=1 (implied by job=N) for per-bit jobs.
 
 Cluster execution (SLURM, snakemake >= 8 with snakemake-executor-plugin-slurm):
 run from a login-node tmux; each job becomes its own sbatch submission:
-    snakemake -s Snakefile --configfile config.yaml --executor slurm -j 80 \
-        --default-resources slurm_partition=<partition> cpus_per_task=2 \
-        mem_mb=8000 runtime=1440 --rerun-triggers=mtime -- pipeline_all
+    snakemake -s Snakefile --configfile config.yaml --executor slurm -j 128 \
+        --default-resources slurm_partition=<partition> cpus_per_task=12 \
+        mem_mb=8000 runtime=6h --rerun-triggers=mtime -- pipeline_all
+Always give runtime WITH a unit (6h, 2d): a bare number on the command line
+is parsed as SECONDS by snakemake's human-friendly resource parser.
+Keep cpus_per_task >= 12: it caps jobs per node; the per-user process limit
+(ulimit -u 1200, per node) crashes apptainer beyond ~4 jobs per 48-core node.
+Verify after submitting: squeue -o "%C %l" must show 12 and 6:00:00.
 
 When running locally, use a small fixed -j (e.g. 4), not -j
 $OMP_NUM_THREADS: each job spawns MPI processes, and ulimit -u on candide
