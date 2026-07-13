@@ -13,6 +13,11 @@
   "packageRules": [
     { "matchDatasources": ["pypi"], "rangeStrategy": "pin" },
     { "matchUpdateTypes": ["minor", "patch", "pin", "digest"], "automerge": true },
-    { "matchPackageNames": ["python"], "automerge": false }
+    { "matchPackageNames": ["python"], "automerge": false },
+    {
+      "matchPackageNames": ["numpy"],
+      "allowedVersions": "<2.5",
+      "description": "numba 0.65.1 caps numpy<2.5; a grouped pin bump to 2.5.0 makes uv lock unsatisfiable and fails the whole batch. Drop this rule when numba supports numpy 2.5."
+    }
   ]
 }
