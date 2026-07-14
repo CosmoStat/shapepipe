@@ -1630,4 +1630,18 @@ def do_ngmix_metacal(
     )
     resdict, obsdict = boot.go(gal_obs_list)
     psf_res = average_multiepoch_psf(obsdict)
+    del obsdict
+
+    # Each FitModel in resdict retains the full metacal observations
+    # (``.obs``, a plain attribute set by FitModel._set_obs) plus the pixel
+    # arrays derived from them (``._pixels_list``) — several MB per object.
+    # Results accumulate until the SAVE_BATCH flush, and compile_results
+    # reads only scalar dict keys, so release the arrays now to keep
+    # resident memory flat.
+    for _fm in resdict.values():
+        if hasattr(_fm, 'obs'):
+            _fm.obs = None
+        if hasattr(_fm, '_pixels_list'):
+            _fm._pixels_list = None
+
     return MetacalResult(resdict=resdict, reconv=psf_res, orig=psf_orig_res)
