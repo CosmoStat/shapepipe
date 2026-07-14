@@ -837,6 +837,7 @@
         <span class="n">id_obj_min</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">id_obj_max</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">centroid_source</span><span class="o">=</span><span class="s2">&quot;hsm&quot;</span><span class="p">,</span>
+        <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">&quot;fitgauss&quot;</span><span class="p">,</span>
     <span class="p">):</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">}:</span>
@@ -868,6 +869,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_min</span> <span class="o">=</span> <span class="n">id_obj_min</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span> <span class="o">=</span> <span class="n">id_obj_max</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_centroid_source</span> <span class="o">=</span> <span class="n">centroid_source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metacal_psf</span> <span class="o">=</span> <span class="n">metacal_psf</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span> <span class="o">=</span> <span class="n">w_log</span>
 
@@ -1263,6 +1265,7 @@
                     <span class="n">flux_guess</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_rng</span><span class="p">,</span>
                     <span class="n">centroid_source</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_centroid_source</span><span class="p">,</span>
+                    <span class="n">metacal_psf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_metacal_psf</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ee</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -1937,7 +1940,9 @@
 
 <div class="viewcode-block" id="do_ngmix_metacal">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">do_ngmix_metacal</span><span class="p">(</span><span class="n">stamp</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">flux_guess</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">&quot;hsm&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">do_ngmix_metacal</span><span class="p">(</span>
+    <span class="n">stamp</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">flux_guess</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">&quot;hsm&quot;</span><span class="p">,</span> <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">&quot;fitgauss&quot;</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Do Ngmix Metacal.</span>
 
 <span class="sd">    Performs metacalibration on a single multi-epoch object and returns the</span>
@@ -1959,6 +1964,17 @@
 <span class="sd">        adaptive-moment centroid); ``&quot;wcs&quot;`` uses the catalog sky position</span>
 <span class="sd">        projected through the WCS — see that function for the star-vs-galaxy</span>
 <span class="sd">        rationale.</span>
+<span class="sd">    metacal_psf : {&quot;fitgauss&quot;, &quot;gauss&quot;, &quot;dilate&quot;, &quot;azgauss&quot;}, optional</span>
+<span class="sd">        The metacal reconvolution-kernel scheme passed to ngmix as</span>
+<span class="sd">        ``metacal_pars[&#39;psf&#39;]``. The default ``&quot;fitgauss&quot;`` fits a Gaussian to</span>
+<span class="sd">        the PSF and rounds it (``MetacalFitGaussPSF``); ``&quot;gauss&quot;`` reconvolves</span>
+<span class="sd">        with a fixed round Gaussian sized from the PSF (``MetacalGaussPSF``);</span>
+<span class="sd">        ``&quot;dilate&quot;`` dilates the original PSF; ``&quot;azgauss&quot;`` (ngmix &gt;= 2.4.1) is</span>
+<span class="sd">        a noise-robust variant of ``&quot;gauss&quot;``. This kernel is a SEPARATE object</span>
+<span class="sd">        from the PSF-model fit (the ``psf_runner`` above) — it only sets the</span>
+<span class="sd">        round PSF that metacal reconvolves with after shearing, so it moves the</span>
+<span class="sd">        metacal *response* (and therefore the recovered shear) but never reaches</span>
+<span class="sd">        the deconvolution, which is by the PSF image.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -2007,7 +2023,7 @@
     <span class="n">metacal_pars</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;types&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;noshear&#39;</span><span class="p">,</span> <span class="s1">&#39;1p&#39;</span><span class="p">,</span> <span class="s1">&#39;1m&#39;</span><span class="p">,</span> <span class="s1">&#39;2p&#39;</span><span class="p">,</span> <span class="s1">&#39;2m&#39;</span><span class="p">],</span>
         <span class="s1">&#39;step&#39;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
-        <span class="s1">&#39;psf&#39;</span><span class="p">:</span> <span class="s1">&#39;fitgauss&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;psf&#39;</span><span class="p">:</span> <span class="n">metacal_psf</span><span class="p">,</span>
         <span class="s1">&#39;fixnoise&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s1">&#39;use_noise_image&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">}</span>
