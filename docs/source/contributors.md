@@ -41,12 +41,15 @@ Martin Kilbinger
 - [Axel Guinot](https://github.com/aguinot) : Primary module developer, validation, performance and debugging
 - [Martin Kilbinger](https://github.com/martinkilbinger) : Scientific lead, module developer and debugging
 
-## Principal Contributors
+## Contributors
 
 - [Lucie Baumont](https://github.com/lbaumo) : Testing
 - [Jérôme Bonnin](https://github.com/jerome-bonnin) : PSF module developer
+- [Cail Daley](https://www.cosmostat.org/people/cail-daley) : Container development
+- [Fabian Hervas Peters](https://www.cosmostat.org/people/former-members/fabian-hervas-peters) : Simulations, validation
 - Marc Gentile : File IO, initial architecture
-- Xavier Jimenez : External catalogue matching module developer
+- [Mike Hudson](https://uwaterloo.ca/physics-astronomy/profile/mjhudson) : Further contributors
+- Xavier Jimenez : External catalogue matching
 - [François Lanusse](https://github.com/eiffl) : Further contributors
 - [Tobias Liaudat](https://github.com/tobias-liaudat) : PSF module developer and validation
 - [Austin Peel](https://github.com/austinpeel) : Validation
