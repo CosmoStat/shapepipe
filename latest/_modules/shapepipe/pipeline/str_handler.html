@@ -826,6 +826,19 @@
 
         <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">while</span> <span class="n">diff</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Mode computation failed: zoom window emptied out&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; after </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2"> iterations&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ptp</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">eps</span><span class="p">:</span>
+                <span class="c1"># The zoom window has degenerated: the remaining values span</span>
+                <span class="c1"># less than the requested accuracy (e.g. near-identical</span>
+                <span class="c1"># float32 values, for which np.histogram cannot construct</span>
+                <span class="c1"># distinct bin edges). The surviving sample localises the</span>
+                <span class="c1"># mode to within eps, so return its median.</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
             <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">hist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">break</span>
@@ -842,7 +855,11 @@
             <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="n">iter_max</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Mode computation failed&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Mode computation did not converge after </span><span class="si">{</span><span class="n">iter_max</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;iterations (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects left in zoom window, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;value range [</span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s2">])&quot;</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">mode</span> <span class="o">=</span> <span class="p">(</span><span class="n">b_min</span> <span class="o">+</span> <span class="n">b_max</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
             <span class="k">return</span> <span class="n">mode</span></div>
