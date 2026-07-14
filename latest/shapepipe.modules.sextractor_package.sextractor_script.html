@@ -535,6 +535,7 @@
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.get_header_value"><code class="docutils literal notranslate"><span class="pre">get_header_value()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.ccd_candidate_mask"><code class="docutils literal notranslate"><span class="pre">ccd_candidate_mask()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.make_post_process"><code class="docutils literal notranslate"><span class="pre">make_post_process()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller"><code class="docutils literal notranslate"><span class="pre">SExtractorCaller</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.get_output_name"><code class="docutils literal notranslate"><span class="pre">SExtractorCaller.get_output_name()</span></code></a></li>
@@ -588,8 +589,38 @@
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.sextractor_script.ccd_candidate_mask">
+<span class="sig-name descname"><span class="pre">ccd_candidate_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ccd_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">margin_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/sextractor_script.html#ccd_candidate_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.sextractor_script.ccd_candidate_mask" title="Link to this definition">#</a></dt>
+<dd><p>CCD Candidate Mask.</p>
+<p>Flag catalogue positions that lie near a CCD’s sky footprint.</p>
+<p>The footprint is obtained by forward-projecting (pixel to world) the
+CCD centre and corners, which is always well defined.  The returned
+mask selects positions within the corner radius plus a fractional
+margin; only those need the (iterative, and potentially divergent)
+inverse projection in <a class="reference internal" href="#shapepipe.modules.sextractor_package.sextractor_script.make_post_process" title="shapepipe.modules.sextractor_package.sextractor_script.make_post_process"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_post_process()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>w</strong> (<a class="reference external" href="https://docs.astropy.org/en/latest/api/astropy.wcs.WCS.html#astropy.wcs.WCS" title="(in Astropy v8.1)"><em>astropy.wcs.WCS</em></a>) – Single-CCD WCS</p></li>
+<li><p><strong>ra</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Right ascension values in degrees</p></li>
+<li><p><strong>dec</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Declination values in degrees</p></li>
+<li><p><strong>ccd_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – CCD pixel bounds <code class="docutils literal notranslate"><span class="pre">[xmin,</span> <span class="pre">xmax,</span> <span class="pre">ymin,</span> <span class="pre">ymax]</span></code></p></li>
+<li><p><strong>margin_frac</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Fractional margin added to the footprint radius; default is
+<code class="docutils literal notranslate"><span class="pre">0.5</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Boolean mask over the input positions</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.sextractor_script.make_post_process">
-<span class="sig-name descname"><span class="pre">make_post_process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ccd_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/sextractor_script.html#make_post_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.sextractor_script.make_post_process" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">make_post_process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ccd_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/sextractor_script.html#make_post_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.sextractor_script.make_post_process" title="Link to this definition">#</a></dt>
 <dd><p>Make Post Processing.</p>
 <p>This function will add one HDU for each epoch to the SExtractor catalogue.
 Note that this only works for tiles.</p>
@@ -606,6 +637,7 @@ Note that this only works for tiles.</p>
 <li><p><strong>f_wcs_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the log file containing WCS for all single exp CCDs</p></li>
 <li><p><strong>pos_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – World coordinates to use to match the objects.</p></li>
 <li><p><strong>ccd_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – Size of a CCD <code class="docutils literal notranslate"><span class="pre">[nx,</span> <span class="pre">ny]</span></code></p></li>
+<li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a><em>, </em><em>optional</em>) – Pipeline logger</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
@@ -817,6 +849,7 @@ the standard error.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.get_header_value"><code class="docutils literal notranslate"><span class="pre">get_header_value()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.ccd_candidate_mask"><code class="docutils literal notranslate"><span class="pre">ccd_candidate_mask()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.make_post_process"><code class="docutils literal notranslate"><span class="pre">make_post_process()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller"><code class="docutils literal notranslate"><span class="pre">SExtractorCaller</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.get_output_name"><code class="docutils literal notranslate"><span class="pre">SExtractorCaller.get_output_name()</span></code></a></li>

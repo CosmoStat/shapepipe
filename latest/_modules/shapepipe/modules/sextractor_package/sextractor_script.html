@@ -527,6 +527,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">fits</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.wcs.wcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidCoordinateError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlitedict</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteDict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
@@ -567,9 +568,68 @@
 
 
 
+<div class="viewcode-block" id="ccd_candidate_mask">
+<a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.ccd_candidate_mask">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ccd_candidate_mask</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">ccd_size</span><span class="p">,</span> <span class="n">margin_frac</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;CCD Candidate Mask.</span>
+
+<span class="sd">    Flag catalogue positions that lie near a CCD&#39;s sky footprint.</span>
+
+<span class="sd">    The footprint is obtained by forward-projecting (pixel to world) the</span>
+<span class="sd">    CCD centre and corners, which is always well defined.  The returned</span>
+<span class="sd">    mask selects positions within the corner radius plus a fractional</span>
+<span class="sd">    margin; only those need the (iterative, and potentially divergent)</span>
+<span class="sd">    inverse projection in :func:`make_post_process`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    w : astropy.wcs.WCS</span>
+<span class="sd">        Single-CCD WCS</span>
+<span class="sd">    ra : numpy.ndarray</span>
+<span class="sd">        Right ascension values in degrees</span>
+<span class="sd">    dec : numpy.ndarray</span>
+<span class="sd">        Declination values in degrees</span>
+<span class="sd">    ccd_size : list</span>
+<span class="sd">        CCD pixel bounds ``[xmin, xmax, ymin, ymax]``</span>
+<span class="sd">    margin_frac : float, optional</span>
+<span class="sd">        Fractional margin added to the footprint radius; default is</span>
+<span class="sd">        ``0.5``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Boolean mask over the input positions</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">corners_x</span> <span class="o">=</span> <span class="p">[</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="p">(</span><span class="n">xmin</span> <span class="o">+</span> <span class="n">xmax</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">]</span>
+    <span class="n">corners_y</span> <span class="o">=</span> <span class="p">[</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="p">(</span><span class="n">ymin</span> <span class="o">+</span> <span class="n">ymax</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">]</span>
+    <span class="n">c_ra</span><span class="p">,</span> <span class="n">c_dec</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">all_pix2world</span><span class="p">(</span><span class="n">corners_x</span><span class="p">,</span> <span class="n">corners_y</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">ra0</span><span class="p">,</span> <span class="n">dec0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">c_ra</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">c_dec</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">ra_r</span><span class="p">,</span> <span class="n">dec_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sep</span><span class="p">(</span><span class="n">ra_a</span><span class="p">,</span> <span class="n">dec_a</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dec0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dec_a</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">dec0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">dec_a</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ra_a</span> <span class="o">-</span> <span class="n">ra0</span><span class="p">),</span>
+            <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span>
+            <span class="mf">1.0</span><span class="p">,</span>
+        <span class="p">))</span>
+
+    <span class="n">radius</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+        <span class="n">_sep</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">c_ra</span><span class="p">[</span><span class="n">idx</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">c_dec</span><span class="p">[</span><span class="n">idx</span><span class="p">]))</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_sep</span><span class="p">(</span><span class="n">ra_r</span><span class="p">,</span> <span class="n">dec_r</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">radius</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">margin_frac</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="make_post_process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.make_post_process">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">make_post_process</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">f_wcs_path</span><span class="p">,</span> <span class="n">pos_params</span><span class="p">,</span> <span class="n">ccd_size</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_post_process</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">f_wcs_path</span><span class="p">,</span> <span class="n">pos_params</span><span class="p">,</span> <span class="n">ccd_size</span><span class="p">,</span> <span class="n">w_log</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Make Post Processing.</span>
 
 <span class="sd">    This function will add one HDU for each epoch to the SExtractor catalogue.</span>
@@ -591,6 +651,8 @@
 <span class="sd">        World coordinates to use to match the objects.</span>
 <span class="sd">    ccd_size: list</span>
 <span class="sd">        Size of a CCD ``[nx, ny]``</span>
+<span class="sd">    w_log: logging.Logger, optional</span>
+<span class="sd">        Pipeline logger</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
@@ -627,6 +689,9 @@
 
     <span class="n">obj_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;NUMBER&quot;</span><span class="p">])</span>
 
+    <span class="n">ra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+    <span class="n">dec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+
     <span class="n">n_epoch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">exp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">exp_list</span><span class="p">):</span>
         <span class="n">pos_tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
@@ -638,17 +703,32 @@
                     <span class="o">+</span> <span class="s2">&quot; file is complete.&quot;</span>
                 <span class="p">)</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">f_wcs</span><span class="p">[</span><span class="n">exp</span><span class="p">][</span><span class="n">idx_j</span><span class="p">][</span><span class="s2">&quot;WCS&quot;</span><span class="p">]</span>
-            <span class="n">pix_tmp</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">all_world2pix</span><span class="p">(</span>
-                <span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
-                <span class="mi">0</span><span class="p">,</span>
-                <span class="n">quiet</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="c1"># Only inverse-project objects near this CCD&#39;s footprint.</span>
+            <span class="c1"># Positions far outside the distortion domain make the</span>
+            <span class="c1"># iterative inversion in (all_)world2pix diverge with</span>
+            <span class="c1"># InvalidCoordinateError, killing the whole tile; they can</span>
+            <span class="c1"># never pass the CCD bounds test anyway.</span>
+            <span class="n">near</span> <span class="o">=</span> <span class="n">ccd_candidate_mask</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">ccd_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">near</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pix_near</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">all_world2pix</span><span class="p">(</span><span class="n">ra</span><span class="p">[</span><span class="n">near</span><span class="p">],</span> <span class="n">dec</span><span class="p">[</span><span class="n">near</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">quiet</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">InvalidCoordinateError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">w_log</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;WCS inversion diverged for </span><span class="si">{</span><span class="n">near</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2"> objects&quot;</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; near exposure </span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s2"> HDU </span><span class="si">{</span><span class="n">idx_j</span><span class="si">}</span><span class="s2">;&quot;</span>
+                        <span class="o">+</span> <span class="s2">&quot; no epoch recorded for them&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">ind_near</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">pix_near</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">pix_near</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">pix_near</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">pix_near</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
             <span class="p">)</span>
-            <span class="n">ind</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="p">(</span><span class="n">pix_tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
-                <span class="o">&amp;</span> <span class="p">(</span><span class="n">pix_tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-                <span class="o">&amp;</span> <span class="p">(</span><span class="n">pix_tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
-                <span class="o">&amp;</span> <span class="p">(</span><span class="n">pix_tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
-            <span class="p">)</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="n">ind</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">near</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="n">ind_near</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">pos_tmp</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx_j</span>
             <span class="n">n_epoch</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">exp_name</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">exp_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">))])</span>
