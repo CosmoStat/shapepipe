@@ -294,6 +294,7 @@ class Ngmix(object):
         id_obj_min=-1,
         id_obj_max=-1,
         centroid_source="hsm",
+        metacal_psf="fitgauss",
     ):
 
         if len(input_file_list) not in {6, 7}:
@@ -325,6 +326,7 @@ class Ngmix(object):
         self._id_obj_min = id_obj_min
         self._id_obj_max = id_obj_max
         self._centroid_source = centroid_source
+        self._metacal_psf = metacal_psf
 
         self._w_log = w_log
 
@@ -700,6 +702,7 @@ class Ngmix(object):
                     flux_guess,
                     self._rng,
                     centroid_source=self._centroid_source,
+                    metacal_psf=self._metacal_psf,
                 )
             except Exception as ee:
                 self._w_log.info(
@@ -1337,7 +1340,9 @@ def make_runners(prior, flux_guess, rng):
     )
 
 
-def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
+def do_ngmix_metacal(
+    stamp, prior, flux_guess, rng, centroid_source="hsm", metacal_psf="fitgauss"
+):
     """Do Ngmix Metacal.
 
     Performs metacalibration on a single multi-epoch object and returns the
@@ -1359,6 +1364,17 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
         adaptive-moment centroid); ``"wcs"`` uses the catalog sky position
         projected through the WCS — see that function for the star-vs-galaxy
         rationale.
+    metacal_psf : {"fitgauss", "gauss", "dilate", "azgauss"}, optional
+        The metacal reconvolution-kernel scheme passed to ngmix as
+        ``metacal_pars['psf']``. The default ``"fitgauss"`` fits a Gaussian to
+        the PSF and rounds it (``MetacalFitGaussPSF``); ``"gauss"`` reconvolves
+        with a fixed round Gaussian sized from the PSF (``MetacalGaussPSF``);
+        ``"dilate"`` dilates the original PSF; ``"azgauss"`` (ngmix >= 2.4.1) is
+        a noise-robust variant of ``"gauss"``. This kernel is a SEPARATE object
+        from the PSF-model fit (the ``psf_runner`` above) — it only sets the
+        round PSF that metacal reconvolves with after shearing, so it moves the
+        metacal *response* (and therefore the recovered shear) but never reaches
+        the deconvolution, which is by the PSF image.
 
     Returns
     -------
@@ -1407,7 +1423,7 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
     metacal_pars = {
         'types': ['noshear', '1p', '1m', '2p', '2m'],
         'step': 0.01,
-        'psf': 'fitgauss',
+        'psf': metacal_psf,
         'fixnoise': True,
         'use_noise_image': True,
     }

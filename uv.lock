@@ -2094,8 +2094,8 @@ wheels = [
 
 [[package]]
 name = "ngmix"
-version = "2.4.0"
-source = { git = "https://github.com/esheldon/ngmix?tag=v2.4.0#d08b471f4c4d5887df9f9f2551efaf8f2e226150" }
+version = "2.4.1"
+source = { git = "https://github.com/esheldon/ngmix?tag=v2.4.1#0b5c835ec020ed9253afea64886de53f4be3577a" }
 
 [[package]]
 name = "nh3"
@@ -3428,7 +3428,7 @@ requires-dist = [
     { name = "modopt", specifier = ">=1.6" },
     { name = "mpi4py", specifier = ">=4.1.2" },
     { name = "myst-parser", marker = "extra == 'doc'" },
-    { name = "ngmix", git = "https://github.com/esheldon/ngmix?tag=v2.4.0" },
+    { name = "ngmix", git = "https://github.com/esheldon/ngmix?tag=v2.4.1" },
     { name = "numba", specifier = ">=0.59" },
     { name = "numpy", specifier = ">=2.4.6" },
     { name = "numpydoc", marker = "extra == 'doc'" },
