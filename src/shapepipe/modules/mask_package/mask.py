@@ -888,26 +888,25 @@ class Mask(object):
         star_zip = zip(*(stars[k] for k in keys_to_use))
 
         for ra, dec, Fmag, Jmag, Vmag, Nmag, clas in star_zip:
-            mag = 0.0
-            idx = 0.0
-
-            # Compute mean magnitude
-            if Fmag is not None:
-                mag += Fmag
-                idx += 1.0
-            if Jmag is not None:
-                mag += Jmag
-                idx += 1.0
-            if Vmag is not None:
-                mag += Vmag
-                idx += 1.0
-            if Nmag is not None:
-                mag += Nmag
-                idx += 1.0
-            if idx == 0.0:
-                mag = None
+            # Compute mean magnitude over the available (finite) bands.
+            # Missing GSC bands are NaN and must be excluded: a single NaN
+            # would make the mean NaN and silently fail the
+            # ``mag < mag_limit`` test below, leaving bright stars with
+            # incomplete photometry (the ones that most need masking)
+            # unmasked.
+            mags = [
+                band
+                for band in (Fmag, Jmag, Vmag, Nmag)
+                if band is not None and np.isfinite(band)
+            ]
+            if len(mags) > 0:
+                mag = sum(mags) / len(mags)
             else:
-                mag /= idx
+                mag = None
+                self._w_log.info(
+                    f"No finite {types} magnitude for star at ra={ra} "
+                    + f"dec={dec}; object not masked"
+                )
 
             if (
                 ra is not None
