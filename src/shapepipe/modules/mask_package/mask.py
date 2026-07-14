@@ -595,8 +595,8 @@ class Mask(object):
         unit_size_X = file_io.get_unit_from_fits_header(header, "size_X")
         unit_size_Y = file_io.get_unit_from_fits_header(header, "size_Y")
 
-        # Loop through all deep-sky objects and check whether any corner is
-        # closer than the object's radius
+        # Loop through all deep-sky objects and check whether the object's
+        # disc overlaps the image footprint
         indices = []
         size_max_deg = []
         for idx, m_obj in enumerate(m_cat):
@@ -610,9 +610,14 @@ class Mask(object):
             r_deg = r.to(units.degree)
             size_max_deg.append(r_deg)
 
-            # Add index to list if distance between DSO and any image corner
-            # is closer than DSO size
-            if np.any(self._corners_sc.separation(m_sc[idx]) < r_deg):
+            # Add index to list if the DSO disc overlaps the image:
+            # distance between DSO centre and image centre smaller than
+            # DSO radius plus image half-diagonal. (Testing only the image
+            # corners against the DSO radius, as done previously, misses
+            # objects that are smaller than the image and lie away from
+            # the corners.)
+            dist = self._fieldcenter["wcs"].separation(m_sc[idx])
+            if dist < r_deg + self._img_radius * units.arcmin:
                 indices.append(idx)
 
         self._w_log.info(
