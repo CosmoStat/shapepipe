@@ -1,5 +1,6 @@
 """UNIT TESTS FOR MODULE PACKAGE: NGMIX."""
 
+from astropy.io import fits
 from hypothesis import given
 from hypothesis import strategies as st
 import numpy as np
@@ -386,6 +387,46 @@ def test_compile_results_nan_fills_failed_fit_types():
     npt.assert_allclose(out["noshear"]["flux"], [100.0])
     assert out["noshear"]["flags"] == [0]
     assert out["noshear"]["mcal_flags"] == [0x8]
+
+
+def test_save_results_batches_survive_a_later_failed_fit(tmp_path):
+    """A batch-1-all-success / batch-2-has-a-failure sequence must not crash.
+
+    With ``SAVE_BATCH`` enabled, ``save_results`` writes batch 1 fresh via
+    ``save_as_fits`` (which locks column dtypes from that data) and appends
+    every later batch into a structured array typed to those locked dtypes
+    (shapepipe#795). ``nfev_fit`` was the only int-like column with a NaN
+    fallback: if batch 1 has zero failed fits, ``nfev_fit`` locks to int64,
+    and the first later batch containing a failed fit fed a NaN into that
+    int64 column, raising ``ValueError: cannot convert float NaN to integer``
+    at append time. The fix uses the -1 sentinel (ngmix's own
+    failed/absent-nfev convention) instead of NaN, so the column stays
+    int64 across every batch.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import Ngmix
+
+    inst = object.__new__(Ngmix)
+    inst._zero_point = 30.0
+    inst._output_dir = str(tmp_path)
+    inst._file_number_string = "-000-000"
+
+    # Batch 1: every fit type succeeds -> nfev_fit locks to int64 on write.
+    batch1 = [_fake_metacal_result(0.18, 0.02, 0.09, 0.001)]
+    inst.save_results(inst.compile_results(batch1))
+
+    # Batch 2: one fit type fails (no "nfev" key -> hits the fallback path).
+    batch2_res = _fake_metacal_result(0.18, 0.02, 0.09, 0.001)
+    batch2_res["1p"] = {"flags": 0x8}  # failed fit: no nfev at all
+    batch2_res["mcal_types_fail"] = 1
+    batch2_res["mcal_flags"] = 0x8
+
+    # Must not raise (pre-fix: ValueError: cannot convert float NaN to integer).
+    inst.save_results(inst.compile_results([batch2_res]))
+
+    with fits.open(inst.get_output_path(str(tmp_path))) as hdul:
+        nfev = hdul["1P"].data["nfev_fit"]
+        assert nfev.dtype.kind == "i"
+        npt.assert_array_equal(nfev, [1, -1])
 
 
 def test_get_mcal_flags_ors_per_type_fit_flags():
