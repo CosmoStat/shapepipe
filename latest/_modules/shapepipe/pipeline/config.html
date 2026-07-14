@@ -524,7 +524,45 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigParser</span>
+
+
+<div class="viewcode-block" id="_expandvars_strict">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.config.html#shapepipe.pipeline.config._expandvars_strict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">_expandvars_strict</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand Environment Variables Strictly.</span>
+
+<span class="sd">    Expand environment variables in ``value``, raising an error if any</span>
+<span class="sd">    referenced variable is unset instead of silently leaving the literal</span>
+<span class="sd">    ``$VAR`` string in place.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : str</span>
+<span class="sd">        Configuration value possibly containing ``$VAR`` or ``${VAR}``</span>
+<span class="sd">        references</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        Value with all environment variables expanded</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If a referenced environment variable is not set</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">expanded</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">unset</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\$\{?(\w+)\}?&quot;</span><span class="p">,</span> <span class="n">expanded</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unset</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Environment variable(s) </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">unset</span><span class="p">)))</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;referenced in config value &#39;</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39; not set.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">expanded</span></div>
+
 
 
 <div class="viewcode-block" id="CustomParser">
@@ -556,7 +594,7 @@
 <span class="sd">            Expanded enviroment variables</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">_expandvars_strict</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="CustomParser.getlist">
