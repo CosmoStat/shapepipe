@@ -1439,26 +1439,25 @@
         <span class="n">star_zip</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">stars</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys_to_use</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">Fmag</span><span class="p">,</span> <span class="n">Jmag</span><span class="p">,</span> <span class="n">Vmag</span><span class="p">,</span> <span class="n">Nmag</span><span class="p">,</span> <span class="n">clas</span> <span class="ow">in</span> <span class="n">star_zip</span><span class="p">:</span>
-            <span class="n">mag</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="n">idx</span> <span class="o">=</span> <span class="mf">0.0</span>
-
-            <span class="c1"># Compute mean magnitude</span>
-            <span class="k">if</span> <span class="n">Fmag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">mag</span> <span class="o">+=</span> <span class="n">Fmag</span>
-                <span class="n">idx</span> <span class="o">+=</span> <span class="mf">1.0</span>
-            <span class="k">if</span> <span class="n">Jmag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">mag</span> <span class="o">+=</span> <span class="n">Jmag</span>
-                <span class="n">idx</span> <span class="o">+=</span> <span class="mf">1.0</span>
-            <span class="k">if</span> <span class="n">Vmag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">mag</span> <span class="o">+=</span> <span class="n">Vmag</span>
-                <span class="n">idx</span> <span class="o">+=</span> <span class="mf">1.0</span>
-            <span class="k">if</span> <span class="n">Nmag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">mag</span> <span class="o">+=</span> <span class="n">Nmag</span>
-                <span class="n">idx</span> <span class="o">+=</span> <span class="mf">1.0</span>
-            <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
-                <span class="n">mag</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="c1"># Compute mean magnitude over the available (finite) bands.</span>
+            <span class="c1"># Missing GSC bands are NaN and must be excluded: a single NaN</span>
+            <span class="c1"># would make the mean NaN and silently fail the</span>
+            <span class="c1"># ``mag &lt; mag_limit`` test below, leaving bright stars with</span>
+            <span class="c1"># incomplete photometry (the ones that most need masking)</span>
+            <span class="c1"># unmasked.</span>
+            <span class="n">mags</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">band</span>
+                <span class="k">for</span> <span class="n">band</span> <span class="ow">in</span> <span class="p">(</span><span class="n">Fmag</span><span class="p">,</span> <span class="n">Jmag</span><span class="p">,</span> <span class="n">Vmag</span><span class="p">,</span> <span class="n">Nmag</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">band</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">band</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mags</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">mag</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">mags</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">mags</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">mag</span> <span class="o">/=</span> <span class="n">idx</span>
+                <span class="n">mag</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;No finite </span><span class="si">{</span><span class="n">types</span><span class="si">}</span><span class="s2"> magnitude for star at ra=</span><span class="si">{</span><span class="n">ra</span><span class="si">}</span><span class="s2"> &quot;</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;dec=</span><span class="si">{</span><span class="n">dec</span><span class="si">}</span><span class="s2">; object not masked&quot;</span>
+                <span class="p">)</span>
 
             <span class="k">if</span> <span class="p">(</span>
                 <span class="n">ra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
