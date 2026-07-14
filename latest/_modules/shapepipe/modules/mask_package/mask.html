@@ -1131,8 +1131,8 @@
         <span class="n">unit_size_X</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">get_unit_from_fits_header</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="s2">&quot;size_X&quot;</span><span class="p">)</span>
         <span class="n">unit_size_Y</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">get_unit_from_fits_header</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="s2">&quot;size_Y&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Loop through all deep-sky objects and check whether any corner is</span>
-        <span class="c1"># closer than the object&#39;s radius</span>
+        <span class="c1"># Loop through all deep-sky objects and check whether the object&#39;s</span>
+        <span class="c1"># disc overlaps the image footprint</span>
         <span class="n">indices</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">size_max_deg</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">m_obj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">m_cat</span><span class="p">):</span>
@@ -1146,9 +1146,14 @@
             <span class="n">r_deg</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
             <span class="n">size_max_deg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r_deg</span><span class="p">)</span>
 
-            <span class="c1"># Add index to list if distance between DSO and any image corner</span>
-            <span class="c1"># is closer than DSO size</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_corners_sc</span><span class="o">.</span><span class="n">separation</span><span class="p">(</span><span class="n">m_sc</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">r_deg</span><span class="p">):</span>
+            <span class="c1"># Add index to list if the DSO disc overlaps the image:</span>
+            <span class="c1"># distance between DSO centre and image centre smaller than</span>
+            <span class="c1"># DSO radius plus image half-diagonal. (Testing only the image</span>
+            <span class="c1"># corners against the DSO radius, as done previously, misses</span>
+            <span class="c1"># objects that are smaller than the image and lie away from</span>
+            <span class="c1"># the corners.)</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldcenter</span><span class="p">[</span><span class="s2">&quot;wcs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">separation</span><span class="p">(</span><span class="n">m_sc</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;</span> <span class="n">r_deg</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_radius</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">arcmin</span><span class="p">:</span>
                 <span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
