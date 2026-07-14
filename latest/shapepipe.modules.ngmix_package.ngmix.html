@@ -550,6 +550,7 @@
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_mcal_flags"><code class="docutils literal notranslate"><span class="pre">get_mcal_flags()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">get_prior()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="docutils literal notranslate"><span class="pre">position_seed()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat"><code class="docutils literal notranslate"><span class="pre">Tile_cat</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data"><code class="docutils literal notranslate"><span class="pre">Tile_cat.get_data()</span></code></a></li>
 </ul>
@@ -731,6 +732,57 @@ type’s galaxy fit failed.</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.position_seed">
+<span class="sig-name descname"><span class="pre">position_seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ra</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ccd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#position_seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="Link to this definition">#</a></dt>
+<dd><p>Deterministic RNG seed from an object’s sky position (ngmix#796).</p>
+<p>For image-simulation m-bias with the Pujol estimator, the same scene is
+simulated under different applied shears (“image branches”) and the shear
+response is read from the branch difference of the SAME objects. Metacal’s
+<code class="docutils literal notranslate"><span class="pre">fixnoise</span></code> adds a counter-noise realisation drawn from an RNG; if that RNG
+is seeded per tile, an object gets <em>different</em> added noise in different
+branches (detection order differs), and the noise fails to cancel in the
+difference, inflating <code class="docutils literal notranslate"><span class="pre">sigma_m</span></code>. Seeding the per-object RNG from sky
+position instead makes the same object draw the same added noise (and the
+same fit guesses) in every branch, so both cancel and the m-bias error
+shrinks. Off in production; a knob for the sim path only.</p>
+<p>Box math (kept exactly as Fabian’s issue #796):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">box_x</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">ra</span>  <span class="o">*</span> <span class="mi">3600</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ccd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">box_y</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">dec</span> <span class="o">*</span> <span class="mi">3600</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ccd</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The 3-arcsec boxes make the seed robust to detection-order changes and to
+small centroid jitter within a box: the same physical object lands in the
+same box across branches and so gets the same seed. The <code class="docutils literal notranslate"><span class="pre">+ccd</span></code> offsets
+disambiguate exposure overlap.</p>
+<p><strong>Deviation from #796.</strong> Fabian combines the boxes as <code class="docutils literal notranslate"><span class="pre">box_x</span> <span class="pre">+</span> <span class="pre">box_y</span></code>,
+which collides along anti-diagonals — e.g. boxes <code class="docutils literal notranslate"><span class="pre">(10,</span> <span class="pre">20)</span></code> and
+<code class="docutils literal notranslate"><span class="pre">(11,</span> <span class="pre">19)</span></code> both give seed 30, so two distinct objects share a noise
+stream. We instead combine them with a Cantor pairing (a bijection on
+non-negative integers), after a zig-zag fold that maps signed box indices
+(dec can be negative) onto non-negative ones. The result is reduced mod
+<code class="docutils literal notranslate"><span class="pre">2**32</span></code> to land in the valid <code class="docutils literal notranslate"><span class="pre">numpy.random.RandomState</span></code> seed range
+<code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">2**32)</span></code>. The box math is untouched; only the collision-prone sum is
+replaced.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ra</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Object sky position in degrees (first-epoch coordinates; all epochs of
+one object share them).</p></li>
+<li><p><strong>dec</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Object sky position in degrees (first-epoch coordinates; all epochs of
+one object share them).</p></li>
+<li><p><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – CCD number of the first epoch.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Seed in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">2**32)</span></code> for <code class="docutils literal notranslate"><span class="pre">numpy.random.RandomState</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Tile_cat">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Tile_cat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Tile_cat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat" title="Link to this definition">#</a></dt>
@@ -794,7 +846,7 @@ type’s galaxy fit failed.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Ngmix">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Ngmix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hsm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metacal_psf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fitgauss'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Ngmix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hsm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed_from_position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metacal_psf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fitgauss'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Ngmix.</p>
 <p>Class to handle NGMIX shapepe measurement.</p>
@@ -819,6 +871,12 @@ default <code class="docutils literal notranslate"><span class="pre">&quot;hsm&q
 (robust for galaxies); <code class="docutils literal notranslate"><span class="pre">&quot;wcs&quot;</span></code> uses the catalog sky position
 projected through the WCS (better for stars, whose HSM moments are
 noisy). See <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a>.</p></li>
+<li><p><strong>seed_from_position</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, replace the tile-level RNG with a per-object RNG seeded
+from the object’s sky position (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="xref py py-func docutils literal notranslate"><span class="pre">position_seed()</span></code></a>) inside the
+object loop, so metacal’s <code class="docutils literal notranslate"><span class="pre">fixnoise</span></code> counter-noise and the fit
+guesses cancel across Pujol image-simulation branches (ngmix#796). The
+default <code class="docutils literal notranslate"><span class="pre">False</span></code> leaves the production path byte-identical. See
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="xref py py-func docutils literal notranslate"><span class="pre">position_seed()</span></code></a> for the physics and the seed construction.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
@@ -1359,6 +1417,7 @@ them. Unpacks positionally as <code class="docutils literal notranslate"><span c
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_mcal_flags"><code class="docutils literal notranslate"><span class="pre">get_mcal_flags()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">get_prior()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="docutils literal notranslate"><span class="pre">position_seed()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat"><code class="docutils literal notranslate"><span class="pre">Tile_cat</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data"><code class="docutils literal notranslate"><span class="pre">Tile_cat.get_data()</span></code></a></li>
 </ul>

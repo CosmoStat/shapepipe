@@ -645,6 +645,67 @@
 
 
 
+<div class="viewcode-block" id="position_seed">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.position_seed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">position_seed</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">ccd</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Deterministic RNG seed from an object&#39;s sky position (ngmix#796).</span>
+
+<span class="sd">    For image-simulation m-bias with the Pujol estimator, the same scene is</span>
+<span class="sd">    simulated under different applied shears (&quot;image branches&quot;) and the shear</span>
+<span class="sd">    response is read from the branch difference of the SAME objects. Metacal&#39;s</span>
+<span class="sd">    ``fixnoise`` adds a counter-noise realisation drawn from an RNG; if that RNG</span>
+<span class="sd">    is seeded per tile, an object gets *different* added noise in different</span>
+<span class="sd">    branches (detection order differs), and the noise fails to cancel in the</span>
+<span class="sd">    difference, inflating ``sigma_m``. Seeding the per-object RNG from sky</span>
+<span class="sd">    position instead makes the same object draw the same added noise (and the</span>
+<span class="sd">    same fit guesses) in every branch, so both cancel and the m-bias error</span>
+<span class="sd">    shrinks. Off in production; a knob for the sim path only.</span>
+
+<span class="sd">    Box math (kept exactly as Fabian&#39;s issue #796)::</span>
+
+<span class="sd">        box_x = floor(ra  * 3600 / 3) + (ccd + 1)</span>
+<span class="sd">        box_y = floor(dec * 3600 / 3) + (ccd + 2)</span>
+
+<span class="sd">    The 3-arcsec boxes make the seed robust to detection-order changes and to</span>
+<span class="sd">    small centroid jitter within a box: the same physical object lands in the</span>
+<span class="sd">    same box across branches and so gets the same seed. The ``+ccd`` offsets</span>
+<span class="sd">    disambiguate exposure overlap.</span>
+
+<span class="sd">    **Deviation from #796.** Fabian combines the boxes as ``box_x + box_y``,</span>
+<span class="sd">    which collides along anti-diagonals — e.g. boxes ``(10, 20)`` and</span>
+<span class="sd">    ``(11, 19)`` both give seed 30, so two distinct objects share a noise</span>
+<span class="sd">    stream. We instead combine them with a Cantor pairing (a bijection on</span>
+<span class="sd">    non-negative integers), after a zig-zag fold that maps signed box indices</span>
+<span class="sd">    (dec can be negative) onto non-negative ones. The result is reduced mod</span>
+<span class="sd">    ``2**32`` to land in the valid ``numpy.random.RandomState`` seed range</span>
+<span class="sd">    ``[0, 2**32)``. The box math is untouched; only the collision-prone sum is</span>
+<span class="sd">    replaced.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ra, dec : float</span>
+<span class="sd">        Object sky position in degrees (first-epoch coordinates; all epochs of</span>
+<span class="sd">        one object share them).</span>
+<span class="sd">    ccd : int</span>
+<span class="sd">        CCD number of the first epoch.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        Seed in ``[0, 2**32)`` for ``numpy.random.RandomState``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">box_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">ra</span> <span class="o">*</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ccd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">box_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">dec</span> <span class="o">*</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ccd</span> <span class="o">+</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="c1"># Zig-zag fold signed -&gt; non-negative (0,-1,1,-2,... -&gt; 0,1,2,3,...) so the</span>
+    <span class="c1"># Cantor pairing, which is a bijection on the non-negative integers, stays</span>
+    <span class="c1"># injective for southern (dec&lt;0) boxes.</span>
+    <span class="n">zx</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">box_x</span> <span class="k">if</span> <span class="n">box_x</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">box_x</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">zy</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">box_y</span> <span class="k">if</span> <span class="n">box_y</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">box_y</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">cantor</span> <span class="o">=</span> <span class="p">(</span><span class="n">zx</span> <span class="o">+</span> <span class="n">zy</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">zx</span> <span class="o">+</span> <span class="n">zy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">zy</span>
+    <span class="k">return</span> <span class="n">cantor</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">32</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="Tile_cat">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Tile_cat">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Tile_cat</span><span class="p">():</span>
@@ -720,6 +781,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ra</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dec</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># CCD number of the first epoch, used only to build the per-object</span>
+        <span class="c1"># position seed (see :func:`position_seed`, ngmix#796). ``None`` when</span>
+        <span class="c1"># position seeding is off, so the field costs nothing on the hot path.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ccd</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bkg_sub</span> <span class="o">=</span> <span class="n">bkg_sub</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">megacam_flip</span> <span class="o">=</span> <span class="n">megacam_flip</span></div>
 
@@ -816,6 +881,13 @@
 <span class="sd">        (robust for galaxies); ``&quot;wcs&quot;`` uses the catalog sky position</span>
 <span class="sd">        projected through the WCS (better for stars, whose HSM moments are</span>
 <span class="sd">        noisy). See :func:`make_ngmix_observation`.</span>
+<span class="sd">    seed_from_position : bool, optional</span>
+<span class="sd">        If ``True``, replace the tile-level RNG with a per-object RNG seeded</span>
+<span class="sd">        from the object&#39;s sky position (:func:`position_seed`) inside the</span>
+<span class="sd">        object loop, so metacal&#39;s ``fixnoise`` counter-noise and the fit</span>
+<span class="sd">        guesses cancel across Pujol image-simulation branches (ngmix#796). The</span>
+<span class="sd">        default ``False`` leaves the production path byte-identical. See</span>
+<span class="sd">        :func:`position_seed` for the physics and the seed construction.</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
@@ -837,6 +909,7 @@
         <span class="n">id_obj_min</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">id_obj_max</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">centroid_source</span><span class="o">=</span><span class="s2">&quot;hsm&quot;</span><span class="p">,</span>
+        <span class="n">seed_from_position</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">&quot;fitgauss&quot;</span><span class="p">,</span>
     <span class="p">):</span>
 
@@ -869,6 +942,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_min</span> <span class="o">=</span> <span class="n">id_obj_min</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span> <span class="o">=</span> <span class="n">id_obj_max</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_centroid_source</span> <span class="o">=</span> <span class="n">centroid_source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_seed_from_position</span> <span class="o">=</span> <span class="n">seed_from_position</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_metacal_psf</span> <span class="o">=</span> <span class="n">metacal_psf</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span> <span class="o">=</span> <span class="n">w_log</span>
@@ -877,6 +951,11 @@
         <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Random generator initialisation seed = </span><span class="si">{</span><span class="n">seed</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seed_from_position</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s1">&#39;SEED_FROM_POSITION on: per-object RNG seeded from sky position&#39;</span>
+                <span class="s1">&#39; for Pujol noise cancellation (image sims, ngmix#796)&#39;</span>
+            <span class="p">)</span>
 
 <div class="viewcode-block" id="Ngmix.MegaCamFlip">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip">[docs]</a>
@@ -1253,6 +1332,25 @@
                 <span class="n">n_no_epoch</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">continue</span>
 
+            <span class="c1"># Position-seeded per-object RNG for Pujol noise cancellation in</span>
+            <span class="c1"># image sims (ngmix#796): the same object gets the same fixnoise</span>
+            <span class="c1"># counter-noise and fit guesses in every shear branch, so both</span>
+            <span class="c1"># cancel in the branch difference. The prior is rebuilt from the</span>
+            <span class="c1"># same per-object RNG because the guesser draws its initial guess</span>
+            <span class="c1"># via prior.sample() (ngmix guessers.py), which consumes the RNG the</span>
+            <span class="c1"># prior was CONSTRUCTED with — so a per-object rng alone would leave</span>
+            <span class="c1"># the guess drawing from the shared tile stream and break</span>
+            <span class="c1"># cancellation. Off in production, where the single tile-level</span>
+            <span class="c1"># self._rng and the tile-level prior carry the whole loop.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seed_from_position</span><span class="p">:</span>
+                <span class="n">obj_rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span>
+                    <span class="n">position_seed</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stamp</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stamp</span><span class="o">.</span><span class="n">ccd</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">obj_prior</span> <span class="o">=</span> <span class="n">get_prior</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span><span class="p">,</span> <span class="n">obj_rng</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">obj_rng</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rng</span>
+                <span class="n">obj_prior</span> <span class="o">=</span> <span class="n">prior</span>
+
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">flux_guess</span> <span class="o">=</span> <span class="p">(</span>
                     <span class="n">tile_cat</span><span class="o">.</span><span class="n">flux</span><span class="p">[</span><span class="n">i_tile</span><span class="p">]</span>
@@ -1261,9 +1359,9 @@
                 <span class="p">)</span>
                 <span class="n">res</span><span class="p">,</span> <span class="n">psf_res</span><span class="p">,</span> <span class="n">psf_orig_res</span> <span class="o">=</span> <span class="n">do_ngmix_metacal</span><span class="p">(</span>
                     <span class="n">stamp</span><span class="p">,</span>
-                    <span class="n">prior</span><span class="p">,</span>
+                    <span class="n">obj_prior</span><span class="p">,</span>
                     <span class="n">flux_guess</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_rng</span><span class="p">,</span>
+                    <span class="n">obj_rng</span><span class="p">,</span>
                     <span class="n">centroid_source</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_centroid_source</span><span class="p">,</span>
                     <span class="n">metacal_psf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_metacal_psf</span><span class="p">,</span>
                 <span class="p">)</span>
@@ -1430,6 +1528,11 @@
         <span class="n">stamp</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_wcs</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">i_tile</span><span class="p">])</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">i_tile</span><span class="p">])</span>
+        <span class="c1"># CCD of the first surviving epoch — Fabian&#39;s coord_list[0] convention</span>
+        <span class="c1"># for the position seed (ngmix#796). All epochs of one object share the</span>
+        <span class="c1"># ra/dec above, so first-epoch CCD pins one deterministic seed stream.</span>
+        <span class="k">if</span> <span class="n">stamp</span><span class="o">.</span><span class="n">ccd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stamp</span><span class="o">.</span><span class="n">ccd</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">stamp</span></div>
 
