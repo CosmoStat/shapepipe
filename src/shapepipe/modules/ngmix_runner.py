@@ -88,6 +88,17 @@ def ngmix_runner(
     else:
         centroid_source = "wcs"
 
+    # Seed the per-object RNG from sky position instead of per tile, so
+    # metacal's fixnoise counter-noise (and the fit guesses) cancel across
+    # Pujol image-simulation shear branches (ngmix#796). Default False leaves
+    # the production path byte-identical.
+    if config.has_option(module_config_sec, "SEED_FROM_POSITION"):
+        seed_from_position = config.getboolean(
+            module_config_sec, "SEED_FROM_POSITION"
+        )
+    else:
+        seed_from_position = False
+
     # Metacal reconvolution-kernel scheme (metacal_pars['psf']): "fitgauss"
     # (default; fit a Gaussian to the PSF and round it), "gauss" (fixed round
     # Gaussian sized from the PSF), "dilate" (dilate the original PSF), or
@@ -110,6 +121,7 @@ def ngmix_runner(
         id_obj_min=id_obj_min,
         id_obj_max=id_obj_max,
         centroid_source=centroid_source,
+        seed_from_position=seed_from_position,
         metacal_psf=metacal_psf,
     )
 

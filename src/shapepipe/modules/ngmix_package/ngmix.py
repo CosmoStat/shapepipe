@@ -119,6 +119,64 @@ def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     )
 
 
+def position_seed(ra, dec, ccd):
+    """Deterministic RNG seed from an object's sky position (ngmix#796).
+
+    For image-simulation m-bias with the Pujol estimator, the same scene is
+    simulated under different applied shears ("image branches") and the shear
+    response is read from the branch difference of the SAME objects. Metacal's
+    ``fixnoise`` adds a counter-noise realisation drawn from an RNG; if that RNG
+    is seeded per tile, an object gets *different* added noise in different
+    branches (detection order differs), and the noise fails to cancel in the
+    difference, inflating ``sigma_m``. Seeding the per-object RNG from sky
+    position instead makes the same object draw the same added noise (and the
+    same fit guesses) in every branch, so both cancel and the m-bias error
+    shrinks. Off in production; a knob for the sim path only.
+
+    Box math (kept exactly as Fabian's issue #796)::
+
+        box_x = floor(ra  * 3600 / 3) + (ccd + 1)
+        box_y = floor(dec * 3600 / 3) + (ccd + 2)
+
+    The 3-arcsec boxes make the seed robust to detection-order changes and to
+    small centroid jitter within a box: the same physical object lands in the
+    same box across branches and so gets the same seed. The ``+ccd`` offsets
+    disambiguate exposure overlap.
+
+    **Deviation from #796.** Fabian combines the boxes as ``box_x + box_y``,
+    which collides along anti-diagonals — e.g. boxes ``(10, 20)`` and
+    ``(11, 19)`` both give seed 30, so two distinct objects share a noise
+    stream. We instead combine them with a Cantor pairing (a bijection on
+    non-negative integers), after a zig-zag fold that maps signed box indices
+    (dec can be negative) onto non-negative ones. The result is reduced mod
+    ``2**32`` to land in the valid ``numpy.random.RandomState`` seed range
+    ``[0, 2**32)``. The box math is untouched; only the collision-prone sum is
+    replaced.
+
+    Parameters
+    ----------
+    ra, dec : float
+        Object sky position in degrees (first-epoch coordinates; all epochs of
+        one object share them).
+    ccd : int
+        CCD number of the first epoch.
+
+    Returns
+    -------
+    int
+        Seed in ``[0, 2**32)`` for ``numpy.random.RandomState``.
+    """
+    box_x = int(np.floor((ra * 3600) / 3) + (ccd + 1))
+    box_y = int(np.floor((dec * 3600) / 3) + (ccd + 2))
+    # Zig-zag fold signed -> non-negative (0,-1,1,-2,... -> 0,1,2,3,...) so the
+    # Cantor pairing, which is a bijection on the non-negative integers, stays
+    # injective for southern (dec<0) boxes.
+    zx = 2 * box_x if box_x >= 0 else -2 * box_x - 1
+    zy = 2 * box_y if box_y >= 0 else -2 * box_y - 1
+    cantor = (zx + zy) * (zx + zy + 1) // 2 + zy
+    return cantor % (2 ** 32)
+
+
 class Tile_cat():
     """Tile_cat.
 
@@ -186,6 +244,10 @@ class Postage_stamp():
         self.wcs = []
         self.ra = []
         self.dec = []
+        # CCD number of the first epoch, used only to build the per-object
+        # position seed (see :func:`position_seed`, ngmix#796). ``None`` when
+        # position seeding is off, so the field costs nothing on the hot path.
+        self.ccd = None
         self.bkg_sub = bkg_sub
         self.megacam_flip = megacam_flip
 
@@ -273,6 +335,13 @@ class Ngmix(object):
         (robust for galaxies); ``"wcs"`` uses the catalog sky position
         projected through the WCS (better for stars, whose HSM moments are
         noisy). See :func:`make_ngmix_observation`.
+    seed_from_position : bool, optional
+        If ``True``, replace the tile-level RNG with a per-object RNG seeded
+        from the object's sky position (:func:`position_seed`) inside the
+        object loop, so metacal's ``fixnoise`` counter-noise and the fit
+        guesses cancel across Pujol image-simulation branches (ngmix#796). The
+        default ``False`` leaves the production path byte-identical. See
+        :func:`position_seed` for the physics and the seed construction.
 
     Raises
     ------
@@ -294,6 +363,7 @@ class Ngmix(object):
         id_obj_min=-1,
         id_obj_max=-1,
         centroid_source="hsm",
+        seed_from_position=False,
         metacal_psf="fitgauss",
     ):
 
@@ -326,6 +396,7 @@ class Ngmix(object):
         self._id_obj_min = id_obj_min
         self._id_obj_max = id_obj_max
         self._centroid_source = centroid_source
+        self._seed_from_position = seed_from_position
         self._metacal_psf = metacal_psf
 
         self._w_log = w_log
@@ -334,6 +405,11 @@ class Ngmix(object):
         seed = int(''.join(re.findall(r'\d+', self._file_number_string)))
         self._rng = np.random.RandomState(seed)
         self._w_log.info(f'Random generator initialisation seed = {seed}')
+        if self._seed_from_position:
+            self._w_log.info(
+                'SEED_FROM_POSITION on: per-object RNG seeded from sky position'
+                ' for Pujol noise cancellation (image sims, ngmix#796)'
+            )
 
     @classmethod
     def MegaCamFlip(self, vign, ccd_nb):
@@ -690,6 +766,25 @@ class Ngmix(object):
                 n_no_epoch += 1
                 continue
 
+            # Position-seeded per-object RNG for Pujol noise cancellation in
+            # image sims (ngmix#796): the same object gets the same fixnoise
+            # counter-noise and fit guesses in every shear branch, so both
+            # cancel in the branch difference. The prior is rebuilt from the
+            # same per-object RNG because the guesser draws its initial guess
+            # via prior.sample() (ngmix guessers.py), which consumes the RNG the
+            # prior was CONSTRUCTED with — so a per-object rng alone would leave
+            # the guess drawing from the shared tile stream and break
+            # cancellation. Off in production, where the single tile-level
+            # self._rng and the tile-level prior carry the whole loop.
+            if self._seed_from_position:
+                obj_rng = np.random.RandomState(
+                    position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
+                )
+                obj_prior = get_prior(self._pixel_scale, obj_rng)
+            else:
+                obj_rng = self._rng
+                obj_prior = prior
+
             try:
                 flux_guess = (
                     tile_cat.flux[i_tile]
@@ -698,9 +793,9 @@ class Ngmix(object):
                 )
                 res, psf_res, psf_orig_res = do_ngmix_metacal(
                     stamp,
-                    prior,
+                    obj_prior,
                     flux_guess,
-                    self._rng,
+                    obj_rng,
                     centroid_source=self._centroid_source,
                     metacal_psf=self._metacal_psf,
                 )
@@ -863,6 +958,11 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
         stamp.wcs.append(epoch_wcs)
         stamp.ra.append(tile_cat.ra[i_tile])
         stamp.dec.append(tile_cat.dec[i_tile])
+        # CCD of the first surviving epoch — Fabian's coord_list[0] convention
+        # for the position seed (ngmix#796). All epochs of one object share the
+        # ra/dec above, so first-epoch CCD pins one deterministic seed stream.
+        if stamp.ccd is None:
+            stamp.ccd = int(ccd_n)
 
     return stamp
 
