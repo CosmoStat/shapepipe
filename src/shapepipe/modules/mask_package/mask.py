@@ -595,8 +595,8 @@ class Mask(object):
         unit_size_X = file_io.get_unit_from_fits_header(header, "size_X")
         unit_size_Y = file_io.get_unit_from_fits_header(header, "size_Y")
 
-        # Loop through all deep-sky objects and check whether any corner is
-        # closer than the object's radius
+        # Loop through all deep-sky objects and check whether the object's
+        # disc overlaps the image footprint
         indices = []
         size_max_deg = []
         for idx, m_obj in enumerate(m_cat):
@@ -610,9 +610,14 @@ class Mask(object):
             r_deg = r.to(units.degree)
             size_max_deg.append(r_deg)
 
-            # Add index to list if distance between DSO and any image corner
-            # is closer than DSO size
-            if np.any(self._corners_sc.separation(m_sc[idx]) < r_deg):
+            # Add index to list if the DSO disc overlaps the image:
+            # distance between DSO centre and image centre smaller than
+            # DSO radius plus image half-diagonal. (Testing only the image
+            # corners against the DSO radius, as done previously, misses
+            # objects that are smaller than the image and lie away from
+            # the corners.)
+            dist = self._fieldcenter["wcs"].separation(m_sc[idx])
+            if dist < r_deg + self._img_radius * units.arcmin:
                 indices.append(idx)
 
         self._w_log.info(
@@ -888,26 +893,25 @@ class Mask(object):
         star_zip = zip(*(stars[k] for k in keys_to_use))
 
         for ra, dec, Fmag, Jmag, Vmag, Nmag, clas in star_zip:
-            mag = 0.0
-            idx = 0.0
-
-            # Compute mean magnitude
-            if Fmag is not None:
-                mag += Fmag
-                idx += 1.0
-            if Jmag is not None:
-                mag += Jmag
-                idx += 1.0
-            if Vmag is not None:
-                mag += Vmag
-                idx += 1.0
-            if Nmag is not None:
-                mag += Nmag
-                idx += 1.0
-            if idx == 0.0:
-                mag = None
+            # Compute mean magnitude over the available (finite) bands.
+            # Missing GSC bands are NaN and must be excluded: a single NaN
+            # would make the mean NaN and silently fail the
+            # ``mag < mag_limit`` test below, leaving bright stars with
+            # incomplete photometry (the ones that most need masking)
+            # unmasked.
+            mags = [
+                band
+                for band in (Fmag, Jmag, Vmag, Nmag)
+                if band is not None and np.isfinite(band)
+            ]
+            if len(mags) > 0:
+                mag = sum(mags) / len(mags)
             else:
-                mag /= idx
+                mag = None
+                self._w_log.info(
+                    f"No finite {types} magnitude for star at ra={ra} "
+                    + f"dec={dec}; object not masked"
+                )
 
             if (
                 ra is not None

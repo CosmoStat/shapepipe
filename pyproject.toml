@@ -87,7 +87,7 @@ canfar_monitor_log  = "shapepipe.canfar_run:run_monitor_log"
 environments = ["sys_platform == 'linux'"]
 
 [tool.uv.sources]
-ngmix = { git = "https://github.com/esheldon/ngmix", tag = "v2.4.0" }
+ngmix = { git = "https://github.com/esheldon/ngmix", tag = "v2.4.1" }
 # Track cs_util's develop branch (a git ref, not a pinned release) so new
 # cs_util.size / cs_util.shape helpers are available without shipping a release
 # and rebuilding the image each time. shapepipe's column grammar sources size
