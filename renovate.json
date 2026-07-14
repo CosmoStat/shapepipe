@@ -1,23 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": [
-    "Low-noise dependency updates with mild supply-chain hygiene, layered on the Mend org config.",
-    "Pins: ShapePipe ships as a container, not a PyPI library, so per the Renovate dependency-pinning doc we pin app dependencies exactly. The pins are written directly in pyproject.toml (== versions), so nothing depends on rangeStrategy resolution against the org config; the packageRule (scoped to PyPI, leaving git-sourced deps like ngmix/cs_util alone) just keeps future deps pinned. Exact pins are also what lets minimumReleaseAge work with uv (renovatebot/renovate#41624).",
-    "Python base-image bumps (3.12 -> 3.14 rides as 'minor' in Renovate's python versioning) never automerge — a Python upgrade gets human eyes.",
-    "Noise: all non-major updates grouped into one weekly PR that automerges when CI (full suite in the container) is green; majors surface individually for review; lockFileMaintenance refreshes transitive deps.",
-    "minimumReleaseAge=7 days: supply-chain detection window, sized per the Renovate docs' automerge guidance and Astral's uv guide."
+    "Low-noise dependency updates; uv owns version resolution. pyproject keeps floor ranges and Renovate uses the org default rangeStrategy=update-lockfile, so `uv lock` picks versions jointly — cross-package conflicts (e.g. numba capping numpy) resolve silently instead of failing the batch, and un-stick themselves when upstream catches up. No minimumReleaseAge: it is unenforceable with uv resolution (renovatebot/renovate#41624 forced exact pins, which forced manual conflict caps); CI running the full suite in the container is the automerge gate.",
+    "Noise: all non-major updates grouped into one weekly PR that automerges when CI is green; majors surface individually; lockFileMaintenance refreshes transitive deps weekly.",
+    "python is guarded: Renovate classes base-image bumps like 3.12 -> 3.14 as 'minor', so it gets its own PR and never automerges — a Python upgrade gets human eyes without holding the weekly batch hostage."
   ],
   "extends": ["config:recommended", "group:allNonMajor", "schedule:weekly"],
-  "minimumReleaseAge": "7 days",
   "lockFileMaintenance": { "enabled": true },
   "packageRules": [
-    { "matchDatasources": ["pypi"], "rangeStrategy": "pin" },
     { "matchUpdateTypes": ["minor", "patch", "pin", "digest"], "automerge": true },
-    { "matchPackageNames": ["python"], "automerge": false },
-    {
-      "matchPackageNames": ["numpy"],
-      "allowedVersions": "<2.5",
-      "description": "numba 0.65.1 caps numpy<2.5; a grouped pin bump to 2.5.0 makes uv lock unsatisfiable and fails the whole batch. Drop this rule when numba supports numpy 2.5."
-    }
+    { "matchPackageNames": ["python"], "groupName": "python", "automerge": false }
   ]
 }
