@@ -10,6 +10,7 @@ import re
 
 import numpy as np
 from astropy.io import fits
+from astropy.wcs.wcs import InvalidCoordinateError
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
@@ -47,7 +48,63 @@ def get_header_value(image_path, key):
     return val
 
 
-def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
+def ccd_candidate_mask(w, ra, dec, ccd_size, margin_frac=0.5):
+    """CCD Candidate Mask.
+
+    Flag catalogue positions that lie near a CCD's sky footprint.
+
+    The footprint is obtained by forward-projecting (pixel to world) the
+    CCD centre and corners, which is always well defined.  The returned
+    mask selects positions within the corner radius plus a fractional
+    margin; only those need the (iterative, and potentially divergent)
+    inverse projection in :func:`make_post_process`.
+
+    Parameters
+    ----------
+    w : astropy.wcs.WCS
+        Single-CCD WCS
+    ra : numpy.ndarray
+        Right ascension values in degrees
+    dec : numpy.ndarray
+        Declination values in degrees
+    ccd_size : list
+        CCD pixel bounds ``[xmin, xmax, ymin, ymax]``
+    margin_frac : float, optional
+        Fractional margin added to the footprint radius; default is
+        ``0.5``
+
+    Returns
+    -------
+    numpy.ndarray
+        Boolean mask over the input positions
+
+    """
+    xmin, xmax = int(ccd_size[0]), int(ccd_size[1])
+    ymin, ymax = int(ccd_size[2]), int(ccd_size[3])
+    corners_x = [xmin, xmin, xmax, xmax, (xmin + xmax) / 2.0]
+    corners_y = [ymin, ymax, ymin, ymax, (ymin + ymax) / 2.0]
+    c_ra, c_dec = w.all_pix2world(corners_x, corners_y, 0)
+
+    ra0, dec0 = np.radians(c_ra[-1]), np.radians(c_dec[-1])
+    ra_r, dec_r = np.radians(ra), np.radians(dec)
+
+    def _sep(ra_a, dec_a):
+        return np.arccos(np.clip(
+            np.sin(dec0) * np.sin(dec_a)
+            + np.cos(dec0) * np.cos(dec_a) * np.cos(ra_a - ra0),
+            -1.0,
+            1.0,
+        ))
+
+    radius = max(
+        _sep(np.radians(c_ra[idx]), np.radians(c_dec[idx]))
+        for idx in range(4)
+    )
+
+    return _sep(ra_r, dec_r) < radius * (1.0 + margin_frac)
+
+
+def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
     """Make Post Processing.
 
     This function will add one HDU for each epoch to the SExtractor catalogue.
@@ -69,6 +126,8 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
         World coordinates to use to match the objects.
     ccd_size: list
         Size of a CCD ``[nx, ny]``
+    w_log: logging.Logger, optional
+        Pipeline logger
 
     Raises
     ------
@@ -105,6 +164,9 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
 
     obj_id = np.copy(cat.get_data()["NUMBER"])
 
+    ra = np.copy(cat.get_data()[pos_params[0]])
+    dec = np.copy(cat.get_data()[pos_params[1]])
+
     n_epoch = np.zeros(len(obj_id), dtype="int32")
     for idx, exp in enumerate(exp_list):
         pos_tmp = np.ones(len(obj_id), dtype="int32") * -1
@@ -116,17 +178,32 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
                     + " file is complete."
                 )
             w = f_wcs[exp][idx_j]["WCS"]
-            pix_tmp = w.all_world2pix(
-                cat.get_data()[pos_params[0]], cat.get_data()[pos_params[1]],
-                0,
-                quiet=True,
+            # Only inverse-project objects near this CCD's footprint.
+            # Positions far outside the distortion domain make the
+            # iterative inversion in (all_)world2pix diverge with
+            # InvalidCoordinateError, killing the whole tile; they can
+            # never pass the CCD bounds test anyway.
+            near = ccd_candidate_mask(w, ra, dec, ccd_size)
+            if not near.any():
+                continue
+            try:
+                pix_near = w.all_world2pix(ra[near], dec[near], 0, quiet=True)
+            except InvalidCoordinateError:
+                if w_log is not None:
+                    w_log.info(
+                        f"WCS inversion diverged for {near.sum()} objects"
+                        + f" near exposure {exp} HDU {idx_j};"
+                        + " no epoch recorded for them"
+                    )
+                continue
+            ind_near = (
+                (pix_near[0] > int(ccd_size[0]))
+                & (pix_near[0] < int(ccd_size[1]))
+                & (pix_near[1] > int(ccd_size[2]))
+                & (pix_near[1] < int(ccd_size[3]))
             )
-            ind = (
-                (pix_tmp[0] > int(ccd_size[0]))
-                & (pix_tmp[0] < int(ccd_size[1]))
-                & (pix_tmp[1] > int(ccd_size[2]))
-                & (pix_tmp[1] < int(ccd_size[3]))
-            )
+            ind = np.zeros(len(obj_id), dtype=bool)
+            ind[np.where(near)[0][ind_near]] = True
             pos_tmp[ind] = idx_j
             n_epoch[ind] += 1
         exp_name = np.array([exp_list[idx] for n in range(len(obj_id))])
