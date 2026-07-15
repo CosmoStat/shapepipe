@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="14 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="15 Jul, 2026"/>
   </head>
   
   
@@ -243,6 +243,10 @@
 <li class="toctree-l1"><a class="reference internal" href="understanding_api.html">Understanding the API Documentation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="shapepipe.html">shapepipe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.fake_psf_package.html">shapepipe.modules.fake_psf_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.fake_psf_package.fake_psf.html">shapepipe.modules.fake_psf_package.fake_psf</a></li>
+</ul>
+</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
 </ul>
@@ -1018,6 +1022,8 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shapepipe.modules.fake_psf_package.fake_psf.html#shapepipe.modules.fake_psf_package.fake_psf.FakePsf">FakePsf (class in shapepipe.modules.fake_psf_package.fake_psf)</a>
+</li>
       <li><a href="shapepipe.pipeline.config.html#shapepipe.pipeline.config.SetUpParser.file_name">file_name (SetUpParser property)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler">FileHandler (class in shapepipe.pipeline.file_handler)</a>
@@ -1320,6 +1326,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.log_command">log_command() (in module shapepipe.utilities.cfis)</a>
 </li>
+      <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.log_mean_ellipticity">log_mean_ellipticity() (Ngmix method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1335,6 +1343,8 @@
       <li><a href="shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.make_command_line">make_command_line() (SExtractorCaller method)</a>
 </li>
       <li><a href="shapepipe.testing.simulate.html#shapepipe.testing.simulate.make_data">make_data() (in module shapepipe.testing.simulate)</a>
+</li>
+      <li><a href="shapepipe.testing.simulate.html#shapepipe.testing.simulate.make_data_pujol">make_data_pujol() (in module shapepipe.testing.simulate)</a>
 </li>
       <li><a href="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.make_ldac_from_ascii">make_ldac_from_ascii() (in module shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat)</a>
 </li>
@@ -1411,6 +1421,10 @@
         <li><a href="shapepipe.info.html#module-shapepipe.info">shapepipe.info</a>
 </li>
         <li><a href="shapepipe.modules.html#module-shapepipe.modules">shapepipe.modules</a>
+</li>
+        <li><a href="shapepipe.modules.fake_psf_package.html#module-shapepipe.modules.fake_psf_package">shapepipe.modules.fake_psf_package</a>
+</li>
+        <li><a href="shapepipe.modules.fake_psf_package.fake_psf.html#module-shapepipe.modules.fake_psf_package.fake_psf">shapepipe.modules.fake_psf_package.fake_psf</a>
 </li>
         <li><a href="shapepipe.modules.find_exposures_package.html#module-shapepipe.modules.find_exposures_package">shapepipe.modules.find_exposures_package</a>
 </li>
@@ -1659,9 +1673,11 @@
 </li>
       <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.print_stats_header">print_stats_header() (job_data class method)</a>
 </li>
-      <li><a href="shapepipe.modules.find_exposures_package.find_exposures.html#shapepipe.modules.find_exposures_package.find_exposures.FindExposures.process">process() (FindExposures method)</a>
+      <li><a href="shapepipe.modules.fake_psf_package.fake_psf.html#shapepipe.modules.fake_psf_package.fake_psf.FakePsf.process">process() (FakePsf method)</a>
 
       <ul>
+        <li><a href="shapepipe.modules.find_exposures_package.find_exposures.html#shapepipe.modules.find_exposures_package.find_exposures.FindExposures.process">(FindExposures method)</a>
+</li>
         <li><a href="shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.GetImages.process">(GetImages method)</a>
 </li>
         <li><a href="shapepipe.modules.match_external_package.match_external.html#shapepipe.modules.match_external_package.match_external.MatchCats.process">(MatchCats method)</a>
@@ -1877,6 +1893,20 @@
 
       <ul>
         <li><a href="shapepipe.modules.html#module-shapepipe.modules">module</a>
+</li>
+      </ul></li>
+      <li>
+    shapepipe.modules.fake_psf_package
+
+      <ul>
+        <li><a href="shapepipe.modules.fake_psf_package.html#module-shapepipe.modules.fake_psf_package">module</a>
+</li>
+      </ul></li>
+      <li>
+    shapepipe.modules.fake_psf_package.fake_psf
+
+      <ul>
+        <li><a href="shapepipe.modules.fake_psf_package.fake_psf.html#module-shapepipe.modules.fake_psf_package.fake_psf">module</a>
 </li>
       </ul></li>
       <li>
@@ -2103,6 +2133,8 @@
         <li><a href="shapepipe.modules.python_example_package.python_example.html#module-shapepipe.modules.python_example_package.python_example">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     shapepipe.modules.random_cat_package
 
@@ -2110,8 +2142,6 @@
         <li><a href="shapepipe.modules.random_cat_package.html#module-shapepipe.modules.random_cat_package">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     shapepipe.modules.random_cat_package.random_cat
 
@@ -2552,7 +2582,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 14 Jul, 2026.
+  Last updated on 15 Jul, 2026.
   <br/>
 </p>
   </div>

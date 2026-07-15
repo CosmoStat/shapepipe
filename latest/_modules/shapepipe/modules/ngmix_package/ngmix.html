@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="14 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="15 Jul, 2026"/>
   </head>
   
   
@@ -243,6 +243,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../understanding_api.html">Understanding the API Documentation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../../../shapepipe.html">shapepipe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../../shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.fake_psf_package.html">shapepipe.modules.fake_psf_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.fake_psf_package.fake_psf.html">shapepipe.modules.fake_psf_package.fake_psf</a></li>
+</ul>
+</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
 </ul>
@@ -815,11 +819,10 @@
         <span class="n">flag_vignet_path</span><span class="p">,</span>
         <span class="n">f_wcs_path</span><span class="p">,</span>
         <span class="n">bkg_rms_vignet_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">f_wcs_file</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="n">f_wcs_path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gal_vign_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="n">gal_vignet_path</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bkg_vign_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="n">bkg_vignet_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bkg_vign_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="n">bkg_vignet_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">bkg_vignet_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">psf_vign_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="n">psf_vignet_path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weight_vign_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="n">weight_vignet_path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">flag_vign_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="n">flag_vignet_path</span><span class="p">)</span>
@@ -834,7 +837,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">f_wcs_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gal_vign_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bkg_vign_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_vign_cat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bkg_vign_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">flag_vign_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weight_vign_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">psf_vign_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -908,26 +912,47 @@
         <span class="n">save_batch</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">id_obj_min</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">id_obj_max</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">bkg_sub</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">centroid_source</span><span class="o">=</span><span class="s2">&quot;hsm&quot;</span><span class="p">,</span>
         <span class="n">seed_from_position</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">&quot;fitgauss&quot;</span><span class="p">,</span>
     <span class="p">):</span>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">}:</span>
+        <span class="c1"># Base count = catalogue + vignets, excluding the f_wcs headers (passed</span>
+        <span class="c1"># separately). One fewer when the background vignet is absent</span>
+        <span class="c1"># (``bkg_sub=False``, image sims). An extra trailing slot may carry the</span>
+        <span class="c1"># optional background-rms vignet (#779), so both counts are valid.</span>
+        <span class="n">n_base</span> <span class="o">=</span> <span class="mi">6</span> <span class="k">if</span> <span class="n">bkg_sub</span> <span class="k">else</span> <span class="mi">5</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="n">n_base</span><span class="p">,</span> <span class="n">n_base</span> <span class="o">+</span> <span class="mi">1</span><span class="p">}:</span>
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Input file list has length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">)</span><span class="si">}</span><span class="s2">,&quot;</span>
-                <span class="o">+</span> <span class="s2">&quot; required is 6 or 7&quot;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; required is </span><span class="si">{</span><span class="n">n_base</span><span class="si">}</span><span class="s2"> or </span><span class="si">{</span><span class="n">n_base</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span> <span class="o">=</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">bkg_sub</span><span class="p">:</span>
+            <span class="n">bkg_path</span><span class="p">,</span> <span class="n">psf_path</span><span class="p">,</span> <span class="n">weight_path</span><span class="p">,</span> <span class="n">flag_path</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">input_file_list</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                <span class="n">input_file_list</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bkg_path</span><span class="p">,</span> <span class="n">psf_path</span><span class="p">,</span> <span class="n">weight_path</span><span class="p">,</span> <span class="n">flag_path</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="kc">None</span><span class="p">,</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">input_file_list</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="n">bkg_rms_vignet_path</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">input_file_list</span><span class="p">[</span><span class="n">n_base</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_base</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_vignet_cat</span> <span class="o">=</span> <span class="n">Vignet</span><span class="p">(</span>
             <span class="n">input_file_list</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-            <span class="n">input_file_list</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
-            <span class="n">input_file_list</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
-            <span class="n">input_file_list</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
-            <span class="n">input_file_list</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>
+            <span class="n">bkg_path</span><span class="p">,</span>
+            <span class="n">psf_path</span><span class="p">,</span>
+            <span class="n">weight_path</span><span class="p">,</span>
+            <span class="n">flag_path</span><span class="p">,</span>
             <span class="n">f_wcs_path</span><span class="p">,</span>
-            <span class="n">input_file_list</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">7</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">bkg_rms_vignet_path</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
@@ -941,6 +966,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_save_batch</span> <span class="o">=</span> <span class="n">save_batch</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_min</span> <span class="o">=</span> <span class="n">id_obj_min</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span> <span class="o">=</span> <span class="n">id_obj_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_sub</span> <span class="o">=</span> <span class="n">bkg_sub</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_centroid_source</span> <span class="o">=</span> <span class="n">centroid_source</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_seed_from_position</span> <span class="o">=</span> <span class="n">seed_from_position</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_metacal_psf</span> <span class="o">=</span> <span class="n">metacal_psf</span>
@@ -1275,6 +1301,64 @@
             <span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Ngmix.log_mean_ellipticity">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.log_mean_ellipticity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_mean_ellipticity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log mean ellipticity from NOSHEAR HDU to the run log.</span>
+
+<span class="sd">        Reports &lt;e1&gt;, &lt;e2&gt; with standard errors for all objects and for</span>
+<span class="sd">        objects passing the default metacal cuts (flags==0, mcal_flags==0,</span>
+<span class="sd">        10 &lt; SNR &lt; 500, T/Tpsf &gt; 0.5).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_output_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="n">hdul</span><span class="p">[</span><span class="s1">&#39;NOSHEAR&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+                <span class="n">g1</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;g1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">g2</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;g2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">flags</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span>
+                <span class="n">mcal_flags</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;mcal_flags&#39;</span><span class="p">]</span>
+                <span class="n">s2n</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;s2n&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">T</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">Tpsf</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;Tpsf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not compute mean ellipticity: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">n_total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">g1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Mean ellipticity: no objects in output catalogue&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_log_stats</span><span class="p">(</span><span class="n">g1_sel</span><span class="p">,</span> <span class="n">g2_sel</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">g1_sel</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: 0 objects&quot;</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="n">mean_g1</span> <span class="o">=</span> <span class="n">g1_sel</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="n">mean_g2</span> <span class="o">=</span> <span class="n">g2_sel</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="n">err_g1</span> <span class="o">=</span> <span class="n">g1_sel</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">err_g2</span> <span class="o">=</span> <span class="n">g2_sel</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> (N=</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">):&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;  &lt;e1&gt; = </span><span class="si">{</span><span class="n">mean_g1</span><span class="si">:</span><span class="s2">+.4e</span><span class="si">}</span><span class="s2"> +/- </span><span class="si">{</span><span class="n">err_g1</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">,&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;  &lt;e2&gt; = </span><span class="si">{</span><span class="n">mean_g2</span><span class="si">:</span><span class="s2">+.4e</span><span class="si">}</span><span class="s2"> +/- </span><span class="si">{</span><span class="n">err_g2</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean ellipticity (NOSHEAR, N_total=</span><span class="si">{</span><span class="n">n_total</span><span class="si">}</span><span class="s2">):&quot;</span><span class="p">)</span>
+        <span class="n">_log_stats</span><span class="p">(</span><span class="n">g1</span><span class="p">,</span> <span class="n">g2</span><span class="p">,</span> <span class="s2">&quot;no cuts&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">flags</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">mcal_flags</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">s2n</span> <span class="o">&gt;=</span> <span class="mf">10.0</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">s2n</span> <span class="o">&lt;=</span> <span class="mf">500.0</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">T</span> <span class="o">/</span> <span class="n">Tpsf</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">_log_stats</span><span class="p">(</span><span class="n">g1</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">g2</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="s2">&quot;SNR in [10, 500], T/Tpsf &gt; 0.5&quot;</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="Ngmix.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1326,7 +1410,7 @@
                 <span class="n">n_empty_cat</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">continue</span>
 
-            <span class="n">stamp</span> <span class="o">=</span> <span class="n">prepare_postage_stamps</span><span class="p">(</span><span class="n">vignet_cat</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">,</span> <span class="n">i_tile</span><span class="p">,</span> <span class="n">tile_cat</span><span class="p">)</span>
+            <span class="n">stamp</span> <span class="o">=</span> <span class="n">prepare_postage_stamps</span><span class="p">(</span><span class="n">vignet_cat</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">,</span> <span class="n">i_tile</span><span class="p">,</span> <span class="n">tile_cat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_sub</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">gals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">n_no_epoch</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -1435,15 +1519,18 @@
         <span class="n">res_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile_results</span><span class="p">(</span><span class="n">final_res</span><span class="p">)</span>
 
         <span class="c1"># Save results</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">res_dict</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">res_dict</span><span class="p">)</span>
+
+        <span class="c1"># Log mean ellipticity statistics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_mean_ellipticity</span><span class="p">()</span></div>
 </div>
 
 
 <div class="viewcode-block" id="prepare_postage_stamps">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">prepare_postage_stamps</span><span class="p">(</span><span class="n">vignet</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">,</span> <span class="n">i_tile</span><span class="p">,</span> <span class="n">tile_cat</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_postage_stamps</span><span class="p">(</span><span class="n">vignet</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">,</span> <span class="n">i_tile</span><span class="p">,</span> <span class="n">tile_cat</span><span class="p">,</span> <span class="n">bkg_sub</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="c1"># define per-object lists of individual exposures to go into ngmix</span>
-    <span class="n">stamp</span> <span class="o">=</span> <span class="n">Postage_stamp</span><span class="p">()</span>
+    <span class="n">stamp</span> <span class="o">=</span> <span class="n">Postage_stamp</span><span class="p">(</span><span class="n">bkg_sub</span><span class="o">=</span><span class="n">bkg_sub</span><span class="p">)</span>
     <span class="c1">#identify exposure and ccd number from psf catalog</span>
     <span class="n">psf_expccd_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">vignet</span><span class="o">.</span><span class="n">psf_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="k">for</span> <span class="n">expccd_name</span> <span class="ow">in</span> <span class="n">psf_expccd_names</span><span class="p">:</span>
@@ -1466,6 +1553,12 @@
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">gal_vign_sub_bkg</span> <span class="o">=</span> <span class="n">gal_vign</span>
+
+        <span class="c1"># Skip epochs where sigma_mad=0 (CCD edge: mostly-zero stamp).</span>
+        <span class="c1"># prepare_ngmix_weights divides by sig_noise; zero sigma causes NaN/inf</span>
+        <span class="c1"># weights that corrupt GalSim&#39;s C-level FFT allocations.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sigma_mad</span><span class="p">(</span><span class="n">gal_vign_sub_bkg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
 
         <span class="n">tile_vign</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">vign</span><span class="p">[</span><span class="n">i_tile</span><span class="p">])</span>
@@ -1731,6 +1824,13 @@
             <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
             <span class="k">else</span> <span class="n">sigma_mad</span><span class="p">(</span><span class="n">gal</span><span class="p">)</span>
         <span class="p">)</span>
+
+    <span class="c1"># Guard: sig_noise=0 means galaxy is at the CCD edge (mostly-zero stamp).</span>
+    <span class="c1"># Division by zero would make weight_map NaN/inf, crashing GalSim C code.</span>
+    <span class="c1"># np.all keeps the guard valid for the per-pixel bkg_rms path (any zero</span>
+    <span class="c1"># pixel would produce the same NaN weight the scalar case guards against).</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">sig_noise</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">gal</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">weight_map</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">gal</span><span class="p">)</span>
 
     <span class="n">noise_img</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">gal</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig_noise</span>
     <span class="n">noise_img_gal</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">gal</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig_noise</span>
@@ -2189,7 +2289,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 14 Jul, 2026.
+  Last updated on 15 Jul, 2026.
   <br/>
 </p>
   </div>

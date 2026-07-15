@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="14 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="15 Jul, 2026"/>
   </head>
   
   
@@ -248,6 +248,10 @@
 <li class="toctree-l1"><a class="reference internal" href="understanding_api.html">Understanding the API Documentation</a></li>
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="shapepipe.html">shapepipe</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.fake_psf_package.html">shapepipe.modules.fake_psf_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.fake_psf_package.fake_psf.html">shapepipe.modules.fake_psf_package.fake_psf</a></li>
+</ul>
+</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
 </ul>
@@ -535,6 +539,7 @@
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.testing.simulate.make_data"><code class="docutils literal notranslate"><span class="pre">make_data()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.testing.simulate.make_data_pujol"><code class="docutils literal notranslate"><span class="pre">make_data_pujol()</span></code></a></li>
 </ul>
             </nav>
         </div>
@@ -608,6 +613,39 @@ centre is <code class="docutils literal notranslate"><span class="pre">(img_size
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.testing.simulate.make_data_pujol">
+<span class="sig-name descname"><span class="pre">make_data_pujol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shear_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_shift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gal_hlr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gal_flux</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_fwhm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.55</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1857</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">201</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/testing/simulate.html#make_data_pujol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.testing.simulate.make_data_pujol" title="Link to this definition">#</a></dt>
+<dd><p>Simulate galaxies at multiple shear values sharing the same noise per epoch.</p>
+<p>Implements the Pujol (2018) denoising approach: all shear variants receive
+the identical noise and sub-pixel shift each epoch, so noise contributions
+to the shear response R and to the m/c estimator cancel exactly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>)</p></li>
+<li><p><strong>shear_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – List of (g1, g2) values to simulate simultaneously.</p></li>
+<li><p><strong>noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Per-pixel noise sigma.</p></li>
+<li><p><strong>n_epochs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>)</p></li>
+<li><p><strong>share_shift</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True all epochs share the same sub-pixel shift; the shift is
+always shared across shear variants regardless of this flag.</p></li>
+<li><p><strong>gal_hlr</strong> (<em>float / int</em><em>, </em><em>optional</em>) – Same meaning as in make_data.</p></li>
+<li><p><strong>gal_flux</strong> (<em>float / int</em><em>, </em><em>optional</em>) – Same meaning as in make_data.</p></li>
+<li><p><strong>psf_fwhm</strong> (<em>float / int</em><em>, </em><em>optional</em>) – Same meaning as in make_data.</p></li>
+<li><p><strong>pixel_scale</strong> (<em>float / int</em><em>, </em><em>optional</em>) – Same meaning as in make_data.</p></li>
+<li><p><strong>img_size</strong> (<em>float / int</em><em>, </em><em>optional</em>) – Same meaning as in make_data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One <code class="docutils literal notranslate"><span class="pre">(gals,</span> <span class="pre">psfs,</span> <span class="pre">psfs_sigmas,</span> <span class="pre">weights,</span> <span class="pre">flags,</span> <span class="pre">jacob_lists)</span></code> per
+entry in <code class="docutils literal notranslate"><span class="pre">shear_list</span></code>, all sharing identical per-epoch noise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -658,6 +696,7 @@ centre is <code class="docutils literal notranslate"><span class="pre">(img_size
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.testing.simulate.make_data"><code class="docutils literal notranslate"><span class="pre">make_data()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.testing.simulate.make_data_pujol"><code class="docutils literal notranslate"><span class="pre">make_data_pujol()</span></code></a></li>
 </ul>
   </nav></div>
 
@@ -691,7 +730,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 14 Jul, 2026.
+  Last updated on 15 Jul, 2026.
   <br/>
 </p>
   </div>

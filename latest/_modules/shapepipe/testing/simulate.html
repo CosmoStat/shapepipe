@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="14 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="15 Jul, 2026"/>
   </head>
   
   
@@ -243,6 +243,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../understanding_api.html">Understanding the API Documentation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../../shapepipe.html">shapepipe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.fake_psf_package.html">shapepipe.modules.fake_psf_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.fake_psf_package.fake_psf.html">shapepipe.modules.fake_psf_package.fake_psf</a></li>
+</ul>
+</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
 </ul>
@@ -672,6 +676,104 @@
         <span class="k">return</span> <span class="n">gals</span><span class="p">,</span> <span class="n">psfs</span><span class="p">,</span> <span class="n">psfs_sigmas</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">jacob_lists</span><span class="p">,</span> <span class="n">centers</span>
     <span class="k">return</span> <span class="n">gals</span><span class="p">,</span> <span class="n">psfs</span><span class="p">,</span> <span class="n">psfs_sigmas</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">jacob_lists</span></div>
 
+
+
+<div class="viewcode-block" id="make_data_pujol">
+<a class="viewcode-back" href="../../../shapepipe.testing.simulate.html#shapepipe.testing.simulate.make_data_pujol">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_data_pujol</span><span class="p">(</span>
+    <span class="n">rng</span><span class="p">,</span>
+    <span class="n">shear_list</span><span class="p">,</span>
+    <span class="n">noise</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>
+    <span class="n">n_epochs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">share_shift</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">gal_hlr</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">gal_flux</span><span class="o">=</span><span class="mf">1000.0</span><span class="p">,</span>
+    <span class="n">psf_fwhm</span><span class="o">=</span><span class="mf">0.55</span><span class="p">,</span>
+    <span class="n">pixel_scale</span><span class="o">=</span><span class="mf">0.1857</span><span class="p">,</span>
+    <span class="n">img_size</span><span class="o">=</span><span class="mi">201</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate galaxies at multiple shear values sharing the same noise per epoch.</span>
+
+<span class="sd">    Implements the Pujol (2018) denoising approach: all shear variants receive</span>
+<span class="sd">    the identical noise and sub-pixel shift each epoch, so noise contributions</span>
+<span class="sd">    to the shear response R and to the m/c estimator cancel exactly.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rng : numpy.random.RandomState</span>
+<span class="sd">    shear_list : list of tuple of float</span>
+<span class="sd">        List of (g1, g2) values to simulate simultaneously.</span>
+<span class="sd">    noise : float, optional</span>
+<span class="sd">        Per-pixel noise sigma.</span>
+<span class="sd">    n_epochs : int, optional</span>
+<span class="sd">    share_shift : bool, optional</span>
+<span class="sd">        If True all epochs share the same sub-pixel shift; the shift is</span>
+<span class="sd">        always shared across shear variants regardless of this flag.</span>
+<span class="sd">    gal_hlr, gal_flux, psf_fwhm, pixel_scale, img_size : float / int, optional</span>
+<span class="sd">        Same meaning as in make_data.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of tuple</span>
+<span class="sd">        One ``(gals, psfs, psfs_sigmas, weights, flags, jacob_lists)`` per</span>
+<span class="sd">        entry in ``shear_list``, all sharing identical per-epoch noise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">psf_noise_sigma</span> <span class="o">=</span> <span class="mf">1.0e-6</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">pixel_scale</span>
+    <span class="n">wcs</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">PixelScale</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+    <span class="n">n_shears</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">shear_list</span><span class="p">)</span>
+
+    <span class="c1"># output accumulators</span>
+    <span class="n">all_gals</span>        <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_shears</span><span class="p">)]</span>
+    <span class="n">all_psfs</span>        <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_shears</span><span class="p">)]</span>
+    <span class="n">all_psfs_sigmas</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_shears</span><span class="p">)]</span>
+    <span class="n">all_weights</span>     <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_shears</span><span class="p">)]</span>
+    <span class="n">all_flags</span>       <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_shears</span><span class="p">)]</span>
+    <span class="n">all_jacobs</span>      <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_shears</span><span class="p">)]</span>
+
+    <span class="k">if</span> <span class="n">share_shift</span><span class="p">:</span>
+        <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">share_shift</span><span class="p">:</span>
+            <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">scale</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># One noise draw shared by all shear variants this epoch</span>
+        <span class="n">noise_img</span>     <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="n">noise</span><span class="p">,</span>            <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">img_size</span><span class="p">,</span> <span class="n">img_size</span><span class="p">))</span>
+        <span class="n">psf_noise_img</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="n">psf_noise_sigma</span><span class="p">,</span>  <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">img_size</span><span class="p">,</span> <span class="n">img_size</span><span class="p">))</span>
+
+        <span class="n">psf</span>    <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">Moffat</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="n">psf_fwhm</span><span class="p">)</span>
+        <span class="n">psf_im_</span> <span class="o">=</span> <span class="n">psf</span><span class="o">.</span><span class="n">drawImage</span><span class="p">(</span><span class="n">nx</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span> <span class="n">ny</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span> <span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">)</span>
+        <span class="n">psf_sigma</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">psf_im_</span><span class="p">)</span><span class="o">.</span><span class="n">moments_sigma</span>
+        <span class="n">psf_im</span> <span class="o">=</span> <span class="n">psf_im_</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">+</span> <span class="n">psf_noise_img</span>
+
+        <span class="n">jacob</span>  <span class="o">=</span> <span class="n">wcs</span><span class="o">.</span><span class="n">jacobian</span><span class="p">()</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">img_size</span><span class="p">,</span> <span class="n">img_size</span><span class="p">),</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">noise</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">flag</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">img_size</span><span class="p">,</span> <span class="n">img_size</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">shear</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">shear_list</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">Convolve</span><span class="p">(</span>
+                <span class="n">psf</span><span class="p">,</span>
+                <span class="n">galsim</span><span class="o">.</span><span class="n">Exponential</span><span class="p">(</span><span class="n">half_light_radius</span><span class="o">=</span><span class="n">gal_hlr</span><span class="p">,</span> <span class="n">flux</span><span class="o">=</span><span class="n">gal_flux</span><span class="p">)</span><span class="o">.</span><span class="n">shear</span><span class="p">(</span>
+                    <span class="n">g1</span><span class="o">=</span><span class="n">shear</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">g2</span><span class="o">=</span><span class="n">shear</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="p">),</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span>
+            <span class="n">im</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">drawImage</span><span class="p">(</span><span class="n">nx</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span> <span class="n">ny</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span> <span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">)</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">im</span> <span class="o">+=</span> <span class="n">noise_img</span>   <span class="c1"># same noise for every shear variant</span>
+
+            <span class="n">all_gals</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">im</span><span class="p">)</span>
+            <span class="n">all_psfs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">psf_im</span><span class="p">)</span>
+            <span class="n">all_psfs_sigmas</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">psf_sigma</span><span class="p">)</span>
+            <span class="n">all_weights</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weight</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+            <span class="n">all_flags</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flag</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+            <span class="n">all_jacobs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jacob</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">all_gals</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">all_psfs</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">all_psfs_sigmas</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
+         <span class="n">all_weights</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">all_flags</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">all_jacobs</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_shears</span><span class="p">)</span>
+    <span class="p">]</span></div>
+
 </pre></div>
 
                 </article>
@@ -719,7 +821,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 14 Jul, 2026.
+  Last updated on 15 Jul, 2026.
   <br/>
 </p>
   </div>

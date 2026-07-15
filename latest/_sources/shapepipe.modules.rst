@@ -13,6 +13,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   shapepipe.modules.fake_psf_package
    shapepipe.modules.find_exposures_package
    shapepipe.modules.get_images_package
    shapepipe.modules.make_cat_package
