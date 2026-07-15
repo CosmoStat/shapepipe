@@ -136,6 +136,155 @@ def test_metacal_is_reproducible_with_fixed_seed():
     npt.assert_array_equal(_metacal_noshear_g(42), _metacal_noshear_g(42))
 
 
+# --- position_seed: the Pujol noise-cancellation seed (ngmix#796) ---
+# The seed is a pure function of (ra, dec, ccd) that must be (a) invariant to
+# sub-box centroid jitter, (b) distinct for neighbouring boxes, (c) in the
+# valid RandomState range, and (d) free of the anti-diagonal collision of
+# Fabian's original ``box_x + box_y`` sum. These properties are what make the
+# per-object noise/guess draws cancel across image-simulation shear branches.
+
+# In-survey positions: RA in [0, 360), Dec in [-40, 40], MegaCam CCDs 0..39.
+_ra = st.floats(min_value=0.0, max_value=359.999, allow_nan=False)
+_dec = st.floats(min_value=-40.0, max_value=40.0, allow_nan=False)
+_ccd = st.integers(min_value=0, max_value=39)
+
+
+@given(_ra, _dec, _ccd)
+def test_position_seed_in_valid_randomstate_range(ra, dec, ccd):
+    """Seed always lands in [0, 2**32), the RandomState-acceptable range."""
+    from shapepipe.modules.ngmix_package.ngmix import position_seed
+
+    seed = position_seed(ra, dec, ccd)
+    assert 0 <= seed < 2 ** 32
+
+
+@given(_ra, _dec, _ccd, st.floats(min_value=-1.4, max_value=1.4))
+def test_position_seed_invariant_to_sub_box_jitter(ra, dec, ccd, jitter_arcsec):
+    """Centroid jitter < half the 3-arcsec box leaves the seed unchanged.
+
+    An object re-detected with a slightly different centroid across branches
+    stays in the same box and so must get the same seed — the robustness that
+    lets the added noise cancel in the branch difference. We nudge the position
+    to a box centre first so a bounded jitter cannot cross a boundary.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import position_seed
+
+    # Snap ra/dec to their box centres (1.5 arcsec into the 3-arcsec box), so a
+    # |jitter| < 1.5 arcsec cannot leave the box.
+    ra_c = (np.floor(ra * 3600 / 3) * 3 + 1.5) / 3600
+    dec_c = (np.floor(dec * 3600 / 3) * 3 + 1.5) / 3600
+    base = position_seed(ra_c, dec_c, ccd)
+    jittered = position_seed(
+        ra_c + jitter_arcsec / 3600, dec_c + jitter_arcsec / 3600, ccd
+    )
+    assert base == jittered
+
+
+@given(_ra, _dec, _ccd)
+def test_position_seed_distinguishes_adjacent_boxes(ra, dec, ccd):
+    """Neighbouring 3-arcsec boxes get different seeds (in RA and in Dec).
+
+    Both positions are snapped to box centres and the neighbour is one full box
+    (3 arcsec) away, so the shift genuinely lands in the next box rather than
+    grazing a boundary where ``3 / 3600``'s float error could leave ``floor``
+    in the same box.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import position_seed
+
+    ra_c = (np.floor(ra * 3600 / 3) * 3 + 1.5) / 3600
+    dec_c = (np.floor(dec * 3600 / 3) * 3 + 1.5) / 3600
+    base = position_seed(ra_c, dec_c, ccd)
+    assert position_seed(ra_c + 3 / 3600, dec_c, ccd) != base
+    assert position_seed(ra_c, dec_c + 3 / 3600, ccd) != base
+
+
+def test_position_seed_resolves_fabian_anti_diagonal_collision():
+    """The Cantor pairing avoids the ``box_x + box_y`` anti-diagonal collision.
+
+    Fabian's #796 formula sums the box indices, so boxes ``(10, 20)`` and
+    ``(11, 19)`` collide (both -> 30) and two distinct objects would share a
+    noise stream. The box centres below realise exactly that pair; our pairing
+    must separate them.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import position_seed
+
+    # Box centres for boxes (box_x, box_y) at ccd=0: box_x = floor(ra*1200)+1.
+    ra_a, dec_a = (10 - 1 + 0.5) / 1200, (20 - 2 + 0.5) / 1200
+    ra_b, dec_b = (11 - 1 + 0.5) / 1200, (19 - 2 + 0.5) / 1200
+    assert position_seed(ra_a, dec_a, 0) != position_seed(ra_b, dec_b, 0)
+
+
+def _metacal_noshear_g_with_psf(seed, **kwargs):
+    """``_metacal_noshear_g`` forwarding extra kwargs to ``do_ngmix_metacal``.
+
+    Used to exercise the ``metacal_psf`` reconvolution-kernel knob while holding
+    the simulated data and seed fixed.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import (
+        Postage_stamp,
+        do_ngmix_metacal,
+        get_prior,
+    )
+    from shapepipe.testing.simulate import make_data
+
+    rng = np.random.RandomState(seed)
+    prior = get_prior(0.1857, rng)
+    gals, psfs, _, weights, flags, jacobs = make_data(
+        rng=np.random.RandomState(123),
+        shear=(0.02, 0.0),
+        noise=1e-4,
+        n_epochs=2,
+        img_size=51,
+    )
+    stamp = Postage_stamp(bkg_sub=False, megacam_flip=False)
+    stamp.gals, stamp.psfs, stamp.weights, stamp.flags, stamp.jacobs = (
+        gals,
+        psfs,
+        weights,
+        flags,
+        jacobs,
+    )
+    res, _, _ = do_ngmix_metacal(stamp, prior, 1.0, rng, **kwargs)
+    return np.asarray(res["noshear"]["g"])
+
+
+def test_metacal_psf_default_is_fitgauss_byte_for_byte():
+    """The ``metacal_psf`` knob defaults to the historical hardcode.
+
+    ``do_ngmix_metacal`` set ``metacal_pars['psf'] = 'fitgauss'`` unconditionally
+    before the knob existed; passing it explicitly must reproduce the no-kwarg
+    result bit-for-bit, so the parameterization is purely additive.
+    """
+    npt.assert_array_equal(
+        _metacal_noshear_g_with_psf(42),
+        _metacal_noshear_g_with_psf(42, metacal_psf="fitgauss"),
+    )
+
+
+def test_metacal_psf_gauss_is_a_live_alternative():
+    """``gauss`` (fixed round Gaussian) is a valid alternative kernel.
+
+    It must run to a finite shear and differ from ``fitgauss`` — the knob is
+    genuinely wired through to ngmix's metacal, not a no-op.
+    """
+    g_fit = _metacal_noshear_g_with_psf(42, metacal_psf="fitgauss")
+    g_gauss = _metacal_noshear_g_with_psf(42, metacal_psf="gauss")
+    assert np.all(np.isfinite(g_gauss))
+    assert not np.array_equal(g_fit, g_gauss)
+
+
+def test_metacal_psf_azgauss_is_a_live_alternative():
+    """``azgauss`` (ngmix >= 2.4.1) is the noise-robust ``gauss`` variant.
+
+    It must run to a finite shear and differ from ``fitgauss`` — this both wires
+    the knob through and asserts the bumped ngmix actually provides the kernel.
+    """
+    g_fit = _metacal_noshear_g_with_psf(42, metacal_psf="fitgauss")
+    g_az = _metacal_noshear_g_with_psf(42, metacal_psf="azgauss")
+    assert np.all(np.isfinite(g_az))
+    assert not np.array_equal(g_fit, g_az)
+
+
 # The two PSF families carry distinct ellipticity AND size (shapepipe#749):
 # the original image PSF (-> *_psf_orig) and the metacal reconvolution kernel
 # (-> *_psf_reconv) are independent fits, so a regression to the old aliasing
