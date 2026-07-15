@@ -526,9 +526,17 @@ build_coverage_map -i exp_ra_dec_v1.6.txt -o coverage_v1.6.x.hsp -c 128 -n 13107
 The healsparse resolutions (128, 131072) match the bit masks.
 
 
-Use `plot_coverage_map` to create plots of the coverage mask.
+Use `plot_coverage_map` to plot a region of the coverage mask. For example,
+the SGC region with a colorbar clipped to the 1–5 exposure range:
 
-Building and plotting for a range of versions is done with
+```bash
+plot_coverage_map -i coverage_v1.6.x.hsp -o coverage_v1.6_SGC.png \
+    -C -R -20 -r 45 -D 18 -d 40 -m 1 -M 5 -v
+```
+
+Here `-R`/`-r` and `-D`/`-d` set the RA and Dec plot limits, `-m`/`-M` the
+colorbar range, and `-C` adds the colorbar. Building and plotting for a range
+of versions (SGC and NGC regions) is automated by
 `build_and_plot_coverage_maps.sh`.
 
 

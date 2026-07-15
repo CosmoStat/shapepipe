@@ -37,7 +37,7 @@ def run_download_headers(args=None):
 def run_extract_corners(args=None):
     """Run Extract Corners.
 
-    Extract field corner coordinates from FITS headers.
+    Extract per-CCD sky-footprint corner coordinates from FITS headers.
 
     Parameters
     ----------
@@ -57,7 +57,7 @@ def run_extract_corners(args=None):
 def run_build_coverage(args=None):
     """Run Build Coverage.
 
-    Build HealSparse coverage maps from field corner coordinates.
+    Build HealSparse coverage maps from per-CCD corner coordinates.
 
     Parameters
     ----------

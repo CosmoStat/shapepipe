@@ -151,8 +151,11 @@ class HeaderDownloader(object):
                 exp = int(r1[0])
                 exps.append(exp)
         else:
-            # Text format
-            f = np.loadtxt(ccd_list_file, dtype="str", encoding="ascii")
+            # Text format; atleast_1d so a single-line file (0-d array) is
+            # still iterable.
+            f = np.atleast_1d(
+                np.loadtxt(ccd_list_file, dtype="str", encoding="ascii")
+            )
             r = np.char.split(f, sep="-")
 
             for i, r1 in enumerate(r):
