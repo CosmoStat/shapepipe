@@ -206,7 +206,9 @@ class CcdPsfHandler(object):
     def get_ccds_with_psf(self, patches, n_CCD=40):
         """Get CCDs With PSF.
 
-        Return set of CCDs from list of patches.
+        Return set of CCDs with valid PSF from a list of patches. A CCD has a
+        valid PSF if it appears among the exposures' single-HDU IDs but not in
+        the per-patch missing-CCD lists.
 
         Parameters
         ----------
@@ -218,7 +220,7 @@ class CcdPsfHandler(object):
         Returns
         -------
         set
-           CCD IDs
+           CCD IDs with valid PSF
 
         """
         # Get missing CCDs
@@ -230,11 +232,18 @@ class CcdPsfHandler(object):
         exp_all = self.get_exp(patches)
 
         # Turn exposures into exposure-single-HDU names (CCDs)
-        exp_shdu_all = summary.get_all_shdus(exp_all, n_CCD)
+        exp_shdu_all = set(summary.get_all_shdus(exp_all, n_CCD))
 
-        print(f"Found {len(exp_shdu_all)} CCDs")
+        # Subtract the CCDs whose PSF model is missing
+        exp_shdu_with_psf = exp_shdu_all - exp_shdu_missing_all
 
-        return exp_shdu_all
+        print(
+            f"Found {len(exp_shdu_all)} CCDs, "
+            f"{len(exp_shdu_missing_all)} missing, "
+            f"{len(exp_shdu_with_psf)} with valid PSF"
+        )
+
+        return exp_shdu_with_psf
 
     def get_ccds_with_psf_method_v1_3(self, patches, n_CCD=40):
         """Get CCDs With PSF Method v1.3.
