@@ -1,5 +1,19 @@
 #!/bin/bash
 
+set -euo pipefail
+
+# Build and plot per-CCD coverage (nexp) maps for a range of catalogue
+# versions. Each map counts, per sky pixel, the number of exposures with a
+# valid PSF model. The per-version flow is:
+#   0. get_ccds_with_psf    -> ccds_with_psf_<version>.txt (valid CCD IDs)
+#   1. download_headers     -> per-exposure header text files
+#   2. extract_field_corners-> exp_ra_dec_<version>.txt (per-CCD corners)
+#   3. build_coverage_map   -> coverage_<version>.x.hsp
+#   4. plot_coverage_map    -> SGC / NGC plots
+# Steps 0-2 are expected to have been run already on canfar (they need
+# VOSpace access); this script rebuilds from the extracted per-CCD corners and
+# plots. Uncomment the marked lines to run the full chain.
+
 # Configuration variables
 
 ## Catalogue versions
@@ -23,7 +37,7 @@ PLOT_COLORBAR="-C"
 PLOT_MIN=1
 PLOT_MAX=5
 
-# Plot parameters 
+# Plot parameters
 ## SGC region
 SGC_RA_MIN=-20
 SGC_RA_MAX=45
@@ -44,12 +58,21 @@ for VERSION in "${VERSIONS[@]}"; do
     echo "Processing ${VERSION}..."
 
     # Define file paths
-    INPUT_EXP="exp_ra_dec_${VERSION}.txt"
+    CCD_LIST="ccds_with_psf_${VERSION}.txt"
+    HEADER_DIR="headers_${VERSION}"
+    INPUT_CORNERS="exp_ra_dec_${VERSION}.txt"
     COVERAGE_MAP="coverage_${VERSION}.x.hsp"
 
+    # Step 0-2: build the per-CCD corner file (canfar / VOSpace only).
+    # Uncomment to run the full chain from scratch.
+    # get_ccds_with_psf -V "${VERSION}" -o "${CCD_LIST}" ${VERBOSE}
+    # download_headers -i "${CCD_LIST}" -o "${HEADER_DIR}" ${VERBOSE}
+    # extract_field_corners -i "${HEADER_DIR}" -l "${CCD_LIST}" \
+    #     -o "${INPUT_CORNERS}" ${VERBOSE}
+
     # Build coverage map
-    echo "  Building coverage map from ${INPUT_EXP}..."
-    CMD="build_coverage_map -i ${INPUT_EXP} -o ${COVERAGE_MAP} -c ${BUILD_CHANNELS} -n ${BUILD_NSIDE} ${VERBOSE}"
+    echo "  Building coverage map from ${INPUT_CORNERS}..."
+    CMD="build_coverage_map -i ${INPUT_CORNERS} -o ${COVERAGE_MAP} -c ${BUILD_CHANNELS} -n ${BUILD_NSIDE} ${VERBOSE}"
     echo "$CMD"
     $CMD
 

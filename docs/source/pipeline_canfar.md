@@ -458,13 +458,12 @@ calibrate_comprehensive
 
 
 ```{note}
-The matched-star-catalogue and coverage-mask diagnostics in the next two
-sections have largely moved out of ShapePipe into
-[`sp_validation`](https://github.com/CosmoStat/sp_validation) / `cosmo_val`.
-Several helpers referenced below — `merge_psf_cat.py`, `download_headers`,
-`extract_field_corners`, `build_coverage_map`, `plot_coverage_map` — are no
-longer shipped in this repository; see `sp_validation` for their current
-equivalents. (`get_ccds_with_psf` and `summary_run` are still part of ShapePipe.)
+The matched-star-catalogue diagnostic (`merge_psf_cat.py`) has moved into
+[`sp_validation`](https://github.com/CosmoStat/sp_validation) / `cosmo_val`;
+see that repository for its current equivalent. The coverage-mask helpers
+(`get_ccds_with_psf`, `download_headers`, `extract_field_corners`,
+`build_coverage_map`, `plot_coverage_map`, and `summary_run`) are shipped by
+ShapePipe and documented below.
 ```
 
 ### Create matched star catalogue
@@ -495,27 +494,33 @@ If the file `$patch/exp_numbers.txt` does not exist for a given patch, create it
 summary_run $patch 1
 ```
 
-Now, create the list of CCDs that have PSF information with
+Now, create the list of single-CCD footprints that have a valid PSF model.
+Only these CCDs are stamped into the mask, so the accumulated map counts, per
+sky pixel, the number of exposures with a valid PSF. The list is written to
+`ccds_with_psf_v1.6.txt`:
 
 ```bash
-get_ccds_with_psf -v -V v1.6
+get_ccds_with_psf -v -V v1.6 -o ccds_with_psf_v1.6.txt
 ```
 
-Next, download exposures headers; indicate (with `-d`) a directory of already
-downloaded headers; those will be linked and duplicated download skipped.
+Next, download the exposure headers; indicate (with `-d`) a directory of
+already downloaded headers, which are linked so duplicate downloads are
+skipped:
 
 ```bash
-download_headers -i ccds_with_psfs_v1.6.txt -o headers_v1.6 -d headers_v1.3 -v
+download_headers -i ccds_with_psf_v1.6.txt -o headers_v1.6 -d headers_v1.3 -v
 ```
 
-From the headers, the CCD corner coordinates are extracted with
+From the headers, the per-CCD corner coordinates are extracted. Pass the
+CCD list with `-l` so only CCDs with a valid PSF are written:
+
 ```bash
-extract_field_corners -i headers_v1.6 -v
+extract_field_corners -i headers_v1.6 -l ccds_with_psf_v1.6.txt -o exp_ra_dec_v1.6.txt -v
 ```
 
 Then, build the healsparse coverage mask file as
 ```bash
-build_coverage_map -i exp_ra_dec_v1.6 -o coverage_v1.6.x.hsp -c 128 -n 131072 -v
+build_coverage_map -i exp_ra_dec_v1.6.txt -o coverage_v1.6.x.hsp -c 128 -n 131072 -v
 ```
 
 The healsparse resolutions (128, 131072) match the bit masks.
