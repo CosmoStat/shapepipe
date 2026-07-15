@@ -138,6 +138,15 @@ def ngmix_runner(
         )
         return None, None
 
+    # Metacal reconvolution-kernel scheme (metacal_pars['psf']): "fitgauss"
+    # (default; fit a Gaussian to the PSF and round it), "gauss" (fixed round
+    # Gaussian sized from the PSF), "dilate" (dilate the original PSF), or
+    # "azgauss" (ngmix >= 2.4.1; noise-robust variant of "gauss").
+    if config.has_option(module_config_sec, "METACAL_PSF"):
+        metacal_psf = config.get(module_config_sec, "METACAL_PSF")
+    else:
+        metacal_psf = "fitgauss"
+
     # Initialise class instance
     ngmix_inst = Ngmix(
         input_file_list,
@@ -153,6 +162,7 @@ def ngmix_runner(
         bkg_sub=bkg_sub,
         centroid_source=centroid_source,
         seed_from_position=seed_from_position,
+        metacal_psf=metacal_psf,
     )
 
     # Process ngmix shape measurement and metacalibration

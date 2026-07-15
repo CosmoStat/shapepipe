@@ -64,7 +64,12 @@ jobs:
       # Build + test (every event)
       # ----------------------------------------------------------------
 
-      # Build runtime first (smaller, used to smoke-test pipeline binaries)
+      # Build runtime first (smaller, used to smoke-test pipeline binaries).
+      # cache-to mode=min (not max): only the layers that survive into the
+      # final image are exported. The expensive base stage (apt + source-built
+      # OpenMPI) IS in the final image, so it still gets cached and restored —
+      # what min drops is the redundant re-export of intermediate-stage-only
+      # layers, which was ~70 s of "writing layer" on every build.
       - name: Build runtime (load)
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
@@ -74,7 +79,7 @@ jobs:
           tags: ${{ steps.meta-runtime.outputs.tags }}
           labels: ${{ steps.meta-runtime.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
 
       # Smoke-test the binaries baked into the runtime image. Catches the
       # class of regression where the image builds but a runtime tool
@@ -94,7 +99,7 @@ jobs:
           # the example tree gets copied into a mktemp workdir before running.
           docker run --rm --read-only --tmpfs /tmp:rw "$IMAGE" shapepipe_run_example
 
-      # Build dev (reuses cached `base` layer)
+      # Build dev (reuses cached `base` layer; see mode=min note above)
       - name: Build dev (load)
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
@@ -104,7 +109,7 @@ jobs:
           tags: ${{ steps.meta-dev.outputs.tags }}
           labels: ${{ steps.meta-dev.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
 
       # Verify the dev-only additions are present and runnable.
       - name: Test dev — interactive tools
@@ -112,6 +117,21 @@ jobs:
           IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
           docker run --rm "$IMAGE" vim --version | head -n1
           docker run --rm "$IMAGE" rg --version | head -n1
+
+      # Fast science guardrails first (tests/science) — the tier of controlled
+      # simulations with a known answer (e.g. the m-bias check: inject g1=0.02,
+      # recover after the metacal response, assert |m| < 5e-3). These run in
+      # seconds and gate scientific correctness, so we fire them as their own
+      # named check *before* the full suite: a regression that breaks the
+      # response correction or deconvolution fails here in seconds, with a
+      # clear signal, instead of being buried minutes deep in the full run.
+      # `-m "not slow"` keeps this the fast lane (the science tier holds only
+      # fast tests today; the filter makes the intent explicit and future-proof).
+      - name: Test dev — science guardrails (fast)
+        run: |
+          IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
+          docker run --rm -e HYPOTHESIS_PROFILE=ci "$IMAGE" \
+            pytest -rX -m "not slow" --no-cov tests/science
 
       # The actual test suite, run inside the shipped image — replacing the
       # retired conda-based suite. pytest exercises the same wheels, binaries,

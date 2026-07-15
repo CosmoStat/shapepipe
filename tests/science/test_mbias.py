@@ -19,8 +19,15 @@ in seconds, with nothing from the cluster.
 Fast + local: marked neither ``slow`` nor ``candide``; part of the inner loop.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pytest
+
+from tests.helpers.artifacts import emit_mbias_artifacts
+
+# The GitHub Pages publish seam (see tests/_artifacts/README.md).
+_ARTIFACTS_DIR = Path(__file__).resolve().parents[1] / "_artifacts"
 
 
 INJECTED_G1 = 0.02
@@ -72,6 +79,22 @@ def test_mbias_ideal_limit_below_few_e3():
     """
     g1_recovered, R11 = _recover_g1_with_response()
     m = g1_recovered / INJECTED_G1 - 1.0
+
+    # Emit the status artifact (the GitHub Pages publish seam) before asserting,
+    # so the recorded status lands on pass *and* fail.
+    passed = np.isfinite(R11) and R11 > 0.1 and abs(m) < M_TOL
+    emit_mbias_artifacts(
+        _ARTIFACTS_DIR,
+        {
+            "metric": "multiplicative_bias",
+            "injected_g1": INJECTED_G1,
+            "recovered_g1": float(g1_recovered),
+            "metacal_response_R11": float(R11),
+            "multiplicative_bias_m": float(m),
+            "tolerance": M_TOL,
+            "status": "PASS" if passed else "FAIL",
+        },
+    )
 
     assert np.isfinite(R11) and R11 > 0.1, (
         f"metacal response R11 = {R11:.4f} is degenerate; "

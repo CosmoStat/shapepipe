@@ -38,29 +38,30 @@ def merge_headers_runner(
         # Tile-level mode: input is an exp_numbers txt file; collect header
         # files from each per-exposure work directory via get_exp_output_files.
         exp_base_dir = config.getexpanded(module_config_sec, "EXP_BASE_DIR")
-        exp_numbers_file = input_file_list[0][0]
-        w_log.info(
-            f"Tile-level merge: collecting headers from {exp_base_dir} "
-            f"using {exp_numbers_file}"
-        )
-        warn_missing = config.getboolean(
-            module_config_sec, "WARN_MISSING_EXP", fallback=False
-        )
-        headers_file_list = get_exp_output_files(
-            exp_base_dir,
-            exp_numbers_file,
-            "split_exp_runner",
-            "headers",
-            ".npy",
-            w_log=w_log,
-            warn_only=warn_missing,
-        )
-        # Extract tile number from the exp_numbers filename, e.g.
-        # "exp_numbers-284.272-1.000.txt" -> "-284.272-1.000"
-        base = os.path.splitext(os.path.basename(exp_numbers_file))[0]
-        tile_number = re.sub(r"^exp_numbers", "", base)
-        merge_headers(headers_file_list, output_dir, tile_number)
-        w_log.info(f"Merged {len(headers_file_list)} exposure header files")
+
+        # In serial mode several tiles' exp_numbers files can arrive in a
+        # single call; merge each tile into its own per-tile sqlite file.
+        for exp_numbers_file in (item[0] for item in input_file_list):
+            w_log.info(
+                f"Tile-level merge: collecting headers from {exp_base_dir} "
+                f"using {exp_numbers_file}"
+            )
+            headers_file_list = get_exp_output_files(
+                exp_base_dir,
+                exp_numbers_file,
+                "split_exp_runner",
+                "headers",
+                ".npy",
+                w_log=w_log,
+            )
+            # Extract tile number from the exp_numbers filename, e.g.
+            # "exp_numbers-284.272-1.000.txt" -> "-284.272-1.000"
+            base = os.path.splitext(os.path.basename(exp_numbers_file))[0]
+            tile_number = re.sub(r"^exp_numbers", "", base)
+            merge_headers(headers_file_list, output_dir, tile_number)
+            w_log.info(
+                f"Merged {len(headers_file_list)} exposure header files"
+            )
     else:
         # Per-exposure mode: input_file_list already contains the header files.
         merge_headers(input_file_list, output_dir)

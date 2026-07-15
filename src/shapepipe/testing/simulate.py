@@ -22,6 +22,8 @@ def make_data(
     pixel_scale=0.1857,
     img_size=201,
     psf_shear=(0.0, 0.0),
+    wcs=None,
+    return_centers=False,
 ):
     """Simulate an exponential galaxy with Moffat PSF.
 
@@ -55,6 +57,23 @@ def make_data(
         guardrail needs: the PSF carries a shape that an unbiased deconvolution
         must remove from a round galaxy. The same sheared PSF is used both to
         convolve the object and as the PSF model stamp.
+    wcs : galsim.BaseWCS, optional
+        Uniform drawing WCS. Default None means ``galsim.PixelScale
+        (pixel_scale)`` with the legacy world-space sub-pixel shift draw —
+        bit-identical rng consumption and values to earlier versions of this
+        function. A non-trivial jacobian (rotation/shear — the ngmix#72
+        sensitivity axis) switches the shift draw to PIXEL space (uniform
+        ±0.5 pixel per axis), guaranteeing the object lands within half a
+        pixel of the stamp centre — the contract that round-to-nearest-pixel
+        centroid logic (e.g. ngmix ``centroid_source="wcs"``) depends on.
+        Note ``psfs_sigmas`` are HSM pixel-unit sigmas of the *WCS-drawn*
+        PSF stamp; under a sheared WCS they are not circularly symmetric
+        measures.
+    return_centers : bool, optional
+        If True, also return per-epoch true object centres as
+        ``galsim.PositionD`` in galsim image coordinates (1-based; stamp
+        centre is ``(img_size + 1) / 2``). Default False keeps the legacy
+        6-tuple return.
 
     Returns
     -------
@@ -64,19 +83,44 @@ def make_data(
     weights : list of numpy.ndarray
     flags : list of numpy.ndarray
     jacob_lists : list of galsim.BaseWCS
+    centers : list of galsim.PositionD, only if ``return_centers``
     """
     psf_noise = 1.0e-6
     scale = pixel_scale
-    wcs = galsim.PixelScale(scale)
+
+    if wcs is None:
+        wcs = galsim.PixelScale(scale)
+
+        def draw_shift():
+            # Legacy world-space draw — these exact lines (incl. dy-then-dx
+            # order) keep rng consumption and values bit-identical to the
+            # pre-wcs version of this function.
+            dy, dx = rng.uniform(low=-scale / 2, high=scale / 2, size=2)
+            return dx, dy, dx / scale, dy / scale
+
+    else:
+        jac = wcs.jacobian()
+        transform = np.array([[jac.dudx, jac.dudy], [jac.dvdx, jac.dvdy]])
+
+        def draw_shift():
+            # Pixel-space draw (same dy-then-dx order): under a sheared
+            # jacobian a world-space ±scale/2 box maps to a pixel-space
+            # parallelogram exceeding ±0.5 pixel, which would silently break
+            # rounded-centroid logic with off-by-one-pixel centres.
+            dpy, dpx = rng.uniform(low=-0.5, high=0.5, size=2)
+            dx, dy = transform @ (dpx, dpy)
+            return float(dx), float(dy), dpx, dpy
 
     if share_shift:
-        dy, dx = rng.uniform(low=-scale / 2, high=scale / 2, size=2)
+        dx, dy, dpx, dpy = draw_shift()
 
-    gals, psfs, psfs_sigmas, weights, flags, jacob_lists = [], [], [], [], [], []
+    gals, psfs, psfs_sigmas, weights, flags, jacob_lists, centers = (
+        [], [], [], [], [], [], []
+    )
 
     for epoch in range(n_epochs):
         if not share_shift:
-            dy, dx = rng.uniform(low=-scale / 2, high=scale / 2, size=2)
+            dx, dy, dpx, dpy = draw_shift()
 
         psf = galsim.Moffat(beta=2.5, fwhm=psf_fwhm).shear(
             g1=psf_shear[0], g2=psf_shear[1]
@@ -101,7 +145,12 @@ def make_data(
         weights.append(im * 0 + 1.0 / noise ** 2)
         flags.append(im * 0)
         jacob_lists.append(wcs.jacobian())
+        centers.append(galsim.PositionD(
+            (img_size + 1) / 2 + dpx, (img_size + 1) / 2 + dpy
+        ))
 
+    if return_centers:
+        return gals, psfs, psfs_sigmas, weights, flags, jacob_lists, centers
     return gals, psfs, psfs_sigmas, weights, flags, jacob_lists
 
 
