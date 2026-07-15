@@ -38,6 +38,7 @@ def merge_headers_runner(
         # Tile-level mode: input is an exp_numbers txt file; collect header
         # files from each per-exposure work directory via get_exp_output_files.
         exp_base_dir = config.getexpanded(module_config_sec, "EXP_BASE_DIR")
+
         # In serial mode several tiles' exp_numbers files can arrive in a
         # single call; merge each tile into its own per-tile sqlite file.
         for exp_numbers_file in (item[0] for item in input_file_list):

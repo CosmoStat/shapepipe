@@ -104,7 +104,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 script-files = [
     "scripts/python/update_runs_log_file.py",
-    "scripts/sh/init_run_v2.0.sh",
     "scripts/sh/run_job_sp_canfar_v2.0.bash",
     "scripts/sh/job_sp_canfar_v2.0.bash",
 ]

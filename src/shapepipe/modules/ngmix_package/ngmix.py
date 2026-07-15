@@ -275,11 +275,10 @@ class Vignet():
         flag_vignet_path,
         f_wcs_path,
         bkg_rms_vignet_path=None,
-
     ):
         self.f_wcs_file = SqliteDict(f_wcs_path)
         self.gal_vign_cat = SqliteDict(gal_vignet_path)
-        self.bkg_vign_cat = SqliteDict(bkg_vignet_path)
+        self.bkg_vign_cat = SqliteDict(bkg_vignet_path) if bkg_vignet_path is not None else None
         self.psf_vign_cat = SqliteDict(psf_vignet_path)
         self.weight_vign_cat = SqliteDict(weight_vignet_path)
         self.flag_vign_cat = SqliteDict(flag_vignet_path)
@@ -292,7 +291,8 @@ class Vignet():
     def close(self):
         self.f_wcs_file.close()
         self.gal_vign_cat.close()
-        self.bkg_vign_cat.close()
+        if self.bkg_vign_cat is not None:
+            self.bkg_vign_cat.close()
         self.flag_vign_cat.close()
         self.weight_vign_cat.close()
         self.psf_vign_cat.close()
@@ -362,26 +362,47 @@ class Ngmix(object):
         save_batch=-1,
         id_obj_min=-1,
         id_obj_max=-1,
+        bkg_sub=True,
         centroid_source="hsm",
         seed_from_position=False,
         metacal_psf="fitgauss",
     ):
 
-        if len(input_file_list) not in {6, 7}:
+        # Base count = catalogue + vignets, excluding the f_wcs headers (passed
+        # separately). One fewer when the background vignet is absent
+        # (``bkg_sub=False``, image sims). An extra trailing slot may carry the
+        # optional background-rms vignet (#779), so both counts are valid.
+        n_base = 6 if bkg_sub else 5
+        if len(input_file_list) not in {n_base, n_base + 1}:
             raise IndexError(
                 f"Input file list has length {len(input_file_list)},"
-                + " required is 6 or 7"
+                + f" required is {n_base} or {n_base + 1}"
             )
 
         self._tile_cat_path = input_file_list[0]
+        if bkg_sub:
+            bkg_path, psf_path, weight_path, flag_path = (
+                input_file_list[2], input_file_list[3],
+                input_file_list[4], input_file_list[5],
+            )
+        else:
+            bkg_path, psf_path, weight_path, flag_path = (
+                None, input_file_list[2],
+                input_file_list[3], input_file_list[4],
+            )
+        bkg_rms_vignet_path = (
+            input_file_list[n_base]
+            if len(input_file_list) == n_base + 1
+            else None
+        )
         self._vignet_cat = Vignet(
             input_file_list[1],
-            input_file_list[2],
-            input_file_list[3],
-            input_file_list[4],
-            input_file_list[5],
+            bkg_path,
+            psf_path,
+            weight_path,
+            flag_path,
             f_wcs_path,
-            input_file_list[6] if len(input_file_list) == 7 else None,
+            bkg_rms_vignet_path,
         )
 
         self._output_dir = output_dir
@@ -395,6 +416,7 @@ class Ngmix(object):
         self._save_batch = save_batch
         self._id_obj_min = id_obj_min
         self._id_obj_max = id_obj_max
+        self._bkg_sub = bkg_sub
         self._centroid_source = centroid_source
         self._seed_from_position = seed_from_position
         self._metacal_psf = metacal_psf
@@ -711,6 +733,61 @@ class Ngmix(object):
                 + f" file '{vignet_path}'"
             )
 
+    def log_mean_ellipticity(self):
+        """Log mean ellipticity from NOSHEAR HDU to the run log.
+
+        Reports <e1>, <e2> with standard errors for all objects and for
+        objects passing the default metacal cuts (flags==0, mcal_flags==0,
+        10 < SNR < 500, T/Tpsf > 0.5).
+        """
+        output_path = self.get_output_path(self._output_dir)
+        try:
+            with fits.open(output_path) as hdul:
+                d = hdul['NOSHEAR'].data
+                g1 = d['g1'].astype(float)
+                g2 = d['g2'].astype(float)
+                flags = d['flags']
+                mcal_flags = d['mcal_flags']
+                s2n = d['s2n'].astype(float)
+                T = d['T'].astype(float)
+                Tpsf = d['Tpsf'].astype(float)
+        except Exception as e:
+            self._w_log.warning(f"Could not compute mean ellipticity: {e}")
+            return
+
+        n_total = len(g1)
+        if n_total == 0:
+            self._w_log.info("Mean ellipticity: no objects in output catalogue")
+            return
+
+        def _log_stats(g1_sel, g2_sel, label):
+            n = len(g1_sel)
+            if n == 0:
+                self._w_log.info(f"  {label}: 0 objects")
+                return
+            mean_g1 = g1_sel.mean()
+            mean_g2 = g2_sel.mean()
+            err_g1 = g1_sel.std() / np.sqrt(n)
+            err_g2 = g2_sel.std() / np.sqrt(n)
+            self._w_log.info(
+                f"  {label} (N={n}):"
+                f"  <e1> = {mean_g1:+.4e} +/- {err_g1:.4e},"
+                f"  <e2> = {mean_g2:+.4e} +/- {err_g2:.4e}"
+            )
+
+        self._w_log.info(f"Mean ellipticity (NOSHEAR, N_total={n_total}):")
+        _log_stats(g1, g2, "no cuts")
+
+        with np.errstate(invalid='ignore'):
+            mask = (
+                (flags == 0)
+                & (mcal_flags == 0)
+                & (s2n >= 10.0)
+                & (s2n <= 500.0)
+                & (T / Tpsf >= 0.5)
+            )
+        _log_stats(g1[mask], g2[mask], "SNR in [10, 500], T/Tpsf > 0.5")
+
     def process(self):
         """Process.
 
@@ -760,7 +837,7 @@ class Ngmix(object):
                 n_empty_cat += 1
                 continue
 
-            stamp = prepare_postage_stamps(vignet_cat, obj_id, i_tile, tile_cat)
+            stamp = prepare_postage_stamps(vignet_cat, obj_id, i_tile, tile_cat, self._bkg_sub)
 
             if len(stamp.gals) == 0:
                 n_no_epoch += 1
@@ -871,9 +948,12 @@ class Ngmix(object):
         # Save results
         self.save_results(res_dict)
 
-def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
+        # Log mean ellipticity statistics
+        self.log_mean_ellipticity()
+
+def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
     # define per-object lists of individual exposures to go into ngmix
-    stamp = Postage_stamp()
+    stamp = Postage_stamp(bkg_sub=bkg_sub)
     #identify exposure and ccd number from psf catalog
     psf_expccd_names = list(vignet.psf_vign_cat[str(obj_id)].keys())
     for expccd_name in psf_expccd_names:
@@ -896,6 +976,12 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
             )
         else:
             gal_vign_sub_bkg = gal_vign
+
+        # Skip epochs where sigma_mad=0 (CCD edge: mostly-zero stamp).
+        # prepare_ngmix_weights divides by sig_noise; zero sigma causes NaN/inf
+        # weights that corrupt GalSim's C-level FFT allocations.
+        if not sigma_mad(gal_vign_sub_bkg) > 0:
+            continue
 
         tile_vign = (
             np.copy(tile_cat.vign[i_tile])
@@ -1146,6 +1232,13 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
             if mask.any()
             else sigma_mad(gal)
         )
+
+    # Guard: sig_noise=0 means galaxy is at the CCD edge (mostly-zero stamp).
+    # Division by zero would make weight_map NaN/inf, crashing GalSim C code.
+    # np.all keeps the guard valid for the per-pixel bkg_rms path (any zero
+    # pixel would produce the same NaN weight the scalar case guards against).
+    if not np.all(sig_noise > 0):
+        return np.zeros_like(gal), np.zeros_like(weight_map), np.zeros_like(gal)
 
     noise_img = rng.standard_normal(gal.shape) * sig_noise
     noise_img_gal = rng.standard_normal(gal.shape) * sig_noise

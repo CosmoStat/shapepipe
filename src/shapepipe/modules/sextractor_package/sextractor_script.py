@@ -157,9 +157,13 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
             history.append(idx)
 
     exp_list = []
-    pattern = r"([0-9]*)p\.(.*)"
+    pattern = r"([0-9]+)p?\.(.*)"
     for hist in history:
         m = re.search(pattern, hist)
+        if m is None:
+            raise ValueError(
+                f"Could not parse exposure ID from HISTORY entry: '{hist}'"
+            )
         exp_list.append(m.group(1))
 
     obj_id = np.copy(cat.get_data()["NUMBER"])
