@@ -2,9 +2,11 @@
 
 Covers the pure and lightly-fixtured logic behind the per-CCD coverage nexp
 masks: exposure-number parsing, the CCD-list -> unique-exposure reduction, the
-handler's missing-CCD subtraction, per-CCD corner extraction from a multi-HDU
-header, ``--ccd_list`` filtering, the builder's per-CCD row parsing and RA-wrap
-guard, the power-of-two ``nside`` validation, the atomic-download rename, and
+handler's missing-CCD subtraction (pinned against the real ID format), per-CCD
+corner extraction from plain and fpack-compressed multi-HDU headers,
+``--ccd_list`` filtering, the per-CCD resume path, the builder's per-CCD row
+parsing, the accumulated exposure-count (nexp) contract, the RA-wrap and pole
+guards, the power-of-two ``nside`` validation, the atomic-download rename, and
 the ``-h``/argv handling of the console runners. The heavy paths (real VOSpace
 download, production-resolution map building, plotting, multiprocessing) are
 exercised end to end by the pipeline, not here.
@@ -12,17 +14,15 @@ exercised end to end by the pipeline, not here.
 
 import sys
 from types import SimpleNamespace
-from unittest import mock
 
 import numpy as np
 import numpy.testing as npt
 import pytest
 from astropy import wcs
-from astropy.io.fits import Header
 from hypothesis import given
 from hypothesis import strategies as st
 
-from shapepipe.utilities import ccd_psf_handler as ccd_psf_handler_mod
+from shapepipe.utilities import summary
 from shapepipe.utilities.ccd_psf_handler import CcdPsfHandler
 from shapepipe.utilities.coverage_map_builder import (
     CoverageMapBuilder,
@@ -32,6 +32,7 @@ from shapepipe.utilities.field_corners_extractor import (
     FieldCornersExtractor,
     _ccd_corners,
     _expnum_from_path,
+    _image_shape,
     _parse_header_to_wcs,
 )
 from shapepipe.utilities.header_downloader import HeaderDownloader
@@ -40,8 +41,8 @@ from shapepipe.utilities.header_downloader import HeaderDownloader
 def _tan_wcs(crval_ra, crval_dec=0.0, nx=2080, ny=4612):
     """Build a minimal 2-D TAN WCS with a populated pixel shape.
 
-    ``nx``/``ny`` set ``pixel_shape`` (populated by astropy from
-    ``NAXIS1``/``NAXIS2``), so ``_ccd_corners`` can read the CCD pixel bounds.
+    ``nx``/``ny`` set ``pixel_shape`` so ``_header_text`` can emit matching
+    ``NAXIS1``/``NAXIS2`` keywords.
     """
     w = wcs.WCS(naxis=2)
     w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
@@ -53,10 +54,8 @@ def _tan_wcs(crval_ra, crval_dec=0.0, nx=2080, ny=4612):
 
 
 def _header_text(wcs_list):
-    """Render a multi-HDU header text file: a primary HDU then one per WCS.
-
-    Each CCD header carries ``NAXIS1``/``NAXIS2`` so the reconstructed WCS has a
-    pixel shape.
+    """Render a multi-HDU header text file: a primary HDU then one plain image
+    HDU per WCS, each carrying ``NAXIS1``/``NAXIS2``.
     """
     blocks = ["SIMPLE  =                    T"]
     for w in wcs_list:
@@ -67,6 +66,34 @@ def _header_text(wcs_list):
         header["NAXIS2"] = ny
         blocks.append("\n".join(str(card) for card in header.cards))
     return "".join(f"{block}\nEND     \n" for block in blocks)
+
+
+def _compressed_header_text(w):
+    """Render a one-CCD header mimicking an fpack tile-compressed HDU.
+
+    ``NAXIS1``/``NAXIS2`` describe the compressed binary table (byte width, row
+    count); the true image dimensions live in ``ZNAXIS1``/``ZNAXIS2``. This is
+    the shape of headers fetched from '<expnum>p.fits.fz' with ``head=True``.
+    """
+    nx, ny = w.pixel_shape
+    wcs_cards = "\n".join(str(card) for card in w.to_header().cards)
+    ccd = (
+        "XTENSION= 'BINTABLE'\n"
+        "BITPIX  =                    8\n"
+        "NAXIS   =                    2\n"
+        "NAXIS1  =                    8\n"
+        f"NAXIS2  =                 {ny}\n"
+        "PCOUNT  =              1000000\n"
+        "GCOUNT  =                    1\n"
+        "TFIELDS =                    1\n"
+        "ZIMAGE  =                    T\n"
+        "ZBITPIX =                  -32\n"
+        "ZNAXIS  =                    2\n"
+        f"ZNAXIS1 =                 {nx}\n"
+        f"ZNAXIS2 =                 {ny}\n"
+        f"{wcs_cards}"
+    )
+    return f"SIMPLE  =                    T\nEND     \n{ccd}\nEND     \n"
 
 
 # ---------------------------------------------------------------------------
@@ -111,6 +138,16 @@ def test_get_exposures_reduces_to_unique_exposures(tmp_path):
     exps = HeaderDownloader().get_exposures(str(ccd_list))
 
     npt.assert_array_equal(exps, np.array([2143523, 2143524]))
+
+
+def test_get_exposures_single_line(tmp_path):
+    """A one-line CCD list (0-d loadtxt array) still yields one exposure."""
+    ccd_list = tmp_path / "ccds.txt"
+    ccd_list.write_text("2143523-0\n")
+
+    exps = HeaderDownloader().get_exposures(str(ccd_list))
+
+    npt.assert_array_equal(exps, np.array([2143523]))
 
 
 def test_get_exposures_csv_matches_txt(tmp_path):
@@ -177,29 +214,81 @@ def test_get_fits_header_failed_copy_leaves_no_dest(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_get_ccds_with_psf_subtracts_missing(monkeypatch):
-    """Valid CCDs are all exposure single-HDUs minus the missing set."""
+    """Valid CCDs are all exposure single-HDUs minus the missing set.
+
+    The real ``summary.get_all_shdus`` is used so the cross-component
+    ``<exp>-<ccd>`` ID format is pinned end to end.
+    """
     handler = CcdPsfHandler()
 
     # Two exposures, 3 CCDs each -> 6 candidate CCDs; two are missing.
-    monkeypatch.setattr(
-        handler, "get_exp", lambda patches: {"100", "200"}
-    )
+    monkeypatch.setattr(handler, "get_exp", lambda patches: {"100", "200"})
     monkeypatch.setattr(
         handler,
         "get_exp_shdu_missing",
         lambda patches: {"100-1", "200-2"},
     )
-    monkeypatch.setattr(
-        ccd_psf_handler_mod.summary,
-        "get_all_shdus",
-        lambda exposures, n_CCD: [
-            f"{e}-{c}" for e in exposures for c in range(n_CCD)
-        ],
-    )
 
     result = handler.get_ccds_with_psf(["P1"], n_CCD=3)
 
+    # get_all_shdus yields "<exp>-<ccd>" for ccd in range(n_CCD).
     assert result == {"100-0", "100-2", "200-0", "200-1"}
+    # Guard the assumption that the missing IDs share the produced format.
+    assert set(summary.get_all_shdus({"100"}, 3)) == {"100-0", "100-1", "100-2"}
+
+
+# ---------------------------------------------------------------------------
+# image-shape resolution (fpack ZNAXIS vs plain NAXIS)
+# ---------------------------------------------------------------------------
+
+def test_image_shape_prefers_znaxis_for_compressed_header(tmp_path):
+    """A compressed HDU reports ZNAXIS dims, not the binary-table NAXIS."""
+    w = _tan_wcs(100.0, 20.0, nx=2080, ny=4612)
+    path = tmp_path / "1234567.txt"
+    path.write_text(_compressed_header_text(w))
+
+    (parsed_w, shape), = _parse_header_to_wcs(str(path))
+
+    # WCS pixel_shape would wrongly report the compressed byte width (8).
+    assert parsed_w.pixel_shape == (8, 4612)
+    # _image_shape recovers the true image dimensions.
+    assert shape == (2080, 4612)
+
+
+def test_image_shape_falls_back_to_naxis(tmp_path):
+    """A plain image HDU (no ZIMAGE) uses NAXIS1/NAXIS2."""
+    w = _tan_wcs(100.0, 20.0, nx=2080, ny=4612)
+    path = tmp_path / "1234567.txt"
+    path.write_text(_header_text([w]))
+
+    (_, shape), = _parse_header_to_wcs(str(path))
+
+    assert shape == (2080, 4612)
+
+
+def test_image_shape_raises_without_dimensions():
+    """A header with no image dimensions raises a clear ``ValueError``."""
+    from astropy.io.fits import Header
+
+    header = Header()
+    header["CTYPE1"] = "RA---TAN"
+
+    with pytest.raises(ValueError, match="image dimensions"):
+        _image_shape(header)
+
+
+def test_compressed_header_corners_are_full_width(tmp_path):
+    """Corners from a compressed header span the true CCD width, not 8 px."""
+    w = _tan_wcs(100.0, 20.0, nx=2080, ny=4612)
+    path = tmp_path / "1234567.txt"
+    path.write_text(_compressed_header_text(w))
+
+    (parsed_w, shape), = _parse_header_to_wcs(str(path))
+    ra, dec = _ccd_corners(parsed_w, shape)
+
+    # RA extent must reflect ~2080 px * 1e-5 deg/px * cos(dec), not 8 px.
+    ra_extent = max(ra) - min(ra)
+    assert ra_extent > 0.01
 
 
 # ---------------------------------------------------------------------------
@@ -211,7 +300,7 @@ def test_ccd_corners_returns_four_corners_around_centre():
     nx, ny = 2080, 4612
     w = _tan_wcs(100.0, 20.0, nx=nx, ny=ny)
 
-    ra, dec = _ccd_corners(w)
+    ra, dec = _ccd_corners(w, (nx, ny))
 
     assert len(ra) == 4
     assert len(dec) == 4
@@ -219,22 +308,11 @@ def test_ccd_corners_returns_four_corners_around_centre():
     assert min(ra) < 100.0 < max(ra)
     assert min(dec) < 20.0 < max(dec)
     # Extent matches the CD-scaled pixel span (with edge padding).
-    npt.assert_allclose(max(dec) - min(dec), (ny) * 1e-5, rtol=1e-3)
-
-
-def test_ccd_corners_raises_without_pixel_shape():
-    """A WCS with no pixel shape raises a clear ``ValueError``."""
-    w = wcs.WCS(naxis=2)
-    w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
-    w.wcs.crval = [100.0, 20.0]
-    assert w.pixel_shape is None
-
-    with pytest.raises(ValueError, match="pixel_shape"):
-        _ccd_corners(w)
+    npt.assert_allclose(max(dec) - min(dec), ny * 1e-5, rtol=1e-3)
 
 
 def test_parse_header_to_wcs_returns_one_wcs_per_extension(tmp_path):
-    """One WCS is returned per CCD HDU; the primary HDU is skipped."""
+    """One (wcs, shape) pair is returned per CCD HDU; the primary is skipped."""
     ccd_wcs = [_tan_wcs(10.0), _tan_wcs(20.0), _tan_wcs(30.0)]
 
     path = tmp_path / "1234567.txt"
@@ -243,8 +321,7 @@ def test_parse_header_to_wcs_returns_one_wcs_per_extension(tmp_path):
     result = _parse_header_to_wcs(str(path))
 
     assert len(result) == len(ccd_wcs)
-    # Reconstructed WCS carry the pixel shape from NAXIS1/NAXIS2.
-    assert all(w.pixel_shape == (2080, 4612) for w in result)
+    assert all(shape == (2080, 4612) for _, shape in result)
 
 
 # ---------------------------------------------------------------------------
@@ -323,19 +400,81 @@ def test_run_extract_writes_per_ccd_rows(tmp_path):
     assert all(len(line.split()) == 9 for line in lines)
 
 
-def test_get_done_exposures_keys_on_expnum(tmp_path):
-    """Resume treats an exposure as done if any of its CCD rows are present."""
+# ---------------------------------------------------------------------------
+# FieldCornersExtractor resume path (per-CCD done-set)
+# ---------------------------------------------------------------------------
+
+def _write_headers(header_dir, expnums, n_ccd=3):
+    """Write one plain multi-HDU header per exposure into ``header_dir``."""
+    header_dir.mkdir(exist_ok=True)
+    for j, expnum in enumerate(expnums):
+        ccd_wcs = [_tan_wcs(10.0 + j + i) for i in range(n_ccd)]
+        (header_dir / f"{expnum}.txt").write_text(_header_text(ccd_wcs))
+
+
+def test_get_done_ccds_reads_present_ids(tmp_path):
+    """The done-set is the exact set of CCD IDs already in the output."""
     out = tmp_path / "corners.txt"
     out.write_text(
         "1234567-0 10 10 10 10 20 20 20 20\n"
-        "1234567-5 10 10 10 10 20 20 20 20\n"
-        "7654321-3 30 30 30 30 40 40 40 40\n"
+        "1234567-2 10 10 10 10 20 20 20 20\n"
     )
 
     extractor = FieldCornersExtractor()
     extractor._params["output_file"] = str(out)
 
-    assert extractor.get_done_exposures() == {1234567, 7654321}
+    assert extractor.get_done_ccds() == {"1234567-0", "1234567-2"}
+
+
+def test_resume_adds_new_exposure_without_duplicating(tmp_path):
+    """Resume appends a new exposure and leaves existing rows untouched."""
+    header_dir = tmp_path / "headers"
+    _write_headers(header_dir, [1000001, 1000002])
+
+    out = tmp_path / "corners.txt"
+    # Pre-populate with exposure 1's three CCD rows.
+    pre = FieldCornersExtractor().process_single_header(
+        (str(header_dir / "1000001.txt"), False, None)
+    )
+    with open(out, "w") as f:
+        for ccd_id, ra, dec in pre:
+            f.write(f"{ccd_id} " + " ".join(f"{v:.5f}" for v in ra + dec) + "\n")
+
+    FieldCornersExtractor().run(
+        args=["-i", str(header_dir), "-o", str(out), "-r"]
+    )
+
+    ids = [line.split()[0] for line in out.read_text().splitlines()]
+    # No duplicate exposure-1 rows; exposure 2's three CCDs added.
+    assert ids.count("1000001-0") == 1
+    assert sorted(ids) == [
+        "1000001-0", "1000001-1", "1000001-2",
+        "1000002-0", "1000002-1", "1000002-2",
+    ]
+
+
+def test_resume_completes_partial_exposure(tmp_path):
+    """An exposure interrupted mid-write is completed, not skipped."""
+    header_dir = tmp_path / "headers"
+    _write_headers(header_dir, [1000001])
+
+    out = tmp_path / "corners.txt"
+    # Simulate an interrupt: only the first of exposure 1's CCDs was written.
+    pre = FieldCornersExtractor().process_single_header(
+        (str(header_dir / "1000001.txt"), False, None)
+    )
+    ccd_id, ra, dec = pre[0]
+    with open(out, "w") as f:
+        f.write(f"{ccd_id} " + " ".join(f"{v:.5f}" for v in ra + dec) + "\n")
+
+    FieldCornersExtractor().run(
+        args=["-i", str(header_dir), "-o", str(out), "-r"]
+    )
+
+    ids = [line.split()[0] for line in out.read_text().splitlines()]
+    # The missing CCDs are filled in; the present one is not duplicated.
+    assert sorted(ids) == ["1000001-0", "1000001-1", "1000001-2"]
+    assert ids.count("1000001-0") == 1
 
 
 # ---------------------------------------------------------------------------
@@ -384,8 +523,53 @@ def test_check_params_missing_input_file_raises(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# CoverageMapBuilder — RA-wrap guard and per-CCD row build
+# CoverageMapBuilder — parsing, nexp contract, RA-wrap and pole guards
 # ---------------------------------------------------------------------------
+
+def _read_map(path):
+    import healsparse as hsp
+
+    return hsp.HealSparseMap.read(str(path))
+
+
+def test_build_map_single_row(tmp_path):
+    """A one-row corners file exercises the atleast_1d/2d parsing guards."""
+    infile = tmp_path / "corners.txt"
+    infile.write_text("100-0 9.9 10.1 10.1 9.9 0.0 0.0 0.2 0.2\n")
+    out = tmp_path / "cov.hsp"
+
+    CoverageMapBuilder().run(
+        args=["-i", str(infile), "-o", str(out), "-c", "32", "-n", "1024"]
+    )
+
+    m = _read_map(out)
+    assert 0 < len(m.valid_pixels) < 200
+    assert m[m.valid_pixels].max() == 1
+
+
+def test_build_map_nexp_counts_overlapping_exposures(tmp_path):
+    """Two overlapping CCDs from different exposures give value 2 in overlap."""
+    # Two 0.4x0.4 deg CCDs offset by 0.2 deg in RA -> a central overlap strip.
+    infile = tmp_path / "corners.txt"
+    infile.write_text(
+        "100-0  9.8 10.2 10.2  9.8 19.8 19.8 20.2 20.2\n"
+        "200-0 10.0 10.4 10.4 10.0 19.8 19.8 20.2 20.2\n"
+    )
+    out = tmp_path / "cov.hsp"
+
+    CoverageMapBuilder().run(
+        args=["-i", str(infile), "-o", str(out), "-c", "32", "-n", "1024"]
+    )
+
+    m = _read_map(out)
+    values = m[m.valid_pixels]
+    # The overlap is covered by both exposures (value 2); the union edges by
+    # one (value 1). Both must be present; nothing exceeds 2.
+    assert values.max() == 2
+    assert values.min() == 1
+    assert (values == 2).sum() > 0
+    assert (values == 1).sum() > 0
+
 
 def test_unwrap_ra_shifts_straddling_seam():
     """A polygon straddling RA=0 is put on a common (negative) branch."""
@@ -401,41 +585,35 @@ def test_unwrap_ra_leaves_normal_polygon_unchanged():
     )
 
 
-def test_build_map_wrapped_ccd_fills_small_patch(tmp_path):
-    """A CCD straddling RA=0 fills a small footprint, not the ~360° complement.
+def test_build_map_invariant_under_ra_shift(tmp_path):
+    """A seam CCD's footprint matches an identical CCD shifted +10 deg in RA.
 
-    Verified empirically against a same-size CCD away from the seam: with the
-    unwrap guard the two footprints have the same pixel count to within a few
-    boundary pixels. (Without unwrapping, HealSparse happens to fill the small
-    region too for a convex CCD-sized polygon, but the guard makes the intent
-    explicit and is robust to degenerate orderings.)
+    Rotating both the seam CCD (via +360/unwrap) and a reference CCD onto the
+    same RA and comparing pixel counts fails if the seam polygon were filling
+    the ~360 deg complement. This is the real RA-wrap regression guard.
     """
-    # CCD straddling RA=0 (0.2 x 0.2 deg) and a reference CCD at RA=10.
-    infile = tmp_path / "corners.txt"
-    infile.write_text(
-        "100-0 359.9   0.1   0.1 359.9 0.0 0.0 0.2 0.2\n"
-        "200-0   9.9  10.1  10.1   9.9 0.0 0.0 0.2 0.2\n"
-    )
-    out = tmp_path / "cov.hsp"
+    # Seam CCD straddling RA=0, and the same CCD translated to RA~10.
+    seam = tmp_path / "seam.txt"
+    seam.write_text("100-0 359.9 0.1 0.1 359.9 20.0 20.0 20.2 20.2\n")
+    ref = tmp_path / "ref.txt"
+    ref.write_text("200-0 9.9 10.1 10.1 9.9 20.0 20.0 20.2 20.2\n")
 
-    builder = CoverageMapBuilder()
-    builder.run(
-        args=[
-            "-i", str(infile),
-            "-o", str(out),
-            "-c", "32",
-            "-n", "1024",
-        ]
+    m_seam = tmp_path / "seam.hsp"
+    m_ref = tmp_path / "ref.hsp"
+    CoverageMapBuilder().run(
+        args=["-i", str(seam), "-o", str(m_seam), "-c", "32", "-n", "1024"]
+    )
+    CoverageMapBuilder().run(
+        args=["-i", str(ref), "-o", str(m_ref), "-c", "32", "-n", "1024"]
     )
 
-    import healsparse as hsp
+    n_seam = len(_read_map(m_seam).valid_pixels)
+    n_ref = len(_read_map(m_ref).valid_pixels)
 
-    m = hsp.HealSparseMap.read(str(out))
-    n_valid = len(m.valid_pixels)
-
-    # Two ~0.04 deg^2 patches at nside=1024 (~3.4 arcmin pixels): a small,
-    # bounded number of pixels — nowhere near a hemisphere.
-    assert 0 < n_valid < 200
+    # Same-size footprints at the same declination: pixel counts agree to
+    # within a few boundary pixels, and are nowhere near a hemisphere.
+    assert abs(n_seam - n_ref) <= max(3, int(0.1 * n_ref))
+    assert 0 < n_seam < 200
 
 
 def test_build_map_pole_guard_skips_polygon(tmp_path, capsys):
@@ -447,8 +625,7 @@ def test_build_map_pole_guard_skips_polygon(tmp_path, capsys):
     )
     out = tmp_path / "cov.hsp"
 
-    builder = CoverageMapBuilder()
-    builder.run(
+    CoverageMapBuilder().run(
         args=["-i", str(infile), "-o", str(out), "-c", "32", "-n", "1024"]
     )
 
