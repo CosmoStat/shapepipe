@@ -3,7 +3,6 @@
 import os
 import argparse
 import yaml
-import subprocess
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -60,33 +59,28 @@ def load_tile_ids(cfg):
 
 
 def get_hdf5_tile_count(hdf5_path):
-    """Query tile count from HDF5 file using create_final_cat.py -l.
+    """Read tile count from a final_cat HDF5 file.
 
-    Returns the count as a string, or "." if file doesn't exist or query fails.
+    Uses the n_tiles root attribute if present, otherwise counts the
+    per-tile datasets under patches/<sim>. Returns "." if the file does
+    not exist, "?" if it cannot be read.
     """
     if not os.path.isfile(hdf5_path):
         return "."
 
     try:
-        HOME = os.path.expanduser("~")
-        script = f"{HOME}/astro/repositories/github/shapepipe/scripts/python/create_final_cat.py"
-        result = subprocess.run(
-            [script, "-I", "-l", "-m", hdf5_path, "-v"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-
-        if result.returncode != 0:
-            return "?"
-
-        for line in result.stdout.split('\n'):
-            if line.startswith("Total:"):
-                parts = line.split()
-                if len(parts) >= 2:
-                    return parts[1]
-
+        import h5py
+    except ImportError:
         return "?"
+
+    try:
+        with h5py.File(hdf5_path, "r") as f:
+            if "n_tiles" in f.attrs:
+                return str(int(f.attrs["n_tiles"]))
+            patches = f.get("patches")
+            if patches is None:
+                return "?"
+            return str(sum(len(grp) for grp in patches.values()))
     except Exception:
         return "?"
 
