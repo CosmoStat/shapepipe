@@ -3,9 +3,11 @@
   "description": [
     "Low-noise dependency updates; uv owns version resolution. pyproject keeps floor ranges and Renovate uses the org default rangeStrategy=update-lockfile, so `uv lock` picks versions jointly — cross-package conflicts (e.g. numba capping numpy) resolve silently instead of failing the batch, and un-stick themselves when upstream catches up. No minimumReleaseAge: it is unenforceable with uv resolution (renovatebot/renovate#41624 forced exact pins, which forced manual conflict caps); CI running the full suite in the container is the automerge gate.",
     "Noise: all non-major updates grouped into one weekly PR that automerges when CI is green; majors surface individually; lockFileMaintenance refreshes transitive deps weekly.",
-    "python is guarded: Renovate classes base-image bumps like 3.12 -> 3.14 as 'minor', so it gets its own PR and never automerges — a Python upgrade gets human eyes without holding the weekly batch hostage."
+    "python is guarded: Renovate classes base-image bumps like 3.12 -> 3.14 as 'minor', so it gets its own PR and never automerges — a Python upgrade gets human eyes without holding the weekly batch hostage.",
+    "minimumReleaseAge is EXPLICITLY zeroed, not merely absent: Mend's hosted org layer injects an age gate invisibly, and merely deleting the key here does not override inherited config — artifact updates then fail on every uv-resolved transitive that is younger than the invisible gate (see #816). An explicit '0 days' should win the merge over the inherited value; if artifact errors persist, the gate lives in Mend portal-global settings and must be removed at developer.mend.io."
   ],
   "extends": ["config:recommended", "group:allNonMajor", "schedule:weekly"],
+  "minimumReleaseAge": "0 days",
   "lockFileMaintenance": { "enabled": true },
   "packageRules": [
     { "matchUpdateTypes": ["minor", "patch", "pin", "digest"], "automerge": true },
