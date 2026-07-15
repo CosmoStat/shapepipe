@@ -3,8 +3,10 @@
 
 Scans the weight maps of the input simulation tiles and computes the
 fraction of nonzero pixels (subsampled). Tiles below the coverage
-threshold are written to an exclude list, which the Snakefile reads at
-DAG-build time to drop them from the run.
+threshold are written to an exclude list (YAML), which the orchestrating
+workflow reads at DAG-build time to drop them from the run. Orchestration
+now lives in sp_validation; this script is the standalone coverage check
+it calls.
 
 The weight-map location is read from the ShapePipe get-images config
 {base}/{sim}/cfis/config_tile_Git_symlink.ini (created by init), for the
@@ -51,7 +53,7 @@ def parse_args():
 
 
 def get_tile_ids(config):
-    """Read the tile ID list the same way the Snakefile does."""
+    """Read the tile ID list the same way the orchestrating workflow does."""
     num = config["num"]
     path = config["tile_IDs"].replace("{num}", str(num))
     with open(path) as f:
