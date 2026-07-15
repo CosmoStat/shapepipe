@@ -209,12 +209,19 @@ class HeaderDownloader(object):
                     print(f"Could not create symlink from {link_source}: {e}")
                     # Fall through to download if symlink fails
 
-        # Download from VOSpace
+        # Download from VOSpace atomically: copy to a temp file in the same
+        # directory, then rename on success. An interrupted transfer leaves
+        # only the temp file behind, so resume never treats a partial download
+        # as complete.
+        tmp_dest = f"{dest}.part"
         try:
-            client.copy(source, dest, head=True)
+            client.copy(source, tmp_dest, head=True)
+            os.rename(tmp_dest, dest)
             return True
         except Exception as e:
             print(f"Could not copy {source}: {e}")
+            if exists(tmp_dest):
+                os.remove(tmp_dest)
             return False
 
     def run(self, args=None):
