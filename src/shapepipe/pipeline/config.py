@@ -7,7 +7,42 @@ This module defines methods for handling the pipeline configuration file.
 """
 
 import os
+import re
 from configparser import ConfigParser
+
+
+def _expandvars_strict(value):
+    """Expand Environment Variables Strictly.
+
+    Expand environment variables in ``value``, raising an error if any
+    referenced variable is unset instead of silently leaving the literal
+    ``$VAR`` string in place.
+
+    Parameters
+    ----------
+    value : str
+        Configuration value possibly containing ``$VAR`` or ``${VAR}``
+        references
+
+    Returns
+    -------
+    str
+        Value with all environment variables expanded
+
+    Raises
+    ------
+    ValueError
+        If a referenced environment variable is not set
+
+    """
+    expanded = os.path.expandvars(value)
+    unset = re.findall(r"\$\{?(\w+)\}?", expanded)
+    if unset:
+        raise ValueError(
+            f"Environment variable(s) {', '.join(sorted(set(unset)))} "
+            + f"referenced in config value '{value}' not set."
+        )
+    return expanded
 
 
 class CustomParser(ConfigParser):
@@ -35,7 +70,7 @@ class CustomParser(ConfigParser):
             Expanded enviroment variables
 
         """
-        return self._get(section, os.path.expandvars, option, **kwargs)
+        return self._get(section, _expandvars_strict, option, **kwargs)
 
     def getlist(self, section, option, delimiter=",", **kwargs):
         """Get List.

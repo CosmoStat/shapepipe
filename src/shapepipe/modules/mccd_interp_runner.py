@@ -114,13 +114,13 @@ def mccd_interp_runner(
         inst.process_me(psf_model_dir, psf_model_pattern, f_wcs_path)
 
     elif mode == "VALIDATION":
-        ValueError(
+        raise ValueError(
             "MODE has to be in MULTI-EPOCH or CLASSIC. For validation"
             + " use MCCD validation runner."
         )
 
     else:
-        ValueError("MODE has to be in : [CLASSIC, MULTI-EPOCH]")
+        raise ValueError("MODE has to be in : [CLASSIC, MULTI-EPOCH]")
 
     # No return objects
     return None, None

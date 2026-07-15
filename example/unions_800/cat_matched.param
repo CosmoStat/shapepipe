@@ -94,7 +94,7 @@ FLAG_TILING
 # magnitude, mainly for plots
 MAG_AUTO
 
-# SNR from SExtractor, used for cuts on GALSIM shapes
+# SNR from SExtractor, used for cuts on shapes
 SNR_WIN
 
 # PSF size measured on original image

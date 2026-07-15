@@ -792,7 +792,7 @@ class FileHandler(object):
 
         """
         if not isinstance(match_pattern, str):
-            TypeError("Match pattern must be a string.")
+            raise TypeError("Match pattern must be a string.")
 
         chars = [char for char in match_pattern if not char.isalnum()]
         split_pattern = "|".join(chars).replace(".", r"\.")

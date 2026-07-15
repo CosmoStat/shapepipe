@@ -21,14 +21,13 @@ metacal RECONVOLUTION kernel (``PSF_RECONV``) are independent fits of
     (``example/cfis/final_cat.param``) names is a column the writer can
     produce — writer/param-file consistency;
 (d) the FULL frozen grammar (shapepipe#761) — ``ESTIMATOR_COMPONENT[_ERR]_
-    OBJECT[_metacaltype]`` — holds across all three estimator families: all three
+    OBJECT[_metacaltype]`` — holds across both estimator families: both
     families split ellipticity into ``G1``/``G2`` (g-type, HSM included since
     the return to reduced shear); every family stores exactly one size, ``T``; HSM
-    keeps the singular ``FLAG`` token, ngmix/galsim keep plural ``FLAGS``.
+    keeps the singular ``FLAG`` token, ngmix keeps plural ``FLAGS``.
     This part is a static example-based check (not writer-driven), so it
-    covers galsim/HSM without depending on those producer modules — see
-    ``test_galsim_grammar_properties.py`` and ``test_psfex_interp.py`` for
-    the writer-driven coverage of those families.
+    covers HSM without depending on that producer module — see
+    ``test_psfex_interp.py`` for the writer-driven coverage of that family.
 
 Setup for (a)-(c) mirrors ``tests/module/test_make_cat.py``: a synthetic
 ngmix FITS with the five shear-type extensions carrying the exact
@@ -395,18 +394,17 @@ def test_param_file_ngmix_tokens_are_producible(param_path, obj_ids):
 #
 # ``ESTIMATOR_COMPONENT[_ERR]_OBJECT[_metacaltype]`` (shapepipe#761). This
 # section encodes the grammar itself as a static property — example column
-# names, not a driven writer — so it covers ngmix, galsim, and HSM together
-# without depending on the galsim/HSM producer modules (covered by their own
-# writer-driving tests: ``test_galsim_grammar_properties.py``,
-# ``test_psfex_interp.py``). What it pins:
+# names, not a driven writer — so it covers ngmix and HSM together without
+# depending on the HSM producer module (covered by its own writer-driving
+# test: ``test_psfex_interp.py``). What it pins:
 #
-# - galaxy is the implicit default object, no token, for BOTH g-type writers
-#   (ngmix, galsim);
+# - galaxy is the implicit default object, no token, for the g-type ngmix
+#   writer;
 # - ellipticity is split into named scalar components, never a packed
-#   2-vector: ``G1``/``G2`` for g-type (ngmix, galsim), ``E1``/``E2`` for
-#   e-type (HSM);
+#   2-vector: ``G1``/``G2`` for g-type (ngmix, HSM since the return to
+#   reduced shear), never a packed ``ELL`` or e-type ``E1``/``E2``;
 # - exactly one stored size, ``T`` (no ``SIGMA``/``FWHM``/``r50``);
-# - HSM keeps the singular ``FLAG`` token; ngmix/galsim keep plural ``FLAGS``.
+# - HSM keeps the singular ``FLAG`` token; ngmix keeps plural ``FLAGS``.
 
 FROZEN_GRAMMAR_RE = re.compile(
     r"^(?:"
@@ -414,10 +412,6 @@ FROZEN_GRAMMAR_RE = re.compile(
     r"NGMIXm?_(?:G1|G2|T|SNR|FLUX|MAG|FLAGS)(?:_ERR)?"
     r"(?:_(?:PSF_ORIG|PSF_RECONV))?_(?:NOSHEAR|1P|1M|2P|2M)"
     r"|NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH)"
-    # galsim: galaxy (no object token) or explicit PSF object; <K> is a
-    # data-driven FITS extension name, so left as a generic uppercase token.
-    r"|GALSIM_(?:G1|G2|T)(?:_ERR|_UNCORR)?(?:_PSF)?_[A-Z0-9_]+"
-    r"|GALSIM_(?:FLUX|FLUX_ERR|MAG|MAG_ERR|FLAGS|RES)_[A-Z0-9_]+"
     # HSM: g-type, explicit PSF/STAR object, singular FLAG; the multi-epoch
     # sink in make_cat._save_psf_data appends a bare epoch index.
     r"|HSM_(?:G1|G2|T)_(?:PSF|STAR)(?:_\d+)?"
@@ -434,10 +428,6 @@ _GRAMMAR_VALID_EXAMPLES = [
     "NGMIX_FLAGS_2P",
     "NGMIXm_G1_PSF_RECONV_NOSHEAR",
     "NGMIX_MCAL_FLAGS",
-    "GALSIM_G1_NOSHEAR",  # galaxy, no object token
-    "GALSIM_G2_UNCORR_NOSHEAR",
-    "GALSIM_T_PSF_ORIGINAL_PSF",
-    "GALSIM_FLAGS_NOSHEAR",
     "HSM_G1_PSF",
     "HSM_T_STAR",
     "HSM_FLAG_PSF",
@@ -456,10 +446,7 @@ _GRAMMAR_INVALID_EXAMPLES = [
     "SIGMA_PSF_HSM",  # raw sigma, not T
     "HSM_SIGMA_PSF",  # stored sigma instead of T
     "HSM_FLAGS_PSF",  # plural — HSM is singular FLAG
-    "GALSIM_GAL_ELL_NOSHEAR",  # GAL token + packed ellipticity
-    "GALSIM_GAL_SIGMA_NOSHEAR",  # GAL token + raw sigma
-    "GALSIM_PSF_ELL_NOSHEAR",  # packed ellipticity
-    "GALSIM_FWHM_NOSHEAR",  # FWHM, not T
+    "NGMIX_ELL_PSF_ORIG_NOSHEAR",  # packed ellipticity, not G1/G2
     "SPREAD_MODEL",  # removed entirely, not renamed
 ]
 
