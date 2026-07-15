@@ -1,6 +1,10 @@
 """FIELD_CORNERS_EXTRACTOR
 
-Extract field corner coordinates from FITS headers.
+Extract per-CCD sky-footprint corner coordinates from FITS headers.
+
+For each CCD (image HDU) in an exposure's multi-HDU header, the four corners
+of the CCD are projected from pixel bounds to the sky, producing one row per
+CCD keyed on its ``<expnum>-<ccd_idx>`` ID.
 
 Author: Mike Hudson, Martin Kilbinger <martin.kilbinger@cea.fr>
 
@@ -32,50 +36,86 @@ def _expnum_from_path(path):
     return int(match.group(1))
 
 
+def _image_shape(header):
+    """Return the CCD image ``(nx, ny)`` pixel shape from a header.
+
+    For fpack tile-compressed HDUs (``ZIMAGE = T``), ``NAXIS1``/``NAXIS2``
+    describe the compressed *binary table* (row width in bytes, row count),
+    not the image, and astropy's WCS never maps the true dimensions into
+    ``pixel_shape``. The true image size is carried by ``ZNAXIS1``/``ZNAXIS2``,
+    which are preferred here; a plain image HDU falls back to
+    ``NAXIS1``/``NAXIS2``.
+
+    Parameters
+    ----------
+    header : astropy.io.fits.Header
+        single-HDU header
+
+    Returns
+    -------
+    tuple
+        ``(nx, ny)`` image pixel dimensions
+
+    Raises
+    ------
+    ValueError
+        if neither the ``Z*`` nor the plain ``NAXIS`` dimensions are present
+    """
+    if header.get("ZIMAGE", False):
+        keys = ("ZNAXIS1", "ZNAXIS2")
+    else:
+        keys = ("NAXIS1", "NAXIS2")
+
+    if keys[0] not in header or keys[1] not in header:
+        raise ValueError(
+            f"Header is missing image dimensions ({keys[0]}/{keys[1]})"
+        )
+
+    return int(header[keys[0]]), int(header[keys[1]])
+
+
 def _parse_header_to_wcs(path):
-    """Parse a multi-HDU header text file and return one WCS per HDU."""
+    """Parse a multi-HDU header text file into ``(wcs, (nx, ny))`` per HDU.
+
+    The primary HDU is skipped. Each remaining HDU yields its WCS together with
+    the CCD image pixel shape (``ZNAXIS1/2`` for compressed HDUs, else
+    ``NAXIS1/2``); the shape is read from the header because the WCS drops the
+    ``Z*`` keywords.
+    """
     with open(path, "r") as f:
         string = f.read()
     tokens = re.split(r"^(END\s+)", string, flags=re.MULTILINE)
-    return [
-        wcs.WCS(Header.fromstring(tokens[i] + tokens[i + 1], sep="\n"))
-        for i in range(2, len(tokens) - 1, 2)
-    ]
+    result = []
+    for i in range(2, len(tokens) - 1, 2):
+        header = Header.fromstring(tokens[i] + tokens[i + 1], sep="\n")
+        result.append((wcs.WCS(header), _image_shape(header)))
+    return result
 
 
-def _ccd_corners(w):
+def _ccd_corners(w, shape):
     """Return (ra, dec) of the 4 corners of a single CCD.
 
-    The polygon is built from the CCD's pixel bounds, read from the WCS
-    ``pixel_shape`` (populated by astropy from the header ``NAXIS1``/``NAXIS2``
-    keywords). Pixel edges ``(-0.5, n - 0.5)`` are used so the quadrilateral
-    covers the full CCD area rather than pixel centres. Corners are returned in
-    a consistent counterclockwise pixel order
-    (bottom-left, bottom-right, top-right, top-left); since ``pixel_to_world``
-    maps this order to a simple, non-self-intersecting sky quadrilateral for a
-    CCD-sized field, and HealSparse ``Polygon`` is orientation-agnostic, the
-    resulting polygon is a valid convex footprint.
+    The polygon is built from the CCD's pixel bounds ``shape = (nx, ny)`` using
+    pixel edges ``(-0.5, n - 0.5)`` so the quadrilateral covers the full CCD
+    area rather than pixel centres. Corners are returned in a consistent
+    counterclockwise pixel order (bottom-left, bottom-right, top-right,
+    top-left); since ``pixel_to_world`` maps this order to a simple,
+    non-self-intersecting sky quadrilateral for a CCD-sized field, and
+    HealSparse ``Polygon`` is orientation-agnostic, the resulting polygon is a
+    valid convex footprint.
 
     Parameters
     ----------
     w : astropy.wcs.WCS
         WCS of a single CCD
+    shape : tuple
+        ``(nx, ny)`` CCD image pixel dimensions
 
     Returns
     -------
     tuple
         ``(ra_list, dec_list)`` each of length 4, in degrees
-
-    Raises
-    ------
-    ValueError
-        if the WCS carries no pixel shape (missing ``NAXIS1``/``NAXIS2``)
     """
-    shape = w.pixel_shape
-    if shape is None:
-        raise ValueError(
-            "WCS has no pixel_shape; header is missing NAXIS1/NAXIS2"
-        )
     nx, ny = shape
 
     # Pixel-edge corners, counterclockwise: BL, BR, TR, TL
@@ -125,7 +165,7 @@ class FieldCornersExtractor(object):
         self._help_strings = {
             "input_dir": "input directory containing header files; default is {}",
             "output_file": "output file for per-CCD corners; default is {}",
-            "ccd_list": "file of valid CCD IDs (output of get_ccds_with_psf); when given, only listed CCDs are written; default is all CCDs",
+            "ccd_list": "file of valid CCD IDs (output of get_ccds_with_psf); when given, only listed CCDs are written; on --resume, CCDs new to an expanded list are added without duplicating existing rows; default is all CCDs",
             "resume": "resume from existing output file; default is {}",
             "n_processes": f"number of parallel processes (1=serial, 0=auto={cpu_count()}); default is {{}}",
         }
@@ -232,19 +272,19 @@ class FieldCornersExtractor(object):
         expnum = _expnum_from_path(path)
 
         try:
-            wcs_list = _parse_header_to_wcs(path)
+            wcs_shapes = _parse_header_to_wcs(path)
         except Exception as e:
             if verbose:
                 print(f"Failed to process {expnum}: {e}")
             return None
 
         rows = []
-        for ccd_idx, w in enumerate(wcs_list):
+        for ccd_idx, (w, shape) in enumerate(wcs_shapes):
             ccd_id = f"{expnum}-{ccd_idx}"
             if valid_ccds is not None and ccd_id not in valid_ccds:
                 continue
             try:
-                ra, dec = _ccd_corners(w)
+                ra, dec = _ccd_corners(w, shape)
             except Exception as e:
                 if verbose:
                     print(f"Failed to process CCD {ccd_id}: {e}")
@@ -253,15 +293,20 @@ class FieldCornersExtractor(object):
 
         return rows
 
-    def get_done_exposures(self):
-        """Get Done Exposures.
+    def get_done_ccds(self):
+        """Get Done CCDs.
 
-        Read exposures already processed from output file.
+        Read the set of CCD IDs already present in the output file. Resume is
+        keyed on individual CCD IDs, not exposure numbers: a CCD counts as done
+        only if its own row is present. This keeps resume correct when a write
+        was interrupted mid-exposure (the missing CCDs are filled in) and when
+        a rerun uses an expanded ``--ccd_list`` (the newly requested CCDs are
+        added), and it never duplicates a row.
 
         Returns
         -------
         set
-            set of exposure numbers already processed
+            CCD IDs already written
 
         """
         output_file = self._params["output_file"]
@@ -273,9 +318,7 @@ class FieldCornersExtractor(object):
             ids = np.atleast_1d(
                 np.loadtxt(output_file, usecols=(0), dtype=str)
             )
-            # First column is a "<expnum>-<ccd_idx>" CCD ID; an exposure counts
-            # as done once any of its CCDs appears in the output.
-            return {int(ccd_id.split("-")[0]) for ccd_id in ids}
+            return set(ids.tolist())
         except Exception as e:
             if self._params["verbose"]:
                 print(f"Could not read existing output file: {e}")
@@ -327,21 +370,17 @@ class FieldCornersExtractor(object):
 
         print(f"{n} header files found")
 
-        # Get list of already processed exposures if resuming
-        done = set()
+        # On resume, read the CCD IDs already written so we can skip them
+        # per-CCD (not per-exposure): a partially written exposure is completed
+        # rather than skipped, and no row is ever duplicated.
+        done_ccds = set()
         if resume:
-            done = self.get_done_exposures()
-            print(f"{len(done)} already done")
+            done_ccds = self.get_done_ccds()
+            print(f"{len(done_ccds)} CCDs already done")
 
-        # Build todo list
-        todo = [p for p in paths if _expnum_from_path(p) not in done]
-
-        n_todo = len(todo)
-        print(f"{n_todo} to process")
-
-        if n_todo == 0:
-            print("Nothing to do")
-            return 0
+        # Every header still needs parsing (a header may hold both done and
+        # not-yet-done CCDs); the per-CCD filter below decides what is written.
+        todo = paths
 
         # Get n_processes
         n_processes = self._params["n_processes"]
@@ -357,8 +396,14 @@ class FieldCornersExtractor(object):
                 todo, n_processes, verbose, valid_ccds
             )
 
-        # Flatten per-exposure CCD lists, dropping failed exposures (None)
-        rows = [row for res in results if res is not None for row in res]
+        # Flatten per-exposure CCD lists (dropping failed exposures), then drop
+        # CCDs already present in the output.
+        rows = [
+            row
+            for res in results if res is not None
+            for row in res
+            if row[0] not in done_ccds
+        ]
 
         # Sort by exposure number, then CCD index
         rows.sort(key=lambda r: (int(r[0].split("-")[0]),
@@ -374,9 +419,9 @@ class FieldCornersExtractor(object):
                 f.write("\n")
 
         n_exp_success = sum(1 for res in results if res is not None)
-        n_failed = n_todo - n_exp_success
+        n_failed = len(todo) - n_exp_success
 
-        print(f"Processed {n_exp_success} exposures, {len(rows)} CCDs")
+        print(f"Processed {n_exp_success} exposures, {len(rows)} new CCDs")
         if n_failed > 0:
             print(f"Failed to process {n_failed} exposures")
 
