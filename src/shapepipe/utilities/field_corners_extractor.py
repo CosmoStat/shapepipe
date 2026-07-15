@@ -43,21 +43,47 @@ def _parse_header_to_wcs(path):
     ]
 
 
-def _megacam_field_corners(w):
-    """Return (ra, dec) of the 4 MegaCam field corners.
+def _ccd_corners(w):
+    """Return (ra, dec) of the 4 corners of a single CCD.
 
-    The hard-coded CCD indices (0, 8, 35, 27) and pixel coords
-    (2079/32, 0) are the MegaCam corner convention; CCDs are flipped so
-    the nominal bottom-right CCD reports the top-left sky corner, etc.
+    The polygon is built from the CCD's pixel bounds, read from the WCS
+    ``pixel_shape`` (populated by astropy from the header ``NAXIS1``/``NAXIS2``
+    keywords). Pixel edges ``(-0.5, n - 0.5)`` are used so the quadrilateral
+    covers the full CCD area rather than pixel centres. Corners are returned in
+    a consistent counterclockwise pixel order
+    (bottom-left, bottom-right, top-right, top-left); since ``pixel_to_world``
+    maps this order to a simple, non-self-intersecting sky quadrilateral for a
+    CCD-sized field, and HealSparse ``Polygon`` is orientation-agnostic, the
+    resulting polygon is a valid convex footprint.
+
+    Parameters
+    ----------
+    w : astropy.wcs.WCS
+        WCS of a single CCD
+
+    Returns
+    -------
+    tuple
+        ``(ra_list, dec_list)`` each of length 4, in degrees
+
+    Raises
+    ------
+    ValueError
+        if the WCS carries no pixel shape (missing ``NAXIS1``/``NAXIS2``)
     """
-    tl = w[0].pixel_to_world(2079, 0)
-    tr = w[8].pixel_to_world(32, 0)
-    br = w[35].pixel_to_world(2079, 0)
-    bl = w[27].pixel_to_world(32, 0)
-    return (
-        [tl.ra.deg, tr.ra.deg, br.ra.deg, bl.ra.deg],
-        [tl.dec.deg, tr.dec.deg, br.dec.deg, bl.dec.deg],
-    )
+    shape = w.pixel_shape
+    if shape is None:
+        raise ValueError(
+            "WCS has no pixel_shape; header is missing NAXIS1/NAXIS2"
+        )
+    nx, ny = shape
+
+    # Pixel-edge corners, counterclockwise: BL, BR, TR, TL
+    px = [-0.5, nx - 0.5, nx - 0.5, -0.5]
+    py = [-0.5, -0.5, ny - 0.5, ny - 0.5]
+
+    sky = w.pixel_to_world(px, py)
+    return list(sky.ra.deg), list(sky.dec.deg)
 
 
 class FieldCornersExtractor(object):
@@ -76,6 +102,7 @@ class FieldCornersExtractor(object):
         self._params = {
             "input_dir": "header",
             "output_file": "exp_ra_dec.txt",
+            "ccd_list": None,
             "resume": False,
             "n_processes": 1,
             "verbose": False,
@@ -84,6 +111,7 @@ class FieldCornersExtractor(object):
         self._short_options = {
             "input_dir": "-i",
             "output_file": "-o",
+            "ccd_list": "-l",
             "resume": "-r",
             "n_processes": "-n",
         }
@@ -96,7 +124,8 @@ class FieldCornersExtractor(object):
 
         self._help_strings = {
             "input_dir": "input directory containing header files; default is {}",
-            "output_file": "output file for field corners; default is {}",
+            "output_file": "output file for per-CCD corners; default is {}",
+            "ccd_list": "file of valid CCD IDs (output of get_ccds_with_psf); when given, only listed CCDs are written; default is all CCDs",
             "resume": "resume from existing output file; default is {}",
             "n_processes": f"number of parallel processes (1=serial, 0=auto={cpu_count()}); default is {{}}",
         }
@@ -142,6 +171,13 @@ class FieldCornersExtractor(object):
                 f"Input directory not found: {self._params['input_dir']}"
             )
 
+        if self._params["ccd_list"] is not None and not exists(
+            self._params["ccd_list"]
+        ):
+            raise FileNotFoundError(
+                f"CCD list file not found: {self._params['ccd_list']}"
+            )
+
         # Set n_processes to cpu_count if 0
         if self._params["n_processes"] == 0:
             self._params["n_processes"] = cpu_count()
@@ -152,34 +188,70 @@ class FieldCornersExtractor(object):
             )
 
     @staticmethod
-    def process_single_header(path_and_verbose):
+    def load_ccd_list(path):
+        """Load CCD List.
+
+        Read valid CCD IDs (one ``<expnum>-<ccd_idx>`` per line) into a set.
+
+        Parameters
+        ----------
+        path : str
+            path to the CCD list file
+
+        Returns
+        -------
+        set
+            valid CCD IDs
+
+        """
+        with open(path) as f:
+            return {line.strip() for line in f if line.strip()}
+
+    @staticmethod
+    def process_single_header(args):
         """Process Single Header.
 
-        Worker function to process a single header file.
+        Worker function to process a single header file into per-CCD corners.
         Static method so it can be pickled for multiprocessing.
 
         Parameters
         ----------
-        path_and_verbose : tuple
-            (path, verbose) where path is header file path and verbose is bool
+        args : tuple
+            ``(path, verbose, valid_ccds)`` where ``path`` is the header file
+            path, ``verbose`` is a bool, and ``valid_ccds`` is a set of CCD IDs
+            to keep (or ``None`` to keep all)
 
         Returns
         -------
-        tuple or None
-            (expnum, ra_list, dec_list) on success, None on failure
+        list or None
+            list of ``(ccd_id, ra_list, dec_list)`` for the exposure's CCDs on
+            success, ``None`` on failure
 
         """
-        path, verbose = path_and_verbose
+        path, verbose, valid_ccds = args
         expnum = _expnum_from_path(path)
 
         try:
-            w = _parse_header_to_wcs(path)
-            ra, dec = _megacam_field_corners(w)
-            return (expnum, ra, dec)
+            wcs_list = _parse_header_to_wcs(path)
         except Exception as e:
             if verbose:
                 print(f"Failed to process {expnum}: {e}")
             return None
+
+        rows = []
+        for ccd_idx, w in enumerate(wcs_list):
+            ccd_id = f"{expnum}-{ccd_idx}"
+            if valid_ccds is not None and ccd_id not in valid_ccds:
+                continue
+            try:
+                ra, dec = _ccd_corners(w)
+            except Exception as e:
+                if verbose:
+                    print(f"Failed to process CCD {ccd_id}: {e}")
+                continue
+            rows.append((ccd_id, ra, dec))
+
+        return rows
 
     def get_done_exposures(self):
         """Get Done Exposures.
@@ -198,8 +270,12 @@ class FieldCornersExtractor(object):
             return set()
 
         try:
-            done = np.loadtxt(output_file, usecols=(0), dtype=int)
-            return set(done)
+            ids = np.atleast_1d(
+                np.loadtxt(output_file, usecols=(0), dtype=str)
+            )
+            # First column is a "<expnum>-<ccd_idx>" CCD ID; an exposure counts
+            # as done once any of its CCDs appears in the output.
+            return {int(ccd_id.split("-")[0]) for ccd_id in ids}
         except Exception as e:
             if self._params["verbose"]:
                 print(f"Could not read existing output file: {e}")
@@ -235,6 +311,12 @@ class FieldCornersExtractor(object):
         resume = self._params["resume"]
         verbose = self._params["verbose"]
 
+        # Load the set of valid CCD IDs to keep, if given
+        valid_ccds = None
+        if self._params["ccd_list"] is not None:
+            valid_ccds = self.load_ccd_list(self._params["ccd_list"])
+            print(f"{len(valid_ccds)} valid CCDs in {self._params['ccd_list']}")
+
         # Find all header files
         paths = glob.glob(f"{input_dir}/*.txt")
         n = len(paths)
@@ -267,31 +349,34 @@ class FieldCornersExtractor(object):
         # Process headers
         if n_processes == 1:
             # Serial processing
-            results = self._process_serial(todo, verbose)
+            results = self._process_serial(todo, verbose, valid_ccds)
         else:
             # Parallel processing
             print(f"Using {n_processes} parallel processes")
-            results = self._process_parallel(todo, n_processes, verbose)
+            results = self._process_parallel(
+                todo, n_processes, verbose, valid_ccds
+            )
 
-        # Filter out failed results (None values)
-        results = [r for r in results if r is not None]
+        # Flatten per-exposure CCD lists, dropping failed exposures (None)
+        rows = [row for res in results if res is not None for row in res]
 
-        # Sort results by exposure number
-        results.sort(key=lambda x: x[0])
+        # Sort by exposure number, then CCD index
+        rows.sort(key=lambda r: (int(r[0].split("-")[0]),
+                                 int(r[0].split("-")[1])))
 
-        # Write results to file
+        # Write results to file: "<ccd_id> ra1 ra2 ra3 ra4 dec1 dec2 dec3 dec4"
         mode = "a" if resume else "w"
         with open(output_file, mode, buffering=1) as f:
-            for expnum, ra, dec in results:
-                f.write(f"{expnum:6d} ")
+            for ccd_id, ra, dec in rows:
+                f.write(f"{ccd_id} ")
                 np.savetxt(f, ra, fmt="%9.5f", newline=" ")
                 np.savetxt(f, dec, fmt="%9.5f", newline=" ")
                 f.write("\n")
 
-        n_success = len(results)
-        n_failed = n_todo - n_success
+        n_exp_success = sum(1 for res in results if res is not None)
+        n_failed = n_todo - n_exp_success
 
-        print(f"Processed {n_success} exposures")
+        print(f"Processed {n_exp_success} exposures, {len(rows)} CCDs")
         if n_failed > 0:
             print(f"Failed to process {n_failed} exposures")
 
@@ -299,7 +384,7 @@ class FieldCornersExtractor(object):
 
         return 0
 
-    def _process_serial(self, todo, verbose):
+    def _process_serial(self, todo, verbose, valid_ccds):
         """Process Serial.
 
         Process headers serially.
@@ -310,18 +395,20 @@ class FieldCornersExtractor(object):
             list of header file paths to process
         verbose : bool
             verbose output
+        valid_ccds : set or None
+            CCD IDs to keep, or ``None`` to keep all
 
         Returns
         -------
         list
-            list of results (expnum, ra, dec) tuples
+            list of per-exposure CCD-row lists (or ``None`` for failures)
 
         """
         results = []
         n_todo = len(todo)
 
         for i, p in enumerate(todo):
-            result = self.process_single_header((p, verbose))
+            result = self.process_single_header((p, verbose, valid_ccds))
             results.append(result)
 
             if verbose and i % 100 == 0:
@@ -329,7 +416,7 @@ class FieldCornersExtractor(object):
 
         return results
 
-    def _process_parallel(self, todo, n_processes, verbose):
+    def _process_parallel(self, todo, n_processes, verbose, valid_ccds):
         """Process Parallel.
 
         Process headers in parallel using multiprocessing.
@@ -342,15 +429,17 @@ class FieldCornersExtractor(object):
             number of parallel processes
         verbose : bool
             verbose output
+        valid_ccds : set or None
+            CCD IDs to keep, or ``None`` to keep all
 
         Returns
         -------
         list
-            list of results (expnum, ra, dec) tuples
+            list of per-exposure CCD-row lists (or ``None`` for failures)
 
         """
         # Prepare arguments for worker function
-        args = [(p, verbose) for p in todo]
+        args = [(p, verbose, valid_ccds) for p in todo]
 
         # Create pool and process
         with Pool(processes=n_processes) as pool:
