@@ -1,6 +1,11 @@
 """COVERAGE_MAP_BUILDER
 
-Build HealSparse coverage maps from field corner coordinates.
+Build HealSparse coverage maps from per-CCD corner coordinates.
+
+Each input row is one CCD footprint. Since the CCDs of a single exposure do
+not overlap, stamping value 1 per CCD polygon and accumulating makes the map
+count, per sky pixel, the number of exposures with a valid PSF model covering
+that pixel.
 
 Author: Mike Hudson, Martin Kilbinger <martin.kilbinger@cea.fr>
 
@@ -15,6 +20,36 @@ import hpgeom as hpg
 
 from cs_util import args as cs_args
 from cs_util import logging
+
+# Declination beyond which a polygon is considered too close to a pole for
+# HealSparse's planar polygon fill to be reliable. CCD footprints are ~10
+# arcmin, so this is a guard against pathological headers, not a common path.
+_DEC_POLE_LIMIT = 89.0
+
+
+def unwrap_ra(ra):
+    """Unwrap RA.
+
+    Shift RA values onto a common branch when a polygon straddles the RA=0
+    seam, so the corners describe the small footprint rather than its ~360°
+    complement. Values above 180 deg are shifted by -360 deg when the raw
+    spread exceeds 180 deg; otherwise the values are returned unchanged.
+
+    Parameters
+    ----------
+    ra : array_like
+        polygon RA corners, in degrees
+
+    Returns
+    -------
+    numpy.ndarray
+        RA corners on a common branch, in degrees
+
+    """
+    ra = np.asarray(ra, dtype=float)
+    if ra.max() - ra.min() > 180.0:
+        return np.where(ra > 180.0, ra - 360.0, ra)
+    return ra
 
 
 
@@ -225,25 +260,18 @@ class CoverageMapBuilder(object):
         verbose = self._params["verbose"]
 
         if verbose:
-            print(f"Reading field corners from: {input_file}")
+            print(f"Reading per-CCD corners from: {input_file}")
 
-        # Load field corner data
-        dtype = np.dtype(
-            [
-                ("expnum", int),
-                ("tlra", float),
-                ("trra", float),
-                ("brra", float),
-                ("blra", float),
-                ("tldec", float),
-                ("trdec", float),
-                ("brdec", float),
-                ("bldec", float),
-            ]
+        # Load per-CCD corner data. Column 0 is a "<expnum>-<ccd_idx>" string
+        # ID; the remaining 8 columns are the 4 RA then 4 Dec corners.
+        ccd_ids = np.atleast_1d(np.loadtxt(input_file, usecols=(0), dtype=str))
+        corners = np.atleast_2d(
+            np.loadtxt(input_file, usecols=range(1, 9), dtype=float)
         )
-        rows = np.loadtxt(input_file, dtype=dtype)
+        ra_all = corners[:, :4]
+        dec_all = corners[:, 4:]
 
-        print(f"Loaded {len(rows)} exposure field corners")
+        print(f"Loaded {len(ccd_ids)} CCD footprints")
 
         if verbose:
             print(
@@ -253,20 +281,37 @@ class CoverageMapBuilder(object):
         # Create empty map
         m = hsp.HealSparseMap.make_empty(nside_coverage, nside, np.uint16)
 
-        # Add polygons for each exposure
+        # Add one polygon per CCD footprint
         if verbose:
             print("Adding polygons to map")
 
-        for i, r in enumerate(rows):
-            ra = [r["tlra"], r["trra"], r["brra"], r["blra"]]
-            dec = [r["tldec"], r["trdec"], r["brdec"], r["bldec"]]
-            poly = hsp.Polygon(ra=ra, dec=dec, value=1)
-            m += poly
+        n_added = 0
+        n_skipped = 0
+        for i in range(len(ccd_ids)):
+            dec = dec_all[i]
+
+            # Pole guard: HealSparse's planar polygon fill degrades near the
+            # poles. CCD footprints never reach here, so warn and skip.
+            if np.any(np.abs(dec) >= _DEC_POLE_LIMIT):
+                print(
+                    f"Warning: skipping CCD {ccd_ids[i]} with |dec| >= "
+                    f"{_DEC_POLE_LIMIT} (too close to a pole)"
+                )
+                n_skipped += 1
+                continue
+
+            # RA-wrap guard: put corners on a common branch across the seam.
+            ra = unwrap_ra(ra_all[i])
+
+            m += hsp.Polygon(ra=list(ra), dec=list(dec), value=1)
+            n_added += 1
 
             if verbose and i % 1000 == 0:
-                print(f"{i:6d} / {len(rows):6d}")
+                print(f"{i:6d} / {len(ccd_ids):6d}")
 
-        print(f"Added {len(rows)} polygons to map")
+        print(f"Added {n_added} polygons to map")
+        if n_skipped > 0:
+            print(f"Skipped {n_skipped} polygons near a pole")
 
         # Apply median filter if requested
         if apply_median_filter:
