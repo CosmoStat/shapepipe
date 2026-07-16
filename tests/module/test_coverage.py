@@ -237,6 +237,27 @@ def test_get_ccds_with_psf_subtracts_missing(monkeypatch):
     assert set(summary.get_all_shdus({"100"}, 3)) == {"100-0", "100-1", "100-2"}
 
 
+@pytest.mark.parametrize(
+    ("version", "n_patch"),
+    [("v1.3", 7), ("v1.4", 7), ("v1.5", 8), ("v1.6", 9), ("v2.0", 9)],
+)
+def test_version_to_patch_count(version, n_patch):
+    """Each catalogue version maps to its patch count; v2.0 mirrors v1.6."""
+    handler = CcdPsfHandler()
+    handler._params["version_cat"] = version
+    handler.update_params()
+    assert handler._params["n_patch"] == n_patch
+    assert len(handler._params["patches"]) == n_patch
+
+
+def test_invalid_version_raises():
+    """An unknown catalogue version fails loudly."""
+    handler = CcdPsfHandler()
+    handler._params["version_cat"] = "v9.9"
+    with pytest.raises(ValueError, match="v9.9"):
+        handler.update_params()
+
+
 # ---------------------------------------------------------------------------
 # image-shape resolution (fpack ZNAXIS vs plain NAXIS)
 # ---------------------------------------------------------------------------

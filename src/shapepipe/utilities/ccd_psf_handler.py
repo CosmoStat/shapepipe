@@ -51,7 +51,7 @@ class CcdPsfHandler(object):
         }
 
         self._help_strings = {
-            "version_cat": "catalogue major version, allowed are v1.3, v1.4, v1.5, v1.6; default is {}",
+            "version_cat": "catalogue major version, allowed are v1.3, v1.4, v1.5, v1.6, v2.0; default is {}",
 
             "n_CCD": "number of CCDs per exposure; default is {}",
             "output": "output file path; default is ccds_with_psf_<version>.txt",
@@ -93,7 +93,8 @@ class CcdPsfHandler(object):
             n_patch = 7
         elif version == "v1.5":
             n_patch = 8
-        elif version == "v1.6":
+        elif version in ("v1.6", "v2.0"):
+            # v2.0 (ngmix) covers the same 9-patch footprint as v1.6
             n_patch = 9
         else:
             raise ValueError(f"Invalid version {version}")
