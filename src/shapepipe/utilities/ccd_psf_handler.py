@@ -37,23 +37,30 @@ class CcdPsfHandler(object):
         self._params = {
             "version_cat": "v1.6",
             "n_CCD": 40,
+            "n_patch": 0,
             "output": None,
         }
 
         self._short_options = {
             "version_cat": "-V",
             "n_CCD": "-n",
+            "n_patch": "-p",
             "output": "-o",
         }
 
         self._types = {
             "n_CCD": "int",
+            "n_patch": "int",
         }
 
         self._help_strings = {
             "version_cat": "catalogue major version, allowed are v1.3, v1.4, v1.5, v1.6, v2.0; default is {}",
 
             "n_CCD": "number of CCDs per exposure; default is {}",
+            "n_patch": (
+                "number of patches (P1..P<n>); overrides the version"
+                + " default, 0 = use version default; default is {}"
+            ),
             "output": "output file path; default is ccds_with_psf_<version>.txt",
         }
 
@@ -87,15 +94,20 @@ class CcdPsfHandler(object):
 
         Set derived parameters based on input parameters.
         """
-        # Determine number of patches based on version
+        # Determine number of patches: explicit -p wins, else version default
         version = self._params["version_cat"]
-        if version in ("v1.3", "v1.4"):
+        if self._params["n_patch"]:
+            n_patch = self._params["n_patch"]
+        elif version in ("v1.3", "v1.4"):
             n_patch = 7
         elif version == "v1.5":
             n_patch = 8
-        elif version in ("v1.6", "v2.0"):
-            # v2.0 (ngmix) covers the same 9-patch footprint as v1.6
+        elif version == "v1.6":
             n_patch = 9
+        elif version == "v2.0":
+            # Newest patch definitions (auxdir/CFIS/tiles_202510) include
+            # P10; override with -p if the v2 footprint settles differently.
+            n_patch = 10
         else:
             raise ValueError(f"Invalid version {version}")
 
