@@ -3,10 +3,14 @@
 
 A plain script (not a run: block) so the tile chain stays group-compatible.
 Reads the tile's exposures from run_index.sqlite and symlinks each exposure's
-``exp/<base>/output`` into ``<forest>/<base>/output`` by exact name (no glob), so
-the tile modules' $SP_EXP globs resolve to exactly this tile's exposures'
-products. The forest is a convenience view; the DAG edge to the exposures is
-declared in the rule's input (tile.smk), not here.
+``exp/<base>/output`` into ``<forest>/<prefix>/<base>/output`` by exact name (no
+glob). The 2-digit ``<prefix>`` shard level is NOT cosmetic: ShapePipe's
+``exp_utils.get_exp_output_files`` hardwires the sharded v2.0 layout into its
+$SP_EXP glob (``<SP_EXP>/<prefix>/<base>/output/run_sp_*/...``), so a flat
+forest makes every tile gather stage fail "No split_exp_runner output found".
+(The exposure STORE stays flat — only the module-facing view needs the shard.)
+The forest is a convenience view; the DAG edge to the exposures is declared in
+the rule's input (tile.smk), not here.
 """
 
 import argparse
@@ -30,7 +34,7 @@ def main() -> None:
     args.forest.mkdir(parents=True, exist_ok=True)
     for e in exps:
         src = args.run_dir / "exp" / e / "output"
-        dst = args.forest / e / "output"
+        dst = args.forest / e[:2] / e / "output"   # sharded: the module glob's shape
         dst.parent.mkdir(parents=True, exist_ok=True)
         if dst.is_symlink() or dst.exists():
             dst.unlink()
