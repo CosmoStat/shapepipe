@@ -62,6 +62,8 @@ rule tile_star_cat:
     output:
         str(RUN_DIR / "tiles/{tile}/star_cat-{tile}.fits")
     params:
-        src=lambda wc: str(STAR_CATS / "tiles" / f"star_cat-{wc.tile}.fits")
+        # the store names tiles in ShapePipe's image-number convention (dots->dashes)
+        src=lambda wc: str(STAR_CATS / "tiles" /
+                           f"star_cat-{wc.tile.replace('.', '-')}.fits")
     shell:
         "ln -sf {params.src} {output}"

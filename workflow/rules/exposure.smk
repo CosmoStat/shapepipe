@@ -27,7 +27,8 @@ rule exp_get_images:
         directory(f"{EXP_OUT}/run_sp_exp_Gie")
     params:
         cmd=lambda wc: sp_rule("exp_get_images", "config_exp_Gie_vos.ini",
-                               "exp", wc.exp, isolate=False)
+                               "exp", wc.exp, isolate=False,
+                               extra=f"--exp-name {EXP[wc.exp]}")
     shell:
         "{params.cmd} --threads {threads}"
 

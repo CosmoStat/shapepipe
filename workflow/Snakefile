@@ -39,11 +39,13 @@ with open(config["tile_list"]) as f:
     TILES = [ln.strip() for ln in f if ln.strip()]
 
 # --- parse-time index load (compute phase only) ----------------------------
-# EXP: global set of exposure base-ids.  TILE_EXP: tile -> [exp_ids].
-EXP, TILE_EXP = set(), {}
+# EXP: exposure base-id -> original name (2605805 -> 2605805p; the name goes
+# verbatim into the fabricated per-unit exp_numbers list so get_images matches
+# <name>.fits.fz in the store).  TILE_EXP: tile -> [exp_ids].
+EXP, TILE_EXP = {}, {}
 if INDEX_DB.exists():
     _con = sqlite3.connect(INDEX_DB)
-    EXP = {r[0] for r in _con.execute("SELECT exp_id FROM exposures")}
+    EXP = dict(_con.execute("SELECT exp_id, name FROM exposures"))
     for tile, exp in _con.execute("SELECT tile_id, exp_id FROM tile_exposures"):
         TILE_EXP.setdefault(tile, []).append(exp)
     _con.close()

@@ -37,19 +37,22 @@ import sys
 from pathlib import Path
 
 
-def read_exposure_list(exp_numbers_file: Path) -> list[str]:
-    """Return the exp_base IDs listed in one tile's find_exposures output.
+def read_exposure_list(exp_numbers_file: Path) -> list[tuple[str, str]]:
+    """Return ``(exp_id, name)`` pairs from one tile's find_exposures output.
 
-    Each line is an exposure name like ``2243881p``; we strip a trailing
-    alphabetic suffix so the base ID is the dedup key.
+    Each line is an exposure *name* like ``2243881p``; the bare base ID (suffix
+    stripped) is the dedup key everywhere in the DAG, but the original name is
+    kept in the index — the fabricated per-unit ``exp_numbers`` list must carry
+    it verbatim (``get_images`` matches ``<name>.fits.fz`` in the store; the
+    bare ID matches nothing).
     """
-    ids = []
+    pairs = []
     for line in exp_numbers_file.read_text().splitlines():
         name = line.strip()
         if not name:
             continue
-        ids.append(name[:-1] if name[-1].isalpha() else name)
-    return ids
+        pairs.append((name[:-1] if name[-1].isalpha() else name, name))
+    return pairs
 
 
 def build(tile_ids: list[str], run_dir: Path, db_path: Path,
@@ -70,7 +73,7 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
         DROP TABLE IF EXISTS exposures;
         DROP TABLE IF EXISTS tile_exposures;
         CREATE TABLE tiles(tile_id TEXT PRIMARY KEY, ra_dir TEXT, n_exp INTEGER);
-        CREATE TABLE exposures(exp_id TEXT PRIMARY KEY);
+        CREATE TABLE exposures(exp_id TEXT PRIMARY KEY, name TEXT NOT NULL);
         CREATE TABLE tile_exposures(
             tile_id TEXT, exp_id TEXT,
             PRIMARY KEY (tile_id, exp_id));
@@ -78,7 +81,7 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
     )
 
     missing = []
-    all_exposures: set[str] = set()
+    all_exposures: set[tuple[str, str]] = set()
     for tile_id in tile_ids:
         ra_dir = tile_id.split(".")[0]
         idra, iddec = tile_id.split(".")
@@ -89,16 +92,16 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
         if not exp_file.exists():
             missing.append(tile_id)
             continue
-        exp_ids = read_exposure_list(exp_file)
+        exp_pairs = read_exposure_list(exp_file)
         con.execute("INSERT INTO tiles VALUES (?,?,?)",
-                    (tile_id, ra_dir, len(exp_ids)))
-        for exp_id in exp_ids:
-            all_exposures.add(exp_id)
+                    (tile_id, ra_dir, len(exp_pairs)))
+        for exp_id, _name in exp_pairs:
             con.execute("INSERT OR IGNORE INTO tile_exposures VALUES (?,?)",
                         (tile_id, exp_id))
+        all_exposures.update(exp_pairs)
 
-    con.executemany("INSERT OR IGNORE INTO exposures VALUES (?)",
-                    [(e,) for e in sorted(all_exposures)])
+    con.executemany("INSERT OR IGNORE INTO exposures VALUES (?,?)",
+                    sorted(all_exposures))
     con.commit()
     con.close()
 

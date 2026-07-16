@@ -93,7 +93,7 @@ def unit_work_dir(run_dir: Path, level: str, unit: str) -> Path:
 
 
 def materialise_unit(work: Path, level: str, unit: str, config_src: Path,
-                     star_cats: Path) -> None:
+                     star_cats: Path, exp_name: str | None = None) -> None:
     """Create the v2.0 unit-isolation furniture in the work dir."""
     (work / "output").mkdir(parents=True, exist_ok=True)
 
@@ -112,8 +112,13 @@ def materialise_unit(work: Path, level: str, unit: str, config_src: Path,
         fe = work / "output" / "run_sp_tile_Fe" / "find_exposures_runner" / "output"
         fe.mkdir(parents=True, exist_ok=True)
         exp_numbers = fe / "exp_numbers-000-000.txt"
-        if not exp_numbers.exists():
-            exp_numbers.write_text(unit + "\n")
+        # Written UNCONDITIONALLY (cheap, deterministic): an exists-guard once
+        # pinned a stale pre-fix file with the bare base id. Content is the
+        # ORIGINAL exposure name (with its 'p'-style suffix, from the index) —
+        # the on-disk store is <name>.fits.fz; the bare base id matches nothing.
+        # v2.0 copies the name verbatim from the tile's Fe output; the index
+        # carries it for us.
+        exp_numbers.write_text((exp_name or unit) + "\n")
 
 
 def normalize_config_text(text: str, unit: str, isolate: bool, threads: int) -> str:
@@ -296,6 +301,10 @@ def main() -> None:
                    help="SMP_BATCH_SIZE == cpus_per_task (fork width)")
     p.add_argument("--exp-forest", type=Path, default=None,
                    help="$SP_EXP: per-tile exposure forest (tile post-stages)")
+    p.add_argument("--exp-name", default=None,
+                   help="original exposure name incl. suffix (e.g. 2605805p); "
+                        "written into the fabricated exp_numbers list so "
+                        "get_images finds <name>.fits.fz in the store")
     p.add_argument("--no-isolate", action="store_true",
                    help="skip NUMBER_LIST (get_images / exp_mask / exp_psf)")
     p.add_argument("--ngmix-chunk", type=int, default=None,
@@ -314,7 +323,7 @@ def main() -> None:
 
     work = unit_work_dir(args.run_dir, args.level, args.unit)
     materialise_unit(work, args.level, args.unit, args.config_src,
-                     args.star_cats or args.run_dir)
+                     args.star_cats or args.run_dir, exp_name=args.exp_name)
 
     # Build the config copy. ngmix chunks and merge fill template placeholders
     # first; every copy is then normalized (RUN_DATETIME=False, SMP_BATCH_SIZE,
