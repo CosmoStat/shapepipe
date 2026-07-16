@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="15 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="16 Jul, 2026"/>
   </head>
   
   
@@ -2240,6 +2240,20 @@
     <span class="p">)</span>
     <span class="n">resdict</span><span class="p">,</span> <span class="n">obsdict</span> <span class="o">=</span> <span class="n">boot</span><span class="o">.</span><span class="n">go</span><span class="p">(</span><span class="n">gal_obs_list</span><span class="p">)</span>
     <span class="n">psf_res</span> <span class="o">=</span> <span class="n">average_multiepoch_psf</span><span class="p">(</span><span class="n">obsdict</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">obsdict</span>
+
+    <span class="c1"># Each FitModel in resdict retains the full metacal observations</span>
+    <span class="c1"># (``.obs``, a plain attribute set by FitModel._set_obs) plus the pixel</span>
+    <span class="c1"># arrays derived from them (``._pixels_list``) — several MB per object.</span>
+    <span class="c1"># Results accumulate until the SAVE_BATCH flush, and compile_results</span>
+    <span class="c1"># reads only scalar dict keys, so release the arrays now to keep</span>
+    <span class="c1"># resident memory flat.</span>
+    <span class="k">for</span> <span class="n">_fm</span> <span class="ow">in</span> <span class="n">resdict</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">_fm</span><span class="p">,</span> <span class="s1">&#39;obs&#39;</span><span class="p">):</span>
+            <span class="n">_fm</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">_fm</span><span class="p">,</span> <span class="s1">&#39;_pixels_list&#39;</span><span class="p">):</span>
+            <span class="n">_fm</span><span class="o">.</span><span class="n">_pixels_list</span> <span class="o">=</span> <span class="kc">None</span>
+
     <span class="k">return</span> <span class="n">MetacalResult</span><span class="p">(</span><span class="n">resdict</span><span class="o">=</span><span class="n">resdict</span><span class="p">,</span> <span class="n">reconv</span><span class="o">=</span><span class="n">psf_res</span><span class="p">,</span> <span class="n">orig</span><span class="o">=</span><span class="n">psf_orig_res</span><span class="p">)</span></div>
 
 </pre></div>
@@ -2289,7 +2303,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 15 Jul, 2026.
+  Last updated on 16 Jul, 2026.
   <br/>
 </p>
   </div>
