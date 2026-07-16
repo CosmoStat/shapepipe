@@ -24,6 +24,11 @@ def main() -> None:
     p.add_argument("--run-dir", required=True, type=Path)
     p.add_argument("--index", required=True, type=Path)
     p.add_argument("--forest", required=True, type=Path)
+    p.add_argument("--script-hash", default=None,
+                   help="ignored at runtime: carries the wrapper-scripts content "
+                        "hash into the rule's params so the params rerun-trigger "
+                        "covers script edits (the code trigger only hashes the "
+                        "rule's own shell string)")
     args = p.parse_args()
 
     con = sqlite3.connect(args.index)

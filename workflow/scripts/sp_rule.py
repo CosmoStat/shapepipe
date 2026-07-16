@@ -315,6 +315,11 @@ def main() -> None:
                    help="N_SPLIT_MAX for the merge_sep_cats template")
     p.add_argument("--final-cat", type=Path, default=None,
                    help="copy the produced final_cat FITS here (make_cat)")
+    p.add_argument("--script-hash", default=None,
+                   help="ignored at runtime: carries the wrapper-scripts content "
+                        "hash into the rule's params so the params rerun-trigger "
+                        "covers script edits (the code trigger only hashes the "
+                        "rule's own shell string)")
     args = p.parse_args()
 
     ngmix_mode = args.ngmix_chunk is not None

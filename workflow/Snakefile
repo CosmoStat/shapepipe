@@ -70,7 +70,8 @@ def sp_rule(stage, config_name, level, unit, *, isolate=True, exp_forest=None,
     cmd = (
         f"python {SCRIPTS}/sp_rule.py --stage {stage} --config {config_name} "
         f"--unit {unit} --level {level} --run-dir {RUN_DIR} "
-        f"--config-src {CONFIG_SRC} --star-cats {STAR_CATS}"
+        f"--config-src {CONFIG_SRC} --star-cats {STAR_CATS} "
+        f"--script-hash {SCRIPT_HASH}"
     )
     if not isolate:
         cmd += " --no-isolate"
@@ -85,6 +86,17 @@ def tile_dir(tile):
 
 def exp_dir(exp):
     return RUN_DIR / "exp" / exp
+
+# Content hash of the wrapper scripts, computed once at parse time. Exposed as a
+# param on every rule (via sp_rule() and tile_exp_forest) so the default
+# rerun-triggers' *params* trigger covers script edits: the `code` trigger only
+# hashes the rule's own shell string, NOT external scripts it calls — without
+# this, a wrapper/forest-script fix silently leaves stale outputs in place
+# (bitten live: the forest-shard fix rebuilt nothing on rerun).
+import hashlib as _hashlib
+SCRIPT_HASH = _hashlib.md5(b"".join(
+    (SCRIPTS / n).read_bytes()
+    for n in ("sp_rule.py", "completeness.py", "build_forest.py"))).hexdigest()[:12]
 
 include: "rules/prepare.smk"
 include: "rules/exposure.smk"

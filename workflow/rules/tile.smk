@@ -36,7 +36,8 @@ rule tile_exp_forest:
         # ONCE — an {output} placeholder inside params.cmd survives literally
         # (same trap as {threads}; all four forest jobs then race one './{output}').
         cmd=lambda wc: (f"python {SCRIPTS}/build_forest.py --tile {wc.tile} "
-                        f"--run-dir {RUN_DIR} --index {INDEX_DB}")
+                        f"--run-dir {RUN_DIR} --index {INDEX_DB} "
+                        f"--script-hash {SCRIPT_HASH}")
     shell:
         # no --threads: build_forest.py is single-threaded symlinking
         "{params.cmd} --forest {output}"
