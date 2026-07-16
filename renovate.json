@@ -1,0 +1,25 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "THE ONLY Renovate config file — do not add another. A forgotten .github/renovate.json5 (the original Dependabot->Renovate migration config) shadowed this file for weeks: Renovate's config discovery (and Mend's cached config-file name) preferred it, so edits here were silently ignored while its 14-day minimumReleaseAge broke every uv artifact update (renovatebot/renovate#41624). Deleted 2026-07; if Renovate ever again behaves contrary to this file, first check for a second config file (renovate.json5, .github/renovate.json*, .renovaterc*), then the Mend portal's resolved config.",
+    "Low-noise dependency updates; uv owns version resolution. pyproject keeps floor ranges and rangeStrategy=update-lockfile means `uv lock` picks versions jointly — cross-package conflicts (e.g. numba capping numpy) resolve silently instead of failing the batch, and un-stick themselves when upstream catches up. No minimumReleaseAge anywhere: any age gate is unenforceable with uv resolution (#41624 — uv resolves transitives past the gate and the artifact step fails); CI running the full suite in the container is the automerge gate.",
+    "Noise: all non-major updates grouped into one weekly PR that automerges when CI is green; majors are gated behind an explicit dashboard-approval tick; lockFileMaintenance refreshes transitive deps weekly. Security fixes (GitHub + OSV alerts) automerge on green CI without waiting for the weekly schedule.",
+    "python is guarded: Renovate classes base-image bumps like 3.12 -> 3.14 as 'minor', so it gets its own PR and never automerges — a Python upgrade gets human eyes without holding the weekly batch hostage. ngmix is pinned to a tag in [tool.uv.sources] as a deliberate shape-measurement decision — Renovate must not touch it."
+  ],
+  "extends": [
+    "config:recommended",
+    "group:allNonMajor",
+    "schedule:weekly",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "rangeStrategy": "update-lockfile",
+  "lockFileMaintenance": { "enabled": true },
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": { "automerge": true, "labels": ["security"] },
+  "packageRules": [
+    { "matchUpdateTypes": ["minor", "patch", "pin", "digest"], "automerge": true },
+    { "matchUpdateTypes": ["major"], "dependencyDashboardApproval": true },
+    { "matchPackageNames": ["python"], "groupName": "python", "automerge": false },
+    { "matchDepNames": ["ngmix"], "enabled": false }
+  ]
+}

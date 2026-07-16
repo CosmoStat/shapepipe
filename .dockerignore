@@ -1,0 +1,48 @@
+# Build context excludes. Two purposes:
+#   1. Shrink the context transferred to BuildKit.
+#   2. Keep the `COPY . /app/.` layer's cache key stable across pushes that
+#      touch none of the shipped files — docs, CI config, felt fibers, repo
+#      metadata. When those are the only diff, `COPY . /app/.` stays a cache
+#      hit, so `uv pip install -e .` and the (~2 min) image export are skipped
+#      and the run is dominated by the test steps alone.
+#
+# Denylist, not allowlist: everything not named here still ships, so a new
+# runtime-needed file can't be silently starved out of the image. Only add a
+# path here once you're sure the image never reads it.
+
+# Version control / repo metadata
+.git
+.gitignore
+.gitattributes
+
+# CI / automation config (baked into the runner, never the image)
+.github
+renovate.json
+
+# felt fiber store (symlinked in on dev machines; never part of the image)
+.felt
+
+# Documentation and top-level prose — not needed to build, install, or test
+docs
+*.md
+*.rst
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+LICENSE
+
+# Python / tooling caches and build artifacts
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+.mypy_cache
+*.egg-info
+build
+dist
+.coverage
+htmlcov
+
+# Editor / OS cruft
+.vscode
+.idea
+.DS_Store

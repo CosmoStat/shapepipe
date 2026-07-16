@@ -124,6 +124,64 @@ def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     )
 
 
+def position_seed(ra, dec, ccd):
+    """Deterministic RNG seed from an object's sky position (ngmix#796).
+
+    For image-simulation m-bias with the Pujol estimator, the same scene is
+    simulated under different applied shears ("image branches") and the shear
+    response is read from the branch difference of the SAME objects. Metacal's
+    ``fixnoise`` adds a counter-noise realisation drawn from an RNG; if that RNG
+    is seeded per tile, an object gets *different* added noise in different
+    branches (detection order differs), and the noise fails to cancel in the
+    difference, inflating ``sigma_m``. Seeding the per-object RNG from sky
+    position instead makes the same object draw the same added noise (and the
+    same fit guesses) in every branch, so both cancel and the m-bias error
+    shrinks. Off in production; a knob for the sim path only.
+
+    Box math (kept exactly as Fabian's issue #796)::
+
+        box_x = floor(ra  * 3600 / 3) + (ccd + 1)
+        box_y = floor(dec * 3600 / 3) + (ccd + 2)
+
+    The 3-arcsec boxes make the seed robust to detection-order changes and to
+    small centroid jitter within a box: the same physical object lands in the
+    same box across branches and so gets the same seed. The ``+ccd`` offsets
+    disambiguate exposure overlap.
+
+    **Deviation from #796.** Fabian combines the boxes as ``box_x + box_y``,
+    which collides along anti-diagonals — e.g. boxes ``(10, 20)`` and
+    ``(11, 19)`` both give seed 30, so two distinct objects share a noise
+    stream. We instead combine them with a Cantor pairing (a bijection on
+    non-negative integers), after a zig-zag fold that maps signed box indices
+    (dec can be negative) onto non-negative ones. The result is reduced mod
+    ``2**32`` to land in the valid ``numpy.random.RandomState`` seed range
+    ``[0, 2**32)``. The box math is untouched; only the collision-prone sum is
+    replaced.
+
+    Parameters
+    ----------
+    ra, dec : float
+        Object sky position in degrees (first-epoch coordinates; all epochs of
+        one object share them).
+    ccd : int
+        CCD number of the first epoch.
+
+    Returns
+    -------
+    int
+        Seed in ``[0, 2**32)`` for ``numpy.random.RandomState``.
+    """
+    box_x = int(np.floor((ra * 3600) / 3) + (ccd + 1))
+    box_y = int(np.floor((dec * 3600) / 3) + (ccd + 2))
+    # Zig-zag fold signed -> non-negative (0,-1,1,-2,... -> 0,1,2,3,...) so the
+    # Cantor pairing, which is a bijection on the non-negative integers, stays
+    # injective for southern (dec<0) boxes.
+    zx = 2 * box_x if box_x >= 0 else -2 * box_x - 1
+    zy = 2 * box_y if box_y >= 0 else -2 * box_y - 1
+    cantor = (zx + zy) * (zx + zy + 1) // 2 + zy
+    return cantor % (2 ** 32)
+
+
 class Tile_cat():
     """Tile_cat.
 
@@ -239,6 +297,10 @@ class Postage_stamp():
         self.wcs = []
         self.ra = []
         self.dec = []
+        # CCD number of the first epoch, used only to build the per-object
+        # position seed (see :func:`position_seed`, ngmix#796). ``None`` when
+        # position seeding is off, so the field costs nothing on the hot path.
+        self.ccd = None
         self.bkg_sub = bkg_sub
         self.megacam_flip = megacam_flip
 
@@ -266,11 +328,10 @@ class Vignet():
         flag_vignet_path,
         f_wcs_path,
         bkg_rms_vignet_path=None,
-
     ):
         self.f_wcs_file = SqliteDict(f_wcs_path)
         self.gal_vign_cat = SqliteDict(gal_vignet_path)
-        self.bkg_vign_cat = SqliteDict(bkg_vignet_path)
+        self.bkg_vign_cat = SqliteDict(bkg_vignet_path) if bkg_vignet_path is not None else None
         self.psf_vign_cat = SqliteDict(psf_vignet_path)
         self.weight_vign_cat = SqliteDict(weight_vignet_path)
         self.flag_vign_cat = SqliteDict(flag_vignet_path)
@@ -283,7 +344,8 @@ class Vignet():
     def close(self):
         self.f_wcs_file.close()
         self.gal_vign_cat.close()
-        self.bkg_vign_cat.close()
+        if self.bkg_vign_cat is not None:
+            self.bkg_vign_cat.close()
         self.flag_vign_cat.close()
         self.weight_vign_cat.close()
         self.psf_vign_cat.close()
@@ -336,6 +398,13 @@ class Ngmix(object):
     dilate_neighbour : int, optional
         Neighbour-mask dilation iterations for ``"uberseg"`` (see
         :func:`uberseg_weight`); the default is ``1``.
+    seed_from_position : bool, optional
+        If ``True``, replace the tile-level RNG with a per-object RNG seeded
+        from the object's sky position (:func:`position_seed`) inside the
+        object loop, so metacal's ``fixnoise`` counter-noise and the fit
+        guesses cancel across Pujol image-simulation branches (ngmix#796). The
+        default ``False`` leaves the production path byte-identical. See
+        :func:`position_seed` for the physics and the seed construction.
 
     Raises
     ------
@@ -359,16 +428,24 @@ class Ngmix(object):
         save_batch=-1,
         id_obj_min=-1,
         id_obj_max=-1,
+        bkg_sub=True,
         centroid_source="hsm",
         blend_handling="noisefill",
         seg_cat_path=None,
         dilate_neighbour=1,
+        seed_from_position=False,
+        metacal_psf="fitgauss",
     ):
 
-        if len(input_file_list) not in {6, 7}:
+        # Base count = catalogue + vignets, excluding the f_wcs headers (passed
+        # separately). One fewer when the background vignet is absent
+        # (``bkg_sub=False``, image sims). An extra trailing slot may carry the
+        # optional background-rms vignet (#779), so both counts are valid.
+        n_base = 6 if bkg_sub else 5
+        if len(input_file_list) not in {n_base, n_base + 1}:
             raise IndexError(
                 f"Input file list has length {len(input_file_list)},"
-                + " required is 6 or 7"
+                + f" required is {n_base} or {n_base + 1}"
             )
 
         if blend_handling not in BLEND_HANDLINGS:
@@ -386,14 +463,29 @@ class Ngmix(object):
             )
 
         self._tile_cat_path = input_file_list[0]
+        if bkg_sub:
+            bkg_path, psf_path, weight_path, flag_path = (
+                input_file_list[2], input_file_list[3],
+                input_file_list[4], input_file_list[5],
+            )
+        else:
+            bkg_path, psf_path, weight_path, flag_path = (
+                None, input_file_list[2],
+                input_file_list[3], input_file_list[4],
+            )
+        bkg_rms_vignet_path = (
+            input_file_list[n_base]
+            if len(input_file_list) == n_base + 1
+            else None
+        )
         self._vignet_cat = Vignet(
             input_file_list[1],
-            input_file_list[2],
-            input_file_list[3],
-            input_file_list[4],
-            input_file_list[5],
+            bkg_path,
+            psf_path,
+            weight_path,
+            flag_path,
             f_wcs_path,
-            input_file_list[6] if len(input_file_list) == 7 else None,
+            bkg_rms_vignet_path,
         )
 
         self._output_dir = output_dir
@@ -407,10 +499,13 @@ class Ngmix(object):
         self._save_batch = save_batch
         self._id_obj_min = id_obj_min
         self._id_obj_max = id_obj_max
+        self._bkg_sub = bkg_sub
         self._centroid_source = centroid_source
         self._blend_handling = blend_handling
         self._seg_cat_path = seg_cat_path
         self._dilate_neighbour = dilate_neighbour
+        self._seed_from_position = seed_from_position
+        self._metacal_psf = metacal_psf
 
         self._w_log = w_log
 
@@ -418,6 +513,11 @@ class Ngmix(object):
         seed = int(''.join(re.findall(r'\d+', self._file_number_string)))
         self._rng = np.random.RandomState(seed)
         self._w_log.info(f'Random generator initialisation seed = {seed}')
+        if self._seed_from_position:
+            self._w_log.info(
+                'SEED_FROM_POSITION on: per-object RNG seeded from sky position'
+                ' for Pujol noise cancellation (image sims, ngmix#796)'
+            )
 
     @classmethod
     def MegaCamFlip(self, vign, ccd_nb):
@@ -765,6 +865,61 @@ class Ngmix(object):
                 + " NUMBER (authoritative)."
             )
 
+    def log_mean_ellipticity(self):
+        """Log mean ellipticity from NOSHEAR HDU to the run log.
+
+        Reports <e1>, <e2> with standard errors for all objects and for
+        objects passing the default metacal cuts (flags==0, mcal_flags==0,
+        10 < SNR < 500, T/Tpsf > 0.5).
+        """
+        output_path = self.get_output_path(self._output_dir)
+        try:
+            with fits.open(output_path) as hdul:
+                d = hdul['NOSHEAR'].data
+                g1 = d['g1'].astype(float)
+                g2 = d['g2'].astype(float)
+                flags = d['flags']
+                mcal_flags = d['mcal_flags']
+                s2n = d['s2n'].astype(float)
+                T = d['T'].astype(float)
+                Tpsf = d['Tpsf'].astype(float)
+        except Exception as e:
+            self._w_log.warning(f"Could not compute mean ellipticity: {e}")
+            return
+
+        n_total = len(g1)
+        if n_total == 0:
+            self._w_log.info("Mean ellipticity: no objects in output catalogue")
+            return
+
+        def _log_stats(g1_sel, g2_sel, label):
+            n = len(g1_sel)
+            if n == 0:
+                self._w_log.info(f"  {label}: 0 objects")
+                return
+            mean_g1 = g1_sel.mean()
+            mean_g2 = g2_sel.mean()
+            err_g1 = g1_sel.std() / np.sqrt(n)
+            err_g2 = g2_sel.std() / np.sqrt(n)
+            self._w_log.info(
+                f"  {label} (N={n}):"
+                f"  <e1> = {mean_g1:+.4e} +/- {err_g1:.4e},"
+                f"  <e2> = {mean_g2:+.4e} +/- {err_g2:.4e}"
+            )
+
+        self._w_log.info(f"Mean ellipticity (NOSHEAR, N_total={n_total}):")
+        _log_stats(g1, g2, "no cuts")
+
+        with np.errstate(invalid='ignore'):
+            mask = (
+                (flags == 0)
+                & (mcal_flags == 0)
+                & (s2n >= 10.0)
+                & (s2n <= 500.0)
+                & (T / Tpsf >= 0.5)
+            )
+        _log_stats(g1[mask], g2[mask], "SNR in [10, 500], T/Tpsf > 0.5")
+
     def process(self):
         """Process.
 
@@ -814,11 +969,30 @@ class Ngmix(object):
                 n_empty_cat += 1
                 continue
 
-            stamp = prepare_postage_stamps(vignet_cat, obj_id, i_tile, tile_cat)
+            stamp = prepare_postage_stamps(vignet_cat, obj_id, i_tile, tile_cat, self._bkg_sub)
 
             if len(stamp.gals) == 0:
                 n_no_epoch += 1
                 continue
+
+            # Position-seeded per-object RNG for Pujol noise cancellation in
+            # image sims (ngmix#796): the same object gets the same fixnoise
+            # counter-noise and fit guesses in every shear branch, so both
+            # cancel in the branch difference. The prior is rebuilt from the
+            # same per-object RNG because the guesser draws its initial guess
+            # via prior.sample() (ngmix guessers.py), which consumes the RNG the
+            # prior was CONSTRUCTED with — so a per-object rng alone would leave
+            # the guess drawing from the shared tile stream and break
+            # cancellation. Off in production, where the single tile-level
+            # self._rng and the tile-level prior carry the whole loop.
+            if self._seed_from_position:
+                obj_rng = np.random.RandomState(
+                    position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
+                )
+                obj_prior = get_prior(self._pixel_scale, obj_rng)
+            else:
+                obj_rng = self._rng
+                obj_prior = prior
 
             try:
                 flux_guess = (
@@ -839,13 +1013,14 @@ class Ngmix(object):
                     self._check_central_seg_label(tile_cat.seg[i_tile], obj_id)
                 res, psf_res, psf_orig_res = do_ngmix_metacal(
                     stamp,
-                    prior,
+                    obj_prior,
                     flux_guess,
-                    self._rng,
+                    obj_rng,
                     centroid_source=self._centroid_source,
                     blend_handling=self._blend_handling,
                     object_number=obj_id,
                     dilate_neighbour=self._dilate_neighbour,
+                    metacal_psf=self._metacal_psf,
                 )
             except Exception as ee:
                 self._w_log.info(
@@ -927,9 +1102,12 @@ class Ngmix(object):
         # Save results
         self.save_results(res_dict)
 
-def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
+        # Log mean ellipticity statistics
+        self.log_mean_ellipticity()
+
+def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
     # define per-object lists of individual exposures to go into ngmix
-    stamp = Postage_stamp()
+    stamp = Postage_stamp(bkg_sub=bkg_sub)
     #identify exposure and ccd number from psf catalog
     psf_expccd_names = list(vignet.psf_vign_cat[str(obj_id)].keys())
     for expccd_name in psf_expccd_names:
@@ -952,6 +1130,12 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
             )
         else:
             gal_vign_sub_bkg = gal_vign
+
+        # Skip epochs where sigma_mad=0 (CCD edge: mostly-zero stamp).
+        # prepare_ngmix_weights divides by sig_noise; zero sigma causes NaN/inf
+        # weights that corrupt GalSim's C-level FFT allocations.
+        if not sigma_mad(gal_vign_sub_bkg) > 0:
+            continue
 
         tile_vign = (
             np.copy(tile_cat.vign[i_tile])
@@ -1027,6 +1211,11 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
         stamp.wcs.append(epoch_wcs)
         stamp.ra.append(tile_cat.ra[i_tile])
         stamp.dec.append(tile_cat.dec[i_tile])
+        # CCD of the first surviving epoch — Fabian's coord_list[0] convention
+        # for the position seed (ngmix#796). All epochs of one object share the
+        # ra/dec above, so first-epoch CCD pins one deterministic seed stream.
+        if stamp.ccd is None:
+            stamp.ccd = int(ccd_n)
 
     return stamp
 
@@ -1391,6 +1580,13 @@ def prepare_ngmix_weights(
             else sigma_mad(gal)
         )
 
+    # Guard: sig_noise=0 means galaxy is at the CCD edge (mostly-zero stamp).
+    # Division by zero would make weight_map NaN/inf, crashing GalSim C code.
+    # np.all keeps the guard valid for the per-pixel bkg_rms path (any zero
+    # pixel would produce the same NaN weight the scalar case guards against).
+    if not np.all(sig_noise > 0):
+        return np.zeros_like(gal), np.zeros_like(weight_map), np.zeros_like(gal)
+
     noise_img = rng.standard_normal(gal.shape) * sig_noise
     noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
 
@@ -1719,6 +1915,7 @@ def make_runners(prior, flux_guess, rng):
 def do_ngmix_metacal(
     stamp, prior, flux_guess, rng, centroid_source="hsm",
     blend_handling="noisefill", object_number=None, dilate_neighbour=0,
+    metacal_psf="fitgauss",
 ):
     """Do Ngmix Metacal.
 
@@ -1754,6 +1951,17 @@ def do_ngmix_metacal(
     dilate_neighbour : int, optional
         Neighbour-mask dilation iterations passed through to
         :func:`make_ngmix_observation` under ``blend_handling="uberseg"``.
+    metacal_psf : {"fitgauss", "gauss", "dilate", "azgauss"}, optional
+        The metacal reconvolution-kernel scheme passed to ngmix as
+        ``metacal_pars['psf']``. The default ``"fitgauss"`` fits a Gaussian to
+        the PSF and rounds it (``MetacalFitGaussPSF``); ``"gauss"`` reconvolves
+        with a fixed round Gaussian sized from the PSF (``MetacalGaussPSF``);
+        ``"dilate"`` dilates the original PSF; ``"azgauss"`` (ngmix >= 2.4.1) is
+        a noise-robust variant of ``"gauss"``. This kernel is a SEPARATE object
+        from the PSF-model fit (the ``psf_runner`` above) — it only sets the
+        round PSF that metacal reconvolves with after shearing, so it moves the
+        metacal *response* (and therefore the recovered shear) but never reaches
+        the deconvolution, which is by the PSF image.
 
     Returns
     -------
@@ -1806,7 +2014,7 @@ def do_ngmix_metacal(
     metacal_pars = {
         'types': ['noshear', '1p', '1m', '2p', '2m'],
         'step': 0.01,
-        'psf': 'fitgauss',
+        'psf': metacal_psf,
         'fixnoise': True,
         'use_noise_image': True,
     }

@@ -113,7 +113,13 @@ def sextractor_runner(
     if config.getboolean(module_config_sec, "MAKE_POST_PROCESS"):
         pos_params = config.getlist(module_config_sec, "WORLD_POSITION")
         ccd_size = config.getlist(module_config_sec, "CCD_SIZE")
-        ss.make_post_process(ss_inst.path_output_file, f_wcs_path, pos_params, ccd_size)
+        ss.make_post_process(
+            ss_inst.path_output_file,
+            f_wcs_path,
+            pos_params,
+            ccd_size,
+            w_log=w_log,
+        )
 
     # Return stdout and stderr
     return stdout, stderr

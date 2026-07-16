@@ -3,8 +3,13 @@
 # run_job_sp_canfar_v2.0
 # Description: Initialise tile/exposure run directory and launch ShapePipe job.
 
+# Repository root, derived from this script's location (scripts/sh/ -> repo root)
+# so the runner is relocatable: no hardcoded ~/shapepipe clone layout. All
+# config dirs and sibling scripts are resolved under $SP_ROOT.
+SP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
 # Shared job-list description
-source $HOME/shapepipe/scripts/sh/job_list_help.bash
+source "$SP_ROOT/scripts/sh/job_list_help.bash"
 
 # ShapePipe version
 version="2.0"
@@ -16,15 +21,28 @@ ID=-1
 psf='psfex'
 tile_det='uc'
 tile_mask=0
-N_SMP=1
+N_SMP=-1
 dry_run=0
 dir=`pwd`
 debug_out=""
+
+# Input type: data or image_sims
+type="data"
+
+# Config directory override (-c). Empty means "self-compute from --type" (the
+# historical behavior); when set, it overrides the computed config_dir for any
+# --type, so a caller (e.g. the sp_validation workflow) can point every stage at
+# an explicit .ini tree.
+config_dir_override=""
+
 #scratch="/scratch/$USER/shapepipe/v${version}"
 scratch=""
 test_only=0
-check=0
+check_only=0
+run_and_check=1
 force=0
+retry=0
+quiet=0
 VERBOSE=1
 
 pat="-- "
@@ -40,14 +58,20 @@ ${JOB_LIST_HELP}   -e, --exclusive ID\timage ID\n
    \t\t\tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    --tile_det DET\t\ttile detection mode, one in ['sx'|'uc'], default='$tile_det'\n
    --tile_mask MASK\ttile masking, default='$tile_mask'\n
+   -t, --type TYPE input type, allowed are 'data', 'image_sims', default='$type'\n
+   -c, --config_dir DIR\tconfig file directory; overrides the default computed\n
+   \t\t\tfrom --type (default: computed per --type)\n
    -N, --N_SMP N_SMP\tnumber of SMP jobs, default from original config files\n
    -d, --directory DIR\trun directory, default is pwd ($dir)\n
    -S, --scratch DIR\tprocessing scratch directory, default=none\n
    -n, --dry_run\t\tDRY RUN, no actual processing; default is $dry_run\n
    --debug_out PATH\tdebug output file PATH, default=none\n
    --test\t\t\ttest mode, no processing\n
-   --check\t\tcheck download completeness only (job 8), no processing\n
+   --check_only\t\tcheck completeness only, no processing\n
    --force\t\tremove existing module output dir(s) before running\n
+   --retry\t\tskip jobs whose existing run is complete; remove and rerun\n
+   \t\t\tonly those whose existing run is incomplete/failed\n
+   -q, --quiet\t\tsuppress all output except Complete/Missing/Incomplete/WARNING lines\n
 "
 
 ## Help if no arguments
@@ -73,6 +97,14 @@ while [ $# -gt 0 ]; do
       ;;
     -p|--psf)
       psf="$2"
+      shift
+      ;;
+    -t|--type)
+      type="$2"
+      shift
+      ;;
+    -c|--config_dir)
+      config_dir_override="$2"
       shift
       ;;
     --tile_det)
@@ -106,11 +138,17 @@ while [ $# -gt 0 ]; do
     --test)
       test_only=1
       ;;
-    --check)
-      check=1
+    --check_only)
+      check_only=1
       ;;
     --force)
       force=1
+      ;;
+    --retry)
+      retry=1
+      ;;
+    -q|--quiet)
+      quiet=1
       ;;
   esac
   shift
@@ -124,9 +162,14 @@ function message() {
   my_debug_out=$2
   my_exit=$3
 
-  echo $msg
+  if [ "$quiet" == "0" ] || [[ "$msg" =~ (Complete|[Mm]issing|Incomplete|WARNING) ]]; then
+    echo $msg
+  fi
   if [ -n "$my_debug_out" ]; then
     echo ${pat}$msg >> $my_debug_out
+  fi
+  if [ -n "$log_file" ]; then
+    echo ${pat}$msg >> $log_file
   fi
 
   if [ "$my_exit" != "-1" ]; then
@@ -135,10 +178,12 @@ function message() {
     else
       echo "${pat}exiting with code $my_exit"
     fi
+    if [ -n "$log_file" ]; then
+      echo "${pat}exiting with code $my_exit" >> $log_file
+    fi
     exit $my_exit
   fi
 }
-
 
 
 # Initialise exposure work directory: create dirs, exp_numbers file, config symlink.
@@ -158,8 +203,32 @@ function init_exp_work_dir() {
   fi
 
   if [ ! -e "$exp_work_dir/cfis" ]; then
-    ln -sf ~/shapepipe/example/cfis "$exp_work_dir/cfis"
+    ln -sf $config_dir "$exp_work_dir/cfis"
   fi
+}
+
+
+# Remove existing run_sp_<kind>_<prefix>* output directories.
+# Args: $1 = base dir containing the "output" subdir (work_dir or exp_work_dir)
+#       $2 = "tile" or "exp"
+#       $3 = space-separated run_prefixes
+#       $4 = label for the removal message (e.g. "Force-removing")
+function remove_run_dirs() {
+  local base_dir=$1
+  local kind=$2
+  local run_prefixes=$3
+  local label=$4
+  local run_prefix
+  for run_prefix in $run_prefixes; do
+    local dirs_to_remove
+    dirs_to_remove=$(ls -d "$base_dir/output/run_sp_${kind}_${run_prefix}"* 2>/dev/null)
+    if [ -n "$dirs_to_remove" ]; then
+      for d in $dirs_to_remove; do
+        message "${label} $d" "$debug_out" -1
+        command "rm -rf $d" $dry_run
+      done
+    fi
+  done
 }
 
 
@@ -185,7 +254,7 @@ function run_exp_job() {
     message "Exposure numbers file exp_numbers-${IDra}-${IDdec}.txt not found in $work_dir/output" "$debug_out" 10
   fi
 
-  if [ "$check" == "1" ]; then
+  if [ "$check_only" == "1" ]; then
     message "Check mode: skipping job $exp_job" "$debug_out" -1
   fi
 
@@ -200,30 +269,27 @@ function run_exp_job() {
 
     (( n_total++ ))
 
-    # exp_id e.g. "2182795p": ab = first 2 chars, abcdefg = all but last char
+    # exp_id e.g. "2182795p" (data) or "208659" (image_sims)
+    # Strip trailing letter if present (data format); keep full id if numeric only.
     local exp_prefix="${exp_id:0:2}"
-    local exp_base="${exp_id%?}"
+    local exp_base
+    if [[ "${exp_id: -1}" =~ [a-zA-Z] ]]; then
+      exp_base="${exp_id%?}"
+    else
+      exp_base="$exp_id"
+    fi
     local exp_id_disp="${exp_prefix}/${exp_base}"
-    local exp_work_dir="$HOME/v${version}/exp/$exp_prefix/$exp_base"
+    local exp_work_dir="$dir/exp/$exp_prefix/$exp_base"
     local exp_log_file="$exp_work_dir/job_sp_canfar_v2.0.log"
 
     # Create exp_numbers-000-000.txt and cfis link if not existent
     init_exp_work_dir "$exp_id" "$exp_work_dir"
 
-    # force: remove all existing run directories for each prefix before running
-    if [ "$force" == "1" ]; then
-      local run_prefix
-      for run_prefix in $run_prefixes; do
-        local dirs_to_remove
-        dirs_to_remove=$(ls -d "$exp_work_dir/output/run_sp_exp_${run_prefix}"* 2>/dev/null)
-        if [ -n "$dirs_to_remove" ]; then
-          for d in $dirs_to_remove; do
-            message "Force-removing $d" "$debug_out" -1
-            command "rm -rf $d" $dry_run
-          done
-        fi
-      done
-    fi
+    # Acquire a per-exposure lock so parallel tiles that share this exposure
+    # don't race: one runs, the other waits and then finds it already complete.
+    local lock_fd
+    exec {lock_fd}>"${exp_work_dir}/.sp_lock"
+    flock -x "$lock_fd"
 
     # Check completeness of existing run output (main prefix)
     local run_dir=$(ls -dt "$exp_work_dir/output/run_sp_exp_${main_prefix}"* 2>/dev/null | head -1)
@@ -286,20 +352,30 @@ function run_exp_job() {
       fi
     done
 
-    if [ "$is_complete" == "1" ]; then
+    # force: always remove and rerun.
+    # retry: remove and rerun only if the existing run is incomplete/failed.
+    if [ "$force" == "1" ]; then
+      remove_run_dirs "$exp_work_dir" "exp" "$run_prefixes" "Force-removing"
+    elif [ "$retry" == "1" ] && [ "$is_complete" == "0" ]; then
+      remove_run_dirs "$exp_work_dir" "exp" "$run_prefixes" "Retry: removing incomplete run"
+    fi
+
+    if [ "$force" != "1" ] && [ "$is_complete" == "1" ]; then
       message "Complete $exp_id_disp: run_sp_exp_${main_prefix} ( $check_desc)" "$debug_out" -1
       (( n_complete++ ))
+      exec {lock_fd}>&-
       continue
     fi
 
     # Report incomplete/missing in check mode; in run mode handle and proceed
-    if [ "$check" == "1" ]; then
+    if [ "$check_only" == "1" ]; then
       if [ -n "$run_dir" ]; then
         message "  Benign incomplete: $exp_id_disp ($check_desc)" "$debug_out" -1
       else
         message "  missing: $exp_id_disp" "$debug_out" -1
       fi
       (( n_incomplete++ ))
+      exec {lock_fd}>&-
       continue
     fi
 
@@ -311,9 +387,10 @@ function run_exp_job() {
     [ -n "$debug_out" ] && debug_flag="--debug_out $debug_out"
 
     echo "$(basename "$0") -j $exp_job -e $exp_id" > "$exp_log_file"
-    echo "pwd=`pwd`"
-    command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
-    echo "Done with job_sp_canfar_v2.0.bash"
+    [ "$quiet" == "0" ] && echo "pwd=`pwd`"
+    command "$SP_ROOT/scripts/sh/job_sp_canfar_v2.0.bash -c $config_dir -p $psf -r $retrieve --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
+    [ "$quiet" == "0" ] && echo "Done with job_sp_canfar_v2.0.bash"
+    exec {lock_fd}>&-
 
   done < "$exp_numbers_file"
 
@@ -343,20 +420,12 @@ function run_tile_job() {
   local complete_checks=$3
   local main_prefix="${run_prefixes%% *}"
 
-  # force: remove all existing run directories for each prefix before running
-  if [ "$force" == "1" ]; then
-    local run_prefix
-    for run_prefix in $run_prefixes; do
-      local dirs_to_remove
-      dirs_to_remove=$(ls -d "$work_dir/output/run_sp_tile_${run_prefix}"* 2>/dev/null)
-      if [ -n "$dirs_to_remove" ]; then
-        for d in $dirs_to_remove; do
-          message "Force-removing $d" "$debug_out" -1
-          command "rm -rf $d" $dry_run
-        done
-      fi
-    done
-  fi
+  # Tile jobs must run in the tile work dir: SP_RUN/SP_CONFIG derive from cwd,
+  # and run_exp_job leaves cwd in the last exposure dir. When run_job is invoked
+  # once for the whole pipeline (-j 4095, as the sp_validation workflow does),
+  # the tile jobs after the exposure loop would otherwise inherit that stale
+  # exposure cwd and write into it. Re-anchor to the tile dir here.
+  cd "$work_dir"
 
   # Locate most recent existing run directory for the main prefix
   local run_dir
@@ -421,16 +490,24 @@ function run_tile_job() {
     done
   fi
 
-  if [ "$is_complete" == "1" ] && [ -n "$complete_checks" ]; then
+  # force: always remove and rerun.
+  # retry: remove and rerun only if the existing run is incomplete/failed.
+  if [ "$force" == "1" ]; then
+    remove_run_dirs "$work_dir" "tile" "$run_prefixes" "Force-removing"
+  elif [ "$retry" == "1" ] && [ "$is_complete" == "0" ]; then
+    remove_run_dirs "$work_dir" "tile" "$run_prefixes" "Retry: removing incomplete run"
+  fi
+
+  if [ "$force" != "1" ] && [ "$is_complete" == "1" ] && [ -n "$complete_checks" ]; then
     message "Complete: ( $check_desc)" "$debug_out" -1
     return 0
   fi
 
-  if [ "$check" == "1" ]; then
+  if [ "$check_only" == "1" ]; then
     if [ -n "$run_dir" ]; then
-      message "Incomplete: ($check_desc)" "$debug_out" -1
+      message "Incomplete: ( $check_desc)" "$debug_out" -1
     else
-      message "Missing: ($check_desc)" "$debug_out" -1
+      message "Missing: ( $check_desc)" "$debug_out" -1
     fi
     return 0
   fi
@@ -440,14 +517,92 @@ function run_tile_job() {
   [ -n "$debug_out" ] && debug_flag="--debug_out $debug_out"
 
   if [ ! -e "cfis" ]; then
-    ln -sf ~/shapepipe/example/cfis "cfis"
+    ln -sf $config_dir cfis
   fi
 
   command "update_runs_log_file.py" $dry_run
 
   # Run job script
-  command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
+  command "$SP_ROOT/scripts/sh/job_sp_canfar_v2.0.bash -c $config_dir -p $psf -r $retrieve --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
 }
+
+
+# Wrap a run_tile_job or run_exp_job call with check-log and force-cleanup.
+# Usage: run_job_logged BIT FUNC [FUNC_ARGS...]
+# - With --force:  removes log_job_BIT.txt before running FUNC
+# - With --check:  captures output of FUNC; writes log_job_BIT.txt only if no
+#                  Missing/Incomplete lines appear
+# - Otherwise:     calls FUNC directly
+function run_job_logged() {
+  local bit=$1
+  shift
+  local log="$dir/logs/log_job_${ID}_${bit}.txt"
+
+  [ "$force" == "1" ] && rm -f "$log"
+
+  if [ "$check_only" == "1" ]; then
+    local out
+    out=$( "$@" 2>&1 )
+    echo "$out"
+    echo "$out" | grep -qiE "(Missing|Incomplete)" || echo "$out" > "$log"
+  else
+    "$@"
+    local rc=$?
+    if [ $rc -eq 0 ]; then
+      if [ "$run_and_check" == "1" ]; then
+        check_only=1
+        local saved_force=$force
+        force=0
+        local out
+        out=$( "$@" 2>&1 )
+        check_only=0
+        force=$saved_force
+        echo "$out"
+        echo "$out" | grep -qiE "(Missing|Incomplete)" || echo "$out" > "$log"
+      else
+        echo "Completed job $bit $(date)" > "$log"
+      fi
+    fi
+  fi
+}
+
+
+if [ "$type" == "data" ]; then
+
+    [ "$quiet" == "0" ] && echo "Running on data"
+    retrieve="vos"
+    config_dir="$SP_ROOT/example/cfis"
+    export SP_DIR=$dir
+    export SP_CONFIG=$config_dir
+
+elif [ "$type" == "image_sims" ]; then
+
+    [ "$quiet" == "0" ] && echo "Running on image simulations"
+    retrieve="symlink"
+    config_dir="$SP_ROOT/example/cfis_image_sims"
+    # SP_DIR points to the run directory where input_tiles and input_exp live;
+    # configs use $SP_DIR/input_* so those dirs stay outside SP_RUN and are
+    # not found twice by ShapePipe's recursive glob scan.
+    export SP_DIR=$dir
+    export SP_CONFIG=$config_dir
+    tile_det='sx'
+
+else
+
+    echo "Invalid input type $type" 
+
+fi
+
+# -c overrides the config_dir computed from --type (uniformly, any type). Kept
+# after the type branch so that when unset the computed default is byte-for-byte
+# unchanged; SP_CONFIG (exported per-type above) is re-exported to match.
+if [ -n "$config_dir_override" ]; then
+    config_dir="$config_dir_override"
+    export SP_CONFIG=$config_dir
+fi
+
+[ "$quiet" == "0" ] && echo "config_dir=$config_dir"
+
 
 # Init message
 if [ "$test_only" == "1" ]; then
@@ -469,17 +624,28 @@ if [ "$ID" == "-1" ]; then
 fi
 
 if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
-  message "PSF (option -p) needs to be 'psfex' or 'mccd'" "$debug_out" 4
+  message "PSF (option -p) needs to be 'psfex' or 'mccd', not '$psf'" "$debug_out" 4
 fi
 
 if [ "$dry_run" != "0" ] && [ "$dry_run" != "1" ]; then
   message "dry_run must be 0 or 1, not $dry_run" "$debug_out" 8
 fi
 
+## Check input links
+for link in "$dir/input_tiles" "$dir/input_exp" "$dir/cfis"; do
+  if [ -L "$link" ]; then
+    if [ ! -e "$link" ]; then
+      message "Broken symlink: $link" "$debug_out" 6
+    fi
+  elif [ ! -e "$link" ]; then
+    message "Missing path: $link" "$debug_out" 6
+  fi
+done
+
 
 # Start script
 
-source $HOME/shapepipe/scripts/sh/functions.sh
+source "$SP_ROOT/scripts/sh/functions.sh"
 
 message "Starting $(basename "$0")" "$debug_out" -1
 message "`date`" "$debug_out" -1
@@ -495,18 +661,28 @@ Letter=${letter^}
 
 cd $dir
 
-# Derive tile path components from ID (e.g. "000.227" -> IDra="000")
+# Derive tile path components from ID (e.g. "000.227" -> IDra="000", IDdec="227")
 IDra=${ID%%.*}
+IDdec=${ID##*.}
+ID_DASHED="${IDra}-${IDdec}"
 work_dir="$dir/tiles/$IDra/$ID"
 log_file="$work_dir/job_sp_canfar_v2.0.log"
 
 # Create tile work directory
 [ ! -d "$work_dir" ] && command "mkdir -p $work_dir" $dry_run
 cd $work_dir
+echo "$0 $@" > "$log_file"
 
 # Write ID to first input
+# Image sims use dash format (e.g. 233-293); real data uses dot format (233.293)
+# which ShapePipe's in2out_pattern converts to dashes for output naming only,
+# not for input file lookup — so write the format that matches the actual files.
 if [ ! -e tile_numbers.txt ]; then
-  echo $ID > tile_numbers.txt
+  if [ "$type" == "image_sims" ]; then
+    echo ${ID//./-} > tile_numbers.txt
+  else
+    echo $ID > tile_numbers.txt
+  fi
 fi
 
 # Output directory
@@ -514,7 +690,8 @@ if [ ! -d "output" ]; then
   command "mkdir output" $dry_run
 fi
 
-echo -n "pwd: "; pwd
+
+[ "$quiet" == "0" ] && { echo -n "pwd: "; pwd; }
 
 
 # Avoid Qt error with setools
@@ -537,44 +714,99 @@ IDdec=${ID##*.}
 (( do_job = job & 1 ))
 if [[ $do_job != 0 ]]; then
   # Job 1: download tile images and weights
-  run_tile_job 1 "Git" "get_images_runner:4"
+  if [ "$type" == "image_sims" ]; then
+    n_exp=2
+  else
+    n_exp=4
+  fi
+  run_job_logged 1 run_tile_job 1 "Git" "get_images_runner:${n_exp}"
 fi
 
 (( do_job = job & 2 ))
 if [[ $do_job != 0 ]]; then
-  # Job 2: uncompress tile weights
-  run_tile_job 2 "Uz" "uncompress_fits_runner:1"
+  log_2="$dir/logs/log_job_${ID}_2.txt"
+  [ "$force" == "1" ] && rm -f "$log_2"
+  if [ "$type" == "image_sims" ]; then
+    # Image sims weights are already uncompressed; fake the Uz output directory
+    # so downstream jobs can find the weight via last:uncompress_fits_runner.
+    weight_src="$dir/input_tiles/CFIS_simu_weight-${ID//./-}.fits"
+    if [ "$check_only" == "1" ]; then
+      uz_run_dir=$(ls -dt "$work_dir/output/run_sp_tile_Uz"* 2>/dev/null | head -1)
+      if [ -n "$uz_run_dir" ] && [ -e "$uz_run_dir/uncompress_fits_runner/output/$(basename $weight_src)" ]; then
+        msg="Complete: ( Uz/uncompress_fits_runner[fake] 1/1 )"
+        message "$msg" "$debug_out" -1
+        echo "$msg" > "$log_2"
+      else
+        message "Missing: Uz $(basename $weight_src)" "$debug_out" -1
+      fi
+    else
+      uz_out="$work_dir/output/run_sp_tile_Uz$(date +_%Y-%m-%d_%H-%M-%S)/uncompress_fits_runner/output"
+      command "mkdir -p $uz_out" $dry_run
+      if [ -e "$weight_src" ] && [ ! -e "$uz_out/$(basename $weight_src)" ]; then
+        command "ln -sf $weight_src $uz_out/$(basename $weight_src)" $dry_run
+      fi
+      if [ "$run_and_check" == "1" ]; then
+        uz_run_dir=$(ls -dt "$work_dir/output/run_sp_tile_Uz"* 2>/dev/null | head -1)
+        if [ -n "$uz_run_dir" ] && [ -e "$uz_run_dir/uncompress_fits_runner/output/$(basename $weight_src)" ]; then
+          msg="Complete: Uz $(basename $weight_src)"
+          message "$msg" "$debug_out" -1
+          echo "$msg" > "$log_2"
+        else
+          message "Missing: Uz $(basename $weight_src)" "$debug_out" -1
+        fi
+      else
+        echo "Completed job 2 $(date)" > "$log_2"
+      fi
+    fi
+  else
+    # Job 2: uncompress tile weights
+    run_job_logged 2 run_tile_job 2 "Uz" "uncompress_fits_runner:1"
+  fi
 fi
 
 (( do_job = job & 4 ))
 if [[ $do_job != 0 ]]; then
   # Job 4: find exposures
-  run_tile_job 4 "Fe" "find_exposures_runner:1"
+  run_job_logged 4 run_tile_job 4 "Fe" "find_exposures_runner:1"
 fi
 
 (( do_job = job & 8 ))
 if [[ $do_job != 0 ]]; then
   # Job 8: retrieve exposure images
-  run_exp_job 8 "Gie" "get_images_runner:6"
+  if [ "$type" == "image_sims" ]; then
+    n_exp=3
+  else
+    n_exp=6
+  fi
+  run_job_logged 8 run_exp_job 8 "Gie" "get_images_runner:${n_exp}"
 fi
 
 (( do_job = job & 16 ))
 if [[ $do_job != 0 ]]; then
   # Job 16: split exposures, get WCS headers
-  run_exp_job 16 "Sp" "split_exp_runner:121"
+  run_job_logged 16 run_exp_job 16 "Sp" "split_exp_runner:121"
 fi
 
 (( do_job = job & 32 ))
 if [[ $do_job != 0 ]]; then
   # Job 32: mask exposures
-  run_exp_job 32 "Ma" "mask_runner:40"
+  run_job_logged 32 run_exp_job 32 "Ma" "mask_runner:40"
 fi
 
 (( do_job = job & 64 ))
 if [[ $do_job != 0 ]]; then
-  # Job 64: process stars on exposures, PSF model
-  if [ "$psf" == "psfex" ]; then
-    run_exp_job 64 "SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40::warn setools_runner:80:rand_split"
+  # Job 64: PSF model
+  # For image_sims: fake PSF runs as part of job 512 (requires sexcat from job 256)
+  # For data: run full exposure-level PSF modelling pipeline
+  if [ "$type" == "image_sims" ]; then
+    # Fake PSF is handled inside job 512; write placeholder log so the sequence is complete
+    log_64="$dir/logs/log_job_${ID}_64.txt"
+    [ "$force" == "1" ] && rm -f "$log_64"
+    msg="Complete: job 64 placeholder (fake PSF runs as part of job 512)"
+    message "$msg" "$debug_out" -1
+    echo "$msg" > "$log_64"
+  elif [ "$psf" == "psfex" ]; then
+    run_job_logged 64 run_exp_job 64 "SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40::warn setools_runner:80:rand_split"
   else
     message "MCCD not implemented yet for v2.0" "$debug_out" 10
   fi
@@ -583,30 +815,80 @@ fi
 (( do_job = job & 128 ))
 if [[ $do_job != 0 ]]; then
   # Job 128: merge exposure WCS headers into tile-level sqlite log
-  run_tile_job 128 "Mh_exp" "merge_headers_runner:1"
+  run_job_logged 128 run_tile_job 128 "Mh_exp" "merge_headers_runner:1"
 fi
 
 (( do_job = job & 256 ))
 if [[ $do_job != 0 ]]; then
   # Job 256: object selection on tiles
   if [ "$tile_det" == "uc" ]; then
-    run_tile_job 256 "Gic Uc" "get_images_runner:2 read_ext_sexcat_runner:1"
+    run_job_logged 256 run_tile_job 256 "Gic Uc" "get_images_runner:2 read_ext_sexcat_runner:1"
   else
-    run_tile_job 256 "Sx" "sextractor_runner:1"
+    n_exp=2
+    run_job_logged 256 run_tile_job 256 "Sx" "sextractor_runner:$n_exp"
   fi
 fi
 
 (( do_job = job & 512 ))
 if [[ $do_job != 0 ]]; then
-  # Job 512: process tiles (PSF interp, vignet)
-  run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4"
+  # Job 512: process tiles ([PSF interp,] vignets)
+  # For image_sims: fake PSF runs first (requires sexcat from job 256), then vignets
+  log_512="$dir/logs/log_job_${ID}_512.txt"
+  [ "$force" == "1" ] && rm -f "$log_512"
+  if [ "$type" == "data" ]; then
+    if [ "$check_only" == "1" ]; then
+      out=$(run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4" 2>&1)
+      echo "$out"
+      echo "$out" | grep -qiE "(Missing|Incomplete)" || echo "$out" > "$log_512"
+    else
+      run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4"
+      if [ "$run_and_check" == "1" ]; then
+        check_only=1; local saved_force_512=$force; force=0
+        out=$(run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4" 2>&1)
+        check_only=0; force=$saved_force_512
+        echo "$out"
+        echo "$out" | grep -qiE "(Missing|Incomplete)" || echo "$out" > "$log_512"
+      else
+        echo "Completed job 512 $(date)" > "$log_512"
+      fi
+    fi
+  else
+    if [ "$check_only" == "1" ]; then
+      out1=$(run_tile_job 64 "fpsf" "fake_psf_runner:1" 2>&1)
+      out2=$(run_tile_job 512 "ViVi ViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:3" 2>&1)
+      echo "$out1"; echo "$out2"
+      { echo "$out1"; echo "$out2"; } | grep -qiE "(Missing|Incomplete)" || \
+        { echo "$out1"; echo "$out2"; } > "$log_512"
+    else
+      run_tile_job 64 "fpsf" "fake_psf_runner:1"
+      run_tile_job 512 "ViVi ViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:3"
+      if [ "$run_and_check" == "1" ]; then
+        check_only=1; saved_force_512im=$force; force=0
+        out1=$(run_tile_job 64 "fpsf" "fake_psf_runner:1" 2>&1)
+        out2=$(run_tile_job 512 "ViVi ViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:3" 2>&1)
+        check_only=0; force=$saved_force_512im
+        echo "$out1"; echo "$out2"
+        { echo "$out1"; echo "$out2"; } | grep -qiE "(Missing|Incomplete)" || \
+          { echo "$out1"; echo "$out2"; } > "$log_512"
+      else
+        echo "Completed job 512 $(date)" > "$log_512"
+      fi
+    fi
+  fi
 fi
 
 (( do_job = job & 1024 ))
 if [[ $do_job != 0 ]]; then
   # Job 1024: shape measurement
-  run_tile_job 1024 "Ng" "ngmix_interp_runner:1"
+  run_job_logged 1024 run_tile_job 1024 "Ng" "ngmix_runner:1"
 fi
+
+(( do_job = job & 2048 ))
+if [[ $do_job != 0 ]]; then
+  # Job 2048: merge catalogues
+  run_job_logged 2048 run_tile_job 2048 "Mc_${psf}" "make_cat_runner:1"
+fi
+
 
 if [ -n "$scratch" ]; then
   message "Syncing output from scratch back to permanent dir" "$debug_out" -1
