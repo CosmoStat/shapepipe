@@ -55,11 +55,10 @@ rule tile_merge_headers:
     shell:
         "{params.cmd} --threads {threads}"
 
-# Mask tiles; this tile's star cat is a declared input (per-unit re-key).
+# Mask tiles (star cats: pre-run store, read via the wrapper's dir symlink).
 rule tile_mask:
     input:
         git=rules.tile_get_images.output,
-        star=str(RUN_DIR / "tiles/{tile}/star_cat-{tile}.fits"),
     output:
         directory(f"{TILE_OUT}/run_sp_tile_Ma")
     params:

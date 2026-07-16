@@ -46,24 +46,13 @@ rule tile_find_exposures:
         "{params.cmd} --threads {threads}"
 
 # Star catalogues for masking are pre-generated offline (create_star_cat.py on a
-# networked login node — the one genuinely networked prepare step). They are
-# re-keyed PER UNIT here: each tile/exposure's cat is its own DAG node, so
-# appending tile 51 adds nodes rather than mutating a run-level output that would
-# dirty every finished mask (the growth-invariant fix, finding 11).
-rule exp_star_cat:
-    output:
-        str(RUN_DIR / "exp/{exp}/star_cat-{exp}.fits")
-    params:
-        src=lambda wc: str(STAR_CATS / "exp" / f"star_cat-{wc.exp}.fits")
-    shell:
-        "ln -sf {params.src} {output}"
-
-rule tile_star_cat:
-    output:
-        str(RUN_DIR / "tiles/{tile}/star_cat-{tile}.fits")
-    params:
-        # the store names tiles in ShapePipe's image-number convention (dots->dashes)
-        src=lambda wc: str(STAR_CATS / "tiles" /
-                           f"star_cat-{wc.tile.replace('.', '-')}.fits")
-    shell:
-        "ln -sf {params.src} {output}"
+# networked login node) and consumed as DIRECTORIES: the mask configs read
+# INPUT_DIR $SP_RUN/star_cat_{exp,tiles} with per-CCD numbering (exp cats are
+# star_cat-<exp>-<ccd>.fits, 40/exposure; tile cats star_cat-<IDra>-<IDdec>.fits)
+# — the v2.0 mechanism. The wrapper materialises the two dir symlinks in every
+# unit work dir (sp_rule.materialise_unit); there is NO per-unit star-cat DAG
+# node: the store is pre-run input like the image store, and a missing cat fails
+# the mask stage's count-floor loudly. (Earlier per-unit file rules linked names
+# that don't exist — one file per exposure vs the store's 40 — and nothing read
+# them: the configs only see the dir symlinks.) When star-cat GENERATION moves
+# in-workflow (P2), it becomes real per-unit rules producing into the store.
