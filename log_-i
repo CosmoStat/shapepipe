@@ -1,1 +1,1 @@
--i /tmp/pytest-of-cdaley/pytest-7/test_build_map_pole_guard_skip0/corners.txt -o /tmp/pytest-of-cdaley/pytest-7/test_build_map_pole_guard_skip0/cov.hsp -c 32 -n 1024
+-i /tmp/pytest-of-cdaley/pytest-8/test_build_map_pole_guard_skip0/corners.txt -o /tmp/pytest-of-cdaley/pytest-8/test_build_map_pole_guard_skip0/cov.hsp -c 32 -n 1024

@@ -239,15 +239,23 @@ def test_get_ccds_with_psf_subtracts_missing(monkeypatch):
 
 @pytest.mark.parametrize(
     ("version", "n_patch"),
-    [("v1.3", 7), ("v1.4", 7), ("v1.5", 8), ("v1.6", 9), ("v2.0", 10)],
+    [("v1.3", 7), ("v1.4", 7), ("v1.5", 8), ("v1.6", 9)],
 )
 def test_version_to_patch_count(version, n_patch):
-    """Each catalogue version maps to its patch count; v2.0 mirrors v1.6."""
+    """Each v1.x catalogue version maps to its patch count."""
     handler = CcdPsfHandler()
     handler._params["version_cat"] = version
     handler.update_params()
     assert handler._params["n_patch"] == n_patch
     assert len(handler._params["patches"]) == n_patch
+
+
+def test_v2_is_patchless():
+    """v2.0 removes the patch concept: summaries read from the run root."""
+    handler = CcdPsfHandler()
+    handler._params["version_cat"] = "v2.0"
+    handler.update_params()
+    assert handler._params["patches"] == ["."]
 
 
 def test_n_patch_option_overrides_version_default():

@@ -59,7 +59,8 @@ class CcdPsfHandler(object):
             "n_CCD": "number of CCDs per exposure; default is {}",
             "n_patch": (
                 "number of patches (P1..P<n>); overrides the version"
-                + " default, 0 = use version default; default is {}"
+                + " default, 0 = use version default (v2.0 is patch-less:"
+                + " summary files are read from the run root); default is {}"
             ),
             "output": "output file path; default is ccds_with_psf_<version>.txt",
         }
@@ -94,7 +95,8 @@ class CcdPsfHandler(object):
 
         Set derived parameters based on input parameters.
         """
-        # Determine number of patches: explicit -p wins, else version default
+        # Determine patch directories: explicit -p wins, else version default.
+        # v2.0 removes the patch concept: summary files live at the run root.
         version = self._params["version_cat"]
         if self._params["n_patch"]:
             n_patch = self._params["n_patch"]
@@ -105,14 +107,14 @@ class CcdPsfHandler(object):
         elif version == "v1.6":
             n_patch = 9
         elif version == "v2.0":
-            # Newest patch definitions (auxdir/CFIS/tiles_202510) include
-            # P10; override with -p if the v2 footprint settles differently.
-            n_patch = 10
+            n_patch = 0
         else:
             raise ValueError(f"Invalid version {version}")
 
         self._params["n_patch"] = n_patch
-        self._params["patches"] = [f"P{x}" for x in np.arange(n_patch) + 1]
+        self._params["patches"] = (
+            [f"P{x}" for x in np.arange(n_patch) + 1] if n_patch else ["."]
+        )
 
         # Set output file if not specified
         if self._params["output"] is None:
