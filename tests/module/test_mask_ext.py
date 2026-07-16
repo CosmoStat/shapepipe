@@ -228,3 +228,47 @@ def test_write_wcs_roundtrip(tmp_path):
     ra_in, dec_in = w.all_pix2world(cx, cy, 0)
     ra_out, dec_out = w_out.all_pix2world(cx, cy, 0)
     npt.assert_allclose([ra_in, dec_in], [ra_out, dec_out], rtol=0, atol=1e-9)
+
+
+def _make_bool_map(masked_ra, masked_dec):
+    """Healsparse boolean map (True = masked) at the given (ra, dec) cells."""
+    hmap = healsparse.HealSparseMap.make_empty(
+        NSIDE_COVERAGE, NSIDE_SPARSE, dtype=np.bool_, sentinel=False
+    )
+    pix = np.unique(hpgeom.angle_to_pixel(NSIDE_SPARSE, masked_ra, masked_dec))
+    hmap[pix] = np.ones(len(pix), dtype=np.bool_)
+    return hmap
+
+
+def test_bool_map_flag_1(tmp_path):
+    """A boolean mask (True = masked) rasterizes through BIT_FLAG_MAP 1:1.
+
+    This is the flavour of the real 2025 r-band UNIONS mask
+    (``mask_r_nside131072.hsp``): dtype bool, sentinel False, valid pixels
+    only where masked.
+    """
+    naxis1 = naxis2 = 16
+    w = _make_wcs(naxis1, naxis2)
+    cx, cy = naxis1 // 2, naxis2 // 2
+    ra_c, dec_c = w.all_pix2world(cx, cy, 0)
+    hmap = _make_bool_map([float(ra_c)], [float(dec_c)])
+
+    inst = _run(tmp_path, w, naxis1, naxis2, hmap, {1: 1})
+    flags = inst.rasterize()
+
+    assert flags.dtype == np.int16
+    assert np.sum(flags == 1) >= 1
+    assert np.all(np.isin(np.unique(flags), [0, 1]))
+
+
+def test_bool_map_wrong_bits_raise(tmp_path):
+    """Boolean mask + bits other than 1 would silently select nothing: raise."""
+    naxis1 = naxis2 = 8
+    w = _make_wcs(naxis1, naxis2)
+    cx, cy = naxis1 // 2, naxis2 // 2
+    ra_c, dec_c = w.all_pix2world(cx, cy, 0)
+    hmap = _make_bool_map([float(ra_c)], [float(dec_c)])
+
+    inst = _run(tmp_path, w, naxis1, naxis2, hmap, {64: 1})
+    with pytest.raises(ValueError, match="boolean healsparse map"):
+        inst.rasterize()

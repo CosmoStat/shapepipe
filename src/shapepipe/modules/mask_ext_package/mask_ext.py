@@ -213,6 +213,20 @@ class MaskExt(object):
         hmap = healsparse.HealSparseMap.read(self._mask_path)
         sentinel = hmap.sentinel
 
+        # Mask products come in two flavours: integer bit-flag maps (per-band
+        # bits, e.g. 64 = r) and boolean maps (True = masked, e.g. the
+        # candide copy of the 2025 r-band mask). For a boolean map the only
+        # meaningful bit is 1 (True); any other bit silently selects nothing
+        # (``True & 64 == 0`` -> an all-clean flag image), so fail loudly.
+        if hmap.dtype == np.bool_:
+            bad_bits = [bit for bit in self._bit_flag_map if bit != 1]
+            if bad_bits:
+                raise ValueError(
+                    f"Mask {self._mask_path} is a boolean healsparse map; "
+                    + f"BIT_FLAG_MAP bits {bad_bits} would never match "
+                    + "(use '1:<flag>' for boolean masks)"
+                )
+
         n_y, n_x = self._img_shape
         chunk_size = self._chunk_size or self._default_chunk_size()
 
