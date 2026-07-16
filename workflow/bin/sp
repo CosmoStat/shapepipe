@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# sp — the committed launcher for the ShapePipe Snakemake workflow.
+#
+# Removes the shell-state dependencies the review flagged (finding 20): it loads
+# the apptainer module (Snakemake resolves `apptainer` via PATH at job runtime)
+# and runs the Snakemake that lives on the shared /project venv (must be on a
+# shared FS — the executor re-invokes it inside jobs). One entry point, so a
+# fresh tmux / a restart after a crash always launches with the right state.
+#
+# Usage:
+#   sp prepare            # prepare_tiles -> build_index.py -> prepare_exposures
+#   sp prepare_tiles      # phase A.1 only
+#   sp index              # build_index.py only (plain script, threshold-gated)
+#   sp prepare_exposures  # phase A.2 only
+#   sp run [ARGS...]      # the main compute DAG
+#   sp rerun <target...>  # forced recompute of protected/finished products
+#   sp cancel <run>       # scancel this workflow's jobs (name sweep) before --unlock
+#   sp clean-exposures [--apply]   # index-driven exposure-store reclaim
+#   sp report             # emit run_report.json now (mid-run ok)
+# Extra args after the subcommand pass through to snakemake.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # workflow/
+REPO="$(dirname "$HERE")"
+VENV="${SP_SNAKEMAKE_ENV:-/project/def-mjhudson/cdaley/snakemake-env}"
+PROFILE="$REPO/profiles/nibi"
+SCRIPTS="$HERE/scripts"
+CONFIG="$HERE/config.yaml"
+
+module load apptainer/1.4.5 2>/dev/null || true
+# shellcheck disable=SC1091
+source "$VENV/bin/activate"
+
+# Minimal scalar reader for workflow/config.yaml (key: value, no nesting).
+cfg() { sed -n "s/^$1:[[:space:]]*//p" "$CONFIG" | head -1; }
+RUN_DIR="$(cfg run_dir)"; INDEX_DB="$(cfg index_db)"
+TILE_LIST="$(cfg tile_list)"; MISSING_THRESH="${SP_MISSING_THRESHOLD:-0.0}"
+
+sm() { snakemake --profile "$PROFILE" "$@"; }
+build_index() {
+  python "$SCRIPTS/build_index.py" --tile-list "$TILE_LIST" \
+    --run-dir "$RUN_DIR" --db "$INDEX_DB" --missing-threshold "$MISSING_THRESH"
+}
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  prepare)           sm prepare_tiles "$@"; build_index; sm prepare_exposures "$@" ;;
+  prepare_tiles)     sm prepare_tiles "$@" ;;
+  index)             build_index ;;
+  prepare_exposures) sm prepare_exposures "$@" ;;
+  run)               sm "$@" ;;
+  rerun)             sm --forcerun "$@" ;;
+  cancel)
+    run="${1:?usage: sp cancel <run-name-substring>}"
+    squeue --me --noheader --format='%i %j' \
+      | awk -v r="$run" '$2 ~ r {print $1}' | xargs -r scancel
+    echo "cancelled jobs matching '$run'; safe to --unlock / rerun now" ;;
+  clean-exposures)   python "$SCRIPTS/clean_exposures.py" \
+                       --run-dir "$RUN_DIR" --index "$INDEX_DB" "$@" ;;
+  report)            python "$SCRIPTS/run_report.py" \
+                       --run-dir "$RUN_DIR" --index "$INDEX_DB" --status manual "$@" ;;
+  *) echo "sp: unknown subcommand '${cmd:-}' (see the header of $0)"; exit 2 ;;
+esac

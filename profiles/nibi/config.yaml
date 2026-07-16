@@ -1,0 +1,101 @@
+# Snakemake profile for the Nibi cluster (Digital Research Alliance).
+#
+# ONE-ALLOCATION mode: sbatch one node up front, then run snakemake with the
+# LOCAL scheduler inside it (no per-job sbatch; the local scheduler bin-packs the
+# DAG into the allocation against `cores` + `resources: mem_mb`). This is the
+# proven nibi path (job_p3_batch1) and the single honest first-pass mode;
+# multi-node scaling = multiple tile-disjoint invocations, deferred.
+#
+# Launch via `workflow/bin/sp` (loads apptainer/1.4.5, uses the /project venv).
+# software-deployment-method wraps every job's shell in `apptainer exec` — the
+# user never types apptainer; the container is set in the Snakefile (local .sif).
+
+# Local scheduler (no `executor:` -> built-in local). Size to the allocation.
+cores: 192                       # node cores available to the DAG
+local-cores: 4                   # cap localrule/aggregation concurrency
+resources:
+  mem_mb: 720000                 # node RAM cap the local scheduler bin-packs under
+
+software-deployment-method: [apptainer]
+# Explicit container environment (finding 2/3): the apptainer SDM otherwise drops
+# the proven-recipe env and hardcodes --home <workdir>, hiding ~/.ssl/cadcproxy.pem.
+#  --cleanenv          strict host-env isolation (APPTAINERENV_*/SINGULARITYENV_* survive)
+#  OMP_NUM_THREADS=1   caps OpenBLAS fork-explosion (verified: pool 32->1)
+#  MALLOC_ARENA_MAX=2  bounded allocator (im_sims/nibi lesson)
+#  --home /home/cdaley wins over the SDM's --home <cwd>; restores cadcproxy.pem for vos/vcp
+#  PYTHONPATH          SETTLED CALL 3 — P0 pins the prod worktree src so science
+#                      content matches the bash validation runs (which use this
+#                      override). Production later rebuilds the sif at the exact
+#                      validation commit and DROPS this --env line.
+apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/project/def-mjhudson/cdaley/shapepipe-prod/src --home /home/cdaley --bind /project --bind /scratch"
+
+latency-wait: 60                 # NFS: wait for outputs to appear after a job
+keep-going: true                 # a failed job poisons only its cone; siblings run on
+rerun-incomplete: true           # re-do jobs left incomplete by an unclean death
+show-failed-logs: true
+printshellcmds: true
+
+# rerun-triggers left at the full Snakemake v9 default
+# {mtime,params,input,code,software-env}: params/code fixes SHOULD propagate.
+# No override — the wrapper writes outputs only on change so mtimes move only
+# when reality moves; protected() guards finished science products.
+
+default-resources:
+  mem_mb: 4000
+  runtime: 120                   # minutes
+  cpus_per_task: 1
+
+# Per-stage resources — measured footprints from the nibi P3 runs (#808).
+# threads == cpus_per_task == ShapePipe SMP fork width (sp_rule sets
+# SMP_BATCH_SIZE={threads}); mem_mb == threads x measured per-worker footprint.
+#
+# set-threads is REQUIRED for {threads} to resolve above 1: the local scheduler
+# derives cpus_per_task from threads, NOT the reverse (verified snakemake 9.23 —
+# set-resources cpus_per_task alone leaves {threads}==1, i.e. SMP_BATCH_SIZE=1,
+# serial). Keep the two blocks in lockstep.
+set-threads:
+  exp_split: 4
+  exp_mask: 4
+  exp_psf: 8
+  tile_mask: 16
+  tile_detect: 16
+  tile_merge_headers: 8
+  tile_vignets: 8
+  tile_ngmix: 8
+  tile_merge_cats: 4
+  tile_make_cat: 4
+
+set-resources:
+  exp_split:
+    cpus_per_task: 4
+    mem_mb: 8000
+  exp_mask:
+    cpus_per_task: 4
+    mem_mb: 8000
+  exp_psf:
+    cpus_per_task: 8
+    mem_mb: 16000
+    runtime: 240
+  tile_mask:
+    cpus_per_task: 16
+    mem_mb: 16000
+  tile_detect:
+    cpus_per_task: 16
+    mem_mb: 16000
+  tile_merge_headers:
+    cpus_per_task: 8
+    mem_mb: 8000
+  tile_vignets:
+    cpus_per_task: 8
+    mem_mb: 24000
+    runtime: 240
+  tile_ngmix:
+    cpus_per_task: 8
+    mem_mb: 24000
+    runtime: 360
+  tile_merge_cats:
+    cpus_per_task: 4
+    mem_mb: 8000
+  tile_make_cat:
+    cpus_per_task: 4
+    mem_mb: 8000

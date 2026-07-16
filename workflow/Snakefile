@@ -1,0 +1,124 @@
+"""ShapePipe real-data orchestration — Snakemake workflow.
+
+Design / rationale: CosmoStat/shapepipe#848 (the living PRD).
+
+Execution is honestly THREE static invocations, chained by ``workflow/bin/sp``
+so the UX stays one command (``sp prepare`` / ``sp run``):
+
+    snakemake --profile profiles/nibi prepare_tiles      # Git_vos + Uz + Fe (keep-going)
+    python workflow/scripts/build_index.py ...            # PLAIN SCRIPT, not a DAG node
+    snakemake --profile profiles/nibi prepare_exposures  # Gie_vos + star cats
+    snakemake --profile profiles/nibi                     # the main compute DAG
+
+The run index is loaded ONCE here at parse time into plain dicts; it is never a
+rule input, so appending tiles and rebuilding it changes which jobs exist without
+invalidating completed work. build_index.py is a plain script *between*
+prepare_tiles and prepare_exposures (the exposure job set is data-derived from
+the tiles' find_exposures output, so it cannot be scheduled in the same static
+DAG that produces it).
+"""
+
+import sqlite3
+from pathlib import Path
+
+configfile: "workflow/config.yaml"
+
+# Every job's shell runs inside this container (apptainer software-deployment in
+# the profile); the user never types apptainer.
+container: config["container"]
+
+# --- paths -----------------------------------------------------------------
+RUN_DIR    = Path(config["run_dir"])
+CONFIG_SRC = Path(config["config_src"])
+STAR_CATS  = Path(config["star_cats"])
+INDEX_DB   = Path(config["index_db"])
+SCRIPTS    = Path(workflow.basedir) / "scripts"
+NGMIX_CHUNKS = config.get("ngmix_chunks", 8)
+
+with open(config["tile_list"]) as f:
+    TILES = [ln.strip() for ln in f if ln.strip()]
+
+# --- parse-time index load (compute phase only) ----------------------------
+# EXP: global set of exposure base-ids.  TILE_EXP: tile -> [exp_ids].
+EXP, TILE_EXP = set(), {}
+if INDEX_DB.exists():
+    _con = sqlite3.connect(INDEX_DB)
+    EXP = {r[0] for r in _con.execute("SELECT exp_id FROM exposures")}
+    for tile, exp in _con.execute("SELECT tile_id, exp_id FROM tile_exposures"):
+        TILE_EXP.setdefault(tile, []).append(exp)
+    _con.close()
+
+wildcard_constraints:
+    tile = r"\d{3}\.\d{3}",
+    exp  = r"\d{6,7}",
+    chunk = r"\d+",
+
+# --- shared wrapper invocation ---------------------------------------------
+def sp_rule(stage, config_name, level, unit, *, isolate=True, exp_forest=None,
+            extra=""):
+    """Build the shell command that runs one unit through sp_rule.py.
+
+    NUMBER_LIST is injected by default (tile-scheme stages + exp split); pass
+    ``isolate=False`` for get_images / exp_mask / exp_psf, whose per-CCD/download
+    numbering must not be constrained. ``{threads}`` is filled by Snakemake and
+    becomes SMP_BATCH_SIZE (fork width == cpus_per_task).
+    """
+    cmd = (
+        f"python {SCRIPTS}/sp_rule.py --stage {stage} --config {config_name} "
+        f"--unit {unit} --level {level} --run-dir {RUN_DIR} "
+        f"--config-src {CONFIG_SRC} --star-cats {STAR_CATS} --threads {{threads}}"
+    )
+    if not isolate:
+        cmd += " --no-isolate"
+    if exp_forest:
+        cmd += f" --exp-forest {exp_forest}"
+    if extra:
+        cmd += " " + extra
+    return cmd
+
+def tile_dir(tile):
+    return RUN_DIR / "tiles" / tile
+
+def exp_dir(exp):
+    return RUN_DIR / "exp" / exp
+
+include: "rules/prepare.smk"
+include: "rules/exposure.smk"
+include: "rules/tile.smk"
+
+# --- top-level targets ------------------------------------------------------
+# Only aggregation targets are localrules (no-ops under the local executor, but
+# they keep the compute chain group-compatible: no mid-chain localrules).
+localrules: all, prepare_tiles, prepare_exposures
+
+rule all:
+    input:
+        expand(str(RUN_DIR / "tiles/{tile}/final_cat-{tile}.fits"), tile=TILES)
+
+# Phase A.1 — per-tile static DAG (download + find_exposures). keep-going so
+# tile failures are independent; build_index.py runs next as a plain script.
+rule prepare_tiles:
+    input:
+        expand(str(RUN_DIR / "tiles/{tile}/output/run_sp_tile_Fe"), tile=TILES)
+
+# Phase A.2 — per-exposure static DAG (download + star cats), parseable now the
+# index exists. Star cats are re-keyed per unit (see prepare.smk).
+rule prepare_exposures:
+    input:
+        expand(str(RUN_DIR / "exp/{exp}/output/run_sp_exp_Gie"), exp=sorted(EXP)),
+        expand(str(RUN_DIR / "exp/{exp}/star_cat-{exp}.fits"), exp=sorted(EXP)),
+        expand(str(RUN_DIR / "tiles/{tile}/star_cat-{tile}.fits"), tile=TILES)
+
+# --- report hooks -----------------------------------------------------------
+# run_report is NOT a DAG node (a descendant of every job would be poisoned by
+# any hard failure — the exact case it exists for). It is a standalone script,
+# emitted automatically at the end of every invocation, runnable any time.
+def _report(status):
+    shell(f"python {SCRIPTS}/run_report.py --run-dir {RUN_DIR} "
+          f"--index {INDEX_DB} --status {status} || true")
+
+onsuccess:
+    _report("success")
+
+onerror:
+    _report("error")
