@@ -32,11 +32,14 @@ rule tile_exp_forest:
     output:
         directory(FOREST)
     params:
+        # --forest {output} lives in the shell string: Snakemake formats shell
+        # ONCE — an {output} placeholder inside params.cmd survives literally
+        # (same trap as {threads}; all four forest jobs then race one './{output}').
         cmd=lambda wc: (f"python {SCRIPTS}/build_forest.py --tile {wc.tile} "
-                        f"--run-dir {RUN_DIR} --index {INDEX_DB} --forest {{output}}")
+                        f"--run-dir {RUN_DIR} --index {INDEX_DB}")
     shell:
-        # no --threads: build_forest.py is single-threaded symlinking, takes no such flag
-        "{params.cmd}"
+        # no --threads: build_forest.py is single-threaded symlinking
+        "{params.cmd} --forest {output}"
 
 # Merge single-exposure WCS headers into the tile-level sqlite log
 # (log_exp_headers-<IDra>-<IDdec>.sqlite — the tile suffix downstream Sx/PiViVi/Ng
