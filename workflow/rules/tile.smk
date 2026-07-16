@@ -35,6 +35,7 @@ rule tile_exp_forest:
         cmd=lambda wc: (f"python {SCRIPTS}/build_forest.py --tile {wc.tile} "
                         f"--run-dir {RUN_DIR} --index {INDEX_DB} --forest {{output}}")
     shell:
+        # no --threads: build_forest.py is single-threaded symlinking, takes no such flag
         "{params.cmd}"
 
 # Merge single-exposure WCS headers into the tile-level sqlite log
@@ -52,7 +53,7 @@ rule tile_merge_headers:
                                "tile", wc.tile, isolate=True,
                                exp_forest=FOREST.format(tile=wc.tile))
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 # Mask tiles; this tile's star cat is a declared input (per-unit re-key).
 rule tile_mask:
@@ -65,7 +66,7 @@ rule tile_mask:
         cmd=lambda wc: sp_rule("tile_mask", "config_tile_Ma_onthefly.ini",
                                "tile", wc.tile, isolate=True)
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 # SExtractor object detection on the tile.
 rule tile_detect:
@@ -78,7 +79,7 @@ rule tile_detect:
         cmd=lambda wc: sp_rule("tile_detect", "config_tile_Sx.ini",
                                "tile", wc.tile, isolate=True)
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 # PSFEx interpolation to galaxies + vignet postage stamps (reads exposure PSF
 # models + split through the forest — those dirs are explicit inputs).
@@ -95,7 +96,7 @@ rule tile_vignets:
                                "tile", wc.tile, isolate=True,
                                exp_forest=FOREST.format(tile=wc.tile))
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 # ngmix shape measurement — static N chunks. Each chunk computes its own closed
 # object-ID range in-job from the tile's own sexcat (a declared input); chunks
@@ -111,7 +112,7 @@ rule tile_ngmix:
             "tile_ngmix", "config_tile_Ng_template_batch.ini", "tile", wc.tile,
             extra=f"--ngmix-chunk {wc.chunk} --ngmix-nchunks {NGMIX_CHUNKS}"),
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 def ngmix_chunks(wc):
     return [f"{RUN_DIR}/tiles/{wc.tile}/output/run_sp_tile_ngmix_Ng{k}u"
@@ -129,7 +130,7 @@ rule tile_merge_cats:
                                "tile", wc.tile, isolate=True,
                                extra=f"--n-split-max {NGMIX_CHUNKS}"),
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 # Build the final catalogue: the run's science product. protected() so a
 # code/params-drift rerun cannot silently discard a finished catalogue — the
@@ -144,4 +145,4 @@ rule tile_make_cat:
                                "tile", wc.tile, isolate=True,
                                extra=f"--final-cat {RUN_DIR}/tiles/{wc.tile}/final_cat-{wc.tile}.fits"),
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"

@@ -19,7 +19,7 @@ rule tile_get_images:
         cmd=lambda wc: sp_rule("tile_get_images", "config_tile_Git_vos.ini",
                                "tile", wc.tile, isolate=False)
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 rule tile_uncompress:
     input:
@@ -30,7 +30,7 @@ rule tile_uncompress:
         cmd=lambda wc: sp_rule("tile_uncompress", "config_tile_Uz.ini",
                                "tile", wc.tile, isolate=True)
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 # find_exposures reads the tile FITS HISTORY header -> exp_numbers-<ID>.txt, the
 # data-derived tile->exposure edge build_index.py aggregates (as a plain script).
@@ -43,7 +43,7 @@ rule tile_find_exposures:
         cmd=lambda wc: sp_rule("tile_find_exposures", "config_tile_Fe.ini",
                                "tile", wc.tile, isolate=True)
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 # Star catalogues for masking are pre-generated offline (create_star_cat.py on a
 # networked login node — the one genuinely networked prepare step). They are

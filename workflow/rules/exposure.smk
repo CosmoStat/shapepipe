@@ -29,7 +29,7 @@ rule exp_get_images:
         cmd=lambda wc: sp_rule("exp_get_images", "config_exp_Gie_vos.ini",
                                "exp", wc.exp, isolate=False)
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 # Split multi-HDU exposure into single-CCD files (+ headers-*.npy). Bulk output;
 # persistent (see module docstring on temp()).
@@ -41,7 +41,7 @@ rule exp_split:
     params:
         cmd=lambda wc: sp_rule("exp_split", "config_exp_Sp.ini", "exp", wc.exp)
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 # Mask per-CCD; this exposure's star cat is a declared input (per-unit re-key).
 rule exp_mask:
@@ -54,7 +54,7 @@ rule exp_mask:
         cmd=lambda wc: sp_rule("exp_mask", "config_exp_Ma_onthefly.ini",
                                "exp", wc.exp, isolate=False)
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"
 
 # SExtractor -> setools star selection -> PSFEx model -> psfex_interp, per CCD.
 # setools may reject a sparse CCD (~0.2% attrition) — tolerated by the floor.
@@ -67,4 +67,4 @@ rule exp_psf:
         cmd=lambda wc: sp_rule("exp_psf", "config_exp_psfex.ini", "exp", wc.exp,
                                isolate=False)
     shell:
-        "{params.cmd}"
+        "{params.cmd} --threads {threads}"

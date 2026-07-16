@@ -60,13 +60,15 @@ def sp_rule(stage, config_name, level, unit, *, isolate=True, exp_forest=None,
 
     NUMBER_LIST is injected by default (tile-scheme stages + exp split); pass
     ``isolate=False`` for get_images / exp_mask / exp_psf, whose per-CCD/download
-    numbering must not be constrained. ``{threads}`` is filled by Snakemake and
+    numbering must not be constrained. ``--threads {threads}`` is appended in
+    each rule's ``shell:`` string (NOT here: Snakemake formats the shell string
+    once, so a ``{threads}`` inside params.cmd would survive literally) and
     becomes SMP_BATCH_SIZE (fork width == cpus_per_task).
     """
     cmd = (
         f"python {SCRIPTS}/sp_rule.py --stage {stage} --config {config_name} "
         f"--unit {unit} --level {level} --run-dir {RUN_DIR} "
-        f"--config-src {CONFIG_SRC} --star-cats {STAR_CATS} --threads {{threads}}"
+        f"--config-src {CONFIG_SRC} --star-cats {STAR_CATS}"
     )
     if not isolate:
         cmd += " --no-isolate"

@@ -30,12 +30,16 @@ Counts are file counts in the runner's output dir, matching the bash
 # stage -> {runner_subdir: {expect, floor, [warn], [subpath]}}
 COMPLETENESS = {
     # --- tile prepare (phase A) ---
-    "tile_get_images":     {"get_images_runner":      dict(expect=4, floor=4)},
+    # get_images counts are CONFIG-FLAVOR-DEPENDENT: the v2.0 bash table said 4/6
+    # for the canfar vos flavor; the nibi symlink configs produce one file per
+    # INPUT_FILE_PATTERN entry (tile: image+weight=2; exp: image+weight+flag=3),
+    # verified against the p3-batch1 baseline tree (100 files / 50 tiles).
+    "tile_get_images":     {"get_images_runner":      dict(expect=2, floor=2)},
     "tile_uncompress":     {"uncompress_fits_runner": dict(expect=1, floor=1)},
     "tile_find_exposures": {"find_exposures_runner":  dict(expect=1, floor=1)},
 
     # --- exposure chain ---
-    "exp_get_images": {"get_images_runner": dict(expect=6, floor=6)},
+    "exp_get_images": {"get_images_runner": dict(expect=3, floor=3)},
     "exp_split":      {"split_exp_runner":  dict(expect=121, floor=41)},
     "exp_mask":       {"mask_runner":       dict(expect=40, floor=1)},
     "exp_psf": {
