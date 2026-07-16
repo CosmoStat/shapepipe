@@ -21,7 +21,10 @@ DAG that produces it).
 import sqlite3
 from pathlib import Path
 
-configfile: "workflow/config.yaml"
+# Resolved relative to THIS file, not the working directory: snakemake runs with
+# --directory on /scratch (bin/sp) so .snakemake/ state never lands on /project
+# (group quota is a hard 27/27 TiB — a metadata write mid-run died on it live).
+configfile: str(Path(workflow.snakefile).parent / "config.yaml")
 
 # Every job's shell runs inside this container (apptainer software-deployment in
 # the profile); the user never types apptainer.

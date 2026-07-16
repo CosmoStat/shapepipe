@@ -34,9 +34,14 @@ source "$VENV/bin/activate"
 # Minimal scalar reader for workflow/config.yaml (key: value, no nesting).
 cfg() { sed -n "s/^$1:[[:space:]]*//p" "$CONFIG" | head -1; }
 RUN_DIR="$(cfg run_dir)"; INDEX_DB="$(cfg index_db)"
+# Snakemake state (.snakemake: metadata, locks, incomplete markers) lives NEXT TO
+# THE RUN on /scratch, never on /project (hard 27/27 TiB group quota killed a
+# metadata write mid-run live). --directory only moves state: all data paths are
+# absolute, and the Snakefile resolves its own configfile.
+STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"; mkdir -p "$STATE_DIR"
 TILE_LIST="$(cfg tile_list)"; MISSING_THRESH="${SP_MISSING_THRESHOLD:-0.0}"
 
-sm() { snakemake --profile "$PROFILE" "$@"; }
+sm() { snakemake --profile "$PROFILE" --directory "$STATE_DIR" "$@"; }
 build_index() {
   python "$SCRIPTS/build_index.py" --tile-list "$TILE_LIST" \
     --run-dir "$RUN_DIR" --db "$INDEX_DB" --missing-threshold "$MISSING_THRESH"

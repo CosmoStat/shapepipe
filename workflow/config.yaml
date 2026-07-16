@@ -24,9 +24,11 @@ config_src: /home/cdaley/projects/def-mjhudson/cdaley/runs/p3-batch1/cfis
 # Star catalogues for masking, pre-generated (network step done in prepare):
 star_cats: /home/cdaley/projects/def-mjhudson/cdaley/runs/p3-batch1/star_cats
 
-# The run index. Durable, low-volume products (index, missing.json, run_report,
-# final_cat) should land on /project, not /scratch (60-day purge, finding 15).
-index_db: /project/def-mjhudson/cdaley/shapepipe-output/smk-p0/index/run_index.sqlite
+# The run index. Design intent (finding 15) is durable products on /project —
+# BLOCKED for now: def-mjhudson /project is hard-full (27/27 TiB), so index and
+# report live with the run on /scratch until space is reclaimed. Mind the
+# 60-day purge for anything that must survive.
+index_db: /scratch/cdaley/shapepipe-output/smk-p0/index/run_index.sqlite
 
 # ngmix within-tile chunking: static N chunks (closed ID ranges computed
 # per-tile, in-job, from the tile's own sexcat).
