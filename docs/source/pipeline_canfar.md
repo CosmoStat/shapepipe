@@ -29,7 +29,15 @@ canfar auth switch default
 
 ### Set variables (optional)
 
-Set the current patch in the shell as
+> **Patch convention by catalogue version.** Runs up to `v1.6` are organised
+> in sky patches `P1`–`P9` (7 patches for `v1.3`/`v1.4`, 8 for `v1.5`), each
+> patch a run directory of its own with its `summary/` subdirectory. **The
+> patch concept is removed in `v2.0`**: there is a single run root, and
+> summary files (`summary/missing_job_32_all.txt`, `exp_numbers.txt`) live
+> directly under it. Tools that take a catalogue version (e.g.
+> `get_ccds_with_psf -V`) follow this convention automatically.
+
+For a `v1.x` run, set the current patch in the shell as
 
 ```bash
 patch=P[1-9]
@@ -501,6 +509,12 @@ sky pixel, the number of exposures with a valid PSF. The list is written to
 
 ```bash
 get_ccds_with_psf -v -V v1.6 -o ccds_with_psf_v1.6.txt
+```
+
+For a (patch-less) `v2.0` run, call this from the run root instead:
+
+```bash
+get_ccds_with_psf -v -V v2.0 -o ccds_with_psf_v2.0.txt
 ```
 
 Next, download the exposure headers; indicate (with `-d`) a directory of
