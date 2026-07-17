@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="16 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="17 Jul, 2026"/>
   </head>
   
   
@@ -538,9 +538,14 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">cs_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">size</span> <span class="k">as</span> <span class="n">cs_size</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">modopt.math.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigma_mad</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ngmix.observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">ObsList</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.ndimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">binary_dilation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">cKDTree</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlitedict</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteDict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
+
+<span class="c1"># Neighbour treatments selectable with the BLEND_HANDLING option.</span>
+<span class="n">BLEND_HANDLINGS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;noisefill&quot;</span><span class="p">,</span> <span class="s2">&quot;uberseg&quot;</span><span class="p">)</span>
 
 <span class="n">METACAL_TYPES</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;noshear&#39;</span><span class="p">,</span> <span class="s1">&#39;1p&#39;</span><span class="p">,</span> <span class="s1">&#39;1m&#39;</span><span class="p">,</span> <span class="s1">&#39;2p&#39;</span><span class="p">,</span> <span class="s1">&#39;2m&#39;</span><span class="p">)</span>
 
@@ -719,14 +724,23 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    cat_path</span>
+<span class="sd">    cat_path : str</span>
+<span class="sd">        Path to the tile SExtractor catalogue.</span>
+<span class="sd">    seg_cat_path : str, optional</span>
+<span class="sd">        Path to the coadd-frame segmentation VIGNET catalogue (a CLASSIC-mode</span>
+<span class="sd">        vignetmaker output cut from the tile ``SEGMENTATION`` check image),</span>
+<span class="sd">        row-aligned to ``cat_path``. When given, ``self.seg`` holds one integer</span>
+<span class="sd">        seg stamp per object for the ``&quot;uberseg&quot;`` blend handling; ``None``</span>
+<span class="sd">        leaves ``self.seg`` unset (the noise-fill path is unaffected).</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">cat_path</span>
+        <span class="n">cat_path</span><span class="p">,</span>
+        <span class="n">seg_cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cat_path</span> <span class="o">=</span> <span class="n">cat_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seg_cat_path</span> <span class="o">=</span> <span class="n">seg_cat_path</span>
         <span class="k">if</span> <span class="n">cat_path</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">cat_path</span><span class="p">)</span>
 
@@ -749,7 +763,40 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;FLUX_AUTO&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;FLUX_AUTO&#39;</span> <span class="ow">in</span> <span class="n">cols</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;VIGNET&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;VIGNET&#39;</span> <span class="ow">in</span> <span class="n">cols</span> <span class="k">else</span> <span class="kc">None</span>
 
-        <span class="n">tile_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+        <span class="n">tile_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c1"># Coadd-frame SExtractor segmentation stamp (integer labels), one per</span>
+        <span class="c1"># object and row-aligned to the tile catalogue, overlaid unchanged on</span>
+        <span class="c1"># every epoch for uberseg neighbour masking (shapepipe#776). None -&gt;</span>
+        <span class="c1"># uberseg unavailable; the noise-fill path is unaffected.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seg</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">seg_cat_path</span><span class="p">:</span>
+            <span class="n">seg_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">seg_cat_path</span><span class="p">,</span>
+                <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">seg_cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+            <span class="n">seg_data</span> <span class="o">=</span> <span class="n">seg_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+            <span class="c1"># The seg VIGNETs are indexed by tile-catalogue row (self.seg[i]),</span>
+            <span class="c1"># so the two catalogues MUST be row-aligned. Fail loud at load if</span>
+            <span class="c1"># they are not — a silent length/order mismatch would hand every</span>
+            <span class="c1"># object the wrong footprint and quietly corrupt every mask.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seg_data</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obj_id</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;SEG_VIGNET_PATH &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">seg_cat_path</span><span class="si">}</span><span class="s2">&#39; has&quot;</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">seg_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows but the tile catalogue has&quot;</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obj_id</span><span class="p">)</span><span class="si">}</span><span class="s2">; the segmentation vignets must be&quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot; row-aligned to the tile catalogue.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;NUMBER&#39;</span> <span class="ow">in</span> <span class="n">seg_data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">seg_data</span><span class="p">[</span><span class="s1">&#39;NUMBER&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">obj_id</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;SEG_VIGNET_PATH &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">seg_cat_path</span><span class="si">}</span><span class="s2">&#39; NUMBER column&quot;</span>
+                        <span class="o">+</span> <span class="s2">&quot; does not match the tile catalogue NUMBER; the&quot;</span>
+                        <span class="o">+</span> <span class="s2">&quot; segmentation vignets are misaligned or reordered.&quot;</span>
+                    <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">seg_data</span><span class="p">[</span><span class="s1">&#39;VIGNET&#39;</span><span class="p">])</span>
+            <span class="n">seg_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 </div>
 
 
@@ -779,6 +826,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bkg_rms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Segmentation stamps, one per epoch, used only by the &quot;uberseg&quot; blend</span>
+        <span class="c1"># handling; empty for the default noise-fill path. All epochs carry the</span>
+        <span class="c1"># SAME coadd-frame seg stamp (shapepipe#776: one coadd seg per object,</span>
+        <span class="c1"># no per-epoch reprojection), each MegaCam-flipped to match its galaxy</span>
+        <span class="c1"># stamp so the overlay stays registered.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">jacobs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Per-epoch full WCS and the object&#39;s sky position, used only by the</span>
         <span class="c1"># &quot;wcs&quot; centroid source (skipped for the default &quot;hsm&quot; path).</span>
@@ -885,6 +938,16 @@
 <span class="sd">        (robust for galaxies); ``&quot;wcs&quot;`` uses the catalog sky position</span>
 <span class="sd">        projected through the WCS (better for stars, whose HSM moments are</span>
 <span class="sd">        noisy). See :func:`make_ngmix_observation`.</span>
+<span class="sd">    blend_handling : {&quot;noisefill&quot;, &quot;uberseg&quot;}, optional</span>
+<span class="sd">        Neighbour treatment; ``&quot;noisefill&quot;`` (default) is the historical</span>
+<span class="sd">        noise-fill, ``&quot;uberseg&quot;`` hard-masks neighbour-side pixels from the</span>
+<span class="sd">        coadd segmentation map and requires ``seg_cat_path``.</span>
+<span class="sd">    seg_cat_path : str, optional</span>
+<span class="sd">        Path to the coadd-frame segmentation VIGNET catalogue (see</span>
+<span class="sd">        :class:`Tile_cat`). Required when ``blend_handling=&quot;uberseg&quot;``.</span>
+<span class="sd">    dilate_neighbour : int, optional</span>
+<span class="sd">        Neighbour-mask dilation iterations for ``&quot;uberseg&quot;`` (see</span>
+<span class="sd">        :func:`uberseg_weight`); the default is ``1``.</span>
 <span class="sd">    seed_from_position : bool, optional</span>
 <span class="sd">        If ``True``, replace the tile-level RNG with a per-object RNG seeded</span>
 <span class="sd">        from the object&#39;s sky position (:func:`position_seed`) inside the</span>
@@ -897,6 +960,9 @@
 <span class="sd">    ------</span>
 <span class="sd">    IndexError</span>
 <span class="sd">        If the length of the input file list is incorrect</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``blend_handling`` is unknown, or ``&quot;uberseg&quot;`` is selected without</span>
+<span class="sd">        ``seg_cat_path``.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -914,6 +980,9 @@
         <span class="n">id_obj_max</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">bkg_sub</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">centroid_source</span><span class="o">=</span><span class="s2">&quot;hsm&quot;</span><span class="p">,</span>
+        <span class="n">blend_handling</span><span class="o">=</span><span class="s2">&quot;noisefill&quot;</span><span class="p">,</span>
+        <span class="n">seg_cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">seed_from_position</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">&quot;fitgauss&quot;</span><span class="p">,</span>
     <span class="p">):</span>
@@ -927,6 +996,20 @@
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Input file list has length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">)</span><span class="si">}</span><span class="s2">,&quot;</span>
                 <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; required is </span><span class="si">{</span><span class="n">n_base</span><span class="si">}</span><span class="s2"> or </span><span class="si">{</span><span class="n">n_base</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">blend_handling</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">BLEND_HANDLINGS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unknown BLEND_HANDLING &#39;</span><span class="si">{</span><span class="n">blend_handling</span><span class="si">}</span><span class="s2">&#39;; expected one of&quot;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">BLEND_HANDLINGS</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Fail fast at construction (not deep in the per-epoch loop) when</span>
+        <span class="c1"># uberseg is requested without its segmentation input (shapepipe#776).</span>
+        <span class="k">if</span> <span class="n">blend_handling</span> <span class="o">==</span> <span class="s2">&quot;uberseg&quot;</span> <span class="ow">and</span> <span class="n">seg_cat_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;blend_handling=&#39;uberseg&#39; requires SEG_VIGNET_PATH (the coadd&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; SExtractor segmentation vignets); none configured.&quot;</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span> <span class="o">=</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -968,6 +1051,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span> <span class="o">=</span> <span class="n">id_obj_max</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_sub</span> <span class="o">=</span> <span class="n">bkg_sub</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_centroid_source</span> <span class="o">=</span> <span class="n">centroid_source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_blend_handling</span> <span class="o">=</span> <span class="n">blend_handling</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_seg_cat_path</span> <span class="o">=</span> <span class="n">seg_cat_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dilate_neighbour</span> <span class="o">=</span> <span class="n">dilate_neighbour</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_seed_from_position</span> <span class="o">=</span> <span class="n">seed_from_position</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_metacal_psf</span> <span class="o">=</span> <span class="n">metacal_psf</span>
 
@@ -1074,6 +1160,7 @@
             <span class="s1">&#39;id&#39;</span><span class="p">,</span>
             <span class="s1">&#39;n_epoch_model&#39;</span><span class="p">,</span>
             <span class="s1">&#39;mcal_types_fail&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;neighbour_flag&#39;</span><span class="p">,</span>
             <span class="s1">&#39;nfev_fit&#39;</span><span class="p">,</span>
             <span class="c1"># galaxy</span>
             <span class="s1">&#39;g1&#39;</span><span class="p">,</span>
@@ -1132,6 +1219,11 @@
                 <span class="p">)</span>
                 <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;mcal_types_fail&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;mcal_types_fail&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="c1"># Per-object blend flag (see process()); replicated across all</span>
+                <span class="c1"># shear types like id / n_epoch_model / mcal_types_fail.</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;neighbour_flag&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;neighbour_flag&quot;</span><span class="p">]</span>
                 <span class="p">)</span>
                 <span class="c1"># ngmix 2.x reports the solver&#39;s function-evaluation count</span>
                 <span class="c1"># (nfev, ~tens-hundreds; -1 on some failures), not the v1</span>
@@ -1301,6 +1393,49 @@
             <span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Ngmix._check_central_seg_label">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix._check_central_seg_label">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_central_seg_label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seg</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cross-check the seg stamp&#39;s centre pixel against the object&#39;s NUMBER.</span>
+
+<span class="sd">        The authoritative central label is ``obj_id`` (the SExtractor NUMBER);</span>
+<span class="sd">        this is a diagnostic on the coadd-vs-epoch overlay registration, not a</span>
+<span class="sd">        gate. Two outcomes:</span>
+
+<span class="sd">        * The seg stamp does not contain ``obj_id`` anywhere — the object&#39;s own</span>
+<span class="sd">          footprint fell outside the cutout (bad centroid / dropped detection),</span>
+<span class="sd">          so uberseg has no central object to keep. Raise; the per-object</span>
+<span class="sd">          ``try/except`` in :meth:`process` drops it, loud in the log.</span>
+<span class="sd">        * The centre-pixel label is nonzero and ``!= obj_id`` — a few-pixel</span>
+<span class="sd">          registration offset put a neighbour on the centre pixel. Harmless for</span>
+<span class="sd">          the mask (which keys off ``obj_id``), but a signal worth surfacing:</span>
+<span class="sd">          log a warning and proceed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        seg : numpy.ndarray</span>
+<span class="sd">            Coadd segmentation stamp for this object (integer labels).</span>
+<span class="sd">        obj_id : int</span>
+<span class="sd">            The object&#39;s SExtractor NUMBER — the authoritative central label.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">seg</span> <span class="o">==</span> <span class="n">obj_id</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;seg stamp for object NUMBER=</span><span class="si">{</span><span class="n">obj_id</span><span class="si">}</span><span class="s2"> contains that label&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; nowhere; the object&#39;s footprint fell outside the cutout&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; (bad centroid / registration). Cannot define the central&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; object for uberseg.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">cy</span><span class="p">,</span> <span class="n">cx</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">seg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">centre_label</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seg</span><span class="p">[</span><span class="n">cy</span><span class="p">,</span> <span class="n">cx</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">centre_label</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">centre_label</span> <span class="o">!=</span> <span class="n">obj_id</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;uberseg: object NUMBER=</span><span class="si">{</span><span class="n">obj_id</span><span class="si">}</span><span class="s2"> but seg centre pixel carries&quot;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; label </span><span class="si">{</span><span class="n">centre_label</span><span class="si">}</span><span class="s2">; a coadd-vs-epoch registration offset&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; is placing a neighbour on the centre. Proceeding with the&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; NUMBER (authoritative).&quot;</span>
+            <span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="Ngmix.log_mean_ellipticity">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.log_mean_ellipticity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">log_mean_ellipticity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1378,7 +1513,7 @@
 <span class="sd">            Dictionary containing the NGMIX metacal results</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">tile_cat</span> <span class="o">=</span> <span class="n">Tile_cat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span><span class="p">)</span>
+        <span class="n">tile_cat</span> <span class="o">=</span> <span class="n">Tile_cat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seg_cat_path</span><span class="p">)</span>
         <span class="n">vignet_cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vignet_cat</span>
 
         <span class="n">final_res</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1441,12 +1576,26 @@
                     <span class="k">if</span> <span class="n">tile_cat</span><span class="o">.</span><span class="n">flux</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
                     <span class="k">else</span> <span class="mf">1.0</span>
                 <span class="p">)</span>
+                <span class="c1"># The central object&#39;s segmentation label IS its SExtractor</span>
+                <span class="c1"># NUMBER (obj_id): seg labels are the NUMBERs of the same SE run</span>
+                <span class="c1"># that produced the tile catalogue, so obj_id is authoritative</span>
+                <span class="c1"># and is used for both the uberseg mask and the neighbour flag.</span>
+                <span class="c1"># The centre pixel is only a diagnostic: a few-pixel coadd-vs-</span>
+                <span class="c1"># epoch overlay offset can put a NEIGHBOUR&#39;s label there, which</span>
+                <span class="c1"># would invert the mask — so we never trust it to define the</span>
+                <span class="c1"># central object. Cross-check it and warn on a mismatch (a</span>
+                <span class="c1"># registration signal), but proceed with obj_id (shapepipe#776).</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blend_handling</span> <span class="o">==</span> <span class="s2">&quot;uberseg&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_check_central_seg_label</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">seg</span><span class="p">[</span><span class="n">i_tile</span><span class="p">],</span> <span class="n">obj_id</span><span class="p">)</span>
                 <span class="n">res</span><span class="p">,</span> <span class="n">psf_res</span><span class="p">,</span> <span class="n">psf_orig_res</span> <span class="o">=</span> <span class="n">do_ngmix_metacal</span><span class="p">(</span>
                     <span class="n">stamp</span><span class="p">,</span>
                     <span class="n">obj_prior</span><span class="p">,</span>
                     <span class="n">flux_guess</span><span class="p">,</span>
                     <span class="n">obj_rng</span><span class="p">,</span>
                     <span class="n">centroid_source</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_centroid_source</span><span class="p">,</span>
+                    <span class="n">blend_handling</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_blend_handling</span><span class="p">,</span>
+                    <span class="n">object_number</span><span class="o">=</span><span class="n">obj_id</span><span class="p">,</span>
+                    <span class="n">dilate_neighbour</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dilate_neighbour</span><span class="p">,</span>
                     <span class="n">metacal_psf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_metacal_psf</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ee</span><span class="p">:</span>
@@ -1457,6 +1606,14 @@
                 <span class="k">continue</span>
 
             <span class="n">res</span><span class="p">[</span><span class="s1">&#39;obj_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj_id</span>
+            <span class="c1"># Neighbour flag: does the coadd seg stamp hold any non-central,</span>
+            <span class="c1"># non-zero label? Systematics-test hook (shapepipe#776); computed</span>
+            <span class="c1"># from the raw coadd seg, 0 when uberseg is off / seg absent.</span>
+            <span class="n">res</span><span class="p">[</span><span class="s1">&#39;neighbour_flag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+                <span class="n">seg_has_neighbour</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">seg</span><span class="p">[</span><span class="n">i_tile</span><span class="p">],</span> <span class="n">obj_id</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tile_cat</span><span class="p">,</span> <span class="s2">&quot;seg&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="mi">0</span>
+            <span class="p">)</span>
             <span class="c1"># epochs that survived the PSF fit and entered the model,</span>
             <span class="c1"># not the number of epochs submitted (v1 contract)</span>
             <span class="n">res</span><span class="p">[</span><span class="s1">&#39;n_epoch_model&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">psf_res</span><span class="p">[</span><span class="s1">&#39;n_epoch&#39;</span><span class="p">]</span>
@@ -1568,6 +1725,17 @@
         <span class="k">if</span> <span class="n">stamp</span><span class="o">.</span><span class="n">megacam_flip</span> <span class="ow">and</span> <span class="n">tile_vign</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tile_vign</span> <span class="o">=</span> <span class="n">Ngmix</span><span class="o">.</span><span class="n">MegaCamFlip</span><span class="p">(</span><span class="n">tile_vign</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">))</span>
 
+        <span class="c1"># Coadd-frame segmentation stamp for this object, MegaCam-flipped to</span>
+        <span class="c1"># match the (flipped) galaxy stamp so the overlay stays registered.</span>
+        <span class="c1"># The SAME coadd seg rides every epoch (shapepipe#776: no reprojection).</span>
+        <span class="n">tile_seg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">seg</span><span class="p">[</span><span class="n">i_tile</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tile_cat</span><span class="p">,</span> <span class="s2">&quot;seg&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">stamp</span><span class="o">.</span><span class="n">megacam_flip</span> <span class="ow">and</span> <span class="n">tile_seg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tile_seg</span> <span class="o">=</span> <span class="n">Ngmix</span><span class="o">.</span><span class="n">MegaCamFlip</span><span class="p">(</span><span class="n">tile_seg</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">))</span>
+
         <span class="n">flag_vign</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">vignet</span><span class="o">.</span><span class="n">flag_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)][</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">&#39;VIGNET&#39;</span><span class="p">]</span>
         <span class="p">)</span>
@@ -1616,6 +1784,8 @@
         <span class="n">stamp</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weight_vign_scaled</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flag_vign</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">bkg_rms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bkg_rms_vign_scaled</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tile_seg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stamp</span><span class="o">.</span><span class="n">segs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_seg</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">jacobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jacob</span><span class="p">)</span>
         <span class="c1"># For the &quot;wcs&quot; centroid source (see make_ngmix_observation).</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_wcs</span><span class="p">)</span>
@@ -1769,9 +1939,175 @@
     <span class="k">return</span> <span class="n">sig_noise</span></div>
 
 
+<div class="viewcode-block" id="central_seg_label">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.central_seg_label">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">central_seg_label</span><span class="p">(</span><span class="n">seg</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Centre-pixel label of a seg stamp — a *diagnostic*, not the central id.</span>
+
+<span class="sd">    The authoritative central label is the object&#39;s SExtractor ``NUMBER``</span>
+<span class="sd">    (``obj_id``), which is plumbed straight through: segmentation labels ARE</span>
+<span class="sd">    the NUMBERs of the same SE run, so ``obj_id`` names the central footprint</span>
+<span class="sd">    directly (shapepipe#776). This helper reads the centre pixel only as a</span>
+<span class="sd">    registration cross-check — a few-pixel coadd-vs-epoch overlay offset can</span>
+<span class="sd">    put a NEIGHBOUR&#39;s label on the centre pixel, which is exactly why the</span>
+<span class="sd">    centre pixel must NOT define the central object (trusting it there would</span>
+<span class="sd">    invert the uberseg mask). See :meth:`Ngmix._check_central_seg_label`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seg : numpy.ndarray</span>
+<span class="sd">        Segmentation stamp (integer SExtractor labels; 0 for sky).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        Label at the centre pixel — the central object&#39;s segmentation id.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the centre pixel is sky (label 0): the cutout is not centred on any</span>
+<span class="sd">        detected footprint (bad centroid / dropped detection), so uberseg</span>
+<span class="sd">        cannot define a central object. Fail fast and loud; the object is then</span>
+<span class="sd">        dropped by the per-object ``try/except`` in :meth:`Ngmix.process`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cy</span><span class="p">,</span> <span class="n">cx</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">seg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seg</span><span class="p">[</span><span class="n">cy</span><span class="p">,</span> <span class="n">cx</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;central_seg_label: centre pixel is sky (label 0); the&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; segmentation stamp is not centred on a detected object.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">label</span></div>
+
+
+
+<div class="viewcode-block" id="seg_has_neighbour">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.seg_has_neighbour">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">seg_has_neighbour</span><span class="p">(</span><span class="n">seg</span><span class="p">,</span> <span class="n">object_number</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether a seg stamp holds any non-central, non-zero label.</span>
+
+<span class="sd">    The per-object neighbour flag (shapepipe#776, a systematics-test hook):</span>
+<span class="sd">    ``True`` when the coadd segmentation stamp contains a footprint other than</span>
+<span class="sd">    the central object&#39;s, i.e. the object is blended.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seg : numpy.ndarray</span>
+<span class="sd">        Segmentation stamp (integer SExtractor labels; 0 for sky).</span>
+<span class="sd">    object_number : int</span>
+<span class="sd">        Central object&#39;s segmentation label.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        ``True`` if any non-zero label differs from ``object_number``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">seg</span><span class="p">[</span><span class="n">seg</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">labels</span> <span class="o">!=</span> <span class="n">object_number</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="uberseg_weight">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.uberseg_weight">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">uberseg_weight</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="n">seg</span><span class="p">,</span> <span class="n">object_number</span><span class="p">,</span> <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Zero a stamp&#39;s weight on neighbour-side pixels — the UberSeg treatment.</span>
+
+<span class="sd">    UberSeg is Erin Sheldon&#39;s MEDS/ngmix neighbour mask (``esheldon/meds``,</span>
+<span class="sd">    https://github.com/esheldon/meds — ``MEDS.get_uberseg`` /</span>
+<span class="sd">    ``meds._uberseg.uberseg_tree``, in MEDS itself &quot;adapted from Niall MacCrann</span>
+<span class="sd">    and Joe Zuntz&quot;, and used in the DES shear pipeline). Each stamp pixel is</span>
+<span class="sd">    assigned to the object whose segmentation footprint it lies nearest to — a</span>
+<span class="sd">    nearest-segment Voronoi partition — and only pixels assigned to the central</span>
+<span class="sd">    object keep their weight.</span>
+
+<span class="sd">    This function **reimplements** the partition rather than depending on</span>
+<span class="sd">    ``meds``: it is a five-line ``scipy.spatial.cKDTree`` nearest-neighbour</span>
+<span class="sd">    query, and pulling in the whole MEDS-file library — plus ``esutil`` and a</span>
+<span class="sd">    C-extension build (``fitsio`` is already in the ShapePipe stack; ``esutil``</span>
+<span class="sd">    is not) — for one standard geometric operation is disproportionate. The</span>
+<span class="sd">    reimplementation was validated bit-for-bit against Sheldon&#39;s own reference</span>
+<span class="sd">    ``get_uberseg`` over a battery of synthetic and random multi-object seg</span>
+<span class="sd">    maps: the two masks agree on every pixel except exact Voronoi-boundary ties</span>
+<span class="sd">    (a measure-zero tie-break convention — ``argmin`` first-min vs cKDTree</span>
+<span class="sd">    order — scientifically inert). See the ``uberseg`` fiber&#39;s ``validation/``</span>
+<span class="sd">    harness for the equivalence proof and figures. The cKDTree stands in for</span>
+<span class="sd">    the C k-d tree; results are identical up to that boundary convention.</span>
+
+<span class="sd">    Because the partition is by distance to the nearest footprint, the pixels</span>
+<span class="sd">    surviving around a compact central object form a single connected,</span>
+<span class="sd">    roughly circular core; the &quot;circularisation&quot; is emergent geometry, not a</span>
+<span class="sd">    separate aperture. Unlike the noise-fill treatment, masked pixels are</span>
+<span class="sd">    handed to ngmix as a hard mask (weight = 0), never replaced by a noise</span>
+<span class="sd">    realisation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    weight : numpy.ndarray</span>
+<span class="sd">        Per-pixel weight (inverse variance) map for the stamp.</span>
+<span class="sd">    seg : numpy.ndarray</span>
+<span class="sd">        Segmentation map on the same grid as ``weight``: 0 for sky, the</span>
+<span class="sd">        SExtractor object number for each detected object&#39;s footprint.</span>
+<span class="sd">    object_number : int</span>
+<span class="sd">        Segmentation label of the central object — its SExtractor ``NUMBER``</span>
+<span class="sd">        (``obj_id``), authoritative because seg labels are the NUMBERs of the</span>
+<span class="sd">        same SE run. Not the centre-pixel label, which a few-pixel coadd-vs-</span>
+<span class="sd">        epoch offset can steal for a neighbour and so invert this mask.</span>
+<span class="sd">    dilate_neighbour : int, optional</span>
+<span class="sd">        Enlarge the neighbour mask by this many binary-dilation iterations</span>
+<span class="sd">        (4-connected, ~one pixel per iteration) on top of the base Voronoi</span>
+<span class="sd">        partition, to absorb the few-pixel coadd-vs-epoch registration offset</span>
+<span class="sd">        the coadd-seg overlay accepts (shapepipe#776, decision on seg source).</span>
+<span class="sd">        ``0`` (the default) recovers the pure Sheldon UberSeg mask, byte-for-</span>
+<span class="sd">        byte. The dilation is additive: it only ever zeros more pixels, never</span>
+<span class="sd">        restores a base-masked one, so over-masking a boundary pixel costs a</span>
+<span class="sd">        little central-object S/N but never leaks neighbour flux into the fit.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Copy of ``weight`` with neighbour-side pixels zeroed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">weight</span><span class="p">)</span>
+
+    <span class="n">obj_pix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">seg</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># No detected footprint, or only sky plus the central object: there is</span>
+    <span class="c1"># no neighbour to mask, so the weight is unchanged (cf. MEDS&#39; early</span>
+    <span class="c1"># ``len(np.unique(seg)) == 2`` return).</span>
+    <span class="k">if</span> <span class="n">obj_pix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">weight</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">seg</span><span class="p">[</span><span class="n">seg</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">labels</span> <span class="o">==</span> <span class="n">object_number</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">weight</span>
+
+    <span class="c1"># Nearest segmentation pixel for every stamp pixel; zero the weight</span>
+    <span class="c1"># wherever that nearest footprint belongs to a neighbour rather than to</span>
+    <span class="c1"># the central object.</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">nearest</span> <span class="o">=</span> <span class="n">cKDTree</span><span class="p">(</span><span class="n">obj_pix</span><span class="p">)</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+    <span class="n">nearest_label</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">nearest</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">weight</span><span class="p">[</span><span class="n">nearest_label</span> <span class="o">!=</span> <span class="n">object_number</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># Enlarge the neighbour mask to absorb the coadd-vs-epoch offset: zero any</span>
+    <span class="c1"># pixel within ``dilate_neighbour`` of a neighbour footprint. Purely</span>
+    <span class="c1"># additive over the base Voronoi result above.</span>
+    <span class="k">if</span> <span class="n">dilate_neighbour</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">neighbour_mask</span> <span class="o">=</span> <span class="n">binary_dilation</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">seg</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">seg</span> <span class="o">!=</span> <span class="n">object_number</span><span class="p">),</span>
+            <span class="n">iterations</span><span class="o">=</span><span class="n">dilate_neighbour</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">weight</span><span class="p">[</span><span class="n">neighbour_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">return</span> <span class="n">weight</span></div>
+
+
 <div class="viewcode-block" id="prepare_ngmix_weights">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">prepare_ngmix_weights</span><span class="p">(</span><span class="n">gal</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">bkg_rms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_ngmix_weights</span><span class="p">(</span>
+    <span class="n">gal</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">bkg_rms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">blend_handling</span><span class="o">=</span><span class="s2">&quot;noisefill&quot;</span><span class="p">,</span> <span class="n">seg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;bookkeeping for ngmix weights. runs on a single galaxy and epoch</span>
 <span class="sd">        pixel scale and galaxy guess</span>
 <span class="sd">        TO DO: decide if we want galaxy guess stuff</span>
@@ -1787,16 +2123,39 @@
 <span class="sd">    bkg_rms : numpy.ndarray, optional</span>
 <span class="sd">        Per-pixel background RMS map. If supplied, unmasked pixels use</span>
 <span class="sd">        ``1 / bkg_rms**2`` as the ngmix inverse variance.</span>
+<span class="sd">    blend_handling : {&quot;noisefill&quot;, &quot;uberseg&quot;}, optional</span>
+<span class="sd">        How to treat pixels shared with a neighbour. ``&quot;noisefill&quot;`` (default)</span>
+<span class="sd">        replaces flagged pixels with a noise realisation and keeps their</span>
+<span class="sd">        inverse-variance weight — the historical behaviour. ``&quot;uberseg&quot;``</span>
+<span class="sd">        instead hard-masks (weight = 0) every pixel closer to a neighbour&#39;s</span>
+<span class="sd">        segmentation footprint than to the central object&#39;s, leaving the</span>
+<span class="sd">        image untouched (see :func:`uberseg_weight`).</span>
+<span class="sd">    seg : numpy.ndarray, optional</span>
+<span class="sd">        Segmentation map on the stamp grid (object NUMBERs). Required for</span>
+<span class="sd">        ``blend_handling=&quot;uberseg&quot;``; ignored otherwise.</span>
+<span class="sd">    object_number : int, optional</span>
+<span class="sd">        Central object&#39;s segmentation label. Required for</span>
+<span class="sd">        ``blend_handling=&quot;uberseg&quot;``; ignored otherwise.</span>
+<span class="sd">    dilate_neighbour : int, optional</span>
+<span class="sd">        Neighbour-mask dilation iterations, passed to :func:`uberseg_weight`</span>
+<span class="sd">        under ``blend_handling=&quot;uberseg&quot;``; ignored otherwise.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    numpy.ndarray</span>
-<span class="sd">        Galaxy image with masked pixels replaced by noise.</span>
+<span class="sd">        Galaxy image. For ``&quot;noisefill&quot;`` masked pixels are replaced by noise;</span>
+<span class="sd">        for ``&quot;uberseg&quot;`` the image is returned untouched.</span>
 <span class="sd">    numpy.ndarray</span>
 <span class="sd">        Variance map for NGMIX.</span>
 <span class="sd">    numpy.ndarray</span>
 <span class="sd">        Noise image.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">blend_handling</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">BLEND_HANDLINGS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unknown blend_handling &#39;</span><span class="si">{</span><span class="n">blend_handling</span><span class="si">}</span><span class="s2">&#39;; expected one of&quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">BLEND_HANDLINGS</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
     <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">weight</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
     <span class="n">mask</span><span class="p">[</span><span class="n">flag</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -1836,7 +2195,23 @@
     <span class="n">noise_img_gal</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">gal</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig_noise</span>
 
     <span class="n">gal_masked</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">gal</span><span class="p">)</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">~</span><span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">blend_handling</span> <span class="o">==</span> <span class="s2">&quot;uberseg&quot;</span><span class="p">:</span>
+        <span class="c1"># Hard-mask neighbour-side pixels (weight -&gt; 0) from the segmentation</span>
+        <span class="c1"># geometry; the image is left untouched (the masked pixels carry no</span>
+        <span class="c1"># weight, so ngmix ignores them in the likelihood). Bad/flagged</span>
+        <span class="c1"># pixels already sit at weight 0 from the mask above.</span>
+        <span class="k">if</span> <span class="n">seg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">object_number</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;blend_handling=&#39;uberseg&#39; requires a segmentation map and the&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; central object_number; none reached prepare_ngmix_weights.&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; Set SEG_VIGNET_PATH on the ngmix run (see&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; CosmoStat/shapepipe#776).&quot;</span>
+            <span class="p">)</span>
+        <span class="n">weight_map</span> <span class="o">=</span> <span class="n">uberseg_weight</span><span class="p">(</span>
+            <span class="n">weight_map</span><span class="p">,</span> <span class="n">seg</span><span class="p">,</span> <span class="n">object_number</span><span class="p">,</span> <span class="n">dilate_neighbour</span><span class="o">=</span><span class="n">dilate_neighbour</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="o">~</span><span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="c1"># noisefill (default): replace masked pixels with a noise realisation.</span>
         <span class="n">gal_masked</span><span class="p">[</span><span class="o">~</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">noise_img_gal</span><span class="p">[</span><span class="o">~</span><span class="n">mask</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="n">gal_masked</span><span class="p">,</span> <span class="n">weight_map</span><span class="p">,</span> <span class="n">noise_img</span></div>
@@ -1847,6 +2222,8 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">make_ngmix_observation</span><span class="p">(</span>
     <span class="n">gal</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">psf</span><span class="p">,</span> <span class="n">wcs</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span>
     <span class="n">bkg_rms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">&quot;hsm&quot;</span><span class="p">,</span> <span class="n">wcs_full</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ra</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">blend_handling</span><span class="o">=</span><span class="s2">&quot;noisefill&quot;</span><span class="p">,</span> <span class="n">seg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build an ngmix Observation for a single galaxy epoch.</span>
 
@@ -1885,6 +2262,18 @@
 <span class="sd">    ra, dec : float, optional</span>
 <span class="sd">        Object sky position in degrees. Required for</span>
 <span class="sd">        ``centroid_source=&quot;wcs&quot;`` (ignored for ``&quot;hsm&quot;``).</span>
+<span class="sd">    blend_handling : {&quot;noisefill&quot;, &quot;uberseg&quot;}, optional</span>
+<span class="sd">        Neighbour treatment passed through to :func:`prepare_ngmix_weights`;</span>
+<span class="sd">        the default ``&quot;noisefill&quot;`` is the historical behaviour.</span>
+<span class="sd">    seg : numpy.ndarray, optional</span>
+<span class="sd">        Segmentation map on the stamp grid. Required for</span>
+<span class="sd">        ``blend_handling=&quot;uberseg&quot;`` (ignored otherwise).</span>
+<span class="sd">    object_number : int, optional</span>
+<span class="sd">        Central object&#39;s segmentation label. Required for</span>
+<span class="sd">        ``blend_handling=&quot;uberseg&quot;`` (ignored otherwise).</span>
+<span class="sd">    dilate_neighbour : int, optional</span>
+<span class="sd">        Neighbour-mask dilation iterations passed through to</span>
+<span class="sd">        :func:`prepare_ngmix_weights` under ``blend_handling=&quot;uberseg&quot;``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1910,7 +2299,9 @@
     <span class="n">psf_obs</span> <span class="o">=</span> <span class="n">Observation</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">psf_wt</span><span class="p">,</span> <span class="n">jacobian</span><span class="o">=</span><span class="n">psf_jacob</span><span class="p">)</span>
 
     <span class="n">gal_masked</span><span class="p">,</span> <span class="n">weight_map</span><span class="p">,</span> <span class="n">noise_img</span> <span class="o">=</span> <span class="n">prepare_ngmix_weights</span><span class="p">(</span>
-        <span class="n">gal</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">bkg_rms</span><span class="o">=</span><span class="n">bkg_rms</span>
+        <span class="n">gal</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">bkg_rms</span><span class="o">=</span><span class="n">bkg_rms</span><span class="p">,</span>
+        <span class="n">blend_handling</span><span class="o">=</span><span class="n">blend_handling</span><span class="p">,</span> <span class="n">seg</span><span class="o">=</span><span class="n">seg</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="n">object_number</span><span class="p">,</span>
+        <span class="n">dilate_neighbour</span><span class="o">=</span><span class="n">dilate_neighbour</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">centroid_source</span> <span class="o">==</span> <span class="s2">&quot;hsm&quot;</span><span class="p">:</span>
@@ -2144,7 +2535,9 @@
 <div class="viewcode-block" id="do_ngmix_metacal">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">do_ngmix_metacal</span><span class="p">(</span>
-    <span class="n">stamp</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">flux_guess</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">&quot;hsm&quot;</span><span class="p">,</span> <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">&quot;fitgauss&quot;</span>
+    <span class="n">stamp</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">flux_guess</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">&quot;hsm&quot;</span><span class="p">,</span>
+    <span class="n">blend_handling</span><span class="o">=</span><span class="s2">&quot;noisefill&quot;</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">&quot;fitgauss&quot;</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Do Ngmix Metacal.</span>
 
@@ -2167,6 +2560,19 @@
 <span class="sd">        adaptive-moment centroid); ``&quot;wcs&quot;`` uses the catalog sky position</span>
 <span class="sd">        projected through the WCS — see that function for the star-vs-galaxy</span>
 <span class="sd">        rationale.</span>
+<span class="sd">    blend_handling : {&quot;noisefill&quot;, &quot;uberseg&quot;}, optional</span>
+<span class="sd">        Neighbour treatment passed through to</span>
+<span class="sd">        :func:`make_ngmix_observation`; the default ``&quot;noisefill&quot;`` is the</span>
+<span class="sd">        historical behaviour. ``&quot;uberseg&quot;`` consumes ``stamp.segs`` and</span>
+<span class="sd">        ``object_number``.</span>
+<span class="sd">    object_number : int, optional</span>
+<span class="sd">        Central object&#39;s segmentation label — its SExtractor ``NUMBER``</span>
+<span class="sd">        (``obj_id``), authoritative because seg labels are the NUMBERs of the</span>
+<span class="sd">        same SE run (shapepipe#776). Required for ``blend_handling=&quot;uberseg&quot;``</span>
+<span class="sd">        (ignored otherwise).</span>
+<span class="sd">    dilate_neighbour : int, optional</span>
+<span class="sd">        Neighbour-mask dilation iterations passed through to</span>
+<span class="sd">        :func:`make_ngmix_observation` under ``blend_handling=&quot;uberseg&quot;``.</span>
 <span class="sd">    metacal_psf : {&quot;fitgauss&quot;, &quot;gauss&quot;, &quot;dilate&quot;, &quot;azgauss&quot;}, optional</span>
 <span class="sd">        The metacal reconvolution-kernel scheme passed to ngmix as</span>
 <span class="sd">        ``metacal_pars[&#39;psf&#39;]``. The default ``&quot;fitgauss&quot;`` fits a Gaussian to</span>
@@ -2208,6 +2614,10 @@
             <span class="n">wcs_full</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">wcs</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">ra</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">dec</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">dec</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">blend_handling</span><span class="o">=</span><span class="n">blend_handling</span><span class="p">,</span>
+            <span class="n">seg</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">segs</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">segs</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">object_number</span><span class="o">=</span><span class="n">object_number</span><span class="p">,</span>
+            <span class="n">dilate_neighbour</span><span class="o">=</span><span class="n">dilate_neighbour</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">gal_obs_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gal_obs</span><span class="p">)</span>
 
@@ -2303,7 +2713,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 16 Jul, 2026.
+  Last updated on 17 Jul, 2026.
   <br/>
 </p>
   </div>

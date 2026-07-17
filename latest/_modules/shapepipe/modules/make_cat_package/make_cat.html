@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="16 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="17 Jul, 2026"/>
   </head>
   
   
@@ -876,9 +876,11 @@
 <span class="sd">        Save the NGMIX catalogue into the final one.</span>
 
 <span class="sd">        Column grammar: ``NGMIX[m]_&lt;COMPONENT&gt;[_ERR][_&lt;OBJECT&gt;]_&lt;SHEAR&gt;``,</span>
-<span class="sd">        plus three OBJECT/SHEAR-less per-object metadata columns</span>
+<span class="sd">        plus four OBJECT/SHEAR-less per-object metadata columns</span>
 <span class="sd">        (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,</span>
-<span class="sd">        ``NGMIX_MCAL_TYPES_FAIL``). The galaxy is the implicit default object</span>
+<span class="sd">        ``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG`` — the last a blend</span>
+<span class="sd">        flag set when the coadd seg stamp held a non-central footprint,</span>
+<span class="sd">        shapepipe#776). The galaxy is the implicit default object</span>
 <span class="sd">        and carries NO ``OBJECT`` token (``NGMIX_G1_NOSHEAR``, dropping the</span>
 <span class="sd">        ``GAL`` segment carried by the pre-#761 names). The explicit PSF</span>
 <span class="sd">        objects are ``PSF_ORIG``</span>
@@ -918,6 +920,9 @@
             <span class="c1">#return err_msg</span>
 
         <span class="n">ngmix_mcal_types_fail</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;mcal_types_fail&quot;</span><span class="p">]</span>
+        <span class="c1"># Per-object blend flag (shapepipe#776): the seg stamp held a</span>
+        <span class="c1"># non-central footprint. Galaxy-only (non-moments), like N_EPOCH.</span>
+        <span class="n">ngmix_neighbour_flag</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;neighbour_flag&quot;</span><span class="p">]</span>
         <span class="c1"># Needed in both moments and non-moments modes (used unconditionally</span>
         <span class="c1"># below), so read them outside the branch.</span>
         <span class="n">ngmix_mcal_flags</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;mcal_flags&quot;</span><span class="p">]</span>
@@ -933,6 +938,7 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">&quot;NGMIX_N_EPOCH&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">&quot;NGMIX_MCAL_TYPES_FAIL&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">&quot;NGMIX_NEIGHBOUR_FLAG&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
 
         <span class="n">prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;NGMIX</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">&quot;</span>
 
@@ -1084,6 +1090,11 @@
                         <span class="n">ngmix_mcal_types_fail</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
                         <span class="n">idx</span><span class="p">,</span>
                     <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
+                        <span class="s2">&quot;NGMIX_NEIGHBOUR_FLAG&quot;</span><span class="p">,</span>
+                        <span class="n">ngmix_neighbour_flag</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+                        <span class="n">idx</span><span class="p">,</span>
+                    <span class="p">)</span>
 
         <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -1218,7 +1229,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 16 Jul, 2026.
+  Last updated on 17 Jul, 2026.
   <br/>
 </p>
   </div>

@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="16 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="17 Jul, 2026"/>
   </head>
   
   
@@ -760,9 +760,11 @@ using the classifier
 <dd><p>Save NGMIX Data.</p>
 <p>Save the NGMIX catalogue into the final one.</p>
 <p>Column grammar: <code class="docutils literal notranslate"><span class="pre">NGMIX[m]_&lt;COMPONENT&gt;[_ERR][_&lt;OBJECT&gt;]_&lt;SHEAR&gt;</span></code>,
-plus three OBJECT/SHEAR-less per-object metadata columns
+plus four OBJECT/SHEAR-less per-object metadata columns
 (<code class="docutils literal notranslate"><span class="pre">NGMIX[m]_MCAL_FLAGS</span></code>, <code class="docutils literal notranslate"><span class="pre">NGMIX_N_EPOCH</span></code>,
-<code class="docutils literal notranslate"><span class="pre">NGMIX_MCAL_TYPES_FAIL</span></code>). The galaxy is the implicit default object
+<code class="docutils literal notranslate"><span class="pre">NGMIX_MCAL_TYPES_FAIL</span></code>, <code class="docutils literal notranslate"><span class="pre">NGMIX_NEIGHBOUR_FLAG</span></code> — the last a blend
+flag set when the coadd seg stamp held a non-central footprint,
+shapepipe#776). The galaxy is the implicit default object
 and carries NO <code class="docutils literal notranslate"><span class="pre">OBJECT</span></code> token (<code class="docutils literal notranslate"><span class="pre">NGMIX_G1_NOSHEAR</span></code>, dropping the
 <code class="docutils literal notranslate"><span class="pre">GAL</span></code> segment carried by the pre-#761 names). The explicit PSF
 objects are <code class="docutils literal notranslate"><span class="pre">PSF_ORIG</span></code>
@@ -891,7 +893,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 16 Jul, 2026.
+  Last updated on 17 Jul, 2026.
   <br/>
 </p>
   </div>
