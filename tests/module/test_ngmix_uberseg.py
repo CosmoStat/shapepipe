@@ -396,6 +396,9 @@ class _FakeConfig:
     def getfloat(self, _sec, _key):
         return 30.0 if _key == "MAG_ZP" else 0.186
 
+    def getboolean(self, _sec, _key, fallback=False):
+        return fallback
+
     def has_option(self, _sec, key):
         return key == "SEG_VIGNET_PATH"
 
