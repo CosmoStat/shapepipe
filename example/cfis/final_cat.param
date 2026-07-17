@@ -26,6 +26,9 @@ NGMIX_G2_PSF_ORIG_NOSHEAR
 N_EPOCH
 NGMIX_N_EPOCH
 
+# Blend flag: coadd seg stamp held a non-central footprint (shapepipe#776)
+NGMIX_NEIGHBOUR_FLAG
+
 ## Shape measurement outputs
 ## Ngmix: model fitting
 
