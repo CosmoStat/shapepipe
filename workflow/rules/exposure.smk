@@ -44,11 +44,14 @@ rule exp_split:
     shell:
         "{params.cmd} --threads {threads}"
 
-# Mask per-CCD; this exposure's star cat is a declared input (per-unit re-key).
+# Mask per-CCD. Star cats are NOT a per-unit input: the store is per-CCD
+# (star_cat-<exp>-<ccd>.fits) and the mask config reads it as a DIR symlink
+# (see prepare.smk) — a per-unit file input here has no producer and makes the
+# DAG unbuildable the moment a new exposure is appended (caught live by the
+# append-invariant test). A missing cat fails the mask count-floor loudly.
 rule exp_mask:
     input:
         rules.exp_split.output,
-        star=str(RUN_DIR / "exp/{exp}/star_cat-{exp}.fits"),
     output:
         directory(f"{EXP_OUT}/run_sp_exp_Ma")
     params:
