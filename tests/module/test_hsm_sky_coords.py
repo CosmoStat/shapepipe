@@ -5,7 +5,7 @@ directly in world coordinates (``FindAdaptiveMom(use_sky_coords=True)``) instead
 of measuring in the pixel frame and rotating afterwards with a WCS Jacobian.
 
 The reference ``_transform_shape`` below is a verbatim copy of the shape-rotation
-math that ``scripts/python/convert_psf_pix2world.py`` used to apply (``transform_shape``,
+math that ``scripts/python/collate_star_cat.py`` used to apply (``transform_shape``,
 removed in this change). The test draws an elliptical Gaussian on a stamp with a
 nontrivial local WCS (rotation + shear + scale, matching a real CD matrix), then
 checks that:
@@ -29,7 +29,7 @@ import pytest
 def _transform_shape(mom_list, jac):
     """Reference: the old pixel-frame → world shape rotation (verbatim).
 
-    Copied from the removed ``convert_psf_pix2world.transform_shape``. ``mom_list``
+    Copied from the removed ``collate_star_cat.transform_shape``. ``mom_list``
     is ``[g1, g2, sigma]`` measured in the pixel frame; ``jac`` is the local WCS.
     """
     scale, shear, theta, flip = jac.getDecomposition()

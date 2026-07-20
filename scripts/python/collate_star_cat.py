@@ -1,10 +1,17 @@
 #! /usr/bin/env python3
 
-"""CONVERT PSF CATALOGUE.
+"""COLLATE STAR CATALOGUES.
 
-Collate the per-exposure PSF validation catalogues into per-patch star
-catalogues: gather positions (X/Y/RA/DEC), assign the MCCD focal-plane CCD id,
-and merge into ``validation_psf_conv-<patch>-<idx>.fits``.
+Collate the per-exposure PSF validation catalogues into star catalogues: gather
+positions (X/Y/RA/DEC), assign the MCCD focal-plane CCD id, and merge into
+``validation_psf_conv`` FITS files.
+
+Catalogue layout depends on the major version (``-V``). Runs up to ``v1.6`` are
+organised in sky patches (``P1``..``P<n>``): input runs live under
+``<base>/P<patch>/output`` and outputs are named
+``validation_psf_conv-<patch>-<idx>.fits``. ``v2.0`` removes the patch concept:
+input runs live under a single ``<base>/output`` root and outputs drop the patch
+token (``validation_psf_conv-<idx>.fits``).
 
 HSM ellipticities and sizes are no longer rotated here. PSFEx and the in-repo
 MCCD interpolation now measure adaptive moments directly in world coordinates
@@ -34,6 +41,58 @@ import galsim
 
 from cs_util import args as cs_args
 from cs_util import logging
+
+
+def collate_paths(input_base_dir, output_base_dir, patch):
+    """Collate Paths.
+
+    Return the ``(input run dir, output dir)`` for a patch. ``patch`` is None
+    for the patch-less v2.0 layout, which drops the ``P<patch>`` token; v1.x
+    passes the patch number.
+
+    Parameters
+    ----------
+    input_base_dir : str
+        input base directory
+    output_base_dir : str
+        output base directory
+    patch : str or None
+        patch number, or None for the patch-less v2.0 layout
+
+    Returns
+    -------
+    tuple
+        input run directory and output directory
+
+    """
+    if patch is None:
+        return f"{input_base_dir}/output/", output_base_dir
+    return f"{input_base_dir}/P{patch}/output/", f"{output_base_dir}/P{patch}"
+
+
+def output_filename(file_pattern, patch, idx):
+    """Output Filename.
+
+    Build the collated catalogue filename. ``patch`` is None for the patch-less
+    v2.0 layout, which drops the patch token.
+
+    Parameters
+    ----------
+    file_pattern : str
+        input file pattern (e.g. ``validation_psf``)
+    patch : str or None
+        patch number, or None for the patch-less v2.0 layout
+    idx : int
+        exposure run index
+
+    Returns
+    -------
+    str
+        output catalogue file name
+
+    """
+    patch_token = "" if patch is None else f"{patch}-"
+    return f"{file_pattern}_conv-{patch_token}{idx}.fits"
 
 
 def transform_shape(mom_list, jac):
@@ -398,6 +457,7 @@ class Convert(object):
         self._params = {
             "input_base_dir": ".",
             "output_base_dir": ".",
+            "version_cat": "v2.0",
             "mode": "merge",
             "patches": "",
             "psf": "psfex",
@@ -406,6 +466,7 @@ class Convert(object):
 
         self._short_options = {
             "input_base_dir": "-i",
+            "version_cat": "-V",
             "mode": "-m",
             "psf": "-p",
             "patches": "-P",
@@ -415,15 +476,19 @@ class Convert(object):
 
         self._help_strings = {
             "input_base_dir": (
-                "input base dir, runs are expected in"
-                + " <input_base_dir>/P<patch?>/output;"
-                " default is {}"
+                "input base dir; for v1.x runs are expected in"
+                + " <input_base_dir>/P<patch>/output, for v2.0 (patch-less) in"
+                + " <input_base_dir>/output; default is {}"
+            ),
+            "version_cat": (
+                "catalogue major version, allowed are v1.3, v1.4, v1.5, v1.6,"
+                + " v2.0; v2.0 is patch-less; default is {}"
             ),
             "mode": (
                 "run mode, allowed are 'merge', 'test'; default is" + " '{}'"
             ),
             "psf": "PSF model, allowed are 'psfex' and 'mccd'; default is {}",
-            "patches": "(list of) input patches",
+            "patches": "(list of) input patches; ignored for v2.0",
         }
 
         # Output column names with types
@@ -474,7 +539,22 @@ class Convert(object):
         Main processing function.
 
         """
-        if self._params["mode"] == "test":
+        # Guard against a mistyped version silently falling through to the
+        # v1.x patch loop (e.g. ``-V v2`` or ``-V 2.0``).
+        allowed_versions = ("v1.3", "v1.4", "v1.5", "v1.6", "v2.0")
+        if self._params["version_cat"] not in allowed_versions:
+            raise ValueError(
+                f"Invalid version {self._params['version_cat']}; allowed are"
+                + f" {', '.join(allowed_versions)}"
+            )
+
+        # v2.0 removes the patch concept: a single patch-less run root. For
+        # v1.x, iterate over the requested sky patches as before. ``patch`` is
+        # None in the patch-less case, which drops the patch token from the
+        # input path and the output filename.
+        if self._params["version_cat"] == "v2.0":
+            patch_nums = [None]
+        elif self._params["mode"] == "test":
             patch_nums = ["3", "4"]
         else:
             patch_nums = cs_args.my_string_split(self._params["patches"])
@@ -484,13 +564,16 @@ class Convert(object):
         # Loop over patches
         for patch in patch_nums:
 
-            output_dir = f"{self._params['output_base_dir']}/P{patch}"
+            patch_dir, output_dir = collate_paths(
+                self._params["input_base_dir"],
+                self._params["output_base_dir"],
+                patch,
+            )
+            print("Running patch-less (v2.0)" if patch is None else f"Running patch: {patch}")
+
             if not os.path.isdir(output_dir):
-                os.makedirs(output_dir, exist_ok=False)
+                os.makedirs(output_dir, exist_ok=True)
 
-            print("Running patch:", patch)
-
-            patch_dir = f"{self._params['input_base_dir']}/P{patch}/output/"
             subdirs = f"{patch_dir}/{self._params['sub_dir_pattern']}*"
             exp_run_dirs = glob.glob(subdirs)
             n_exp_runs = len(exp_run_dirs)
@@ -536,8 +619,10 @@ class Convert(object):
 
         """
         output_path = (
-            f"{output_dir}/{self._params['file_pattern_psfint']}_conv"
-            + f"-{patch}-{idx}.fits"
+            f"{output_dir}/"
+            + output_filename(
+                self._params["file_pattern_psfint"], patch, idx
+            )
         )
         if os.path.exists(output_path):
             print(f"Skipping transform_exposures, file {output_path} exists")
