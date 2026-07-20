@@ -14,6 +14,7 @@ import ngmix
 import galsim
 import numpy as np
 from astropy.io import fits
+from astropy.wcs.utils import proj_plane_pixel_scales
 from cs_util import size as cs_size
 from modopt.math.stats import sigma_mad
 from ngmix.observation import Observation, ObsList
@@ -352,6 +353,44 @@ class Vignet():
         if self.bkg_rms_vign_cat is not None:
             self.bkg_rms_vign_cat.close()
 
+def pixel_scale_from_wcs(f_wcs_file):
+    """Representative pixel scale (arcsec) from the tile's image WCS.
+
+    The ngmix fit builds each object's Jacobian from the full per-epoch WCS,
+    so this scalar only sets the centroid-prior width and the noise-window
+    scale (see :func:`get_prior`, :func:`get_noise`). A single value read from
+    the astrometry is therefore sufficient -- and, unlike a hard-coded config
+    constant, it cannot silently drift from the pixels it describes (this
+    mirrors SExtractor's ``PIXEL_SCALE 0`` convention).
+
+    Parameters
+    ----------
+    f_wcs_file : dict-like
+        Mapping ``exposure -> {ccd -> {"WCS": astropy.wcs.WCS, ...}}`` (the
+        merged single-exposure headers opened by :class:`Vignet`).
+
+    Returns
+    -------
+    float
+        Pixel scale in arcsec, averaged over the two axes of the first WCS.
+
+    Raises
+    ------
+    ValueError
+        If no WCS can be found in ``f_wcs_file``.
+    """
+    for exp_name in f_wcs_file:
+        for ccd_dict in f_wcs_file[exp_name].values():
+            # proj_plane_pixel_scales returns deg/pixel per world axis; the
+            # two axes are equal to sub-per-mille for survey astrometry.
+            scales = proj_plane_pixel_scales(ccd_dict["WCS"])
+            return float(np.mean(scales) * 3600.0)
+    raise ValueError(
+        "cannot derive PIXEL_SCALE from the WCS: the merged single-exposure "
+        "headers file contains no exposures"
+    )
+
+
 class Ngmix(object):
     """Ngmix.
 
@@ -367,8 +406,10 @@ class Ngmix(object):
         File numbering scheme
     zero_point : float
         Photometric zero point
-    pixel_scale : float
-        Pixel scale in arcsec
+    pixel_scale : float or None
+        Pixel scale in arcsec. Optional override: when ``None`` or
+        non-positive, the pixel scale is derived from the image WCS (see
+        :func:`pixel_scale_from_wcs`).
     f_wcs_path : str
         Path to merged single-exposure single-HDU headers
     w_log : logging.Logger
@@ -492,7 +533,6 @@ class Ngmix(object):
         self._file_number_string = file_number_string
 
         self._zero_point = zero_point
-        self._pixel_scale = pixel_scale
 
         self._f_wcs_path = f_wcs_path
 
@@ -513,6 +553,26 @@ class Ngmix(object):
         seed = int(''.join(re.findall(r'\d+', self._file_number_string)))
         self._rng = np.random.RandomState(seed)
         self._w_log.info(f'Random generator initialisation seed = {seed}')
+
+        # Pixel scale: an explicit positive PIXEL_SCALE overrides; otherwise
+        # derive it from the image WCS so it can never drift from the pixels
+        # (mirrors SExtractor's ``PIXEL_SCALE 0`` convention). Only the
+        # centroid-prior width and noise window use it -- the fit Jacobian is
+        # built per object from the full WCS.
+        if pixel_scale is None or pixel_scale <= 0:
+            self._pixel_scale = pixel_scale_from_wcs(
+                self._vignet_cat.f_wcs_file
+            )
+            self._w_log.info(
+                f'PIXEL_SCALE derived from image WCS = '
+                f'{self._pixel_scale:.6f} arcsec'
+            )
+        else:
+            self._pixel_scale = pixel_scale
+            self._w_log.info(
+                f'PIXEL_SCALE from config = {self._pixel_scale:.6f} arcsec'
+            )
+
         if self._seed_from_position:
             self._w_log.info(
                 'SEED_FROM_POSITION on: per-object RNG seeded from sky position'

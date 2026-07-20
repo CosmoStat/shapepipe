@@ -44,8 +44,8 @@ def spread_model_runner(
     else:
         prefix = ""
 
-    # Get pixel scale and output mode
-    pixel_scale = config.getfloat(module_config_sec, "PIXEL_SCALE")
+    # Get output mode. The spread model is computed entirely in pixel space,
+    # so no pixel scale is needed (see spread_model.get_model).
     output_mode = config.get(module_config_sec, "OUTPUT_MODE")
 
     # Set output file path
@@ -58,7 +58,6 @@ def spread_model_runner(
         psf_cat_path,
         weight_cat_path,
         output_path,
-        pixel_scale,
         output_mode,
     )
 
