@@ -504,17 +504,18 @@ summary_run $patch 1
 
 Now, create the list of single-CCD footprints that have a valid PSF model.
 Only these CCDs are stamped into the mask, so the accumulated map counts, per
-sky pixel, the number of exposures with a valid PSF. The list is written to
-`ccds_with_psf_v1.6.txt`:
+sky pixel, the number of exposures with a valid PSF. For a (patch-less) `v2.0`
+run — the default — call this from the run root; the list is written to
+`ccds_with_psf_v2.0.txt`:
+
+```bash
+get_ccds_with_psf -v -o ccds_with_psf_v2.0.txt
+```
+
+For an older, patched layout, select the version explicitly with `-V`:
 
 ```bash
 get_ccds_with_psf -v -V v1.6 -o ccds_with_psf_v1.6.txt
-```
-
-For a (patch-less) `v2.0` run, call this from the run root instead:
-
-```bash
-get_ccds_with_psf -v -V v2.0 -o ccds_with_psf_v2.0.txt
 ```
 
 Next, download the exposure headers; indicate (with `-d`) a directory of

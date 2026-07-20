@@ -35,7 +35,7 @@ class CcdPsfHandler(object):
         """Set default parameters and command line options."""
 
         self._params = {
-            "version_cat": "v1.6",
+            "version_cat": "v2.0",
             "n_CCD": 40,
             "n_patch": 0,
             "output": None,
@@ -54,7 +54,7 @@ class CcdPsfHandler(object):
         }
 
         self._help_strings = {
-            "version_cat": "catalogue major version, allowed are v1.3, v1.4, v1.5, v1.6, v2.0; default is {}",
+            "version_cat": "catalogue major version, allowed are v1.3, v1.4, v1.5, v1.6, v2.0; v2.0 is patch-less; default is {}",
 
             "n_CCD": "number of CCDs per exposure; default is {}",
             "n_patch": (
