@@ -559,7 +559,9 @@ class MergeStarCatPSFEX(object):
         """
         x, y, ra, dec = [], [], [], []
         g1_psf, g2_psf, size_psf = [], [], []
+        m4_1_psf, m4_2_psf, rho4_psf = [], [], []
         g1, g2, size = [], [], []
+        m4_1_star, m4_2_star, rho4_star = [], [], []
         flag_psf, flag_star = [], []
         mag, snr, psfex_acc = [], [], []
         ccd_nb = []
@@ -588,9 +590,15 @@ class MergeStarCatPSFEX(object):
             g1_psf += list(data_j["HSM_G1_PSF"])
             g2_psf += list(data_j["HSM_G2_PSF"])
             size_psf += list(data_j["HSM_T_PSF"])
+            m4_1_psf += list(data_j["HSM_M4_1_PSF"])
+            m4_2_psf += list(data_j["HSM_M4_2_PSF"])
+            rho4_psf += list(data_j["HSM_RHO4_PSF"])
             g1 += list(data_j["HSM_G1_STAR"])
             g2 += list(data_j["HSM_G2_STAR"])
             size += list(data_j["HSM_T_STAR"])
+            m4_1_star += list(data_j["HSM_M4_1_STAR"])
+            m4_2_star += list(data_j["HSM_M4_2_STAR"])
+            rho4_star += list(data_j["HSM_RHO4_STAR"])
 
             # flags
             flag_psf += list(data_j["HSM_FLAG_PSF"])
@@ -636,9 +644,15 @@ class MergeStarCatPSFEX(object):
             "HSM_G1_PSF": g1_psf,
             "HSM_G2_PSF": g2_psf,
             "HSM_T_PSF": size_psf,
+            "HSM_M4_1_PSF": m4_1_psf,
+            "HSM_M4_2_PSF": m4_2_psf,
+            "HSM_RHO4_PSF": rho4_psf,
             "HSM_G1_STAR": g1,
             "HSM_G2_STAR": g2,
             "HSM_T_STAR": size,
+            "HSM_M4_1_STAR": m4_1_star,
+            "HSM_M4_2_STAR": m4_2_star,
+            "HSM_RHO4_STAR": rho4_star,
             "HSM_FLAG_PSF": flag_psf,
             "HSM_FLAG_STAR": flag_star,
             "MAG": mag,
