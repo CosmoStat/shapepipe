@@ -134,9 +134,9 @@ def test_psf_fourth_moments_frame_invariant(theta):
     rot = psf_row(prof, make_wcs(theta))
 
     assert abs(ref[M4_1]) > 1e-2 and abs(ref[M4_2]) > 1e-2  # non-trivial
-    npt.assert_allclose(rot[M4_1], ref[M4_1], rtol=1e-3, atol=1e-5)
-    npt.assert_allclose(rot[M4_2], ref[M4_2], rtol=1e-3, atol=1e-5)
-    npt.assert_allclose(rot[RHO4], ref[RHO4], rtol=1e-4)
+    npt.assert_allclose(rot[M4_1], ref[M4_1], rtol=1e-5, atol=1e-6)
+    npt.assert_allclose(rot[M4_2], ref[M4_2], rtol=1e-5, atol=1e-6)
+    npt.assert_allclose(rot[RHO4], ref[RHO4], rtol=1e-5)
 
 
 @pytest.mark.parametrize("theta", [28.0, -45.0])
@@ -146,9 +146,31 @@ def test_star_fourth_moments_frame_invariant(theta):
     ref = star_row(prof, make_wcs(0.0))
     rot = star_row(prof, make_wcs(theta))
 
-    npt.assert_allclose(rot[M4_1], ref[M4_1], rtol=1e-3, atol=1e-5)
-    npt.assert_allclose(rot[M4_2], ref[M4_2], rtol=1e-3, atol=1e-5)
-    npt.assert_allclose(rot[RHO4], ref[RHO4], rtol=1e-4)
+    npt.assert_allclose(rot[M4_1], ref[M4_1], rtol=1e-5, atol=1e-6)
+    npt.assert_allclose(rot[M4_2], ref[M4_2], rtol=1e-5, atol=1e-6)
+    npt.assert_allclose(rot[RHO4], ref[RHO4], rtol=1e-5)
+
+
+@pytest.mark.parametrize("theta", [0.0, 40.0])
+def test_fourth_moments_invariant_under_world_shift(theta):
+    """Off-center object: the sky-frame centroid subtraction makes the fourth
+    moments invariant under a world-frame translation of the source.
+
+    Every other fixture is drawn centered, so ``moments_centroid`` is ~0 and the
+    recentering in ``_fourth_moments`` is a no-op. Real star vignets are only
+    approximately centered, so this case shifts the source in the *world* frame
+    (arcsec) and asserts the fourth moments are unchanged -- exercising the
+    centroid transform that is otherwise dead in the suite.
+    """
+    prof = composite(beta_deg=30.0)
+    wcs = make_wcs(theta)
+    ref = psf_row(prof, wcs)
+    shifted = psf_row(prof.shift(0.9, -1.3), wcs)  # world-frame shift, arcsec
+
+    assert abs(ref[M4_1]) > 1e-2 and abs(ref[M4_2]) > 1e-2  # non-trivial
+    npt.assert_allclose(shifted[M4_1], ref[M4_1], rtol=1e-4, atol=1e-6)
+    npt.assert_allclose(shifted[M4_2], ref[M4_2], rtol=1e-4, atol=1e-6)
+    npt.assert_allclose(shifted[RHO4], ref[RHO4], rtol=1e-4)
 
 
 def test_psf_and_star_paths_agree():
@@ -160,6 +182,50 @@ def test_psf_and_star_paths_agree():
     npt.assert_allclose(s[M4_1], p[M4_1], rtol=1e-4, atol=1e-6)
     npt.assert_allclose(s[M4_2], p[M4_2], rtol=1e-4, atol=1e-6)
     npt.assert_allclose(s[RHO4], p[RHO4], rtol=1e-4)
+
+
+# ---------------------------------------------------------------------------
+# Bad-pixel masking on the star path.
+# ---------------------------------------------------------------------------
+
+
+def test_masked_pixels_are_zeroed_before_fourth_moment_sum():
+    """Star path: pixels carrying the ``-1e30`` bad-pixel sentinel are zeroed
+    before the fourth-moment sum, so a masked vignet reproduces the clean
+    result -- and the zeroing is load-bearing.
+
+    Without the zeroing the sum runs over the raw ``-1e30`` sentinels and the
+    fourth moments become garbage (the sum over an un-zeroed stamp is order
+    ``-1e30``). We mask low-flux outskirt pixels: dropping them leaves the clean
+    measurement essentially unchanged, while feeding the same sentinels through
+    un-zeroed blows the result up by many orders of magnitude.
+    """
+    prof = composite(beta_deg=30.0)
+    wcs = make_wcs(17.0)
+    clean = star_row(prof, wcs)
+
+    # A block of outskirt pixels, offset off-axis so it does not cancel in M4_1.
+    mask = np.zeros((_STAMP, _STAMP), dtype=bool)
+    c = _STAMP // 2
+    mask[c + 18 : c + 22, c + 12 : c + 15] = True
+
+    masked = star_row(prof, wcs, mask=mask)
+
+    # Zeroing => the masked measurement reproduces the clean one.
+    npt.assert_allclose(masked[M4_1], clean[M4_1], rtol=1e-5, atol=1e-6)
+    npt.assert_allclose(masked[M4_2], clean[M4_2], rtol=1e-5, atol=1e-6)
+    npt.assert_allclose(masked[RHO4], clean[RHO4], rtol=1e-5)
+
+    # Contrast: the same sentinel stamp with the zeroing removed is garbage.
+    sentinel = np.where(mask, -1e30, render(prof, wcs))
+    moms = galsim.hsm.FindAdaptiveMom(
+        galsim.Image(sentinel, wcs=wcs),
+        badpix=galsim.Image(mask.astype(float)),
+        strict=False,
+        use_sky_coords=True,
+    )
+    raw = _fourth_moments(sentinel, moms, wcs)  # no zeroing applied
+    assert abs(raw[0] - clean[M4_1]) > 1.0
 
 
 # ---------------------------------------------------------------------------
