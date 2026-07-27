@@ -11,7 +11,7 @@
 # ----------------------------------------------------------------------
 # base — system deps shared by every target
 # ----------------------------------------------------------------------
-FROM python:3.12-slim-bookworm AS base
+FROM python:3.14-slim-bookworm AS base
 
 LABEL maintainer="martin.kilbinger@cea.fr"
 
