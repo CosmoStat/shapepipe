@@ -333,21 +333,43 @@ shapepipe_run -c $SP_CONFIG/config_Ms_$psf.ini
 shapepipe_run -c $SP_CONFIG/config_Pl_$psf.ini
 ```
 
-#### Convert star catalogue to wCS
+#### Collate star catalogues
 
-Convert all input validation PSF files and create directories per patch `P?`.
-Create files `validation_psf_conv-<patchnum>-<idx>.fits` (for the v1.4 setup only one file):
+Collate all input validation PSF files into star catalogues, gathering positions
+(X/Y/RA/DEC) and the MCCD CCD id.
+
+Note: HSM shapes are no longer rotated into world coordinates at this step. The
+PSF/star ellipticities and sizes are now measured directly in sky coordinates
+during PSF interpolation (galsim `FindAdaptiveMom(use_sky_coords=True)`), so
+`collate_star_cat.py` only collates and passes the shapes through.
+
+> **v2.0 is patch-less.** Runs up to `v1.6` are organised in sky patches
+> `P1`..`P<n>`, each patch a run directory. `v2.0` removes the patch concept: a
+> single run root, outputs directly under it. `v2.0` is the default; select an
+> older layout with `-V` (e.g. `-V v1.6`). For `v2.0` the patch loop and the
+> `-P` option no longer apply, and the patch token drops from the output
+> filename (`validation_psf_conv-<idx>.fits` instead of
+> `validation_psf_conv-<patchnum>-<idx>.fits`).
 
 ```bash
 cd /path/to/version
-mkdir stat_car
+mkdir star_cat
 cd star_cat
 ```
 
-For each patch run
+For `v2.0` (the default), run once against the patch-less run root, producing
+files `validation_psf_conv-<idx>.fits`:
 
 ```bash
-convert_psf_pix2world.py -i .. -P $patchnum -v
+collate_star_cat.py -i .. -v
+```
+
+For `v1.x`, pass the version explicitly and run once per patch, creating a
+directory per patch `P?` and producing files
+`validation_psf_conv-<patchnum>-<idx>.fits` (for the v1.4 setup only one file):
+
+```bash
+collate_star_cat.py -i .. -V v1.6 -P $patchnum -v
 ```
 
 Combine previously created files as links within one ShapePipe run directory (for the v1.4 setup only one link).

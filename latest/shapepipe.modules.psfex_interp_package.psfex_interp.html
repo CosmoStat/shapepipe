@@ -538,6 +538,7 @@
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.local_wcs_list"><code class="docutils literal notranslate"><span class="pre">local_wcs_list()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator.process()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_position_parameters"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._get_position_parameters()</span></code></a></li>
@@ -548,6 +549,7 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._write_output"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._write_output()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process_validation"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator.process_validation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_starshapes"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._get_starshapes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._galcat_wcs"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._galcat_wcs()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfexcatdict"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._get_psfexcatdict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._write_output_validation"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._write_output_validation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process_me"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator.process_me()</span></code></a></li>
@@ -575,6 +577,32 @@
 <dd class="field-odd"><p>Morgan Schmitz, Axel Guinot, Martin Kilbinger</p>
 </dd>
 </dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.psfex_interp_package.psfex_interp.local_wcs_list">
+<span class="sig-name descname"><span class="pre">local_wcs_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#local_wcs_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp.local_wcs_list" title="Link to this definition">#</a></dt>
+<dd><p>Local WCS List.</p>
+<p>Build a list of local (Jacobian) WCS from an astropy/galsim WCS, one per
+object position. Attaching the local WCS to an object-centred stamp lets
+<code class="docutils literal notranslate"><span class="pre">FindAdaptiveMom(use_sky_coords=True)</span></code> measure moments directly in world
+coordinates: at the stamp’s <code class="docutils literal notranslate"><span class="pre">true_center</span></code> galsim evaluates this local WCS,
+which must therefore be the linearisation of the full WCS <em>at the object’s
+position in the original image</em>, not at the stamp centre.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wcs</strong> (<em>galsim.BaseWCS</em><em> or </em><a class="reference external" href="https://docs.astropy.org/en/latest/api/astropy.wcs.WCS.html#astropy.wcs.WCS" title="(in Astropy v8.1)"><em>astropy.wcs.WCS</em></a>) – Full (celestial) WCS for the CCD.</p></li>
+<li><p><strong>positions</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Object positions <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">2)</span></code> in image (pixel) coordinates.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One local WCS per object position.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of galsim.JacobianWCS</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">PSFExInterpolator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dotpsf_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">galcat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">get_shapes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">star_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chi2_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#PSFExInterpolator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator" title="Link to this definition">#</a></dt>
@@ -652,9 +680,18 @@ positions.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfshapes">
-<span class="sig-name descname"><span class="pre">_get_psfshapes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#PSFExInterpolator._get_psfshapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfshapes" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">_get_psfshapes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wcs_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#PSFExInterpolator._get_psfshapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfshapes" title="Link to this definition">#</a></dt>
 <dd><p>Get PSF Shapes.</p>
 <p>Compute shapes of PSF at galaxy positions using HSM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>wcs_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>galsim.BaseWCS</em><em>, </em><em>optional</em>) – Local WCS at each object position (see <a class="reference internal" href="#shapepipe.modules.psfex_interp_package.psfex_interp.local_wcs_list" title="shapepipe.modules.psfex_interp_package.psfex_interp.local_wcs_list"><code class="xref py py-func docutils literal notranslate"><span class="pre">local_wcs_list()</span></code></a>). When
+provided, HSM adaptive moments are measured directly in world
+coordinates (<code class="docutils literal notranslate"><span class="pre">use_sky_coords=True</span></code>), so the <code class="docutils literal notranslate"><span class="pre">g1</span></code>/<code class="docutils literal notranslate"><span class="pre">g2</span></code>/<code class="docutils literal notranslate"><span class="pre">sigma</span></code>
+returned are already in sky coordinates and need no post-hoc
+rotation. When <code class="docutils literal notranslate"><span class="pre">None</span></code>, moments are measured in the pixel frame.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -678,12 +715,35 @@ positions.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_starshapes">
-<span class="sig-name descname"><span class="pre">_get_starshapes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">star_vign</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#PSFExInterpolator._get_starshapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_starshapes" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">_get_starshapes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">star_vign</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#PSFExInterpolator._get_starshapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_starshapes" title="Link to this definition">#</a></dt>
 <dd><p>Get Star Shapes.</p>
 <p>Compute shapes of stars at stars positions using HSM.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>numpy.ndarray</strong> – Array containing the star’s vignets.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>star_vign</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Array containing the star’s vignets.</p></li>
+<li><p><strong>wcs_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>galsim.BaseWCS</em><em>, </em><em>optional</em>) – Local WCS at each star position; see <a class="reference internal" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfshapes" title="shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfshapes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_get_psfshapes()</span></code></a>. When
+provided, moments are measured in world coordinates
+(<code class="docutils literal notranslate"><span class="pre">use_sky_coords=True</span></code>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._galcat_wcs">
+<span class="sig-name descname"><span class="pre">_galcat_wcs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#PSFExInterpolator._galcat_wcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._galcat_wcs" title="Link to this definition">#</a></dt>
+<dd><p>Galaxy Catalogue WCS.</p>
+<p>Read the CCD image WCS from the SExtractor FITS_LDAC galaxy catalogue.
+The original image header is stored as a card list in the <code class="docutils literal notranslate"><span class="pre">LDAC_IMHEAD</span></code>
+HDU (HDU 1); this is the same header the (now retired) pixel-to-world
+conversion reconstructed to rotate shapes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>WCS of the CCD the stars/PSFs live on.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>galsim.AstropyWCS</p>
 </dd>
 </dl>
 </dd></dl>
@@ -819,6 +879,7 @@ positions.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.local_wcs_list"><code class="docutils literal notranslate"><span class="pre">local_wcs_list()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator.process()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_position_parameters"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._get_position_parameters()</span></code></a></li>
@@ -829,6 +890,7 @@ positions.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._write_output"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._write_output()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process_validation"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator.process_validation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_starshapes"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._get_starshapes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._galcat_wcs"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._galcat_wcs()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfexcatdict"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._get_psfexcatdict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._write_output_validation"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._write_output_validation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process_me"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator.process_me()</span></code></a></li>

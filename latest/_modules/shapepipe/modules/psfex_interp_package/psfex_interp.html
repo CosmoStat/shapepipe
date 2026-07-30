@@ -538,6 +538,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
 
 <span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">galsim</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">galsim.hsm</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">hsm</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">galsim</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
@@ -549,6 +550,40 @@
 <span class="n">NOT_ENOUGH_STARS</span> <span class="o">=</span> <span class="s2">&quot;Fail_stars&quot;</span>
 <span class="n">BAD_CHI2</span> <span class="o">=</span> <span class="s2">&quot;Fail_chi2&quot;</span>
 <span class="n">FILE_NOT_FOUND</span> <span class="o">=</span> <span class="s2">&quot;File_not_found&quot;</span>
+
+
+<div class="viewcode-block" id="local_wcs_list">
+<a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.local_wcs_list">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">local_wcs_list</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span> <span class="n">positions</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Local WCS List.</span>
+
+<span class="sd">    Build a list of local (Jacobian) WCS from an astropy/galsim WCS, one per</span>
+<span class="sd">    object position. Attaching the local WCS to an object-centred stamp lets</span>
+<span class="sd">    ``FindAdaptiveMom(use_sky_coords=True)`` measure moments directly in world</span>
+<span class="sd">    coordinates: at the stamp&#39;s ``true_center`` galsim evaluates this local WCS,</span>
+<span class="sd">    which must therefore be the linearisation of the full WCS *at the object&#39;s</span>
+<span class="sd">    position in the original image*, not at the stamp centre.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    wcs : galsim.BaseWCS or astropy.wcs.WCS</span>
+<span class="sd">        Full (celestial) WCS for the CCD.</span>
+<span class="sd">    positions : numpy.ndarray</span>
+<span class="sd">        Object positions ``(N, 2)`` in image (pixel) coordinates.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of galsim.JacobianWCS</span>
+<span class="sd">        One local WCS per object position.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span> <span class="n">galsim</span><span class="o">.</span><span class="n">BaseWCS</span><span class="p">):</span>
+        <span class="n">wcs</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">AstropyWCS</span><span class="p">(</span><span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">wcs</span><span class="o">.</span><span class="n">local</span><span class="p">(</span><span class="n">image_pos</span><span class="o">=</span><span class="n">galsim</span><span class="o">.</span><span class="n">PositionD</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">positions</span>
+    <span class="p">]</span></div>
+
 
 
 <div class="viewcode-block" id="PSFExInterpolator">
@@ -670,7 +705,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Psf model file </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dotpsf_path</span><span class="si">}</span><span class="s2"> not found.&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_shape</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfshapes</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfshapes</span><span class="p">(</span>
+                    <span class="n">local_wcs_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_galcat_wcs</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span><span class="p">)</span>
+                <span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_output</span><span class="p">()</span></div>
 
@@ -847,18 +884,36 @@
 
 <div class="viewcode-block" id="PSFExInterpolator._get_psfshapes">
 <a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfshapes">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_psfshapes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_psfshapes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wcs_list</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get PSF Shapes.</span>
 
 <span class="sd">        Compute shapes of PSF at galaxy positions using HSM.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        wcs_list : list of galsim.BaseWCS, optional</span>
+<span class="sd">            Local WCS at each object position (see :func:`local_wcs_list`). When</span>
+<span class="sd">            provided, HSM adaptive moments are measured directly in world</span>
+<span class="sd">            coordinates (``use_sky_coords=True``), so the ``g1``/``g2``/``sigma``</span>
+<span class="sd">            returned are already in sky coordinates and need no post-hoc</span>
+<span class="sd">            rotation. When ``None``, moments are measured in the pixel frame.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">import_fail</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;Galsim is required to get shapes information&quot;</span><span class="p">)</span>
 
-        <span class="n">psf_moms</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">Image</span><span class="p">(</span><span class="n">psf</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">psf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span>
-        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">wcs_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">psf_moms</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span>
+                    <span class="n">Image</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span> <span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_sky_coords</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">psf</span><span class="p">,</span> <span class="n">wcs</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="n">wcs_list</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">psf_moms</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">Image</span><span class="p">(</span><span class="n">psf</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">psf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span>
+            <span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span>
@@ -953,8 +1008,13 @@
             <span class="n">star_dict</span><span class="p">[</span><span class="s2">&quot;SNR&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">star_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;SNR_WIN&quot;</span><span class="p">])</span>
             <span class="n">star_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfshapes</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_get_starshapes</span><span class="p">(</span><span class="n">star_vign</span><span class="p">)</span>
+            <span class="n">wcs_list</span> <span class="o">=</span> <span class="n">local_wcs_list</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_galcat_wcs</span><span class="p">(),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">star_dict</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">],</span> <span class="n">star_dict</span><span class="p">[</span><span class="s2">&quot;Y&quot;</span><span class="p">])),</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfshapes</span><span class="p">(</span><span class="n">wcs_list</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_starshapes</span><span class="p">(</span><span class="n">star_vign</span><span class="p">,</span> <span class="n">wcs_list</span><span class="p">)</span>
             <span class="n">psfex_cat_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfexcatdict</span><span class="p">(</span><span class="n">psfex_cat_path</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_output_validation</span><span class="p">(</span><span class="n">star_dict</span><span class="p">,</span> <span class="n">psfex_cat_dict</span><span class="p">)</span></div>
@@ -962,15 +1022,19 @@
 
 <div class="viewcode-block" id="PSFExInterpolator._get_starshapes">
 <a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_starshapes">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_starshapes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">star_vign</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_starshapes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">star_vign</span><span class="p">,</span> <span class="n">wcs_list</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Star Shapes.</span>
 
 <span class="sd">        Compute shapes of stars at stars positions using HSM.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        numpy.ndarray</span>
+<span class="sd">        star_vign : numpy.ndarray</span>
 <span class="sd">            Array containing the star&#39;s vignets.</span>
+<span class="sd">        wcs_list : list of galsim.BaseWCS, optional</span>
+<span class="sd">            Local WCS at each star position; see :meth:`_get_psfshapes`. When</span>
+<span class="sd">            provided, moments are measured in world coordinates</span>
+<span class="sd">            (``use_sky_coords=True``).</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">import_fail</span><span class="p">:</span>
@@ -979,10 +1043,23 @@
         <span class="n">masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">star_vign</span><span class="p">)</span>
         <span class="n">masks</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">star_vign</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1e30</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
 
-        <span class="n">star_moms</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">Image</span><span class="p">(</span><span class="n">star</span><span class="p">),</span> <span class="n">badpix</span><span class="o">=</span><span class="n">Image</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">star</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">star_vign</span><span class="p">,</span> <span class="n">masks</span><span class="p">)</span>
-        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">wcs_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">star_moms</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span>
+                    <span class="n">Image</span><span class="p">(</span><span class="n">star</span><span class="p">,</span> <span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">),</span>
+                    <span class="n">badpix</span><span class="o">=</span><span class="n">Image</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span>
+                    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">use_sky_coords</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">star</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">wcs</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">star_vign</span><span class="p">,</span> <span class="n">masks</span><span class="p">,</span> <span class="n">wcs_list</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">star_moms</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span>
+                    <span class="n">Image</span><span class="p">(</span><span class="n">star</span><span class="p">),</span> <span class="n">badpix</span><span class="o">=</span><span class="n">Image</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">star</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">star_vign</span><span class="p">,</span> <span class="n">masks</span><span class="p">)</span>
+            <span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">star_shapes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span>
@@ -995,6 +1072,29 @@
                 <span class="k">for</span> <span class="n">moms</span> <span class="ow">in</span> <span class="n">star_moms</span>
             <span class="p">]</span>
         <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PSFExInterpolator._galcat_wcs">
+<a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._galcat_wcs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_galcat_wcs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Galaxy Catalogue WCS.</span>
+
+<span class="sd">        Read the CCD image WCS from the SExtractor FITS_LDAC galaxy catalogue.</span>
+<span class="sd">        The original image header is stored as a card list in the ``LDAC_IMHEAD``</span>
+<span class="sd">        HDU (HDU 1); this is the same header the (now retired) pixel-to-world</span>
+<span class="sd">        conversion reconstructed to rotate shapes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        galsim.AstropyWCS</span>
+<span class="sd">            WCS of the CCD the stars/PSFs live on.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_galcat_path</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdu_list</span><span class="p">:</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Header</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">hdu_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">galsim</span><span class="o">.</span><span class="n">AstropyWCS</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PSFExInterpolator._get_psfexcatdict">
@@ -1217,6 +1317,15 @@
                         <span class="mi">0</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="p">)</span><span class="o">.</span><span class="n">T</span>
+                <span class="c1"># 1-indexed (FITS) positions for local_wcs_list, which wraps</span>
+                <span class="c1"># galsim.AstropyWCS; gal_pos (origin 0) stays for PSFEx interp.</span>
+                <span class="n">gal_pos_wcs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_f_wcs_file</span><span class="p">[</span><span class="n">exp_name</span><span class="p">][</span><span class="n">ccd</span><span class="p">][</span><span class="s2">&quot;WCS&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">all_world2pix</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">][</span><span class="n">ind_obj</span><span class="p">],</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">][</span><span class="n">ind_obj</span><span class="p">],</span>
+                        <span class="mi">1</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">T</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpsfex</span><span class="p">(</span>
                     <span class="n">dot_psf_path</span><span class="p">,</span>
@@ -1261,7 +1370,11 @@
                     <span class="n">array_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">array_id</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)))</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_shape</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfshapes</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfshapes</span><span class="p">(</span>
+                        <span class="n">local_wcs_list</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_f_wcs_file</span><span class="p">[</span><span class="n">exp_name</span><span class="p">][</span><span class="n">ccd</span><span class="p">][</span><span class="s2">&quot;WCS&quot;</span><span class="p">],</span> <span class="n">gal_pos_wcs</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
                     <span class="k">if</span> <span class="n">array_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">array_shape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>

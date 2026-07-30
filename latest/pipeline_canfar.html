@@ -576,7 +576,7 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#additional-shapepipe-processing">Additional <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-star-catalogue">Create star Catalogue</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#combine-all-psf-runs">Combine all PSF runs</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#convert-star-catalogue-to-wcs">Convert star catalogue to wCS</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#collate-star-catalogues">Collate star catalogues</a></li>
 </ul>
 </li>
 </ul>
@@ -886,17 +886,37 @@ shapepipe_run<span class="w"> </span>-c<span class="w"> </span><span class="nv">
 </pre></div>
 </div>
 </section>
-<section id="convert-star-catalogue-to-wcs">
-<h4>Convert star catalogue to wCS<a class="headerlink" href="#convert-star-catalogue-to-wcs" title="Link to this heading">#</a></h4>
-<p>Convert all input validation PSF files and create directories per patch <code class="docutils literal notranslate"><span class="pre">P?</span></code>.
-Create files <code class="docutils literal notranslate"><span class="pre">validation_psf_conv-&lt;patchnum&gt;-&lt;idx&gt;.fits</span></code> (for the v1.4 setup only one file):</p>
+<section id="collate-star-catalogues">
+<h4>Collate star catalogues<a class="headerlink" href="#collate-star-catalogues" title="Link to this heading">#</a></h4>
+<p>Collate all input validation PSF files into star catalogues, gathering positions
+(X/Y/RA/DEC) and the MCCD CCD id.</p>
+<p>Note: HSM shapes are no longer rotated into world coordinates at this step. The
+PSF/star ellipticities and sizes are now measured directly in sky coordinates
+during PSF interpolation (galsim <code class="docutils literal notranslate"><span class="pre">FindAdaptiveMom(use_sky_coords=True)</span></code>), so
+<code class="docutils literal notranslate"><span class="pre">collate_star_cat.py</span></code> only collates and passes the shapes through.</p>
+<blockquote>
+<div><p><strong>v2.0 is patch-less.</strong> Runs up to <code class="docutils literal notranslate"><span class="pre">v1.6</span></code> are organised in sky patches
+<code class="docutils literal notranslate"><span class="pre">P1</span></code>..<code class="docutils literal notranslate"><span class="pre">P&lt;n&gt;</span></code>, each patch a run directory. <code class="docutils literal notranslate"><span class="pre">v2.0</span></code> removes the patch concept: a
+single run root, outputs directly under it. <code class="docutils literal notranslate"><span class="pre">v2.0</span></code> is the default; select an
+older layout with <code class="docutils literal notranslate"><span class="pre">-V</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">-V</span> <span class="pre">v1.6</span></code>). For <code class="docutils literal notranslate"><span class="pre">v2.0</span></code> the patch loop and the
+<code class="docutils literal notranslate"><span class="pre">-P</span></code> option no longer apply, and the patch token drops from the output
+filename (<code class="docutils literal notranslate"><span class="pre">validation_psf_conv-&lt;idx&gt;.fits</span></code> instead of
+<code class="docutils literal notranslate"><span class="pre">validation_psf_conv-&lt;patchnum&gt;-&lt;idx&gt;.fits</span></code>).</p>
+</div></blockquote>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/version
-mkdir<span class="w"> </span>stat_car
+mkdir<span class="w"> </span>star_cat
 <span class="nb">cd</span><span class="w"> </span>star_cat
 </pre></div>
 </div>
-<p>For each patch run</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>convert_psf_pix2world.py<span class="w"> </span>-i<span class="w"> </span>..<span class="w"> </span>-P<span class="w"> </span><span class="nv">$patchnum</span><span class="w"> </span>-v
+<p>For <code class="docutils literal notranslate"><span class="pre">v2.0</span></code> (the default), run once against the patch-less run root, producing
+files <code class="docutils literal notranslate"><span class="pre">validation_psf_conv-&lt;idx&gt;.fits</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>collate_star_cat.py<span class="w"> </span>-i<span class="w"> </span>..<span class="w"> </span>-v
+</pre></div>
+</div>
+<p>For <code class="docutils literal notranslate"><span class="pre">v1.x</span></code>, pass the version explicitly and run once per patch, creating a
+directory per patch <code class="docutils literal notranslate"><span class="pre">P?</span></code> and producing files
+<code class="docutils literal notranslate"><span class="pre">validation_psf_conv-&lt;patchnum&gt;-&lt;idx&gt;.fits</span></code> (for the v1.4 setup only one file):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>collate_star_cat.py<span class="w"> </span>-i<span class="w"> </span>..<span class="w"> </span>-V<span class="w"> </span>v1.6<span class="w"> </span>-P<span class="w"> </span><span class="nv">$patchnum</span><span class="w"> </span>-v
 </pre></div>
 </div>
 <p>Combine previously created files as links within one ShapePipe run directory (for the v1.4 setup only one link).
@@ -1131,7 +1151,7 @@ merge_psf_cat.py<span class="w"> </span><span class="o">[</span>-V<span class="w
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#additional-shapepipe-processing">Additional <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-star-catalogue">Create star Catalogue</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#combine-all-psf-runs">Combine all PSF runs</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#convert-star-catalogue-to-wcs">Convert star catalogue to wCS</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#collate-star-catalogues">Collate star catalogues</a></li>
 </ul>
 </li>
 </ul>

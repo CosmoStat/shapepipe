@@ -636,9 +636,16 @@ they are read directly from the <code class="docutils literal notranslate"><span
 
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfshapes">
-<span class="sig-name descname"><span class="pre">_get_psfshapes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mccd_package/mccd_interpolation_script.html#MCCDinterpolator._get_psfshapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfshapes" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">_get_psfshapes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wcs_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mccd_package/mccd_interpolation_script.html#MCCDinterpolator._get_psfshapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfshapes" title="Link to this definition">#</a></dt>
 <dd><p>Get PSF Shapes.</p>
 <p>Compute shapes of PSF at galaxy positions using HSM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>wcs_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>galsim.BaseWCS</em><em>, </em><em>optional</em>) – Local WCS at each object position. When provided, HSM adaptive
+moments are measured in world coordinates (<code class="docutils literal notranslate"><span class="pre">use_sky_coords=True</span></code>),
+so the returned shapes and sizes are already in sky coordinates.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -650,12 +657,17 @@ they are read directly from the <code class="docutils literal notranslate"><span
 
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_starshapes">
-<span class="sig-name descname"><span class="pre">_get_starshapes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">star_vign</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mccd_package/mccd_interpolation_script.html#MCCDinterpolator._get_starshapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_starshapes" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">_get_starshapes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">star_vign</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mccd_package/mccd_interpolation_script.html#MCCDinterpolator._get_starshapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_starshapes" title="Link to this definition">#</a></dt>
 <dd><p>Get Star Shapes.</p>
 <p>Compute shapes of stars at stars positions using HSM.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>star_vign</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Array containing the star’s vignets</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>star_vign</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Array containing the star’s vignets</p></li>
+<li><p><strong>wcs_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>galsim.BaseWCS</em><em>, </em><em>optional</em>) – Local WCS at each star position; see <a class="reference internal" href="#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfshapes" title="shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfshapes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_get_psfshapes()</span></code></a>. When
+provided, moments are measured in world coordinates
+(<code class="docutils literal notranslate"><span class="pre">use_sky_coords=True</span></code>).</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

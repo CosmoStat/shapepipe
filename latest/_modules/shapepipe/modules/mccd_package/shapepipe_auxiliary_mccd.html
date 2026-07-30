@@ -537,6 +537,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">fits</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cs_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">size</span> <span class="k">as</span> <span class="n">cs_size</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.modules.psfex_interp_package.psfex_interp</span><span class="w"> </span><span class="kn">import</span> <span class="n">local_wcs_list</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
 
 <span class="n">NOT_ENOUGH_STARS</span> <span class="o">=</span> <span class="s2">&quot;Not enough stars to train the model.&quot;</span>
@@ -935,6 +936,10 @@
     <span class="n">x_pos</span> <span class="o">=</span> <span class="n">galcat</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
     <span class="n">y_pos</span> <span class="o">=</span> <span class="n">galcat</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
     <span class="n">interp_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_pos</span><span class="p">,</span> <span class="n">y_pos</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+    <span class="c1"># CCD image WCS, stored as a card list in the FITS_LDAC LDAC_IMHEAD HDU</span>
+    <span class="n">wcs_header</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Header</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span>
+        <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">galcat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
     <span class="c1"># Close catalog</span>
     <span class="n">galcat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -943,9 +948,18 @@
 
     <span class="k">if</span> <span class="n">interp_PSFs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">get_shapes</span><span class="p">:</span>
+            <span class="c1"># Local WCS at each object position lets HSM measure adaptive</span>
+            <span class="c1"># moments directly in world coordinates (use_sky_coords=True).</span>
+            <span class="n">wcs_list</span> <span class="o">=</span> <span class="n">local_wcs_list</span><span class="p">(</span>
+                <span class="n">galsim</span><span class="o">.</span><span class="n">AstropyWCS</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">wcs_header</span><span class="p">),</span> <span class="n">interp_pos</span>
+            <span class="p">)</span>
             <span class="n">PSF_moms</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">galsim</span><span class="o">.</span><span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">galsim</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">psf</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">psf</span> <span class="ow">in</span> <span class="n">interp_PSFs</span>
+                <span class="n">galsim</span><span class="o">.</span><span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span>
+                    <span class="n">galsim</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span> <span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">),</span>
+                    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">use_sky_coords</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">psf</span><span class="p">,</span> <span class="n">wcs</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="n">wcs_list</span><span class="p">)</span>
             <span class="p">]</span>
 
             <span class="n">PSF_shapes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>

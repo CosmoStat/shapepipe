@@ -535,6 +535,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlitedict</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteDict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.modules.psfex_interp_package.psfex_interp</span><span class="w"> </span><span class="kn">import</span> <span class="n">local_wcs_list</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">galsim.hsm</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">hsm</span>
@@ -738,18 +739,34 @@
 
 <div class="viewcode-block" id="MCCDinterpolator._get_psfshapes">
 <a class="viewcode-back" href="../../../../shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfshapes">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_psfshapes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_psfshapes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wcs_list</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get PSF Shapes.</span>
 
 <span class="sd">        Compute shapes of PSF at galaxy positions using HSM.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        wcs_list : list of galsim.BaseWCS, optional</span>
+<span class="sd">            Local WCS at each object position. When provided, HSM adaptive</span>
+<span class="sd">            moments are measured in world coordinates (``use_sky_coords=True``),</span>
+<span class="sd">            so the returned shapes and sizes are already in sky coordinates.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">import_fail</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;Galsim is required to get shapes information&quot;</span><span class="p">)</span>
 
-        <span class="n">psf_moms</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">Image</span><span class="p">(</span><span class="n">psf</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">psf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span>
-        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">wcs_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">psf_moms</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span>
+                    <span class="n">Image</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span> <span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_sky_coords</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">psf</span><span class="p">,</span> <span class="n">wcs</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="n">wcs_list</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">psf_moms</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">Image</span><span class="p">(</span><span class="n">psf</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">psf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span>
+            <span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span>
@@ -793,7 +810,7 @@
 
 <div class="viewcode-block" id="MCCDinterpolator._get_starshapes">
 <a class="viewcode-back" href="../../../../shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_starshapes">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_starshapes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">star_vign</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_starshapes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">star_vign</span><span class="p">,</span> <span class="n">wcs_list</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Star Shapes.</span>
 
 <span class="sd">        Compute shapes of stars at stars positions using HSM.</span>
@@ -802,6 +819,10 @@
 <span class="sd">        ----------</span>
 <span class="sd">        star_vign : numpy.ndarray</span>
 <span class="sd">            Array containing the star&#39;s vignets</span>
+<span class="sd">        wcs_list : list of galsim.BaseWCS, optional</span>
+<span class="sd">            Local WCS at each star position; see :meth:`_get_psfshapes`. When</span>
+<span class="sd">            provided, moments are measured in world coordinates</span>
+<span class="sd">            (``use_sky_coords=True``).</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">import_fail</span><span class="p">:</span>
@@ -810,10 +831,23 @@
         <span class="n">masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">star_vign</span><span class="p">)</span>
         <span class="n">masks</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">star_vign</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1e30</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
 
-        <span class="n">star_moms</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">Image</span><span class="p">(</span><span class="n">star</span><span class="p">),</span> <span class="n">badpix</span><span class="o">=</span><span class="n">Image</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">star</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">star_vign</span><span class="p">,</span> <span class="n">masks</span><span class="p">)</span>
-        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">wcs_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">star_moms</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span>
+                    <span class="n">Image</span><span class="p">(</span><span class="n">star</span><span class="p">,</span> <span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">),</span>
+                    <span class="n">badpix</span><span class="o">=</span><span class="n">Image</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span>
+                    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">use_sky_coords</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">star</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">wcs</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">star_vign</span><span class="p">,</span> <span class="n">masks</span><span class="p">,</span> <span class="n">wcs_list</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">star_moms</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span>
+                    <span class="n">Image</span><span class="p">(</span><span class="n">star</span><span class="p">),</span> <span class="n">badpix</span><span class="o">=</span><span class="n">Image</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">star</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">star_vign</span><span class="p">,</span> <span class="n">masks</span><span class="p">)</span>
+            <span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">star_shapes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span>
@@ -1003,6 +1037,15 @@
                         <span class="mi">0</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="p">)</span><span class="o">.</span><span class="n">T</span>
+                <span class="c1"># 1-indexed (FITS) positions for local_wcs_list, which wraps</span>
+                <span class="c1"># galsim.AstropyWCS; gal_pos (origin 0) stays for MCCD interp.</span>
+                <span class="n">gal_pos_wcs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_f_wcs_file</span><span class="p">[</span><span class="n">exp_name</span><span class="p">][</span><span class="n">ccd</span><span class="p">][</span><span class="s2">&quot;WCS&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">all_world2pix</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">][</span><span class="n">ind_obj</span><span class="p">],</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">][</span><span class="n">ind_obj</span><span class="p">],</span>
+                        <span class="mi">1</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">T</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">=</span> <span class="n">interp_MCCD</span><span class="p">(</span><span class="n">mccd_model_path</span><span class="p">,</span> <span class="n">gal_pos</span><span class="p">,</span> <span class="n">ccd</span><span class="p">)</span>
 
@@ -1049,7 +1092,11 @@
                     <span class="n">array_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">array_id</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)))</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_shape</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfshapes</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfshapes</span><span class="p">(</span>
+                        <span class="n">local_wcs_list</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_f_wcs_file</span><span class="p">[</span><span class="n">exp_name</span><span class="p">][</span><span class="n">ccd</span><span class="p">][</span><span class="s2">&quot;WCS&quot;</span><span class="p">],</span> <span class="n">gal_pos_wcs</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
                     <span class="k">if</span> <span class="n">array_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">array_shape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
