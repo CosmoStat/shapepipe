@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="27 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="30 Jul, 2026"/>
   </head>
   
   
@@ -535,6 +535,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">galsim</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">fits</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.wcs.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">proj_plane_pixel_scales</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cs_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">size</span> <span class="k">as</span> <span class="n">cs_size</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">modopt.math.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigma_mad</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ngmix.observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">ObsList</span>
@@ -900,6 +901,47 @@
 </div>
 
 
+<div class="viewcode-block" id="pixel_scale_from_wcs">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pixel_scale_from_wcs</span><span class="p">(</span><span class="n">f_wcs_file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Representative pixel scale (arcsec) from the tile&#39;s image WCS.</span>
+
+<span class="sd">    The ngmix fit builds each object&#39;s Jacobian from the full per-epoch WCS,</span>
+<span class="sd">    so this scalar only sets the centroid-prior width and the noise-window</span>
+<span class="sd">    scale (see :func:`get_prior`, :func:`get_noise`). A single value read from</span>
+<span class="sd">    the astrometry is therefore sufficient -- and, unlike a hard-coded config</span>
+<span class="sd">    constant, it cannot silently drift from the pixels it describes (this</span>
+<span class="sd">    mirrors SExtractor&#39;s ``PIXEL_SCALE 0`` convention).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f_wcs_file : dict-like</span>
+<span class="sd">        Mapping ``exposure -&gt; {ccd -&gt; {&quot;WCS&quot;: astropy.wcs.WCS, ...}}`` (the</span>
+<span class="sd">        merged single-exposure headers opened by :class:`Vignet`).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Pixel scale in arcsec, averaged over the two axes of the first WCS.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If no WCS can be found in ``f_wcs_file``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">exp_name</span> <span class="ow">in</span> <span class="n">f_wcs_file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ccd_dict</span> <span class="ow">in</span> <span class="n">f_wcs_file</span><span class="p">[</span><span class="n">exp_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="c1"># proj_plane_pixel_scales returns deg/pixel per world axis; the</span>
+            <span class="c1"># two axes are equal to sub-per-mille for survey astrometry.</span>
+            <span class="n">scales</span> <span class="o">=</span> <span class="n">proj_plane_pixel_scales</span><span class="p">(</span><span class="n">ccd_dict</span><span class="p">[</span><span class="s2">&quot;WCS&quot;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">scales</span><span class="p">)</span> <span class="o">*</span> <span class="mf">3600.0</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="s2">&quot;cannot derive PIXEL_SCALE from the WCS: the merged single-exposure &quot;</span>
+        <span class="s2">&quot;headers file contains no exposures&quot;</span>
+    <span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="Ngmix">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Ngmix</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -917,8 +959,10 @@
 <span class="sd">        File numbering scheme</span>
 <span class="sd">    zero_point : float</span>
 <span class="sd">        Photometric zero point</span>
-<span class="sd">    pixel_scale : float</span>
-<span class="sd">        Pixel scale in arcsec</span>
+<span class="sd">    pixel_scale : float or None</span>
+<span class="sd">        Pixel scale in arcsec. Optional override: when ``None`` or</span>
+<span class="sd">        non-positive, the pixel scale is derived from the image WCS (see</span>
+<span class="sd">        :func:`pixel_scale_from_wcs`).</span>
 <span class="sd">    f_wcs_path : str</span>
 <span class="sd">        Path to merged single-exposure single-HDU headers</span>
 <span class="sd">    w_log : logging.Logger</span>
@@ -1042,7 +1086,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span> <span class="o">=</span> <span class="n">file_number_string</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_zero_point</span> <span class="o">=</span> <span class="n">zero_point</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span> <span class="o">=</span> <span class="n">pixel_scale</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_f_wcs_path</span> <span class="o">=</span> <span class="n">f_wcs_path</span>
 
@@ -1063,6 +1106,26 @@
         <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Random generator initialisation seed = </span><span class="si">{</span><span class="n">seed</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Pixel scale: an explicit positive PIXEL_SCALE overrides; otherwise</span>
+        <span class="c1"># derive it from the image WCS so it can never drift from the pixels</span>
+        <span class="c1"># (mirrors SExtractor&#39;s ``PIXEL_SCALE 0`` convention). Only the</span>
+        <span class="c1"># centroid-prior width and noise window use it -- the fit Jacobian is</span>
+        <span class="c1"># built per object from the full WCS.</span>
+        <span class="k">if</span> <span class="n">pixel_scale</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">pixel_scale</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span> <span class="o">=</span> <span class="n">pixel_scale_from_wcs</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_vignet_cat</span><span class="o">.</span><span class="n">f_wcs_file</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;PIXEL_SCALE derived from image WCS = &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span><span class="si">:</span><span class="s1">.6f</span><span class="si">}</span><span class="s1"> arcsec&#39;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span> <span class="o">=</span> <span class="n">pixel_scale</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;PIXEL_SCALE from config = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span><span class="si">:</span><span class="s1">.6f</span><span class="si">}</span><span class="s1"> arcsec&#39;</span>
+            <span class="p">)</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seed_from_position</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="s1">&#39;SEED_FROM_POSITION on: per-object RNG seeded from sky position&#39;</span>
@@ -2713,7 +2776,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 27 Jul, 2026.
+  Last updated on 30 Jul, 2026.
   <br/>
 </p>
   </div>

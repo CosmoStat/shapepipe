@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="27 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="30 Jul, 2026"/>
   </head>
   
   
@@ -564,6 +564,7 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Vignet.close"><code class="docutils literal notranslate"><span class="pre">Vignet.close()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs"><code class="docutils literal notranslate"><span class="pre">pixel_scale_from_wcs()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix"><code class="docutils literal notranslate"><span class="pre">Ngmix</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip"><code class="docutils literal notranslate"><span class="pre">Ngmix.MegaCamFlip()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_prior()</span></code></a></li>
@@ -860,6 +861,33 @@ leaves <code class="docutils literal notranslate"><span class="pre">self.seg</sp
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs">
+<span class="sig-name descname"><span class="pre">pixel_scale_from_wcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_wcs_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#pixel_scale_from_wcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs" title="Link to this definition">#</a></dt>
+<dd><p>Representative pixel scale (arcsec) from the tile’s image WCS.</p>
+<p>The ngmix fit builds each object’s Jacobian from the full per-epoch WCS,
+so this scalar only sets the centroid-prior width and the noise-window
+scale (see <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.get_prior" title="shapepipe.modules.ngmix_package.ngmix.get_prior"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_prior()</span></code></a>, <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.get_noise" title="shapepipe.modules.ngmix_package.ngmix.get_noise"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_noise()</span></code></a>). A single value read from
+the astrometry is therefore sufficient – and, unlike a hard-coded config
+constant, it cannot silently drift from the pixels it describes (this
+mirrors SExtractor’s <code class="docutils literal notranslate"><span class="pre">PIXEL_SCALE</span> <span class="pre">0</span></code> convention).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f_wcs_file</strong> (<em>dict-like</em>) – Mapping <code class="docutils literal notranslate"><span class="pre">exposure</span> <span class="pre">-&gt;</span> <span class="pre">{ccd</span> <span class="pre">-&gt;</span> <span class="pre">{&quot;WCS&quot;:</span> <span class="pre">astropy.wcs.WCS,</span> <span class="pre">...}}</span></code> (the
+merged single-exposure headers opened by <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Vignet" title="shapepipe.modules.ngmix_package.ngmix.Vignet"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vignet</span></code></a>).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pixel scale in arcsec, averaged over the two axes of the first WCS.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If no WCS can be found in <code class="docutils literal notranslate"><span class="pre">f_wcs_file</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Ngmix">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Ngmix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_sub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hsm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed_from_position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metacal_psf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fitgauss'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix" title="Link to this definition">#</a></dt>
@@ -873,7 +901,9 @@ leaves <code class="docutils literal notranslate"><span class="pre">self.seg</sp
 <li><p><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Output directory</p></li>
 <li><p><strong>file_number_string</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – File numbering scheme</p></li>
 <li><p><strong>zero_point</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Photometric zero point</p></li>
-<li><p><strong>pixel_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Pixel scale in arcsec</p></li>
+<li><p><strong>pixel_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>None</em>) – Pixel scale in arcsec. Optional override: when <code class="docutils literal notranslate"><span class="pre">None</span></code> or
+non-positive, the pixel scale is derived from the image WCS (see
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs" title="shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs"><code class="xref py py-func docutils literal notranslate"><span class="pre">pixel_scale_from_wcs()</span></code></a>).</p></li>
 <li><p><strong>f_wcs_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to merged single-exposure single-HDU headers</p></li>
 <li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a>) – Logging instance</p></li>
 <li><p><strong>save_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Save output catalogue in batches of this size; detaul is <code class="docutils literal notranslate"><span class="pre">-1</span></code> (no
@@ -1633,6 +1663,7 @@ them. Unpacks positionally as <code class="docutils literal notranslate"><span c
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Vignet.close"><code class="docutils literal notranslate"><span class="pre">Vignet.close()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs"><code class="docutils literal notranslate"><span class="pre">pixel_scale_from_wcs()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix"><code class="docutils literal notranslate"><span class="pre">Ngmix</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip"><code class="docutils literal notranslate"><span class="pre">Ngmix.MegaCamFlip()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_prior()</span></code></a></li>
@@ -1693,7 +1724,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 27 Jul, 2026.
+  Last updated on 30 Jul, 2026.
   <br/>
 </p>
   </div>

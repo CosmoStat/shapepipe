@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="27 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="30 Jul, 2026"/>
   </head>
   
   
@@ -593,7 +593,10 @@ measurements required to calibrate the shear values.</p>
 <dl class="simple">
 <dt>MAG_ZP<span class="classifier">float</span></dt><dd><p>Photometric zero point</p>
 </dd>
-<dt>PIXEL_SCALE<span class="classifier">float</span></dt><dd><p>Pixel scale in arcseconds</p>
+<dt>PIXEL_SCALE<span class="classifier">float, optional</span></dt><dd><p>Pixel scale in arcsec. Optional override; when omitted (or non-positive)
+it is read from the image WCS so it cannot drift from the pixels. Only
+sets the centroid-prior width and noise window – the fit Jacobian is
+built per object from the full WCS.</p>
 </dd>
 <dt>SAVE_BATCH<span class="classifier">int, optional</span></dt><dd><p>Save the output catalogue in batches of this size; default is <code class="docutils literal notranslate"><span class="pre">-1</span></code>
 (no batch saving)</p>
@@ -641,6 +644,7 @@ measurements required to calibrate the shear values.</p>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Vignet.close"><code class="docutils literal notranslate"><span class="pre">Vignet.close()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs"><code class="docutils literal notranslate"><span class="pre">pixel_scale_from_wcs()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix"><code class="docutils literal notranslate"><span class="pre">Ngmix</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip"><code class="docutils literal notranslate"><span class="pre">Ngmix.MegaCamFlip()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_prior()</span></code></a></li>
@@ -758,7 +762,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 27 Jul, 2026.
+  Last updated on 30 Jul, 2026.
   <br/>
 </p>
   </div>

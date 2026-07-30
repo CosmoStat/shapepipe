@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="27 Jul, 2026"/>
+    <meta name="docbuild:last-update" content="30 Jul, 2026"/>
   </head>
   
   
@@ -603,12 +603,18 @@
 
 <div class="viewcode-block" id="get_model">
 <a class="viewcode-back" href="../../../../shapepipe.modules.spread_model_package.spread_model.html#shapepipe.modules.spread_model_package.spread_model.get_model">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">img_shape</span><span class="p">,</span> <span class="n">pixel_scale</span><span class="o">=</span><span class="mf">0.186</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">img_shape</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Model.</span>
 
 <span class="sd">    This method computes</span>
 <span class="sd">     - an exponential galaxy model with scale radius = 1/16 FWHM</span>
 <span class="sd">     - a Gaussian model for the PSF</span>
+
+<span class="sd">    The spread-model statistic compares the object, PSF, and galaxy-model</span>
+<span class="sd">    vignets entirely in pixel space, so the models are rendered in pixel</span>
+<span class="sd">    units. A physical pixel scale would cancel out exactly (every length is</span>
+<span class="sd">    ``pixels x pixel_scale``, drawn at ``scale=pixel_scale``), so none is</span>
+<span class="sd">    needed here.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -618,8 +624,6 @@
 <span class="sd">        Flux of the galaxy for the model</span>
 <span class="sd">    img_shape : list</span>
 <span class="sd">        Size of the output vignet ``[xsize, ysize]``</span>
-<span class="sd">    pixel_scale : float, optional</span>
-<span class="sd">        Pixel scale to use for the model (in arcsec); default is ``0.186``</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -627,25 +631,25 @@
 <span class="sd">        Vignet of the galaxy model and of the PSF model</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Get scale radius</span>
-    <span class="n">scale_radius</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">16</span> <span class="o">*</span> <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_fwhm</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span> <span class="o">*</span> <span class="n">pixel_scale</span>
+    <span class="c1"># Get scale radius (pixels)</span>
+    <span class="n">scale_radius</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">16</span> <span class="o">*</span> <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_fwhm</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
 
     <span class="c1"># Get galaxy model</span>
     <span class="n">gal_obj</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">Exponential</span><span class="p">(</span><span class="n">scale_radius</span><span class="o">=</span><span class="n">scale_radius</span><span class="p">,</span> <span class="n">flux</span><span class="o">=</span><span class="n">flux</span><span class="p">)</span>
 
-    <span class="c1"># Get PSF</span>
-    <span class="n">psf_obj</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">Gaussian</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">pixel_scale</span><span class="p">)</span>
+    <span class="c1"># Get PSF (sigma in pixels)</span>
+    <span class="n">psf_obj</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">Gaussian</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
 
     <span class="c1"># Convolve both</span>
     <span class="n">gal_obj</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">Convolve</span><span class="p">(</span><span class="n">gal_obj</span><span class="p">,</span> <span class="n">psf_obj</span><span class="p">)</span>
 
-    <span class="c1"># Draw galaxy and PSF on vignets</span>
+    <span class="c1"># Draw galaxy and PSF on vignets, in pixel units (scale = 1 pixel)</span>
     <span class="n">gal_vign</span> <span class="o">=</span> <span class="n">gal_obj</span><span class="o">.</span><span class="n">drawImage</span><span class="p">(</span>
-        <span class="n">nx</span><span class="o">=</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ny</span><span class="o">=</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="n">pixel_scale</span>
+        <span class="n">nx</span><span class="o">=</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ny</span><span class="o">=</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span>
     <span class="p">)</span><span class="o">.</span><span class="n">array</span>
 
     <span class="n">psf_vign</span> <span class="o">=</span> <span class="n">psf_obj</span><span class="o">.</span><span class="n">drawImage</span><span class="p">(</span>
-        <span class="n">nx</span><span class="o">=</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ny</span><span class="o">=</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="n">pixel_scale</span>
+        <span class="n">nx</span><span class="o">=</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ny</span><span class="o">=</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span>
     <span class="p">)</span><span class="o">.</span><span class="n">array</span>
 
     <span class="k">return</span> <span class="n">gal_vign</span><span class="p">,</span> <span class="n">psf_vign</span></div>
@@ -667,8 +671,6 @@
 <span class="sd">        Path to weight catalogue</span>
 <span class="sd">    output_path : str</span>
 <span class="sd">        Output file path of pasted catalog</span>
-<span class="sd">    pixel_scale : float</span>
-<span class="sd">        Pixel scale in arcsec</span>
 <span class="sd">    output_mode : str</span>
 <span class="sd">        Options are ``new`` or ``add``</span>
 
@@ -689,7 +691,6 @@
         <span class="n">psf_cat_path</span><span class="p">,</span>
         <span class="n">weight_cat_path</span><span class="p">,</span>
         <span class="n">output_path</span><span class="p">,</span>
-        <span class="n">pixel_scale</span><span class="p">,</span>
         <span class="n">output_mode</span><span class="p">,</span>
     <span class="p">):</span>
 
@@ -697,7 +698,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_psf_cat_path</span> <span class="o">=</span> <span class="n">psf_cat_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_weight_cat_path</span> <span class="o">=</span> <span class="n">weight_cat_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span> <span class="o">=</span> <span class="n">output_path</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span> <span class="o">=</span> <span class="n">pixel_scale</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_mode</span> <span class="o">=</span> <span class="n">output_mode</span>
 
 <div class="viewcode-block" id="SpreadModel.process">
@@ -759,7 +759,6 @@
                     <span class="n">obj_sigma_tmp</span><span class="p">,</span>
                     <span class="n">obj_flux_tmp</span><span class="p">,</span>
                     <span class="n">obj_vign_tmp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span><span class="p">,</span>
                 <span class="p">)</span>
 
                 <span class="n">obj_sm</span><span class="p">,</span> <span class="n">obj_sm_err</span> <span class="o">=</span> <span class="n">get_sm</span><span class="p">(</span>
@@ -894,7 +893,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 27 Jul, 2026.
+  Last updated on 30 Jul, 2026.
   <br/>
 </p>
   </div>
