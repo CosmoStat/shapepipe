@@ -42,8 +42,11 @@ COMPLETENESS = {
     "exp_get_images": {"get_images_runner": dict(expect=3, floor=3)},
     "exp_split":      {"split_exp_runner":  dict(expect=121, floor=41)},
     "exp_mask":       {"mask_runner":       dict(expect=40, floor=1)},
+    # sextractor expect is nibi-flavor: 3 files/CCD (sexcat + background +
+    # background_rms; v2.0's 80 assumed 2/CCD), verified against the P0 tree
+    # AND the bash baseline (both 120/exposure).
     "exp_psf": {
-        "sextractor_runner":   dict(expect=80, floor=2),
+        "sextractor_runner":   dict(expect=120, floor=2),
         "setools_runner":      dict(expect=80, floor=2, subpath="rand_split"),
         "psfex_runner":        dict(expect=80, floor=2),
         "psfex_interp_runner": dict(expect=40, floor=0, warn=True),
@@ -56,7 +59,10 @@ COMPLETENESS = {
     "tile_vignets": {
         "psfex_interp_runner":     dict(expect=1, floor=1),
         "vignetmaker_runner_run_1": dict(expect=1, floor=1),
-        "vignetmaker_runner_run_2": dict(expect=4, floor=4),
+        # 5 sqlites/tile on nibi (image/weight/flag/background/background_rms);
+        # v2.0's 4 was the canfar flavor. floor follows the tile-post pattern
+        # (expect=floor: all-or-nothing, every vignette feeds ngmix).
+        "vignetmaker_runner_run_2": dict(expect=5, floor=5),
     },
     "tile_ngmix":     {"ngmix_runner":          dict(expect=1, floor=1)},
     "tile_merge_cats": {"merge_sep_cats_runner": dict(expect=1, floor=1)},

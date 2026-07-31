@@ -12,6 +12,14 @@ automatically via the Snakefile's onsuccess/onerror hooks, and by hand any time
 It distinguishes whole-exposure absence (all runners missing — a real gap or a
 deletion/forest bug) from tolerated per-CCD attrition (counts between floor and
 expect), so a future deletion bug cannot be silently absorbed (finding 5).
+
+Attrition is counted at file granularity, not unit granularity: each stage's
+``products`` block aggregates found-vs-expected file counts per runner across
+all passing units, with a per-unit shortfall map where files are missing.
+``warn`` runners (psfex_interp) are exempt from *failing* a unit, not from
+being *reported* — the P0 validation found 46/760 psfex_interp CCDs missing
+(6%) behind a unit-level "zero attrition" claim, which is the failure mode
+this granularity exists to prevent.
 """
 
 import argparse
@@ -52,7 +60,9 @@ def classify(stage, run_dir):
         if mand and all(n == 0 for _, n, *_ in mand):
             return "absent", details
         return "under", details
-    if any(n < expect for _, n, floor, expect, warn in details if not warn):
+    # warn runners are exempt from FAILING a unit (check_floor), not from
+    # attrition reporting — psfex_interp is precisely the runner that attrits.
+    if any(n < expect for _, n, _, expect, _ in details):
         return "attrition", details
     return "complete", details
 
@@ -83,13 +93,28 @@ def main() -> None:
         units = tiles if level == "tile" else exps
         sub = "tiles" if level == "tile" else "exp"
         tally = {"complete": 0, "attrition": 0, "under": [], "absent": []}
+        # File-level aggregate per runner over PASSING units (complete/attrition);
+        # under/absent units are enumerated by name above, not folded in here —
+        # mixing them would double-count whole-unit absence as attrition.
+        products = {r: {"found": 0, "expect": 0, "by_unit": {}}
+                    for r in COMPLETENESS[stage]}
         for u in units:
             run_dir = args.run_dir / sub / u / "output" / prefix
-            verdict, _ = classify(stage, run_dir)
+            verdict, details = classify(stage, run_dir)
             if verdict in ("complete", "attrition"):
                 tally[verdict] += 1
+                for runner, n, _, expect, _ in details:
+                    agg = products[runner]
+                    agg["found"] += n
+                    agg["expect"] += expect
+                    if n < expect:
+                        agg["by_unit"][u] = expect - n
             else:
                 tally[verdict].append(u)
+        for agg in products.values():
+            if not agg["by_unit"]:
+                del agg["by_unit"]
+        tally["products"] = products
         report["stages"][stage] = tally
 
     finals = [t for t in tiles
@@ -101,6 +126,13 @@ def main() -> None:
     out.write_text(json.dumps(report, indent=2))
     print(f"[run_report] {report['final_cats']['present']}/{len(tiles)} final "
           f"cats -> {out}", file=sys.stderr)
+    for stage, tally in report["stages"].items():
+        for runner, agg in tally["products"].items():
+            if agg["found"] < agg["expect"]:
+                pct = 100 * (agg["expect"] - agg["found"]) / agg["expect"]
+                print(f"[run_report] attrition {stage}/{runner}: "
+                      f"{agg['found']}/{agg['expect']} files (-{pct:.1f}%) "
+                      f"across {len(agg['by_unit'])} units", file=sys.stderr)
 
 
 if __name__ == "__main__":
