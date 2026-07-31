@@ -1,24 +1,31 @@
 """ShapePipe real-data orchestration — Snakemake workflow.
 
-Design / rationale: CosmoStat/shapepipe#848 (the living PRD).
+Design / rationale: CosmoStat/shapepipe#848 (the living PRD), D1-D5.
 
-Execution is honestly THREE static invocations, chained by ``workflow/bin/sp``
-so the UX stays one command (``sp prepare`` / ``sp run``):
+`sp run` is TWO snakemake invocations over this one Snakefile:
 
-    snakemake --profile profiles/nibi prepare_tiles      # Git_vos + Uz + Fe (keep-going)
-    python workflow/scripts/build_index.py ...            # PLAIN SCRIPT, not a DAG node
-    snakemake --profile profiles/nibi prepare_exposures  # Gie_vos + star cats
-    snakemake --profile profiles/nibi                     # the main compute DAG
+    SP_PHASE=prepare snakemake prepare_all_tiles   # Git -> Uz -> Fe, per tile
+    SP_PHASE=compute snakemake all                 # everything else
 
-The run index is loaded ONCE here at parse time into plain dicts; it is never a
-rule input, so appending tiles and rebuilding it changes which jobs exist without
-invalidating completed work. build_index.py is a plain script *between*
-prepare_tiles and prepare_exposures (the exposure job set is data-derived from
-the tiles' find_exposures output, so it cannot be scheduled in the same static
-DAG that produces it).
+They are two because the exposure job set is *data-derived*: it comes from the
+tiles' find_exposures output, and a Snakemake DAG is fixed at parse time. The
+join between them is the tile<->exposure index, built HERE at parse time of
+invocation 2 (build_index.build(), imported — there is no `sp index` verb) and
+loaded into plain dicts. The index is never a rule input, so appending tiles and
+rebuilding it changes which jobs exist without invalidating completed work; it
+ACCUMULATES across invocations, so a later clean_exposure (S5) sees every
+consuming tile of the whole campaign, not just this tile list.
+
+The atom (D2): one rule == one `shapepipe_run` on one unit; its single declared
+output is its MANIFEST (`<unit dir>/manifests/<stage>.json`), written by
+`completeness.py check`. Product files are not declared — a missing CCD is often
+legitimate, and at DR6 scale per-CCD declaration means millions of paths.
 """
 
+import hashlib
+import os
 import sqlite3
+import sys
 from pathlib import Path
 
 # Resolved relative to THIS file, not the working directory: snakemake runs with
@@ -32,16 +39,49 @@ container: config["container"]
 
 # --- paths -----------------------------------------------------------------
 RUN_DIR    = Path(config["run_dir"])
-CONFIG_SRC = Path(config["config_src"])
 STAR_CATS  = Path(config["star_cats"])
 INDEX_DB   = Path(config["index_db"])
 SCRIPTS    = Path(workflow.basedir) / "scripts"
-NGMIX_CHUNKS = config.get("ngmix_chunks", 8)
+# The config chain is the repo's own committed dir BY CONSTRUCTION (D2): the
+# configs and the rules that set the env vars they interpolate are one artefact
+# and must version together. Hence no `config_src` knob.
+CONFIG_DIR = Path(workflow.basedir) / "config" / "cfis"
+
+sys.path.insert(0, str(SCRIPTS))
+import build_index                                     # noqa: E402
+from completeness import STAGE_DIR                     # noqa: E402
+
+# `prepare` suppresses the missing-tile threshold (tiles are still being
+# prepared) and the report hooks. Unset == compute (a bare hand-run of `all`).
+PHASE = os.environ.get("SP_PHASE", "compute")
 
 with open(config["tile_list"]) as f:
     TILES = [ln.strip() for ln in f if ln.strip()]
 
-# --- parse-time index load (compute phase only) ----------------------------
+# --- ngmix scatter (D4) ----------------------------------------------------
+# Native directive: `--set-scatter ngmix=N` overrides it, N=1 degenerates to one
+# ngmix job per tile. We take the count and drive our own integer `chunk`
+# wildcard rather than snakemake's `{scatteritem}` ("3-of-8") token, because the
+# chunk number is not ours alone: it names the run dir
+# (`run_sp_tile_ngmix_Ng<k>u`, from the template's RUN_NAME), and
+# merge_sep_cats derives chunks 2..N from chunk 1's path by substituting the
+# first "1" — which only works for bare integers.
+scattergather:
+    ngmix=int(config.get("ngmix_chunks", 8))
+
+NGMIX_CHUNKS = workflow._scatter["ngmix"]
+
+# --- parse-time index build + load (D1) ------------------------------------
+# Invocation 2's parse IS the index build. Tiles whose find_exposures output is
+# absent land in index/missing.json and are dropped from the DAG; the build is
+# fatal only above SP_MISSING_THRESHOLD (and never in the prepare phase, where
+# absent Fe output is the normal state).
+if any(build_index.exp_list_path(RUN_DIR, t).exists() for t in TILES):
+    build_index.build(
+        TILES, RUN_DIR, INDEX_DB,
+        missing_threshold=(None if PHASE == "prepare"
+                           else float(os.environ.get("SP_MISSING_THRESHOLD", "0.0"))))
+
 # EXP: exposure base-id -> original name (2605805 -> 2605805p; the name goes
 # verbatim into the fabricated per-unit exp_numbers list so get_images matches
 # <name>.fits.fz in the store).  TILE_EXP: tile -> [exp_ids].
@@ -49,93 +89,186 @@ EXP, TILE_EXP = {}, {}
 if INDEX_DB.exists():
     _con = sqlite3.connect(INDEX_DB)
     EXP = dict(_con.execute("SELECT exp_id, name FROM exposures"))
-    for tile, exp in _con.execute("SELECT tile_id, exp_id FROM tile_exposures"):
-        TILE_EXP.setdefault(tile, []).append(exp)
+    for _tile, _exp in _con.execute("SELECT tile_id, exp_id FROM tile_exposures"):
+        TILE_EXP.setdefault(_tile, []).append(_exp)
     _con.close()
 
+# Tiles this run can actually compute: declared AND indexed. The index spans the
+# campaign, so it is intersected with the declared list, not used as it.
+TILES_READY = [t for t in TILES if t in TILE_EXP]
+
 wildcard_constraints:
-    tile = r"\d{3}\.\d{3}",
-    exp  = r"\d{6,7}",
+    tile  = r"\d{3}\.\d{3}",
+    exp   = r"\d{6,7}",
+    shard = r"\d{2}",
     chunk = r"\d+",
 
-# --- shared wrapper invocation ---------------------------------------------
-def sp_rule(stage, config_name, level, unit, *, isolate=True, exp_forest=None,
-            extra=""):
-    """Build the shell command that runs one unit through sp_rule.py.
-
-    NUMBER_LIST is injected by default (tile-scheme stages + exp split); pass
-    ``isolate=False`` for get_images / exp_mask / exp_psf, whose per-CCD/download
-    numbering must not be constrained. ``--threads {threads}`` is appended in
-    each rule's ``shell:`` string (NOT here: Snakemake formats the shell string
-    once, so a ``{threads}`` inside params.cmd would survive literally) and
-    becomes SMP_BATCH_SIZE (fork width == cpus_per_task).
-    """
-    cmd = (
-        f"python {SCRIPTS}/sp_rule.py --stage {stage} --config {config_name} "
-        f"--unit {unit} --level {level} --run-dir {RUN_DIR} "
-        f"--config-src {CONFIG_SRC} --star-cats {STAR_CATS} "
-        f"--script-hash {SCRIPT_HASH}"
-    )
-    if not isolate:
-        cmd += " --no-isolate"
-    if exp_forest:
-        cmd += f" --exp-forest {exp_forest}"
-    if extra:
-        cmd += " " + extra
-    return cmd
+# --- the sharded stores (D2) ----------------------------------------------
+# tiles/<2-char prefix>/<ID>/ and exp/<2-char prefix>/<base>/ — no directory
+# exceeds ~1k entries at full-UNIONS scale. Rules carry the shard as its own
+# wildcard because an output pattern cannot compute it; every path the DAG uses
+# is built by these helpers, so a mismatched (shard, id) pair is never requested.
+TILE_DIR = str(RUN_DIR / "tiles" / "{shard}" / "{tile}")
+EXP_DIR  = str(RUN_DIR / "exp" / "{shard}" / "{exp}")
 
 def tile_dir(tile):
-    return RUN_DIR / "tiles" / tile
+    return f"{RUN_DIR}/tiles/{tile[:2]}/{tile}"
 
 def exp_dir(exp):
-    return RUN_DIR / "exp" / exp
+    return f"{RUN_DIR}/exp/{exp[:2]}/{exp}"
 
-# Content hash of the wrapper scripts, computed once at parse time. Exposed as a
-# param on every rule (via sp_rule() and tile_exp_forest) so the default
-# rerun-triggers' *params* trigger covers script edits: the `code` trigger only
-# hashes the rule's own shell string, NOT external scripts it calls — without
-# this, a wrapper/forest-script fix silently leaves stale outputs in place
-# (bitten live: the forest-shard fix rebuilt nothing on rerun).
-import hashlib as _hashlib
-SCRIPT_HASH = _hashlib.md5(b"".join(
-    (SCRIPTS / n).read_bytes()
-    for n in ("sp_rule.py", "completeness.py", "build_forest.py"))).hexdigest()[:12]
+def tile_manifest(tile, stage):
+    return f"{tile_dir(tile)}/manifests/{stage}.json"
+
+def exp_manifest(exp, stage):
+    return f"{exp_dir(exp)}/manifests/{stage}.json"
+
+def forest_dir(tile):
+    return f"{tile_dir(tile)}/exp_forest"
+
+def final_cat(tile):
+    return f"{tile_dir(tile)}/final_cat-{tile}.fits"
+
+def unit_num(unit):
+    """$SP_UNIT_NUM: ShapePipe's image-number convention, dot -> dash, leading
+    dash (tile ``210.282`` -> ``-210-282``; exposure ``2605805`` -> ``-2605805``).
+    The RULES do this transform; the configs just interpolate $SP_UNIT_NUM into
+    NUMBER_LIST (the `set_config_number_list` mechanism that replaced the retired
+    -e/--exclusive flag, #746)."""
+    return "-" + unit.replace(".", "-")
+
+# Content hash of completeness.py, computed once at parse time and carried as a
+# param on every rule: the default rerun-triggers' `code` trigger hashes only the
+# rule's own shell string, NOT external scripts it calls — without this, a fix to
+# the count table silently leaves stale manifests in place (bitten live). Scoped
+# to completeness.py alone, the one script every shell line runs; build_forest.py
+# gets its own hash, on the forest rule only.
+SCRIPT_HASH = hashlib.md5((SCRIPTS / "completeness.py").read_bytes()).hexdigest()[:12]
+FOREST_HASH = hashlib.md5((SCRIPTS / "build_forest.py").read_bytes()).hexdigest()[:12]
+
+# --- the shell every rule runs (D2) ----------------------------------------
+
+_THREAD_CAPS = " ".join(
+    f"{k}={v}" for k, v in (
+        ("OMP_NUM_THREADS", 1), ("OPENBLAS_NUM_THREADS", 1),
+        ("MKL_NUM_THREADS", 1), ("NUMEXPR_NUM_THREADS", 1),
+        ("MALLOC_ARENA_MAX", 2), ("MALLOC_TRIM_THRESHOLD_", 0)))
+
+
+def unit_pre(stage, level, unit, *, exp_name=None, forest=None, env=None,
+             pre_run=()):
+    """The unit-furniture + environment prologue, as bash.
+
+    Returned as a rule ``params`` value, NEVER inlined into the ``shell:``
+    string: snakemake formats a shell string ONCE, so a ``{output}``/``{threads}``
+    placeholder inside a params value would survive literally — and, conversely,
+    the literal ``${SP_NGMIX_CHUNK}`` braces this prologue needs would blow up
+    that formatting if they lived in the shell string. Params values are
+    substituted after formatting, so both hazards go away together.
+
+    What it materialises (the proven v2.0 isolation-by-work-dir-content, NOT
+    -e/--exclusive):
+      * ``output/`` and ``manifests/``;
+      * tile: ``tile_numbers.txt`` (dot format — what get_images reads);
+      * exposure: a fabricated pseudo-Fe ``exp_numbers-000-000.txt`` holding the
+        ORIGINAL exposure name from the index (``2605805p``), so get_images
+        matches ``<name>.fits.fz`` in the store — the bare base id matches
+        nothing. Written UNCONDITIONALLY: an exists-guard once pinned a stale
+        pre-fix file with the bare id;
+      * ``star_cat_exp`` / ``star_cat_tiles`` dir symlinks into the shared
+        pre-generated pool (the mask configs read them as INPUT_DIRs).
+    There is no per-unit ``cfis`` symlink any more: $SP_CONFIG points straight at
+    the committed config dir.
+
+    Finally it ``rm -rf``s this stage's own fixed run dir — ShapePipe's
+    FileHandler raises on an existing run dir, and it is how a rerun never sees
+    stale products (D2: the job clears its run dir at start).
+    """
+    work = tile_dir(unit) if level == "tile" else exp_dir(unit)
+    _, subdir = STAGE_DIR[stage]
+    lines = [
+        "set -euo pipefail",
+        f"export SP_RUN='{work}'",
+        f"export SP_UNIT_NUM='{unit_num(unit)}'",
+        f"export SP_CONFIG='{CONFIG_DIR}'",
+        # Also set via apptainer-args in the profile; kept here so a hand-run of
+        # this same line outside snakemake behaves identically.
+        f"export {_THREAD_CAPS}",
+        'mkdir -p "$SP_RUN/output" "$SP_RUN/manifests"',
+    ]
+    if forest:
+        lines.append(f"export SP_EXP='{forest}'")
+    for k, v in (env or {}).items():
+        lines.append(f"export {k}='{v}'")
+
+    if level == "tile":
+        lines.append(f"printf '%s\\n' '{unit}' > \"$SP_RUN/tile_numbers.txt\"")
+    else:
+        fe = "$SP_RUN/output/run_sp_tile_Fe/find_exposures_runner/output"
+        lines += [f'mkdir -p "{fe}"',
+                  f"printf '%s\\n' '{exp_name or unit}' > \"{fe}/exp_numbers-000-000.txt\""]
+
+    for name, sub in (("star_cat_exp", "exp"), ("star_cat_tiles", "tiles")):
+        src = STAR_CATS / sub
+        lines.append(f"[ -d '{src}' ] && ln -sfn '{src}' \"$SP_RUN/{name}\" || true")
+
+    lines += list(pre_run)
+    lines += [f'rm -rf "$SP_RUN/output/{subdir}"', 'cd "$SP_RUN"']
+    return "\n".join(lines)
+
+
+def sp_shell(stage, config_name):
+    """The rule's shell string: prologue, one shapepipe_run, one completeness check.
+
+    ``{threads}`` and ``{output}`` are placeholders HERE and nowhere else (see
+    unit_pre). ``-b {threads}`` makes SMP fork width and cpus_per_task one number
+    by construction (D4).
+
+    The check runs even when shapepipe_run failed — the manifest is the only
+    thing `sp report` reads, so a failed unit must still leave a record of why.
+    """
+    return (
+        "{params.pre}\n"
+        "rc=0\n"
+        f"shapepipe_run -c \"$SP_CONFIG/{config_name}\" -b {{threads}} || rc=$?\n"
+        f"python {SCRIPTS}/completeness.py check {stage} {{output.manifest}} || rc=1\n"
+        "exit $rc\n"
+    )
+
 
 include: "rules/prepare.smk"
 include: "rules/exposure.smk"
 include: "rules/tile.smk"
 
 # --- top-level targets ------------------------------------------------------
-# Only aggregation targets are localrules (no-ops under the local executor, but
-# they keep the compute chain group-compatible: no mid-chain localrules).
-localrules: all, prepare_tiles, prepare_exposures
+# Only the aggregation targets are localrules: a mid-chain localrule would break
+# `group:` fusion of the compute chains (D4).
+localrules: all, prepare_all_tiles
 
 rule all:
     input:
-        expand(str(RUN_DIR / "tiles/{tile}/final_cat-{tile}.fits"), tile=TILES)
+        [final_cat(t) for t in TILES_READY]
 
-# Phase A.1 — per-tile static DAG (download + find_exposures). keep-going so
-# tile failures are independent; build_index.py runs next as a plain script.
-rule prepare_tiles:
+# Invocation 1 — the static per-tile DAG, known from the tile list alone.
+# keep-going makes tile failures independent; the ones that lose their exposure
+# list are dropped by the index build at invocation 2's parse.
+rule prepare_all_tiles:
     input:
-        expand(str(RUN_DIR / "tiles/{tile}/output/run_sp_tile_Fe"), tile=TILES)
-
-# Phase A.2 — per-exposure static DAG (download + star cats), parseable now the
-# index exists. Star cats are re-keyed per unit (see prepare.smk).
-rule prepare_exposures:
-    input:
-        expand(str(RUN_DIR / "exp/{exp}/output/run_sp_exp_Gie"), exp=sorted(EXP))
+        [tile_manifest(t, "tile_find_exposures") for t in TILES]
 
 # --- report hooks -----------------------------------------------------------
 # run_report is NOT a DAG node (a descendant of every job would be poisoned by
 # any hard failure — the exact case it exists for). It is a standalone script,
-# emitted automatically at the end of every invocation, runnable any time.
+# emitted automatically at the end of the COMPUTE invocation, runnable any time
+# via `sp report`.
 def _report(status):
     shell(f"python {SCRIPTS}/run_report.py --run-dir {RUN_DIR} "
           f"--index {INDEX_DB} --status {status} || true")
 
-onsuccess:
-    _report("success")
+if PHASE == "compute":
 
-onerror:
-    _report("error")
+    onsuccess:
+        _report("success")
+
+    onerror:
+        _report("error")

@@ -13,16 +13,14 @@ tile_list: /scratch/cdaley/shapepipe-output/smk-p0/tiles4.txt
 # The container every job runs inside (apptainer software-deployment in the profile).
 container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
 
-# Where products land ($SP_RUN root). Per-unit work-dir forest is built under here:
-#   <run_dir>/tiles/<IDra>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
+# Where products land ($SP_RUN root). The sharded per-unit stores live under here:
+#   <run_dir>/tiles/<2-char prefix>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
 run_dir: /scratch/cdaley/shapepipe-output/smk-p0
 
-# The canonical config chain: the committed, wrapper-free configs (#848 D2 config
-# sweep) -- RUN_DATETIME=False, fixed INPUT_DIRs, NUMBER_LIST=$SP_UNIT_NUM baked
-# in. example/cfis stays untouched for the bash flow; runs/p3-batch1/cfis's real
-# divergences (real data paths, external star cats, SAVE_BATCH memory tuning)
-# were folded in -- see the config-sweep report for the full list.
-config_src: /home/cdaley/shapepipe-smk/workflow/config/cfis
+# There is no config_src knob: the config chain is workflow/config/cfis, resolved
+# relative to the Snakefile. The configs interpolate $SP_RUN / $SP_UNIT_NUM /
+# $SP_CONFIG / $SP_EXP / $NGMIX_* and the rules export them -- configs and rules
+# are one artefact and must version together, so the dir is fixed by construction.
 
 # Pre-staged inputs (P3 data already on /project; get_images RETRIEVE=symlink).
 # Star catalogues for masking, pre-generated (network step done in prepare):

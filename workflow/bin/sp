@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# sp — the committed launcher for the ShapePipe Snakemake workflow.
+# sp — the committed launcher for the ShapePipe Snakemake workflow (PRD #848 D1).
 #
-# Removes the shell-state dependencies the review flagged (finding 20): it loads
-# the apptainer module (Snakemake resolves `apptainer` via PATH at job runtime)
-# and runs the Snakemake that lives on the shared /project venv (must be on a
-# shared FS — the executor re-invokes it inside jobs). One entry point, so a
-# fresh tmux / a restart after a crash always launches with the right state.
+# Two verbs, nothing else:
 #
-# Usage:
-#   sp prepare            # prepare_tiles -> build_index.py -> prepare_exposures
-#   sp prepare_tiles      # phase A.1 only
-#   sp index              # build_index.py only (plain script, threshold-gated)
-#   sp prepare_exposures  # phase A.2 only
-#   sp run [ARGS...]      # the main compute DAG
-#   sp rerun <target...>  # forced recompute of protected/finished products
-#   sp cancel <run>       # scancel this workflow's jobs (name sweep) before --unlock
-#   sp clean-exposures [--apply]   # index-driven exposure-store reclaim
-#   sp report             # emit run_report.json now (mid-run ok)
-# Extra args after the subcommand pass through to snakemake.
+#   sp run [ARGS...]   bring the products on disk up to date with the tile list.
+#                      Two snakemake invocations over one Snakefile:
+#                        1. PREPARE  snakemake prepare_all_tiles
+#                        2. COMPUTE  snakemake all   <- its PARSE builds the index
+#                      ARGS (--jobs, -n, --forcerun, ...) pass through to BOTH.
+#   sp report [ARGS...]  emit run_report.json now (mid-run is fine).
+#
+# Anything else is passed straight through to snakemake with the same profile and
+# state dir (the escape hatch: `sp --unlock`, `sp exp_psf ...`, `sp --dag`).
+#
+# It also loads the apptainer module (snakemake resolves `apptainer` via PATH at
+# job runtime) and activates the snakemake venv on the shared /project FS (the
+# executor re-invokes it inside jobs, so it cannot live on a node-local path).
+# One entry point, so a fresh tmux or a restart after a crash always launches
+# with the right state.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # workflow/
@@ -34,35 +34,40 @@ source "$VENV/bin/activate"
 # Minimal scalar reader for workflow/config.yaml (key: value, no nesting).
 cfg() { sed -n "s/^$1:[[:space:]]*//p" "$CONFIG" | head -1; }
 RUN_DIR="$(cfg run_dir)"; INDEX_DB="$(cfg index_db)"
+
 # Snakemake state (.snakemake: metadata, locks, incomplete markers) lives NEXT TO
-# THE RUN on /scratch, never on /project (hard 27/27 TiB group quota killed a
-# metadata write mid-run live). --directory only moves state: all data paths are
+# THE RUN on /scratch, never on /project (a hard 27/27 TiB group quota killed a
+# metadata write mid-run, live). --directory only moves state: all data paths are
 # absolute, and the Snakefile resolves its own configfile.
 STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"; mkdir -p "$STATE_DIR"
-TILE_LIST="$(cfg tile_list)"; MISSING_THRESH="${SP_MISSING_THRESHOLD:-0.0}"
+
+# SP_MISSING_THRESHOLD gates the compute parse's index build: the fraction of
+# declared tiles allowed to be missing their exposure list (default 0.0).
+export SP_MISSING_THRESHOLD="${SP_MISSING_THRESHOLD:-0.0}"
 
 sm() { snakemake --profile "$PROFILE" --directory "$STATE_DIR" "$@"; }
-build_index() {
-  python "$SCRIPTS/build_index.py" --tile-list "$TILE_LIST" \
-    --run-dir "$RUN_DIR" --db "$INDEX_DB" --missing-threshold "$MISSING_THRESH"
-}
 
-cmd="${1:-}"; shift || true
+cmd="${1:-}"
 case "$cmd" in
-  prepare)           sm prepare_tiles "$@"; build_index; sm prepare_exposures "$@" ;;
-  prepare_tiles)     sm prepare_tiles "$@" ;;
-  index)             build_index ;;
-  prepare_exposures) sm prepare_exposures "$@" ;;
-  run)               sm "$@" ;;
-  rerun)             sm --forcerun "$@" ;;
+  run)
+    shift
+    SP_PHASE=prepare sm prepare_all_tiles "$@"
+    SP_PHASE=compute sm all "$@"
+    ;;
+  report)
+    shift
+    python "$SCRIPTS/run_report.py" --run-dir "$RUN_DIR" --index "$INDEX_DB" \
+      --status manual "$@"
+    ;;
   cancel)
-    run="${1:?usage: sp cancel <run-name-substring>}"
+    # Kept only because it is two lines: scancel this workflow's jobs by name
+    # before an --unlock. Not part of the design surface.
+    run="${2:?usage: sp cancel <run-name-substring>}"
     squeue --me --noheader --format='%i %j' \
       | awk -v r="$run" '$2 ~ r {print $1}' | xargs -r scancel
-    echo "cancelled jobs matching '$run'; safe to --unlock / rerun now" ;;
-  clean-exposures)   python "$SCRIPTS/clean_exposures.py" \
-                       --run-dir "$RUN_DIR" --index "$INDEX_DB" "$@" ;;
-  report)            python "$SCRIPTS/run_report.py" \
-                       --run-dir "$RUN_DIR" --index "$INDEX_DB" --status manual "$@" ;;
-  *) echo "sp: unknown subcommand '${cmd:-}' (see the header of $0)"; exit 2 ;;
+    echo "cancelled jobs matching '$run'; safe to --unlock / rerun now"
+    ;;
+  *)
+    sm "$@"
+    ;;
 esac

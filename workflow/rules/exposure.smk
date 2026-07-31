@@ -1,74 +1,90 @@
-"""Exposure chain — per exposure, keyed by exp_id (dedup is structural).
+"""Exposure chain — per exposure, keyed by exp base id (dedup is structural).
 
-Gie -> Sp -> Ma -> psf, each in the exposure's own work dir, chained by
-ShapePipe's last:/run_sp_exp_* INPUT_DIR resolver. Completeness is the count
-floor (completeness.py).
+    exp_get_images -> exp_split -> exp_mask -> exp_psf
 
-NO temp() on these shared exposure directories: exposures overlap tiles by
-construction (~7-10 tiles per exposure), so temp() would delete an exposure the
-moment its forests are built and cascade destructive reruns across spatial
-neighbours whenever a tile is appended (findings 4/5/6/19). The store is
-persistent; space is reclaimed by the explicit index-driven `sp clean-exposures`
-verb (scripts/clean_exposures.py), which deletes an exposure's intermediates
-only once every consuming tile in the index has its final_cat present.
+Each in the exposure's own sharded work dir, chained by manifests; every config
+reads fixed ``$SP_RUN/output/run_sp_exp_*`` INPUT_DIRs, so nothing resolves a
+run log. There is no `prepare_exposures` aggregation target: these chains hang
+off the compute DAG (`all` <- final_cat <- tile chain <- exposure manifests).
 
-NUMBER_LIST is injected only for exp_split (numbering scheme == exposure id);
-NEVER for get_images (download) / exp_mask / exp_psf (per-CCD schemes where the
-#746 startup validation would turn tolerated per-CCD attrition into a
-whole-exposure hard failure).
+NO temp() anywhere in this file, ever (D5). Exposures overlap tiles by
+construction (~7-10 tiles each), so their consumer set closes over the CAMPAIGN,
+not over one invocation — reclamation here is clean_exposure's job (S5), driven
+by the accumulating index. A temp() here would delete an exposure the moment
+this invocation's readers finished and cascade destructive reruns across spatial
+neighbours the next time a tile is appended.
+
+NUMBER_LIST is set only for exp_split (its numbering scheme IS the exposure id);
+never for get_images / exp_mask / exp_psf, whose per-CCD or download numbering
+would make the #746 startup validation turn tolerated per-CCD attrition into a
+whole-exposure hard failure. That is now a property of the committed configs
+(config_exp_Sp.ini has NUMBER_LIST = $SP_UNIT_NUM; Gie/Ma/psfex have none).
 """
 
-EXP_OUT = str(RUN_DIR / "exp/{exp}/output")
-
-# Symlink/download exposure image/weight/flag; reads the fabricated pseudo-Fe
-# exp_numbers-000-000.txt the wrapper drops (via last:find_exposures_runner).
 rule exp_get_images:
     output:
-        directory(f"{EXP_OUT}/run_sp_exp_Gie")
+        manifest = f"{EXP_DIR}/manifests/exp_get_images.json"
     params:
-        cmd=lambda wc: sp_rule("exp_get_images", "config_exp_Gie_vos.ini",
-                               "exp", wc.exp, isolate=False,
-                               extra=f"--exp-name {EXP[wc.exp]}")
+        pre = lambda wc: unit_pre("exp_get_images", "exp", wc.exp,
+                                  exp_name=EXP[wc.exp]),
+        script_hash = SCRIPT_HASH
+    threads: 1
+    retries: 2
+    resources:
+        mem_mb = lambda wc, attempt: 4000 * attempt,
+        runtime = 60
     shell:
-        "{params.cmd} --threads {threads}"
+        sp_shell("exp_get_images", "config_exp_Gie.ini")
 
-# Split multi-HDU exposure into single-CCD files (+ headers-*.npy). Bulk output;
-# persistent (see module docstring on temp()).
+# Split the multi-HDU exposure into single-CCD files (+ headers-*.npy, which the
+# tiles' merge_headers reads).
 rule exp_split:
     input:
-        rules.exp_get_images.output
+        rules.exp_get_images.output.manifest
     output:
-        directory(f"{EXP_OUT}/run_sp_exp_Sp")
+        manifest = f"{EXP_DIR}/manifests/exp_split.json"
     params:
-        cmd=lambda wc: sp_rule("exp_split", "config_exp_Sp.ini", "exp", wc.exp)
+        pre = lambda wc: unit_pre("exp_split", "exp", wc.exp),
+        script_hash = SCRIPT_HASH
+    threads: 8
+    resources:
+        mem_mb = lambda wc, attempt: 8000 * attempt,
+        runtime = 120
     shell:
-        "{params.cmd} --threads {threads}"
+        sp_shell("exp_split", "config_exp_Sp.ini")
 
-# Mask per-CCD. Star cats are NOT a per-unit input: the store is per-CCD
-# (star_cat-<exp>-<ccd>.fits) and the mask config reads it as a DIR symlink
-# (see prepare.smk) — a per-unit file input here has no producer and makes the
-# DAG unbuildable the moment a new exposure is appended (caught live by the
-# append-invariant test). A missing cat fails the mask count-floor loudly.
 rule exp_mask:
     input:
-        rules.exp_split.output,
+        rules.exp_split.output.manifest
     output:
-        directory(f"{EXP_OUT}/run_sp_exp_Ma")
+        manifest = f"{EXP_DIR}/manifests/exp_mask.json"
     params:
-        cmd=lambda wc: sp_rule("exp_mask", "config_exp_Ma_onthefly.ini",
-                               "exp", wc.exp, isolate=False)
+        pre = lambda wc: unit_pre("exp_mask", "exp", wc.exp),
+        script_hash = SCRIPT_HASH
+    threads: 4
+    resources:
+        mem_mb = lambda wc, attempt: 8000 * attempt,
+        runtime = 120
     shell:
-        "{params.cmd} --threads {threads}"
+        sp_shell("exp_mask", "config_exp_Ma.ini")
 
 # SExtractor -> setools star selection -> PSFEx model -> psfex_interp, per CCD.
-# setools may reject a sparse CCD (~0.2% attrition) — tolerated by the floor.
+# setools may reject a sparse CCD (~0.2% attrition) — tolerated by the floor's
+# :warn on psfex_interp_runner.
 rule exp_psf:
     input:
-        rules.exp_mask.output
+        rules.exp_mask.output.manifest
     output:
-        directory(f"{EXP_OUT}/run_sp_exp_SxSePsfPi")
+        manifest = f"{EXP_DIR}/manifests/exp_psf.json"
     params:
-        cmd=lambda wc: sp_rule("exp_psf", "config_exp_psfex.ini", "exp", wc.exp,
-                               isolate=False)
+        pre = lambda wc: unit_pre("exp_psf", "exp", wc.exp),
+        script_hash = SCRIPT_HASH
+    threads: 8
+    retries: 2
+    benchmark:
+        f"{EXP_DIR}/manifests/exp_psf.benchmark.tsv"
+    resources:
+        mem_mb = lambda wc, attempt: 16000 * attempt,
+        runtime = 240
     shell:
-        "{params.cmd} --threads {threads}"
+        sp_shell("exp_psf", "config_exp_psfex.ini")

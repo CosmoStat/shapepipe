@@ -5,7 +5,11 @@ The index is *parse-time data*, never a rule input: the Snakefile loads it once
 at parse time into plain dicts, so extending a run's tile list changes which
 jobs exist without touching the mtime chain of completed work.
 
-It records, per run:
+It ACCUMULATES: tables are created if absent and rows upserted, never dropped
+(D1). Successive invocations widen it, so a later ``clean_exposure`` sees every
+consuming tile of the whole campaign rather than of the current tile list.
+
+It records:
 
     tiles(tile_id, ra_dir, n_exp, status)
     exposures(exp_id)                          -- deduplicated union over tiles
@@ -14,20 +18,21 @@ It records, per run:
 The tile->exposure edges are *data-derived*: they are read from each tile's
 ``find_exposures`` output (``exp_numbers-<IDra>-<IDdec>.txt``), which
 ``find_exposures_runner`` produces by parsing the tile FITS ``HISTORY`` header.
-So this is a **plain script**, not a DAG node: it runs between the two static
-invocations — after ``snakemake prepare_tiles`` (Git+Uz+Fe, keep-going) and
-before ``snakemake prepare_exposures`` parses the now-existing index. It
+So the build is not a DAG node: ``build()`` is imported and called at PARSE TIME
+by the Snakefile of the COMPUTE invocation, after the PREPARE invocation has
+produced the tiles' find_exposures output. (There is no ``sp index`` verb; the
+CLI below stays for hand-inspection.) It
 iterates the *declared* tile list and checks each tile's Fe output at its
 deterministic path (no globbing — O(tile-list) existence checks, respecting the
 no-``ls``-at-scale ban). A bad tile costs only that tile: it is recorded in
-``missing.json`` and the index is built over the rest. The script exits nonzero
-only if the missing *fraction* exceeds ``--missing-threshold`` (default 0.0),
-so a keep-going download storm that lost a few tiles does not cost the run.
-There is NO ``--allow-missing`` flag (that Snakemake flag does not exist).
+``missing.json`` and the index is built over the rest. The build fails only if
+the missing *fraction* exceeds ``missing_threshold`` (``None`` disables the
+check — what the PREPARE phase passes, where absent Fe output is normal), so a
+keep-going download storm that lost a few tiles does not cost the run.
 
 Exposure IDs are stored with their trailing single-char suffix stripped
 (``2243881p`` -> ``2243881``); that ``exp_base`` is the dedup key and the
-exposure-rule wildcard, matching the ``exp/<prefix>/<expbase>/`` forest layout.
+exposure-rule wildcard, matching the sharded ``exp/<prefix>/<expbase>/`` store.
 """
 
 import argparse
@@ -55,8 +60,20 @@ def read_exposure_list(exp_numbers_file: Path) -> list[tuple[str, str]]:
     return pairs
 
 
+def exp_list_path(run_dir: Path, tile_id: str) -> Path:
+    """This tile's find_exposures output, at its deterministic path.
+
+    Sharded store (D2), fixed run dir (RUN_DATETIME=False) — an existence check,
+    never a glob (no ``ls`` at scale).
+    """
+    idra, iddec = tile_id.split(".")
+    return (run_dir / "tiles" / tile_id[:2] / tile_id / "output" /
+            "run_sp_tile_Fe" / "find_exposures_runner" / "output" /
+            f"exp_numbers-{idra}-{iddec}.txt")
+
+
 def build(tile_ids: list[str], run_dir: Path, db_path: Path,
-          missing_threshold: float = 0.0) -> dict:
+          missing_threshold: float | None = 0.0) -> dict:
     """Build the index over ``tile_ids``; return a summary dict.
 
     For each tile, check its ``exp_numbers-<IDra>-<IDdec>.txt`` at the tile's
@@ -67,14 +84,14 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
     """
     db_path.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(db_path)
+    # No DROP: the index accumulates across invocations (D1).
     con.executescript(
         """
-        DROP TABLE IF EXISTS tiles;
-        DROP TABLE IF EXISTS exposures;
-        DROP TABLE IF EXISTS tile_exposures;
-        CREATE TABLE tiles(tile_id TEXT PRIMARY KEY, ra_dir TEXT, n_exp INTEGER);
-        CREATE TABLE exposures(exp_id TEXT PRIMARY KEY, name TEXT NOT NULL);
-        CREATE TABLE tile_exposures(
+        CREATE TABLE IF NOT EXISTS tiles(
+            tile_id TEXT PRIMARY KEY, ra_dir TEXT, n_exp INTEGER);
+        CREATE TABLE IF NOT EXISTS exposures(
+            exp_id TEXT PRIMARY KEY, name TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS tile_exposures(
             tile_id TEXT, exp_id TEXT,
             PRIMARY KEY (tile_id, exp_id));
         """
@@ -84,30 +101,26 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
     all_exposures: set[tuple[str, str]] = set()
     for tile_id in tile_ids:
         ra_dir = tile_id.split(".")[0]
-        idra, iddec = tile_id.split(".")
-        # Flat forest, deterministic run dir (RUN_DATETIME=False).
-        exp_file = (run_dir / "tiles" / tile_id / "output" / "run_sp_tile_Fe" /
-                    "find_exposures_runner" / "output" /
-                    f"exp_numbers-{idra}-{iddec}.txt")
+        exp_file = exp_list_path(run_dir, tile_id)
         if not exp_file.exists():
             missing.append(tile_id)
             continue
         exp_pairs = read_exposure_list(exp_file)
-        con.execute("INSERT INTO tiles VALUES (?,?,?)",
+        con.execute("INSERT OR REPLACE INTO tiles VALUES (?,?,?)",
                     (tile_id, ra_dir, len(exp_pairs)))
         for exp_id, _name in exp_pairs:
             con.execute("INSERT OR IGNORE INTO tile_exposures VALUES (?,?)",
                         (tile_id, exp_id))
         all_exposures.update(exp_pairs)
 
-    con.executemany("INSERT OR IGNORE INTO exposures VALUES (?,?)",
+    con.executemany("INSERT OR REPLACE INTO exposures VALUES (?,?)",
                     sorted(all_exposures))
     con.commit()
     con.close()
 
     (db_path.parent / "missing.json").write_text(json.dumps(missing, indent=2))
     frac = len(missing) / len(tile_ids) if tile_ids else 0.0
-    if frac > missing_threshold:
+    if missing_threshold is not None and frac > missing_threshold:
         raise SystemExit(
             f"Missing exposure lists for {len(missing)}/{len(tile_ids)} tile(s) "
             f"(fraction {frac:.3f} > threshold {missing_threshold}): {missing}. "
