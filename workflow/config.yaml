@@ -8,14 +8,14 @@
 # 210/211 quad: 19 unique exposures, 15 reused across tiles — exercises the
 # structural exposure dedup (the 196 quad had zero overlap; kept for the
 # append-invariant test).
-tile_list: /scratch/cdaley/shapepipe-output/smk-p0/tiles4.txt
+tile_list: /scratch/cdaley/shapepipe-output/smk-g3/tiles4.txt
 
 # The container every job runs inside (apptainer software-deployment in the profile).
 container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
 
 # Where products land ($SP_RUN root). The sharded per-unit stores live under here:
 #   <run_dir>/tiles/<2-char prefix>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
-run_dir: /scratch/cdaley/shapepipe-output/smk-p0
+run_dir: /scratch/cdaley/shapepipe-output/smk-g3
 
 # There is no config_src knob: the config chain is workflow/config/cfis, resolved
 # relative to the Snakefile. The configs interpolate $SP_RUN / $SP_UNIT_NUM /
@@ -30,7 +30,7 @@ star_cats: /home/cdaley/projects/def-mjhudson/cdaley/runs/p3-batch1/star_cats
 # BLOCKED for now: def-mjhudson /project is hard-full (27/27 TiB), so index and
 # report live with the run on /scratch until space is reclaimed. Mind the
 # 60-day purge for anything that must survive.
-index_db: /scratch/cdaley/shapepipe-output/smk-p0/index/run_index.sqlite
+index_db: /scratch/cdaley/shapepipe-output/smk-g3/index/run_index.sqlite
 
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
