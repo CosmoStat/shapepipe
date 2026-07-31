@@ -69,8 +69,10 @@ keep-incomplete: true
 # Nothing this workflow relied on is lost. The two genuinely data-derived input
 # sets are covered another way: a changed exposure list arrives through the
 # (non-ancient) find_exposures manifest's mtime, and the ngmix chunk count rides
-# in params. And the Snakefile refuses to schedule reclamation while the trigger
-# is enabled, so a bare snakemake invocation cannot quietly undo this.
+# in params. And clean scheduling is structurally gated to bin/sp (SP_PHASE=compute
+# + this profile), so a bare snakemake invocation cannot quietly recombine
+# reclamation with the `input` trigger; a runtime assertion is impossible
+# (the trigger set is unreadable at parse time) — the gate is the launcher.
 rerun-triggers: [mtime, params, code, software-env]
 
 # NO set-threads / set-resources here, deliberately. Profile overrides REPLACE a
