@@ -28,7 +28,7 @@ def merge_sep_cats_runner(
 ):
     """Define The Merge SEP Catalogues Runner."""
     # Get config entries
-    n_split_max = config.getint(module_config_sec, "N_SPLIT_MAX")
+    n_split_max = int(config.getexpanded(module_config_sec, "N_SPLIT_MAX"))
 
     file_pattern = config.getlist(module_config_sec, "FILE_PATTERN")
     file_ext = config.getlist(module_config_sec, "FILE_EXT")

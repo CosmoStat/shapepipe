@@ -17,8 +17,12 @@ container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
 #   <run_dir>/tiles/<IDra>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
 run_dir: /scratch/cdaley/shapepipe-output/smk-p0
 
-# The canonical config chain (example/cfis in the repo, or a run-specific copy).
-config_src: /home/cdaley/projects/def-mjhudson/cdaley/runs/p3-batch1/cfis
+# The canonical config chain: the committed, wrapper-free configs (#848 D2 config
+# sweep) -- RUN_DATETIME=False, fixed INPUT_DIRs, NUMBER_LIST=$SP_UNIT_NUM baked
+# in. example/cfis stays untouched for the bash flow; runs/p3-batch1/cfis's real
+# divergences (real data paths, external star cats, SAVE_BATCH memory tuning)
+# were folded in -- see the config-sweep report for the full list.
+config_src: /home/cdaley/shapepipe-smk/workflow/config/cfis
 
 # Pre-staged inputs (P3 data already on /project; get_images RETRIEVE=symlink).
 # Star catalogues for masking, pre-generated (network step done in prepare):
