@@ -142,6 +142,28 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   appended tile finds an unbuilt chain and regenerates it. The `clean:` flag
   in `config.yaml` gates it; flipping it on later reclaims retroactively,
   since the missing tombstones schedule exactly the outstanding clean jobs.
+  The tombstone is written *before* anything is deleted, so a crash can cost
+  disk but never the record.
+- **A finished tile declares no reclaimed exposures.** Deleting an exposure's
+  manifests would otherwise rerun every other tile that reads it, and those
+  reruns spread across the exposure-overlap component. So a tile whose
+  `final_cat` exists drops the exposure manifests that are gone from its input
+  list, and holds the rest through `ancient()`. This is why the profile runs
+  with `rerun-triggers: [mtime, params, code, software-env]`: the `input`
+  trigger reads that cut as a reason to rerun the very tiles it protects.
+  Know the consequence — `--forcerun` on a tile whose `final_cat` exists will
+  not rebuild its reclaimed exposures. Delete the `final_cat` first.
+- **A dead tile can be told to stop pinning exposures.** An exposure is
+  cleanable only once every consuming tile has its vignets, so one
+  permanently-failed tile holds its ~80 exposures for the life of the
+  campaign. List it under `clean_ignore_tiles:` in `config.yaml` and it leaves
+  the consumer sets. Retrying an ignored tile later is legal and expensive:
+  its exposure chains are gone and rebuild from scratch.
+- **A reclaimed exposure reports as `cleaned`.** `run_report.py` reads the
+  absorbed manifests out of `cleaned.json`, so a reclaimed exposure keeps its
+  per-runner counts and blocks no tile. The `exp_psf` benchmark tsv lives
+  beside `manifests/`, not inside it, so reclamation does not eat the
+  memory-sizing data.
 - **Failure is a report, not a gate.** `run_report.py` disk-scans the trees
   against the count table and enumerates shortfalls (whole-unit absence vs
   per-CCD attrition). It runs standalone — a DAG report node would itself be

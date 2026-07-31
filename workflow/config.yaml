@@ -35,12 +35,27 @@ index_db: /scratch/cdaley/shapepipe-output/smk-p0/index/run_index.sqlite
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
 # that exposure has its vignets, deletes the exposure's store AND its manifests,
-# and leaves `cleaned.json` (which absorbs the manifests, so the report keeps
-# them). Off here because P0 is a 4-tile debugging run where the exposure store
-# is exactly what you want to inspect; on for any run big enough to care about
-# disk. Flipping it on later reclaims retroactively — the missing tombstones
-# schedule exactly the outstanding clean jobs.
+# and leaves `cleaned.json`, which absorbs the manifests — `sp report` reads them
+# back out of the tombstone and reports the exposure as `cleaned`. Off here
+# because P0 is a 4-tile debugging run where the exposure store is exactly what
+# you want to inspect; on for any run big enough to care about disk. Flipping it
+# on later reclaims retroactively — the missing tombstones schedule exactly the
+# outstanding clean jobs.
 clean: false
+
+# Tiles that may NOT pin an exposure store (default: empty).
+#
+# An exposure is eligible for cleaning only once EVERY consuming tile has its
+# vignets. One permanently-failed tile therefore holds all ~80 exposures it
+# touches for the life of the campaign. A tile listed here is dropped from the
+# consumer sets, and its exposures become eligible.
+#
+# READ THIS BEFORE ADDING A TILE. Ignoring a tile is a decision to give up its
+# exposures' stores. If you later retry that tile, those exposure chains are
+# gone and will be REBUILT from scratch — get_images, split, mask, psf, per
+# exposure. That is correct, and expensive. Ignore a tile when you have decided
+# it is dead, not while you are still debugging it.
+clean_ignore_tiles: []
 
 # ngmix within-tile chunking: static N chunks (closed ID ranges computed
 # per-tile, in-job, from the tile's own sexcat).

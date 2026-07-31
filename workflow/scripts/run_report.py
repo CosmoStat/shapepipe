@@ -16,6 +16,11 @@ It reads two things and nothing else (PRD D3):
     ``completeness.py check``, carrying per-runner found/expect/floor and
     log-scraped failure reasons.
 
+A reclaimed exposure has no manifests: ``clean_exposure`` deleted them after
+copying them into ``<exp dir>/cleaned.json``. That tombstone is read as the
+unit's record and the unit is reported as **cleaned** — not "not run", and it
+blocks no tile.
+
 No disk scanning: counting products is the *check's* job, done once at the moment
 the products were fresh. A unit with no manifest for a stage is "not run" — which
 is a real and distinct answer from "ran and produced nothing".
@@ -69,6 +74,36 @@ def load_manifests(run_dir: Path, sub: str) -> dict:
     return out
 
 
+def absorb_tombstones(run_dir: Path, sub: str, manifests: dict) -> set:
+    """Fill in reclaimed units from their ``cleaned.json``; return their ids.
+
+    A cleaned exposure has NO ``manifests/`` — ``clean_exposure`` deleted it,
+    after copying every manifest verbatim into the tombstone. Read them back, or
+    the report inverts the truth exactly when reclamation works: the exposure
+    shows as "not run" and blocks the very tiles whose completion authorised the
+    deletion.
+
+    Manifests on disk win if both exist — that is a re-built chain, and the
+    tombstone is then a stale record of the previous generation.
+    """
+    cleaned = set()
+    for path in sorted((run_dir / sub).glob("**/cleaned.json")):
+        unit = path.parent.name
+        try:
+            tomb = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"[run_report] unreadable tombstone {path}: {exc}", file=sys.stderr)
+            continue
+        if manifests.get(unit):
+            continue
+        for key, m in (tomb.get("manifests") or {}).items():
+            if not isinstance(m, dict):
+                continue
+            manifests[unit][m.get("stage", key)] = m
+        cleaned.add(unit)
+    return cleaned
+
+
 def shortfalls(m: dict) -> dict:
     """``{runner: (found, expect, floor)}`` for every runner under expect."""
     return {r: (d["found"], d["expect"], d["floor"])
@@ -84,17 +119,25 @@ def reasons(m: dict) -> list:
     return out
 
 
-def tally_level(units, stages, manifests) -> dict:
-    """Per-stage counts + named unit lists, for one level."""
+def tally_level(units, stages, manifests, cleaned=frozenset()) -> dict:
+    """Per-stage counts + named unit lists, for one level.
+
+    ``cleaned`` units are counted by the status their absorbed manifests carry
+    (complete or warn — attrition is preserved) and additionally listed under
+    ``cleaned``, so a reclaimed campaign reads as reclaimed rather than as a
+    campaign that never ran.
+    """
     per_stage = {}
     for stage in stages:
-        t = {"complete": 0, "warn": [], "failed": [], "not_run": []}
+        t = {"complete": 0, "warn": [], "failed": [], "not_run": [], "cleaned": []}
         agg = defaultdict(lambda: {"found": 0, "expect": 0, "by_unit": {}})
         for u in units:
             m = manifests.get(u, {}).get(stage)
             if m is None:
                 t["not_run"].append(u)
                 continue
+            if u in cleaned:
+                t["cleaned"].append(u)
             status = m.get("status", "failed")
             status = status if status in ("complete", "warn") else "failed"
             if status == "complete":
@@ -158,12 +201,14 @@ def print_table(title, rows, limit=25):
 
 def print_stage_table(title, per_stage, n_units):
     print(f"\n{title}  ({n_units} units declared)")
-    print(f"  {'stage':<20} {'ok':>6} {'warn':>6} {'fail':>6} {'not run':>8}  attrition")
+    print(f"  {'stage':<20} {'ok':>6} {'warn':>6} {'fail':>6} {'not run':>8} "
+          f"{'cleaned':>8}  attrition")
     for stage, t in per_stage.items():
         att = [f"{r} {a['found']}/{a['expect']}"
                for r, a in t["products"].items() if a["found"] < a["expect"]]
         print(f"  {stage:<20} {t['complete']:>6} {len(t['warn']):>6} "
-              f"{len(t['failed']):>6} {len(t['not_run']):>8}  {', '.join(att)[:60]}")
+              f"{len(t['failed']):>6} {len(t['not_run']):>8} "
+              f"{len(t.get('cleaned', [])):>8}  {', '.join(att)[:60]}")
 
 
 def main() -> None:
@@ -190,6 +235,8 @@ def main() -> None:
 
     tile_m = load_manifests(args.run_dir, "tiles")
     exp_m = load_manifests(args.run_dir, "exp")
+    # Reclaimed exposures speak through their tombstones (D5, S5).
+    cleaned_exp = absorb_tombstones(args.run_dir, "exp", exp_m)
     tiles = tiles or sorted(tile_m)
     exps = exps or sorted(exp_m)
 
@@ -201,7 +248,8 @@ def main() -> None:
         "n_tiles": len(tiles), "n_exposures": len(exps),
         "missing_tiles": missing,
         "tile_stages": tally_level(tiles, TILE_STAGES, tile_m),
-        "exp_stages": tally_level(exps, EXP_STAGES, exp_m),
+        "exp_stages": tally_level(exps, EXP_STAGES, exp_m, cleaned_exp),
+        "cleaned_exposures": sorted(cleaned_exp),
         "tiles": unit_rows(tiles, TILE_STAGES, tile_m),
         "exposures": unit_rows(exps, EXP_STAGES, exp_m),
     }
@@ -216,7 +264,13 @@ def main() -> None:
     # nothing.
     # Judged over ALL the exposure's stages, not just the first bad one, so an
     # exposure that warns early and fails late still blocks.
+    # A CLEANED exposure never blocks: its store is gone precisely because every
+    # consuming tile already had its vignets. Its absorbed manifests are read
+    # above, so a cleaned exposure that genuinely failed still shows in the
+    # tables — it just does not get to hold complete tiles hostage.
     def _blocks(unit):
+        if unit in cleaned_exp:
+            return False
         for stage in EXP_STAGES:
             m = exp_m.get(unit, {}).get(stage)
             if m is None or m.get("status", "failed") == "failed":
@@ -235,7 +289,8 @@ def main() -> None:
     out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
 
     print(f"[run_report] status={args.status}  {done}/{len(tiles)} final cats"
-          + (f"  ({len(missing)} tiles missing exposure lists)" if missing else ""))
+          + (f"  ({len(missing)} tiles missing exposure lists)" if missing else "")
+          + (f"  ({len(cleaned_exp)} exposures reclaimed)" if cleaned_exp else ""))
     print_stage_table("EXPOSURES", report["exp_stages"], len(exps))
     print_stage_table("TILES", report["tile_stages"], len(tiles))
     print_table("exposures not complete", report["exposures"], args.limit)

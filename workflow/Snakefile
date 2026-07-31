@@ -107,6 +107,7 @@ if INDEX_DB.exists():
 # Tiles this run can actually compute: declared AND indexed. The index spans the
 # campaign, so it is intersected with the declared list, not used as it.
 TILES_READY = [t for t in TILES if t in TILE_EXP]
+READY_SET = set(TILES_READY)
 
 # A compute invocation with nothing to compute is never a success. Without this,
 # an empty intersection yields `rule all` with no inputs, an empty DAG and exit
@@ -168,13 +169,50 @@ FOREST_HASH = hashlib.md5((SCRIPTS / "build_forest.py").read_bytes()).hexdigest(
 CLEAN_HASH  = hashlib.md5((SCRIPTS / "clean_exposure.py").read_bytes()).hexdigest()[:12]
 
 # --- exposure reclamation (D5, S5) -----------------------------------------
+
+
+def flag(value, default=False):
+    """Truthiness for a config value that may arrive as a STRING.
+
+    `--config clean=false` delivers the string "false", and every non-empty
+    string is truthy in Python — a plain bool() read that as ON and scheduled
+    the deletions the user had just switched off. YAML booleans pass through
+    unchanged; only strings are parsed, and an unparseable one is an error, not
+    a guess.
+    """
+    if value is None:
+        return default
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in ("1", "true", "yes", "on"):
+            return True
+        if v in ("0", "false", "no", "off", ""):
+            return False
+        raise WorkflowError(f"Cannot read {value!r} as a boolean (use true/false).")
+    return bool(value)
+
+
 # `clean:` in config.yaml gates the whole mechanism. Off => the rule generates no
 # jobs at all (nothing requests a tombstone); flipping it on later reclaims
 # RETROACTIVELY, because the exposures already cleaned are exactly the ones with
 # a tombstone, so the missing tombstones schedule exactly the clean jobs.
 # Only ever active under SP_PHASE=compute: the prepare and passthrough parses
 # read no index of their own and must schedule no deletions.
-CLEAN = bool(config.get("clean", False)) and PHASE == "compute"
+CLEAN = flag(config.get("clean", False)) and PHASE == "compute"
+
+# Reclamation REQUIRES the `input` rerun-trigger to be off (profiles/nibi sets
+# the list; tile.smk explains why). The two are already tied together: CLEAN is
+# gated on SP_PHASE=compute, which only workflow/bin/sp sets, and bin/sp always
+# launches with that profile. A bare snakemake invocation without SP_PHASE
+# schedules no clean job at all, so it cannot meet the incompatible combination.
+# There is no runtime assertion because the trigger set is not readable at parse
+# time (workflow.dag_settings is None until the DAG is built).
+
+# Tiles that must not pin an exposure's store. See config.yaml: a permanently
+# failed tile otherwise holds every exposure it touches (~80) forever, because
+# its vignets manifest will never exist and its exposures are therefore never
+# eligible. Listing it here drops it from the consumer sets.
+CLEAN_IGNORE_TILES = set(config.get("clean_ignore_tiles") or [])
 
 
 def tombstone(exp):
@@ -185,8 +223,9 @@ def tombstone(exp):
 
 def clean_consumers(exp):
     """Every tile in the campaign that reads this exposure — the set whose
-    vignets must all exist before the store may go."""
-    return sorted(EXP_TILES.get(exp, []))
+    vignets must all exist before the store may go — minus the ignored tiles."""
+    return sorted(t for t in EXP_TILES.get(exp, [])
+                  if t not in CLEAN_IGNORE_TILES)
 
 
 def clean_targets():
@@ -199,15 +238,23 @@ def clean_targets():
     scope expansion by cleanup, which is not a trade anyone asked for. Ineligible
     exposures are simply skipped; the invocation that finishes their last
     consumer picks them up. Deferral, never loss.
+
+    Consumer sets are the IGNORE-FILTERED ones (clean_consumers), so a tile in
+    `clean_ignore_tiles` neither gates eligibility nor appears in the job's
+    input — which is the whole point of that list.
     """
     if not CLEAN:
         return []
-    ready = set(TILES_READY)
     out = []
-    for exp, tiles in EXP_TILES.items():
-        if not tiles:
+    for exp, raw in EXP_TILES.items():
+        if not raw:
             continue
-        if all(t in ready or Path(tile_manifest(t, "tile_vignets")).exists()
+        # An empty set AFTER filtering means every consumer is ignored: nothing
+        # is left that could ever read this exposure, so it is eligible now.
+        # That is the whole point of clean_ignore_tiles — all() of an empty set
+        # is True, and it is true here in the intended sense.
+        tiles = clean_consumers(exp)
+        if all(t in READY_SET or Path(tile_manifest(t, "tile_vignets")).exists()
                for t in tiles):
             out.append(tombstone(exp))
     return sorted(out)
@@ -307,9 +354,13 @@ include: "rules/exposure.smk"
 include: "rules/tile.smk"
 
 # --- top-level targets ------------------------------------------------------
-# Only the aggregation targets are localrules: a mid-chain localrule would break
-# `group:` fusion of the compute chains (D4).
-localrules: all, prepare_all_tiles
+# Only the aggregation targets and clean_exposure are localrules: a mid-chain
+# localrule would break `group:` fusion of the compute chains (D4).
+# clean_exposure is safe there because it is not in any chain — it hangs off
+# `all` — and it is seconds of rmtree. As an sbatch job it would be ~20k
+# scheduler submissions at DR6 scale to delete directories; the local-cores cap
+# serialises them instead, which costs nothing at rmtree speed.
+localrules: all, prepare_all_tiles, clean_exposure
 
 rule all:
     input:

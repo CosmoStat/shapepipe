@@ -23,8 +23,69 @@ variant is a config + one rule, at the config selector the PRD describes.
 def tile_exp(wc):
     return TILE_EXP.get(wc.tile, [])
 
+# --- the tile->exposure edge, and why it is cut for finished tiles ----------
+#
+# THE cascade fix. clean_exposure deletes the exposure's manifests on purpose:
+# that is what makes a tile appended later rebuild the chain instead of running
+# against an empty store. But those manifests are the tile side's inputs, and an
+# exposure is read by ~7-10 tiles. So the moment ONE tile's chain rebuilt an
+# exposure, every other tile reading it saw "input files updated by another job"
+# and reran — and that rerun rebuilt ITS exposures, which reran THEIR other
+# consumers, propagating across the whole exposure-overlap connected component.
+# On fixture t4, asking for one damaged tile scheduled all four tiles' chains.
+#
+# Two mechanisms, and only the second one actually cuts it:
+#
+#  1. ancient() on every exposure-manifest edge. Correct on its own terms — a
+#     tile has no business rerunning because an exposure manifest is NEWER — and
+#     it is what keeps a pure-mtime disturbance (a re-touched manifest, a
+#     restored backup) from waking finished tiles. But ancient() governs
+#     TIMESTAMPS only. Snakemake propagates "my input is produced by a job that
+#     will run in this DAG" separately, and ancient does not suppress it
+#     (measured: t4 counts were identical with ancient alone).
+#
+#  2. Cutting the RECLAIMED edges of a FINISHED tile — the mechanism that works.
+#     A tile whose final_cat is on disk needs nothing further from its
+#     exposures: it has already extracted everything it will ever read. So for
+#     such a tile the input list drops the manifests that are GONE, and the
+#     propagation has nowhere to go. An UNfinished tile keeps its full edge set
+#     and therefore still drags in — and rebuilds — every exposure it needs,
+#     which is the accepted price of a late append, unchanged.
+#
+# Only the missing ones are dropped, never a manifest that still exists: a
+# campaign that has cleaned nothing then declares exactly the edges it always
+# did, and the cut cannot perturb it.
+#
+# The marker is final_cat, not the tile's own vignets manifest: on a tile whose
+# catalogue was lost, the vignets manifest still exists while the vignette store
+# (temp()) does not, so keying on vignets would cut the edge on exactly the tile
+# that has to rerun, and run it against a deleted exposure store.
+#
+# THE CUT REQUIRES THE `input` RERUN-TRIGGER TO BE OFF (profiles/nibi sets the
+# trigger list). Dropping an input is itself a change in the set of input files,
+# which that trigger reads as a reason to rerun — reinstating the very cascade,
+# now as "Set of input files has changed", and running finished tiles against a
+# store that is gone. Measured on fixture t4, one damaged tile of four: 82 jobs
+# with neither fix, 70 with the cut but the trigger on, 28 with both (= exactly
+# the damaged tile's own chain, its two exposures, and the clean jobs).
+#
+# The cost, stated plainly: `--forcerun` on a tile whose final_cat exists will
+# NOT rebuild its reclaimed exposures, because those edges are not in the DAG.
+# Delete that tile's final_cat first and the whole chain comes back.
+#
+# What none of this weakens: clean_exposure's own inputs are neither ancient nor
+# cut, so a tile that really did rebuild its vignets still reschedules the cleans
+# of the exposures it read, and a grown consumer set still travels through
+# params.consumers.
+def tile_finished(tile):
+    return Path(final_cat(tile)).exists()
+
+
 def exp_manifests(wc, stage):
-    return [exp_manifest(e, stage) for e in tile_exp(wc)]
+    paths = [exp_manifest(e, stage) for e in tile_exp(wc)]
+    if tile_finished(wc.tile):
+        paths = [p for p in paths if Path(p).exists()]
+    return [ancient(p) for p in paths]
 
 def tile_exp_split(wc):  return exp_manifests(wc, "exp_split")
 def tile_exp_mask(wc):   return exp_manifests(wc, "exp_mask")

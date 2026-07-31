@@ -21,8 +21,20 @@ deliberate and load-bearing, not tidiness:
     manifests vanishing.
 
 Nothing is lost to the report: each manifest's content is copied verbatim into
-the tombstone under ``manifests`` before deletion, so `sp report` can still say
-what this exposure produced and why any runner was short.
+the tombstone under ``manifests``, and ``run_report.py`` reads a cleaned
+exposure's record out of the tombstone — it reports the unit as ``cleaned``,
+warn counts and shortfalls intact, instead of "not run".
+
+Order matters, and it is the reverse of the obvious one: the tombstone is
+written FIRST, complete, and only then is anything deleted. A crash between the
+two leaves a tombstone beside a store that is still there — the next invocation
+treats the exposure as cleaned and only the disk is lost. Deleting first would
+put the crash window where the manifests are already gone and the record that
+replaces them was never written, and the report would be blind to that exposure
+forever.
+
+The exp_psf benchmark tsv lives beside ``manifests/``, not inside it, so it
+survives this job — it is the measured-memory feed for resource sizing (D4).
 
 The tombstone records the consumer set it was cleaned against. The rule carries
 that same set as a ``params`` value, so when the index grows a new consumer the
@@ -60,20 +72,26 @@ def main() -> None:
             except (OSError, json.JSONDecodeError) as exc:
                 manifests[f.stem] = {"unreadable": str(exc)}
 
-    removed = []
-    for target in (args.exp_dir / "output", mdir):
-        if target.exists():
-            shutil.rmtree(target)
-            removed.append(str(target))
+    targets = [t for t in (args.exp_dir / "output", mdir) if t.exists()]
 
+    # Tombstone first, complete, fsync'd — then delete. See the module docstring:
+    # the crash window has to sit where the data still exists, not where the
+    # record does not.
     args.tombstone.parent.mkdir(parents=True, exist_ok=True)
-    args.tombstone.write_text(json.dumps({
+    tmp = args.tombstone.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps({
         "exp": args.exp,
         "cleaned_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "consumers": consumers,
-        "removed": removed,
+        "removed": [str(t) for t in targets],
         "manifests": manifests,
     }, indent=2) + "\n")
+    tmp.replace(args.tombstone)   # atomic: no half-written tombstone, ever
+
+    removed = []
+    for target in targets:
+        shutil.rmtree(target)
+        removed.append(str(target))
     print(f"[clean_exposure] {args.exp}: removed {len(removed)} tree(s) after "
           f"{len(consumers)} consuming tile(s)")
 

@@ -82,7 +82,11 @@ rule exp_psf:
     threads: 8
     retries: 2
     benchmark:
-        f"{EXP_DIR}/manifests/exp_psf.benchmark.tsv"
+        # BESIDE manifests/, not inside it: clean_exposure deletes manifests/
+        # wholesale, and this tsv is the measured-memory feed for mem_mb sizing
+        # (D4). Inside manifests/ it died with the first reclamation and took
+        # the campaign's only record of exp_psf's real footprint with it.
+        f"{EXP_DIR}/exp_psf.benchmark.tsv"
     resources:
         mem_mb = lambda wc, attempt: 16000 * attempt,
         runtime = 240
@@ -109,12 +113,26 @@ rule exp_psf:
 #     tombstone stale under the default `params` rerun-trigger; the clean job
 #     reruns after the new tile's vignets, against the enlarged set.
 #
-# Not a localrule: at DR6 scale these are ~20k rmtrees and the local-cores cap
-# would serialise them behind the aggregation targets.
+# The tile side reads the exposure manifests through ancient() (see tile.smk),
+# which is what keeps this deletion from rebuilding every neighbouring tile.
+# This rule's OWN inputs are deliberately not ancient: a tile that really did
+# rebuild its vignets must reschedule the cleans of the exposures it read.
+#
+# A localrule (declared in the Snakefile): it is an rmtree, not science, and one
+# sbatch per exposure would be ~20k scheduler submissions at DR6 scale. Local
+# execution serialises them under local-cores, which costs nothing at rmtree
+# speed and never blocks the compute chains (this rule is in none of them).
 rule clean_exposure:
     input:
+        # ONLY the consumers this invocation may actually build. A consumer that
+        # is out of scope had its vignets manifest checked for existence at parse
+        # time (clean_targets' eligibility test) — declaring it here as well would
+        # pull that finished tile's whole chain into the DAG, where a rebuilt
+        # shared exposure then reruns it. That is how one damaged tile reached its
+        # spatial neighbours. In-scope consumers keep their edge: they may run in
+        # this DAG, so the clean must be ordered after them.
         lambda wc: [tile_manifest(t, "tile_vignets")
-                    for t in clean_consumers(wc.exp)]
+                    for t in clean_consumers(wc.exp) if t in READY_SET]
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
     params:

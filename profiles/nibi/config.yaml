@@ -54,10 +54,24 @@ printshellcmds: true
 # so a rerun never sees stale products.
 keep-incomplete: true
 
-# rerun-triggers left at the full Snakemake v9 default
-# {mtime,params,input,code,software-env}: params/code fixes SHOULD propagate.
-# No override — completeness.py writes the manifest only on change, so mtimes
-# move only when reality moves.
+# rerun-triggers: the v9 default MINUS `input`. params/code/mtime fixes still
+# propagate — completeness.py writes the manifest only on change, so mtimes move
+# only when reality moves.
+#
+# `input` is dropped because reclamation needs the tile->exposure edge to be
+# CONDITIONAL: a tile whose final_cat is on disk declares no exposure inputs, so
+# a neighbour rebuilding a shared exposure cannot drag it along (see tile.smk).
+# With the `input` trigger on, that same conditional reads as "set of input files
+# has changed" and reruns every finished tile — against an exposure store that
+# reclamation has already deleted. Measured on fixture t4: 70 jobs with the
+# trigger, 28 without, for one damaged tile in a four-tile chain.
+#
+# Nothing this workflow relied on is lost. The two genuinely data-derived input
+# sets are covered another way: a changed exposure list arrives through the
+# (non-ancient) find_exposures manifest's mtime, and the ngmix chunk count rides
+# in params. And the Snakefile refuses to schedule reclamation while the trigger
+# is enabled, so a bare snakemake invocation cannot quietly undo this.
+rerun-triggers: [mtime, params, code, software-env]
 
 # NO set-threads / set-resources here, deliberately. Profile overrides REPLACE a
 # rule's own values (verified snakemake 9.23), which would kill the
