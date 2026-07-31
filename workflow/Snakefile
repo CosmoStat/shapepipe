@@ -93,12 +93,15 @@ if PHASE == "compute":
 # EXP: exposure base-id -> original name (2605805 -> 2605805p; the name goes
 # verbatim into the fabricated per-unit exp_numbers list so get_images matches
 # <name>.fits.fz in the store).  TILE_EXP: tile -> [exp_ids].
-EXP, TILE_EXP = {}, {}
+# EXP_TILES is the inverse edge — the CAMPAIGN-WIDE consumer set clean_exposure
+# is keyed on (D5).
+EXP, TILE_EXP, EXP_TILES = {}, {}, {}
 if INDEX_DB.exists():
     _con = sqlite3.connect(INDEX_DB)
     EXP = dict(_con.execute("SELECT exp_id, name FROM exposures"))
     for _tile, _exp in _con.execute("SELECT tile_id, exp_id FROM tile_exposures"):
         TILE_EXP.setdefault(_tile, []).append(_exp)
+        EXP_TILES.setdefault(_exp, []).append(_tile)
     _con.close()
 
 # Tiles this run can actually compute: declared AND indexed. The index spans the
@@ -162,6 +165,52 @@ def unit_num(unit):
 # gets its own hash, on the forest rule only.
 SCRIPT_HASH = hashlib.md5((SCRIPTS / "completeness.py").read_bytes()).hexdigest()[:12]
 FOREST_HASH = hashlib.md5((SCRIPTS / "build_forest.py").read_bytes()).hexdigest()[:12]
+CLEAN_HASH  = hashlib.md5((SCRIPTS / "clean_exposure.py").read_bytes()).hexdigest()[:12]
+
+# --- exposure reclamation (D5, S5) -----------------------------------------
+# `clean:` in config.yaml gates the whole mechanism. Off => the rule generates no
+# jobs at all (nothing requests a tombstone); flipping it on later reclaims
+# RETROACTIVELY, because the exposures already cleaned are exactly the ones with
+# a tombstone, so the missing tombstones schedule exactly the clean jobs.
+# Only ever active under SP_PHASE=compute: the prepare and passthrough parses
+# read no index of their own and must schedule no deletions.
+CLEAN = bool(config.get("clean", False)) and PHASE == "compute"
+
+
+def tombstone(exp):
+    """The clean_exposure output. Lives BESIDE manifests/, not inside it: the
+    clean job deletes manifests/ wholesale, and `sp report` scans it."""
+    return f"{exp_dir(exp)}/cleaned.json"
+
+
+def clean_consumers(exp):
+    """Every tile in the campaign that reads this exposure — the set whose
+    vignets must all exist before the store may go."""
+    return sorted(EXP_TILES.get(exp, []))
+
+
+def clean_targets():
+    """Which exposures this invocation may clean.
+
+    An exposure is eligible only when every consuming tile is either in this
+    run's scope or has already produced its vignets on disk. Without that test,
+    requesting a tombstone for an exposure shared with a LATER batch would drag
+    that batch's whole tile chain into this DAG through the clean rule's input —
+    scope expansion by cleanup, which is not a trade anyone asked for. Ineligible
+    exposures are simply skipped; the invocation that finishes their last
+    consumer picks them up. Deferral, never loss.
+    """
+    if not CLEAN:
+        return []
+    ready = set(TILES_READY)
+    out = []
+    for exp, tiles in EXP_TILES.items():
+        if not tiles:
+            continue
+        if all(t in ready or Path(tile_manifest(t, "tile_vignets")).exists()
+               for t in tiles):
+            out.append(tombstone(exp))
+    return sorted(out)
 
 # --- the shell every rule runs (D2) ----------------------------------------
 
@@ -264,7 +313,8 @@ localrules: all, prepare_all_tiles
 
 rule all:
     input:
-        [final_cat(t) for t in TILES_READY]
+        [final_cat(t) for t in TILES_READY],
+        clean_targets(),
 
 # Invocation 1 — the static per-tile DAG, known from the tile list alone.
 # keep-going makes tile failures independent; the ones that lose their exposure

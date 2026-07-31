@@ -88,3 +88,43 @@ rule exp_psf:
         runtime = 240
     shell:
         sp_shell("exp_psf", "config_exp_psfex.ini")
+
+
+# --- reclamation (D5) -------------------------------------------------------
+# The one exception to "no reclamation in this file": clean_exposure OWNS
+# exposure-level deletion, and it is a real job, not temp() bookkeeping, because
+# an exposure's consumer set closes over the CAMPAIGN. The index supplies that
+# set (EXP_TILES, accumulated across invocations); the input is every consuming
+# tile's tile_vignets manifest — vignets is the last stage that reads exposure
+# products, everything after it reads tile-level files.
+#
+# Three properties make the late append behave (see clean_exposure.py):
+#   * the job deletes the exposure's manifests too, so a tile appended after the
+#     clean sees an unbuilt chain and regenerates it instead of running against
+#     an empty store. The tombstone deliberately does NOT stand in for those
+#     manifests — it is not an input to anything but itself.
+#   * a finished tile is not disturbed: Snakemake demands a missing intermediate
+#     only when something downstream of it must run.
+#   * params.consumers carries the consumer set, so growing it makes the
+#     tombstone stale under the default `params` rerun-trigger; the clean job
+#     reruns after the new tile's vignets, against the enlarged set.
+#
+# Not a localrule: at DR6 scale these are ~20k rmtrees and the local-cores cap
+# would serialise them behind the aggregation targets.
+rule clean_exposure:
+    input:
+        lambda wc: [tile_manifest(t, "tile_vignets")
+                    for t in clean_consumers(wc.exp)]
+    output:
+        tombstone = f"{EXP_DIR}/cleaned.json"
+    params:
+        consumers   = lambda wc: ",".join(clean_consumers(wc.exp)),
+        script_hash = CLEAN_HASH
+    threads: 1
+    resources:
+        mem_mb = 2000,
+        runtime = 30
+    shell:
+        f"python {SCRIPTS}/clean_exposure.py"
+        " --exp-dir $(dirname {output.tombstone}) --exp {wildcards.exp}"
+        " --tombstone {output.tombstone} --consumers '{params.consumers}'"
