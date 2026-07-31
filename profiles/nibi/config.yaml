@@ -1,20 +1,29 @@
 # Snakemake profile for the Nibi cluster (Digital Research Alliance).
 #
-# ONE-ALLOCATION mode: sbatch one node up front, then run snakemake with the
-# LOCAL scheduler inside it (no per-job sbatch; the local scheduler bin-packs the
-# DAG into the allocation against `cores` + `resources: mem_mb`). This is the
-# proven nibi path (job_p3_batch1) and the single honest first-pass mode;
-# multi-node scaling = multiple tile-disjoint invocations, deferred.
+# SLURM-EXECUTOR mode (PRD #848 D-profile): one SLURM job per rule instance,
+# each carrying its rule's own attempt-scaled resources (cpus_per_task,
+# mem_mb, runtime). Snakemake feeds the queue as jobs finish, so DR6's ~170k
+# total jobs never queue at once, and multi-node scaling is inherent — this
+# supersedes the earlier one-allocation/local-scheduler mode.
 #
 # Launch via `workflow/bin/sp` (loads apptainer/1.4.5, uses the /project venv).
 # software-deployment-method wraps every job's shell in `apptainer exec` — the
 # user never types apptainer; the container is set in the Snakefile (local .sif).
 
-# Local scheduler (no `executor:` -> built-in local). Size to the allocation.
-cores: 192                       # node cores available to the DAG
-local-cores: 4                   # cap localrule/aggregation concurrency
-resources:
-  mem_mb: 720000                 # node RAM cap the local scheduler bin-packs under
+executor: slurm
+
+# Per-user submit cap, queried 2026-07-30 on nibi:
+#   sacctmgr show assoc user=cdaley format=Account,MaxSubmitPU -P
+#   -> def-mjhudson_cpu 1000, def-mjhudson_gpu 1000 (MaxSubmitPU; no site-wide
+#      MaxSubmitJobs in `scontrol show config`, so the association limit governs)
+# Set to ~80% of that (1000) so this workflow never starves other submissions
+# under the same account. Re-query if the association limits change.
+jobs: 800
+
+default-resources:
+  mem_mb: 2000
+  runtime: 120                   # minutes
+  slurm_account: def-mjhudson
 
 software-deployment-method: [apptainer]
 # Explicit container environment (finding 2/3): the apptainer SDM otherwise drops
@@ -50,13 +59,13 @@ keep-incomplete: true
 # No override — completeness.py writes the manifest only on change, so mtimes
 # move only when reality moves.
 
-default-resources:
-  mem_mb: 4000
-  runtime: 120                   # minutes
-  cpus_per_task: 1
-
 # NO set-threads / set-resources here, deliberately. Profile overrides REPLACE a
 # rule's own values (verified snakemake 9.23), which would kill the
 # attempt-scaled `mem_mb = lambda wc, attempt: ...` OOM retries and the tuned
 # ngmix thread count. The RULES own threads and resources; this profile only
-# sizes the allocation and sets the defaults for rules that state nothing.
+# sets defaults for rules that state nothing (default-resources above).
+#
+# `group:` fusion of the short rules (uncompress, merges) into their chunky
+# neighbours (PRD D-profile) is NOT set here — it requires labels in the rule
+# files themselves, which is out of scope for this profile-only pass. Deferred
+# to whichever slice next touches workflow/rules/*.smk.
