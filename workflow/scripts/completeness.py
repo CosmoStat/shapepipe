@@ -8,12 +8,18 @@ whitelist. A stage is a real failure iff a mandatory runner produced fewer than
 its ``floor`` files; per-CCD attrition (a sparse CCD setools rejects, ~0.2%)
 sits between ``floor`` and ``expect`` and is tolerated.
 
-Two consumers share this table:
-  * ``sp_rule.py`` — after ``shapepipe_run``, counts products per runner and
-    exits nonzero if any mandatory runner is below its floor (``keep-going``
-    then isolates that unit's cone; ``retries`` handle transient failures).
-  * ``run_report.py`` — disk-scans finished trees against ``expect`` to
-    enumerate shortfalls for the human, mid-run or after.
+This file is also the ``check`` CLI — the second half of every rule's shell line
+(PRD D2/D3)::
+
+    shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini -b {threads} \\
+        && completeness.py check exp_mask {output}
+
+It counts the unit's products under ``$SP_RUN``, writes the manifest at
+``{output}``, and exits nonzero iff a mandatory runner is below its floor. The
+manifest is ALWAYS written first, failure included: it is the DAG's currency and
+the only thing ``run_report.py`` reads, so a failed unit must still leave a
+record of *why*. Manifests carry no wall-clock — identical on-disk state must
+produce a byte-identical manifest, or the mtime rerun-trigger churns the cone.
 
 Per-runner fields:
     expect   nominal file count for a fully complete unit (report yardstick)
@@ -26,6 +32,13 @@ Per-runner fields:
 Counts are file counts in the runner's output dir, matching the bash
 ``ls <out_dir>/ | wc -l`` semantics (broken symlinks excluded by the caller).
 """
+
+import argparse
+import json
+import os
+import re
+import sys
+from pathlib import Path
 
 # stage -> {runner_subdir: {expect, floor, [warn], [subpath]}}
 COMPLETENESS = {
@@ -94,3 +107,187 @@ def check_floor(stage, run_dir):
         if not spec.get("warn", False) and n < spec["floor"]:
             ok = False
     return ok, details
+
+
+# --- where a stage writes -------------------------------------------------
+#
+# stage -> (level, run_sp_<prefix> dir under $SP_RUN/output/). These are the
+# committed configs' RUN_NAMEs (RUN_DATETIME=False makes them fixed, PRD D2), so
+# the check never resolves a run-log. The ngmix entry interpolates the same env
+# var its config does, so chunk K's check looks at chunk K's dir.
+STAGE_DIR = {
+    "tile_get_images":     ("tile", "run_sp_tile_Git"),
+    "tile_uncompress":     ("tile", "run_sp_tile_Uz"),
+    "tile_find_exposures": ("tile", "run_sp_tile_Fe"),
+    "exp_get_images":      ("exp",  "run_sp_exp_Gie"),
+    "exp_split":           ("exp",  "run_sp_exp_Sp"),
+    "exp_mask":            ("exp",  "run_sp_exp_Ma"),
+    "exp_psf":             ("exp",  "run_sp_exp_SxSePsfPi"),
+    "tile_merge_headers":  ("tile", "run_sp_tile_Mh_exp"),
+    "tile_mask":           ("tile", "run_sp_tile_Ma"),
+    "tile_detect":         ("tile", "run_sp_tile_Sx"),
+    "tile_detect_uc":      ("tile", "run_sp_tile_Uc"),
+    "tile_vignets":        ("tile", "run_sp_tile_PiViVi"),
+    "tile_ngmix":          ("tile", "run_sp_tile_ngmix_Ng${SP_NGMIX_CHUNK}u"),
+    "tile_merge_cats":     ("tile", "run_sp_Ms"),
+    "tile_make_cat":       ("tile", "run_sp_Mc"),
+}
+
+
+# --- failure reasons ------------------------------------------------------
+
+# Lines worth showing a human who asks "why is this runner short?". Deliberately
+# crude: the point is a pointer into the logs, not a taxonomy (there is no error
+# whitelist in this design — the count floor is the policy).
+_ERROR_RE = re.compile(
+    r"traceback|exception|\berror\b|\bfailed\b|no such file|not found|"
+    r"killed|out of memory|oom|segmentation fault|bad chi2",
+    re.IGNORECASE)
+_TS_RE = re.compile(r"^\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}\s*")
+_NOISE_RE = re.compile(r"A total of 0 errors were recorded")
+
+MAX_LOG_FILES = 40      # logs are per-CCD; a handful is enough to characterise
+MAX_TAIL_LINES = 120    # per file
+MAX_REASONS = 3         # per runner
+
+
+def _normalise(line: str) -> str:
+    """Collapse a log line to its shape, so 40 per-CCD copies dedupe to one."""
+    line = _TS_RE.sub("", line.strip())
+    line = re.sub(r"/\S+", "<path>", line)      # paths differ per CCD
+    line = re.sub(r"\d+", "N", line)
+    return line[:200]
+
+
+def scrape_reasons(stage_dir, runner):
+    """Best-effort, bounded: distinct error-looking lines from a runner's logs.
+
+    Two sources, in order of usefulness: the runner's per-process worker logs
+    (``<runner>/logs/process-*.log`` — where the module's own exception lands),
+    and the stage's ``logs/log_sp.log`` (where ShapePipe records its error
+    tally). Sorted, truncated, deduped by shape — a manifest must stay
+    byte-stable for a given tree.
+    """
+    seen, reasons = {}, []
+    candidates = []
+    for d in (stage_dir / runner / "logs", stage_dir / "logs"):
+        if d.is_dir():
+            candidates += sorted(p for p in d.iterdir() if p.is_file())
+    for path in candidates[:MAX_LOG_FILES]:
+        try:
+            lines = path.read_text(errors="replace").splitlines()[-MAX_TAIL_LINES:]
+        except OSError:
+            continue
+        for raw in lines:
+            if not _ERROR_RE.search(raw) or _NOISE_RE.search(raw):
+                continue
+            shape = _normalise(raw)
+            if shape in seen:
+                seen[shape] += 1
+                continue
+            seen[shape] = 1
+            reasons.append([path.name, _TS_RE.sub("", raw.strip())[:300], shape])
+    out = []
+    for name, text, shape in reasons[:MAX_REASONS]:
+        n = seen[shape]
+        out.append(f"{name}: {text}" + (f"  [x{n}]" if n > 1 else ""))
+    return out
+
+
+# --- manifest -------------------------------------------------------------
+
+def build_manifest(stage, run_dir, unit, stage_subdir=None):
+    """Count, classify and (on shortfall) scrape. Returns (manifest, ok).
+
+    Stages absent from the table fall back to the zero-output floor: any product
+    anywhere under the stage dir passes, nothing at all fails.
+    """
+    level, subdir = STAGE_DIR.get(stage, (None, None))
+    subdir = stage_subdir or (os.path.expandvars(subdir) if subdir else None)
+    stage_dir = run_dir / "output" / subdir if subdir else run_dir
+    manifest = {
+        "stage": stage,
+        "level": level,
+        "unit": unit,
+        "run_dir": str(run_dir),
+        "stage_dir": str(stage_dir),
+        "runners": {},
+        "failures": [],
+    }
+
+    if stage not in COMPLETENESS:
+        produced = list(stage_dir.glob("**/output/*")) if stage_dir.is_dir() else []
+        ok = bool(produced)
+        manifest["status"] = "complete" if ok else "failed"
+        manifest["n_products"] = len(produced)
+        if not ok:
+            manifest["failures"].append(
+                {"runner": None, "found": 0, "floor": 1,
+                 "reasons": [f"zero output under {stage_dir}"]})
+        return manifest, ok
+
+    ok, details = check_floor(stage, stage_dir)
+    short = False
+    for runner, n, floor, expect, warn in details:
+        below = n < floor
+        if n < expect:
+            short = True
+        manifest["runners"][runner] = {
+            "found": n, "expect": expect, "floor": floor, "warn": warn,
+            "status": ("complete" if n >= expect else
+                       "warn" if (warn or not below) else "below_floor"),
+        }
+        if below:
+            manifest["failures"].append({
+                "runner": runner, "found": n, "floor": floor, "expect": expect,
+                "warn": warn, "reasons": scrape_reasons(stage_dir, runner),
+            })
+    manifest["status"] = "failed" if not ok else ("warn" if short else "complete")
+    return manifest, ok
+
+
+def _unit_from_env():
+    """``SP_UNIT_NUM`` carries the rules' dashed, dash-prefixed form
+    (``-210-282``, ``-2605805``); the manifest records the human ID."""
+    raw = os.environ.get("SP_UNIT_NUM", "")
+    return raw.lstrip("-") or "unknown"
+
+
+def main(argv=None) -> int:
+    p = argparse.ArgumentParser(description="ShapePipe per-unit completeness check")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    c = sub.add_parser("check", help="count products, write the manifest")
+    c.add_argument("stage")
+    c.add_argument("manifest", type=Path)
+    c.add_argument("--run-dir", type=Path, default=None,
+                   help="the unit's $SP_RUN (default: the env var)")
+    c.add_argument("--unit", default=None, help="override $SP_UNIT_NUM")
+    c.add_argument("--stage-dir", default=None,
+                   help="override the run_sp_* subdir (default: the stage table)")
+    args = p.parse_args(argv)
+
+    run_dir = args.run_dir or Path(os.environ.get("SP_RUN", ""))
+    if not str(run_dir):
+        print("[completeness] FATAL: $SP_RUN unset and --run-dir not given",
+              file=sys.stderr)
+        return 2
+    unit = args.unit or _unit_from_env()
+
+    manifest, ok = build_manifest(args.stage, Path(run_dir), unit, args.stage_dir)
+    args.manifest.parent.mkdir(parents=True, exist_ok=True)
+    args.manifest.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+
+    for runner, r in manifest["runners"].items():
+        tag = {"complete": "OK", "warn": "warn", "below_floor": "<-- BELOW floor"}
+        print(f"[completeness]   {runner}: {r['found']}/{r['expect']} "
+              f"(floor {r['floor']}) {tag[r['status']]}", file=sys.stderr)
+    print(f"[completeness] {args.stage} {unit}: {manifest['status']} "
+          f"-> {args.manifest}", file=sys.stderr)
+    for f in manifest["failures"]:
+        for reason in f["reasons"]:
+            print(f"[completeness]   {f['runner']}: {reason}", file=sys.stderr)
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

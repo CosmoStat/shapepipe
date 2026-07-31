@@ -1,70 +1,169 @@
 #!/usr/bin/env python3
-"""Standalone run report — NOT a DAG node.
+"""``sp report`` — the run's success/failure tables, read from the manifests.
 
-A report rule that declares all tiles' outputs as inputs is a descendant of every
-job, so any single hard failure (under --keep-going) poisons its cone and the
-report never runs — the exact scenario it exists for (finding 8). So this is a
-plain script: it disk-scans the tiles/ and exp/ trees against the count-floor
-table (completeness.py) and the index, and emits run_report.json. It runs
-automatically via the Snakefile's onsuccess/onerror hooks, and by hand any time
-(``sp report``), mid-run included.
+NOT a DAG node. A report rule that declared all tiles' outputs as inputs would be
+a descendant of every job, so one hard failure under --keep-going would poison
+its cone and the report would never run — the exact scenario it exists for. So it
+is a plain script, runnable at any time including mid-run; the Snakefile's
+onsuccess/onerror hooks call it so every invocation ends with one.
 
-It distinguishes whole-exposure absence (all runners missing — a real gap or a
-deletion/forest bug) from tolerated per-CCD attrition (counts between floor and
-expect), so a future deletion bug cannot be silently absorbed (finding 5).
+It reads two things and nothing else (PRD D3):
 
-Attrition is counted at file granularity, not unit granularity: each stage's
-``products`` block aggregates found-vs-expected file counts per runner across
-all passing units, with a per-unit shortfall map where files are missing.
-``warn`` runners (psfex_interp) are exempt from *failing* a unit, not from
-being *reported* — the P0 validation found 46/760 psfex_interp CCDs missing
-(6%) behind a unit-level "zero attrition" claim, which is the failure mode
-this granularity exists to prevent.
+  * the **index** (``run_index.sqlite``) — the units the run declared, and the
+    tile->exposure edges that let an exposure failure be blamed on the tiles it
+    blocks;
+  * the **manifests** — one per unit per stage, written by
+    ``completeness.py check``, carrying per-runner found/expect/floor and
+    log-scraped failure reasons.
+
+No disk scanning: counting products is the *check's* job, done once at the moment
+the products were fresh. A unit with no manifest for a stage is "not run" — which
+is a real and distinct answer from "ran and produced nothing".
+
+Manifests are discovered by glob (``tiles/**/manifests/*.json``), not by
+constructed path: the unit stores are sharded (``tiles/<prefix>/<ID>/``) and the
+sharding depth is not this script's business.
 """
 
 import argparse
 import json
 import sqlite3
 import sys
+from collections import defaultdict
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from completeness import COMPLETENESS, check_floor  # noqa: E402
+# Stage order per level — the report's column order, and the definition of
+# "expected" (a declared unit with no manifest for one of these is not run).
+TILE_STAGES = ["tile_get_images", "tile_uncompress", "tile_find_exposures",
+               "tile_merge_headers", "tile_detect", "tile_vignets",
+               "tile_ngmix", "tile_merge_cats", "tile_make_cat"]
+EXP_STAGES = ["exp_get_images", "exp_split", "exp_mask", "exp_psf"]
 
-# stage -> (level, run_sp_<prefix> dir name)
-STAGE_DIR = {
-    "tile_get_images":     ("tile", "run_sp_tile_Git"),
-    "tile_uncompress":     ("tile", "run_sp_tile_Uz"),
-    "tile_find_exposures": ("tile", "run_sp_tile_Fe"),
-    "exp_get_images":      ("exp",  "run_sp_exp_Gie"),
-    "exp_split":           ("exp",  "run_sp_exp_Sp"),
-    "exp_mask":            ("exp",  "run_sp_exp_Ma"),
-    "exp_psf":             ("exp",  "run_sp_exp_SxSePsfPi"),
-    "tile_merge_headers":  ("tile", "run_sp_tile_Mh_exp"),
-    "tile_mask":           ("tile", "run_sp_tile_Ma"),
-    "tile_detect":         ("tile", "run_sp_tile_Sx"),
-    "tile_vignets":        ("tile", "run_sp_tile_PiViVi"),
-    "tile_merge_cats":     ("tile", "run_sp_Ms"),
-    "tile_make_cat":       ("tile", "run_sp_Mc"),
-}
+STATUSES = ("complete", "warn", "failed", "not_run")
 
 
-def classify(stage, run_dir):
-    """'absent' | 'under' | 'attrition' | 'complete' for one unit's stage."""
-    if not run_dir.is_dir():
-        return "absent", []
-    ok, details = check_floor(stage, run_dir)
-    if not ok:
-        # all mandatory runners empty -> whole-unit absence; else below floor
-        mand = [d for d in details if not d[4]]
-        if mand and all(n == 0 for _, n, *_ in mand):
-            return "absent", details
-        return "under", details
-    # warn runners are exempt from FAILING a unit (check_floor), not from
-    # attrition reporting — psfex_interp is precisely the runner that attrits.
-    if any(n < expect for _, n, _, expect, _ in details):
-        return "attrition", details
-    return "complete", details
+def load_manifests(run_dir: Path, sub: str) -> dict:
+    """``{unit: {stage: manifest}}`` for one store (``tiles`` or ``exp``).
+
+    The unit key is the manifest dir's *parent directory name* — shard-depth
+    agnostic, and the only form that joins to the index (the manifest's own
+    ``unit`` field carries ``SP_UNIT_NUM``'s dashed form, ``210-282``, which is
+    not the index's ``210.282``). The stage comes from the manifest body, never
+    the filename: ngmix chunks share a stage under per-chunk filenames, and they
+    collapse to one worst-case entry.
+    """
+    out: dict = defaultdict(dict)
+    for path in sorted((run_dir / sub).glob("**/manifests/*.json")):
+        try:
+            m = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"[run_report] unreadable manifest {path}: {exc}", file=sys.stderr)
+            continue
+        unit = path.parent.parent.name
+        stage = m.get("stage", path.stem)
+        prev = out[unit].get(stage)
+        # Worst status wins when several manifests share a stage (ngmix chunks).
+        rank = lambda d: STATUSES.index(d.get("status")) if d.get("status") in STATUSES else len(STATUSES)  # noqa: E731
+        if prev is None or rank(m) > rank(prev):
+            out[unit][stage] = m
+    return out
+
+
+def shortfalls(m: dict) -> dict:
+    """``{runner: (found, expect, floor)}`` for every runner under expect."""
+    return {r: (d["found"], d["expect"], d["floor"])
+            for r, d in m.get("runners", {}).items() if d["found"] < d["expect"]}
+
+
+def reasons(m: dict) -> list:
+    """Flattened failure reasons, runner-tagged, for the report's why column."""
+    out = []
+    for f in m.get("failures", []):
+        head = f"{f['runner']} {f['found']}/{f.get('expect', '?')} (floor {f['floor']})"
+        out += [f"{head}: {r}" for r in f["reasons"]] or [head]
+    return out
+
+
+def tally_level(units, stages, manifests) -> dict:
+    """Per-stage counts + named unit lists, for one level."""
+    per_stage = {}
+    for stage in stages:
+        t = {"complete": 0, "warn": [], "failed": [], "not_run": []}
+        agg = defaultdict(lambda: {"found": 0, "expect": 0, "by_unit": {}})
+        for u in units:
+            m = manifests.get(u, {}).get(stage)
+            if m is None:
+                t["not_run"].append(u)
+                continue
+            status = m.get("status", "failed")
+            status = status if status in ("complete", "warn") else "failed"
+            if status == "complete":
+                t["complete"] += 1
+            else:
+                t[status].append(u)
+            if status == "failed":
+                # Failed units are named above, never folded into the attrition
+                # aggregate: a whole-unit failure is not per-CCD attrition, and
+                # mixing them hides real deletion bugs behind a big denominator.
+                continue
+            for runner, d in m.get("runners", {}).items():
+                a = agg[runner]
+                a["found"] += d["found"]
+                a["expect"] += d["expect"]
+                if d["found"] < d["expect"]:
+                    a["by_unit"][u] = d["expect"] - d["found"]
+        for a in agg.values():
+            if not a["by_unit"]:
+                del a["by_unit"]
+        t["products"] = dict(agg)
+        per_stage[stage] = t
+    return per_stage
+
+
+def unit_rows(units, stages, manifests) -> list:
+    """One row per non-clean unit: its first bad stage, shortfalls, why."""
+    rows = []
+    for u in units:
+        got = manifests.get(u, {})
+        bad = [s for s in stages
+               if got.get(s) is None or got[s].get("status") != "complete"]
+        if not bad:
+            continue
+        stage = bad[0]
+        m = got.get(stage)
+        rows.append({
+            "unit": u,
+            "stage": stage,
+            "status": "not_run" if m is None else m.get("status", "failed"),
+            "shortfalls": shortfalls(m) if m else {},
+            "reasons": reasons(m) if m else [],
+            "n_bad_stages": len(bad),
+        })
+    return rows
+
+
+def print_table(title, rows, limit=25):
+    print(f"\n{title}  ({len(rows)} affected)")
+    if not rows:
+        print("  — none")
+        return
+    print(f"  {'unit':<14} {'stage':<20} {'status':<8} why")
+    for r in rows[:limit]:
+        short = ", ".join(f"{k} {v[0]}/{v[1]}" for k, v in r["shortfalls"].items())
+        why = (r["reasons"][0] if r["reasons"] else short) or "-"
+        print(f"  {r['unit']:<14} {r['stage']:<20} {r['status']:<8} {why[:90]}")
+    if len(rows) > limit:
+        print(f"  … and {len(rows) - limit} more (see the JSON report)")
+
+
+def print_stage_table(title, per_stage, n_units):
+    print(f"\n{title}  ({n_units} units declared)")
+    print(f"  {'stage':<20} {'ok':>6} {'warn':>6} {'fail':>6} {'not run':>8}  attrition")
+    for stage, t in per_stage.items():
+        att = [f"{r} {a['found']}/{a['expect']}"
+               for r, a in t["products"].items() if a["found"] < a["expect"]]
+        print(f"  {stage:<20} {t['complete']:>6} {len(t['warn']):>6} "
+              f"{len(t['failed']):>6} {len(t['not_run']):>8}  {', '.join(att)[:60]}")
 
 
 def main() -> None:
@@ -73,66 +172,66 @@ def main() -> None:
     p.add_argument("--index", required=True, type=Path)
     p.add_argument("--status", default="manual")
     p.add_argument("--out", type=Path, default=None)
+    p.add_argument("--limit", type=int, default=25,
+                   help="rows per stdout table (the JSON report is complete)")
     args = p.parse_args()
 
-    tiles, exps = [], []
+    tiles, exps, tile_exp = [], [], defaultdict(list)
     if args.index.exists():
         con = sqlite3.connect(args.index)
-        tiles = [r[0] for r in con.execute("SELECT tile_id FROM tiles")]
-        exps = [r[0] for r in con.execute("SELECT exp_id FROM exposures")]
+        tiles = [r[0] for r in con.execute("SELECT tile_id FROM tiles ORDER BY 1")]
+        exps = [r[0] for r in con.execute("SELECT exp_id FROM exposures ORDER BY 1")]
+        for tile_id, exp_id in con.execute("SELECT tile_id, exp_id FROM tile_exposures"):
+            tile_exp[tile_id].append(exp_id)
         con.close()
+    else:
+        print(f"[run_report] no index at {args.index} — reporting manifests only",
+              file=sys.stderr)
+
+    tile_m = load_manifests(args.run_dir, "tiles")
+    exp_m = load_manifests(args.run_dir, "exp")
+    tiles = tiles or sorted(tile_m)
+    exps = exps or sorted(exp_m)
 
     missing_json = args.index.parent / "missing.json"
     missing = json.loads(missing_json.read_text()) if missing_json.exists() else []
 
-    report = {"status": args.status, "n_tiles": len(tiles), "n_exposures": len(exps),
-              "missing_tiles": missing, "stages": {}}
-    for stage, (level, prefix) in STAGE_DIR.items():
-        if stage not in COMPLETENESS:
-            continue
-        units = tiles if level == "tile" else exps
-        sub = "tiles" if level == "tile" else "exp"
-        tally = {"complete": 0, "attrition": 0, "under": [], "absent": []}
-        # File-level aggregate per runner over PASSING units (complete/attrition);
-        # under/absent units are enumerated by name above, not folded in here —
-        # mixing them would double-count whole-unit absence as attrition.
-        products = {r: {"found": 0, "expect": 0, "by_unit": {}}
-                    for r in COMPLETENESS[stage]}
-        for u in units:
-            run_dir = args.run_dir / sub / u / "output" / prefix
-            verdict, details = classify(stage, run_dir)
-            if verdict in ("complete", "attrition"):
-                tally[verdict] += 1
-                for runner, n, _, expect, _ in details:
-                    agg = products[runner]
-                    agg["found"] += n
-                    agg["expect"] += expect
-                    if n < expect:
-                        agg["by_unit"][u] = expect - n
-            else:
-                tally[verdict].append(u)
-        for agg in products.values():
-            if not agg["by_unit"]:
-                del agg["by_unit"]
-        tally["products"] = products
-        report["stages"][stage] = tally
+    report = {
+        "status": args.status,
+        "n_tiles": len(tiles), "n_exposures": len(exps),
+        "missing_tiles": missing,
+        "tile_stages": tally_level(tiles, TILE_STAGES, tile_m),
+        "exp_stages": tally_level(exps, EXP_STAGES, exp_m),
+        "tiles": unit_rows(tiles, TILE_STAGES, tile_m),
+        "exposures": unit_rows(exps, EXP_STAGES, exp_m),
+    }
 
-    finals = [t for t in tiles
-              if (args.run_dir / "tiles" / t / f"final_cat-{t}.fits").exists()]
-    report["final_cats"] = {"present": len(finals), "of": len(tiles),
-                            "missing": [t for t in tiles if t not in finals]}
+    # Blame propagation: an incomplete exposure blocks every tile that reads it.
+    # Without this, a tile stalled at tile_vignets looks like its own failure.
+    bad_exp = {r["unit"] for r in report["exposures"]}
+    blocked = {t: sorted(set(tile_exp.get(t, [])) & bad_exp) for t in tiles}
+    report["tiles_blocked_by_exposures"] = {t: e for t, e in blocked.items() if e}
+
+    done = report["tile_stages"]["tile_make_cat"]["complete"]
+    report["final_cats"] = {"present": done, "of": len(tiles)}
 
     out = args.out or (args.index.parent / "run_report.json")
-    out.write_text(json.dumps(report, indent=2))
-    print(f"[run_report] {report['final_cats']['present']}/{len(tiles)} final "
-          f"cats -> {out}", file=sys.stderr)
-    for stage, tally in report["stages"].items():
-        for runner, agg in tally["products"].items():
-            if agg["found"] < agg["expect"]:
-                pct = 100 * (agg["expect"] - agg["found"]) / agg["expect"]
-                print(f"[run_report] attrition {stage}/{runner}: "
-                      f"{agg['found']}/{agg['expect']} files (-{pct:.1f}%) "
-                      f"across {len(agg['by_unit'])} units", file=sys.stderr)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+
+    print(f"[run_report] status={args.status}  {done}/{len(tiles)} final cats"
+          + (f"  ({len(missing)} tiles missing exposure lists)" if missing else ""))
+    print_stage_table("EXPOSURES", report["exp_stages"], len(exps))
+    print_stage_table("TILES", report["tile_stages"], len(tiles))
+    print_table("exposures not complete", report["exposures"], args.limit)
+    print_table("tiles not complete", report["tiles"], args.limit)
+    nb = report["tiles_blocked_by_exposures"]
+    if nb:
+        print(f"\ntiles waiting on incomplete exposures  ({len(nb)})")
+        for t, e in list(nb.items())[:args.limit]:
+            print(f"  {t:<14} {', '.join(e[:6])}"
+                  + (f" (+{len(e) - 6})" if len(e) > 6 else ""))
+    print(f"\n[run_report] -> {out}")
 
 
 if __name__ == "__main__":
