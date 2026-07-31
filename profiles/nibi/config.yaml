@@ -23,7 +23,7 @@ jobs: 800
 default-resources:
   mem_mb: 2000
   runtime: 120                   # minutes
-  slurm_account: def-mjhudson
+  slurm_account: def-mjhudson_cpu
 
 software-deployment-method: [apptainer]
 # Explicit container environment (finding 2/3): the apptainer SDM otherwise drops
