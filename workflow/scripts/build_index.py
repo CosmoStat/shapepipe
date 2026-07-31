@@ -5,9 +5,19 @@ The index is *parse-time data*, never a rule input: the Snakefile loads it once
 at parse time into plain dicts, so extending a run's tile list changes which
 jobs exist without touching the mtime chain of completed work.
 
-It ACCUMULATES: tables are created if absent and rows upserted, never dropped
-(D1). Successive invocations widen it, so a later ``clean_exposure`` sees every
-consuming tile of the whole campaign rather than of the current tile list.
+It ACCUMULATES ACROSS INVOCATIONS, but is AUTHORITATIVE FOR THE CURRENT TILE
+LIST (D1). Precisely:
+
+  * a tile in the current list that has find_exposures output has its ``tiles``
+    row replaced and its ``tile_exposures`` edges DELETED AND REBUILT — the Fe
+    output is the truth, so a tile whose exposure list shrank or changed must
+    not keep stale edges to exposures it no longer reads;
+  * a tile NOT in the current list is left completely untouched, which is what
+    makes the index span the campaign and lets a later ``clean_exposure`` see
+    every consuming tile;
+  * ``exposures`` rows only ever accumulate (``INSERT OR IGNORE``). An exposure
+    no tile references any more is a harmless orphan: nothing reads that table
+    except by joining through ``tile_exposures``.
 
 It records:
 
@@ -19,16 +29,20 @@ The tile->exposure edges are *data-derived*: they are read from each tile's
 ``find_exposures`` output (``exp_numbers-<IDra>-<IDdec>.txt``), which
 ``find_exposures_runner`` produces by parsing the tile FITS ``HISTORY`` header.
 So the build is not a DAG node: ``build()`` is imported and called at PARSE TIME
-by the Snakefile of the COMPUTE invocation, after the PREPARE invocation has
-produced the tiles' find_exposures output. (There is no ``sp index`` verb; the
-CLI below stays for hand-inspection.) It
+by the Snakefile of the COMPUTE invocation ONLY — ``SP_PHASE == "compute"``,
+which ``bin/sp`` sets — after the PREPARE invocation has produced the tiles'
+find_exposures output. No other parse builds anything: a prepare parse or a
+passthrough invocation (``sp --unlock``, ``sp --dag``) just loads whatever is
+already on disk. (There is no ``sp index`` verb; the CLI below stays for
+hand-inspection.) It
 iterates the *declared* tile list and checks each tile's Fe output at its
 deterministic path (no globbing — O(tile-list) existence checks, respecting the
 no-``ls``-at-scale ban). A bad tile costs only that tile: it is recorded in
 ``missing.json`` and the index is built over the rest. The build fails only if
-the missing *fraction* exceeds ``missing_threshold`` (``None`` disables the
-check — what the PREPARE phase passes, where absent Fe output is normal), so a
-keep-going download storm that lost a few tiles does not cost the run.
+the missing *fraction* exceeds ``missing_threshold`` (``None`` disables the check
+entirely), so a keep-going download storm that lost a few tiles does not cost the
+run. The threshold is checked BEFORE anything is written, so a failed build
+leaves the previous index and ``missing.json`` intact.
 
 Exposure IDs are stored with their trailing single-char suffix stripped
 (``2243881p`` -> ``2243881``); that ``exp_base`` is the dedup key and the
@@ -81,7 +95,24 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
     tile whose exposure list is missing is recorded in ``missing.json`` and the
     index is built over the rest (a bad tile costs that tile, not the run). The
     build is fatal only if the missing fraction exceeds ``missing_threshold``.
+
+    ORDER MATTERS: the threshold is evaluated FIRST, from the missing set, and
+    the database + ``missing.json`` are written only if it passes. A build that
+    aborts must leave no trace — an aborted parse that had already mutated
+    durable state was the bug this ordering fixes.
+
+    The write is idempotent, which is what makes it acceptable that the compute
+    parse runs it even under ``-n``: re-running over an unchanged tree produces
+    an identical database.
     """
+    missing = [t for t in tile_ids if not exp_list_path(run_dir, t).exists()]
+    frac = len(missing) / len(tile_ids) if tile_ids else 0.0
+    if missing_threshold is not None and frac > missing_threshold:
+        raise SystemExit(
+            f"Missing exposure lists for {len(missing)}/{len(tile_ids)} tile(s) "
+            f"(fraction {frac:.3f} > threshold {missing_threshold}): {missing}. "
+            f"Re-run prepare_tiles for them, or raise --missing-threshold.")
+
     db_path.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(db_path)
     # No DROP: the index accumulates across invocations (D1).
@@ -97,34 +128,32 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
         """
     )
 
-    missing = []
+    missing_set = set(missing)
     all_exposures: set[tuple[str, str]] = set()
     for tile_id in tile_ids:
-        ra_dir = tile_id.split(".")[0]
-        exp_file = exp_list_path(run_dir, tile_id)
-        if not exp_file.exists():
-            missing.append(tile_id)
+        if tile_id in missing_set:
             continue
-        exp_pairs = read_exposure_list(exp_file)
+        ra_dir = tile_id.split(".")[0]
+        exp_pairs = read_exposure_list(exp_list_path(run_dir, tile_id))
         con.execute("INSERT OR REPLACE INTO tiles VALUES (?,?,?)",
                     (tile_id, ra_dir, len(exp_pairs)))
-        for exp_id, _name in exp_pairs:
-            con.execute("INSERT OR IGNORE INTO tile_exposures VALUES (?,?)",
-                        (tile_id, exp_id))
+        # Replace this tile's edge set wholesale. INSERT OR IGNORE alone only
+        # ever added, so a tile whose exposure list shrank kept edges to
+        # exposures it no longer reads — and those stale edges would block it in
+        # the report and pin those exposures against cleanup.
+        con.execute("DELETE FROM tile_exposures WHERE tile_id = ?", (tile_id,))
+        con.executemany("INSERT INTO tile_exposures VALUES (?,?)",
+                        [(tile_id, exp_id) for exp_id, _ in exp_pairs])
         all_exposures.update(exp_pairs)
 
-    con.executemany("INSERT OR REPLACE INTO exposures VALUES (?,?)",
+    # Exposures accumulate: OR IGNORE, never REPLACE (the name never changes,
+    # and orphans left by a shrunken tile are harmless).
+    con.executemany("INSERT OR IGNORE INTO exposures VALUES (?,?)",
                     sorted(all_exposures))
     con.commit()
     con.close()
 
     (db_path.parent / "missing.json").write_text(json.dumps(missing, indent=2))
-    frac = len(missing) / len(tile_ids) if tile_ids else 0.0
-    if missing_threshold is not None and frac > missing_threshold:
-        raise SystemExit(
-            f"Missing exposure lists for {len(missing)}/{len(tile_ids)} tile(s) "
-            f"(fraction {frac:.3f} > threshold {missing_threshold}): {missing}. "
-            f"Re-run prepare_tiles for them, or raise --missing-threshold.")
     return {"n_tiles": len(tile_ids) - len(missing),
             "n_exposures": len(all_exposures),
             "n_missing": len(missing)}

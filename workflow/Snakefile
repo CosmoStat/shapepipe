@@ -28,6 +28,8 @@ import sqlite3
 import sys
 from pathlib import Path
 
+from snakemake.exceptions import WorkflowError
+
 # Resolved relative to THIS file, not the working directory: snakemake runs with
 # --directory on /scratch (bin/sp) so .snakemake/ state never lands on /project
 # (group quota is a hard 27/27 TiB — a metadata write mid-run died on it live).
@@ -51,9 +53,12 @@ sys.path.insert(0, str(SCRIPTS))
 import build_index                                     # noqa: E402
 from completeness import STAGE_DIR                     # noqa: E402
 
-# `prepare` suppresses the missing-tile threshold (tiles are still being
-# prepared) and the report hooks. Unset == compute (a bare hand-run of `all`).
-PHASE = os.environ.get("SP_PHASE", "compute")
+# SP_PHASE is set by bin/sp on the two invocations of `sp run` and NOWHERE else.
+# It gates the two parse-time side effects — the index build and the report
+# hooks — so that a passthrough invocation (`sp --unlock`, `sp --dag`, `sp
+# exp_psf ...`) never mutates durable state or dies on a threshold it was not
+# asked about. Unset means "read the index, build nothing".
+PHASE = os.environ.get("SP_PHASE", "")
 
 with open(config["tile_list"]) as f:
     TILES = [ln.strip() for ln in f if ln.strip()]
@@ -72,15 +77,18 @@ scattergather:
 NGMIX_CHUNKS = workflow._scatter["ngmix"]
 
 # --- parse-time index build + load (D1) ------------------------------------
-# Invocation 2's parse IS the index build. Tiles whose find_exposures output is
-# absent land in index/missing.json and are dropped from the DAG; the build is
-# fatal only above SP_MISSING_THRESHOLD (and never in the prepare phase, where
-# absent Fe output is the normal state).
-if any(build_index.exp_list_path(RUN_DIR, t).exists() for t in TILES):
+# The COMPUTE invocation's parse IS the index build, and it runs UNCONDITIONALLY
+# there — no "some Fe output exists" guard. That guard used to make a
+# totally-failed prepare produce an empty index, an empty DAG and a green exit 0;
+# with it gone, zero Fe outputs means a missing fraction of 1.0, which trips the
+# SP_MISSING_THRESHOLD gate and fails loudly, as it should.
+#
+# In every other phase (prepare, or unset for a passthrough invocation) the parse
+# builds NOTHING and only loads whatever index is already on disk.
+if PHASE == "compute":
     build_index.build(
         TILES, RUN_DIR, INDEX_DB,
-        missing_threshold=(None if PHASE == "prepare"
-                           else float(os.environ.get("SP_MISSING_THRESHOLD", "0.0"))))
+        missing_threshold=float(os.environ.get("SP_MISSING_THRESHOLD", "0.0")))
 
 # EXP: exposure base-id -> original name (2605805 -> 2605805p; the name goes
 # verbatim into the fabricated per-unit exp_numbers list so get_images matches
@@ -96,6 +104,15 @@ if INDEX_DB.exists():
 # Tiles this run can actually compute: declared AND indexed. The index spans the
 # campaign, so it is intersected with the declared list, not used as it.
 TILES_READY = [t for t in TILES if t in TILE_EXP]
+
+# A compute invocation with nothing to compute is never a success. Without this,
+# an empty intersection yields `rule all` with no inputs, an empty DAG and exit
+# 0 — the silent green run the threshold gate exists to prevent.
+if PHASE == "compute" and not TILES_READY:
+    raise WorkflowError(
+        f"No declared tile has an indexed exposure list: 0 of {len(TILES)} tiles "
+        f"are ready to compute (index {INDEX_DB}). Run the prepare phase first "
+        f"(`sp run`), or check {INDEX_DB.parent / 'missing.json'}.")
 
 wildcard_constraints:
     tile  = r"\d{3}\.\d{3}",

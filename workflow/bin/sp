@@ -51,8 +51,30 @@ cmd="${1:-}"
 case "$cmd" in
   run)
     shift
-    SP_PHASE=prepare sm prepare_all_tiles "$@"
-    SP_PHASE=compute sm all "$@"
+    # PREPARE failing is NOT fatal to the run: keep-going means a failed tile
+    # poisons only its own cone, and the tiles that lost their exposure list are
+    # dropped at the compute parse. The real gate is SP_MISSING_THRESHOLD, which
+    # the compute parse's index build enforces over the WHOLE tile list — so we
+    # record the failure and go on rather than letting `set -e` abort here.
+    prep_rc=0
+    SP_PHASE=prepare sm prepare_all_tiles "$@" || prep_rc=$?
+    if [ "$prep_rc" -ne 0 ]; then
+      echo "" >&2
+      echo "############################################################" >&2
+      echo "## WARNING: the PREPARE phase exited $prep_rc." >&2
+      echo "## Some tiles may be missing their exposure list and will be" >&2
+      echo "## dropped from the compute DAG. Continuing to COMPUTE; the" >&2
+      echo "## SP_MISSING_THRESHOLD gate (now $SP_MISSING_THRESHOLD) decides" >&2
+      echo "## whether that is tolerable." >&2
+      echo "############################################################" >&2
+      echo "" >&2
+    fi
+
+    comp_rc=0
+    SP_PHASE=compute sm all "$@" || comp_rc=$?
+    if [ "$prep_rc" -ne 0 ] || [ "$comp_rc" -ne 0 ]; then
+      exit "$([ "$comp_rc" -ne 0 ] && echo "$comp_rc" || echo "$prep_rc")"
+    fi
     ;;
   report)
     shift

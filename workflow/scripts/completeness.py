@@ -9,17 +9,24 @@ its ``floor`` files; per-CCD attrition (a sparse CCD setools rejects, ~0.2%)
 sits between ``floor`` and ``expect`` and is tolerated.
 
 This file is also the ``check`` CLI — the second half of every rule's shell line
-(PRD D2/D3)::
+(PRD D2/D3). The rules capture ShapePipe's return code rather than ``&&``-ing
+onto it, so the check runs — and the manifest is written — even when
+``shapepipe_run`` failed::
 
-    shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini -b {threads} \\
-        && completeness.py check exp_mask {output}
+    rc=0
+    shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini -b {threads} || rc=$?
+    completeness.py check exp_mask {output} || rc=1
+    exit $rc
 
 It counts the unit's products under ``$SP_RUN``, writes the manifest at
 ``{output}``, and exits nonzero iff a mandatory runner is below its floor. The
-manifest is ALWAYS written first, failure included: it is the DAG's currency and
-the only thing ``run_report.py`` reads, so a failed unit must still leave a
-record of *why*. Manifests carry no wall-clock — identical on-disk state must
-produce a byte-identical manifest, or the mtime rerun-trigger churns the cone.
+manifest is ALWAYS written, failure included: it is the DAG's currency and the
+only thing ``run_report.py`` reads, so a failed unit must still leave a record of
+*why*. (The profile sets ``keep-incomplete`` so snakemake does not delete that
+record on the way out.) Manifests carry no wall-clock, and are rewritten ONLY
+when their content changes — identical on-disk state must leave a byte-identical
+manifest with an UNMOVED mtime, or the mtime rerun-trigger churns the cone on
+every unrelated ``--forcerun``.
 
 Per-runner fields:
     expect   nominal file count for a fully complete unit (report yardstick)
@@ -246,11 +253,15 @@ def build_manifest(stage, run_dir, unit, stage_subdir=None):
     return manifest, ok
 
 
-def _unit_from_env():
-    """``SP_UNIT_NUM`` carries the rules' dashed, dash-prefixed form
-    (``-210-282``, ``-2605805``); the manifest records the human ID."""
-    raw = os.environ.get("SP_UNIT_NUM", "")
-    return raw.lstrip("-") or "unknown"
+def _unit_from_run_dir(run_dir):
+    """The human unit ID: the basename of ``$SP_RUN`` (``210.282``, ``2605805``).
+
+    NOT ``SP_UNIT_NUM``, which carries ShapePipe's dashed numbering form
+    (``-210-282``) and would put ``210-282`` in the manifest — a key that joins
+    to nothing. ``run_report`` keys units on the store directory name, which is
+    exactly this basename, so the two now agree.
+    """
+    return Path(str(run_dir)).name or "unknown"
 
 
 def main(argv=None) -> int:
@@ -261,7 +272,8 @@ def main(argv=None) -> int:
     c.add_argument("manifest", type=Path)
     c.add_argument("--run-dir", type=Path, default=None,
                    help="the unit's $SP_RUN (default: the env var)")
-    c.add_argument("--unit", default=None, help="override $SP_UNIT_NUM")
+    c.add_argument("--unit", default=None,
+                   help="override the unit ID (default: basename of $SP_RUN)")
     c.add_argument("--stage-dir", default=None,
                    help="override the run_sp_* subdir (default: the stage table)")
     args = p.parse_args(argv)
@@ -271,11 +283,17 @@ def main(argv=None) -> int:
         print("[completeness] FATAL: $SP_RUN unset and --run-dir not given",
               file=sys.stderr)
         return 2
-    unit = args.unit or _unit_from_env()
+    unit = args.unit or _unit_from_run_dir(run_dir)
 
     manifest, ok = build_manifest(args.stage, Path(run_dir), unit, args.stage_dir)
     args.manifest.parent.mkdir(parents=True, exist_ok=True)
-    args.manifest.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    # Write ONLY on change. An unconditional write moves the mtime on every run,
+    # and mtime is a rerun-trigger: a `--forcerun` of one upstream stage would
+    # then rewrite this manifest byte-identically and drag the whole downstream
+    # cone along with it.
+    text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+    if not args.manifest.exists() or args.manifest.read_text() != text:
+        args.manifest.write_text(text)
 
     for runner, r in manifest["runners"].items():
         tag = {"complete": "OK", "warn": "warn", "below_floor": "<-- BELOW floor"}

@@ -63,6 +63,12 @@ rule tile_merge_headers:
     input:
         forest = rules.tile_exp_forest.output.forest,
         split  = tile_exp_split,
+        # config_tile_Mh_exp.ini reads run_sp_tile_Fe output, which the PREPARE
+        # phase produced. Declaring the Fe manifest gives the COMPUTE DAG a
+        # regeneration path for it instead of a silent dependency on a
+        # previous invocation (prepare.smk is included in every parse, so the
+        # rule exists here too). Normally a satisfied no-op.
+        fe     = f"{TILE_DIR}/manifests/tile_find_exposures.json",
     output:
         manifest = f"{TILE_DIR}/manifests/tile_merge_headers.json"
     params:
@@ -109,6 +115,9 @@ rule tile_vignets:
         forest = rules.tile_exp_forest.output.forest,
         split  = tile_exp_split,
         psf    = tile_exp_psf,
+        # config_tile_PiViVi.ini reads run_sp_tile_Fe output — same reason as
+        # tile_merge_headers above.
+        fe     = f"{TILE_DIR}/manifests/tile_find_exposures.json",
     output:
         manifest = f"{TILE_DIR}/manifests/tile_vignets.json",
         store    = temp(directory(f"{TILE_DIR}/output/run_sp_tile_PiViVi")),
@@ -144,8 +153,14 @@ rule tile_ngmix:
         pre = lambda wc: unit_pre(
             "tile_ngmix", "tile", wc.tile,
             env={"SP_NGMIX_CHUNK": wc.chunk, "NGMIX_N_CHUNKS": NGMIX_CHUNKS},
-            pre_run=[f'eval "$(python {SCRIPTS}/ngmix_range.py --run-dir '
-                     f'"$SP_RUN" --chunk {wc.chunk} --n-chunks {NGMIX_CHUNKS})"']),
+            # Two steps, not `eval "$(...)"`: a command substitution inside eval
+            # discards the script's exit status, so a missing sexcat would fall
+            # through to shapepipe_run with an unset range and fail as something
+            # else. Capture, check, then eval — the range script fails as itself.
+            pre_run=[f'ngmix_range_out=$(python {SCRIPTS}/ngmix_range.py --run-dir '
+                     f'"$SP_RUN" --chunk {wc.chunk} --n-chunks {NGMIX_CHUNKS}) '
+                     f'|| exit 1',
+                     'eval "$ngmix_range_out"']),
         script_hash = SCRIPT_HASH
     threads: 4
     retries: 2

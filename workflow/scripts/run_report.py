@@ -206,9 +206,24 @@ def main() -> None:
         "exposures": unit_rows(exps, EXP_STAGES, exp_m),
     }
 
-    # Blame propagation: an incomplete exposure blocks every tile that reads it.
+    # Blame propagation: a BLOCKING exposure blocks every tile that reads it.
     # Without this, a tile stalled at tile_vignets looks like its own failure.
-    bad_exp = {r["unit"] for r in report["exposures"]}
+    #
+    # Blocking means "failed" or "never ran" — NOT "warn". Warn is the expected
+    # per-CCD attrition (setools rejecting a sparse CCD, psfex_interp short an
+    # epoch); it is present in essentially every exposure at production scale, so
+    # counting it here made every exposure block every tile and the table said
+    # nothing.
+    # Judged over ALL the exposure's stages, not just the first bad one, so an
+    # exposure that warns early and fails late still blocks.
+    def _blocks(unit):
+        for stage in EXP_STAGES:
+            m = exp_m.get(unit, {}).get(stage)
+            if m is None or m.get("status", "failed") == "failed":
+                return True
+        return False
+
+    bad_exp = {e for e in exps if _blocks(e)}
     blocked = {t: sorted(set(tile_exp.get(t, [])) & bad_exp) for t in tiles}
     report["tiles_blocked_by_exposures"] = {t: e for t, e in blocked.items() if e}
 

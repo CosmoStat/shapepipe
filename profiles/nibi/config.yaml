@@ -37,67 +37,26 @@ rerun-incomplete: true           # re-do jobs left incomplete by an unclean deat
 show-failed-logs: true
 printshellcmds: true
 
+# D3 DEPENDS ON THIS. Snakemake's default is to DELETE the declared outputs of a
+# failed job — and this workflow's declared output IS the manifest, the only
+# record of *why* a unit failed and the only thing `sp report` reads. Without
+# keep-incomplete, every failed unit reads back as "not_run" and the post-mortem
+# debris is gone. Safe here because each rule `rm -rf`s its own run dir at start,
+# so a rerun never sees stale products.
+keep-incomplete: true
+
 # rerun-triggers left at the full Snakemake v9 default
 # {mtime,params,input,code,software-env}: params/code fixes SHOULD propagate.
-# No override — the wrapper writes outputs only on change so mtimes move only
-# when reality moves; protected() guards finished science products.
+# No override — completeness.py writes the manifest only on change, so mtimes
+# move only when reality moves.
 
 default-resources:
   mem_mb: 4000
   runtime: 120                   # minutes
   cpus_per_task: 1
 
-# Per-stage resources — measured footprints from the nibi P3 runs (#808).
-# threads == cpus_per_task == ShapePipe SMP fork width (sp_rule sets
-# SMP_BATCH_SIZE={threads}); mem_mb == threads x measured per-worker footprint.
-#
-# set-threads is REQUIRED for {threads} to resolve above 1: the local scheduler
-# derives cpus_per_task from threads, NOT the reverse (verified snakemake 9.23 —
-# set-resources cpus_per_task alone leaves {threads}==1, i.e. SMP_BATCH_SIZE=1,
-# serial). Keep the two blocks in lockstep.
-set-threads:
-  exp_split: 4
-  exp_mask: 4
-  exp_psf: 8
-  tile_mask: 16
-  tile_detect: 16
-  tile_merge_headers: 8
-  tile_vignets: 8
-  tile_ngmix: 8
-  tile_merge_cats: 4
-  tile_make_cat: 4
-
-set-resources:
-  exp_split:
-    cpus_per_task: 4
-    mem_mb: 8000
-  exp_mask:
-    cpus_per_task: 4
-    mem_mb: 8000
-  exp_psf:
-    cpus_per_task: 8
-    mem_mb: 16000
-    runtime: 240
-  tile_mask:
-    cpus_per_task: 16
-    mem_mb: 16000
-  tile_detect:
-    cpus_per_task: 16
-    mem_mb: 16000
-  tile_merge_headers:
-    cpus_per_task: 8
-    mem_mb: 8000
-  tile_vignets:
-    cpus_per_task: 8
-    mem_mb: 24000
-    runtime: 240
-  tile_ngmix:
-    cpus_per_task: 8
-    mem_mb: 24000
-    runtime: 360
-  tile_merge_cats:
-    cpus_per_task: 4
-    mem_mb: 8000
-  tile_make_cat:
-    cpus_per_task: 4
-    mem_mb: 8000
+# NO set-threads / set-resources here, deliberately. Profile overrides REPLACE a
+# rule's own values (verified snakemake 9.23), which would kill the
+# attempt-scaled `mem_mb = lambda wc, attempt: ...` OOM retries and the tuned
+# ngmix thread count. The RULES own threads and resources; this profile only
+# sizes the allocation and sets the defaults for rules that state nothing.

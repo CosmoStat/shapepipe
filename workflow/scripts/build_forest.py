@@ -14,6 +14,7 @@ the rule's input (tile.smk), not here.
 """
 
 import argparse
+import shutil
 import sqlite3
 from pathlib import Path
 
@@ -36,8 +37,14 @@ def main() -> None:
         src = args.run_dir / "exp" / e[:2] / e / "output"
         dst = args.forest / e[:2] / e / "output"   # sharded: the module glob's shape
         dst.parent.mkdir(parents=True, exist_ok=True)
+        # A symlink (the normal case) is unlinked; a REAL directory left behind
+        # by a hand-run or an older layout must be removed as a tree — unlink()
+        # raises IsADirectoryError on it and would kill the job.
         if dst.is_symlink() or dst.exists():
-            dst.unlink()
+            if dst.is_dir() and not dst.is_symlink():
+                shutil.rmtree(dst)
+            else:
+                dst.unlink()
         dst.symlink_to(src)
     print(f"[build_forest] {args.tile}: {len(exps)} exposures -> {args.forest}")
 
