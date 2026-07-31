@@ -86,9 +86,12 @@ def ngmix_runner(
         # No batch saving
         save_batch = -1
 
-    # First and last galaxy ID to process
-    id_obj_min = config.getint(module_config_sec, "ID_OBJ_MIN")
-    id_obj_max = config.getint(module_config_sec, "ID_OBJ_MAX")
+    # First and last galaxy ID to process. Read via ``getexpanded`` so an
+    # orchestrator can drive the chunk bounds from environment variables
+    # (``$SP_NGMIX_ID_OBJ_MIN`` and friends); ``getexpanded`` is the only
+    # accessor in ShapePipe's config that expands ``$VAR``.
+    id_obj_min = int(config.getexpanded(module_config_sec, "ID_OBJ_MIN"))
+    id_obj_max = int(config.getexpanded(module_config_sec, "ID_OBJ_MAX"))
 
     # Centroid source for the galaxy Jacobian origin: "wcs" (default -- the
     # catalog sky position projected through the WCS, trusting the astrometry)
@@ -99,16 +102,20 @@ def ngmix_runner(
     else:
         centroid_source = "wcs"
 
-    # Seed the per-object RNG from sky position instead of per tile, so
-    # metacal's fixnoise counter-noise (and the fit guesses) cancel across
-    # Pujol image-simulation shear branches (ngmix#796). Default False leaves
-    # the production path byte-identical.
+    # Position-seeded RNG is the only mode: every object's RNG comes from its
+    # own (ra, dec, ccd), so results do not depend on how the tile is split
+    # into chunks, and metacal's fixnoise counter-noise cancels across Pujol
+    # image-simulation shear branches (ngmix#796). The retired tile-seed mode
+    # had neither property. Old configs that disable it must fail loudly.
     if config.has_option(module_config_sec, "SEED_FROM_POSITION"):
-        seed_from_position = config.getboolean(
-            module_config_sec, "SEED_FROM_POSITION"
-        )
-    else:
-        seed_from_position = False
+        if not config.getboolean(module_config_sec, "SEED_FROM_POSITION"):
+            raise ValueError(
+                "SEED_FROM_POSITION = False is no longer supported: the"
+                " tile-seeded RNG mode has been retired because it makes"
+                " results depend on the object chunking. Remove the"
+                " SEED_FROM_POSITION entry from the ngmix config section"
+                " (position-seeded RNG is now the only mode)."
+            )
 
     # Check PSF vignets first: if all are empty dicts {}, the exposures for this
     # tile are absent from the PSF dictionary and no shape measurement is possible.
@@ -161,7 +168,6 @@ def ngmix_runner(
         id_obj_max=id_obj_max,
         bkg_sub=bkg_sub,
         centroid_source=centroid_source,
-        seed_from_position=seed_from_position,
         metacal_psf=metacal_psf,
     )
 

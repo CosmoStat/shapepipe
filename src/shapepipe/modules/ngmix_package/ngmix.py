@@ -335,13 +335,12 @@ class Ngmix(object):
         (robust for galaxies); ``"wcs"`` uses the catalog sky position
         projected through the WCS (better for stars, whose HSM moments are
         noisy). See :func:`make_ngmix_observation`.
-    seed_from_position : bool, optional
-        If ``True``, replace the tile-level RNG with a per-object RNG seeded
-        from the object's sky position (:func:`position_seed`) inside the
-        object loop, so metacal's ``fixnoise`` counter-noise and the fit
-        guesses cancel across Pujol image-simulation branches (ngmix#796). The
-        default ``False`` leaves the production path byte-identical. See
-        :func:`position_seed` for the physics and the seed construction.
+    Notes
+    -----
+    The RNG is always per object and seeded from that object's sky position
+    (:func:`position_seed`). Results therefore do not depend on how the tile is
+    split into object chunks, and metacal's ``fixnoise`` counter-noise and the
+    fit guesses cancel across Pujol image-simulation branches (ngmix#796).
 
     Raises
     ------
@@ -364,7 +363,6 @@ class Ngmix(object):
         id_obj_max=-1,
         bkg_sub=True,
         centroid_source="hsm",
-        seed_from_position=False,
         metacal_psf="fitgauss",
     ):
 
@@ -418,20 +416,14 @@ class Ngmix(object):
         self._id_obj_max = id_obj_max
         self._bkg_sub = bkg_sub
         self._centroid_source = centroid_source
-        self._seed_from_position = seed_from_position
         self._metacal_psf = metacal_psf
 
         self._w_log = w_log
 
-        # Initiatlise random generator
-        seed = int(''.join(re.findall(r'\d+', self._file_number_string)))
-        self._rng = np.random.RandomState(seed)
-        self._w_log.info(f'Random generator initialisation seed = {seed}')
-        if self._seed_from_position:
-            self._w_log.info(
-                'SEED_FROM_POSITION on: per-object RNG seeded from sky position'
-                ' for Pujol noise cancellation (image sims, ngmix#796)'
-            )
+        self._w_log.info(
+            'Per-object RNG seeded from sky position (ngmix#796): results are'
+            ' invariant to how the tile is split into object chunks'
+        )
 
     @classmethod
     def MegaCamFlip(self, vign, ccd_nb):
@@ -460,18 +452,6 @@ class Ngmix(object):
         else:
             # swap y axis so origin is on bottom-left
             return vign
-
-    def get_prior(self, T_range=None, F_range=None):
-        """Get Prior.
-
-        Returns
-        -------
-        ngmix.joint_prior.PriorSimpleSep
-        """
-        return get_prior(
-            self._pixel_scale, self._rng,
-            T_range=T_range, F_range=F_range,
-        )
 
     def compile_results(self, results):
         """Compile Results.
@@ -809,7 +789,6 @@ class Ngmix(object):
         vignet_cat = self._vignet_cat
 
         final_res = []
-        prior = self.get_prior()
 
         count = 0
         n_empty_cat = 0
@@ -843,24 +822,20 @@ class Ngmix(object):
                 n_no_epoch += 1
                 continue
 
-            # Position-seeded per-object RNG for Pujol noise cancellation in
-            # image sims (ngmix#796): the same object gets the same fixnoise
-            # counter-noise and fit guesses in every shear branch, so both
-            # cancel in the branch difference. The prior is rebuilt from the
-            # same per-object RNG because the guesser draws its initial guess
-            # via prior.sample() (ngmix guessers.py), which consumes the RNG the
-            # prior was CONSTRUCTED with — so a per-object rng alone would leave
-            # the guess drawing from the shared tile stream and break
-            # cancellation. Off in production, where the single tile-level
-            # self._rng and the tile-level prior carry the whole loop.
-            if self._seed_from_position:
-                obj_rng = np.random.RandomState(
-                    position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
-                )
-                obj_prior = get_prior(self._pixel_scale, obj_rng)
-            else:
-                obj_rng = self._rng
-                obj_prior = prior
+            # Position-seeded per-object RNG (ngmix#796). Each object draws from
+            # a stream fixed by its own (ra, dec, ccd), so the result is
+            # independent of which chunk the object lands in and of detection
+            # order, and the same object gets the same fixnoise counter-noise
+            # and fit guesses in every Pujol shear branch, so both cancel in the
+            # branch difference. The prior is rebuilt from the same per-object
+            # RNG because the guesser draws its initial guess via prior.sample()
+            # (ngmix guessers.py), which consumes the RNG the prior was
+            # CONSTRUCTED with — a per-object rng alone would leave the guess
+            # drawing from a shared stream and break both properties.
+            obj_rng = np.random.RandomState(
+                position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
+            )
+            obj_prior = get_prior(self._pixel_scale, obj_rng)
 
             try:
                 flux_guess = (
