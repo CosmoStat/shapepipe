@@ -18,6 +18,14 @@ Note there is no `tile_mask` rule: the committed config chain is the
 "sx_nomask" tile_detect variant (config_tile_Sx.ini reads Git + Uz + Mh, no mask
 run), and no tile-mask config was committed in the S2 sweep. Adding the masked
 variant is a config + one rule, at the config selector the PRD describes.
+
+That rule also needs a tile-side analogue of ``exp_star_cat``: tile star cats key
+on TILE id, so they are a separate cache namespace and a separate node, and the
+earliest point it can run is after ``tile_uncompress`` (create_star_cat.py's
+``-k tile`` mode reads the uncompressed tile image's primary header). The mask
+config would then read a real per-unit ``$SP_RUN/star_cat_tiles`` directory,
+built the same way and for the same reason (the file handler intersects numbers
+across INPUT_DIRs, so a shared pool cannot be symlinked in wholesale).
 """
 
 def tile_exp(wc):

@@ -10,12 +10,10 @@ tier).
 
 Rules stay group-compatible: shell only, no mid-chain localrules, no pipe outputs.
 
-Star catalogues for masking are pre-generated offline (create_star_cat.py on a
-networked login node) and consumed as DIRECTORIES: the mask configs read
-``$SP_RUN/star_cat_{exp,tiles}`` with per-CCD numbering. Every rule's prologue
-materialises the two dir symlinks; there is NO per-unit star-cat DAG node — the
-store is pre-run input like the image store, and a missing cat fails the mask
-stage's count floor loudly.
+Star catalogues for masking are NOT a prepare-phase concern and not pre-run
+input: they are built in the compute DAG, one node per exposure
+(``exp_star_cat`` in exposure.smk), into a run-independent cache. The tile side
+has no star-cat node because it has no mask rule yet — see tile.smk.
 """
 
 # NUMBER_LIST is never set for get_images (download stage; nothing on disk to

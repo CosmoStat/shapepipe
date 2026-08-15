@@ -23,6 +23,7 @@ legitimate, and at DR6 scale per-CCD declaration means millions of paths.
 """
 
 import hashlib
+import json
 import os
 import sqlite3
 import sys
@@ -41,7 +42,13 @@ container: config["container"]
 
 # --- paths -----------------------------------------------------------------
 RUN_DIR    = Path(config["run_dir"])
+# Run-independent cache root for the mask star catalogues, keyed by exposure and
+# filled by the exp_star_cat rule (config.yaml explains the placement).
 STAR_CATS  = Path(config["star_cats"])
+# This checkout's own tree: exp_star_cat runs its scripts/python/create_star_cat.py
+# against its src/, for the same reason CONFIG_DIR is the committed config dir —
+# script, library and rule are one artefact and version together.
+REPO_DIR   = Path(workflow.basedir).parent
 INDEX_DB   = Path(config["index_db"])
 SCRIPTS    = Path(workflow.basedir) / "scripts"
 # The config chain is the repo's own committed dir BY CONSTRUCTION (D2): the
@@ -296,11 +303,10 @@ def unit_pre(stage, level, unit, *, exp_name=None, forest=None, env=None,
         ORIGINAL exposure name from the index (``2605805p``), so get_images
         matches ``<name>.fits.fz`` in the store — the bare base id matches
         nothing. Written UNCONDITIONALLY: an exists-guard once pinned a stale
-        pre-fix file with the bare id;
-      * ``star_cat_exp`` / ``star_cat_tiles`` dir symlinks into the shared
-        pre-generated pool (the mask configs read them as INPUT_DIRs).
+        pre-fix file with the bare id.
     There is no per-unit ``cfis`` symlink any more: $SP_CONFIG points straight at
-    the committed config dir.
+    the committed config dir, and ``star_cat_exp`` is a real per-unit directory
+    built by the ``exp_star_cat`` rule, not a symlink into a shared pool.
 
     Finally it ``rm -rf``s this stage's own fixed run dir — ShapePipe's
     FileHandler raises on an existing run dir, and it is how a rerun never sees
@@ -329,10 +335,6 @@ def unit_pre(stage, level, unit, *, exp_name=None, forest=None, env=None,
         fe = "$SP_RUN/output/run_sp_tile_Fe/find_exposures_runner/output"
         lines += [f'mkdir -p "{fe}"',
                   f"printf '%s\\n' '{exp_name or unit}' > \"{fe}/exp_numbers-000-000.txt\""]
-
-    for name, sub in (("star_cat_exp", "exp"), ("star_cat_tiles", "tiles")):
-        src = STAR_CATS / sub
-        lines.append(f"[ -d '{src}' ] && ln -sfn '{src}' \"$SP_RUN/{name}\" || true")
 
     lines += list(pre_run)
     lines += [f'rm -rf "$SP_RUN/output/{subdir}"', 'cd "$SP_RUN"']
@@ -366,13 +368,15 @@ include: "rules/exposure.smk"
 include: "rules/tile.smk"
 
 # --- top-level targets ------------------------------------------------------
-# Only the aggregation targets and clean_exposure are localrules: a mid-chain
-# localrule would break `group:` fusion of the compute chains (D4).
-# clean_exposure is safe there because it is not in any chain — it hangs off
-# `all` — and it is seconds of rmtree. As an sbatch job it would be ~20k
-# scheduler submissions at DR6 scale to delete directories; the local-cores cap
-# serialises them instead, which costs nothing at rmtree speed.
-localrules: all, prepare_all_tiles, clean_exposure
+# The aggregation targets, clean_exposure and exp_star_cat run in the head
+# process. clean_exposure is seconds of rmtree and hangs off `all`; exp_star_cat
+# is ~6 s dominated by one CDS query, and running it locally serialises those
+# queries (see exposure.smk). Both would otherwise be ~20k sbatch submissions at
+# DR6 scale for work shorter than the scheduling latency.
+#
+# exp_star_cat is the one MID-CHAIN localrule, so it must stay out of any future
+# `group:` label: a local job cannot be fused into a submitted group.
+localrules: all, prepare_all_tiles, clean_exposure, exp_star_cat
 
 rule all:
     input:

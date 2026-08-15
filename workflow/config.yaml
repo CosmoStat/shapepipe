@@ -24,8 +24,17 @@ run_dir: /scratch/cdaley/shapepipe-output/smk-g3
 # are one artefact and must version together, so the dir is fixed by construction.
 
 # Pre-staged inputs (P3 data already on /project; get_images RETRIEVE=symlink).
-# Star catalogues for masking, pre-generated (network step done in prepare):
-star_cats: /home/cdaley/projects/def-mjhudson/cdaley/runs/p3-batch1/star_cats
+
+# The mask star-catalogue CACHE root — run-independent, shared by every campaign.
+# `exp_star_cat` writes <root>/exp/star_cat-<exp>.fits, one GSC 2.3 cone query per
+# exposure (~787 KiB, ~6 s), and skips a cat that is already there. Exposures
+# recur across tiles and batches, so the cache is mostly hits.
+#
+# On /scratch because def-mjhudson /project is hard-full (27/27 TiB). The 60-day
+# purge therefore applies, and that is acceptable: a purged cache regenerates one
+# query per exposure, and exp_star_cat is a localrule, so the head process runs
+# those queries serially and never hammers CDS.
+star_cats: /scratch/cdaley/shapepipe-output/star-cat-cache
 
 # The run index. Design intent (finding 15) is durable products on /project —
 # BLOCKED for now: def-mjhudson /project is hard-full (27/27 TiB), so index and

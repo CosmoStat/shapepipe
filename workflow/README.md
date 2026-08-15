@@ -22,7 +22,8 @@ uv venv /project/def-mjhudson/cdaley/snakemake-env --python 3.12
 source /project/def-mjhudson/cdaley/snakemake-env/bin/activate
 uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 
-# Edit workflow/config.yaml: tile_list, run_dir, container, star_cats.
+# Edit workflow/config.yaml: tile_list, run_dir, container, star_cats (the
+# star-catalogue cache root).
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -92,8 +93,8 @@ workflow/
   config.yaml            the run: tile list, paths, container, chunk count
   bin/sp                 committed launcher (module load + /project venv + run/report/cancel)
   rules/
-    prepare.smk          tile get_images/uncompress/find_exposures + per-unit star cats
-    exposure.smk         per-exposure: get_images, split, mask, psf (no temp())
+    prepare.smk          tile get_images/uncompress/find_exposures
+    exposure.smk         per-exposure: get_images, star_cat, split, mask, psf (no temp())
     tile.smk             per-tile: exp forest, merge_headers, mask, detect, vignets, ngmix, merge, make_cat
   scripts/
     sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count floor)
@@ -129,14 +130,22 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   error-signature whitelist. `--keep-going` isolates a failure to its own
   DAG cone.
 - **Stores are sharded.** Every tile/exposure runs its own `shapepipe_run`
-  in `tiles/<2-char prefix>/<ID>/` or `exp/<prefix>/<base>/`, with a `cfis`
-  config symlink, `star_cat_{exp,tiles}` symlinks, and a config copy setting
-  `RUN_DATETIME=False`. Configs are committed under `workflow/config/cfis/`
-  and version with the rules that set the env vars they interpolate — there
-  is no `config_src` knob, by construction.
+  in `tiles/<2-char prefix>/<ID>/` or `exp/<prefix>/<base>/`. Configs are
+  committed under `workflow/config/cfis/` and version with the rules that set
+  the env vars they interpolate — there is no `config_src` knob, and no per-unit
+  config symlink; `$SP_CONFIG` points straight at the committed directory.
+- **Mask star catalogues are built in the DAG.** `exp_star_cat` runs one Vizier
+  cone query per exposure into the run-independent cache at `star_cats:`, then
+  fans it out into a real per-unit `star_cat_exp/` directory of 40 per-CCD
+  symlinks, which `exp_mask` consumes. The directory must be per-unit and real:
+  the file handler intersects the image numbers it finds across a config's
+  `INPUT_DIR`s, so a symlink to the whole cache contributes every other
+  exposure's numbers and the intersection comes out empty. It is a `localrule`,
+  so the queries run serially in the head process — CDS is never hammered, and
+  the scheduler never sees a six-second job. The cache makes reruns and later
+  campaigns free.
 - **The index is parse-time data, never a rule input.** Appending tiles
-  changes which jobs exist without invalidating completed work. Star cats
-  are re-keyed per unit for the same reason. `final_cat` is `protected()`.
+  changes which jobs exist without invalidating completed work.
 - **Exposure products are not `temp()`.** Exposures overlap tiles, so
   `temp()` would cascade destructive reruns when a tile is appended later.
   Reclamation is the in-DAG `clean_exposure` rule instead: one job per

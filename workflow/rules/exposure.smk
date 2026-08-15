@@ -1,6 +1,7 @@
 """Exposure chain — per exposure, keyed by exp base id (dedup is structural).
 
-    exp_get_images -> exp_split -> exp_mask -> exp_psf
+    exp_get_images -> exp_split ---> exp_mask -> exp_psf
+                   -> exp_star_cat -/
 
 Each in the exposure's own sharded work dir, chained by manifests; every config
 reads fixed ``$SP_RUN/output/run_sp_exp_*`` INPUT_DIRs, so nothing resolves a
@@ -36,6 +37,102 @@ rule exp_get_images:
     shell:
         sp_shell("exp_get_images", "config_exp_Gie.ini")
 
+# --- mask star catalogues ---------------------------------------------------
+# One GSC 2.3 (Vizier) cone query per exposure, covering the whole MegaCam focal
+# plane, plus the 40 per-CCD symlinks the mask module's numbering scheme needs.
+#
+# It reads the exp_get_images output dir directly: that is a symlink farm of
+# image-<exp>.fitsfz, exactly what create_star_cat.py's `-k exp` mode consumes —
+# one multi-extension header read, one query, ~6 s measured.
+#
+# A LOCALRULE (declared in the Snakefile), so it runs in the head process — an
+# sbatch job on a compute node, and nibi compute nodes have internet (verified by
+# curl to vizier.cds.unistra.fr from a compute job). Local execution serialises
+# the queries, which throttles CDS at any campaign scale for free, and it spares
+# the scheduler one submission per exposure for six seconds of work.
+#
+# The CATALOGUE is cached run-independently under config `star_cats`, keyed by
+# exposure. create_star_cat.py skips a cat that exists, so retries, reruns and
+# later campaigns re-link an existing file and issue no query.
+#
+# The per-unit farm is a REAL directory holding exactly this exposure's 40
+# numbers, and that is load-bearing: config_exp_Ma.ini reads it as an INPUT_DIR
+# and the file handler INTERSECTS the numbers found across INPUT_DIRs, so a
+# symlink to a shared whole-store pool contributes every other exposure's numbers
+# and the intersection is empty ("numbers ... do not intersect", live).
+#
+# Declared output is a manifest rather than a symlink or a directory(): it is
+# written last, it is the one per-exposure file that is unique to this rule, it
+# records what the farm points at, and it keeps the "one rule, one manifest"
+# currency of every other rule — including being deleted by clean_exposure, so a
+# reclaimed exposure rebuilds its farm from the cache at no query cost.
+
+# The container's certifi bundle. The host leaks SSL_CERT_FILE / CURL_CA_BUNDLE
+# pointing at a path that does not exist inside the image, so requests is pointed
+# at the bundle explicitly (proven in the p3-batch1 bash precedent).
+STAR_CAT_CA = "/app/.venv/lib/python3.12/site-packages/certifi/cacert.pem"
+
+
+def star_cat_cmd(exp):
+    """The whole rule body, as bash — carried as a params value, never inlined
+    in ``shell:``: it contains literal ``{}`` (the manifest JSON) and snakemake
+    formats a shell string once, which would consume those braces."""
+    cache = f"{STAR_CATS}/exp"
+    cat = f"{cache}/star_cat-{exp}.fits"
+    work = exp_dir(exp)
+    farm = f"{work}/star_cat_exp"
+    images = f"{work}/output/run_sp_exp_Gie/get_images_runner/output"
+    manifest = exp_manifest(exp, "exp_star_cat")
+    body = json.dumps({
+        "stage": "exp_star_cat", "level": "exp", "unit": exp,
+        "status": "complete", "cache": cat, "link_dir": farm, "n_links": 40,
+    }, indent=2, sort_keys=True)
+    return "\n".join([
+        "set -euo pipefail",
+        f"mkdir -p '{cache}' '{farm}' '{work}/manifests'",
+        # Same binds and isolation as the profile's apptainer-args; the SDM does
+        # not wrap this rule (container: None below), because the farm loop and
+        # the manifest write belong to the host side of the job.
+        f"apptainer exec --cleanenv --home {Path.home()} --bind /project --bind /scratch"
+        f" --env PYTHONPATH={REPO_DIR}/src,REQUESTS_CA_BUNDLE={STAR_CAT_CA}"
+        f",SSL_CERT_FILE={STAR_CAT_CA},CURL_CA_BUNDLE={STAR_CAT_CA}"
+        f" '{config['container']}'"
+        f" python {REPO_DIR}/scripts/python/create_star_cat.py"
+        f" -i '{images}' -o '{cache}' -k exp",
+        f"test -s '{cat}'",
+        # The fan-out the file handler's NUMBERING_SCHEME wants: 40 links to the
+        # one focal-plane catalogue (pattern from the p3-batch1 precedent).
+        f"for ccd in $(seq 0 39); do ln -sfn '{cat}' "
+        f"'{farm}/star_cat-{exp}-'\"$ccd\"'.fits'; done",
+        # Byte-stable, and written only after the links exist: an unconditional
+        # write would move the mtime, which is a rerun-trigger.
+        f"tmp='{manifest}.tmp'",
+        "cat > \"$tmp\" <<'SP_STAR_CAT_JSON'",
+        body,
+        "SP_STAR_CAT_JSON",
+        f"cmp -s \"$tmp\" '{manifest}' && rm -f \"$tmp\" || mv -f \"$tmp\" '{manifest}'",
+    ])
+
+
+rule exp_star_cat:
+    input:
+        rules.exp_get_images.output.manifest
+    output:
+        manifest = f"{EXP_DIR}/manifests/exp_star_cat.json"
+    params:
+        cmd = lambda wc: star_cat_cmd(wc.exp)
+    # No SDM wrapping: the rule calls apptainer itself, because only the query
+    # runs in the container (bin/sp has loaded the apptainer module).
+    container:
+        None
+    threads: 1
+    retries: 2
+    resources:
+        mem_mb = 2000,
+        runtime = 10
+    shell:
+        "{params.cmd}"
+
 # Split the multi-HDU exposure into single-CCD files (+ headers-*.npy, which the
 # tiles' merge_headers reads).
 rule exp_split:
@@ -55,7 +152,10 @@ rule exp_split:
 
 rule exp_mask:
     input:
-        rules.exp_split.output.manifest
+        # Both inputs are real INPUT_DIRs of config_exp_Ma.ini: the split CCDs
+        # and this exposure's own star_cat_exp farm.
+        rules.exp_split.output.manifest,
+        rules.exp_star_cat.output.manifest
     output:
         manifest = f"{EXP_DIR}/manifests/exp_mask.json"
     params:
