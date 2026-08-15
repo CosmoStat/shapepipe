@@ -85,7 +85,14 @@ NGMIX_CHUNKS = workflow._scatter["ngmix"]
 #
 # In every other phase (prepare, or unset for a passthrough invocation) the parse
 # builds NOTHING and only loads whatever index is already on disk.
-if PHASE == "compute":
+#
+# is_main_process matters as much as PHASE: the SLURM executor re-invokes
+# snakemake inside every job, that re-invocation parses this file again, and it
+# inherits SP_PHASE=compute from the submitting environment. Without the guard,
+# every one of the run's jobs re-runs the build — hundreds of concurrent sqlite
+# writers on Lustre, which is exactly the "database is locked" storm that killed
+# the first real run (2026-07-31). Job parses only LOAD the index below.
+if PHASE == "compute" and workflow.is_main_process:
     build_index.build(
         TILES, RUN_DIR, INDEX_DB,
         missing_threshold=float(os.environ.get("SP_MISSING_THRESHOLD", "0.0")))
@@ -97,7 +104,9 @@ if PHASE == "compute":
 # is keyed on (D5).
 EXP, TILE_EXP, EXP_TILES = {}, {}, {}
 if INDEX_DB.exists():
-    _con = sqlite3.connect(INDEX_DB)
+    # timeout=60: Lustre lock handoffs are slow; the default 5 s trips on
+    # nothing more sinister than a reader in another job's parse.
+    _con = sqlite3.connect(INDEX_DB, timeout=60)
     EXP = dict(_con.execute("SELECT exp_id, name FROM exposures"))
     for _tile, _exp in _con.execute("SELECT tile_id, exp_id FROM tile_exposures"):
         TILE_EXP.setdefault(_tile, []).append(_exp)

@@ -114,7 +114,7 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
             f"Re-run prepare_tiles for them, or raise --missing-threshold.")
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(db_path)
+    con = sqlite3.connect(db_path, timeout=60)
     # No DROP: the index accumulates across invocations (D1).
     con.executescript(
         """

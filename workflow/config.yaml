@@ -5,9 +5,10 @@
 # tiles) never invalidates completed work — it only changes which jobs exist.
 
 # The tile list that scopes this run (one "IDra.IDdec" per line).
-# 210/211 quad: 19 unique exposures, 15 reused across tiles — exercises the
-# structural exposure dedup (the 196 quad had zero overlap; kept for the
-# append-invariant test).
+# 186/187 quad: 18 unique exposures with cross-tile reuse — exercises the
+# structural exposure dedup. (The 210/211 quad used earlier is unusable: its
+# tile images are symlinks into anaennis' moved processed_tiles tree. ~8.5k of
+# the 10.3k staged tiles are such broken links; ~600 tiles are real files.)
 tile_list: /scratch/cdaley/shapepipe-output/smk-g3/tiles4.txt
 
 # The container every job runs inside (apptainer software-deployment in the profile).

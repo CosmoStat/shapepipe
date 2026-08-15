@@ -27,7 +27,7 @@ def main() -> None:
     p.add_argument("--forest", required=True, type=Path)
     args = p.parse_args()
 
-    con = sqlite3.connect(args.index)
+    con = sqlite3.connect(args.index, timeout=60)
     exps = [r[0] for r in con.execute(
         "SELECT exp_id FROM tile_exposures WHERE tile_id=?", (args.tile,))]
     con.close()

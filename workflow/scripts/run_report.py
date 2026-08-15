@@ -223,7 +223,7 @@ def main() -> None:
 
     tiles, exps, tile_exp = [], [], defaultdict(list)
     if args.index.exists():
-        con = sqlite3.connect(args.index)
+        con = sqlite3.connect(args.index, timeout=60)
         tiles = [r[0] for r in con.execute("SELECT tile_id FROM tiles ORDER BY 1")]
         exps = [r[0] for r in con.execute("SELECT exp_id FROM exposures ORDER BY 1")]
         for tile_id, exp_id in con.execute("SELECT tile_id, exp_id FROM tile_exposures"):
