@@ -47,8 +47,8 @@ clean: false
 # Tiles that may NOT pin an exposure store (default: empty).
 #
 # An exposure is eligible for cleaning only once EVERY consuming tile has its
-# vignets. One permanently-failed tile therefore holds all ~80 exposures it
-# touches for the life of the campaign. A tile listed here is dropped from the
+# vignets. One permanently-failed tile therefore holds all its exposures
+# (~8 measured on P3: 7.9 exposures/tile) for the life of the campaign. A tile listed here is dropped from the
 # consumer sets, and its exposures become eligible.
 #
 # READ THIS BEFORE ADDING A TILE. Ignoring a tile is a decision to give up its
