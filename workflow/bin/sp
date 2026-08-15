@@ -45,7 +45,9 @@ STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"; mkdir -p "$STATE_DIR"
 # declared tiles allowed to be missing their exposure list (default 0.0).
 export SP_MISSING_THRESHOLD="${SP_MISSING_THRESHOLD:-0.0}"
 
-sm() { snakemake --profile "$PROFILE" --directory "$STATE_DIR" "$@"; }
+# --snakefile pins the workflow to this checkout: sp must work from any cwd
+# (an sbatch head job starts in the submission directory, not the repo).
+sm() { snakemake --snakefile "$HERE/Snakefile" --profile "$PROFILE" --directory "$STATE_DIR" "$@"; }
 
 cmd="${1:-}"
 case "$cmd" in
