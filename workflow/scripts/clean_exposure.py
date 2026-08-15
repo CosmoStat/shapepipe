@@ -20,10 +20,16 @@ deliberate and load-bearing, not tidiness:
     needs to run, so tiles already finished are NOT rerun by their exposures'
     manifests vanishing.
 
-Nothing is lost to the report: each manifest's content is copied verbatim into
+Nothing is lost to the report: every ``manifests/*.json`` is copied verbatim into
 the tombstone under ``manifests``, and ``run_report.py`` reads a cleaned
 exposure's record out of the tombstone — it reports the unit as ``cleaned``,
 warn counts and shortfalls intact, instead of "not run".
+
+The absorption is by GLOB, so it takes whatever is in ``manifests/``, keyed by
+file stem; the report re-keys on each manifest's own ``stage`` field. A
+``<stage>.failed.json`` is therefore carried through unremarkably — it should
+never be there (an exposure with a failed stage has no complete vignets consumer
+and so is not eligible for cleaning), but it costs nothing to be right about.
 
 Order matters, and it is the reverse of the obvious one: the tombstone is
 written FIRST, complete, and only then is anything deleted. A crash between the

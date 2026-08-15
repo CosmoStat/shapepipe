@@ -18,15 +18,25 @@ onto it, so the check runs — and the manifest is written — even when
     completeness.py check exp_mask {output} || rc=1
     exit $rc
 
-It counts the unit's products under ``$SP_RUN``, writes the manifest at
-``{output}``, and exits nonzero iff a mandatory runner is below its floor. The
-manifest is ALWAYS written, failure included: it is the DAG's currency and the
-only thing ``run_report.py`` reads, so a failed unit must still leave a record of
-*why*. (The profile sets ``keep-incomplete`` so snakemake does not delete that
-record on the way out.) Manifests carry no wall-clock, and are rewritten ONLY
-when their content changes — identical on-disk state must leave a byte-identical
-manifest with an UNMOVED mtime, or the mtime rerun-trigger churns the cone on
-every unrelated ``--forcerun``.
+It counts the unit's products under ``$SP_RUN`` and exits nonzero iff a mandatory
+runner is below its floor. WHERE it writes the record is the whole point:
+
+  * success -> ``<stage>.json`` (the rule's declared output, the DAG's currency)
+    and any stale ``<stage>.failed.json`` is removed;
+  * failure -> ``<stage>.failed.json`` (same content, ``status: failed``) and any
+    stale ``<stage>.json`` is REMOVED.
+
+``<stage>.json`` therefore means "this stage succeeded", full stop — a resume can
+never schedule a downstream stage on top of a failed one, not even after a head
+process died without recording the failure. The failed manifest is never a
+declared output of any rule: it is post-mortem evidence for ``run_report.py``,
+which reads it when the success manifest is absent, and snakemake neither tracks
+nor deletes it.
+
+Manifests carry no wall-clock, and either file is rewritten ONLY when its content
+changes — identical on-disk state must leave a byte-identical manifest with an
+UNMOVED mtime, or the mtime rerun-trigger churns the cone on every unrelated
+``--forcerun``.
 
 Per-runner fields:
     expect   nominal file count for a fully complete unit (report yardstick)
@@ -253,6 +263,18 @@ def build_manifest(stage, run_dir, unit, stage_subdir=None):
     return manifest, ok
 
 
+def failed_path(manifest: Path) -> Path:
+    """``<stage>.json`` -> ``<stage>.failed.json``, in the same manifests/ dir."""
+    return manifest.with_name(manifest.name[:-len(".json")] + ".failed.json")
+
+
+def write_if_changed(path: Path, text: str) -> None:
+    """Write only when the bytes differ — see the module docstring on mtime."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists() or path.read_text() != text:
+        path.write_text(text)
+
+
 def _unit_from_run_dir(run_dir):
     """The human unit ID: the basename of ``$SP_RUN`` (``210.282``, ``2605805``).
 
@@ -286,21 +308,24 @@ def main(argv=None) -> int:
     unit = args.unit or _unit_from_run_dir(run_dir)
 
     manifest, ok = build_manifest(args.stage, Path(run_dir), unit, args.stage_dir)
-    args.manifest.parent.mkdir(parents=True, exist_ok=True)
-    # Write ONLY on change. An unconditional write moves the mtime on every run,
-    # and mtime is a rerun-trigger: a `--forcerun` of one upstream stage would
-    # then rewrite this manifest byte-identically and drag the whole downstream
-    # cone along with it.
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
-    if not args.manifest.exists() or args.manifest.read_text() != text:
-        args.manifest.write_text(text)
+
+    # The success/failure fork. Exactly one of the two files exists afterwards,
+    # so the presence of <stage>.json IS the statement "this stage succeeded" and
+    # the DAG can never build on top of a failure. The removal of the stale
+    # counterpart is what makes a success->failure or failure->success transition
+    # complete rather than additive.
+    written = args.manifest if ok else failed_path(args.manifest)
+    stale = failed_path(args.manifest) if ok else args.manifest
+    write_if_changed(written, text)
+    stale.unlink(missing_ok=True)
 
     for runner, r in manifest["runners"].items():
         tag = {"complete": "OK", "warn": "warn", "below_floor": "<-- BELOW floor"}
         print(f"[completeness]   {runner}: {r['found']}/{r['expect']} "
               f"(floor {r['floor']}) {tag[r['status']]}", file=sys.stderr)
     print(f"[completeness] {args.stage} {unit}: {manifest['status']} "
-          f"-> {args.manifest}", file=sys.stderr)
+          f"-> {written}", file=sys.stderr)
     for f in manifest["failures"]:
         for reason in f["reasons"]:
             print(f"[completeness]   {f['runner']}: {reason}", file=sys.stderr)

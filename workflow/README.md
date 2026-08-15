@@ -112,11 +112,16 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   (`<unit dir>/manifests/<stage>.json`), not its product files — a missing
   CCD is often legitimate, and at DR6 scale per-CCD declaration means
   millions of paths.
-- **Manifests are the DAG's currency.** `completeness.py check` writes the
-  manifest, and it is the only record of *why* a unit failed. That is why
-  the profile sets `keep-incomplete: true` — Snakemake's default deletes a
-  failed job's declared outputs, which would erase the manifest the report
-  needs.
+- **Manifests are the DAG's currency, and they are success-only.**
+  `completeness.py check` writes `<stage>.json` when the stage passed its count
+  floor, and `<stage>.failed.json` when it did not — removing the other file
+  either way. So `<stage>.json` on disk means "this stage succeeded", and a
+  resume after an unclean death cannot schedule downstream work on top of a
+  failure. The failed manifest carries the same content plus the scraped
+  reasons; it is never a declared output, so Snakemake never tracks or deletes
+  it, and `sp report` reads it when the success manifest is absent. The profile
+  runs *without* `keep-incomplete` for the same reason: deleting a failed job's
+  declared output is the wanted semantics.
 - **Completeness is a count floor, not a taxonomy.** After a run,
   `sp_rule.py` counts products per mandatory runner against
   `completeness.py`'s floor and exits nonzero below it. Per-CCD attrition

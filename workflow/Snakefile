@@ -346,8 +346,11 @@ def sp_shell(stage, config_name):
     unit_pre). ``-b {threads}`` makes SMP fork width and cpus_per_task one number
     by construction (D4).
 
-    The check runs even when shapepipe_run failed — the manifest is the only
-    thing `sp report` reads, so a failed unit must still leave a record of why.
+    The check runs even when shapepipe_run failed, so a failed unit still leaves
+    a record of why — but that record goes to `<stage>.failed.json`, and the
+    declared `<stage>.json` is removed if it was there. Success manifests are
+    success-only currency (completeness.py); the failed one is evidence for
+    `sp report` and is never a declared output.
     """
     return (
         "{params.pre}\n"

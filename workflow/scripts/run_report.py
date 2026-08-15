@@ -16,6 +16,13 @@ It reads two things and nothing else (PRD D3):
     ``completeness.py check``, carrying per-runner found/expect/floor and
     log-scraped failure reasons.
 
+A stage that failed leaves ``<stage>.failed.json`` instead of ``<stage>.json``
+(``completeness.py``): the success name is reserved for success, so the DAG
+cannot build on a failure. Both names are read here, and the status comes from
+the manifest BODY, so a stage is reported as failed either way — including
+manifests written before that split, where the failure content sat under the
+success name.
+
 A reclaimed exposure has no manifests: ``clean_exposure`` deleted them after
 copying them into ``<exp dir>/cleaned.json``. That tombstone is read as the
 unit's record and the unit is reported as **cleaned** — not "not run", and it
@@ -42,7 +49,7 @@ from pathlib import Path
 TILE_STAGES = ["tile_get_images", "tile_uncompress", "tile_find_exposures",
                "tile_merge_headers", "tile_detect", "tile_vignets",
                "tile_ngmix", "tile_merge_cats", "tile_make_cat"]
-EXP_STAGES = ["exp_get_images", "exp_split", "exp_mask", "exp_psf"]
+EXP_STAGES = ["exp_get_images", "exp_star_cat", "exp_split", "exp_mask", "exp_psf"]
 
 STATUSES = ("complete", "warn", "failed", "not_run")
 
@@ -54,8 +61,13 @@ def load_manifests(run_dir: Path, sub: str) -> dict:
     agnostic, and the only form that joins to the index (the manifest's own
     ``unit`` field carries ``SP_UNIT_NUM``'s dashed form, ``210-282``, which is
     not the index's ``210.282``). The stage comes from the manifest body, never
-    the filename: ngmix chunks share a stage under per-chunk filenames, and they
-    collapse to one worst-case entry.
+    the filename: ngmix chunks share a stage under per-chunk filenames, and
+    ``<stage>.failed.json`` names the same stage as ``<stage>.json``.
+
+    Several files can therefore map to one (unit, stage), and the WORST status
+    wins. That is what collapses the ngmix chunks to one entry, and what makes a
+    failed manifest speak even in the transient window where its success-named
+    counterpart has not yet been removed.
     """
     out: dict = defaultdict(dict)
     for path in sorted((run_dir / sub).glob("**/manifests/*.json")):
