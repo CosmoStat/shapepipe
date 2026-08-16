@@ -118,6 +118,29 @@ def query_vizier(ra, dec, radius_arcmin):
     return _query_vizier(ra, dec, radius_arcmin, CDS_CAT_ID)
 
 
+def _write_atomic(table, output_dir, img_number, output_name):
+    """Write ``table`` to ``output_name`` atomically.
+
+    The catalogue is a run-independent CACHE, and the caller's only test for a
+    cache hit is ``os.path.isfile``. An in-place ``table.write`` that is killed
+    part-way (job timeout, OOM, node failure) therefore leaves a truncated FITS
+    that every later run trusts forever — and ``test -s`` passes on partial
+    bytes. Writing to a temp and renaming makes the visible file all-or-nothing:
+    ``os.replace`` is atomic within a directory.
+
+    The temp keeps a ``.fits`` suffix, because astropy picks the writer from the
+    extension. It is dot-prefixed and PID-tagged so it stays out of the
+    ``star_cat*`` globs the rules use, and two concurrent writers cannot collide.
+    """
+    tmp = f"{output_dir}/.tmp-{os.getpid()}-star_cat{img_number}.fits"
+    try:
+        table.write(tmp, overwrite=True)
+        os.replace(tmp, output_name)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
 def main(input_dir, output_dir, kind):
 
     file_list = os.listdir(input_dir)
@@ -140,7 +163,7 @@ def main(input_dir, output_dir, kind):
                 f"Focal plane center: ra={ra:.4f}, dec={dec:.4f}, radius={radius:.2f} arcmin"
             )
             table = query_vizier(ra, dec, radius)
-            table.write(output_name, overwrite=True)
+            _write_atomic(table, output_dir, img_number, output_name)
 
         else:
             h = fits.getheader(fpath, 0)
@@ -156,7 +179,7 @@ def main(input_dir, output_dir, kind):
                 continue
 
             table = query_vizier(ra, dec, radius)
-            table.write(output_name, overwrite=True)
+            _write_atomic(table, output_dir, img_number, output_name)
 
     return 0
 

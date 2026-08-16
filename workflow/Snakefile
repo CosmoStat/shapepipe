@@ -183,6 +183,14 @@ def unit_num(unit):
 SCRIPT_HASH = hashlib.md5((SCRIPTS / "completeness.py").read_bytes()).hexdigest()[:12]
 FOREST_HASH = hashlib.md5((SCRIPTS / "build_forest.py").read_bytes()).hexdigest()[:12]
 CLEAN_HASH  = hashlib.md5((SCRIPTS / "clean_exposure.py").read_bytes()).hexdigest()[:12]
+# Same argument for the star-cat query script, which lives in the repo's own
+# scripts/python/ rather than workflow/scripts/: exp_star_cat's params otherwise
+# fingerprint nothing but paths, so an edit to create_star_cat.py would never
+# rerun the rule. The hash does NOT key the cache path — see config.yaml's
+# star_cats block on clearing the cache after a semantic change.
+STAR_CAT_HASH = hashlib.md5(
+    (REPO_DIR / "scripts" / "python" / "create_star_cat.py").read_bytes()
+).hexdigest()[:12]
 
 # --- exposure reclamation (D5, S5) -----------------------------------------
 

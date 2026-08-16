@@ -47,9 +47,19 @@ rule exp_get_images:
 #
 # A LOCALRULE (declared in the Snakefile), so it runs in the head process — an
 # sbatch job on a compute node, and nibi compute nodes have internet (verified by
-# curl to vizier.cds.unistra.fr from a compute job). Local execution serialises
-# the queries, which throttles CDS at any campaign scale for free, and it spares
-# the scheduler one submission per exposure for six seconds of work.
+# curl to vizier.cds.unistra.fr from a compute job). Local execution does NOT
+# serialise the queries — an earlier version of this comment claimed it did, and
+# that was false. In cluster mode snakemake runs local jobs in a worker pool
+# sized by `--local-cores`, and this rule takes one thread each, so as many CDS
+# queries (and apptainer execs) run at once as that pool is wide. The nibi
+# profile leaves --local-cores unset, so it is the head process's CPU count —
+# 5 in the measured allocation.
+#
+# The localrule stays anyway. 5-way concurrency against Vizier is ordinary
+# politeness, not abuse, and the alternative is one sbatch per exposure: ~20k
+# submissions for six seconds of work each, which is exactly the sub-15-minute
+# scheduler churn cluster policy asks us to bundle away. If CDS ever objects,
+# --local-cores is the knob — it caps these queries directly.
 #
 # The CATALOGUE is cached run-independently under config `star_cats`, keyed by
 # exposure. create_star_cat.py skips a cat that exists, so retries, reruns and
@@ -61,11 +71,23 @@ rule exp_get_images:
 # symlink to a shared whole-store pool contributes every other exposure's numbers
 # and the intersection is empty ("numbers ... do not intersect", live).
 #
-# Declared output is a manifest rather than a symlink or a directory(): it is
-# written last, it is the one per-exposure file that is unique to this rule, it
-# records what the farm points at, and it keeps the "one rule, one manifest"
-# currency of every other rule — including being deleted by clean_exposure, so a
-# reclaimed exposure rebuilds its farm from the cache at no query cost.
+# TWO declared outputs, and the second one is the point.
+#
+# The manifest keeps the "one rule, one manifest" currency of every other rule:
+# written last, unique to this rule, a record of what the farm points at, and
+# deleted by clean_exposure so a reclaimed exposure rebuilds its farm from the
+# cache at no query cost.
+#
+# But a manifest attests FOREVER, and the two things it attests to both live
+# outside the unit's manifests/ dir: the cache FITS on /scratch (60-day purge)
+# and the farm itself. Either can vanish under a manifest that still says
+# "complete", and then exp_mask runs against nothing. So the ccd-0 farm link is
+# declared too — one link stands for all 40, they are created by the same loop
+# in the same instant, and declaring 40 buys nothing. Snakemake's existence test
+# is os.path.exists, which FOLLOWS symlinks and is therefore False for a link
+# whose target the purge removed. A purged cache or a deleted farm makes the
+# rule out of date, it reruns, and it re-queries or re-links as needed — the
+# recovery config.yaml's star_cats comment promises, now actually wired up.
 
 # The container's certifi bundle. The host leaks SSL_CERT_FILE / CURL_CA_BUNDLE
 # pointing at a path that does not exist inside the image, so requests is pointed
@@ -89,6 +111,14 @@ def star_cat_cmd(exp):
     }, indent=2, sort_keys=True)
     return "\n".join([
         "set -euo pipefail",
+        # LEGACY-SYMLINK HAZARD. Unit dirs built before this rule existed carry
+        # star_cat_exp as a SYMLINK into the old shared star-cat pool. `mkdir -p`
+        # is a no-op on an existing symlink-to-directory, so the 40-link loop
+        # below followed it and wrote this exposure's links INTO THE SHARED POOL
+        # (520 stray links found live). Replace the link — never `rm -rf` it,
+        # which would recurse into the pool, and never touch a real directory:
+        # a real farm is this rule's own output and `ln -sfn` refreshes it.
+        f"[ -L '{farm}' ] && rm -f '{farm}' || true",
         f"mkdir -p '{cache}' '{farm}' '{work}/manifests'",
         # Same binds and isolation as the profile's apptainer-args; the SDM does
         # not wrap this rule (container: None below), because the farm loop and
@@ -118,9 +148,14 @@ rule exp_star_cat:
     input:
         rules.exp_get_images.output.manifest
     output:
-        manifest = f"{EXP_DIR}/manifests/exp_star_cat.json"
+        manifest = f"{EXP_DIR}/manifests/exp_star_cat.json",
+        # The sentinel: ccd-0 of the 40-link farm (see above).
+        link     = f"{EXP_DIR}/star_cat_exp/star_cat-{{exp}}-0.fits"
     params:
-        cmd = lambda wc: star_cat_cmd(wc.exp)
+        cmd = lambda wc: star_cat_cmd(wc.exp),
+        # create_star_cat.py is external to the shell string, so the `code`
+        # rerun-trigger does not see it — same reason SCRIPT_HASH exists.
+        script_hash = STAR_CAT_HASH
     # No SDM wrapping: the rule calls apptainer itself, because only the query
     # runs in the container (bin/sp has loaded the apptainer module).
     container:
