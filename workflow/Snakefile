@@ -353,12 +353,24 @@ def sp_shell(stage, config_name):
     declared `<stage>.json` is removed if it was there. Success manifests are
     success-only currency (completeness.py); the failed one is evidence for
     `sp report` and is never a declared output.
+
+    The verdict is COMPOSED, which is why `--job-rc "$rc"` is passed: the count
+    floors and shapepipe_run's exit status are two independent statements about
+    the same job, and the manifest must reflect both. Without it, a job whose
+    counts cleared their floors but whose shapepipe_run died (a late runner
+    raising after the counted ones wrote their files) wrote the SUCCESS manifest
+    and still exited nonzero — snakemake then deleted that manifest as a failed
+    job's output, no failed.json was written (the check thought it had won), and
+    any prior failed.json had already been unlinked. The failure left no trace at
+    all. With the rc composed in, the fork lands on the failure side and the
+    evidence survives.
     """
     return (
         "{params.pre}\n"
         "rc=0\n"
         f"shapepipe_run -c \"$SP_CONFIG/{config_name}\" -b {{threads}} || rc=$?\n"
-        f"python {SCRIPTS}/completeness.py check {stage} {{output.manifest}} || rc=1\n"
+        f"python {SCRIPTS}/completeness.py check {stage} {{output.manifest}}"
+        " --job-rc \"$rc\" || rc=1\n"
         "exit $rc\n"
     )
 

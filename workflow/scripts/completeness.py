@@ -15,11 +15,14 @@ onto it, so the check runs — and the manifest is written — even when
 
     rc=0
     shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini -b {threads} || rc=$?
-    completeness.py check exp_mask {output} || rc=1
+    completeness.py check exp_mask {output} --job-rc "$rc" || rc=1
     exit $rc
 
 It counts the unit's products under ``$SP_RUN`` and exits nonzero iff a mandatory
-runner is below its floor. WHERE it writes the record is the whole point:
+runner is below its floor OR ``--job-rc`` is nonzero — the verdict is COMPOSED of
+the counts and shapepipe_run's own exit status, because a runner can raise after
+the counted ones have written their files. WHERE it writes the record is the
+whole point:
 
   * success -> ``<stage>.json`` (the rule's declared output, the DAG's currency)
     and any stale ``<stage>.failed.json`` is removed;
@@ -298,6 +301,8 @@ def main(argv=None) -> int:
                    help="override the unit ID (default: basename of $SP_RUN)")
     c.add_argument("--stage-dir", default=None,
                    help="override the run_sp_* subdir (default: the stage table)")
+    c.add_argument("--job-rc", type=int, default=0,
+                   help="shapepipe_run's exit status, composed into the verdict")
     args = p.parse_args(argv)
 
     run_dir = args.run_dir or Path(os.environ.get("SP_RUN", ""))
@@ -308,6 +313,29 @@ def main(argv=None) -> int:
     unit = args.unit or _unit_from_run_dir(run_dir)
 
     manifest, ok = build_manifest(args.stage, Path(run_dir), unit, args.stage_dir)
+
+    # The verdict is COMPOSED of two independent statements: the count floors
+    # (above) and shapepipe_run's own exit status (here). Counts alone are not
+    # enough — a runner can raise AFTER the counted runners have written their
+    # files, so the floors are met while the job died. That combination used to
+    # write the SUCCESS manifest, which snakemake then deleted as a failed job's
+    # output, leaving no manifest at all: failure invisible, and any earlier
+    # failed.json already unlinked by the success branch. An rc-driven override
+    # puts the fork on the failure side, so failed.json is written and kept.
+    #
+    # Recorded only when nonzero, which keeps every existing success manifest
+    # byte-identical (the mtime rerun-trigger reads those bytes).
+    if args.job_rc != 0:
+        ok = False
+        manifest["status"] = "failed"
+        manifest["job_rc"] = args.job_rc
+        manifest["failures"].append({
+            "runner": "shapepipe_run", "found": 0, "floor": 1, "expect": 1,
+            "warn": False,
+            "reasons": [f"shapepipe_run exited {args.job_rc} "
+                        f"(counts above floor)"],
+        })
+
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
     # The success/failure fork. Exactly one of the two files exists afterwards,
