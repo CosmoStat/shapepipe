@@ -7,8 +7,19 @@ this executes, every campaign tile that reads this exposure has already extracte
 its postage stamps. Writer, then readers, then cleaner — DAG-ordered, race-free.
 
 What it deletes: the exposure's whole ``output/`` tree (the bulk store —
-run_sp_exp_Gie/Sp/Ma/SxSePsfPi) AND its ``manifests/``. Deleting the manifests is
-deliberate and load-bearing, not tidiness:
+run_sp_exp_Gie/Sp/Ma/SxSePsfPi), its ``manifests/``, and its star-catalogue link
+farms (``star_cat_exp``, plus the legacy ``star_cat_tiles``). The farms are
+reclaimed for consistency, not for bytes: ``exp_star_cat``'s manifest is deleted
+here like every other, so the exposure's chain must read as unbuilt, and 40
+symlinks left behind are a farm no rule now owns. The catalogue itself lives in
+the run-independent cache, so rebuilding the farm costs a relink and no query.
+
+Deletion is SYMLINK-SAFE: a target that is itself a symlink is ``unlink``ed, not
+``rmtree``d. Legacy unit dirs carry ``star_cat_exp`` as a link into the old
+shared pool, and an rmtree would recurse through it and delete the shared cache
+for every other exposure in the campaign.
+
+Deleting the manifests is deliberate and load-bearing, not tidiness:
 
   * the manifests are the exposure rules' DECLARED outputs. If they survived, a
     tile appended later would find the exposure chain "up to date" and run
@@ -78,7 +89,11 @@ def main() -> None:
             except (OSError, json.JSONDecodeError) as exc:
                 manifests[f.stem] = {"unreadable": str(exc)}
 
-    targets = [t for t in (args.exp_dir / "output", mdir) if t.exists()]
+    # is_symlink() first, and OR'd with exists(): exists() follows the link, so a
+    # dangling legacy star_cat_exp would otherwise be skipped and survive.
+    candidates = (args.exp_dir / "output", mdir,
+                  args.exp_dir / "star_cat_exp", args.exp_dir / "star_cat_tiles")
+    targets = [t for t in candidates if t.is_symlink() or t.exists()]
 
     # Tombstone first, complete, fsync'd — then delete. See the module docstring:
     # the crash window has to sit where the data still exists, not where the
@@ -96,7 +111,12 @@ def main() -> None:
 
     removed = []
     for target in targets:
-        shutil.rmtree(target)
+        # NEVER rmtree a symlink: star_cat_exp is a link into the shared pool in
+        # legacy unit dirs, and rmtree would follow it and empty that pool.
+        if target.is_symlink():
+            target.unlink()
+        else:
+            shutil.rmtree(target)
         removed.append(str(target))
     print(f"[clean_exposure] {args.exp}: removed {len(removed)} tree(s) after "
           f"{len(consumers)} consuming tile(s)")
