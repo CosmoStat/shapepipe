@@ -13,7 +13,7 @@
     "helpers:pinGitHubActionDigests"
   ],
   "rangeStrategy": "update-lockfile",
-  "lockFileMaintenance": { "enabled": true },
+  "lockFileMaintenance": { "enabled": true, "automerge": true },
   "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": { "automerge": true, "labels": ["security"] },
   "packageRules": [
