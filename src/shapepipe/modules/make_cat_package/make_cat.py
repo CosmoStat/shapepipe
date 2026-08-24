@@ -327,9 +327,11 @@ class SaveCatalogue:
         Save the NGMIX catalogue into the final one.
 
         Column grammar: ``NGMIX[m]_<COMPONENT>[_ERR][_<OBJECT>]_<SHEAR>``,
-        plus three OBJECT/SHEAR-less per-object metadata columns
+        plus four OBJECT/SHEAR-less per-object metadata columns
         (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
-        ``NGMIX_MCAL_TYPES_FAIL``). The galaxy is the implicit default object
+        ``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG`` — the last a blend
+        flag set when the coadd seg stamp held a non-central footprint,
+        shapepipe#776). The galaxy is the implicit default object
         and carries NO ``OBJECT`` token (``NGMIX_G1_NOSHEAR``, dropping the
         ``GAL`` segment carried by the pre-#761 names). The explicit PSF
         objects are ``PSF_ORIG``
@@ -369,6 +371,9 @@ class SaveCatalogue:
             #return err_msg
 
         ngmix_mcal_types_fail = ngmix_cat_file.get_data()["mcal_types_fail"]
+        # Per-object blend flag (shapepipe#776): the seg stamp held a
+        # non-central footprint. Galaxy-only (non-moments), like N_EPOCH.
+        ngmix_neighbour_flag = ngmix_cat_file.get_data()["neighbour_flag"]
         # Needed in both moments and non-moments modes (used unconditionally
         # below), so read them outside the branch.
         ngmix_mcal_flags = ngmix_cat_file.get_data()["mcal_flags"]
@@ -384,6 +389,7 @@ class SaveCatalogue:
 
             self._add2dict("NGMIX_N_EPOCH", np.zeros(n_obj))
             self._add2dict("NGMIX_MCAL_TYPES_FAIL", np.zeros(n_obj))
+            self._add2dict("NGMIX_NEIGHBOUR_FLAG", np.zeros(n_obj))
 
         prefix = f"NGMIX{m}"
 
@@ -533,6 +539,11 @@ class SaveCatalogue:
                     self._add2dict(
                         f"NGMIX{m}_MCAL_TYPES_FAIL",
                         ngmix_mcal_types_fail[ind[0]],
+                        idx,
+                    )
+                    self._add2dict(
+                        "NGMIX_NEIGHBOUR_FLAG",
+                        ngmix_neighbour_flag[ind[0]],
                         idx,
                     )
 
