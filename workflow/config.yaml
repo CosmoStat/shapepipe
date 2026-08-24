@@ -5,10 +5,14 @@
 # tiles) never invalidates completed work — it only changes which jobs exist.
 
 # The tile list that scopes this run (one "IDra.IDdec" per line).
-# 186/187 quad: 18 unique exposures with cross-tile reuse — exercises the
-# structural exposure dedup. (The 210/211 quad used earlier is unusable: its
-# tile images are symlinks into anaennis' moved processed_tiles tree. ~8.5k of
-# the 10.3k staged tiles are such broken links; ~600 tiles are real files.)
+# The campaign grows by appending to this file — parse-time config, so
+# completed work is never invalidated. Current contents: the 186/187 quad
+# (18 exposures, complete and validated against the bash baseline), plus the
+# first 30 tiles of the p3-batch1 list (100 unique exposures — chosen so the
+# worst-case un-cleaned exposure high-water ~660G fits the scratch quota with
+# margin; the remaining 20 batch1 tiles are the next append). (The 210/211
+# quad used earlier is unusable: its tile images are symlinks into anaennis'
+# moved processed_tiles tree — ~8.5k of the 10.3k staged tiles are broken.)
 tile_list: /scratch/cdaley/shapepipe-output/smk-g3/tiles4.txt
 
 # The container every job runs inside (apptainer software-deployment in the profile).
