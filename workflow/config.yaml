@@ -53,12 +53,14 @@ index_db: /scratch/cdaley/shapepipe-output/smk-g3/index/run_index.sqlite
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
 # that exposure has its vignets, deletes the exposure's store AND its manifests,
 # and leaves `cleaned.json`, which absorbs the manifests — `sp report` reads them
-# back out of the tombstone and reports the exposure as `cleaned`. Off here
-# because P0 is a 4-tile debugging run where the exposure store is exactly what
-# you want to inspect; on for any run big enough to care about disk. Flipping it
-# on later reclaims retroactively — the missing tombstones schedule exactly the
-# outstanding clean jobs.
-clean: false
+# back out of the tombstone and reports the exposure as `cleaned`. On here:
+# the quad is validated against the bash baseline (validation verdict
+# p0night1), so its exposure stores' inspection value is spent, and the
+# campaign is scaling into the p3-batch1 tiles — 181 exposures un-cleaned
+# would be ~1.2 TB against a 1 TiB scratch quota, so rolling reclamation is
+# load-bearing from here on. Flipping it on reclaims retroactively — the
+# missing tombstones schedule exactly the outstanding clean jobs.
+clean: true
 
 # Tiles that may NOT pin an exposure store (default: empty).
 #
