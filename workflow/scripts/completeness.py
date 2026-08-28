@@ -10,33 +10,41 @@ sits between ``floor`` and ``expect`` and is tolerated.
 
 This file is also the ``check`` CLI — the second half of every rule's shell line
 (PRD D2/D3). The rules capture ShapePipe's return code rather than ``&&``-ing
-onto it, so the check runs — and the manifest is written — even when
+onto it, so the check runs — and the verdict is recorded — even when
 ``shapepipe_run`` failed::
 
     rc=0
     shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini -b {threads} || rc=$?
-    completeness.py check exp_mask {output} --job-rc "$rc" || rc=1
+    completeness.py check exp_mask {output} --log {log} --job-rc "$rc" || rc=1
     exit $rc
 
 It counts the unit's products under ``$SP_RUN`` and exits nonzero iff a mandatory
 runner is below its floor OR ``--job-rc`` is nonzero — the verdict is COMPOSED of
 the counts and shapepipe_run's own exit status, because a runner can raise after
-the counted ones have written their files. WHERE it writes the record is the
-whole point:
+the counted ones have written their files.
 
-  * success -> ``<stage>.json`` (the rule's declared output, the DAG's currency)
-    and any stale ``<stage>.failed.json`` is removed;
-  * failure -> ``<stage>.failed.json`` (same content, ``status: failed``) and any
-    stale ``<stage>.json`` is REMOVED.
+WHERE it writes the verdict is the whole point, and it is two files with two
+different jobs:
 
-``<stage>.json`` therefore means "this stage succeeded", full stop — a resume can
-never schedule a downstream stage on top of a failed one, not even after a head
-process died without recording the failure. The failed manifest is never a
-declared output of any rule: it is post-mortem evidence for ``run_report.py``,
-which reads it when the success manifest is absent, and snakemake neither tracks
-nor deletes it.
+  * the LOG (``--log``, the rule's snakemake ``log:``) gets the full verdict on
+    EVERY run, success or failure — counts against floors, per-runner detail,
+    scraped failure reasons, ``job_rc`` when nonzero. Snakemake never deletes a
+    log file, so it survives the failed job that wrote it and is the post-mortem
+    evidence ``run_report.py`` reads.
+  * the MANIFEST (the rule's declared ``output:``) gets that same verdict ONLY
+    when it is a success. Snakemake deletes a failed job's declared output
+    natively, so nothing here has to unlink anything.
 
-Manifests carry no wall-clock, and either file is rewritten ONLY when its content
+``<stage>.json`` therefore means "this stage succeeded": a resume cannot schedule
+a downstream stage on top of a failed one. The removal of a PREVIOUS success's
+manifest is snakemake's to do, not this script's, and the one gap that leaves is
+a head process SIGKILLed between the job's failure and that deletion — a
+success-named manifest then outlives the failure it no longer describes. The
+profile's ``rerun-incomplete`` covers the DAG side, and ``run_report.py`` takes
+the WORST status across a stage's log and manifest, so the report is right even
+in that window.
+
+Neither file carries wall-clock, and each is rewritten ONLY when its content
 changes — identical on-disk state must leave a byte-identical manifest with an
 UNMOVED mtime, or the mtime rerun-trigger churns the cone on every unrelated
 ``--forcerun``.
@@ -266,11 +274,6 @@ def build_manifest(stage, run_dir, unit, stage_subdir=None):
     return manifest, ok
 
 
-def failed_path(manifest: Path) -> Path:
-    """``<stage>.json`` -> ``<stage>.failed.json``, in the same manifests/ dir."""
-    return manifest.with_name(manifest.name[:-len(".json")] + ".failed.json")
-
-
 def write_if_changed(path: Path, text: str) -> None:
     """Write only when the bytes differ — see the module docstring on mtime."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -295,6 +298,9 @@ def main(argv=None) -> int:
     c = sub.add_parser("check", help="count products, write the manifest")
     c.add_argument("stage")
     c.add_argument("manifest", type=Path)
+    c.add_argument("--log", type=Path, required=True,
+                   help="the rule's log: path — the verdict is written here every "
+                        "run, success or failure")
     c.add_argument("--run-dir", type=Path, default=None,
                    help="the unit's $SP_RUN (default: the env var)")
     c.add_argument("--unit", default=None,
@@ -317,11 +323,10 @@ def main(argv=None) -> int:
     # The verdict is COMPOSED of two independent statements: the count floors
     # (above) and shapepipe_run's own exit status (here). Counts alone are not
     # enough — a runner can raise AFTER the counted runners have written their
-    # files, so the floors are met while the job died. That combination used to
-    # write the SUCCESS manifest, which snakemake then deleted as a failed job's
-    # output, leaving no manifest at all: failure invisible, and any earlier
-    # failed.json already unlinked by the success branch. An rc-driven override
-    # puts the fork on the failure side, so failed.json is written and kept.
+    # files, so the floors are met while the job died. Without this, such a job
+    # publishes a SUCCESS manifest that snakemake then deletes as a failed job's
+    # output — and the log would claim "complete" for a stage with no manifest,
+    # which reads as a bookkeeping bug rather than as the failure it is.
     #
     # Recorded only when nonzero, which keeps every existing success manifest
     # byte-identical (the mtime rerun-trigger reads those bytes).
@@ -338,22 +343,22 @@ def main(argv=None) -> int:
 
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
-    # The success/failure fork. Exactly one of the two files exists afterwards,
-    # so the presence of <stage>.json IS the statement "this stage succeeded" and
-    # the DAG can never build on top of a failure. The removal of the stale
-    # counterpart is what makes a success->failure or failure->success transition
-    # complete rather than additive.
-    written = args.manifest if ok else failed_path(args.manifest)
-    stale = failed_path(args.manifest) if ok else args.manifest
-    write_if_changed(written, text)
-    stale.unlink(missing_ok=True)
+    # The log ALWAYS gets the verdict; the manifest gets it only on success. No
+    # unlink of anything: snakemake deletes a failed job's declared output, so
+    # the presence of <stage>.json IS the statement "this stage succeeded" and
+    # the DAG can never build on top of a failure. A failure->success transition
+    # publishes the manifest; a success->failure has the manifest removed for us,
+    # and the log is overwritten with the new verdict either way.
+    write_if_changed(args.log, text)
+    if ok:
+        write_if_changed(args.manifest, text)
 
     for runner, r in manifest["runners"].items():
         tag = {"complete": "OK", "warn": "warn", "below_floor": "<-- BELOW floor"}
         print(f"[completeness]   {runner}: {r['found']}/{r['expect']} "
               f"(floor {r['floor']}) {tag[r['status']]}", file=sys.stderr)
     print(f"[completeness] {args.stage} {unit}: {manifest['status']} "
-          f"-> {written}", file=sys.stderr)
+          f"-> {args.log}" + (f" + {args.manifest}" if ok else ""), file=sys.stderr)
     for f in manifest["failures"]:
         for reason in f["reasons"]:
             print(f"[completeness]   {f['runner']}: {reason}", file=sys.stderr)

@@ -102,7 +102,7 @@ workflow/
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
     completeness.py      the ported count-floor table (shared by sp_rule + run_report)
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
-    clean_exposure.py    ONE exposure's store + manifests -> tombstone (the clean_exposure rule)
+    clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
 
@@ -114,15 +114,16 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   CCD is often legitimate, and at DR6 scale per-CCD declaration means
   millions of paths.
 - **Manifests are the DAG's currency, and they are success-only.**
-  `completeness.py check` writes `<stage>.json` when the stage passed its count
-  floor, and `<stage>.failed.json` when it did not — removing the other file
-  either way. So `<stage>.json` on disk means "this stage succeeded", and a
+  `completeness.py check` writes its full verdict — per-runner counts against
+  floors, scraped failure reasons, the `shapepipe_run` exit status when nonzero
+  — to the rule's `log:` (`<unit dir>/logs/<stage>.json`) on *every* run, and
+  additionally to the declared `<stage>.json` manifest only when that verdict is
+  a success. So `<stage>.json` on disk means "this stage succeeded", and a
   resume after an unclean death cannot schedule downstream work on top of a
-  failure. The failed manifest carries the same content plus the scraped
-  reasons; it is never a declared output, so Snakemake never tracks or deletes
-  it, and `sp report` reads it when the success manifest is absent. The profile
-  runs *without* `keep-incomplete` for the same reason: deleting a failed job's
-  declared output is the wanted semantics.
+  failure. Nothing unlinks anything: Snakemake deletes a failed job's declared
+  output natively and never touches its log, which is why the profile runs
+  *without* `keep-incomplete`. `sp report` reads both dirs — the manifest for
+  success, the log for failure — and a unit with neither ran nothing.
 - **Completeness is a count floor, not a taxonomy.** After a run,
   `sp_rule.py` counts products per mandatory runner against
   `completeness.py`'s floor and exits nonzero below it. Per-CCD attrition
@@ -151,8 +152,9 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   Reclamation is the in-DAG `clean_exposure` rule instead: one job per
   exposure, taking every consuming tile's `tile_vignets` manifest as input
   (the campaign-wide consumer set comes from the accumulating index), which
-  deletes the store *and* the exposure's manifests and leaves a `cleaned.json`
-  tombstone. Deleting the manifests is what makes a late append correct: the
+  deletes the store *and* the exposure's `manifests/` and `logs/`, and leaves a
+  `cleaned.json` tombstone. Deleting the manifests is what makes a late append
+  correct: the
   appended tile finds an unbuilt chain and regenerates it. The `clean:` flag
   in `config.yaml` gates it; flipping it on later reclaims retroactively,
   since the missing tombstones schedule exactly the outstanding clean jobs.
@@ -175,9 +177,11 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   its exposure chains are gone and rebuild from scratch.
 - **A reclaimed exposure reports as `cleaned`.** `run_report.py` reads the
   absorbed manifests out of `cleaned.json`, so a reclaimed exposure keeps its
-  per-runner counts and blocks no tile. The `exp_psf` benchmark tsv lives
-  beside `manifests/`, not inside it, so reclamation does not eat the
-  memory-sizing data.
+  per-runner counts and blocks no tile. The logs go with the manifests — a log
+  claiming `complete` for a store that is gone would contradict the unbuilt
+  chain the DAG must now see, and its content duplicates the manifest anyway.
+  The `exp_psf` benchmark tsv lives beside both dirs, not inside either, so
+  reclamation does not eat the memory-sizing data.
 - **Failure is a report, not a gate.** `run_report.py` disk-scans the trees
   against the count table and enumerates shortfalls (whole-unit absence vs
   per-CCD attrition). It runs standalone — a DAG report node would itself be

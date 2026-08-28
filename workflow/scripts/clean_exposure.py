@@ -7,8 +7,8 @@ this executes, every campaign tile that reads this exposure has already extracte
 its postage stamps. Writer, then readers, then cleaner — DAG-ordered, race-free.
 
 What it deletes: the exposure's whole ``output/`` tree (the bulk store —
-run_sp_exp_Gie/Sp/Ma/SxSePsfPi), its ``manifests/``, and its star-catalogue link
-farms (``star_cat_exp``, plus the legacy ``star_cat_tiles``). The farms are
+run_sp_exp_Gie/Sp/Ma/SxSePsfPi), its ``manifests/`` and its ``logs/``, and its
+star-catalogue link farms (``star_cat_exp``, plus the legacy ``star_cat_tiles``). The farms are
 reclaimed for consistency, not for bytes: ``exp_star_cat``'s manifest is deleted
 here like every other, so the exposure's chain must read as unbuilt, and 40
 symlinks left behind are a farm no rule now owns. The catalogue itself lives in
@@ -31,16 +31,25 @@ Deleting the manifests is deliberate and load-bearing, not tidiness:
     needs to run, so tiles already finished are NOT rerun by their exposures'
     manifests vanishing.
 
+``logs/`` goes with them, and for the same reason rather than for bytes. Each
+log holds the completeness verdict of one stage, written on every run and kept by
+snakemake through failures; a log left behind would attest "complete" for a store
+that is no longer there, contradicting the unbuilt chain the DAG must now see.
+Its content for a successful stage is byte-identical to the manifest beside it,
+so absorbing the logs into the tombstone would duplicate what the manifests
+already carry — they are deleted, not copied.
+
 Nothing is lost to the report: every ``manifests/*.json`` is copied verbatim into
 the tombstone under ``manifests``, and ``run_report.py`` reads a cleaned
 exposure's record out of the tombstone — it reports the unit as ``cleaned``,
 warn counts and shortfalls intact, instead of "not run".
 
 The absorption is by GLOB, so it takes whatever is in ``manifests/``, keyed by
-file stem; the report re-keys on each manifest's own ``stage`` field. A
-``<stage>.failed.json`` is therefore carried through unremarkably — it should
-never be there (an exposure with a failed stage has no complete vignets consumer
-and so is not eligible for cleaning), but it costs nothing to be right about.
+file stem; the report re-keys on each manifest's own ``stage`` field. A legacy
+``<stage>.failed.json`` from the pre-``log:`` convention is therefore carried
+through unremarkably — it should never be there (an exposure with a failed stage
+has no complete vignets consumer and so is not eligible for cleaning), but it
+costs nothing to be right about.
 
 Order matters, and it is the reverse of the obvious one: the tombstone is
 written FIRST, complete, and only then is anything deleted. A crash between the
@@ -50,8 +59,8 @@ put the crash window where the manifests are already gone and the record that
 replaces them was never written, and the report would be blind to that exposure
 forever.
 
-The exp_psf benchmark tsv lives beside ``manifests/``, not inside it, so it
-survives this job — it is the measured-memory feed for resource sizing (D4).
+The exp_psf benchmark tsv lives beside ``manifests/`` and ``logs/``, not inside
+either, so it survives this job — it is the measured-memory feed for resource sizing (D4).
 
 The tombstone records the consumer set it was cleaned against. The rule carries
 that same set as a ``params`` value, so when the index grows a new consumer the
@@ -91,7 +100,7 @@ def main() -> None:
 
     # is_symlink() first, and OR'd with exists(): exists() follows the link, so a
     # dangling legacy star_cat_exp would otherwise be skipped and survive.
-    candidates = (args.exp_dir / "output", mdir,
+    candidates = (args.exp_dir / "output", mdir, args.exp_dir / "logs",
                   args.exp_dir / "star_cat_exp", args.exp_dir / "star_cat_tiles")
     targets = [t for t in candidates if t.is_symlink() or t.exists()]
 

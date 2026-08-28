@@ -46,13 +46,13 @@ rerun-incomplete: true           # re-do jobs left incomplete by an unclean deat
 show-failed-logs: true
 printshellcmds: true
 
-# No `keep-incomplete` here (it was the pre-S7a way to preserve failed manifests
-# as report evidence): the declared output IS the manifest, so letting snakemake
-# delete a failed job's output is exactly the semantics this workflow wants — a
-# `<stage>.json` on disk then means the stage succeeded, and a resume cannot
-# schedule downstream work on top of a failure. The post-mortem evidence lives in
-# `<stage>.failed.json`, which completeness.py writes on failure and which is
-# never a declared output, so snakemake never touches it.
+# No `keep-incomplete` here. The declared output IS the manifest, so letting
+# snakemake delete a failed job's output is exactly the semantics this workflow
+# wants: a `<stage>.json` on disk means the stage succeeded, and a resume cannot
+# schedule downstream work on top of a failure. The post-mortem evidence is the
+# rule's `log:` (`<unit>/logs/<stage>.json`), which completeness.py writes on
+# every run and which snakemake preserves through the failure that produced it —
+# which is also what `show-failed-logs` above surfaces on the console.
 
 # rerun-triggers: the v9 default MINUS `input`. params/code/mtime fixes still
 # propagate — completeness.py writes the manifest only on change, so mtimes move

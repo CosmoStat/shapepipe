@@ -140,6 +140,8 @@ rule tile_merge_headers:
         fe     = f"{TILE_DIR}/manifests/tile_find_exposures.json",
     output:
         manifest = f"{TILE_DIR}/manifests/tile_merge_headers.json"
+    log:
+        f"{TILE_DIR}/logs/tile_merge_headers.json"
     params:
         pre = lambda wc: unit_pre("tile_merge_headers", "tile", wc.tile,
                                   forest=forest_dir(wc.tile)),
@@ -158,6 +160,8 @@ rule tile_detect:
         mh = rules.tile_merge_headers.output.manifest,
     output:
         manifest = f"{TILE_DIR}/manifests/tile_detect.json"
+    log:
+        f"{TILE_DIR}/logs/tile_detect.json"
     params:
         pre = lambda wc: unit_pre("tile_detect", "tile", wc.tile),
         script_hash = SCRIPT_HASH
@@ -190,6 +194,8 @@ rule tile_vignets:
     output:
         manifest = f"{TILE_DIR}/manifests/tile_vignets.json",
         store    = temp(directory(f"{TILE_DIR}/output/run_sp_tile_PiViVi")),
+    log:
+        f"{TILE_DIR}/logs/tile_vignets.json"
     params:
         pre = lambda wc: unit_pre("tile_vignets", "tile", wc.tile,
                                   forest=forest_dir(wc.tile)),
@@ -218,6 +224,8 @@ rule tile_ngmix:
         manifest = f"{TILE_DIR}/manifests/tile_ngmix_{{chunk}}.json",
         # temp(directory()) for the same reason as the vignette store above.
         chunkdir = temp(directory(f"{TILE_DIR}/output/run_sp_tile_ngmix_Ng{{chunk}}u")),
+    log:
+        f"{TILE_DIR}/logs/tile_ngmix_{{chunk}}.json"
     params:
         pre = lambda wc: unit_pre(
             "tile_ngmix", "tile", wc.tile,
@@ -258,6 +266,8 @@ rule tile_merge_cats:
         chunkdirs = ngmix_chunkdirs,
     output:
         manifest = f"{TILE_DIR}/manifests/tile_merge_cats.json"
+    log:
+        f"{TILE_DIR}/logs/tile_merge_cats.json"
     params:
         pre = lambda wc: unit_pre("tile_merge_cats", "tile", wc.tile,
                                   env={"NGMIX_N_CHUNKS": NGMIX_CHUNKS}),
@@ -281,6 +291,8 @@ rule tile_make_cat:
     output:
         manifest  = f"{TILE_DIR}/manifests/tile_make_cat.json",
         final_cat = f"{TILE_DIR}/final_cat-{{tile}}.fits",
+    log:
+        f"{TILE_DIR}/logs/tile_make_cat.json"
     params:
         pre = lambda wc: unit_pre("tile_make_cat", "tile", wc.tile),
         script_hash = SCRIPT_HASH
@@ -289,12 +301,17 @@ rule tile_make_cat:
         mem_mb = lambda wc, attempt: 16000 * attempt,
         runtime = 120
     shell:
-        # Publish the catalogue next to the manifest: a real file, so it is a
-        # real declared output (and it persists — never temp()).
+        # sp_shell's body, plus the catalogue publish: a real file, so it is a
+        # real declared output (and it persists — never temp()). `--job-rc` is
+        # composed in for the same reason it is everywhere else (see sp_shell) —
+        # without it a job whose counts cleared their floors but whose
+        # shapepipe_run died writes a "complete" log for a manifest snakemake is
+        # about to delete.
         "{params.pre}\n"
         "rc=0\n"
         'shapepipe_run -c "$SP_CONFIG/config_tile_Mc.ini" -b {threads} || rc=$?\n'
-        f"python {SCRIPTS}/completeness.py check tile_make_cat {{output.manifest}} || rc=1\n"
+        f"python {SCRIPTS}/completeness.py check tile_make_cat {{output.manifest}}"
+        ' --log {log} --job-rc "$rc" || rc=1\n'
         "if [ $rc -eq 0 ]; then\n"
         '  cp -f "$(ls -1 "$SP_RUN"/output/run_sp_Mc/make_cat_runner/output/final_cat*.fits'
         ' | head -1)" {output.final_cat}\n'

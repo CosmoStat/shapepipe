@@ -25,6 +25,8 @@ whole-exposure hard failure. That is now a property of the committed configs
 rule exp_get_images:
     output:
         manifest = f"{EXP_DIR}/manifests/exp_get_images.json"
+    log:
+        f"{EXP_DIR}/logs/exp_get_images.json"
     params:
         pre = lambda wc: unit_pre("exp_get_images", "exp", wc.exp,
                                   exp_name=EXP[wc.exp]),
@@ -151,6 +153,10 @@ rule exp_star_cat:
         manifest = f"{EXP_DIR}/manifests/exp_star_cat.json",
         # The sentinel: ccd-0 of the 40-link farm (see above).
         link     = f"{EXP_DIR}/star_cat_exp/star_cat-{{exp}}-0.fits"
+    # No `log:`. Every other rule's log carries a completeness VERDICT, and this
+    # rule computes none: it is not a shapepipe_run, it has no count floor, and
+    # under `set -euo pipefail` it either completes or aborts at the failing
+    # step. Snakemake's own captured job stderr is the evidence for that.
     params:
         cmd = lambda wc: star_cat_cmd(wc.exp),
         # create_star_cat.py is external to the shell string, so the `code`
@@ -175,6 +181,8 @@ rule exp_split:
         rules.exp_get_images.output.manifest
     output:
         manifest = f"{EXP_DIR}/manifests/exp_split.json"
+    log:
+        f"{EXP_DIR}/logs/exp_split.json"
     params:
         pre = lambda wc: unit_pre("exp_split", "exp", wc.exp),
         script_hash = SCRIPT_HASH
@@ -193,6 +201,8 @@ rule exp_mask:
         rules.exp_star_cat.output.manifest
     output:
         manifest = f"{EXP_DIR}/manifests/exp_mask.json"
+    log:
+        f"{EXP_DIR}/logs/exp_mask.json"
     params:
         pre = lambda wc: unit_pre("exp_mask", "exp", wc.exp),
         script_hash = SCRIPT_HASH
@@ -211,6 +221,8 @@ rule exp_psf:
         rules.exp_mask.output.manifest
     output:
         manifest = f"{EXP_DIR}/manifests/exp_psf.json"
+    log:
+        f"{EXP_DIR}/logs/exp_psf.json"
     params:
         pre = lambda wc: unit_pre("exp_psf", "exp", wc.exp),
         script_hash = SCRIPT_HASH

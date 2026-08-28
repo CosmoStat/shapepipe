@@ -12,19 +12,21 @@ It reads two things and nothing else (PRD D3):
   * the **index** (``run_index.sqlite``) — the units the run declared, and the
     tile->exposure edges that let an exposure failure be blamed on the tiles it
     blocks;
-  * the **manifests** — one per unit per stage, written by
-    ``completeness.py check``, carrying per-runner found/expect/floor and
-    log-scraped failure reasons.
+  * the **verdicts** written by ``completeness.py check`` — per-runner
+    found/expect/floor and log-scraped failure reasons — which land in two places
+    with two different lifetimes. Every run writes the unit's ``logs/<stage>.json``
+    (the rule's snakemake ``log:``, which snakemake never deletes); a run whose
+    verdict is a success ADDITIONALLY writes ``manifests/<stage>.json``, the
+    rule's declared output, which snakemake deletes when the job fails.
 
-A stage that failed leaves ``<stage>.failed.json`` instead of ``<stage>.json``
-(``completeness.py``): the success name is reserved for success, so the DAG
-cannot build on a failure. Both names are read here, and the status comes from
-the manifest BODY, so a stage is reported as failed either way — including
-manifests written before that split, where the failure content sat under the
-success name.
+Both dirs are read here and the status comes from the file BODY, so a failed
+stage speaks through its log while a successful one is corroborated by two
+identical files. A unit with neither ran nothing. Also read, for continuity with
+stores written before this convention: ``manifests/<stage>.failed.json``, which
+is where failure evidence used to go.
 
-A reclaimed exposure has no manifests: ``clean_exposure`` deleted them after
-copying them into ``<exp dir>/cleaned.json``. That tombstone is read as the
+A reclaimed exposure has neither dir: ``clean_exposure`` deleted both, after
+copying the manifests into ``<exp dir>/cleaned.json``. That tombstone is read as the
 unit's record and the unit is reported as **cleaned** — not "not run", and it
 blocks no tile.
 
@@ -32,9 +34,9 @@ No disk scanning: counting products is the *check's* job, done once at the momen
 the products were fresh. A unit with no manifest for a stage is "not run" — which
 is a real and distinct answer from "ran and produced nothing".
 
-Manifests are discovered by glob (``tiles/**/manifests/*.json``), not by
-constructed path: the unit stores are sharded (``tiles/<prefix>/<ID>/``) and the
-sharding depth is not this script's business.
+Records are discovered by glob (``tiles/**/manifests/*.json`` and
+``tiles/**/logs/*.json``), not by constructed path: the unit stores are sharded
+(``tiles/<prefix>/<ID>/``) and the sharding depth is not this script's business.
 """
 
 import argparse
@@ -55,31 +57,41 @@ STATUSES = ("complete", "warn", "failed", "not_run")
 
 
 def load_manifests(run_dir: Path, sub: str) -> dict:
-    """``{unit: {stage: manifest}}`` for one store (``tiles`` or ``exp``).
+    """``{unit: {stage: verdict}}`` for one store (``tiles`` or ``exp``).
 
-    The unit key is the manifest dir's *parent directory name* — shard-depth
-    agnostic, and the only form that joins to the index (the manifest's own
+    Reads BOTH of a unit's record dirs: ``manifests/`` (the rules' declared
+    outputs, success-only) and ``logs/`` (the rules' ``log:``, written every run
+    and never deleted by snakemake, so this is where a failure survives).
+
+    The unit key is the record dir's *parent directory name* — shard-depth
+    agnostic, and the only form that joins to the index (the record's own
     ``unit`` field carries ``SP_UNIT_NUM``'s dashed form, ``210-282``, which is
-    not the index's ``210.282``). The stage comes from the manifest body, never
-    the filename: ngmix chunks share a stage under per-chunk filenames, and
-    ``<stage>.failed.json`` names the same stage as ``<stage>.json``.
+    not the index's ``210.282``). The stage comes from the body, never the
+    filename: ngmix chunks share a stage under per-chunk filenames, and a log
+    names the same stage as the manifest beside it.
 
-    Several files can therefore map to one (unit, stage), and the WORST status
-    wins. That is what collapses the ngmix chunks to one entry, and what makes a
-    failed manifest speak even in the transient window where its success-named
-    counterpart has not yet been removed.
+    Several files therefore map to one (unit, stage), and the WORST status wins.
+    That is what collapses the ngmix chunks to one entry, and it is why a
+    successful stage's two byte-identical records cost nothing while a failure
+    always speaks. A body with no ``stage`` field is skipped: it is not one of
+    ours, which is what keeps a stray JSON deeper in the tree inert.
     """
     out: dict = defaultdict(dict)
-    for path in sorted((run_dir / sub).glob("**/manifests/*.json")):
+    paths = sorted((run_dir / sub).glob("**/manifests/*.json")) \
+        + sorted((run_dir / sub).glob("**/logs/*.json"))
+    for path in paths:
         try:
             m = json.loads(path.read_text())
         except (OSError, json.JSONDecodeError) as exc:
-            print(f"[run_report] unreadable manifest {path}: {exc}", file=sys.stderr)
+            print(f"[run_report] unreadable record {path}: {exc}", file=sys.stderr)
+            continue
+        if not isinstance(m, dict) or "stage" not in m:
             continue
         unit = path.parent.parent.name
-        stage = m.get("stage", path.stem)
+        stage = m["stage"]
         prev = out[unit].get(stage)
-        # Worst status wins when several manifests share a stage (ngmix chunks).
+        # Worst status wins when several records share a stage (ngmix chunks;
+        # a stage's manifest and its identical log).
         rank = lambda d: STATUSES.index(d.get("status")) if d.get("status") in STATUSES else len(STATUSES)  # noqa: E731
         if prev is None or rank(m) > rank(prev):
             out[unit][stage] = m
@@ -89,8 +101,9 @@ def load_manifests(run_dir: Path, sub: str) -> dict:
 def absorb_tombstones(run_dir: Path, sub: str, manifests: dict) -> set:
     """Fill in reclaimed units from their ``cleaned.json``; return their ids.
 
-    A cleaned exposure has NO ``manifests/`` — ``clean_exposure`` deleted it,
-    after copying every manifest verbatim into the tombstone. Read them back, or
+    A cleaned exposure has neither ``manifests/`` nor ``logs/`` —
+    ``clean_exposure`` deleted both, after copying every manifest verbatim into
+    the tombstone (the logs duplicate them). Read them back, or
     the report inverts the truth exactly when reclamation works: the exposure
     shows as "not run" and blocks the very tiles whose completion authorised the
     deletion.

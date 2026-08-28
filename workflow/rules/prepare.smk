@@ -23,6 +23,8 @@ has no star-cat node because it has no mask rule yet — see tile.smk.
 rule tile_get_images:
     output:
         manifest = f"{TILE_DIR}/manifests/tile_get_images.json"
+    log:
+        f"{TILE_DIR}/logs/tile_get_images.json"
     params:
         pre = lambda wc: unit_pre("tile_get_images", "tile", wc.tile),
         script_hash = SCRIPT_HASH
@@ -39,6 +41,8 @@ rule tile_uncompress:
         rules.tile_get_images.output.manifest
     output:
         manifest = f"{TILE_DIR}/manifests/tile_uncompress.json"
+    log:
+        f"{TILE_DIR}/logs/tile_uncompress.json"
     params:
         pre = lambda wc: unit_pre("tile_uncompress", "tile", wc.tile),
         script_hash = SCRIPT_HASH
@@ -54,6 +58,8 @@ rule tile_find_exposures:
         rules.tile_uncompress.output.manifest
     output:
         manifest = f"{TILE_DIR}/manifests/tile_find_exposures.json"
+    log:
+        f"{TILE_DIR}/logs/tile_find_exposures.json"
     params:
         pre = lambda wc: unit_pre("tile_find_exposures", "tile", wc.tile),
         script_hash = SCRIPT_HASH

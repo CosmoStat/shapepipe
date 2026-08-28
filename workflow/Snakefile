@@ -20,6 +20,13 @@ The atom (D2): one rule == one `shapepipe_run` on one unit; its single declared
 output is its MANIFEST (`<unit dir>/manifests/<stage>.json`), written by
 `completeness.py check`. Product files are not declared — a missing CCD is often
 legitimate, and at DR6 scale per-CCD declaration means millions of paths.
+
+Failure evidence rides on the rule's `log:` (`<unit dir>/logs/<stage>.json`,
+`unit_log` below): the check writes its full verdict there on every run, and the
+manifest only when that verdict is a success. Snakemake deletes a failed job's
+declared output and never touches its log, so the two directives say exactly the
+two things this workflow needs — "this stage succeeded" and "here is what
+happened".
 """
 
 import hashlib
@@ -240,8 +247,8 @@ CLEAN_IGNORE_TILES = set(config.get("clean_ignore_tiles") or [])
 
 
 def tombstone(exp):
-    """The clean_exposure output. Lives BESIDE manifests/, not inside it: the
-    clean job deletes manifests/ wholesale, and `sp report` scans it."""
+    """The clean_exposure output. Lives BESIDE manifests/ and logs/, not inside
+    either: the clean job deletes both wholesale, and `sp report` scans it."""
     return f"{exp_dir(exp)}/cleaned.json"
 
 
@@ -305,7 +312,12 @@ def unit_pre(stage, level, unit, *, exp_name=None, forest=None, env=None,
 
     What it materialises (the proven v2.0 isolation-by-work-dir-content, NOT
     -e/--exclusive):
-      * ``output/`` and ``manifests/``;
+      * ``output/``, ``manifests/`` and ``logs/`` — the last two are a SIBLING
+        pair, not one dir with two naming conventions: clean_exposure deletes
+        BOTH wholesale, because a log attesting "complete" for a store that has
+        been reclaimed contradicts the unbuilt chain the DAG must now see. (The
+        benchmark tsv is deliberately outside both: it measures the job, it does
+        not claim anything about the store, so reclamation must not eat it.)
       * tile: ``tile_numbers.txt`` (dot format — what get_images reads);
       * exposure: a fabricated pseudo-Fe ``exp_numbers-000-000.txt`` holding the
         ORIGINAL exposure name from the index (``2605805p``), so get_images
@@ -330,7 +342,7 @@ def unit_pre(stage, level, unit, *, exp_name=None, forest=None, env=None,
         # Also set via apptainer-args in the profile; kept here so a hand-run of
         # this same line outside snakemake behaves identically.
         f"export {_THREAD_CAPS}",
-        'mkdir -p "$SP_RUN/output" "$SP_RUN/manifests"',
+        'mkdir -p "$SP_RUN/output" "$SP_RUN/manifests" "$SP_RUN/logs"',
     ]
     if forest:
         lines.append(f"export SP_EXP='{forest}'")
@@ -352,33 +364,32 @@ def unit_pre(stage, level, unit, *, exp_name=None, forest=None, env=None,
 def sp_shell(stage, config_name):
     """The rule's shell string: prologue, one shapepipe_run, one completeness check.
 
-    ``{threads}`` and ``{output}`` are placeholders HERE and nowhere else (see
-    unit_pre). ``-b {threads}`` makes SMP fork width and cpus_per_task one number
-    by construction (D4).
+    ``{threads}``, ``{output}`` and ``{log}`` are placeholders HERE and nowhere
+    else (see unit_pre). ``-b {threads}`` makes SMP fork width and cpus_per_task
+    one number by construction (D4).
 
     The check runs even when shapepipe_run failed, so a failed unit still leaves
-    a record of why — but that record goes to `<stage>.failed.json`, and the
-    declared `<stage>.json` is removed if it was there. Success manifests are
-    success-only currency (completeness.py); the failed one is evidence for
-    `sp report` and is never a declared output.
+    a record of why: the verdict goes to the rule's `log:` on EVERY run, and to
+    the declared `<stage>.json` manifest only when it is a success. Snakemake
+    deletes a failed job's output and never touches its log, so the manifest
+    stays success-only currency and the log is the evidence `sp report` reads.
 
     The verdict is COMPOSED, which is why `--job-rc "$rc"` is passed: the count
     floors and shapepipe_run's exit status are two independent statements about
-    the same job, and the manifest must reflect both. Without it, a job whose
+    the same job, and the record must reflect both. Without it, a job whose
     counts cleared their floors but whose shapepipe_run died (a late runner
-    raising after the counted ones wrote their files) wrote the SUCCESS manifest
-    and still exited nonzero — snakemake then deleted that manifest as a failed
-    job's output, no failed.json was written (the check thought it had won), and
-    any prior failed.json had already been unlinked. The failure left no trace at
-    all. With the rc composed in, the fork lands on the failure side and the
-    evidence survives.
+    raising after the counted ones wrote their files) publishes a SUCCESS
+    manifest and still exits nonzero — snakemake deletes that manifest as a
+    failed job's output, and the log is left claiming "complete" for a stage
+    with nothing to show for it. With the rc composed in, both files agree that
+    the job failed.
     """
     return (
         "{params.pre}\n"
         "rc=0\n"
         f"shapepipe_run -c \"$SP_CONFIG/{config_name}\" -b {{threads}} || rc=$?\n"
         f"python {SCRIPTS}/completeness.py check {stage} {{output.manifest}}"
-        " --job-rc \"$rc\" || rc=1\n"
+        " --log {log} --job-rc \"$rc\" || rc=1\n"
         "exit $rc\n"
     )
 
