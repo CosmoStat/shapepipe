@@ -12,20 +12,22 @@ shard level is not cosmetic: ``exp_utils.get_exp_output_files`` hardwires
 ``<SP_EXP>/<prefix>/<base>/output/run_sp_*`` into its glob, so a flat forest
 makes every tile gather stage fail "No split_exp_runner output found".
 
-All rules are group-compatible (shell only, no mid-chain localrules), but only
-the tail pair is actually grouped: ``group: "tile_finish"`` on tile_merge_cats
-(median 0:15) and tile_make_cat (1:34) — one sbatch per tile for two short jobs
-of identical shape (16 GB, 8 threads, 120 min each; the group asks max mem_mb =
-16000*attempt, max threads = 8, sum runtime = 240, per the composition rules in
-prepare.smk's docstring). Distinct tiles share no edge, so it is one group job
-per tile.
+All rules are group-compatible (shell only, no mid-chain localrules), and the two
+short regions are grouped, per the composition rules in prepare.smk's docstring.
+Distinct tiles share no edge, so each is one group job per tile:
 
-Nothing else on the tile side may join a group. merge_cats' upstream is
-tile_ngmix (hours) and make_cat is the terminus, so this pair is the whole
-connected short region. tile_merge_headers (0:38) is short but STRANDED: its
-upstream is the tile_exp_forest localrule and its only downstream is tile_detect
-(16 GB), so any group containing it either fuses a localrule — impossible — or
-pulls a heavy rule in. It stays one job per tile, deliberately.
+* ``group: "tile_gather"`` — tile_exp_forest (2 GB, 20 min) and
+  tile_merge_headers (median 0:38; 8 GB, 4 threads, 120 min). The group asks max
+  mem_mb = 8000*attempt, max threads = 4, sum runtime = 140. tile_detect also
+  consumes the forest, but a consumer OUTSIDE the group is just an ordinary DAG
+  edge on the group job — it does not pull tile_detect (16 GB) in.
+* ``group: "tile_finish"`` — tile_merge_cats (median 0:15) and tile_make_cat
+  (1:34), two short jobs of identical shape (16 GB, 8 threads, 120 min each;
+  max mem_mb = 16000*attempt, max threads = 8, sum runtime = 240).
+
+Nothing else joins either. The heavy middle (tile_detect, tile_vignets,
+tile_ngmix) is where the wall time is, and fusing a short rule onto one of those
+would reserve its footprint for the short job too.
 
 Note there is no `tile_mask` rule: the committed config chain is the
 "sx_nomask" tile_detect variant (config_tile_Sx.ini reads Git + Uz + Mh, no mask
@@ -119,6 +121,7 @@ def tile_exp_all(wc):    return tile_exp_split(wc) + tile_exp_mask(wc) + tile_ex
 # Its output stays a directory() (it has no ShapePipe run dir and no manifest —
 # it is not a shapepipe_run at all).
 rule tile_exp_forest:
+    group: "tile_gather"
     input:
         tile_exp_all
     output:
@@ -142,6 +145,7 @@ rule tile_exp_forest:
 # (log_exp_headers-<IDra>-<IDdec>.sqlite, which Sx / PiViVi / ngmix consume).
 # Reads headers-*.npy through the forest -> the split manifests are the edge.
 rule tile_merge_headers:
+    group: "tile_gather"
     input:
         forest = rules.tile_exp_forest.output.forest,
         split  = tile_exp_split,
