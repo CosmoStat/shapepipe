@@ -30,6 +30,7 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 workflow/bin/sp run       # bring products on disk up to date with the tile list
 workflow/bin/sp report    # emit run_report.json now (mid-run is fine)
 workflow/bin/sp cancel <run-name-substring>   # scancel this workflow's jobs
+workflow/bin/sp container status              # which image the jobs will run
 ```
 
 Installed and pinned versions on nibi (`/project/def-mjhudson/cdaley/snakemake-env`,
@@ -38,9 +39,48 @@ Pin range: `snakemake>=9,<10`, `snakemake-executor-plugin-slurm>=2.7,<3`. The
 v8→v9 breaks matter here: `--use-singularity` became `--sdm`, executors became
 plugins, and full `rerun-triggers` became the default.
 
-Anything other than `run`, `report`, `cancel` passes straight through to
+Anything other than `run`, `report`, `container`, `cancel` passes straight through to
 snakemake with the workflow's profile and state dir — the escape hatch for
 `sp --unlock`, `sp --dag`, `sp exp_psf ...`.
+
+## The container image
+
+`sp container` owns which image the jobs run inside. Two layers, and the second
+only exists if you ask for one:
+
+* your **cached SIF** (`~/.cache/shapepipe/shapepipe.sif`, `SP_CACHE_DIR` or
+  `SP_CONTAINER` to move it) — a pristine pull of the published image, private
+  to you, so nobody else's refresh moves the ground under your running jobs;
+* an optional **sandbox** (`~/.cache/shapepipe/sandbox/`, `SP_SANDBOX`) — the
+  same image unpacked writable, so a `pip install` into it sticks. The escape
+  hatch for work needing a package the image does not carry yet.
+
+The Snakefile's `container:` is that resolution, in one order shared by the CLI
+and the workflow: **sandbox → cached SIF → the `container:` path in
+`config.yaml`**. With an empty cache — the normal case — that lands on the
+shared `/project` `.sif` the workflow has always used, so this changes nothing
+until you opt in.
+
+```bash
+sp container status                      # layers present, active one, revision vs HEAD
+sp container pull                        # ghcr.io/cosmostat/shapepipe:develop-runtime
+sp container pull --tag docker://...     # some other image
+sp container sandbox                     # unpack the SIF writable (opt-in)
+sp container exec --writable pip install <pkg>
+sp container exec python -c 'import shapepipe'
+sp container resolve                     # just the path the workflow will run
+```
+
+`status` reads the image's OCI labels and places its
+`org.opencontainers.image.revision` against this checkout's HEAD:
+in-sync / behind / ahead / diverged, or unknown when the image carries no label
+or the commit was never fetched here.
+
+**`pull` needs the network.** Compute nodes on Alliance clusters generally have
+none, so run it on a login node or inside an `salloc` allocation — never from a
+batch job. `pull` and `sandbox` both stage to a sibling path and swap it in, so
+an in-flight job never sees a half-written image and a failed rebuild leaves the
+one you had intact.
 
 ## Execution: two static invocations
 
@@ -91,7 +131,7 @@ profile-only pass.
 workflow/
   Snakefile              parse-time index load; global container:; onsuccess/onerror report hooks
   config.yaml            the run: tile list, paths, container, chunk count
-  bin/sp                 committed launcher (module load + /project venv + run/report/cancel)
+  bin/sp                 committed launcher (module load + /project venv + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
     exposure.smk         per-exposure: get_images, star_cat, split, mask, psf (no temp())
@@ -102,6 +142,7 @@ workflow/
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
     completeness.py      the ported count-floor table (shared by sp_rule + run_report)
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
+    container.py         image layers + the resolution order behind `sp container` (stdlib-only)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```

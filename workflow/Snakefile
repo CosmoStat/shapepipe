@@ -44,8 +44,15 @@ from snakemake.exceptions import WorkflowError
 configfile: str(Path(workflow.snakefile).parent / "config.yaml")
 
 # Every job's shell runs inside this container (apptainer software-deployment in
-# the profile); the user never types apptainer.
-container: config["container"]
+# the profile); the user never types apptainer. WHICH image is the one resolution
+# order `sp container` exposes — this user's writable sandbox if they built one,
+# else their cached SIF if they pulled one, else `container:` above. An empty
+# cache therefore lands on exactly the shared /project image the workflow has
+# always run, and a package installed into a sandbox reaches the jobs too.
+sys.path.insert(0, str(Path(workflow.snakefile).parent / "scripts"))
+import container as _container                          # noqa: E402
+
+container: _container.resolve_image()[0]
 
 # --- paths -----------------------------------------------------------------
 RUN_DIR    = Path(config["run_dir"])

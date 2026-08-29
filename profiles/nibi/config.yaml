@@ -8,7 +8,12 @@
 #
 # Launch via `workflow/bin/sp` (loads apptainer/1.4.5, uses the /project venv).
 # software-deployment-method wraps every job's shell in `apptainer exec` — the
-# user never types apptainer; the container is set in the Snakefile (local .sif).
+# user never types apptainer. WHICH image is resolved in the Snakefile through
+# workflow/scripts/container.py: this user's writable sandbox if they built one,
+# else their cached SIF (`sp container pull`), else the `container:` path in
+# workflow/config.yaml — the shared /project .sif, and the default whenever the
+# cache is empty. `sp container status` prints which layer is live. `sp container
+# pull` needs the network: login node or salloc, never a batch job.
 
 executor: slurm
 

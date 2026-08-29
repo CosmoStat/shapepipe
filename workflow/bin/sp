@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # sp — the committed launcher for the ShapePipe Snakemake workflow (PRD #848 D1).
 #
-# Two verbs, nothing else:
+# Three verbs, nothing else:
 #
 #   sp run [ARGS...]   bring the products on disk up to date with the tile list.
 #                      Two snakemake invocations over one Snakefile:
@@ -9,6 +9,12 @@
 #                        2. COMPUTE  snakemake all   <- its PARSE builds the index
 #                      ARGS (--jobs, -n, --forcerun, ...) pass through to BOTH.
 #   sp report [ARGS...]  emit run_report.json now (mid-run is fine).
+#   sp container VERB    manage the image every job runs inside: pull, status,
+#                      sandbox, exec, resolve. `sp container --help` documents
+#                      the two layers and the resolution order (sandbox -> your
+#                      cached SIF -> the `container:` path in config.yaml).
+#                      `pull` needs the network: run it on a login node or in an
+#                      salloc allocation, never from a batch job.
 #
 # Anything else is passed straight through to snakemake with the same profile and
 # state dir (the escape hatch: `sp --unlock`, `sp exp_psf ...`, `sp --dag`).
@@ -82,6 +88,12 @@ case "$cmd" in
     shift
     python "$SCRIPTS/run_report.py" --run-dir "$RUN_DIR" --index "$INDEX_DB" \
       --status manual "$@"
+    ;;
+  container)
+    # The image layer, outside snakemake entirely: the script is stdlib-only so
+    # it runs on the bare host, and the apptainer module is already loaded above.
+    shift
+    python "$SCRIPTS/container.py" "$@"
     ;;
   cancel)
     # Kept only because it is two lines: scancel this workflow's jobs by name
