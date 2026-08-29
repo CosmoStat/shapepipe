@@ -309,7 +309,7 @@ rule tile_make_cat:
         store = rules.tile_vignets.output.store,
     output:
         manifest  = f"{TILE_DIR}/manifests/tile_make_cat.json",
-        final_cat = f"{TILE_DIR}/final_cat-{{tile}}.fits",
+        final_cat = f"{PROD_TILE_DIR}/final_cat-{{tile}}.fits",
     log:
         f"{TILE_DIR}/logs/tile_make_cat.json"
     params:

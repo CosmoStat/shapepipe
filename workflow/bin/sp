@@ -42,9 +42,15 @@ cfg() { sed -n "s/^$1:[[:space:]]*//p" "$CONFIG" | head -1; }
 RUN_DIR="$(cfg run_dir)"; INDEX_DB="$(cfg index_db)"
 
 # Snakemake state (.snakemake: metadata, locks, incomplete markers) lives NEXT TO
-# THE RUN on /scratch, never on /project (a hard 27/27 TiB group quota killed a
-# metadata write mid-run, live). --directory only moves state: all data paths are
-# absolute, and the Snakefile resolves its own configfile.
+# THE RUN on /scratch, never on the persistent root — the one exception to D5's
+# "durable, low-volume products go on /project". It is neither: one small, hot
+# metadata file per output, rewritten on every job, which at DR6 is >170k files
+# of churn against a backed-up filesystem with a 1M-inode group quota. It is also
+# reconstructible — losing it costs a re-parse, not a re-run. (The lesson arrived
+# the hard way: a hard 27/27 TiB group quota killed a metadata write mid-run,
+# live. The quota has since eased; the placement is right on its own merits.)
+# --directory only moves state: all data paths are absolute, and the Snakefile
+# resolves its own configfile.
 STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"; mkdir -p "$STATE_DIR"
 
 # SP_MISSING_THRESHOLD gates the compute parse's index build: the fraction of

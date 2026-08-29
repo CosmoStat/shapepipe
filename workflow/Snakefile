@@ -69,7 +69,16 @@ if _kind == "none":
 container: _image
 
 # --- paths -----------------------------------------------------------------
+# TWO ROOTS (D5). RUN_DIR is the scratch root: bulk intermediates, sized so a
+# batch finishes inside the purge window. PRODUCTS_DIR is the persistent root
+# for the durable, low-volume products — the final catalogues, the index, the
+# report. Snakemake's own state is the one durable-looking thing that stays on
+# scratch (bin/sp explains why: tens of thousands of small, hot metadata writes
+# against a backed-up, file-count-limited filesystem).
 RUN_DIR    = Path(config["run_dir"])
+# Defaults to RUN_DIR so a scratch-only run (a fixture, a smoke test) needs no
+# second path: one root, exactly the pre-D5 layout.
+PRODUCTS_DIR = Path(config.get("products_dir") or RUN_DIR)
 # Run-independent root for the mask star catalogues: the HEALPix chunk store the
 # star_catalogue rule fills, and the per-exposure cuts exp_star_cat makes from it
 # (config.yaml explains the placement).
@@ -191,6 +200,9 @@ wildcard_constraints:
 # is built by these helpers, so a mismatched (shard, id) pair is never requested.
 TILE_DIR = str(RUN_DIR / "tiles" / "{shard}" / "{tile}")
 EXP_DIR  = str(RUN_DIR / "exp" / "{shard}" / "{exp}")
+# The persistent root mirrors the scratch one, shard for shard, so the two trees
+# read as the same campaign seen from two filesystems.
+PROD_TILE_DIR = str(PRODUCTS_DIR / "tiles" / "{shard}" / "{tile}")
 
 def tile_dir(tile):
     return f"{RUN_DIR}/tiles/{tile[:2]}/{tile}"
@@ -208,7 +220,17 @@ def forest_dir(tile):
     return f"{tile_dir(tile)}/exp_forest"
 
 def final_cat(tile):
-    return f"{tile_dir(tile)}/final_cat-{tile}.fits"
+    """The campaign's science product, and its tile-finished marker.
+
+    It lives on the PERSISTENT root, not the scratch one, and both halves of
+    that sentence are load-bearing. As a product: it is what the campaign is
+    for, and a 60-day purge must not eat it. As a marker: tile_finished() keys
+    on this path to cut a finished tile's exposure edges (D5), so if a purge
+    could remove it, finished tiles would re-declare inputs against exposure
+    stores that reclamation deleted — the rerun avalanche the cut exists to
+    prevent, arriving by way of the purge instead.
+    """
+    return f"{PRODUCTS_DIR}/tiles/{tile[:2]}/{tile}/final_cat-{tile}.fits"
 
 def unit_num(unit):
     """$SP_UNIT_NUM: ShapePipe's image-number convention, dot -> dash, leading

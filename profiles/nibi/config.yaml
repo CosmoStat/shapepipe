@@ -37,12 +37,15 @@ software-deployment-method: [apptainer]
 #  OMP_NUM_THREADS=1   caps OpenBLAS fork-explosion (verified: pool 32->1)
 #  MALLOC_ARENA_MAX=2  bounded allocator (im_sims/nibi lesson)
 #  --home /home/cdaley wins over the SDM's --home <cwd>; restores cadcproxy.pem for vos/vcp
-#  PYTHONPATH          SETTLED CALL 3 — P0 pins THIS branch's src/ (identical to
-#                      develop@97e16d50: orchestration commits never touch src/).
+#  PYTHONPATH          SETTLED CALL 3 — pins THIS branch's src/, which is
+#                      develop@97e16d50 plus the four commits that genuinely need
+#                      module code: ngmix chunk fields + position-seeded RNG,
+#                      merge_sep_cats chunk paths, the vizier star-cat helpers,
+#                      and the cherry-picked #873 (seeded setools split).
 #                      NOT shapepipe-prod (drifted to a PR branch mid-run, and the
 #                      live p3-batch1 job reads it) and not the sif default
-#                      (frozen pre-#843). Production later rebuilds the sif at the
-#                      validated commit and DROPS this --env line.
+#                      (frozen pre-#843, and pre-#873). Production later rebuilds
+#                      the sif at the validated commit and DROPS this --env line.
 apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/project/def-mjhudson/cdaley/shapepipe-snakemake/src --home /home/cdaley --bind /project --bind /scratch"
 
 latency-wait: 60                 # NFS: wait for outputs to appear after a job
