@@ -37,10 +37,20 @@ where the science stack is not installed, and so must import without it.
 import argparse
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+
+class ContainerError(Exception):
+    """A misconfiguration the caller must fix (bad override, no image at all).
+
+    Raised rather than ``sys.exit``ed so the Snakefile, which imports this
+    module at parse time, can turn it into a WorkflowError instead of a
+    SystemExit. ``main`` below turns it back into a one-line CLI error.
+    """
 
 # The published image. CI pushes one tag per branch, sanitized; `-runtime` is
 # the slim variant the workflow runs.
@@ -51,6 +61,12 @@ CONTAINER_URI = "docker://ghcr.io/cosmostat/shapepipe:develop-runtime"
 # here, so the CLI and the workflow cannot disagree about the default.
 CONFIG_FILE = Path(__file__).resolve().parents[1] / "config.yaml"
 CONFIG_KEY = "container"
+
+# The profile whose `apptainer-args:` every workflow job runs under. `exec` reads
+# it at runtime rather than restating it, so a one-off `sp container exec` and a
+# job see the same environment (the PYTHONPATH pin above all: a divergence there
+# means the one-off imports a different src/ than the workflow does).
+PROFILE_FILE = Path(__file__).resolve().parents[2] / "profiles" / "nibi" / "config.yaml"
 
 # ~/.cache/shapepipe by default; SP_CACHE_DIR moves the whole cache (e.g. onto
 # a filesystem with room), XDG_CACHE_HOME moves it with everything else.
@@ -85,6 +101,20 @@ def configured_default():
     return match.group(1) if match else None
 
 
+def profile_apptainer_args():
+    """Return the profile's ``apptainer-args`` as a token list, or ``[]``.
+
+    Minimal scalar read again (stdlib-only); a missing or unreadable profile
+    yields ``[]``, which callers replace with their own defaults.
+    """
+    try:
+        text = PROFILE_FILE.read_text()
+    except OSError:
+        return []
+    match = re.search(r'^apptainer-args:[ \t]*"(.*)"[ \t]*$', text, re.MULTILINE)
+    return shlex.split(match.group(1)) if match else []
+
+
 def local_sif():
     """Return this user's cached image path (may not exist yet)."""
     override = os.environ.get("SP_CONTAINER")
@@ -110,6 +140,14 @@ def resolve_image():
     sif = local_sif()
     if sif.exists():
         return str(sif), "sif"
+    # An override that resolves to nothing is a typo, never an intention: falling
+    # through to the shared image would run the job against something other than
+    # what the user named.
+    if os.environ.get("SP_CONTAINER"):
+        raise ContainerError(
+            f"SP_CONTAINER={os.environ['SP_CONTAINER']} does not exist "
+            f"(resolved to {sif}). Unset it, or point it at an image that does."
+        )
     default = configured_default()
     if default:
         return default, "configured"
@@ -281,7 +319,13 @@ def cmd_status(args):
     """Report which image layer is live, its revision, and how current it is."""
     sif = local_sif()
     sandbox = local_sandbox()
-    active, kind = resolve_image()
+    # status is the verb you run WHEN something is wrong, so a broken override is
+    # reported here rather than raised.
+    try:
+        active, kind = resolve_image()
+    except ContainerError as exc:
+        print(f"active:    NONE -- {exc}")
+        return 1
 
     if sif.exists():
         print(f"SIF:       {sif} ({sif.stat().st_size / 1e9:.1f} GB)")
@@ -323,7 +367,11 @@ def cmd_status(args):
     verdict = compare_revision(revision)
     explain = {
         "in-sync": "matches this checkout's HEAD",
-        "behind": "older than this checkout's HEAD -- pull to refresh",
+        "behind": (
+            "older than this checkout's HEAD -- `sp container pull` fetches "
+            f"{CONTAINER_URI}, which is not built from this branch unless you "
+            "pass --tag"
+        ),
         "ahead": "newer than this checkout's HEAD",
         "diverged": "on a different branch from this checkout",
         "unknown": "cannot compare (no label, or a commit this clone lacks)",
@@ -338,7 +386,24 @@ def cmd_exec(args):
     command = [a for a in args.command if a != "--"]
     if not command:
         sys.exit("nothing to run; pass a command after `exec`")
-    binds = args.bind or os.environ.get("SP_APPTAINER_BINDS", DEFAULT_BINDS)
+
+    # Same environment the workflow's jobs get: the profile's apptainer-args
+    # verbatim (--cleanenv, the PYTHONPATH pin, --home, its binds). Explicit
+    # binds still win, and a profile that cannot be read falls back to the old
+    # standalone defaults.
+    env_args = profile_apptainer_args()
+    explicit_binds = args.bind or os.environ.get("SP_APPTAINER_BINDS")
+    if not env_args:
+        print(
+            f"warning: could not read apptainer-args from {PROFILE_FILE}; "
+            "falling back to --cleanenv and the default binds, which may not "
+            "match what jobs run under",
+            file=sys.stderr,
+        )
+        env_args = ["--cleanenv"]
+        explicit_binds = explicit_binds or DEFAULT_BINDS
+    if explicit_binds:
+        env_args += ["--bind", explicit_binds]
 
     if args.writable:
         # A SIF is a read-only filesystem, so `--writable` against one fails
@@ -356,7 +421,7 @@ def cmd_exec(args):
             sys.exit("no image resolved; run: sp container pull")
         extra = []
 
-    cmd = ["apptainer", "exec", *extra, "--cleanenv", "--bind", binds, image, *command]
+    cmd = ["apptainer", "exec", *extra, *env_args, image, *command]
     return subprocess.run(cmd).returncode
 
 
@@ -425,7 +490,10 @@ def build_parser():
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except ContainerError as exc:
+        sys.exit(str(exc))
 
 
 if __name__ == "__main__":

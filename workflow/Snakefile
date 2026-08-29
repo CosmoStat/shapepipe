@@ -52,7 +52,21 @@ configfile: str(Path(workflow.snakefile).parent / "config.yaml")
 sys.path.insert(0, str(Path(workflow.snakefile).parent / "scripts"))
 import container as _container                          # noqa: E402
 
-container: _container.resolve_image()[0]
+# Loud at PARSE time, both ways: a broken SP_CONTAINER override, or nothing to
+# resolve at all (empty cache AND no `container:` key). The empty string the
+# resolver returns for "none" is a valid-looking container directive that passes
+# dry-run and only fails once jobs reach a node.
+try:
+    _image, _kind = _container.resolve_image()
+except _container.ContainerError as _exc:
+    raise WorkflowError(str(_exc))
+if _kind == "none":
+    raise WorkflowError(
+        f"No container image resolved: no sandbox, no cached SIF, and no "
+        f"'{_container.CONFIG_KEY}:' key in {_container.CONFIG_FILE}. "
+        f"Run `sp container pull`, or restore the key.")
+
+container: _image
 
 # --- paths -----------------------------------------------------------------
 RUN_DIR    = Path(config["run_dir"])
@@ -76,12 +90,26 @@ sys.path.insert(0, str(SCRIPTS))
 import build_index                                     # noqa: E402
 from completeness import STAGE_DIR                     # noqa: E402
 
-# SP_PHASE is set by bin/sp on the two invocations of `sp run` and NOWHERE else.
-# It gates the two parse-time side effects — the index build and the report
-# hooks — so that a passthrough invocation (`sp --unlock`, `sp --dag`, `sp
-# exp_psf ...`) never mutates durable state or dies on a threshold it was not
-# asked about. Unset means "read the index, build nothing".
+# SP_PHASE is set by bin/sp and NOWHERE else: `prepare`/`compute` on the two
+# invocations of `sp run`, `passthrough` on the escape hatch (`sp --unlock`, `sp
+# --dag`, `sp exp_psf ...`). It gates the two parse-time side effects — the index
+# build and the report hooks — so that a passthrough parse never mutates durable
+# state or dies on a threshold it was not asked about.
+#
+# Requiring it to be SET is the point of the check below: a bare `snakemake`
+# would otherwise parse as a passthrough, find `rule all` gated on an index it
+# never built, and exit 0 on an empty DAG. Jobs re-parse this file under the
+# slurm executor and inherit the head process's environment, so a submitted job
+# always carries the launching phase.
 PHASE = os.environ.get("SP_PHASE", "")
+if not PHASE:
+    raise WorkflowError(
+        "SP_PHASE is not set — run the workflow through workflow/bin/sp "
+        "(`sp run`), which exports it. A bare snakemake invocation would "
+        "silently build an empty DAG.")
+if PHASE not in ("prepare", "compute", "passthrough"):
+    raise WorkflowError(
+        f"SP_PHASE={PHASE!r} is not one of prepare, compute, passthrough.")
 
 with open(config["tile_list"]) as f:
     TILES = [ln.strip() for ln in f if ln.strip()]
@@ -93,7 +121,7 @@ with open(config["tile_list"]) as f:
 # chunk number is not ours alone: it names the run dir
 # (`run_sp_tile_ngmix_Ng<k>u`, from the template's RUN_NAME), and
 # merge_sep_cats derives chunks 2..N from chunk 1's path by substituting the
-# first "1" — which only works for bare integers.
+# chunk number in that run-directory name — which only works for bare integers.
 scattergather:
     ngmix=int(config.get("ngmix_chunks", 8))
 
