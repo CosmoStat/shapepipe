@@ -1,7 +1,11 @@
 """Exposure chain — per exposure, keyed by exp base id (dedup is structural).
 
-    exp_get_images -> exp_split ---> exp_mask -> exp_psf
-                   -> exp_star_cat -/
+    exp_get_images -> exp_split -----> exp_mask -> exp_psf
+                   -> exp_star_cat --/
+    star_catalogue ---------------/
+
+``star_catalogue`` is campaign-level, not per-exposure: one fetch of the whole
+footprint's stars, which every exposure's ``exp_star_cat`` then cuts locally.
 
 Each in the exposure's own sharded work dir, chained by manifests; every config
 reads fixed ``$SP_RUN/output/run_sp_exp_*`` INPUT_DIRs, so nothing resolves a
@@ -40,32 +44,98 @@ rule exp_get_images:
         sp_shell("exp_get_images", "config_exp_Gie.ini")
 
 # --- mask star catalogues ---------------------------------------------------
-# One GSC 2.3 (Vizier) cone query per exposure, covering the whole MegaCam focal
-# plane, plus the 40 per-CCD symlinks the mask module's numbering scheme needs.
+# Two rules, and the split between them is the design: the NETWORK is a function
+# of the campaign's sky area, the per-exposure catalogue is a local cut.
 #
-# It reads the exp_get_images output dir directly: that is a symlink farm of
-# image-<exp>.fitsfz, exactly what create_star_cat.py's `-k exp` mode consumes —
-# one multi-extension header read, one query, ~6 s measured.
+# `star_catalogue` fetches the footprint's GSC 2.3 stars once, one Vizier query
+# per HEALPix chunk, into a run-independent chunk store under config `star_cats`.
+# `exp_star_cat` then reads the chunks covering an exposure's focal plane and
+# cuts them to it — no network at all. workflow/scripts/star_cats.py holds both
+# halves and the geometry they must agree on; its docstring is the reference for
+# the chunking and the padding.
 #
-# A LOCALRULE (declared in the Snakefile), so it runs in the head process — an
-# sbatch job on a compute node, and nibi compute nodes have internet (verified by
-# curl to vizier.cds.unistra.fr from a compute job). Local execution does NOT
-# serialise the queries — an earlier version of this comment claimed it did, and
-# that was false. In cluster mode snakemake runs local jobs in a worker pool
-# sized by `--local-cores`, and this rule takes one thread each, so as many CDS
-# queries (and apptainer execs) run at once as that pool is wide. The nibi
-# profile leaves --local-cores unset, so it is the head process's CPU count —
-# 5 in the measured allocation.
+# The arithmetic: exposures overlap ~7-10 deep and a tile's exposures all look at
+# the same square degree, so the old one-cone-per-exposure design re-fetched the
+# same sky ~8 times over. Chunked by sky, a full-UNIONS footprint is ~1.5k
+# queries where the exposure count would have been ~25k, and a campaign that
+# grows within the fetched footprint issues none.
+
+# The container's certifi bundle. The host leaks SSL_CERT_FILE / CURL_CA_BUNDLE
+# pointing at a path that does not exist inside the image, so requests is pointed
+# at the bundle explicitly (proven in the p3-batch1 bash precedent).
+STAR_CAT_CA = "/app/.venv/lib/python3.12/site-packages/certifi/cacert.pem"
+
+# The rules run star_cats.py inside the container (healpy, astroquery, astropy)
+# but call apptainer THEMSELVES rather than letting the SDM wrap them
+# (`container: None` on both): the CA bundle above and the exposure rule's
+# host-side farm loop both need the explicit exec. bin/sp has loaded the
+# apptainer module. PYTHONPATH pins this checkout's src/ for
+# shapepipe.utilities.{vizier,cfis} — the mirror-retry query and the tile-ID
+# grid convention are library code, not copies.
+def in_container(cmd, *, network=False):
+    ca = ("," + ",".join(f"{k}={STAR_CAT_CA}" for k in
+                         ("REQUESTS_CA_BUNDLE", "SSL_CERT_FILE", "CURL_CA_BUNDLE"))
+          if network else "")
+    return (f"apptainer exec --cleanenv --home {Path.home()}"
+            f" --bind /project --bind /scratch"
+            f" --env PYTHONPATH={REPO_DIR}/src{ca}"
+            f" '{config['container']}' {cmd}")
+
+
+# The campaign's star catalogue: a first-class durable science product, keyed by
+# sky rather than by run. Chunk-need is recomputed from the tile list on every
+# run and only the missing chunks are fetched, so appending tiles costs exactly
+# the chunks they add.
 #
-# The localrule stays anyway. 5-way concurrency against Vizier is ordinary
-# politeness, not abuse, and the alternative is one sbatch per exposure: ~20k
-# submissions for six seconds of work each, which is exactly the sub-15-minute
-# scheduler churn cluster policy asks us to bundle away. If CDS ever objects,
-# --local-cores is the knob — it caps these queries directly.
+# A LOCALRULE (declared in the Snakefile): it is one job of network I/O, and the
+# fetch loop is a 4-wide thread pool inside it — the same modest concurrency the
+# per-exposure rule reached by accident through --local-cores, now an explicit
+# number that does not scale with the head node's CPU count.
 #
-# The CATALOGUE is cached run-independently under config `star_cats`, keyed by
-# exposure. create_star_cat.py skips a cat that exists, so retries, reruns and
-# later campaigns re-link an existing file and issue no query.
+# `tile_list_hash` is what makes the incremental behaviour visible to the DAG.
+# The tile list is parse-time config, not a rule input (and the profile drops the
+# `input` rerun-trigger anyway), so appending tiles would otherwise leave this
+# rule up to date against a footprint that has grown. Hashing the list into a
+# param reruns it, and the rerun fetches only what is new.
+STAR_CAT_MANIFEST = f"{RUN_DIR}/manifests/star_catalogue.json"
+
+
+rule star_catalogue:
+    output:
+        manifest = STAR_CAT_MANIFEST
+    # No `log:` — see write_manifest() in star_cats.py: this rule runs no
+    # shapepipe_run and computes no completeness verdict, so there is nothing to
+    # split between a manifest and a log. Under `set -euo pipefail` it either
+    # completes or aborts, and snakemake's captured stderr is the evidence.
+    # `cmd` is a params value, so it is substituted AFTER the shell string is
+    # formatted: a `{output.manifest}` placeholder in here would survive
+    # literally (see unit_pre in the Snakefile). Hence the explicit path.
+    params:
+        cmd = in_container(
+            f"python {SCRIPTS}/star_cats.py fetch"
+            f" --tile-list '{config['tile_list']}' --store '{STAR_CATS}'"
+            f" --manifest '{STAR_CAT_MANIFEST}'", network=True),
+        tile_list_hash = hashlib.md5(
+            Path(config["tile_list"]).read_bytes()).hexdigest()[:12],
+        script_hash = STAR_CAT_HASH
+    container:
+        None
+    threads: 4
+    retries: 2
+    resources:
+        mem_mb = 4000,
+        runtime = 720
+    shell:
+        "set -euo pipefail\n{params.cmd}"
+
+
+# The per-exposure catalogue and the 40 per-CCD symlinks the mask module's
+# numbering scheme needs. Local: one header read for the focal-plane footprint,
+# a load of the chunks covering it, a radial cut.
+#
+# A LOCALRULE for the same reason as clean_exposure: seconds of work, and one
+# sbatch per exposure would be ~20k submissions well under the 15-minute floor
+# cluster policy asks us to bundle away.
 #
 # The per-unit farm is a REAL directory holding exactly this exposure's 40
 # numbers, and that is load-bearing: config_exp_Ma.ini reads it as an INPUT_DIR
@@ -78,38 +148,30 @@ rule exp_get_images:
 # The manifest keeps the "one rule, one manifest" currency of every other rule:
 # written last, unique to this rule, a record of what the farm points at, and
 # deleted by clean_exposure so a reclaimed exposure rebuilds its farm from the
-# cache at no query cost.
+# chunk store at no network cost.
 #
 # But a manifest attests FOREVER, and the two things it attests to both live
-# outside the unit's manifests/ dir: the cache FITS on /scratch (60-day purge)
+# outside the unit's manifests/ dir: the cut catalogue on /scratch (60-day purge)
 # and the farm itself. Either can vanish under a manifest that still says
 # "complete", and then exp_mask runs against nothing. So the ccd-0 farm link is
 # declared too — one link stands for all 40, they are created by the same loop
 # in the same instant, and declaring 40 buys nothing. Snakemake's existence test
 # is os.path.exists, which FOLLOWS symlinks and is therefore False for a link
-# whose target the purge removed. A purged cache or a deleted farm makes the
-# rule out of date, it reruns, and it re-queries or re-links as needed — the
-# recovery config.yaml's star_cats comment promises, now actually wired up.
-
-# The container's certifi bundle. The host leaks SSL_CERT_FILE / CURL_CA_BUNDLE
-# pointing at a path that does not exist inside the image, so requests is pointed
-# at the bundle explicitly (proven in the p3-batch1 bash precedent).
-STAR_CAT_CA = "/app/.venv/lib/python3.12/site-packages/certifi/cacert.pem"
-
-
+# whose target the purge removed. A purged cut or a deleted farm makes the rule
+# out of date, it reruns, and it re-cuts or re-links as needed.
 def star_cat_cmd(exp):
     """The whole rule body, as bash — carried as a params value, never inlined
     in ``shell:``: it contains literal ``{}`` (the manifest JSON) and snakemake
     formats a shell string once, which would consume those braces."""
-    cache = f"{STAR_CATS}/exp"
-    cat = f"{cache}/star_cat-{exp}.fits"
+    cut_dir = f"{STAR_CATS}/exp"
+    cat = f"{cut_dir}/star_cat-{exp}.fits"
     work = exp_dir(exp)
     farm = f"{work}/star_cat_exp"
     images = f"{work}/output/run_sp_exp_Gie/get_images_runner/output"
     manifest = exp_manifest(exp, "exp_star_cat")
     body = json.dumps({
         "stage": "exp_star_cat", "level": "exp", "unit": exp,
-        "status": "complete", "cache": cat, "link_dir": farm, "n_links": 40,
+        "status": "complete", "cat": cat, "link_dir": farm, "n_links": 40,
     }, indent=2, sort_keys=True)
     return "\n".join([
         "set -euo pipefail",
@@ -121,16 +183,10 @@ def star_cat_cmd(exp):
         # which would recurse into the pool, and never touch a real directory:
         # a real farm is this rule's own output and `ln -sfn` refreshes it.
         f"[ -L '{farm}' ] && rm -f '{farm}' || true",
-        f"mkdir -p '{cache}' '{farm}' '{work}/manifests'",
-        # Same binds and isolation as the profile's apptainer-args; the SDM does
-        # not wrap this rule (container: None below), because the farm loop and
-        # the manifest write belong to the host side of the job.
-        f"apptainer exec --cleanenv --home {Path.home()} --bind /project --bind /scratch"
-        f" --env PYTHONPATH={REPO_DIR}/src,REQUESTS_CA_BUNDLE={STAR_CAT_CA}"
-        f",SSL_CERT_FILE={STAR_CAT_CA},CURL_CA_BUNDLE={STAR_CAT_CA}"
-        f" '{config['container']}'"
-        f" python {REPO_DIR}/scripts/python/create_star_cat.py"
-        f" -i '{images}' -o '{cache}' -k exp",
+        f"mkdir -p '{cut_dir}' '{farm}' '{work}/manifests'",
+        in_container(f"python {SCRIPTS}/star_cats.py cut"
+                     f" --images '{images}' --store '{STAR_CATS}'"
+                     f" --out '{cat}'"),
         f"test -s '{cat}'",
         # The fan-out the file handler's NUMBERING_SCHEME wants: 40 links to the
         # one focal-plane catalogue (pattern from the p3-batch1 precedent).
@@ -148,28 +204,26 @@ def star_cat_cmd(exp):
 
 rule exp_star_cat:
     input:
-        rules.exp_get_images.output.manifest
+        rules.exp_get_images.output.manifest,
+        # The chunks this cut reads. star_cats.py fails loudly on a chunk that is
+        # missing anyway, but the edge is what makes the fetch happen first.
+        rules.star_catalogue.output.manifest
     output:
         manifest = f"{EXP_DIR}/manifests/exp_star_cat.json",
         # The sentinel: ccd-0 of the 40-link farm (see above).
         link     = f"{EXP_DIR}/star_cat_exp/star_cat-{{exp}}-0.fits"
-    # No `log:`. Every other rule's log carries a completeness VERDICT, and this
-    # rule computes none: it is not a shapepipe_run, it has no count floor, and
-    # under `set -euo pipefail` it either completes or aborts at the failing
-    # step. Snakemake's own captured job stderr is the evidence for that.
+    # No `log:`, for the same reason as star_catalogue above.
     params:
         cmd = lambda wc: star_cat_cmd(wc.exp),
-        # create_star_cat.py is external to the shell string, so the `code`
+        # star_cats.py is external to the shell string, so the `code`
         # rerun-trigger does not see it — same reason SCRIPT_HASH exists.
         script_hash = STAR_CAT_HASH
-    # No SDM wrapping: the rule calls apptainer itself, because only the query
-    # runs in the container (bin/sp has loaded the apptainer module).
     container:
         None
     threads: 1
     retries: 2
     resources:
-        mem_mb = 2000,
+        mem_mb = 4000,
         runtime = 10
     shell:
         "{params.cmd}"

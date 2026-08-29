@@ -29,22 +29,31 @@ run_dir: /scratch/cdaley/shapepipe-output/smk-g3
 
 # Pre-staged inputs (P3 data already on /project; get_images RETRIEVE=symlink).
 
-# The mask star-catalogue CACHE root — run-independent, shared by every campaign.
-# `exp_star_cat` writes <root>/exp/star_cat-<exp>.fits, one GSC 2.3 cone query per
-# exposure (~787 KiB, ~6 s), and skips a cat that is already there. Exposures
-# recur across tiles and batches, so the cache is mostly hits.
+# The mask star-catalogue root — run-independent, shared by every campaign, and
+# holding two things:
+#   <root>/I_305_out/nside32/star_chunk-<ipix>.fits   the SKY store, one GSC 2.3
+#       query per HEALPix chunk (~3.4 deg^2, ~25k rows), written by
+#       `star_catalogue` over the tile list's footprint and never fetched twice;
+#   <root>/exp/star_cat-<exp>.fits                     the per-exposure cuts
+#       `exp_star_cat` makes from those chunks, with no network at all.
+# Network therefore scales with SKY AREA, not exposure count: exposures overlap
+# ~7-10 deep, so a full-UNIONS footprint is ~1.5k queries against ~25k exposures.
+# Design intent is /project — this is a durable science product, not scratch
+# work — blocked only by the quota below.
 #
-# THE CACHE IS NOT KEYED BY SCRIPT VERSION. A semantic change to
-# scripts/python/create_star_cat.py (query radius, catalogue ID, column set)
-# does rerun exp_star_cat — the script's hash is a rule param — but the rerun
-# takes the skip-if-exists branch and only re-links the OLD catalogues. Clear
-# this cache by hand when the change must reach the data.
+# THE STORE IS NOT KEYED BY SCRIPT VERSION. A semantic change to
+# workflow/scripts/star_cats.py (padding, catalogue ID, column set) does rerun
+# both rules — the script's hash is a param on each — but a chunk already on disk
+# is skipped and only re-cut. Clear the store by hand when the change must reach
+# the data. Changing NSIDE or the catalogue ID is the exception: those name the
+# directory, so a change there fetches into a new one beside the old.
 #
 # On /scratch because def-mjhudson /project is hard-full (27/27 TiB). The 60-day
-# purge therefore applies, and that is acceptable: a purged cache regenerates one
-# query per exposure. exp_star_cat declares its ccd-0 farm link as an output, so
-# a purge leaves that link dangling and the rule reruns, instead of trusting a
-# manifest that outlived its data.
+# purge therefore applies. A purged per-exposure cut is free to remake, and
+# exp_star_cat declares its ccd-0 farm link as an output so a purge leaves that
+# link dangling and the rule reruns rather than trusting a manifest that outlived
+# its data. A purged CHUNK costs its query again: exp_star_cat fails loudly on a
+# missing chunk, and re-running `star_catalogue` refetches it.
 star_cats: /scratch/cdaley/shapepipe-output/star-cat-cache
 
 # The run index. Design intent (finding 15) is durable products on /project —

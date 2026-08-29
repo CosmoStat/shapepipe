@@ -11,9 +11,10 @@ tier).
 Rules stay group-compatible: shell only, no mid-chain localrules, no pipe outputs.
 
 Star catalogues for masking are NOT a prepare-phase concern and not pre-run
-input: they are built in the compute DAG, one node per exposure
-(``exp_star_cat`` in exposure.smk), into a run-independent cache. The tile side
-has no star-cat node because it has no mask rule yet — see tile.smk.
+input: the compute DAG fetches the campaign footprint's stars once
+(``star_catalogue``) and cuts them per exposure (``exp_star_cat``), both in
+exposure.smk, into a run-independent store. The tile side has no star-cat node
+because it has no mask rule yet — see tile.smk.
 """
 
 # NUMBER_LIST is never set for get_images (download stage; nothing on disk to

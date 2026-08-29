@@ -49,12 +49,14 @@ container: config["container"]
 
 # --- paths -----------------------------------------------------------------
 RUN_DIR    = Path(config["run_dir"])
-# Run-independent cache root for the mask star catalogues, keyed by exposure and
-# filled by the exp_star_cat rule (config.yaml explains the placement).
+# Run-independent root for the mask star catalogues: the HEALPix chunk store the
+# star_catalogue rule fills, and the per-exposure cuts exp_star_cat makes from it
+# (config.yaml explains the placement).
 STAR_CATS  = Path(config["star_cats"])
-# This checkout's own tree: exp_star_cat runs its scripts/python/create_star_cat.py
-# against its src/, for the same reason CONFIG_DIR is the committed config dir —
-# script, library and rule are one artefact and version together.
+# This checkout's own tree: the star-cat rules run in the container against its
+# src/ (shapepipe.utilities.vizier and .cfis), for the same reason CONFIG_DIR is
+# the committed config dir — script, library and rule are one artefact and
+# version together.
 REPO_DIR   = Path(workflow.basedir).parent
 INDEX_DB   = Path(config["index_db"])
 SCRIPTS    = Path(workflow.basedir) / "scripts"
@@ -190,14 +192,14 @@ def unit_num(unit):
 SCRIPT_HASH = hashlib.md5((SCRIPTS / "completeness.py").read_bytes()).hexdigest()[:12]
 FOREST_HASH = hashlib.md5((SCRIPTS / "build_forest.py").read_bytes()).hexdigest()[:12]
 CLEAN_HASH  = hashlib.md5((SCRIPTS / "clean_exposure.py").read_bytes()).hexdigest()[:12]
-# Same argument for the star-cat query script, which lives in the repo's own
-# scripts/python/ rather than workflow/scripts/: exp_star_cat's params otherwise
-# fingerprint nothing but paths, so an edit to create_star_cat.py would never
-# rerun the rule. The hash does NOT key the cache path — see config.yaml's
-# star_cats block on clearing the cache after a semantic change.
+# Same argument for star_cats.py, which both star-cat rules call: their params
+# otherwise fingerprint nothing but paths, so an edit to the chunking or the cut
+# would never rerun them. ONE hash for both rules because it is one script — and
+# that is also why fetch and cut live in one module (they must agree on which
+# pixel holds which star). The hash does NOT key the store path — see
+# config.yaml's star_cats block on clearing the store after a semantic change.
 STAR_CAT_HASH = hashlib.md5(
-    (REPO_DIR / "scripts" / "python" / "create_star_cat.py").read_bytes()
-).hexdigest()[:12]
+    (SCRIPTS / "star_cats.py").read_bytes()).hexdigest()[:12]
 
 # --- exposure reclamation (D5, S5) -----------------------------------------
 
@@ -399,15 +401,16 @@ include: "rules/exposure.smk"
 include: "rules/tile.smk"
 
 # --- top-level targets ------------------------------------------------------
-# The aggregation targets, clean_exposure and exp_star_cat run in the head
-# process. clean_exposure is seconds of rmtree and hangs off `all`; exp_star_cat
-# is ~6 s dominated by one CDS query, and running it locally serialises those
-# queries (see exposure.smk). Both would otherwise be ~20k sbatch submissions at
-# DR6 scale for work shorter than the scheduling latency.
+# The aggregation targets, clean_exposure, star_catalogue and exp_star_cat run in
+# the head process. clean_exposure is seconds of rmtree and hangs off `all`;
+# exp_star_cat is seconds of local FITS work; both would otherwise be ~20k sbatch
+# submissions at DR6 scale for work shorter than the scheduling latency.
+# star_catalogue is one job either way, and local keeps its CDS concurrency the
+# explicit number its thread pool sets (see exposure.smk).
 #
-# exp_star_cat is the one MID-CHAIN localrule, so it must stay out of any future
-# `group:` label: a local job cannot be fused into a submitted group.
-localrules: all, prepare_all_tiles, clean_exposure, exp_star_cat
+# star_catalogue and exp_star_cat are MID-CHAIN localrules, so they must stay out
+# of any future `group:` label: a local job cannot be fused into a submitted group.
+localrules: all, prepare_all_tiles, clean_exposure, star_catalogue, exp_star_cat
 
 rule all:
     input:
