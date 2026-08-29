@@ -86,7 +86,9 @@ rerun-triggers: [mtime, params, code, software-env]
 # ngmix thread count. The RULES own threads and resources; this profile only
 # sets defaults for rules that state nothing (default-resources above).
 #
-# `group:` fusion of the short rules (uncompress, merges) into their chunky
-# neighbours (PRD D-profile) is NOT set here — it requires labels in the rule
-# files themselves, which is out of scope for this profile-only pass. Deferred
-# to whichever slice next touches workflow/rules/*.smk.
+# `group:` fusion of the short rules (PRD D-profile) lives in the rule files, not
+# here: the labels are `tile_prep` (prepare.smk), `exp_short` (exp_split +
+# exp_mask) and `tile_finish` (tile_merge_cats + tile_make_cat), each documented
+# in its file's docstring. Grouping composes resources per toposort level (max
+# mem/threads, summed runtime for a linear chain) and leaves the attempt scaling
+# above intact, which is the other reason set-resources must stay out of here.

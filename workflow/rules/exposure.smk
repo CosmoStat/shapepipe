@@ -19,6 +19,21 @@ by the accumulating index. A temp() here would delete an exposure the moment
 this invocation's readers finished and cascade destructive reruns across spatial
 neighbours the next time a tile is appended.
 
+GROUPING (``group: "exp_short"``) covers exp_split and exp_mask, and only them —
+one sbatch per exposure for two jobs whose medians are 1:28 and 1:54, well under
+the 15-minute floor Alliance policy asks us to bundle away. The composition
+rules are in prepare.smk's docstring; this chain is linear too, so the group
+asks max(mem_mb) = 8000*attempt, max(threads) = 8, sum(runtime) = 240 min.
+
+The two rules NOT in it are structural, not taste:
+  * exp_psf is heavy (16 GB, 4 h) and never fuses with a short rule;
+  * exp_get_images cannot join, because ``exp_star_cat`` — a LOCALRULE, and so
+    ungroupable — sits between it and exp_mask. Pulling get_images in would make
+    the group both a dependency and a dependent of exp_star_cat, i.e. a cycle.
+    Starting the group at exp_split leaves star_cat's inputs entirely upstream
+    of it, so the group has one clean external edge.
+Different exposures share no DAG edge, so this is one group job per exposure.
+
 NUMBER_LIST is set only for exp_split (its numbering scheme IS the exposure id);
 never for get_images / exp_mask / exp_psf, whose per-CCD or download numbering
 would make the #746 startup validation turn tolerated per-CCD attrition into a
@@ -231,6 +246,7 @@ rule exp_star_cat:
 # Split the multi-HDU exposure into single-CCD files (+ headers-*.npy, which the
 # tiles' merge_headers reads).
 rule exp_split:
+    group: "exp_short"
     input:
         rules.exp_get_images.output.manifest
     output:
@@ -248,6 +264,7 @@ rule exp_split:
         sp_shell("exp_split", "config_exp_Sp.ini")
 
 rule exp_mask:
+    group: "exp_short"
     input:
         # Both inputs are real INPUT_DIRs of config_exp_Ma.ini: the split CCDs
         # and this exposure's own star_cat_exp farm.

@@ -12,7 +12,20 @@ shard level is not cosmetic: ``exp_utils.get_exp_output_files`` hardwires
 ``<SP_EXP>/<prefix>/<base>/output/run_sp_*`` into its glob, so a flat forest
 makes every tile gather stage fail "No split_exp_runner output found".
 
-All rules are group-compatible (shell only, no mid-chain localrules).
+All rules are group-compatible (shell only, no mid-chain localrules), but only
+the tail pair is actually grouped: ``group: "tile_finish"`` on tile_merge_cats
+(median 0:15) and tile_make_cat (1:34) — one sbatch per tile for two short jobs
+of identical shape (16 GB, 8 threads, 120 min each; the group asks max mem_mb =
+16000*attempt, max threads = 8, sum runtime = 240, per the composition rules in
+prepare.smk's docstring). Distinct tiles share no edge, so it is one group job
+per tile.
+
+Nothing else on the tile side may join a group. merge_cats' upstream is
+tile_ngmix (hours) and make_cat is the terminus, so this pair is the whole
+connected short region. tile_merge_headers (0:38) is short but STRANDED: its
+upstream is the tile_exp_forest localrule and its only downstream is tile_detect
+(16 GB), so any group containing it either fuses a localrule — impossible — or
+pulls a heavy rule in. It stays one job per tile, deliberately.
 
 Note there is no `tile_mask` rule: the committed config chain is the
 "sx_nomask" tile_detect variant (config_tile_Sx.ini reads Git + Uz + Mh, no mask
@@ -261,6 +274,7 @@ def ngmix_chunkdirs(wc):
 # The gather: merge the N chunk catalogues. N_SPLIT_MAX comes from the workflow's
 # own chunk count via $NGMIX_N_CHUNKS (env-expanded by the module).
 rule tile_merge_cats:
+    group: "tile_finish"
     input:
         manifests = ngmix_manifests,
         chunkdirs = ngmix_chunkdirs,
@@ -285,6 +299,7 @@ rule tile_merge_cats:
 # No protected(): the full default rerun-triggers govern, and protected() only
 # ever forced people through a `--forcerun` detour.
 rule tile_make_cat:
+    group: "tile_finish"
     input:
         ms    = rules.tile_merge_cats.output.manifest,
         store = rules.tile_vignets.output.store,

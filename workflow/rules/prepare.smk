@@ -8,7 +8,26 @@ data-derived tile->exposure edge that invocation 2's parse aggregates into the
 index. Nibi compute nodes have internet, so downloads run in-DAG (no login-node
 tier).
 
+All three rules carry ``group: "tile_prep"``, so one tile's whole chain is ONE
+sbatch instead of three (medians 0:41 / ~0:40 / 0:15 — all far under the
+15-minute floor Alliance policy asks us to bundle away, and at DR6 scale three
+submissions per tile is a scheduler load out of all proportion to the work).
+Group membership is per connected DAG component and distinct tiles share no
+edge, so this is exactly one group job per tile, never a cross-tile bundle.
 Rules stay group-compatible: shell only, no mid-chain localrules, no pipe outputs.
+
+Group resource composition (snakemake 9.23, ``GroupResources.basic_layered`` in
+snakemake/resources.py): jobs are laid out per toposort level; within a level
+non-additive resources (mem_mb, cpus) SUM — split into layers when a global
+constraint is exceeded, the group's width being the widest layer — while the
+additive resource ``runtime`` is maxed within a layer and SUMMED across layers.
+This chain is strictly linear, one job per level, so the group asks for
+max(mem_mb) = 8000*attempt, max(threads) = 4 and sum(runtime) = 150 min.
+Attempt scaling survives grouping: ``GroupJob.attempt``'s setter clears the
+cached group resources and re-sets ``attempt`` on every member (jobs.py), and
+``GroupJob.restart_times`` is the max over members — so tile_get_images'
+``retries: 2`` still governs. A retry re-runs the whole group, which is safe
+because every rule ``rm -rf``s its own run dir at start.
 
 Star catalogues for masking are NOT a prepare-phase concern and not pre-run
 input: the compute DAG fetches the campaign footprint's stars once
@@ -22,6 +41,7 @@ because it has no mask rule yet — see tile.smk.
 # config_tile_Git.ini simply has no NUMBER_LIST, so this is now a property of the
 # config, not of an injection step.
 rule tile_get_images:
+    group: "tile_prep"
     output:
         manifest = f"{TILE_DIR}/manifests/tile_get_images.json"
     log:
@@ -38,6 +58,7 @@ rule tile_get_images:
         sp_shell("tile_get_images", "config_tile_Git.ini")
 
 rule tile_uncompress:
+    group: "tile_prep"
     input:
         rules.tile_get_images.output.manifest
     output:
@@ -55,6 +76,7 @@ rule tile_uncompress:
         sp_shell("tile_uncompress", "config_tile_Uz.ini")
 
 rule tile_find_exposures:
+    group: "tile_prep"
     input:
         rules.tile_uncompress.output.manifest
     output:
