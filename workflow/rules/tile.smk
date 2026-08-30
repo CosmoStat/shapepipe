@@ -21,13 +21,21 @@ Distinct tiles share no edge, so each is one group job per tile:
   mem_mb = 8000*attempt, max threads = 4, sum runtime = 140. tile_detect also
   consumes the forest, but a consumer OUTSIDE the group is just an ordinary DAG
   edge on the group job — it does not pull tile_detect (16 GB) in.
-* ``group: "tile_finish"`` — tile_merge_cats (median 0:15) and tile_make_cat
-  (1:34), two short jobs of identical shape (16 GB, 8 threads, 120 min each;
-  max mem_mb = 16000*attempt, max threads = 8, sum runtime = 240).
+* ``group: TILE_GROUP`` ("tile_shape") — tile_vignets -> 8 x tile_ngmix ->
+  tile_merge_cats -> tile_make_cat, THE WHOLE SHAPE CHAIN AS ONE JOB. This is
+  not a latency optimisation; it is what lets the 5.6 GB vignette store live on
+  node-local NVMe and never touch /scratch (see the TILE_LOCAL block below).
+  Composition, verified against snakemake 9.23.1 and a real sbatch:
+  cpus = max over levels of summed siblings = max(8, 8x1, 8, 8) = 8;
+  mem_mb = max(32000, 8x14000, 16000, 16000) = 112000;
+  runtime = sum along the chain of each level's MAX = 20 + 120 + 10 + 15 = 165.
+  165 min is under the 180 min ceiling of ``cpubase_bycore_b1``, so the fused
+  job reaches the widest partition set (plus cpubackfill) — which is why each
+  member's runtime is measured p99 plus margin and not the old ceiling.
 
-Nothing else joins either. The heavy middle (tile_detect, tile_vignets,
-tile_ngmix) is where the wall time is, and fusing a short rule onto one of those
-would reserve its footprint for the short job too.
+The heavy middle (tile_detect) stays out: it is a 16 GB / 8 thread SExtractor
+run that the shape chain does not need co-scheduled, and folding it in would add
+its runtime to a sum that has no room.
 
 Note there is no `tile_mask` rule: the committed config chain is the
 "sx_nomask" tile_detect variant (config_tile_Sx.ini reads Git + Uz + Mh, no mask
@@ -42,6 +50,144 @@ config would then read a real per-unit ``$SP_RUN/star_cat_tiles`` directory,
 built the same way and for the same reason (the file handler intersects numbers
 across INPUT_DIRs, so a shared pool cannot be symlinked in wholesale).
 """
+
+# --- the node-local tile root (the I/O + scratch fix) ----------------------
+#
+# MEASURED PROBLEM. tile_ngmix was I/O-bound, not CPU-bound: median 7h34m
+# elapsed against 52 min of CPU (3% efficiency, 0.12 of 4 reserved cores).
+# Each chunk read ~20 GB at 0.78 MB/s and all 8 chunks of a tile re-read the
+# SAME 5.6 GB vignette store -- ~163 GB of small random sqlite preads per tile
+# against /scratch, which on nibi is NFS (VAST, 4.5 PB, 95% full). What hurts
+# is per-read LATENCY, not bandwidth: the sequential local-vs-scratch gap is
+# only ~3x and is NOT the argument for this change.
+#
+# THE FIX IS THE FUSE. tile_vignets -> 8 x tile_ngmix -> tile_merge_cats ->
+# tile_make_cat run as ONE group job on ONE node, and the vignette store is
+# WRITTEN to that node's NVMe and never lands on /scratch at all. So the store
+# is not copied, it is simply never remote: zero staging cost, zero NFS random
+# reads, and -- the reason this was chosen over per-chunk staging -- the
+# per-tile scratch high-water drops by the whole 5.6 GB store (~190 GiB across
+# 34 concurrent tiles). Scratch quota, not speed, is what caps batch size.
+#
+# WHAT STAYS ON SHARED STORAGE, and it is everything that is DAG currency:
+# every manifest (the success sentinels), every verdict log, the ngmix chunk
+# dirs merge_sep_cats gathers, and final_cat on the PERSISTENT root. Only the
+# bulk intra-tile intermediate is node-local. That split is possible because
+# ShapePipe's configs set input and output paths independently -- see
+# config_tile_PiViVi.ini (OUTPUT_DIR = $SP_VIGNET_OUT) and
+# config_tile_Ng_template.ini / config_tile_Mc.ini ($NGMIX_VIGNET_DIR).
+#
+# WHY IT NEEDS THE GROUP. $SLURM_TMPDIR is per SLURM JOB. Unfused, tile_vignets
+# and tile_ngmix are different jobs on different nodes and the store MUST be on
+# shared storage. Fused, all members share one job, one node and one
+# $SLURM_TMPDIR, so the store written by the first member is simply there for
+# the rest. (Verified: group members see the same $SLURM_TMPDIR.)
+#
+# HOW $SLURM_TMPDIR GETS IN HERE. profiles/nibi passes --bind /local and
+# --env SLURM_TMPDIR=$SLURM_TMPDIR through apptainer-args; --cleanenv strips
+# the real one. See that file for why {resources.tmpdir} is NOT usable (it
+# resolves to /tmp, a RAM-backed tmpfs) and why the expansion happens in the
+# job. The guard below turns any breakage in that chain into a hard failure
+# rather than a silent fall back onto NFS -- or, worse, a 5.6 GB write into a
+# tmpfs charged to the job's memory cgroup.
+#
+# THE COST WE ACCEPT: a failure anywhere in the tile re-runs the WHOLE tile,
+# not one chunk, because the store dies with the job. At ~1 h per fused tile
+# that is a cheap trade for the scratch it buys. Noted, not engineered around.
+#
+# It lives in each rule's `pre_run`, i.e. in THAT RULE's params.pre. The shared
+# prologue (unit_pre) and completeness.py are untouched by design: both are
+# fingerprinted into every rule, and changing either would invalidate the whole
+# campaign, including the 117 finished exposure chains.
+TILE_LOCAL = r"""
+if [ -z "${SLURM_TMPDIR:-}" ] || [ ! -d "${SLURM_TMPDIR}" ]; then
+  echo "tile_shape: node-local storage unavailable." >&2
+  echo "  SLURM_TMPDIR=${SLURM_TMPDIR:-<unset>} is not a directory in the container." >&2
+  echo "  profiles/nibi/config.yaml apptainer-args must carry BOTH" >&2
+  echo "    --bind /local   and   --env SLURM_TMPDIR=\$SLURM_TMPDIR" >&2
+  exit 1
+fi
+export SP_LOCAL="$SLURM_TMPDIR/sp-tile"
+export SP_VIGNET_OUT="$SP_LOCAL/output"
+export NGMIX_VIGNET_DIR="$SP_LOCAL/output/run_sp_tile_PiViVi"
+mkdir -p "$SP_VIGNET_OUT"
+"""
+
+# Every member of a group job must agree on a STRING resource or snakemake
+# raises "Resource slurm_extra is a string but not all jobs in group require
+# the same value" (resources.py::_is_string_resource). So the tmp-disk request
+# is one constant on all four members, not a property of tile_ngmix alone.
+#
+# --tmp is a node SELECTION FLOOR, not a reservation: Slurm matches it against
+# the node's configured TmpDisk (nibi: 1.67-12 TB, TmpFS=/local) and does not
+# decrement it per job. It buys exactly one thing, and it is the thing worth
+# having -- the fused job can no longer land on a node with no usable local
+# disk, which is the one configuration in which the whole design fails. 16 GB
+# against a measured 5.6 GB store leaves room for an unusually rich tile, and
+# filters no nibi node today, so it costs no queue time. Resources are not a
+# rerun trigger, so adding it invalidates nothing.
+TILE_SLURM_EXTRA = "--tmp=16000"
+
+# One label for the whole shape chain. Composition, verified empirically
+# against snakemake 9.23.1 (resources.py::GroupResources.basic_layered, and a
+# real sbatch): within a toposort level siblings SUM their mem_mb and cores and
+# MAX their runtime; across levels the sums are MAXed and the runtimes SUMMED.
+# So the eight chunks are one wave -- 8 x 1 core, 8 x mem, ONE chunk's runtime
+# -- and the group's declared runtime is the sum along the chain. That sum is
+# what gates partitions on nibi, so each member's runtime below is measured
+# p99 plus margin, NOT the old defensive ceiling. See the tile_ngmix docstring.
+TILE_GROUP = "tile_shape"
+
+# Cleanup, on the LAST member only. $SLURM_TMPDIR is Slurm's to reclaim, but
+# /local/scratch on nibi demonstrably carries stale directories from
+# long-finished jobs, so the epilog is not on its own reliable. tile_make_cat is
+# the last reader of the store, so its EXIT trap is the earliest moment the
+# 5.6 GB can go. It must NOT be set by the earlier members: their shells exit
+# while the store is still needed. Residual failure mode accepted: SIGKILL
+# (OOM-kill, node death) skips the trap, and if the epilog also misses it the
+# store leaks until the node drains -- 5.6 GB against a 3.3 TB disk.
+TILE_CLEAN = r"""
+trap 'rm -rf "$SP_LOCAL"' EXIT
+"""
+
+# tile_vignets ONLY. unit_pre clears each stage's own run dir on the shared root
+# ("the job clears its run dir at start" — ShapePipe's FileHandler raises on an
+# existing one); the node-local root needs the same treatment, and only the rule
+# that WRITES the store may do it. Putting this in TILE_LOCAL would have
+# tile_ngmix delete the store it is about to read.
+TILE_VIGNET_FRESH = r"""
+rm -rf "$SP_VIGNET_OUT/run_sp_tile_PiViVi"
+"""
+
+# THE FUSE'S ONE SHARP EDGE, made loud rather than mysterious.
+#
+# The vignette store is not a declared output any more, so snakemake cannot see
+# it. tile_vignets' manifest CAN be up to date while the store does not exist on
+# this node — concretely, after a fused group job dies part-way: the manifest is
+# a success and survives, so a LATER invocation re-plans the group with only the
+# surviving members and the store is simply not there. (An in-flight `retries:`
+# resubmission is safe: it reruns the same member set, tile_vignets included.)
+#
+# Recovery is one line, and the message says it: delete the tile's
+# tile_vignets.json and resume — that puts tile_vignets back in the group and
+# the store comes back with it. The alternative fixes are worse: temp()-ing the
+# vignets manifest would break clean_exposure, which keys reclamation
+# eligibility on exactly that file.
+TILE_VIGNET_REQUIRED = r"""
+if [ ! -d "$NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output" ]; then
+  echo "tile_shape: the node-local vignette store is missing." >&2
+  echo "  expected: $NGMIX_VIGNET_DIR" >&2
+  echo "  This means tile_vignets did NOT run in this group job — its manifest" >&2
+  echo "  was already satisfied, most likely because a previous fused job for" >&2
+  echo "  this tile died after tile_vignets succeeded. The store lives and dies" >&2
+  echo "  with the job, so it cannot be inherited." >&2
+  echo "  FIX: rm \"\$SP_RUN/manifests/tile_vignets.json\" and resume." >&2
+  exit 1
+fi
+"""
+
+
+
 
 def tile_exp(wc):
     return TILE_EXP.get(wc.tile, [])
@@ -200,6 +346,7 @@ rule tile_detect:
 # fires at the right moment. Its readers (tile_ngmix, tile_make_cat) declare
 # BOTH. `--notemp` keeps it for debugging.
 rule tile_vignets:
+    group: TILE_GROUP
     input:
         sx     = rules.tile_detect.output.manifest,
         forest = rules.tile_exp_forest.output.forest,
@@ -209,20 +356,53 @@ rule tile_vignets:
         # tile_merge_headers above.
         fe     = f"{TILE_DIR}/manifests/tile_find_exposures.json",
     output:
+        # THE MANIFEST IS THE ONLY DECLARED OUTPUT NOW. The vignette store used
+        # to ride along as a second temp(directory()) output purely so native
+        # temp() would reclaim it; it lives on node-local storage under
+        # $SLURM_TMPDIR, whose path is not knowable at DAG time, so it cannot
+        # be declared at all — and does not need to be. It was never DAG
+        # currency (the manifest always was the edge), its readers are now all
+        # inside this group job, and Slurm reclaims it with the job. The one
+        # affordance lost: `--notemp` can no longer keep it for debugging.
         manifest = f"{TILE_DIR}/manifests/tile_vignets.json",
-        store    = temp(directory(f"{TILE_DIR}/output/run_sp_tile_PiViVi")),
     log:
         f"{TILE_DIR}/logs/tile_vignets.json"
     params:
         pre = lambda wc: unit_pre("tile_vignets", "tile", wc.tile,
-                                  forest=forest_dir(wc.tile)),
+                                  forest=forest_dir(wc.tile),
+                                  pre_run=[TILE_LOCAL, TILE_VIGNET_FRESH]),
         script_hash = SCRIPT_HASH
-    threads: 16
+    # 8, not 16, for the same reason tile_ngmix is 1: `-b {threads}` is SMP
+    # batch size over input FILE SETS, and a tile is one set -- this run's own
+    # log says "Batch size: 16 / Total number of processes: 1". 16 was the
+    # widest member and therefore set the whole GROUP's cpus_per_task; at 8 the
+    # group asks exactly what the eight-chunk ngmix wave needs. Billing is
+    # unchanged either way (nibi is MAX_TRES and the 112 GB memory term is
+    # 28 core-equivalents, well above both), but the group now packs onto a
+    # node in 8 cores instead of 16.
+    threads: 8
     resources:
         mem_mb = lambda wc, attempt: 32000 * attempt,
-        runtime = 240
+        # Measured median 3m29s, max 5:25 (this branch: 2m38s on 198.305).
+        # 20 min is p99 plus a wide margin, and it is a term in the GROUP's
+        # runtime sum, so the old defensive 240 is not free any more.
+        runtime = 20,
+        slurm_extra = TILE_SLURM_EXTRA
     shell:
-        sp_shell("tile_vignets", "config_tile_PiViVi.ini")
+        # sp_shell's body, except that the completeness check is pointed at the
+        # NODE-LOCAL run root. completeness.py is unmodified: --run-dir is its
+        # own documented override for "$SP_RUN", and --unit keeps the manifest's
+        # unit field the tile ID instead of the basename of the local root (it
+        # would otherwise default to "sp-tile"). Passing --unit also keeps the
+        # manifest CONTENT independent of the ephemeral local path, which the
+        # mtime rerun-trigger depends on.
+        "{params.pre}\n"
+        "rc=0\n"
+        'shapepipe_run -c "$SP_CONFIG/config_tile_PiViVi.ini" -b {threads} || rc=$?\n'
+        f"python {SCRIPTS}/completeness.py check tile_vignets {{output.manifest}}"
+        ' --run-dir "$SP_LOCAL" --unit {wildcards.tile}'
+        " --log {log} --job-rc \"$rc\" || rc=1\n"
+        "exit $rc\n"
 
 # ngmix shape measurement — N chunks per tile (D4). Each chunk computes its own
 # CLOSED object-ID range at EXECUTION time from this tile's own sexcat: a params
@@ -233,13 +413,21 @@ rule tile_vignets:
 # Chunks write nothing shared: each has its own run_sp_tile_ngmix_Ng<k>u, and
 # merge_sep_cats — DAG-serialised after all chunks — is the gather.
 rule tile_ngmix:
+    group: TILE_GROUP
     input:
+        # The manifest, and only the manifest. The vignette store is no longer a
+        # declared input because it is no longer a declared output: it is
+        # node-local, produced by tile_vignets earlier in THIS SAME group job
+        # (see TILE_LOCAL). The manifest was always the real edge.
         vignets  = rules.tile_vignets.output.manifest,
-        store    = rules.tile_vignets.output.store,
         sx       = rules.tile_detect.output.manifest,
     output:
         manifest = f"{TILE_DIR}/manifests/tile_ngmix_{{chunk}}.json",
-        # temp(directory()) for the same reason as the vignette store above.
+        # STAYS ON SCRATCH, unlike the vignette store. It is DAG currency:
+        # tile_merge_cats reads it, and merge_sep_cats derives chunks 2..N from
+        # chunk 1's path. It is also small (~300 KB/chunk), so it costs the
+        # scratch high-water nothing worth chasing. temp() still reclaims it
+        # once merge_cats has run.
         chunkdir = temp(directory(f"{TILE_DIR}/output/run_sp_tile_ngmix_Ng{{chunk}}u")),
     log:
         f"{TILE_DIR}/logs/tile_ngmix_{{chunk}}.json"
@@ -254,15 +442,65 @@ rule tile_ngmix:
             pre_run=[f'ngmix_range_out=$(python {SCRIPTS}/ngmix_range.py --run-dir '
                      f'"$SP_RUN" --chunk {wc.chunk} --n-chunks {NGMIX_CHUNKS}) '
                      f'|| exit 1',
-                     'eval "$ngmix_range_out"']),
+                     'eval "$ngmix_range_out"',
+                     TILE_LOCAL, TILE_VIGNET_REQUIRED]),
         script_hash = SCRIPT_HASH
-    threads: 4
+    # ONE core, not four. `-b {threads}` is shapepipe_run's SMP BATCH SIZE
+    # (pipeline/args.py) -- joblib Parallel(n_jobs=batch_size) over
+    # filehd.process_list, i.e. parallelism ACROSS INPUT FILE SETS. An ngmix
+    # chunk is one catalogue, so process_list has exactly one entry: every real
+    # log says "Batch size: 4 / Total number of processes: 1". There is no
+    # internal parallelism either (no multiprocessing/Pool/joblib/threading in
+    # ngmix_package/ngmix.py), and OMP/BLAS are pinned to 1 by both the prologue
+    # and the profile. The reserved cores 2-4 never had anything to run.
+    #
+    # Worth being precise about what this saves. nibi bills
+    # TRESBillingWeights=CPU=1000,Mem=250G under PriorityFlags=MAX_TRES, i.e.
+    # max(cores, mem_GB/4). At 14 GB the memory term alone is 3.5 core-
+    # equivalents, so 4 -> 1 core moves the reservation from 4.0 to 3.5, a 12%
+    # saving -- NOT 75%. The real core-hour win is the elapsed-time collapse
+    # from killing the NFS random reads, not this.
+    threads: 1
     retries: 2
     benchmark:
         f"{TILE_DIR}/manifests/tile_ngmix_{{chunk}}.benchmark.tsv"
     resources:
+        # 14000, UNCHANGED — and the scary-looking number that argued for
+        # raising it is an artefact, so read this before touching it.
+        #
+        # sacct MaxRSS for the timed chunk (job 20795277) was 12.92 GiB, 94.5%
+        # of the reservation. It is not process memory. nibi runs
+        # JobAcctGatherType=jobacct_gather/cgroup, so sacct's MaxRSS is the
+        # cgroup's memory.current, which under cgroup v2 CHARGES PAGE CACHE to
+        # the job. Snakemake's own benchmark for the same job, taken from psutil
+        # per-process counters, says max_rss = 1262 MB / max_pss = 1165 MB. The
+        # ~11.7 GiB difference is file-backed cache — the store written and then
+        # read back — and it is reclaimable, so it cannot OOM the job; the
+        # kernel evicts cache before it kills anything.
+        #
+        # So ngmix's real footprint is ~1.2 GB, and 14000 is ~11x that. It is
+        # almost certainly reducible, and cutting it is the single biggest
+        # lever left on this rule's cost (see the mem_mb note in the group
+        # composition above — memory, not cores, is what nibi bills the fused
+        # job for). But it wants its own measurement across several tiles, not
+        # a guess off one chunk, so it stays at the value the last campaign ran.
+        # Keeping it generous also keeps the 5.6 GB store resident in page
+        # cache, which is part of why the fused tile is fast.
+        #
+        # The eight chunks are SIBLINGS in the group's toposort, so snakemake
+        # SUMS their mem_mb: the group reserves 8 x this (112000 MiB). That is
+        # deliberate — it is what makes all eight run as one wave, and one wave
+        # is what makes the group's runtime ONE chunk's runtime instead of eight.
         mem_mb = lambda wc, attempt: 14000 * attempt,
-        runtime = 720
+        # 120, not 720. MEASURED on tile 198.305 chunk 1 with the store
+        # node-local (job 20795277): ~76 min elapsed for 3547 objects, against a
+        # 7h34m median on NFS — the same ~50 min of TotalCPU either way, so the
+        # six-fold collapse is pure I/O. 120 is that plus ~60% margin for a
+        # richer tile. It is the dominant term in the group's runtime sum, so
+        # the old 12 h ceiling is not free any more: at 720 the fused job would
+        # declare 12h45m and drop out of every 3 h partition.
+        runtime = 120,
+        slurm_extra = TILE_SLURM_EXTRA
     shell:
         sp_shell("tile_ngmix", "config_tile_Ng_template.ini")
 
@@ -278,7 +516,7 @@ def ngmix_chunkdirs(wc):
 # The gather: merge the N chunk catalogues. N_SPLIT_MAX comes from the workflow's
 # own chunk count via $NGMIX_N_CHUNKS (env-expanded by the module).
 rule tile_merge_cats:
-    group: "tile_finish"
+    group: TILE_GROUP
     input:
         manifests = ngmix_manifests,
         chunkdirs = ngmix_chunkdirs,
@@ -293,7 +531,9 @@ rule tile_merge_cats:
     threads: 8
     resources:
         mem_mb = lambda wc, attempt: 16000 * attempt,
-        runtime = 120
+        # Measured median 0:15, max 0:42. A term in the group's runtime sum.
+        runtime = 10,
+        slurm_extra = TILE_SLURM_EXTRA
     shell:
         sp_shell("tile_merge_cats", "config_merge_sep_cats.ini")
 
@@ -303,22 +543,28 @@ rule tile_merge_cats:
 # No protected(): the full default rerun-triggers govern, and protected() only
 # ever forced people through a `--forcerun` detour.
 rule tile_make_cat:
-    group: "tile_finish"
+    group: TILE_GROUP
     input:
+        # No store input: it is node-local, written by tile_vignets in this same
+        # group job. make_cat reads its psfex_interp output through
+        # $NGMIX_VIGNET_DIR (config_tile_Mc.ini).
         ms    = rules.tile_merge_cats.output.manifest,
-        store = rules.tile_vignets.output.store,
     output:
         manifest  = f"{TILE_DIR}/manifests/tile_make_cat.json",
         final_cat = f"{PROD_TILE_DIR}/final_cat-{{tile}}.fits",
     log:
         f"{TILE_DIR}/logs/tile_make_cat.json"
     params:
-        pre = lambda wc: unit_pre("tile_make_cat", "tile", wc.tile),
+        pre = lambda wc: unit_pre("tile_make_cat", "tile", wc.tile,
+                                  pre_run=[TILE_LOCAL, TILE_VIGNET_REQUIRED,
+                                           TILE_CLEAN]),
         script_hash = SCRIPT_HASH
     threads: 8
     resources:
         mem_mb = lambda wc, attempt: 16000 * attempt,
-        runtime = 120
+        # Measured median 1:33, max 1:50. A term in the group's runtime sum.
+        runtime = 15,
+        slurm_extra = TILE_SLURM_EXTRA
     shell:
         # sp_shell's body, plus the catalogue publish: a real file, so it is a
         # real declared output (and it persists — never temp()). `--job-rc` is

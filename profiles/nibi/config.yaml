@@ -37,6 +37,47 @@ software-deployment-method: [apptainer]
 #  OMP_NUM_THREADS=1   caps OpenBLAS fork-explosion (verified: pool 32->1)
 #  MALLOC_ARENA_MAX=2  bounded allocator (im_sims/nibi lesson)
 #  --home /home/cdaley wins over the SDM's --home <cwd>; restores cadcproxy.pem for vos/vcp
+#  --bind /local       NODE-LOCAL NVME. $SLURM_TMPDIR on nibi is
+#                      /local/scratch/<user>.<jobid>.0, and the mount is /local
+#                      (/dev/nvme0n1, ext4, 3.5 TB) -- binding /localscratch is
+#                      NOT enough, the real path is under /local (verified,
+#                      probe job 20794182). The fused `tile_shape` group job
+#                      WRITES its 5.6 GB vignette store there and never puts it
+#                      on scratch at all (workflow/rules/tile.smk); every other
+#                      rule simply ignores the bind. Adding it does NOT
+#                      invalidate anything: the `software-env` rerun trigger
+#                      hashes only job.container_img_url (+ conda env, env
+#                      modules) --
+#                      snakemake/persistence/__init__.py::_software_stack_hash,
+#                      v9.23.1 -- and apptainer-args is not in that hash.
+#  --env SLURM_TMPDIR=$SLURM_TMPDIR
+#                      HOW the in-container shell LEARNS its node-local dir.
+#                      --cleanenv strips the real SLURM_TMPDIR, and the two
+#                      alternatives do not work here:
+#                        * {resources.tmpdir} is NOT $SLURM_TMPDIR. Snakemake
+#                          defers that resource to the job and evaluates it as
+#                          tempfile.gettempdir(); nibi's Slurm does not export
+#                          TMPDIR, so it lands on /tmp -- which on a compute
+#                          node is a 378 GB RAM-backed tmpfs whose pages are
+#                          charged to the job's memory cgroup. Staging 6 GB
+#                          there would eat the job's RAM, not use the NVMe.
+#                          (Measured, job 20794656.)
+#                        * APPTAINERENV_SLURM_TMPDIR would have to be exported
+#                          by something that already knows the JOB's value;
+#                          bin/sp runs on the login node, where it is unset.
+#                      This works because snakemake splices apptainer-args
+#                      verbatim into a command it runs with Popen(shell=True)
+#                      (snakemake/deployment/singularity.py::shellcmd +
+#                      shell.py), so the JOB's /bin/sh expands $SLURM_TMPDIR at
+#                      submission-shell time, in the job, where the value is
+#                      known. Verified in-container, not assumed.
+#                      Rules outside the tile_shape group ignore the variable;
+#                      on the login node (localrules) it expands to empty,
+#                      which apptainer accepts. Every tile_shape member REFUSES
+#                      TO RUN if what arrives is not a real directory
+#                      (tile.smk), so a broken passthrough is a loud failure --
+#                      never a silent slide back onto NFS, and never a 5.6 GB
+#                      write into the RAM-backed /tmp tmpfs.
 #  PYTHONPATH          SETTLED CALL 3 — pins THIS branch's src/, which is
 #                      develop@97e16d50 plus the four commits that genuinely need
 #                      module code: ngmix chunk fields + position-seeded RNG,
@@ -46,7 +87,7 @@ software-deployment-method: [apptainer]
 #                      live p3-batch1 job reads it) and not the sif default
 #                      (frozen pre-#843, and pre-#873). Production later rebuilds
 #                      the sif at the validated commit and DROPS this --env line.
-apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/project/def-mjhudson/cdaley/shapepipe-snakemake/src --home /home/cdaley --bind /project --bind /scratch"
+apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/project/def-mjhudson/cdaley/shapepipe-snakemake/src --home /home/cdaley --bind /project --bind /scratch --bind /local --env SLURM_TMPDIR=$SLURM_TMPDIR"
 
 latency-wait: 60                 # NFS: wait for outputs to appear after a job
 keep-going: true                 # a failed job poisons only its cone; siblings run on
