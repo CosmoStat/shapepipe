@@ -594,11 +594,24 @@ rule tile_ngmix:
         # them and nothing propagates down to them either.
         #
         # A group replanned without tile_vignets is precisely the state
-        # TILE_VIGNET_REQUIRED exists to catch. Every chunk trips the guard,
-        # the group fails, and GroupJob.postprocess(error=True) fans out over
-        # every member and removes its EXISTING outputs -- tile_make_cat's
+        # TILE_VIGNET_REQUIRED exists to catch. Every chunk trips the guard and
+        # the group fails; from there GroupJob.postprocess(error=True) fans out
+        # over every member and removes its EXISTING outputs -- tile_make_cat's
         # final_cat on the persistent root among them. So the cost of getting
         # this wrong is a deleted science product, not a wasted hour.
+        #
+        # THE REPLANNING IS OBSERVED; THAT LAST STEP IS DERIVED, and the
+        # difference should not quietly disappear from a comment that confines a
+        # whole class of change to campaign boundaries. The deletion is read off
+        # snakemake's own cleanup path (job_scheduler.py:564 ->
+        # jobs.py:1653-1673 -> jobs.py:942-965, and profiles/nibi sets no
+        # keep-incomplete) and has never been seen -- twice now, by independent
+        # reviews, for the same reason: snakemake reports "Group jobs: inactive
+        # (local execution)", so no login-node fixture reaches the group path at
+        # all and only a submitted job against a finished tile can settle it.
+        # sp-products/smk-g5/EXPERIMENT_postprocess_deletion.md designs exactly
+        # that, on a tile whose final_cat is bit-reproducible from another
+        # campaign's independent copy, so the observation costs nothing to make.
         #
         # WHY THE TILE_LOCAL WARNING ABOVE DOES NOT ALREADY COVER IT, which is
         # the whole reason this needs its own note: tile_local() sits in the
