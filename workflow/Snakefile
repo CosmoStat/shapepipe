@@ -272,11 +272,11 @@ STAR_CAT_HASH = hashlib.md5(
 # ADDING it is itself a params change, and on a RESUME that change is
 # destructive rather than merely expensive: it replans the fused group WITHOUT
 # tile_vignets, so every chunk trips TILE_VIGNET_REQUIRED and the group fails.
-# That the failed group then removes each member's existing outputs, final_cat
-# included, is DERIVED from snakemake's cleanup path and has never been
-# observed — tile.smk's range_hash comment cites the source lines, and
-# sp-products/smk-g5/EXPERIMENT_postprocess_deletion.md designs the run that
-# would settle it. The TILE_LOCAL warning does not cover this case at all:
+# The failed group then removes each member's existing outputs, final_cat
+# included. That was derived from snakemake's cleanup path for months; it is now
+# OBSERVED — job 20818649 against smk-g5, 2026-08-30, 32 seconds, and the tile's
+# directory on the persistent root was empty afterwards. tile.smk's range_hash
+# comment carries the run. The TILE_LOCAL warning does not cover this case at all:
 # tile_local() sits in three rules' params and drags tile_vignets back in,
 # this sits in one — and clean_tiles: false, the shipped default, is the
 # configuration it bites. Land this hash, and any later edit to the split, at

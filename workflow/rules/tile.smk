@@ -600,18 +600,29 @@ rule tile_ngmix:
         # final_cat on the persistent root among them. So the cost of getting
         # this wrong is a deleted science product, not a wasted hour.
         #
-        # THE REPLANNING IS OBSERVED; THAT LAST STEP IS DERIVED, and the
-        # difference should not quietly disappear from a comment that confines a
-        # whole class of change to campaign boundaries. The deletion is read off
-        # snakemake's own cleanup path (job_scheduler.py:564 ->
-        # jobs.py:1653-1673 -> jobs.py:942-965, and profiles/nibi sets no
-        # keep-incomplete) and has never been seen -- twice now, by independent
-        # reviews, for the same reason: snakemake reports "Group jobs: inactive
-        # (local execution)", so no login-node fixture reaches the group path at
-        # all and only a submitted job against a finished tile can settle it.
-        # sp-products/smk-g5/EXPERIMENT_postprocess_deletion.md designs exactly
-        # that, on a tile whose final_cat is bit-reproducible from another
-        # campaign's independent copy, so the observation costs nothing to make.
+        # ALL OF THIS IS OBSERVED, end to end, on a real campaign root -- SLURM
+        # job 20818649 against smk-g5, 2026-08-30. It had been derived twice from
+        # snakemake's cleanup path and never seen, because "Group jobs: inactive
+        # (local execution)" puts it out of reach of any login-node fixture. The
+        # run took 32 seconds:
+        #   * the dry run scheduled tile_ngmix x8 + tile_merge_cats +
+        #     tile_make_cat, reason "params have changed since last execution",
+        #     with tile_vignets and tile_detect ABSENT -- the group's own SLURM
+        #     label came back as tile_shape_tile_make_cat_tile_merge_cats_tile_ngmix,
+        #     with no tile_vignets in it;
+        #   * every chunk tripped the guard below;
+        #   * the group FAILED, and final_cat-186.307.fits was GONE from
+        #     /project afterwards. The tile's directory on the persistent root
+        #     was empty.
+        # (Restored from a copy taken first; the design and the transcript are in
+        # sp-products/smk-g5/EXPERIMENT_postprocess_deletion.md.)
+        #
+        # WORTH SITTING WITH: the guard below is what makes this loud rather than
+        # silent, and the loud failure is precisely what triggers the deletion. A
+        # guard that turns a wrong catalogue into a failed job is still the right
+        # trade -- but on a fused group, "fails loudly" is not a cheap outcome,
+        # and that is an argument for never reaching this state rather than for
+        # relaxing the guard.
         #
         # WHY THE TILE_LOCAL WARNING ABOVE DOES NOT ALREADY COVER IT, which is
         # the whole reason this needs its own note: tile_local() sits in the
