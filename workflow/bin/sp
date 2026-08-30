@@ -37,8 +37,11 @@ module load apptainer/1.4.5 2>/dev/null || true
 # shellcheck disable=SC1091
 source "$VENV/bin/activate"
 
-# Minimal scalar reader for workflow/config.yaml (key: value, no nesting).
-cfg() { sed -n "s/^$1:[[:space:]]*//p" "$CONFIG" | head -1; }
+# Scalar reader for workflow/config.yaml. The venv is active by this point and
+# snakemake depends on PyYAML, so this parses the file rather than pattern-matching
+# it -- quotes, inline comments and nesting are the parser's problem, not ours.
+cfg() { python -c 'import sys, yaml
+print(yaml.safe_load(open(sys.argv[1])).get(sys.argv[2]) or "")' "$CONFIG" "$1"; }
 RUN_DIR="$(cfg run_dir)"; INDEX_DB="$(cfg index_db)"
 
 # Snakemake state (.snakemake: metadata, locks, incomplete markers) lives NEXT TO
