@@ -34,11 +34,11 @@ The two rules NOT in it are structural, not taste:
     of it, so the group has one clean external edge.
 Different exposures share no DAG edge, so this is one group job per exposure.
 
-NUMBER_LIST is set only for exp_split (its numbering scheme IS the exposure id);
-never for get_images / exp_mask / exp_psf, whose per-CCD or download numbering
-would make the #746 startup validation turn tolerated per-CCD attrition into a
-whole-exposure hard failure. That is now a property of the committed configs
-(config_exp_Sp.ini has NUMBER_LIST = $SP_UNIT_NUM; Gie/Ma/psfex have none).
+NUMBER_LIST ($SP_UNIT_NUM, see unit_num in the Snakefile) is set only for
+exp_split, whose numbering scheme IS the exposure id; never for get_images /
+exp_mask / exp_psf, whose per-CCD or download numbering would turn tolerated
+per-CCD attrition into a whole-exposure hard failure. It is a property of the
+committed configs (config_exp_Sp.ini alone carries the entry).
 """
 
 rule exp_get_images:
@@ -66,14 +66,8 @@ rule exp_get_images:
 # per HEALPix chunk, into a run-independent chunk store under config `star_cats`.
 # `exp_star_cat` then reads the chunks covering an exposure's focal plane and
 # cuts them to it — no network at all. workflow/scripts/star_cats.py holds both
-# halves and the geometry they must agree on; its docstring is the reference for
-# the chunking and the padding.
-#
-# The arithmetic: exposures overlap ~7-10 deep and a tile's exposures all look at
-# the same square degree, so the old one-cone-per-exposure design re-fetched the
-# same sky ~8 times over. Chunked by sky, a full-UNIONS footprint is ~1.5k
-# queries where the exposure count would have been ~25k, and a campaign that
-# grows within the fetched footprint issues none.
+# halves, the geometry they must agree on, and the arithmetic that motivates the
+# split; its docstring is the reference for chunking, padding and query counts.
 
 # The container's certifi bundle. The host leaks SSL_CERT_FILE / CURL_CA_BUNDLE
 # pointing at a path that does not exist inside the image, so requests is pointed
@@ -134,13 +128,9 @@ STAR_CAT_MANIFEST = f"{RUN_DIR}/manifests/star_catalogue.json"
 rule star_catalogue:
     output:
         manifest = STAR_CAT_MANIFEST
-    # No `log:` — see write_manifest() in star_cats.py: this rule runs no
-    # shapepipe_run and computes no completeness verdict, so there is nothing to
-    # split between a manifest and a log. Under `set -euo pipefail` it either
-    # completes or aborts, and snakemake's captured stderr is the evidence.
-    # `cmd` is a params value, so it is substituted AFTER the shell string is
-    # formatted: a `{output.manifest}` placeholder in here would survive
-    # literally (see unit_pre in the Snakefile). Hence the explicit path.
+    # No `log:` — see write_manifest() in star_cats.py.
+    # `cmd` is a params value, so placeholders in it are not formatted (see
+    # unit_pre in the Snakefile). Hence the explicit manifest path.
     params:
         cmd = in_container(
             f"python {SCRIPTS}/star_cats.py fetch"
@@ -164,9 +154,7 @@ rule star_catalogue:
 # numbering scheme needs. Local: one header read for the focal-plane footprint,
 # a load of the chunks covering it, a radial cut.
 #
-# A LOCALRULE for the same reason as clean_exposure: seconds of work, and one
-# sbatch per exposure would be ~20k submissions well under the 15-minute floor
-# cluster policy asks us to bundle away.
+# A LOCALRULE, for the reason the Snakefile's localrules line gives.
 #
 # The per-unit farm is a REAL directory holding exactly this exposure's 40
 # numbers, and that is load-bearing: config_exp_Ma.ini reads it as an INPUT_DIR
@@ -191,9 +179,8 @@ rule star_catalogue:
 # whose target the purge removed. A purged cut or a deleted farm makes the rule
 # out of date, it reruns, and it re-cuts or re-links as needed.
 def star_cat_cmd(exp):
-    """The whole rule body, as bash — carried as a params value, never inlined
-    in ``shell:``: it contains literal ``{}`` (the manifest JSON) and snakemake
-    formats a shell string once, which would consume those braces."""
+    """The whole rule body, as bash — carried as a params value because it
+    contains literal ``{}`` (the manifest JSON); see unit_pre in the Snakefile."""
     cut_dir = f"{STAR_CATS}/exp"
     cat = f"{cut_dir}/star_cat-{exp}.fits"
     work = exp_dir(exp)
@@ -336,26 +323,19 @@ rule exp_psf:
 # tile's tile_vignets manifest — vignets is the last stage that reads exposure
 # products, everything after it reads tile-level files.
 #
-# Three properties make the late append behave (see clean_exposure.py):
-#   * the job deletes the exposure's manifests too, so a tile appended after the
-#     clean sees an unbuilt chain and regenerates it instead of running against
-#     an empty store. The tombstone deliberately does NOT stand in for those
-#     manifests — it is not an input to anything but itself.
-#   * a finished tile is not disturbed: Snakemake demands a missing intermediate
-#     only when something downstream of it must run.
-#   * params.consumers carries the consumer set, so growing it makes the
-#     tombstone stale under the default `params` rerun-trigger; the clean job
-#     reruns after the new tile's vignets, against the enlarged set.
+# What the job deletes, and why a late append still behaves, is argued in
+# clean_exposure.py's docstring; params.consumers is what makes a grown consumer
+# set stale (same file).
 #
-# The tile side reads the exposure manifests through ancient() (see tile.smk),
-# which is what keeps this deletion from rebuilding every neighbouring tile.
-# This rule's OWN inputs are deliberately not ancient: a tile that really did
-# rebuild its vignets must reschedule the cleans of the exposures it read.
+# The tile side reads the exposure manifests through ancient() and cuts the
+# reclaimed edges of finished tiles (see tile.smk), which is what keeps this
+# deletion from rebuilding every neighbouring tile. This rule's OWN inputs are
+# deliberately not ancient: a tile that really did rebuild its vignets must
+# reschedule the cleans of the exposures it read.
 #
-# A localrule (declared in the Snakefile): it is an rmtree, not science, and one
-# sbatch per exposure would be ~20k scheduler submissions at DR6 scale. Local
-# execution serialises them under local-cores, which costs nothing at rmtree
-# speed and never blocks the compute chains (this rule is in none of them).
+# A localrule (declared in the Snakefile). Local execution serialises the cleans
+# under local-cores, which costs nothing at rmtree speed and never blocks the
+# compute chains (this rule is in none of them).
 rule clean_exposure:
     input:
         # ONLY the consumers this invocation may actually build. A consumer that

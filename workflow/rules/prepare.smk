@@ -36,10 +36,8 @@ exposure.smk, into a run-independent store. The tile side has no star-cat node
 because it has no mask rule yet — see tile.smk.
 """
 
-# NUMBER_LIST is never set for get_images (download stage; nothing on disk to
-# validate against — #746 would hard-fail the unit). The committed
-# config_tile_Git.ini simply has no NUMBER_LIST, so this is now a property of the
-# config, not of an injection step.
+# No NUMBER_LIST for get_images — a download stage has nothing on disk to
+# validate against (see exposure.smk's docstring for the convention).
 rule tile_get_images:
     group: "tile_prep"
     output:

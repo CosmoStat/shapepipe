@@ -21,12 +21,9 @@ output is its MANIFEST (`<unit dir>/manifests/<stage>.json`), written by
 `completeness.py check`. Product files are not declared — a missing CCD is often
 legitimate, and at DR6 scale per-CCD declaration means millions of paths.
 
-Failure evidence rides on the rule's `log:` (`<unit dir>/logs/<stage>.json`,
-`unit_log` below): the check writes its full verdict there on every run, and the
-manifest only when that verdict is a success. Snakemake deletes a failed job's
-declared output and never touches its log, so the two directives say exactly the
-two things this workflow needs — "this stage succeeded" and "here is what
-happened".
+Failure evidence rides on the rule's `log:` (`<unit dir>/logs/<stage>.json`):
+the manifest says "this stage succeeded", the log says "here is what happened"
+(the contract is argued in completeness.py's docstring).
 """
 
 import functools
@@ -324,18 +321,9 @@ STAR_CAT_HASH = script_hash("star_cats.py")
 # failure family as the script's own no-fallback rule, across time rather than
 # across processes.
 #
-# ADDING it is itself a params change, and on a RESUME that change is
-# destructive rather than merely expensive: it replans the fused group WITHOUT
-# tile_vignets, so every chunk trips TILE_VIGNET_REQUIRED and the group fails.
-# The failed group then removes each member's existing outputs, final_cat
-# included. That was derived from snakemake's cleanup path for months; it is now
-# OBSERVED — job 20818649 against smk-g5, 2026-08-30, 32 seconds, and the tile's
-# directory on the persistent root was empty afterwards. tile.smk's range_hash
-# comment carries the run. The TILE_LOCAL warning does not cover this case at all:
-# tile_local() sits in three rules' params and drags tile_vignets back in,
-# this sits in one — and clean_tiles: false, the shipped default, is the
-# configuration it bites. Land this hash, and any later edit to the split, at
-# a campaign boundary on a fresh root.
+# Land this hash, and any later edit to the split, at a campaign boundary on a
+# fresh root: on a RESUME the params change is destructive, not merely expensive
+# (observed, with the transcript, at tile.smk's range_hash).
 NGMIX_RANGE_HASH = script_hash("ngmix_range.py")
 
 # --- exposure reclamation (D5, S5) -----------------------------------------
@@ -370,13 +358,11 @@ def flag(value, default=False):
 # read no index of their own and must schedule no deletions.
 CLEAN = flag(config.get("clean", False)) and PHASE == "compute"
 
-# Reclamation REQUIRES the `input` rerun-trigger to be off (profiles/nibi sets
-# the list; tile.smk explains why). The two are already tied together: CLEAN is
-# gated on SP_PHASE=compute, which only workflow/bin/sp sets, and bin/sp always
-# launches with that profile. A bare snakemake invocation without SP_PHASE
-# schedules no clean job at all, so it cannot meet the incompatible combination.
-# There is no runtime assertion because the trigger set is not readable at parse
-# time (workflow.dag_settings is None until the DAG is built).
+# Reclamation REQUIRES the `input` rerun-trigger to be off (see tile.smk's
+# tile_finished cascade note). The gate is structural rather than asserted: CLEAN
+# needs SP_PHASE=compute, only bin/sp sets it, and bin/sp always launches with
+# profiles/nibi — so the incompatible combination is unreachable. A runtime
+# assertion is impossible (workflow.dag_settings is None until the DAG is built).
 
 # Tiles that must not pin an exposure's store. See config.yaml: a permanently
 # failed tile otherwise holds every exposure it touches (~80) forever, because
@@ -455,26 +441,20 @@ def tile_tombstone(tile):
 def clean_tile_targets():
     """Which tiles this invocation may clean: the in-scope ones, and no test.
 
-    The exposure case needs clean_targets()' eligibility test because an
-    exposure's consumer set closes over the campaign. A TILE's store has no
-    consumer outside that tile — tiles read exposures, nothing reads another
-    tile's store — so there is nothing to wait for and nothing to defer on. Every
-    ready tile is eligible the moment its own final_cat exists, and the rule's
-    input is exactly that.
+    No eligibility test, because a tile's store has no consumer outside that
+    tile (clean_tile.py argues the asymmetry with clean_targets()). Every ready
+    tile is eligible the moment its own final_cat exists, and the rule's input
+    is exactly that.
 
-    The restriction to TILES_READY is therefore not eligibility, it is scope
-    containment, and it runs the opposite way from the exposure case: an
+    The restriction to TILES_READY is therefore scope containment, not
+    eligibility, and it runs the opposite way from the exposure case: an
     OUT-OF-SCOPE tile's tombstone would drag that tile's final_cat, its
     tile_make_cat job and the whole fused tile_shape group into this DAG, where
     the `params` rerun-trigger can find a finished tile out of date and rerun it
     against reclaimed exposure stores (see the TILE_LOCAL warning in tile.smk).
     In scope the edge is free: `rule all` already requests the same final_cat.
-
-    Nothing is lost by skipping an out-of-scope tile, because the tile list only
-    ever grows — a later invocation has it in scope and cleans it then. That is
-    also what makes flipping `clean_tiles` on RETROACTIVE: the tiles already
-    reclaimed are exactly the ones with a tombstone, so the missing tombstones
-    schedule exactly the missing cleans.
+    Nothing is lost by skipping an out-of-scope tile — the tile list only ever
+    grows, so a later invocation has it in scope.
 
     HEAD PROCESS ONLY, for the same reason as clean_targets() above.
     """
@@ -505,11 +485,10 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     What it materialises (the proven v2.0 isolation-by-work-dir-content, NOT
     -e/--exclusive):
       * ``output/``, ``manifests/`` and ``logs/`` — the last two are a SIBLING
-        pair, not one dir with two naming conventions: clean_exposure deletes
-        BOTH wholesale, because a log attesting "complete" for a store that has
-        been reclaimed contradicts the unbuilt chain the DAG must now see. (The
-        benchmark tsv is deliberately outside both: it measures the job, it does
-        not claim anything about the store, so reclamation must not eat it.)
+        pair, not one dir with two naming conventions, because clean_exposure
+        deletes both wholesale (clean_exposure.py says why). The benchmark tsv
+        is deliberately outside both: it measures the job, not the store, so
+        reclamation must not eat it.
       * tile: ``tile_numbers.txt`` (dot format — what get_images reads);
       * exposure: a fabricated pseudo-Fe ``exp_numbers-000-000.txt`` holding the
         ORIGINAL exposure name from the index (``2605805p``), so get_images
@@ -575,21 +554,10 @@ def sp_shell(stage, config_name, *, check_args="", post=""):
     else (see unit_pre). ``-b {threads}`` makes SMP fork width and cpus_per_task
     one number by construction (D4).
 
-    The check runs even when shapepipe_run failed, so a failed unit still leaves
-    a record of why: the verdict goes to the rule's `log:` on EVERY run, and to
-    the declared `<stage>.json` manifest only when it is a success. Snakemake
-    deletes a failed job's output and never touches its log, so the manifest
-    stays success-only currency and the log is the evidence `sp report` reads.
-
-    The verdict is COMPOSED, which is why `--job-rc "$rc"` is passed: the count
-    floors and shapepipe_run's exit status are two independent statements about
-    the same job, and the record must reflect both. Without it, a job whose
-    counts cleared their floors but whose shapepipe_run died (a late runner
-    raising after the counted ones wrote their files) publishes a SUCCESS
-    manifest and still exits nonzero — snakemake deletes that manifest as a
-    failed job's output, and the log is left claiming "complete" for a stage
-    with nothing to show for it. With the rc composed in, both files agree that
-    the job failed.
+    The rc is CAPTURED rather than ``&&``-ed onto, so the check still runs when
+    shapepipe_run failed, and it is passed back as ``--job-rc "$rc"`` so the
+    verdict composes the count floors with shapepipe_run's own exit status. Both
+    halves are argued in completeness.py's docstring.
     """
     return (
         "{params.pre}\n"

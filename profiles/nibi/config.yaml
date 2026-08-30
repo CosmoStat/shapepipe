@@ -9,11 +9,8 @@
 # Launch via `workflow/bin/sp` (loads apptainer/1.4.5, uses the /project venv).
 # software-deployment-method wraps every job's shell in `apptainer exec` — the
 # user never types apptainer. WHICH image is resolved in the Snakefile through
-# workflow/scripts/container.py: this user's writable sandbox if they built one,
-# else their cached SIF (`sp container pull`), else the `container:` path in
-# workflow/config.yaml — the shared /project .sif, and the default whenever the
-# cache is empty. `sp container status` prints which layer is live. `sp container
-# pull` needs the network: login node or salloc, never a batch job.
+# workflow/scripts/container.py, whose docstring documents the layers and the
+# resolution order; `sp container status` prints which layer is live.
 
 executor: slurm
 
@@ -118,43 +115,34 @@ show-failed-logs: true
 printshellcmds: true
 
 # No `keep-incomplete` here. The declared output IS the manifest, so letting
-# snakemake delete a failed job's output is exactly the semantics this workflow
-# wants: a `<stage>.json` on disk means the stage succeeded, and a resume cannot
-# schedule downstream work on top of a failure. The post-mortem evidence is the
-# rule's `log:` (`<unit>/logs/<stage>.json`), which completeness.py writes on
-# every run and which snakemake preserves through the failure that produced it —
-# which is also what `show-failed-logs` above surfaces on the console.
+# snakemake delete a failed job's output is exactly the manifest-vs-log
+# semantics this workflow wants (completeness.py's docstring argues it), and
+# `show-failed-logs` above surfaces the surviving log on the console.
 
 # rerun-triggers: the v9 default MINUS `input`. params/code/mtime fixes still
 # propagate — completeness.py writes the manifest only on change, so mtimes move
 # only when reality moves.
 #
 # `input` is dropped because reclamation needs the tile->exposure edge to be
-# CONDITIONAL: a tile whose final_cat is on disk declares no exposure inputs, so
-# a neighbour rebuilding a shared exposure cannot drag it along (see tile.smk).
-# With the `input` trigger on, that same conditional reads as "set of input files
-# has changed" and reruns every finished tile — against an exposure store that
-# reclamation has already deleted. Measured on fixture t4: 70 jobs with the
-# trigger, 28 without, for one damaged tile in a four-tile chain.
+# CONDITIONAL; with the trigger on, that conditional itself reruns every
+# finished tile against a reclaimed exposure store. tile.smk's tile_finished
+# commentary carries the mechanism and the fixture-t4 job counts.
 #
 # Nothing this workflow relied on is lost. The two genuinely data-derived input
 # sets are covered another way: a changed exposure list arrives through the
 # (non-ancient) find_exposures manifest's mtime, and the ngmix chunk count rides
 # in params. And clean scheduling is structurally gated to bin/sp (SP_PHASE=compute
 # + this profile), so a bare snakemake invocation cannot quietly recombine
-# reclamation with the `input` trigger; a runtime assertion is impossible
-# (the trigger set is unreadable at parse time) — the gate is the launcher.
+# reclamation with the `input` trigger.
 rerun-triggers: [mtime, params, code, software-env]
 
 # NO set-threads / set-resources here, deliberately. Profile overrides REPLACE a
 # rule's own values (verified snakemake 9.23), which would kill the
 # attempt-scaled `mem_mb = lambda wc, attempt: ...` OOM retries and the tuned
-# ngmix thread count. The RULES own threads and resources; this profile only
-# sets defaults for rules that state nothing (default-resources above).
+# ngmix thread count, and would flatten the group resource composition. The
+# RULES own threads and resources; this profile only sets defaults for rules
+# that state nothing (default-resources above).
 #
-# `group:` fusion of the short rules (PRD D-profile) lives in the rule files, not
-# here: the labels are `tile_prep` (prepare.smk), `exp_short` (exp_split +
-# exp_mask) and `tile_finish` (tile_merge_cats + tile_make_cat), each documented
-# in its file's docstring. Grouping composes resources per toposort level (max
-# mem/threads, summed runtime for a linear chain) and leaves the attempt scaling
-# above intact, which is the other reason set-resources must stay out of here.
+# `group:` fusion of the short rules (PRD D-profile) lives in the rule files,
+# each label documented in its file's docstring: `tile_prep` (prepare.smk),
+# `exp_short` (exposure.smk) and `tile_shape` (tile.smk).
