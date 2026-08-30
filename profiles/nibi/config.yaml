@@ -51,9 +51,13 @@ software-deployment-method: [apptainer]
 #                      snakemake/persistence/__init__.py::_software_stack_hash,
 #                      v9.23.1 -- and apptainer-args is not in that hash.
 # 
-#                      HOW the in-container shell LEARNS its node-local dir.
-#                      --cleanenv strips the real SLURM_TMPDIR, and the two
-#                      alternatives do not work here:
+#                      HOW the in-container shell LEARNS its node-local dir:
+#                      IT DOES NOT. It DERIVES the path from the tile wildcard
+#                      (tile.smk::tile_local -> /local/scratch/sp-<tile>), and
+#                      that is the only mechanism that survives contact with
+#                      snakemake. Three alternatives were tried; all fail, and
+#                      the third failed IN PRODUCTION, so read this before
+#                      reaching for any of them again:
 #                        * {resources.tmpdir} is NOT $SLURM_TMPDIR. Snakemake
 #                          defers that resource to the job and evaluates it as
 #                          tempfile.gettempdir(); nibi's Slurm does not export
@@ -65,19 +69,22 @@ software-deployment-method: [apptainer]
 #                        * APPTAINERENV_SLURM_TMPDIR would have to be exported
 #                          by something that already knows the JOB's value;
 #                          bin/sp runs on the login node, where it is unset.
-#                      This works because snakemake splices apptainer-args
-#                      verbatim into a command it runs with Popen(shell=True)
-#                      (snakemake/deployment/singularity.py::shellcmd +
-#                      shell.py), so the JOB's /bin/sh expands $SLURM_TMPDIR at
-#                      submission-shell time, in the job, where the value is
-#                      known. Verified in-container, not assumed.
-#                      Rules outside the tile_shape group ignore the variable;
-#                      on the login node (localrules) it expands to empty,
-#                      which apptainer accepts. Every tile_shape member REFUSES
-#                      TO RUN if what arrives is not a real directory
-#                      (tile.smk), so a broken passthrough is a loud failure --
-#                      never a silent slide back onto NFS, and never a 5.6 GB
-#                      write into the RAM-backed /tmp tmpfs.
+#                        * SPLICING "$SLURM_TMPDIR" INTO apptainer-args AND
+#                          LETTING THE JOB'S SHELL EXPAND IT DOES NOT WORK.
+#                          This was the shipped design for exactly one campaign
+#                          and it killed every tile of run 20798193 in eight
+#                          minutes: snakemake ESCAPES the `$` before the string
+#                          reaches any shell, so the container receives the
+#                          literal characters and never a path. NOTHING can be
+#                          carried into the container this way -- not a tmpdir,
+#                          not anything else. The bind below is static, and the
+#                          VALUE is derived job-side from a wildcard instead.
+#                      Every tile_shape member still REFUSES TO RUN if the
+#                      derived directory is not real (tile.smk), which is the
+#                      only reason that campaign cost minutes and not a night:
+#                      a broken node-local path is a loud failure, never a
+#                      silent slide back onto NFS, and never a 5.6 GB write
+#                      into the RAM-backed /tmp tmpfs.
 #  PYTHONPATH          SETTLED CALL 3 — pins THIS branch's src/, which is
 #                      develop@97e16d50 plus the four commits that genuinely need
 #                      module code: ngmix chunk fields + position-seeded RNG,
