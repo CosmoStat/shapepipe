@@ -75,7 +75,16 @@ across INPUT_DIRs, so a shared pool cannot be symlinked in wholesale).
 # bulk intra-tile intermediate is node-local. That split is possible because
 # ShapePipe's configs set input and output paths independently -- see
 # config_tile_PiViVi.ini (OUTPUT_DIR = $SP_VIGNET_OUT) and
-# config_tile_Ng_template.ini / config_tile_Mc.ini ($NGMIX_VIGNET_DIR).
+# config_tile_Ng_template.ini / config_tile_Mc.ini ($NGMIX_VIGNET_DIR,
+# $SP_WCS_DIR).
+#
+# TWO node-local stores, not one, and the second is small on purpose. The
+# vignette store is ~5-8 GB of bulk; $SP_WCS_DIR holds a single 11.3 MB file,
+# log_exp_headers-<tile>.sqlite, which ngmix reads once per object per epoch.
+# Moving 5.6 GB bought 4.3x and left 44% of every chunk blocked in NFS RPC on
+# that one file. What costs on a network filesystem is the operation, not the
+# byte, and the two stores are the same fix applied at the two ends of that
+# distribution.
 #
 # WHY IT NEEDS THE GROUP. The store is node-local, so it exists only on the
 # machine that wrote it and only while that job lives. Unfused, tile_vignets and
@@ -129,6 +138,26 @@ def tile_local(tile):
 
     NOT `/tmp`: inside the container that is a 378 GB tmpfs, i.e. RAM charged to
     the job's cgroup, so a 5.6 GB store there would be paid for twice.
+
+    TWO STORES, AND THE SECOND IS 11 MB. `$SP_WCS_DIR` holds one file,
+    `log_exp_headers-<tile>.sqlite`, and staging it is the rest of the same fix
+    rather than a refinement of it. Moving the 5.6 GB vignette store off NFS
+    bought 4.3x and did not solve the problem: thread-state sampling of the
+    fused job (3,200 samples across 8 chunks, campaign smk-g4 job 20799387) put
+    every chunk at 56% on CPU and 44% in `rpc_wait_bit_killable`, with 147 of
+    176 D-state samples inside NFS RPC and exactly one hot NFS file still open.
+    ngmix reads that file once per object PER EPOCH for the WCS, so what costs
+    is the operation count and not the byte count -- a network round trip per
+    read. The two stores are the same intervention at the two ends of the size
+    distribution, and the small one is worth ~1.8x on the rule that is 99.3% of
+    tile-side core-hours.
+
+    A copy, never a symlink: a link resolves straight back to NFS. Every member
+    of the group runs this prologue, so the copy is attempted up to ten times
+    per tile; `cp -u` makes the repeats free. `tile_merge_headers` is upstream of
+    the whole group, so the file exists by the time any member runs, and if it
+    does not then failing here is correct -- the alternative is ngmix silently
+    reading a different tree.
     """
     return f'''
 if [ ! -d /local/scratch ]; then
@@ -140,8 +169,17 @@ fi
 export SP_LOCAL="/local/scratch/sp-{tile}"
 export SP_VIGNET_OUT="$SP_LOCAL/output"
 export NGMIX_VIGNET_DIR="$SP_LOCAL/output/run_sp_tile_PiViVi"
-mkdir -p "$SP_VIGNET_OUT" || {{
+export SP_WCS_DIR="$SP_LOCAL/wcs"
+mkdir -p "$SP_VIGNET_OUT" "$SP_WCS_DIR" || {{
   echo "tile_shape: cannot create $SP_LOCAL on this node." >&2
+  exit 1
+}}
+# the WCS store -- see the docstring; a copy, never a symlink
+cp -u "$SP_RUN"/output/run_sp_tile_Mh_exp/merge_headers_runner/output/log_exp_headers-*.sqlite \
+      "$SP_WCS_DIR"/ || {{
+  echo "tile_shape: no log_exp_headers-*.sqlite under" >&2
+  echo "  $SP_RUN/output/run_sp_tile_Mh_exp/merge_headers_runner/output" >&2
+  echo "  tile_merge_headers must have run before this group." >&2
   exit 1
 }}
 find /local/scratch -maxdepth 1 -name 'sp-*.*' -user "$(id -u)" -mmin +1440 \
