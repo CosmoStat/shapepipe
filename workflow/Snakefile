@@ -257,6 +257,17 @@ CLEAN_HASH  = hashlib.md5((SCRIPTS / "clean_exposure.py").read_bytes()).hexdiges
 # config.yaml's star_cats block on clearing the store after a semantic change.
 STAR_CAT_HASH = hashlib.md5(
     (SCRIPTS / "star_cats.py").read_bytes()).hexdigest()[:12]
+# ngmix_range.py earns a hash for a stronger reason than the others. What it
+# emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks
+# are a PARTITION of its object IDs: resume a tile across an edit to the split
+# and the chunks that already succeeded keep the old ranges while the reruns
+# take the new ones, so within one tile some objects are measured twice and
+# others by nobody. merge_sep_cats concatenates whatever it is handed, so the
+# tile completes green with a corrupt catalogue and no error anywhere. Same
+# failure family as the script's own no-fallback rule, across time rather than
+# across processes.
+NGMIX_RANGE_HASH = hashlib.md5(
+    (SCRIPTS / "ngmix_range.py").read_bytes()).hexdigest()[:12]
 
 # --- exposure reclamation (D5, S5) -----------------------------------------
 

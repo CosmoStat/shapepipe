@@ -572,7 +572,15 @@ rule tile_ngmix:
                      f'|| exit 1',
                      'eval "$ngmix_range_out"',
                      tile_local(wc.tile), TILE_VIGNET_REQUIRED]),
-        script_hash = SCRIPT_HASH
+        script_hash = SCRIPT_HASH,
+        # The one rule whose fingerprint has to cover ngmix_range.py.
+        # `pre_run` already puts the INVOCATION in params, but the invocation
+        # is invariant to the script's body — and what that body decides is a
+        # PARTITION. Resume a tile across an edit to the split without this and
+        # the already-done chunks keep the old ranges while the reruns take the
+        # new ones: some objects measured twice, others by nobody, the tile
+        # green, no error anywhere.
+        range_hash = NGMIX_RANGE_HASH
     # ONE core, not four. `-b {threads}` is shapepipe_run's SMP BATCH SIZE
     # (pipeline/args.py) -- joblib Parallel(n_jobs=batch_size) over
     # filehd.process_list, i.e. parallelism ACROSS INPUT FILE SETS. An ngmix
