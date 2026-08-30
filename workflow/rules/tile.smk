@@ -580,6 +580,49 @@ rule tile_ngmix:
         # the already-done chunks keep the old ranges while the reruns take the
         # new ones: some objects measured twice, others by nobody, the tile
         # green, no error anywhere.
+        #
+        # ADDING THIS PARAM IS ITSELF A PARAMS CHANGE, AND ON A RESUME IT DOES
+        # THE VERY THING IT PREVENTS, BY ANOTHER ROUTE. Snakemake compares the
+        # SET of recorded param values, and smk-g4's metadata for a finished
+        # chunk (record_format_version 6) holds two of them -- the SCRIPT_HASH
+        # digest and the pre string -- so a third entry is new and the job
+        # replans with "Params have changed since last execution". On snakemake
+        # 9.23.1 under profiles/nibi's trigger set, on a fixture mirroring this
+        # group with everything up to date, that reschedules the eight chunks,
+        # tile_merge_cats and tile_make_cat -- and NOT tile_vignets or
+        # tile_detect, whose manifests exist, so missing_output never queues
+        # them and nothing propagates down to them either.
+        #
+        # A group replanned without tile_vignets is precisely the state
+        # TILE_VIGNET_REQUIRED exists to catch. Every chunk trips the guard,
+        # the group fails, and GroupJob.postprocess(error=True) fans out over
+        # every member and removes its EXISTING outputs -- tile_make_cat's
+        # final_cat on the persistent root among them. So the cost of getting
+        # this wrong is a deleted science product, not a wasted hour.
+        #
+        # WHY THE TILE_LOCAL WARNING ABOVE DOES NOT ALREADY COVER IT, which is
+        # the whole reason this needs its own note: tile_local() sits in the
+        # params.pre of tile_vignets, tile_ngmix AND tile_make_cat, so an edit
+        # there drags tile_vignets back in and the store is rebuilt.
+        # range_hash is on tile_ngmix ALONE. Same family, opposite shape -- it
+        # is the ONE-rule fingerprint change that is dangerous, not the
+        # three-rule kind that warning describes, and reading it as covering
+        # both is the mistake to avoid. job_head.sh's runbook sweep for the
+        # guard state does not help either: it skips any tile with a final_cat,
+        # which is exactly the set this breaks.
+        #
+        # INVERTED BY clean_tiles, so read the default carefully. With
+        # reclamation ON the tombstoned tile has lost tile_detect.json, and the
+        # structural "Input files updated by another job" propagation puts
+        # tile_vignets back in the group (clean_tile below measures this) --
+        # the store is rebuilt and nothing trips. The SHIPPED DEFAULT
+        # clean_tiles: false is therefore the dangerous configuration, which is
+        # the opposite of how reclamation reads everywhere else in this file.
+        #
+        # So: land this hash, and every later edit to ngmix_range.py, at a
+        # campaign boundary on a fresh root. Same rule as tile_local()'s, same
+        # escape hatch and same caveat if a resume is unavoidable --
+        # `--rerun-triggers mtime code software-env`.
         range_hash = NGMIX_RANGE_HASH
     # ONE core, not four. `-b {threads}` is shapepipe_run's SMP BATCH SIZE
     # (pipeline/args.py) -- joblib Parallel(n_jobs=batch_size) over

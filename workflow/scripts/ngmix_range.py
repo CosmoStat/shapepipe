@@ -44,6 +44,20 @@ EPOCH extensions cannot be read this script exits non-zero. Such a fallback
 would be the worst available behaviour precisely because it would apply only to
 the chunks that hit the failure, shredding the tile's coverage instead of
 failing it.
+
+The cross-TIME case is not covered here and cannot be. NGMIX_RANGE_HASH
+(Snakefile) makes a RESUME across an edit rerun the chunks rather than mix two
+partitions, but a fused group holds its eight chunks open over the LIVE
+checkout for hours — smk-g4 measured 6,236-7,762 s of elapsed per chunk — and
+each chunk reads this file only when its own shell starts. An edit landed
+mid-flight is therefore read by some chunks and not others. Seen once, live: an
+invocation four seconds after a rewrite returned chunk 5 of 186.307 as
+17649..22060 where the other seven had been split 17129..21229, orphaning 520
+objects and double-measuring 831; twelve sequential and thirty-six concurrent
+runs against a stable checkout gave the identical correct partition. Nothing in
+this script can catch that. The rule is the one tile_local() already states —
+land edits between campaigns — and it binds harder here, because tile_local()
+fails loudly while this fails green.
 """
 
 import argparse

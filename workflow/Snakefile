@@ -268,6 +268,16 @@ STAR_CAT_HASH = hashlib.md5(
 # tile completes green with a corrupt catalogue and no error anywhere. Same
 # failure family as the script's own no-fallback rule, across time rather than
 # across processes.
+#
+# ADDING it is itself a params change, and on a RESUME that change is
+# destructive rather than merely expensive: it replans the fused group WITHOUT
+# tile_vignets, so every chunk trips TILE_VIGNET_REQUIRED and the failed
+# group's postprocess removes each member's existing outputs, final_cat
+# included. The TILE_LOCAL warning does not cover this — tile_local() sits in
+# three rules' params and drags tile_vignets back in, this sits in one — and
+# clean_tiles: false, the shipped default, is the configuration it bites.
+# tile.smk's range_hash comment carries the mechanism. Land this hash, and any
+# later edit to the split, at a campaign boundary on a fresh root.
 NGMIX_RANGE_HASH = hashlib.md5(
     (SCRIPTS / "ngmix_range.py").read_bytes()).hexdigest()[:12]
 
