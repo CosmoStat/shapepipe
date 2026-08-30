@@ -249,6 +249,8 @@ def unit_num(unit):
 SCRIPT_HASH = hashlib.md5((SCRIPTS / "completeness.py").read_bytes()).hexdigest()[:12]
 FOREST_HASH = hashlib.md5((SCRIPTS / "build_forest.py").read_bytes()).hexdigest()[:12]
 CLEAN_HASH  = hashlib.md5((SCRIPTS / "clean_exposure.py").read_bytes()).hexdigest()[:12]
+CLEAN_TILE_HASH = hashlib.md5(
+    (SCRIPTS / "clean_tile.py").read_bytes()).hexdigest()[:12]
 # Same argument for star_cats.py, which both star-cat rules call: their params
 # otherwise fingerprint nothing but paths, so an edit to the chunking or the cut
 # would never rerun them. ONE hash for both rules because it is one script — and
@@ -360,6 +362,51 @@ def clean_targets():
             out.append(tombstone(exp))
     return sorted(out)
 
+# --- tile reclamation (D5) --------------------------------------------------
+# A SEPARATE FLAG from `clean:`, deliberately (config.yaml carries the full
+# argument): exposure reclamation costs nothing but a rebuild if a tile is
+# appended later, while tile reclamation destroys the per-tile AUDIT TRAIL that
+# the campaign's cost model was derived from. They are not the same decision and
+# must not be made by the same switch. Gated on SP_PHASE=compute exactly as
+# CLEAN is, and read through flag() for the same reason (`--config
+# clean_tiles=false` arrives as the string "false").
+CLEAN_TILES = flag(config.get("clean_tiles", False)) and PHASE == "compute"
+
+
+def tile_tombstone(tile):
+    """The clean_tile output. Beside manifests/ and logs/, not inside either —
+    same placement and same reason as the exposure tombstone() above."""
+    return f"{tile_dir(tile)}/cleaned.json"
+
+
+def clean_tile_targets():
+    """Which tiles this invocation may clean: the in-scope ones, and no test.
+
+    The exposure case needs clean_targets()' eligibility test because an
+    exposure's consumer set closes over the campaign. A TILE's store has no
+    consumer outside that tile — tiles read exposures, nothing reads another
+    tile's store — so there is nothing to wait for and nothing to defer on. Every
+    ready tile is eligible the moment its own final_cat exists, and the rule's
+    input is exactly that.
+
+    The restriction to TILES_READY is therefore not eligibility, it is scope
+    containment, and it runs the opposite way from the exposure case: an
+    OUT-OF-SCOPE tile's tombstone would drag that tile's final_cat, its
+    tile_make_cat job and the whole fused tile_shape group into this DAG, where
+    the `params` rerun-trigger can find a finished tile out of date and rerun it
+    against reclaimed exposure stores (see the TILE_LOCAL warning in tile.smk).
+    In scope the edge is free: `rule all` already requests the same final_cat.
+
+    Nothing is lost by skipping an out-of-scope tile, because the tile list only
+    ever grows — a later invocation has it in scope and cleans it then. That is
+    also what makes flipping `clean_tiles` on RETROACTIVE: the tiles already
+    reclaimed are exactly the ones with a tombstone, so the missing tombstones
+    schedule exactly the missing cleans.
+    """
+    if not CLEAN_TILES:
+        return []
+    return sorted(tile_tombstone(t) for t in TILES_READY)
+
 # --- the shell every rule runs (D2) ----------------------------------------
 
 _THREAD_CAPS = " ".join(
@@ -469,21 +516,24 @@ include: "rules/exposure.smk"
 include: "rules/tile.smk"
 
 # --- top-level targets ------------------------------------------------------
-# The aggregation targets, clean_exposure, star_catalogue and exp_star_cat run in
-# the head process. clean_exposure is seconds of rmtree and hangs off `all`;
-# exp_star_cat is seconds of local FITS work; both would otherwise be ~20k sbatch
+# The aggregation targets, clean_exposure, clean_tile, star_catalogue and
+# exp_star_cat run in the head process. The two clean rules are seconds of rmtree
+# and hang off `all`; exp_star_cat is seconds of local FITS work; all three would
+# otherwise be ~20k (clean_exposure, exp_star_cat) or ~23k (clean_tile) sbatch
 # submissions at DR6 scale for work shorter than the scheduling latency.
 # star_catalogue is one job either way, and local keeps its CDS concurrency the
 # explicit number its thread pool sets (see exposure.smk).
 #
 # star_catalogue and exp_star_cat are MID-CHAIN localrules, so they must stay out
 # of any future `group:` label: a local job cannot be fused into a submitted group.
-localrules: all, prepare_all_tiles, clean_exposure, star_catalogue, exp_star_cat
+# The two clean rules are DAG leaves and have no such constraint.
+localrules: all, prepare_all_tiles, clean_exposure, clean_tile, star_catalogue, exp_star_cat
 
 rule all:
     input:
         [final_cat(t) for t in TILES_READY],
         clean_targets(),
+        clean_tile_targets(),
 
 # Invocation 1 — the static per-tile DAG, known from the tile list alone.
 # keep-going makes tile failures independent; the ones that lose their exposure

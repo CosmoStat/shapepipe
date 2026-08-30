@@ -30,6 +30,12 @@ copying the manifests into ``<exp dir>/cleaned.json``. That tombstone is read as
 unit's record and the unit is reported as **cleaned** — not "not run", and it
 blocks no tile.
 
+A reclaimed TILE is the same story with one asymmetry: ``clean_tile`` deletes
+``logs/`` but cannot empty ``manifests/``, because two of those manifests are
+currency other mechanisms read (SURVIVING_TILE_STAGES). So the "records on disk
+mean a rebuilt chain" test takes that survivor set explicitly — see
+``absorb_tombstones``.
+
 No disk scanning: counting products is the *check's* job, done once at the moment
 the products were fresh. A unit with no manifest for a stage is "not run" — which
 is a real and distinct answer from "ran and produced nothing".
@@ -52,6 +58,12 @@ TILE_STAGES = ["tile_get_images", "tile_uncompress", "tile_find_exposures",
                "tile_merge_headers", "tile_detect", "tile_vignets",
                "tile_ngmix", "tile_merge_cats", "tile_make_cat"]
 EXP_STAGES = ["exp_get_images", "exp_star_cat", "exp_split", "exp_mask", "exp_psf"]
+
+# The manifests clean_tile leaves on disk (workflow/scripts/clean_tile.py names
+# the mechanism that owns each). Their presence is therefore NOT evidence that a
+# tile's chain was rebuilt, which is the one thing absorb_tombstones has to know
+# to read a reclaimed tile's record out of its tombstone.
+SURVIVING_TILE_STAGES = frozenset({"tile_vignets", "tile_find_exposures"})
 
 STATUSES = ("complete", "warn", "failed", "not_run")
 
@@ -98,7 +110,8 @@ def load_manifests(run_dir: Path, sub: str) -> dict:
     return out
 
 
-def absorb_tombstones(run_dir: Path, sub: str, manifests: dict) -> set:
+def absorb_tombstones(run_dir: Path, sub: str, manifests: dict,
+                      survivors: frozenset = frozenset()) -> set:
     """Fill in reclaimed units from their ``cleaned.json``; return their ids.
 
     A cleaned exposure has neither ``manifests/`` nor ``logs/`` —
@@ -110,6 +123,16 @@ def absorb_tombstones(run_dir: Path, sub: str, manifests: dict) -> set:
 
     Manifests on disk win if both exist — that is a re-built chain, and the
     tombstone is then a stale record of the previous generation.
+
+    ``survivors`` is what makes that test work for TILES. ``clean_tile`` cannot
+    empty ``manifests/`` the way ``clean_exposure`` does: two of the manifests
+    there are currency other mechanisms read (SURVIVING_TILE_STAGES below), so a
+    reclaimed tile ALWAYS has records on disk. Without this argument the
+    "manifests win" guard fires on every cleaned tile, the tombstone is ignored,
+    and a fully reclaimed campaign reports as one that ran two stages and
+    stopped. A unit counts as REBUILT — and keeps the guard — iff it has a record
+    for some stage that is not a survivor; the default empty set reproduces the
+    exposure test exactly.
     """
     cleaned = set()
     for path in sorted((run_dir / sub).glob("**/cleaned.json")):
@@ -119,12 +142,15 @@ def absorb_tombstones(run_dir: Path, sub: str, manifests: dict) -> set:
         except (OSError, json.JSONDecodeError) as exc:
             print(f"[run_report] unreadable tombstone {path}: {exc}", file=sys.stderr)
             continue
-        if manifests.get(unit):
+        if any(s not in survivors for s in manifests.get(unit, {})):
             continue
         for key, m in (tomb.get("manifests") or {}).items():
             if not isinstance(m, dict):
                 continue
-            manifests[unit][m.get("stage", key)] = m
+            # setdefault, not assignment: the surviving on-disk records are the
+            # live ones and stay authoritative, even though the tombstone's
+            # copies of them are byte-identical today.
+            manifests[unit].setdefault(m.get("stage", key), m)
         cleaned.add(unit)
     return cleaned
 
@@ -260,8 +286,12 @@ def main() -> None:
 
     tile_m = load_manifests(args.run_dir, "tiles")
     exp_m = load_manifests(args.run_dir, "exp")
-    # Reclaimed exposures speak through their tombstones (D5, S5).
+    # Reclaimed units speak through their tombstones (D5, S5). Tiles pass the
+    # survivor set: clean_tile leaves two manifests on disk on purpose, and
+    # without that argument they would read as a rebuilt chain.
     cleaned_exp = absorb_tombstones(args.run_dir, "exp", exp_m)
+    cleaned_tiles = absorb_tombstones(args.run_dir, "tiles", tile_m,
+                                      SURVIVING_TILE_STAGES)
     tiles = tiles or sorted(tile_m)
     exps = exps or sorted(exp_m)
 
@@ -272,9 +302,10 @@ def main() -> None:
         "status": args.status,
         "n_tiles": len(tiles), "n_exposures": len(exps),
         "missing_tiles": missing,
-        "tile_stages": tally_level(tiles, TILE_STAGES, tile_m),
+        "tile_stages": tally_level(tiles, TILE_STAGES, tile_m, cleaned_tiles),
         "exp_stages": tally_level(exps, EXP_STAGES, exp_m, cleaned_exp),
         "cleaned_exposures": sorted(cleaned_exp),
+        "cleaned_tiles": sorted(cleaned_tiles),
         "tiles": unit_rows(tiles, TILE_STAGES, tile_m),
         "exposures": unit_rows(exps, EXP_STAGES, exp_m),
     }
@@ -315,7 +346,8 @@ def main() -> None:
 
     print(f"[run_report] status={args.status}  {done}/{len(tiles)} final cats"
           + (f"  ({len(missing)} tiles missing exposure lists)" if missing else "")
-          + (f"  ({len(cleaned_exp)} exposures reclaimed)" if cleaned_exp else ""))
+          + (f"  ({len(cleaned_exp)} exposures reclaimed)" if cleaned_exp else "")
+          + (f"  ({len(cleaned_tiles)} tiles reclaimed)" if cleaned_tiles else ""))
     print_stage_table("EXPOSURES", report["exp_stages"], len(exps))
     print_stage_table("TILES", report["tile_stages"], len(tiles))
     print_table("exposures not complete", report["exposures"], args.limit)

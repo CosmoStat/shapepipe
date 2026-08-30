@@ -93,6 +93,39 @@ index_db: /project/def-mjhudson/cdaley/sp-products/smk-g5/index/run_index.sqlite
 # means a re-measurement re-runs only the shape chain instead of the whole tile.
 clean: false
 
+# Rolling TILE-store reclamation (D5). When true, the COMPUTE DAG grows one
+# `clean_tile` job per in-scope tile, ordered after that tile's own final_cat, so
+# a tile's scratch store goes as soon as its chain lands rather than at the end
+# of the batch. It deletes the tile's whole <run_dir>/tiles/<shard>/<tile>/ tree
+# except four things another mechanism owns — `cleaned.json`,
+# `manifests/tile_vignets.json` (clean_exposure's eligibility currency),
+# `manifests/tile_find_exposures.json` (prepare_all_tiles' target) and the Fe
+# exposure list under output/ (build_index re-reads it at every compute parse).
+# clean_tile.py argues each one.
+#
+# A SEPARATE SWITCH FROM `clean:` ABOVE, AND NOT AN OVERSIGHT. Exposure
+# reclamation is reversible in the only sense that matters: a tile appended later
+# rebuilds the exposure chain from VOS, expensively but completely. TILE
+# reclamation DESTROYS THE PER-TILE AUDIT TRAIL and nothing rebuilds it.
+# sp-products/tools/sp_tilecost.py attributes the fused tile_shape group job's
+# cost per tile by reading that tile's SExtractor catalogue out of the scratch
+# store (NAXIS2 of the sexcat is the object count, the cost model's independent
+# variable) — and that model is how every mem_mb and runtime number in tile.smk
+# was derived. The sexcat is ~380 MB per tile and cannot be kept; the eight
+# tile_ngmix benchmark rows are absorbed into the tombstone, so the measurements
+# survive but not at the paths the tool reads.
+#
+# The honest one-line summary: REQUIRED FOR ANY BATCH OVER ~850 TILES, AND IT
+# TURNS OFF PER-TILE COST ATTRIBUTION. The arithmetic: a finished tile leaves
+# 1.19 GiB across 137 inodes (measured on 186.307), so a 1 TiB scratch quota is
+# full at 859 tiles, and DR6's 23,114 tiles would want 26.9 TiB and 3.17M inodes
+# against a 1M quota. Reclaimed, a tile costs 10 inodes and 12.9 KB — 231k inodes
+# and ~300 MB for the whole of DR6.
+#
+# OFF here for the same reason `clean:` is: smk-g5 is a one-tile control, and its
+# store is what a re-measurement would read.
+clean_tiles: false
+
 # Tiles that may NOT pin an exposure store (default: empty).
 #
 # An exposure is eligible for cleaning only once EVERY consuming tile has its
