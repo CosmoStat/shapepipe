@@ -142,11 +142,8 @@ def ngmix_runner(
     else:
         dilate_neighbour = 1
 
-    # Position-seeded RNG is the only mode: every object's RNG comes from its
-    # own (ra, dec, ccd), so results do not depend on how the tile is split
-    # into chunks, and metacal's fixnoise counter-noise cancels across Pujol
-    # image-simulation shear branches (ngmix#796). The retired tile-seed mode
-    # had neither property. Old configs that disable it must fail loudly.
+    # Position-seeded RNG is the only mode (see ngmix.position_seed). Old
+    # configs that disable it must fail loudly, not silently change the RNG.
     if config.has_option(module_config_sec, "SEED_FROM_POSITION"):
         if not config.getboolean(module_config_sec, "SEED_FROM_POSITION"):
             raise ValueError(

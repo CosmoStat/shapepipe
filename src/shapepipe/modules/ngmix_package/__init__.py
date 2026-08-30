@@ -58,11 +58,9 @@ Random number generation
 ========================
 
 Each object gets its own random number stream, seeded from its sky position
-and CCD (``position_seed``, ngmix#796). The output is therefore identical
-whether a tile is processed in one go or split into object chunks with
-``ID_OBJ_MIN``/``ID_OBJ_MAX``. The older tile-seeded mode is retired; the
-config option ``SEED_FROM_POSITION`` is obsolete. Setting it to ``False``
-raises an error, so a stale config cannot silently change the RNG.
+and CCD (``ngmix.position_seed``, which argues what that buys). It is the only
+mode: the config option ``SEED_FROM_POSITION`` is obsolete, and setting it to
+``False`` raises rather than silently changing the RNG.
 
 """
 

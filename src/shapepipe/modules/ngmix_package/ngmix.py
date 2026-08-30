@@ -137,7 +137,8 @@ def position_seed(ra, dec, ccd):
     difference, inflating ``sigma_m``. Seeding the per-object RNG from sky
     position instead makes the same object draw the same added noise (and the
     same fit guesses) in every branch, so both cancel and the m-bias error
-    shrinks. Off in production; a knob for the sim path only.
+    shrinks. It also makes the result independent of how the tile is split into
+    ``ID_OBJ_MIN``/``ID_OBJ_MAX`` chunks, which is why it is now the only mode.
 
     Box math (kept exactly as Fabian's issue #796)::
 
@@ -299,8 +300,7 @@ class Postage_stamp():
         self.ra = []
         self.dec = []
         # CCD number of the first epoch, used only to build the per-object
-        # position seed (see :func:`position_seed`, ngmix#796). ``None`` when
-        # position seeding is off, so the field costs nothing on the hot path.
+        # position seed (see :func:`position_seed`).
         self.ccd = None
         self.bkg_sub = bkg_sub
         self.megacam_flip = megacam_flip
@@ -442,10 +442,8 @@ class Ngmix(object):
 
     Notes
     -----
-    The RNG is always per object and seeded from that object's sky position
-    (:func:`position_seed`). Results therefore do not depend on how the tile is
-    split into object chunks, and metacal's ``fixnoise`` counter-noise and the
-    fit guesses cancel across Pujol image-simulation branches (ngmix#796).
+    The RNG is always per object and seeded from that object's sky position;
+    :func:`position_seed` says what that buys.
 
     Raises
     ------
@@ -1014,16 +1012,12 @@ class Ngmix(object):
                 n_no_epoch += 1
                 continue
 
-            # Position-seeded per-object RNG (ngmix#796). Each object draws from
-            # a stream fixed by its own (ra, dec, ccd), so the result is
-            # independent of which chunk the object lands in and of detection
-            # order, and the same object gets the same fixnoise counter-noise
-            # and fit guesses in every Pujol shear branch, so both cancel in the
-            # branch difference. The prior is rebuilt from the same per-object
-            # RNG because the guesser draws its initial guess via prior.sample()
+            # Per-object RNG, seeded from (ra, dec, ccd) — see
+            # :func:`position_seed`. The prior is rebuilt from that same RNG
+            # because the guesser draws its initial guess via prior.sample()
             # (ngmix guessers.py), which consumes the RNG the prior was
-            # CONSTRUCTED with — a per-object rng alone would leave the guess
-            # drawing from a shared stream and break both properties.
+            # CONSTRUCTED with: a per-object rng alone would leave the guess
+            # drawing from a shared stream and break the invariance.
             obj_rng = np.random.RandomState(
                 position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
             )
@@ -1247,8 +1241,8 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
         stamp.ra.append(tile_cat.ra[i_tile])
         stamp.dec.append(tile_cat.dec[i_tile])
         # CCD of the first surviving epoch — Fabian's coord_list[0] convention
-        # for the position seed (ngmix#796). All epochs of one object share the
-        # ra/dec above, so first-epoch CCD pins one deterministic seed stream.
+        # for the position seed. All epochs of one object share the ra/dec
+        # above, so first-epoch CCD pins one deterministic seed stream.
         if stamp.ccd is None:
             stamp.ccd = int(ccd_n)
 
@@ -1549,8 +1543,8 @@ def prepare_ngmix_weights(
     weight : numpy.ndarray
     flag : numpy.ndarray
     rng : numpy.random.RandomState
-        Random state for the noise realisations (seeded per tile for
-        reproducibility).
+        Random state for the noise realisations (seeded per object; see
+        :func:`position_seed`).
     bkg_rms : numpy.ndarray, optional
         Per-pixel background RMS map. If supplied, unmasked pixels use
         ``1 / bkg_rms**2`` as the ngmix inverse variance.
@@ -1678,8 +1672,8 @@ def make_ngmix_observation(
     wcs : galsim.BaseWCS
         Local WCS Jacobian at the object position.
     rng : numpy.random.RandomState
-        Random state for the noise realisations (seeded per tile for
-        reproducibility).
+        Random state for the noise realisations (seeded per object; see
+        :func:`position_seed`).
     bkg_rms : numpy.ndarray, optional
         Per-pixel background RMS map.
     centroid_source : {"hsm", "wcs"}, optional
