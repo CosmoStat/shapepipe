@@ -16,7 +16,7 @@
 # (The 210/211 quad used earlier is unusable: its tile images are symlinks into
 # anaennis' moved processed_tiles tree — ~8.5k of the 10.3k staged tiles are
 # broken.)
-tile_list: /project/def-mjhudson/cdaley/sp-products/smk-g5/tiles1.txt
+tile_list: /project/def-mjhudson/cdaley/sp-products/smk-g6/tiles.txt
 
 # The container every job runs inside (apptainer software-deployment in the profile).
 container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
@@ -27,7 +27,7 @@ container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
 # intermediates, sized so a batch finishes inside the 60-day purge window. The
 # sharded per-unit stores live under it:
 #   <run_dir>/tiles/<2-char prefix>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
-run_dir: /scratch/cdaley/shapepipe-output/smk-g5
+run_dir: /scratch/cdaley/shapepipe-output/smk-g6
 
 # products_dir is the PERSISTENT root: the durable, low-volume products — the
 # final catalogues (<products_dir>/tiles/<prefix>/<ID>/final_cat-<ID>.fits,
@@ -44,7 +44,7 @@ run_dir: /scratch/cdaley/shapepipe-output/smk-g5
 #
 # Snakemake's own state is the one durable-looking thing that stays on scratch
 # (<run_dir>-state; bin/sp explains why).
-products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g5
+products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g6
 
 # There is no config_src knob: the config chain is workflow/config/cfis, resolved
 # relative to the Snakefile. The configs interpolate $SP_RUN / $SP_UNIT_NUM /
@@ -81,7 +81,7 @@ star_cats: /project/def-mjhudson/cdaley/sp-products/star-cat-cache
 # On the persistent root with the catalogues (D5): the index is the record of
 # which tile reads which exposure, so it is what a post-purge reconstruction
 # would otherwise have to rebuild from tile headers.
-index_db: /project/def-mjhudson/cdaley/sp-products/smk-g5/index/run_index.sqlite
+index_db: /project/def-mjhudson/cdaley/sp-products/smk-g6/index/run_index.sqlite
 
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
@@ -91,7 +91,7 @@ index_db: /project/def-mjhudson/cdaley/sp-products/smk-g5/index/run_index.sqlite
 # this is a one-tile control, its ~8 exposure stores cost ~54 GiB against 979 GiB
 # free, reclamation is already measured exactly by smk-g4, and keeping the stores
 # means a re-measurement re-runs only the shape chain instead of the whole tile.
-clean: false
+clean: true
 
 # Rolling TILE-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_tile` job per in-scope tile, ordered after that tile's own final_cat, so
@@ -131,7 +131,7 @@ clean: false
 #
 # OFF here for the same reason `clean:` is: smk-g5 is a one-tile control, and its
 # store is what a re-measurement would read.
-clean_tiles: false
+clean_tiles: true
 
 # Tiles that may NOT pin an exposure store (default: empty).
 #
