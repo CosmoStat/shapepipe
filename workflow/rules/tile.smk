@@ -27,7 +27,11 @@ Distinct tiles share no edge, so each is one group job per tile:
   node-local NVMe and never touch /scratch (see tile_local() below).
   Composition, verified against snakemake 9.23.1 and a real sbatch:
   cpus = max over levels of summed siblings = max(8, 8x1, 8, 8) = 8;
-  mem_mb = max(32000, 8x14000, 16000, 16000) = 112000;
+  mem_mb = max(32000, 8x5000, 16000, 16000) = 40000, so nibi's
+  max(cores, mem_GB/4) bills the group 10 core-equivalents rather than the 28
+  it billed at 8x14000 (see the mem_mb note on tile_ngmix for the 31-tile
+  measurement that sized it); tile_vignets' own 32000 is now the second term
+  and becomes binding if the chunks ever go below 4000;
   runtime = sum along the chain of each level's MAX = 20 + 120 + 10 + 15 = 165.
   165 min is under the 180 min ceiling of ``cpubase_bycore_b1``, so the fused
   job reaches the widest partition set (plus cpubackfill) — which is why each
@@ -539,33 +543,41 @@ rule tile_ngmix:
     benchmark:
         f"{TILE_DIR}/manifests/tile_ngmix_{{chunk}}.benchmark.tsv"
     resources:
-        # 14000, UNCHANGED — and the scary-looking number that argued for
-        # raising it is an artefact, so read this before touching it.
+        # 5000, down from 14000, and this is the campaign's largest single cost
+        # saving — but read what the number means before moving it again.
         #
-        # sacct MaxRSS for the timed chunk (job 20795277) was 12.92 GiB, 94.5%
-        # of the reservation. It is not process memory. nibi runs
-        # JobAcctGatherType=jobacct_gather/cgroup, so sacct's MaxRSS is the
-        # cgroup's memory.current, which under cgroup v2 CHARGES PAGE CACHE to
-        # the job. Snakemake's own benchmark for the same job, taken from psutil
-        # per-process counters, says max_rss = 1262 MB / max_pss = 1165 MB. The
-        # ~11.7 GiB difference is file-backed cache — the store written and then
-        # read back — and it is reclaimable, so it cannot OOM the job; the
-        # kernel evicts cache before it kills anything.
+        # sacct's MaxRSS here is NOT process memory. nibi runs
+        # JobAcctGatherType=jobacct_gather/cgroup, so it reports the cgroup's
+        # memory.current, which under cgroup v2 CHARGES PAGE CACHE to the job.
+        # Snakemake's own psutil benchmark for the same chunks says max_rss
+        # ~1.25 GiB each, so the eight chunks' real anonymous footprint is
+        # ~10 GiB and everything above that is file-backed cache — the store
+        # written and then read back. Cache is reclaimable: the kernel evicts it
+        # before it kills anything, so this reservation cannot OOM the job. What
+        # it can do is squeeze the cache that keeps the node-local store
+        # resident, which is part of why the fused tile is fast.
         #
-        # So ngmix's real footprint is ~1.2 GB, and 14000 is ~11x that. It is
-        # almost certainly reducible, and cutting it is the single biggest
-        # lever left on this rule's cost (see the mem_mb note in the group
-        # composition above — memory, not cores, is what nibi bills the fused
-        # job for). But it wants its own measurement across several tiles, not
-        # a guess off one chunk, so it stays at the value the last campaign ran.
-        # Keeping it generous also keeps the 5.6 GB store resident in page
-        # cache, which is part of why the fused tile is fast.
+        # MEASURED ACROSS 31 TILES (campaign smk-g4, 2026-08-30): cgroup
+        # high-water 27.40 GiB max, 22.14 GiB mean, against the 109.4 GiB the
+        # group was reserving. The eight chunks are SIBLINGS in the group's
+        # toposort so snakemake SUMS their mem_mb; at 5000 the group asks
+        # 40000 MiB, a 1.43x margin over the worst tile observed and ~4x the
+        # anonymous footprint, leaving ~29 GiB of cache for an 8.1 GiB store.
         #
-        # The eight chunks are SIBLINGS in the group's toposort, so snakemake
-        # SUMS their mem_mb: the group reserves 8 x this (112000 MiB). That is
-        # deliberate — it is what makes all eight run as one wave, and one wave
-        # is what makes the group's runtime ONE chunk's runtime instead of eight.
-        mem_mb = lambda wc, attempt: 14000 * attempt,
+        # WHY THIS IS THE BIG ONE. nibi bills max(cores, mem_GB/4), so at
+        # 112 GB the fused group billed 28 core-equivalents for 8 real cores —
+        # 3.4x, measured live at 905 billed against 266 allocated. At 40 GB it
+        # bills 10. That is not a saving so much as a schedule: the account's
+        # fairshare target is ~250 CE, which buys 9 tiles in flight at 28 and 25
+        # at 10, and DR6's wall clock is (tiles / tiles-in-flight) x elapsed.
+        #
+        # 4000 is the floor and is NOT recommended yet: it would take the group
+        # to 32000, where tile_vignets' own 32000 becomes the binding term and
+        # the group finally bills its 8 real cores — but that is only a 1.17x
+        # margin over the worst tile measured, and the first thing to give would
+        # be the page cache holding the store. Take it only with a measurement
+        # of cache behaviour under pressure, not on the arithmetic alone.
+        mem_mb = lambda wc, attempt: 5000 * attempt,
         # 120 on the FIRST attempt, and ATTEMPT-SCALED after it. MEASURED
         # two ways, and the second is why the margin is thinner than it looks:
         #   * alone (job 20795277, tile 198.305 chunk 1): ~76 min for 3547
