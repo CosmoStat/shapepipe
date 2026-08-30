@@ -29,6 +29,7 @@ two things this workflow needs — "this stage succeeded" and "here is what
 happened".
 """
 
+import functools
 import hashlib
 import json
 import os
@@ -83,11 +84,6 @@ PRODUCTS_DIR = Path(config.get("products_dir") or RUN_DIR)
 # star_catalogue rule fills, and the per-exposure cuts exp_star_cat makes from it
 # (config.yaml explains the placement).
 STAR_CATS  = Path(config["star_cats"])
-# This checkout's own tree: the star-cat rules run in the container against its
-# src/ (shapepipe.utilities.vizier and .cfis), for the same reason CONFIG_DIR is
-# the committed config dir — script, library and rule are one artefact and
-# version together.
-REPO_DIR   = Path(workflow.basedir).parent
 INDEX_DB   = Path(config["index_db"])
 SCRIPTS    = Path(workflow.basedir) / "scripts"
 # The config chain is the repo's own committed dir BY CONSTRUCTION (D2): the
@@ -162,8 +158,15 @@ if PHASE == "compute" and workflow.is_main_process:
 # <name>.fits.fz in the store).  TILE_EXP: tile -> [exp_ids].
 # EXP_TILES is the inverse edge — the CAMPAIGN-WIDE consumer set clean_exposure
 # is keyed on (D5).
+#
+# SLURPED ONLY IN THE HEAD PROCESS. The executor re-parses this file inside every
+# job (~800 per run), and each of those parses needs at most its own unit's edges
+# — reading the whole campaign's tile_exposures table there is pure waste that
+# grows with the campaign rather than with the job. Job parses get the same three
+# lookups backed by memoised single-row queries instead (the table's primary key
+# indexes both), so every input function returns exactly what it would have.
 EXP, TILE_EXP, EXP_TILES = {}, {}, {}
-if INDEX_DB.exists():
+if INDEX_DB.exists() and workflow.is_main_process:
     # timeout=60: Lustre lock handoffs are slow; the default 5 s trips on
     # nothing more sinister than a reader in another job's parse.
     _con = sqlite3.connect(INDEX_DB, timeout=60)
@@ -173,9 +176,59 @@ if INDEX_DB.exists():
         EXP_TILES.setdefault(_exp, []).append(_tile)
     _con.close()
 
+
+if workflow.is_main_process:
+
+    def exp_name(exp):
+        """The exposure's original name (get_images matches <name>.fits.fz)."""
+        return EXP[exp]
+
+    def tile_exposures(tile):
+        """This tile's exposure base-ids, sorted as the index stores them."""
+        return TILE_EXP.get(tile, [])
+
+    def exp_consumers(exp):
+        """Every tile in the campaign that reads this exposure (D5)."""
+        return EXP_TILES.get(exp, [])
+
+else:
+    # One connection for the whole parse, and lru_cache over it: a job parse asks
+    # about a handful of units, each of them several times (params, input, log).
+    _JOB_CON = sqlite3.connect(INDEX_DB, timeout=60) if INDEX_DB.exists() else None
+
+    @functools.lru_cache(maxsize=None)
+    def exp_name(exp):
+        row = _JOB_CON.execute(
+            "SELECT name FROM exposures WHERE exp_id = ?", (exp,)).fetchone()
+        if row is None:
+            raise KeyError(exp)          # same failure as EXP[exp] would give
+        return row[0]
+
+    @functools.lru_cache(maxsize=None)
+    def tile_exposures(tile):
+        if _JOB_CON is None:
+            return []
+        # ORDER BY rowid, not by exp_id: the eager slurp above is a table scan,
+        # so its lists are in INSERTION order, and the two paths must hand the
+        # DAG the same list and not merely the same set.
+        return [r[0] for r in _JOB_CON.execute(
+            "SELECT exp_id FROM tile_exposures WHERE tile_id = ? ORDER BY rowid",
+            (tile,))]
+
+    @functools.lru_cache(maxsize=None)
+    def exp_consumers(exp):
+        if _JOB_CON is None:
+            return []
+        # Unindexed on exp_id (the PK leads with tile_id), so this is a scan —
+        # harmless because the only caller, clean_consumers, is reachable from
+        # the head process alone (clean_exposure is a localrule).
+        return [r[0] for r in _JOB_CON.execute(
+            "SELECT tile_id FROM tile_exposures WHERE exp_id = ? ORDER BY rowid",
+            (exp,))]
+
 # Tiles this run can actually compute: declared AND indexed. The index spans the
 # campaign, so it is intersected with the declared list, not used as it.
-TILES_READY = [t for t in TILES if t in TILE_EXP]
+TILES_READY = [t for t in TILES if tile_exposures(t)]
 READY_SET = set(TILES_READY)
 
 # A compute invocation with nothing to compute is never a success. Without this,
@@ -246,19 +299,21 @@ def unit_num(unit):
 # the count table silently leaves stale manifests in place (bitten live). Scoped
 # to completeness.py alone, the one script every shell line runs; build_forest.py
 # gets its own hash, on the forest rule only.
-SCRIPT_HASH = hashlib.md5((SCRIPTS / "completeness.py").read_bytes()).hexdigest()[:12]
-FOREST_HASH = hashlib.md5((SCRIPTS / "build_forest.py").read_bytes()).hexdigest()[:12]
-CLEAN_HASH  = hashlib.md5((SCRIPTS / "clean_exposure.py").read_bytes()).hexdigest()[:12]
-CLEAN_TILE_HASH = hashlib.md5(
-    (SCRIPTS / "clean_tile.py").read_bytes()).hexdigest()[:12]
+def script_hash(name):
+    """The 12-hex fingerprint of one script under workflow/scripts/."""
+    return hashlib.md5((SCRIPTS / name).read_bytes()).hexdigest()[:12]
+
+SCRIPT_HASH = script_hash("completeness.py")
+FOREST_HASH = script_hash("build_forest.py")
+CLEAN_HASH  = script_hash("clean_exposure.py")
+CLEAN_TILE_HASH = script_hash("clean_tile.py")
 # Same argument for star_cats.py, which both star-cat rules call: their params
 # otherwise fingerprint nothing but paths, so an edit to the chunking or the cut
 # would never rerun them. ONE hash for both rules because it is one script — and
 # that is also why fetch and cut live in one module (they must agree on which
 # pixel holds which star). The hash does NOT key the store path — see
 # config.yaml's star_cats block on clearing the store after a semantic change.
-STAR_CAT_HASH = hashlib.md5(
-    (SCRIPTS / "star_cats.py").read_bytes()).hexdigest()[:12]
+STAR_CAT_HASH = script_hash("star_cats.py")
 # ngmix_range.py earns a hash for a stronger reason than the others. What it
 # emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks
 # are a PARTITION of its object IDs: resume a tile across an edit to the split
@@ -281,8 +336,7 @@ STAR_CAT_HASH = hashlib.md5(
 # this sits in one — and clean_tiles: false, the shipped default, is the
 # configuration it bites. Land this hash, and any later edit to the split, at
 # a campaign boundary on a fresh root.
-NGMIX_RANGE_HASH = hashlib.md5(
-    (SCRIPTS / "ngmix_range.py").read_bytes()).hexdigest()[:12]
+NGMIX_RANGE_HASH = script_hash("ngmix_range.py")
 
 # --- exposure reclamation (D5, S5) -----------------------------------------
 
@@ -340,7 +394,7 @@ def tombstone(exp):
 def clean_consumers(exp):
     """Every tile in the campaign that reads this exposure — the set whose
     vignets must all exist before the store may go — minus the ignored tiles."""
-    return sorted(t for t in EXP_TILES.get(exp, [])
+    return sorted(t for t in exp_consumers(exp)
                   if t not in CLEAN_IGNORE_TILES)
 
 
@@ -358,8 +412,14 @@ def clean_targets():
     Consumer sets are the IGNORE-FILTERED ones (clean_consumers), so a tile in
     `clean_ignore_tiles` neither gates eligibility nor appears in the job's
     input — which is the whole point of that list.
+
+    HEAD PROCESS ONLY. This feeds `rule all` at module level, so it runs on every
+    parse — including the ~800 per-job re-parses under the slurm executor, none of
+    which can ever schedule `all`. Each of those was stat()ing the whole
+    campaign's tile_vignets manifests for nothing. The empty list a job parse
+    returns costs it exactly the target it could not have used anyway.
     """
-    if not CLEAN:
+    if not CLEAN or not workflow.is_main_process:
         return []
     out = []
     for exp, raw in EXP_TILES.items():
@@ -415,8 +475,10 @@ def clean_tile_targets():
     also what makes flipping `clean_tiles` on RETROACTIVE: the tiles already
     reclaimed are exactly the ones with a tombstone, so the missing tombstones
     schedule exactly the missing cleans.
+
+    HEAD PROCESS ONLY, for the same reason as clean_targets() above.
     """
-    if not CLEAN_TILES:
+    if not CLEAN_TILES or not workflow.is_main_process:
         return []
     return sorted(tile_tombstone(t) for t in TILES_READY)
 
@@ -429,7 +491,7 @@ _THREAD_CAPS = " ".join(
         ("MALLOC_ARENA_MAX", 2), ("MALLOC_TRIM_THRESHOLD_", 0)))
 
 
-def unit_pre(stage, level, unit, *, exp_name=None, forest=None, env=None,
+def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
              pre_run=()):
     """The unit-furniture + environment prologue, as bash.
 
@@ -462,8 +524,12 @@ def unit_pre(stage, level, unit, *, exp_name=None, forest=None, env=None,
     FileHandler raises on an existing run dir, and it is how a rerun never sees
     stale products (D2: the job clears its run dir at start).
     """
+    # The stage table already knows both halves of "where this stage writes":
+    # its level and its run dir. Taking them from there rather than from an
+    # argument means a caller cannot disagree with completeness.py about which
+    # store a stage belongs to.
+    level, subdir = STAGE_DIR[stage]
     work = tile_dir(unit) if level == "tile" else exp_dir(unit)
-    _, subdir = STAGE_DIR[stage]
     lines = [
         "set -euo pipefail",
         f"export SP_RUN='{work}'",

@@ -204,10 +204,12 @@ def tile_local(tile):
     the time any member runs; failing loudly if it does not is correct, because
     the alternative is ngmix silently reading a different tree.
     """
-    # `log_exp_headers-<IDra>-<IDdec>.sqlite`, named from the tile with the dot
-    # replaced -- spelled out rather than globbed so a missing file is one
-    # precise error instead of an empty expansion.
-    tile_num = tile.replace(".", "-")
+    # `log_exp_headers-<IDra>-<IDdec>.sqlite`, named from the tile in ShapePipe's
+    # dashed image-number form -- spelled out rather than globbed so a missing
+    # file is one precise error instead of an empty expansion. unit_num() owns
+    # that convention and supplies the SEPARATING DASH itself, so there is none
+    # in the literals below.
+    tile_num = unit_num(tile)
     return f'''
 if [ ! -d /local/scratch ]; then
   echo "tile_shape: node-local storage unavailable." >&2
@@ -225,10 +227,10 @@ mkdir -p "$SP_VIGNET_OUT" "$SP_WCS_DIR" || {{
 }}
 # the WCS store -- see the docstring. Copy to a temp name and rename, because
 # `cp` is not atomic and the eight chunks share this destination.
-sp_wcs_src="$SP_RUN/output/run_sp_tile_Mh_exp/merge_headers_runner/output/log_exp_headers-{tile_num}.sqlite"
+sp_wcs_src="$SP_RUN/output/run_sp_tile_Mh_exp/merge_headers_runner/output/log_exp_headers{tile_num}.sqlite"
 cp "$sp_wcs_src" "$SP_WCS_DIR/.log_exp_headers.$$" && \
 mv -f "$SP_WCS_DIR/.log_exp_headers.$$" \
-      "$SP_WCS_DIR/log_exp_headers-{tile_num}.sqlite" || {{
+      "$SP_WCS_DIR/log_exp_headers{tile_num}.sqlite" || {{
   rm -f "$SP_WCS_DIR/.log_exp_headers.$$"
   echo "tile_shape: could not stage the WCS store." >&2
   echo "  source: $sp_wcs_src" >&2
@@ -318,7 +320,7 @@ fi
 
 
 def tile_exp(wc):
-    return TILE_EXP.get(wc.tile, [])
+    return tile_exposures(wc.tile)
 
 # --- the tile->exposure edge, and why it is cut for finished tiles ----------
 #
@@ -434,7 +436,7 @@ rule tile_merge_headers:
     log:
         f"{TILE_DIR}/logs/tile_merge_headers.json"
     params:
-        pre = lambda wc: unit_pre("tile_merge_headers", "tile", wc.tile,
+        pre = lambda wc: unit_pre("tile_merge_headers", wc.tile,
                                   forest=forest_dir(wc.tile)),
         script_hash = SCRIPT_HASH
     threads: 4
@@ -454,7 +456,7 @@ rule tile_detect:
     log:
         f"{TILE_DIR}/logs/tile_detect.json"
     params:
-        pre = lambda wc: unit_pre("tile_detect", "tile", wc.tile),
+        pre = lambda wc: unit_pre("tile_detect", wc.tile),
         script_hash = SCRIPT_HASH
     threads: 8
     resources:
@@ -496,7 +498,7 @@ rule tile_vignets:
     log:
         f"{TILE_DIR}/logs/tile_vignets.json"
     params:
-        pre = lambda wc: unit_pre("tile_vignets", "tile", wc.tile,
+        pre = lambda wc: unit_pre("tile_vignets", wc.tile,
                                   forest=forest_dir(wc.tile),
                                   pre_run=[tile_local(wc.tile), TILE_VIGNET_FRESH]),
         script_hash = SCRIPT_HASH
@@ -560,8 +562,7 @@ rule tile_ngmix:
     log:
         f"{TILE_DIR}/logs/tile_ngmix_{{chunk}}.json"
     params:
-        pre = lambda wc: unit_pre(
-            "tile_ngmix", "tile", wc.tile,
+        pre = lambda wc: unit_pre("tile_ngmix", wc.tile,
             env={"SP_NGMIX_CHUNK": wc.chunk, "NGMIX_N_CHUNKS": NGMIX_CHUNKS},
             # Two steps, not `eval "$(...)"`: a command substitution inside eval
             # discards the script's exit status, so a missing sexcat would fall
@@ -760,7 +761,7 @@ rule tile_merge_cats:
     log:
         f"{TILE_DIR}/logs/tile_merge_cats.json"
     params:
-        pre = lambda wc: unit_pre("tile_merge_cats", "tile", wc.tile,
+        pre = lambda wc: unit_pre("tile_merge_cats", wc.tile,
                                   env={"NGMIX_N_CHUNKS": NGMIX_CHUNKS}),
         script_hash = SCRIPT_HASH
     threads: 8
@@ -790,7 +791,7 @@ rule tile_make_cat:
     log:
         f"{TILE_DIR}/logs/tile_make_cat.json"
     params:
-        pre = lambda wc: unit_pre("tile_make_cat", "tile", wc.tile,
+        pre = lambda wc: unit_pre("tile_make_cat", wc.tile,
                                   pre_run=[tile_local(wc.tile), TILE_VIGNET_REQUIRED,
                                            TILE_CLEAN]),
         script_hash = SCRIPT_HASH

@@ -47,7 +47,7 @@ rule tile_get_images:
     log:
         f"{TILE_DIR}/logs/tile_get_images.json"
     params:
-        pre = lambda wc: unit_pre("tile_get_images", "tile", wc.tile),
+        pre = lambda wc: unit_pre("tile_get_images", wc.tile),
         script_hash = SCRIPT_HASH
     threads: 1
     retries: 2
@@ -66,7 +66,7 @@ rule tile_uncompress:
     log:
         f"{TILE_DIR}/logs/tile_uncompress.json"
     params:
-        pre = lambda wc: unit_pre("tile_uncompress", "tile", wc.tile),
+        pre = lambda wc: unit_pre("tile_uncompress", wc.tile),
         script_hash = SCRIPT_HASH
     threads: 4
     resources:
@@ -84,7 +84,7 @@ rule tile_find_exposures:
     log:
         f"{TILE_DIR}/logs/tile_find_exposures.json"
     params:
-        pre = lambda wc: unit_pre("tile_find_exposures", "tile", wc.tile),
+        pre = lambda wc: unit_pre("tile_find_exposures", wc.tile),
         script_hash = SCRIPT_HASH
     threads: 1
     resources:

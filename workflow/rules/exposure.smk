@@ -47,8 +47,8 @@ rule exp_get_images:
     log:
         f"{EXP_DIR}/logs/exp_get_images.json"
     params:
-        pre = lambda wc: unit_pre("exp_get_images", "exp", wc.exp,
-                                  exp_name=EXP[wc.exp]),
+        pre = lambda wc: unit_pre("exp_get_images", wc.exp,
+                                  exp_name=exp_name(wc.exp)),
         script_hash = SCRIPT_HASH
     threads: 1
     retries: 2
@@ -84,17 +84,33 @@ STAR_CAT_CA = "/app/.venv/lib/python3.12/site-packages/certifi/cacert.pem"
 # but call apptainer THEMSELVES rather than letting the SDM wrap them
 # (`container: None` on both): the CA bundle above and the exposure rule's
 # host-side farm loop both need the explicit exec. bin/sp has loaded the
-# apptainer module. PYTHONPATH pins this checkout's src/ for
-# shapepipe.utilities.{vizier,cfis} — the mirror-retry query and the tile-ID
-# grid convention are library code, not copies.
+# apptainer module.
+#
+# WHICH image and WHICH arguments are not this file's to decide, and hand-rolling
+# them here was a real divergence: these were the only two rules that ignored a
+# user's dev sandbox, because they read `config['container']` — the shared /project
+# fallback — instead of the image the Snakefile resolved for everything else.
+# `_image` is that resolution (sandbox -> cached SIF -> config), and the profile's
+# own apptainer-args are the same string the SDM splices onto every other rule,
+# PYTHONPATH pin for shapepipe.utilities.{vizier,cfis} included.
+# container.profile_apptainer_args() exists precisely so this file can read them
+# rather than restate them. Only the CA bundle is added on top, and only when the
+# command touches the network.
 def in_container(cmd, *, network=False):
-    ca = ("," + ",".join(f"{k}={STAR_CAT_CA}" for k in
-                         ("REQUESTS_CA_BUNDLE", "SSL_CERT_FILE", "CURL_CA_BUNDLE"))
-          if network else "")
-    return (f"apptainer exec --cleanenv --home {Path.home()}"
-            f" --bind /project --bind /scratch"
-            f" --env PYTHONPATH={REPO_DIR}/src{ca}"
-            f" '{config['container']}' {cmd}")
+    args = list(_container.profile_apptainer_args())
+    if not args:
+        # Silently falling back would run these two rules with no --cleanenv and
+        # no PYTHONPATH pin, i.e. against a different src/ than every other rule.
+        raise WorkflowError(
+            f"Could not read apptainer-args from {_container.PROFILE_FILE}; "
+            f"star_catalogue and exp_star_cat build their apptainer line from it.")
+    if network:
+        # The container's certifi bundle, one --env per variable (the profile's
+        # own PYTHONPATH entry uses the same one-assignment-per-flag form).
+        args += [a for k in ("REQUESTS_CA_BUNDLE", "SSL_CERT_FILE",
+                             "CURL_CA_BUNDLE")
+                 for a in ("--env", f"{k}={STAR_CAT_CA}")]
+    return f"apptainer exec {' '.join(args)} '{_image}' {cmd}"
 
 
 # The campaign's star catalogue: a first-class durable science product, keyed by
@@ -254,7 +270,7 @@ rule exp_split:
     log:
         f"{EXP_DIR}/logs/exp_split.json"
     params:
-        pre = lambda wc: unit_pre("exp_split", "exp", wc.exp),
+        pre = lambda wc: unit_pre("exp_split", wc.exp),
         script_hash = SCRIPT_HASH
     threads: 8
     resources:
@@ -275,7 +291,7 @@ rule exp_mask:
     log:
         f"{EXP_DIR}/logs/exp_mask.json"
     params:
-        pre = lambda wc: unit_pre("exp_mask", "exp", wc.exp),
+        pre = lambda wc: unit_pre("exp_mask", wc.exp),
         script_hash = SCRIPT_HASH
     threads: 4
     resources:
@@ -295,7 +311,7 @@ rule exp_psf:
     log:
         f"{EXP_DIR}/logs/exp_psf.json"
     params:
-        pre = lambda wc: unit_pre("exp_psf", "exp", wc.exp),
+        pre = lambda wc: unit_pre("exp_psf", wc.exp),
         script_hash = SCRIPT_HASH
     threads: 8
     retries: 2
