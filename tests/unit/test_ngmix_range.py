@@ -1,18 +1,23 @@
 """The ngmix chunk split tiles ``[1, n_obj]`` exactly.
 
-``workflow/scripts/ngmix_range.py`` is run INDEPENDENTLY by each of the
-``n_chunks`` ngmix processes, which then trust each other to have computed the
-same ranges. Nothing downstream cross-checks: merge_sep_cats concatenates the
-chunk catalogues, so an overlap silently duplicates objects and a gap silently
-drops them. The one invariant that catches both is that the ranges partition
-``1..n_obj`` — that is what this module asserts, over the epoch-weight
+Nothing downstream cross-checks the chunk ranges: merge_sep_cats concatenates
+the chunk catalogues, so an overlap silently duplicates objects and a gap
+silently drops them. The one invariant that catches both is that the ranges
+partition ``1..n_obj`` — that is what this module asserts, over the epoch-weight
 distributions the splitter actually has to cope with.
+
+``workflow/scripts/ngmix_range.py`` now runs ONCE per tile (tile_vignets writes
+the whole partition to the group's node-local scratch) and is then only read
+from, once per chunk. The second thing this module pins is that the trip through
+JSON changes nothing: row ``k`` of the written file is exactly what asking the
+splitter for chunk ``k`` used to return.
 
 Deliberately container-free: the range function takes a plain sequence of epoch
 counts, so nothing here imports astropy, numpy, or shapepipe.
 """
 
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -97,6 +102,62 @@ def test_ranges_are_deterministic(n_obj, n_chunks, data):
     first = ngmix_range.id_ranges(epochs, n_chunks)
     assert first == ngmix_range.id_ranges(list(epochs), n_chunks)
     assert all(isinstance(b, int) for lo, hi in first for b in (lo, hi))
+
+
+# --------------------------------------------------------------------------- #
+# Write-once / read-per-chunk is the same partition
+# --------------------------------------------------------------------------- #
+
+
+def _roundtrip(epochs, n_chunks):
+    """What a chunk shell sees: the doc as it comes back off disk."""
+    return json.loads(json.dumps(ngmix_range.partition(epochs, n_chunks)))
+
+
+@settings(deadline=None)
+@given(
+    n_obj=st.integers(min_value=1, max_value=200),
+    n_chunks=st.integers(min_value=1, max_value=12),
+    data=st.data(),
+)
+def test_written_rows_reproduce_the_per_chunk_computation(n_obj, n_chunks, data):
+    """THE INVARIANCE TEST for materialising the split.
+
+    Writing the whole partition and reading chunk ``k``'s row back must give
+    byte-for-byte what the old per-chunk ``id_ranges(...)[k - 1]`` returned. If
+    this ever fails, the two mechanisms have drifted and a tile's coverage is
+    what pays.
+    """
+    epochs = data.draw(
+        st.lists(
+            st.integers(min_value=0, max_value=40),
+            min_size=n_obj,
+            max_size=n_obj,
+        )
+    )
+    doc = _roundtrip(epochs, n_chunks)
+    assert doc["n_obj"] == n_obj and doc["n_chunks"] == n_chunks
+    expected = ngmix_range.id_ranges(epochs, n_chunks)
+    got = [ngmix_range.chunk_range(doc, k) for k in range(1, n_chunks + 1)]
+    assert got == expected
+    assert_tiles(got, n_obj, n_chunks)
+
+
+def test_chunk_index_outside_the_written_partition_is_fatal():
+    """A chunk index the file does not hold must not index from the end."""
+    doc = _roundtrip([3] * 40, 4)
+    for bad in (0, -1, 5):
+        with pytest.raises(SystemExit, match="outside 1..4"):
+            ngmix_range.chunk_range(doc, bad)
+
+
+def test_reading_an_absent_ranges_file_is_fatal(tmp_path):
+    """NO FALLBACK: a missing file fails, it does not recompute.
+
+    Recomputing per chunk is precisely the mechanism this design removed.
+    """
+    with pytest.raises(SystemExit, match="no ranges file"):
+        ngmix_range.read_ranges(tmp_path / "ngmix_ranges.json")
 
 
 # --------------------------------------------------------------------------- #

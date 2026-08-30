@@ -1,11 +1,28 @@
 #!/usr/bin/env python3
-"""Print one ngmix chunk's closed object-ID range as bash exports.
+"""Materialise the ngmix chunk partition once per tile, then serve it.
 
-Run inside the chunk's shell, from the tile's own sexcat, because the range is
-only knowable at execution time (PRD D4)::
+TWO MODES, ONE WRITER. The partition is computed ONCE, by tile_vignets — the
+first member of the fused tile_shape group — and written to the group's
+node-local scratch; each of the n_chunks chunk shells then only LOOKS UP its
+own row::
 
-    eval "$(ngmix_range.py --run-dir $SP_RUN --chunk 3 --n-chunks 8)"
+    # tile_vignets, once (see tile.smk's TILE_NGMIX_RANGES)
+    ngmix_range.py --run-dir $SP_RUN --n-chunks 8 --write $SP_LOCAL/ngmix_ranges.json
+
+    # each chunk, at its own start
+    eval "$(ngmix_range.py --read $SP_LOCAL/ngmix_ranges.json --chunk 3)"
     # -> export NGMIX_ID_MIN=751; export NGMIX_ID_MAX=1125
+
+The file is group-internal plumbing, NOT DAG currency: it lives on $SP_LOCAL and
+dies with the group job, exactly like the vignette store. It is deliberately not
+a rule output — a chunk can only ever read the file its own group job wrote.
+
+Read mode does NOT fall back to recomputation when the file is absent; it exits
+non-zero. The fallback would restore the very failure this design removes (see
+DETERMINISM, below).
+
+The range is still only knowable at EXECUTION time (PRD D4) — a params function
+cannot compute it, because params evaluate before the sexcat exists.
 
 SExtractor's NUMBER column (ngmix's obj_id) runs 1..N contiguous, so covering
 [1, N] processes every object exactly once. The bounds are CLOSED, never
@@ -34,36 +51,42 @@ Moving the boundaries is scientifically free: ngmix's RNG is seeded per object
 from its sky position, so which chunk an object falls in cannot change its
 measurement (see ``ngmix_package.ngmix.position_seed``).
 
-DETERMINISM HERE IS CORRECTNESS, NOT TIDINESS. The n_chunks chunks are separate
-processes that each run this script independently and must derive the IDENTICAL
-range set; if two of them disagree, objects are silently measured twice or
-silently dropped and nothing downstream notices — merge_sep_cats concatenates
-whatever it is given. Hence integer arithmetic end to end (weights scale to
-milli-epochs so no float ever decides a boundary), and NO FALLBACK: if the
-EPOCH extensions cannot be read this script exits non-zero. Such a fallback
-would be the worst available behaviour precisely because it would apply only to
-the chunks that hit the failure, shredding the tile's coverage instead of
-failing it.
+DETERMINISM HERE IS CORRECTNESS, NOT TIDINESS. A tile's chunk ranges are a
+PARTITION of its object IDs: if two chunks disagree about the boundaries,
+objects are silently measured twice or silently dropped and nothing downstream
+notices — merge_sep_cats concatenates whatever it is given.
 
-The cross-TIME case is not covered here and cannot be. NGMIX_RANGE_HASH
-(Snakefile) handles a RESUME across an edit, but a fused group holds its eight
-chunks open over the LIVE checkout for hours — smk-g4 measured 6,236-7,762 s of elapsed per chunk — and
-each chunk reads this file only when its own shell starts. An edit landed
-mid-flight is therefore read by some chunks and not others. Seen once, live: an
-invocation four seconds after a rewrite returned chunk 5 of 186.307 as
-17649..22060 where the other seven had been split 17129..21229, orphaning 520
-objects and double-measuring 831; twelve sequential and thirty-six concurrent
-runs against a stable checkout gave the identical correct partition. Nothing in
-this script can catch that. The rule is the one tile_local() already states —
-land edits between campaigns — and it binds harder here, because tile_local()
-fails loudly while this fails green.
+SINGLE-WRITER IS WHY THAT NO LONGER DEPENDS ON AGREEMENT. Every chunk reads the
+same file, produced by one process from one read of the sexcat, so sibling
+chunks cannot disagree even in principle — the boundaries are a fact of the
+group job rather than a computation eight processes each have to land on. The
+mechanism that closes is a real one: this script used to run independently in
+each chunk's shell, and a group holds its chunks open over the LIVE checkout for
+hours (smk-g4: 6,236-7,762 s of elapsed per chunk), so an edit landed mid-flight
+was read by some chunks and not others. Observed once, live — the transcript is
+at tile.smk's range_hash, which is the home for that history.
+
+The rest of the determinism discipline stays, because it is what makes the
+written file trustworthy rather than merely shared: integer arithmetic end to
+end (weights scale to milli-epochs so no float ever decides a boundary), and NO
+FALLBACK — if the EPOCH extensions cannot be read, or the ranges file is absent
+in read mode, this script exits non-zero. A fallback would be the worst
+available behaviour precisely because it would apply only to the processes that
+hit the failure, shredding the tile's coverage instead of failing it.
+
+What remains uncovered is the cross-TIME case, and NGMIX_RANGE_HASH (Snakefile)
+is what covers it: a RESUME that reruns some chunks after an edit to this script
+would otherwise mix old and new boundaries within one tile.
 """
 
 import argparse
+import json
 from pathlib import Path
 
 # Weights are integers in milli-epochs (one epoch = 1000) so every boundary is
-# decided by exact integer comparison, identically on all n_chunks processes.
+# decided by exact integer comparison, identically on every run of the splitter
+# — which is now what makes the written file REPRODUCIBLE across attempts and
+# resumes, rather than what makes eight siblings agree.
 MILLI_EPOCH = 1000
 
 # The per-object setup cost, expressed in epochs so one integer weight carries
@@ -229,20 +252,96 @@ def object_epochs(run_dir: Path):
     return counts
 
 
-def main() -> None:
-    """Emit this chunk's range as the two bash exports the config reads."""
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--run-dir", required=True, type=Path)
-    p.add_argument("--chunk", required=True, type=int)
-    p.add_argument("--n-chunks", required=True, type=int)
-    a = p.parse_args()
-    # Explicit, because a negative --chunk would index from the end and hand
-    # this process some other chunk's range without any error.
-    if not 1 <= a.chunk <= a.n_chunks:
+def partition(epochs, n_chunks: int) -> dict:
+    """The whole partition, as the dict that gets serialised to JSON.
+
+    Minimal on purpose: the ranges themselves, plus the two numbers a reader
+    needs to check that the file is the one it expects (``n_obj`` so a mismatch
+    against the catalogue is visible, ``n_chunks`` so a chunk index is validated
+    against what was actually written, not against what the caller believes).
+    ``chunk`` is 1-based, matching SP_NGMIX_CHUNK and the run-directory suffix.
+    """
+    ranges = id_ranges(epochs, n_chunks)
+    return {
+        "n_obj": len(epochs),
+        "n_chunks": n_chunks,
+        "chunks": [
+            {"chunk": k, "id_min": lo, "id_max": hi}
+            for k, (lo, hi) in enumerate(ranges, start=1)
+        ],
+    }
+
+
+def chunk_range(doc: dict, chunk: int) -> tuple[int, int]:
+    """Chunk ``chunk``'s closed range out of a ``partition()`` document.
+
+    Validated rather than indexed: a negative ``chunk`` would index from the end
+    and hand this process some other chunk's range without any error.
+    """
+    n_chunks = doc["n_chunks"]
+    if not 1 <= chunk <= n_chunks:
         raise SystemExit(
-            f"[ngmix_range] FATAL: --chunk {a.chunk} outside 1..{a.n_chunks}"
+            f"[ngmix_range] FATAL: --chunk {chunk} outside 1..{n_chunks}"
         )
-    lo, hi = id_ranges(object_epochs(a.run_dir), a.n_chunks)[a.chunk - 1]
+    row = doc["chunks"][chunk - 1]
+    if row["chunk"] != chunk:
+        raise SystemExit(
+            f"[ngmix_range] FATAL: ranges file row {chunk - 1} is chunk "
+            f"{row['chunk']}, not {chunk}"
+        )
+    return int(row["id_min"]), int(row["id_max"])
+
+
+def read_ranges(path: Path) -> dict:
+    """Load the ranges file, or die saying what should have written it."""
+    try:
+        return json.loads(path.read_text())
+    except FileNotFoundError:
+        raise SystemExit(
+            f"[ngmix_range] FATAL: no ranges file at {path}.\n"
+            "  tile_vignets writes it once per tile, on the node-local scratch "
+            "this group job shares.\n"
+            "  Its absence means tile_vignets did NOT run in this group job "
+            "(same cause as a missing vignette store).\n"
+            "  FIX: rm the tile's tile_vignets.json and resume.\n"
+            "  NOT recomputed here on purpose: a per-chunk fallback would let "
+            "chunks disagree about the partition."
+        )
+
+
+def main() -> None:
+    """Write the whole partition, or emit one chunk's range as bash exports."""
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--write", type=Path, metavar="JSON",
+                   help="compute the whole partition and write it here")
+    p.add_argument("--read", type=Path, metavar="JSON",
+                   help="look one chunk's range up in a file --write made")
+    p.add_argument("--run-dir", type=Path, help="--write: the tile's run root")
+    p.add_argument("--n-chunks", type=int, help="--write: chunks to split into")
+    p.add_argument("--chunk", type=int, help="--read: 1-based chunk index")
+    a = p.parse_args()
+
+    if bool(a.write) == bool(a.read):
+        raise SystemExit(
+            "[ngmix_range] FATAL: pass exactly one of --write / --read"
+        )
+
+    if a.write:
+        if a.run_dir is None or a.n_chunks is None:
+            raise SystemExit(
+                "[ngmix_range] FATAL: --write needs --run-dir and --n-chunks"
+            )
+        doc = partition(object_epochs(a.run_dir), a.n_chunks)
+        # Temp name plus rename, the same all-or-nothing publish tile_local()
+        # uses for the WCS store: a reader must never see a half-written file.
+        tmp = a.write.with_name(f".{a.write.name}.tmp")
+        tmp.write_text(json.dumps(doc))
+        tmp.replace(a.write)
+        return
+
+    if a.chunk is None:
+        raise SystemExit("[ngmix_range] FATAL: --read needs --chunk")
+    lo, hi = chunk_range(read_ranges(a.read), a.chunk)
     print(f"export NGMIX_ID_MIN={lo}; export NGMIX_ID_MAX={hi}")
 
 

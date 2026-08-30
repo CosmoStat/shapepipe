@@ -271,6 +271,25 @@ TILE_VIGNET_FRESH = r"""
 rm -rf "$SP_VIGNET_OUT/run_sp_tile_PiViVi"
 """
 
+# THE SINGLE WRITER OF THE ngmix CHUNK PARTITION, and tile_vignets ONLY.
+#
+# The ranges are materialised once per tile, here, and every chunk then looks
+# its own row up (TILE_NGMIX_RANGE_READ below). tile_vignets is the first member
+# of the fused group and strictly precedes all chunks in its DAG, so this is the
+# one place in the group where a single process can write something all chunks
+# read — no flock, no first-one-wins race. The sexcat it reads is tile_detect's,
+# upstream of the whole group and on the SHARED root ($SP_RUN); only the OUTPUT
+# is node-local.
+#
+# Group-internal plumbing, deliberately not a rule output: the file lives and
+# dies with the group job exactly as the vignette store does, so a chunk can
+# only ever read what its own group job wrote. ngmix_range.py owns the rest.
+NGMIX_RANGES = "$SP_LOCAL/ngmix_ranges.json"
+TILE_NGMIX_RANGES = (
+    f'python {SCRIPTS}/ngmix_range.py --run-dir "$SP_RUN" '
+    f'--n-chunks {NGMIX_CHUNKS} --write "{NGMIX_RANGES}" || exit 1'
+)
+
 # THE FUSE'S ONE SHARP EDGE, made loud rather than mysterious.
 #
 # The vignette store is not a declared output any more, so snakemake cannot see
@@ -473,8 +492,14 @@ rule tile_vignets:
     params:
         pre = lambda wc: unit_pre("tile_vignets", wc.tile,
                                   forest=forest_dir(wc.tile),
-                                  pre_run=[tile_local(wc.tile), TILE_VIGNET_FRESH]),
-        script_hash = SCRIPT_HASH
+                                  pre_run=[tile_local(wc.tile), TILE_VIGNET_FRESH,
+                                           TILE_NGMIX_RANGES]),
+        script_hash = SCRIPT_HASH,
+        # tile_vignets now PRODUCES the chunk partition (TILE_NGMIX_RANGES), so
+        # it carries the splitter's fingerprint too. Same hash, same constant —
+        # the Snakefile's NGMIX_RANGE_HASH argues what it guards, and
+        # tile_ngmix's copy below carries the mid-campaign-edit warning.
+        range_hash = NGMIX_RANGE_HASH
     # 8, not 16, for the same reason tile_ngmix is 1: `-b {threads}` is SMP
     # batch size over input FILE SETS, and a tile is one set -- this run's own
     # log says "Batch size: 16 / Total number of processes: 1". 16 was the
@@ -497,11 +522,12 @@ rule tile_vignets:
         sp_shell("tile_vignets", "config_tile_PiViVi.ini",
                  check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}')
 
-# ngmix shape measurement — N chunks per tile (D4). Each chunk computes its own
-# CLOSED object-ID range at EXECUTION time from this tile's own sexcat: a params
-# function cannot, because params evaluate before the sexcat exists. Closed, not
-# open-ended: `ID_OBJ_MAX = -1` on the last chunk was the 13-hour straggler's
-# root cause (ngmix treats id_obj_max <= 0 as unbounded).
+# ngmix shape measurement — N chunks per tile (D4). Each chunk LOOKS UP its own
+# CLOSED object-ID range in the file tile_vignets materialised at the top of this
+# group job (TILE_NGMIX_RANGES); the ranges are knowable only at EXECUTION time,
+# from this tile's own sexcat, which is why a params function cannot supply them.
+# Closed, not open-ended: `ID_OBJ_MAX = -1` on the last chunk was the 13-hour
+# straggler's root cause (ngmix treats id_obj_max <= 0 as unbounded).
 #
 # Chunks write nothing shared: each has its own run_sp_tile_ngmix_Ng<k>u, and
 # merge_sep_cats — DAG-serialised after all chunks — is the gather.
@@ -531,19 +557,51 @@ rule tile_ngmix:
             # discards the script's exit status, so a missing sexcat would fall
             # through to shapepipe_run with an unset range and fail as something
             # else. Capture, check, then eval — the range script fails as itself.
-            pre_run=[f'ngmix_range_out=$(python {SCRIPTS}/ngmix_range.py --run-dir '
-                     f'"$SP_RUN" --chunk {wc.chunk} --n-chunks {NGMIX_CHUNKS}) '
-                     f'|| exit 1',
-                     'eval "$ngmix_range_out"',
-                     tile_local(wc.tile), TILE_VIGNET_REQUIRED]),
+            # tile_local FIRST, because it is what exports $SP_LOCAL — and the
+            # ranges file the lookup reads lives there, written once by
+            # tile_vignets (TILE_NGMIX_RANGES). This chunk only looks its row
+            # up; it never recomputes, and the script refuses to.
+            #
+            # Two steps, not `eval "$(...)"`: a command substitution inside eval
+            # discards the script's exit status, so a missing ranges file would
+            # fall through to shapepipe_run with an unset range and fail as
+            # something else. Capture, check, then eval — the lookup fails as
+            # itself.
+            pre_run=[tile_local(wc.tile), TILE_VIGNET_REQUIRED,
+                     f'ngmix_range_out=$(python {SCRIPTS}/ngmix_range.py '
+                     f'--read "{NGMIX_RANGES}" --chunk {wc.chunk}) || exit 1',
+                     'eval "$ngmix_range_out"']),
         script_hash = SCRIPT_HASH,
-        # The one rule whose fingerprint has to cover ngmix_range.py: `pre_run`
-        # already puts the INVOCATION in params, but the invocation is invariant
-        # to the script's body, and what that body decides is a PARTITION (the
-        # Snakefile's NGMIX_RANGE_HASH argues the corruption).
+        # `pre_run` already puts the INVOCATION in params, but the invocation is
+        # invariant to the script's body, and what that body decides is a
+        # PARTITION (the Snakefile's NGMIX_RANGE_HASH argues the corruption).
+        # Carried on tile_vignets too, since the split moved there.
         #
-        # LANDING THIS PARAM MID-CAMPAIGN DELETES SCIENCE PRODUCTS. A new param
-        # entry replans the fused group with "Params have changed since last
+        # WHY THE PARTITION IS MATERIALISED ONCE, kept as history because the
+        # design only reads as over-careful until you have seen this. The eight
+        # chunks used to each run ngmix_range.py in their own shell and trust the
+        # others to have landed on the same boundaries. A fused group holds them
+        # open over the LIVE checkout for hours (smk-g4: 6,236-7,762 s elapsed
+        # per chunk), and each chunk read the script only when its own shell
+        # started, so an edit landed mid-flight was read by some and not others.
+        # Seen once, live: an invocation four seconds after a rewrite returned
+        # chunk 5 of 186.307 as 17649..22060 where the other seven had been split
+        # 17129..21229 — 520 objects orphaned, 831 measured twice, and
+        # merge_sep_cats concatenates whatever it is handed, so the tile would
+        # have completed green. (Twelve sequential and thirty-six concurrent runs
+        # against a stable checkout gave the identical correct partition; the
+        # race was purely the edit.) That is now STRUCTURALLY closed: tile_vignets
+        # writes the ranges once and the chunks only look their row up, so there
+        # is nothing left for them to disagree about. The hash below no longer
+        # buys sibling agreement — it buys REPRODUCIBILITY across a resume.
+        #
+        # WHAT A ONE-RULE FINGERPRINT DOES MID-CAMPAIGN: IT DELETES SCIENCE
+        # PRODUCTS. Observed when range_hash lived on tile_ngmix ALONE, which is
+        # no longer the case -- tile_vignets carries it too now that it is the
+        # rule that runs the splitter, so an edit drags tile_vignets back into
+        # the group, the store and the ranges are rebuilt, and nothing trips.
+        # Kept because the mechanism is general and the next single-rule param is
+        # one edit away. A new param entry replans the fused group with "Params have changed since last
         # execution", scheduling the eight chunks, tile_merge_cats and
         # tile_make_cat but NOT tile_vignets or tile_detect (their manifests
         # exist, so missing_output never queues them). That is exactly the state
@@ -568,12 +626,13 @@ rule tile_ngmix:
         # Still the right trade -- but it argues for never reaching this state,
         # not for relaxing the guard.
         #
-        # WHY THE TILE_LOCAL WARNING ABOVE DOES NOT COVER IT: tile_local() sits
-        # in three rules' params.pre, so an edit there drags tile_vignets back in
-        # and the store is rebuilt. range_hash is on tile_ngmix ALONE. Same
-        # family, opposite shape -- the ONE-rule fingerprint change is the
-        # dangerous one. job_head.sh's runbook sweep does not help either: it
-        # skips any tile with a final_cat, exactly the set this breaks.
+        # THE RULE THE INCIDENT LEFT BEHIND: a fingerprint that changes on the
+        # chunks but NOT on tile_vignets is the dangerous shape. tile_local()
+        # was always safe for exactly this reason -- it sits in three rules'
+        # params.pre, so an edit there pulls tile_vignets in and the store is
+        # rebuilt. range_hash is now the same shape by construction. job_head.sh's
+        # runbook sweep would not have helped either: it skips any tile with a
+        # final_cat, exactly the set this breaks.
         #
         # INVERTED BY clean_tiles, so read the default carefully. With
         # reclamation ON the tombstoned tile has lost tile_detect.json and the

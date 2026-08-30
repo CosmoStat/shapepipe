@@ -312,18 +312,26 @@ CLEAN_TILE_HASH = script_hash("clean_tile.py")
 # config.yaml's star_cats block on clearing the store after a semantic change.
 STAR_CAT_HASH = script_hash("star_cats.py")
 # ngmix_range.py earns a hash for a stronger reason than the others. What it
-# emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks
-# are a PARTITION of its object IDs: resume a tile across an edit to the split
-# and the chunks that already succeeded keep the old ranges while the reruns
-# take the new ones, so within one tile some objects are measured twice and
-# others by nobody. merge_sep_cats concatenates whatever it is handed, so the
-# tile completes green with a corrupt catalogue and no error anywhere. Same
-# failure family as the script's own no-fallback rule, across time rather than
-# across processes.
+# emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks are
+# a PARTITION of its object IDs: resume a tile across an edit to the split and
+# the chunks that already succeeded keep the old ranges while the reruns take the
+# new ones, so within one tile some objects are measured twice and others by
+# nobody. merge_sep_cats concatenates whatever it is handed, so the tile
+# completes green with a corrupt catalogue and no error anywhere.
+#
+# ACROSS TIME IS ALL THIS GUARDS NOW. The within-group version of the same
+# corruption — eight sibling chunks each computing the split and disagreeing — is
+# structurally closed: the partition is materialised ONCE per tile, by
+# tile_vignets, and the chunks only look their row up (tile.smk's
+# TILE_NGMIX_RANGES, which also keeps the incident transcript). So this hash buys
+# REPRODUCIBILITY of the file across attempts and resumes, not agreement between
+# siblings. It therefore fingerprints the script that PRODUCES the file, and
+# rides on tile_vignets as well as tile_ngmix — both rules, deliberately; the
+# one-rule version of this param is the dangerous one, argued at tile.smk.
 #
 # Land this hash, and any later edit to the split, at a campaign boundary on a
-# fresh root: on a RESUME the params change is destructive, not merely expensive
-# (observed, with the transcript, at tile.smk's range_hash).
+# fresh root: a resume across it re-measures the tile, and the failure modes a
+# mid-campaign params change can reach are catalogued at tile.smk's range_hash.
 NGMIX_RANGE_HASH = script_hash("ngmix_range.py")
 
 # --- exposure reclamation (D5, S5) -----------------------------------------
