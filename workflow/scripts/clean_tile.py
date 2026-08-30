@@ -72,10 +72,12 @@ outlive its directories: 10 inodes per cleaned tile in total (the tile dir,
 file), i.e. ~231k inodes at DR6 against the 1M scratch quota — versus 3.2M if
 nothing were reclaimed and 1.4M if only ``output/`` were.
 
-WHAT IS LOST, STATED PLAINLY. The per-tile audit trail. ``sp_tilecost.py``
-attributes the fused ``tile_shape`` group job's cost per tile by reading the
-tile's SExtractor catalogue (NAXIS2 of the sexcat = the object count, the cost
-model's independent variable, ~380 MB and unkeepable) and the eight
+WHAT IS LOST, STATED PLAINLY. The per-tile audit trail, for BOTH tools that
+read it — ``sp_tilecost.py`` and ``sp_costmodel.py``. They attribute the fused
+``tile_shape`` group job's cost per tile by reading the tile's SExtractor
+catalogue (NAXIS2 of the sexcat = the object count, the cost model's independent
+variable, ~380 MB and unkeepable; sp_costmodel also reads its ``EPOCH_k``
+extensions for the geometric epoch count) and the eight
 ``tile_ngmix_<k>.benchmark.tsv`` files. The sexcat is gone for good; the
 benchmark ROWS are absorbed into the tombstone under ``benchmarks``, because
 they are two lines each and they are the measured-memory feed D4 sizes
@@ -88,13 +90,27 @@ here: teach ``sp_tilecost.py`` to fall back to ``cleaned.json`` for a tile whose
 benchmark TSVs are gone. Until it does, per-chunk cost attribution stops at the
 first reclaimed tile even though the numbers are still on disk.
 
-DELETION IS SYMLINK-SAFE, and here that is not a nicety. ``exp_forest/`` is a
-sharded view of ~8 symlinks pointing at the EXPOSURE stores, which are shared
-with 7-10 other tiles each. ``shutil.rmtree`` unlinks symlinked entries rather
-than recursing through them, and every entry is tested with
-``is_symlink()`` BEFORE ``is_dir()`` — a clean that followed the forest would
-delete a large slice of the campaign's exposure stores from a job whose whole
-job description is "one finished tile".
+DELETION IS SYMLINK-SAFE, and here that is not a nicety. A finished tile holds
+NINE symlinks in TWO classes, and the second is the one that matters:
+
+  * ``exp_forest/<shard>/<exp>/output`` — 7 links into the EXPOSURE stores,
+    each shared with 7-10 other tiles. Rebuildable, but only by re-running those
+    chains from VOS.
+  * ``output/run_sp_tile_Git/get_images_runner/output/CFIS_{image,weight}-*``
+    — 2 links into ``/project/def-mjhudson/unions-wl/tiles``, the staged survey
+    imaging: 621 GB across 2,536 files, on the BACKED-UP, GROUP-SHARED
+    ``/project``, and not this campaign's to lose. get_images RETRIEVE=symlink
+    is what puts them there, so every tile in every campaign carries a pair.
+
+Both classes are handed WHOLESALE to ``shutil.rmtree`` — ``exp_forest/`` as a
+top-level entry, ``run_sp_tile_Git/`` as one inside ``output/``, which ``prune``
+descends only because the Fe survivor lives there. So the safety rests on
+rmtree's own semantics (it unlinks a symlinked entry rather than recursing
+through it), NOT on ``prune``'s ``is_symlink()`` test, which fires only for a
+link that is itself a direct entry of a level prune walks. Both were verified on
+the fixture: every link unlinked, no target followed. Whoever edits ``prune``
+next should know that the worst case is not a scratch store they could rebuild —
+it is a rmtree walking into half a terabyte of shared, backed-up survey data.
 
 LOGS ARE DELETED, NOT ABSORBED, for the same reason ``clean_exposure`` deletes
 them: on a finished tile every ``logs/<stage>.json`` is BYTE-IDENTICAL to the

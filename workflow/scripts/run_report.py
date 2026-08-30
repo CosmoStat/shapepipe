@@ -68,6 +68,40 @@ SURVIVING_TILE_STAGES = frozenset({"tile_vignets", "tile_find_exposures"})
 STATUSES = ("complete", "warn", "failed", "not_run")
 
 
+def _rank(m: dict) -> int:
+    """How BAD a record is, as a position in STATUSES; unknown sorts worst."""
+    return STATUSES.index(m["status"]) if m.get("status") in STATUSES else len(STATUSES)
+
+
+def keep_worst(records: dict, stage: str, m: dict) -> None:
+    """Collapse the several records of one stage into the WORST of them.
+
+    ONE rule, used by both readers in this module, and that is the point.
+    Several files map to one (unit, stage) either way: on disk, a stage's
+    manifest and its byte-identical log, plus the eight ngmix chunks, which all
+    carry ``stage: "tile_ngmix"`` under per-chunk filenames; inside a tombstone,
+    those same eight chunks again, keyed by file stem.
+
+    absorb_tombstones used to resolve that collision by first-key-wins
+    (``setdefault`` over sorted stems), so only ``tile_ngmix_1`` survived and a
+    ``warn`` on any other chunk disappeared the moment the tile was reclaimed —
+    ``tile_ngmix ok 0 warn 1`` before the clean, ``ok 1 warn 0`` after, and the
+    tile silently left the "tiles not complete" table. The data was in the
+    tombstone the whole time; only the reader dropped it (found in review,
+    reproduced on 186.307 with chunk 5 flipped to warn).
+
+    What this does NOT fix, because it is not a reclamation bug: a stage's
+    per-runner ``products`` aggregate is taken from the single surviving record,
+    so tile_ngmix attrition is counted over one chunk of eight. That is true
+    before and after a clean, identically — it is the price of collapsing the
+    chunks to one stage row, and it is the same on both paths by construction
+    now.
+    """
+    prev = records.get(stage)
+    if prev is None or _rank(m) > _rank(prev):
+        records[stage] = m
+
+
 def load_manifests(run_dir: Path, sub: str) -> dict:
     """``{unit: {stage: verdict}}`` for one store (``tiles`` or ``exp``).
 
@@ -100,13 +134,7 @@ def load_manifests(run_dir: Path, sub: str) -> dict:
         if not isinstance(m, dict) or "stage" not in m:
             continue
         unit = path.parent.parent.name
-        stage = m["stage"]
-        prev = out[unit].get(stage)
-        # Worst status wins when several records share a stage (ngmix chunks;
-        # a stage's manifest and its identical log).
-        rank = lambda d: STATUSES.index(d.get("status")) if d.get("status") in STATUSES else len(STATUSES)  # noqa: E731
-        if prev is None or rank(m) > rank(prev):
-            out[unit][stage] = m
+        keep_worst(out[unit], m["stage"], m)
     return out
 
 
@@ -133,6 +161,22 @@ def absorb_tombstones(run_dir: Path, sub: str, manifests: dict,
     stopped. A unit counts as REBUILT — and keeps the guard — iff it has a record
     for some stage that is not a survivor; the default empty set reproduces the
     exposure test exactly.
+
+    KNOWN AND DELIBERATE: the guard is all-or-nothing, so a PARTIALLY rebuilt
+    cleaned tile loses its whole tombstone record. Force a rerun that restores
+    tile_detect..tile_make_cat but not the prepare stages (which only the
+    prepare invocation produces) and tile_get_images / tile_uncompress read
+    "not run" though they did run and nothing invalidated them.
+
+    Not fixed, because the obvious fix is wrong rather than long. Filling
+    per-stage from the tombstone would, on a unit whose chain is rebuilding,
+    report the PREVIOUS generation's "complete" for a stage whose manifest is
+    absent precisely because it is mid-rerun or failed — a stale complete is
+    invisibly wrong where "not run" is visibly incomplete, and the same hazard
+    reaches exposures, where the mixing would be silent and campaign-wide. The
+    all-or-nothing guard is a generation boundary and is worth more than the
+    cosmetics. A correct fix needs a per-stage notion of which generation a
+    record belongs to, which nothing here records today.
     """
     cleaned = set()
     for path in sorted((run_dir / sub).glob("**/cleaned.json")):
@@ -144,13 +188,19 @@ def absorb_tombstones(run_dir: Path, sub: str, manifests: dict,
             continue
         if any(s not in survivors for s in manifests.get(unit, {})):
             continue
+        # Collapse the tombstone's per-stem records to one per stage FIRST,
+        # by the same rule the on-disk path uses (keep_worst), and only then
+        # merge. Reversing those two steps is what lost a warning chunk.
+        absorbed: dict = {}
         for key, m in (tomb.get("manifests") or {}).items():
             if not isinstance(m, dict):
                 continue
+            keep_worst(absorbed, m.get("stage", key), m)
+        for stage, m in absorbed.items():
             # setdefault, not assignment: the surviving on-disk records are the
             # live ones and stay authoritative, even though the tombstone's
             # copies of them are byte-identical today.
-            manifests[unit].setdefault(m.get("stage", key), m)
+            manifests[unit].setdefault(stage, m)
         cleaned.add(unit)
     return cleaned
 
@@ -174,9 +224,17 @@ def tally_level(units, stages, manifests, cleaned=frozenset()) -> dict:
     """Per-stage counts + named unit lists, for one level.
 
     ``cleaned`` units are counted by the status their absorbed manifests carry
-    (complete or warn — attrition is preserved) and additionally listed under
-    ``cleaned``, so a reclaimed campaign reads as reclaimed rather than as a
-    campaign that never ran.
+    and additionally listed under ``cleaned``, so a reclaimed campaign reads as
+    reclaimed rather than as a campaign that never ran. The STATUS is preserved
+    exactly, including a warn on any one of the eight ngmix chunks (keep_worst
+    is what makes that true on the tombstone path as well as on disk).
+
+    The per-runner ``products`` aggregate is NOT a per-chunk total, before or
+    after reclamation: a stage contributes the runners of its one surviving
+    record, so tile_ngmix attrition is counted over one chunk of eight. Reading
+    it as a whole-tile figure over-states completeness by 8x. That is a property
+    of collapsing the chunks to one stage row, not of cleaning, and the two
+    paths now agree on it.
     """
     per_stage = {}
     for stage in stages:
