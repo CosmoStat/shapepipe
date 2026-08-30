@@ -14,12 +14,18 @@ import ngmix
 import galsim
 import numpy as np
 from astropy.io import fits
+from astropy.wcs.utils import proj_plane_pixel_scales
 from cs_util import size as cs_size
 from modopt.math.stats import sigma_mad
 from ngmix.observation import Observation, ObsList
+from scipy.ndimage import binary_dilation
+from scipy.spatial import cKDTree
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
+
+# Neighbour treatments selectable with the BLEND_HANDLING option.
+BLEND_HANDLINGS = ("noisefill", "uberseg")
 
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
 
@@ -184,14 +190,23 @@ class Tile_cat():
 
     Parameters
     ----------
-    cat_path
+    cat_path : str
+        Path to the tile SExtractor catalogue.
+    seg_cat_path : str, optional
+        Path to the coadd-frame segmentation VIGNET catalogue (a CLASSIC-mode
+        vignetmaker output cut from the tile ``SEGMENTATION`` check image),
+        row-aligned to ``cat_path``. When given, ``self.seg`` holds one integer
+        seg stamp per object for the ``"uberseg"`` blend handling; ``None``
+        leaves ``self.seg`` unset (the noise-fill path is unaffected).
 
     """
     def __init__(
         self,
-        cat_path
+        cat_path,
+        seg_cat_path=None,
     ):
         self.cat_path = cat_path
+        self.seg_cat_path = seg_cat_path
         if cat_path:
             self.get_data(cat_path)
 
@@ -213,6 +228,39 @@ class Tile_cat():
         self.vign = np.copy(data['VIGNET']) if 'VIGNET' in cols else None
 
         tile_cat.close()
+
+        # Coadd-frame SExtractor segmentation stamp (integer labels), one per
+        # object and row-aligned to the tile catalogue, overlaid unchanged on
+        # every epoch for uberseg neighbour masking (shapepipe#776). None ->
+        # uberseg unavailable; the noise-fill path is unaffected.
+        self.seg = None
+        if self.seg_cat_path:
+            seg_cat = file_io.FITSCatalogue(
+                self.seg_cat_path,
+                SEx_catalogue=True,
+            )
+            seg_cat.open()
+            seg_data = seg_cat.get_data()
+            # The seg VIGNETs are indexed by tile-catalogue row (self.seg[i]),
+            # so the two catalogues MUST be row-aligned. Fail loud at load if
+            # they are not — a silent length/order mismatch would hand every
+            # object the wrong footprint and quietly corrupt every mask.
+            if len(seg_data) != len(self.obj_id):
+                raise ValueError(
+                    f"SEG_VIGNET_PATH '{self.seg_cat_path}' has"
+                    + f" {len(seg_data)} rows but the tile catalogue has"
+                    + f" {len(self.obj_id)}; the segmentation vignets must be"
+                    + " row-aligned to the tile catalogue."
+                )
+            if 'NUMBER' in seg_data.dtype.names:
+                if not np.array_equal(seg_data['NUMBER'], self.obj_id):
+                    raise ValueError(
+                        f"SEG_VIGNET_PATH '{self.seg_cat_path}' NUMBER column"
+                        + " does not match the tile catalogue NUMBER; the"
+                        + " segmentation vignets are misaligned or reordered."
+                    )
+            self.seg = np.copy(seg_data['VIGNET'])
+            seg_cat.close()
 
 class Postage_stamp():
     """Galaxy Postage Stamp.
@@ -238,6 +286,12 @@ class Postage_stamp():
         self.weights = []
         self.flags = []
         self.bkg_rms = []
+        # Segmentation stamps, one per epoch, used only by the "uberseg" blend
+        # handling; empty for the default noise-fill path. All epochs carry the
+        # SAME coadd-frame seg stamp (shapepipe#776: one coadd seg per object,
+        # no per-epoch reprojection), each MegaCam-flipped to match its galaxy
+        # stamp so the overlay stays registered.
+        self.segs = []
         self.jacobs = []
         # Per-epoch full WCS and the object's sky position, used only by the
         # "wcs" centroid source (skipped for the default "hsm" path).
@@ -299,6 +353,44 @@ class Vignet():
         if self.bkg_rms_vign_cat is not None:
             self.bkg_rms_vign_cat.close()
 
+def pixel_scale_from_wcs(f_wcs_file):
+    """Representative pixel scale (arcsec) from the tile's image WCS.
+
+    The ngmix fit builds each object's Jacobian from the full per-epoch WCS,
+    so this scalar only sets the centroid-prior width and the noise-window
+    scale (see :func:`get_prior`, :func:`get_noise`). A single value read from
+    the astrometry is therefore sufficient -- and, unlike a hard-coded config
+    constant, it cannot silently drift from the pixels it describes (this
+    mirrors SExtractor's ``PIXEL_SCALE 0`` convention).
+
+    Parameters
+    ----------
+    f_wcs_file : dict-like
+        Mapping ``exposure -> {ccd -> {"WCS": astropy.wcs.WCS, ...}}`` (the
+        merged single-exposure headers opened by :class:`Vignet`).
+
+    Returns
+    -------
+    float
+        Pixel scale in arcsec, averaged over the two axes of the first WCS.
+
+    Raises
+    ------
+    ValueError
+        If no WCS can be found in ``f_wcs_file``.
+    """
+    for exp_name in f_wcs_file:
+        for ccd_dict in f_wcs_file[exp_name].values():
+            # proj_plane_pixel_scales returns deg/pixel per world axis; the
+            # two axes are equal to sub-per-mille for survey astrometry.
+            scales = proj_plane_pixel_scales(ccd_dict["WCS"])
+            return float(np.mean(scales) * 3600.0)
+    raise ValueError(
+        "cannot derive PIXEL_SCALE from the WCS: the merged single-exposure "
+        "headers file contains no exposures"
+    )
+
+
 class Ngmix(object):
     """Ngmix.
 
@@ -314,8 +406,10 @@ class Ngmix(object):
         File numbering scheme
     zero_point : float
         Photometric zero point
-    pixel_scale : float
-        Pixel scale in arcsec
+    pixel_scale : float or None
+        Pixel scale in arcsec. Optional override: when ``None`` or
+        non-positive, the pixel scale is derived from the image WCS (see
+        :func:`pixel_scale_from_wcs`).
     f_wcs_path : str
         Path to merged single-exposure single-HDU headers
     w_log : logging.Logger
@@ -335,6 +429,17 @@ class Ngmix(object):
         (robust for galaxies); ``"wcs"`` uses the catalog sky position
         projected through the WCS (better for stars, whose HSM moments are
         noisy). See :func:`make_ngmix_observation`.
+    blend_handling : {"noisefill", "uberseg"}, optional
+        Neighbour treatment; ``"noisefill"`` (default) is the historical
+        noise-fill, ``"uberseg"`` hard-masks neighbour-side pixels from the
+        coadd segmentation map and requires ``seg_cat_path``.
+    seg_cat_path : str, optional
+        Path to the coadd-frame segmentation VIGNET catalogue (see
+        :class:`Tile_cat`). Required when ``blend_handling="uberseg"``.
+    dilate_neighbour : int, optional
+        Neighbour-mask dilation iterations for ``"uberseg"`` (see
+        :func:`uberseg_weight`); the default is ``1``.
+
     Notes
     -----
     The RNG is always per object and seeded from that object's sky position
@@ -346,6 +451,9 @@ class Ngmix(object):
     ------
     IndexError
         If the length of the input file list is incorrect
+    ValueError
+        If ``blend_handling`` is unknown, or ``"uberseg"`` is selected without
+        ``seg_cat_path``.
 
     """
 
@@ -363,6 +471,9 @@ class Ngmix(object):
         id_obj_max=-1,
         bkg_sub=True,
         centroid_source="hsm",
+        blend_handling="noisefill",
+        seg_cat_path=None,
+        dilate_neighbour=1,
         metacal_psf="fitgauss",
     ):
 
@@ -375,6 +486,20 @@ class Ngmix(object):
             raise IndexError(
                 f"Input file list has length {len(input_file_list)},"
                 + f" required is {n_base} or {n_base + 1}"
+            )
+
+        if blend_handling not in BLEND_HANDLINGS:
+            raise ValueError(
+                f"Unknown BLEND_HANDLING '{blend_handling}'; expected one of"
+                + f" {BLEND_HANDLINGS}"
+            )
+
+        # Fail fast at construction (not deep in the per-epoch loop) when
+        # uberseg is requested without its segmentation input (shapepipe#776).
+        if blend_handling == "uberseg" and seg_cat_path is None:
+            raise ValueError(
+                "blend_handling='uberseg' requires SEG_VIGNET_PATH (the coadd"
+                + " SExtractor segmentation vignets); none configured."
             )
 
         self._tile_cat_path = input_file_list[0]
@@ -407,7 +532,6 @@ class Ngmix(object):
         self._file_number_string = file_number_string
 
         self._zero_point = zero_point
-        self._pixel_scale = pixel_scale
 
         self._f_wcs_path = f_wcs_path
 
@@ -416,6 +540,9 @@ class Ngmix(object):
         self._id_obj_max = id_obj_max
         self._bkg_sub = bkg_sub
         self._centroid_source = centroid_source
+        self._blend_handling = blend_handling
+        self._seg_cat_path = seg_cat_path
+        self._dilate_neighbour = dilate_neighbour
         self._metacal_psf = metacal_psf
 
         self._w_log = w_log
@@ -424,6 +551,25 @@ class Ngmix(object):
             'Per-object RNG seeded from sky position (ngmix#796): results are'
             ' invariant to how the tile is split into object chunks'
         )
+
+        # Pixel scale: an explicit positive PIXEL_SCALE overrides; otherwise
+        # derive it from the image WCS so it can never drift from the pixels
+        # (mirrors SExtractor's ``PIXEL_SCALE 0`` convention). Only the
+        # centroid-prior width and noise window use it -- the fit Jacobian is
+        # built per object from the full WCS.
+        if pixel_scale is None or pixel_scale <= 0:
+            self._pixel_scale = pixel_scale_from_wcs(
+                self._vignet_cat.f_wcs_file
+            )
+            self._w_log.info(
+                f'PIXEL_SCALE derived from image WCS = '
+                f'{self._pixel_scale:.6f} arcsec'
+            )
+        else:
+            self._pixel_scale = pixel_scale
+            self._w_log.info(
+                f'PIXEL_SCALE from config = {self._pixel_scale:.6f} arcsec'
+            )
 
     @classmethod
     def MegaCamFlip(self, vign, ccd_nb):
@@ -496,6 +642,7 @@ class Ngmix(object):
             'id',
             'n_epoch_model',
             'mcal_types_fail',
+            'neighbour_flag',
             'nfev_fit',
             # galaxy
             'g1',
@@ -554,6 +701,11 @@ class Ngmix(object):
                 )
                 output_dict[name]["mcal_types_fail"].append(
                     results[idx]["mcal_types_fail"]
+                )
+                # Per-object blend flag (see process()); replicated across all
+                # shear types like id / n_epoch_model / mcal_types_fail.
+                output_dict[name]["neighbour_flag"].append(
+                    results[idx]["neighbour_flag"]
                 )
                 # ngmix 2.x reports the solver's function-evaluation count
                 # (nfev, ~tens-hundreds; -1 on some failures), not the v1
@@ -713,6 +865,46 @@ class Ngmix(object):
                 + f" file '{vignet_path}'"
             )
 
+    def _check_central_seg_label(self, seg, obj_id):
+        """Cross-check the seg stamp's centre pixel against the object's NUMBER.
+
+        The authoritative central label is ``obj_id`` (the SExtractor NUMBER);
+        this is a diagnostic on the coadd-vs-epoch overlay registration, not a
+        gate. Two outcomes:
+
+        * The seg stamp does not contain ``obj_id`` anywhere — the object's own
+          footprint fell outside the cutout (bad centroid / dropped detection),
+          so uberseg has no central object to keep. Raise; the per-object
+          ``try/except`` in :meth:`process` drops it, loud in the log.
+        * The centre-pixel label is nonzero and ``!= obj_id`` — a few-pixel
+          registration offset put a neighbour on the centre pixel. Harmless for
+          the mask (which keys off ``obj_id``), but a signal worth surfacing:
+          log a warning and proceed.
+
+        Parameters
+        ----------
+        seg : numpy.ndarray
+            Coadd segmentation stamp for this object (integer labels).
+        obj_id : int
+            The object's SExtractor NUMBER — the authoritative central label.
+        """
+        if not np.any(seg == obj_id):
+            raise ValueError(
+                f"seg stamp for object NUMBER={obj_id} contains that label"
+                + " nowhere; the object's footprint fell outside the cutout"
+                + " (bad centroid / registration). Cannot define the central"
+                + " object for uberseg."
+            )
+        cy, cx = seg.shape[0] // 2, seg.shape[1] // 2
+        centre_label = int(seg[cy, cx])
+        if centre_label != 0 and centre_label != obj_id:
+            self._w_log.info(
+                f"uberseg: object NUMBER={obj_id} but seg centre pixel carries"
+                + f" label {centre_label}; a coadd-vs-epoch registration offset"
+                + " is placing a neighbour on the centre. Proceeding with the"
+                + " NUMBER (authoritative)."
+            )
+
     def log_mean_ellipticity(self):
         """Log mean ellipticity from NOSHEAR HDU to the run log.
 
@@ -785,7 +977,7 @@ class Ngmix(object):
             Dictionary containing the NGMIX metacal results
 
         """
-        tile_cat = Tile_cat(self._tile_cat_path)
+        tile_cat = Tile_cat(self._tile_cat_path, self._seg_cat_path)
         vignet_cat = self._vignet_cat
 
         final_res = []
@@ -843,12 +1035,26 @@ class Ngmix(object):
                     if tile_cat.flux is not None
                     else 1.0
                 )
+                # The central object's segmentation label IS its SExtractor
+                # NUMBER (obj_id): seg labels are the NUMBERs of the same SE run
+                # that produced the tile catalogue, so obj_id is authoritative
+                # and is used for both the uberseg mask and the neighbour flag.
+                # The centre pixel is only a diagnostic: a few-pixel coadd-vs-
+                # epoch overlay offset can put a NEIGHBOUR's label there, which
+                # would invert the mask — so we never trust it to define the
+                # central object. Cross-check it and warn on a mismatch (a
+                # registration signal), but proceed with obj_id (shapepipe#776).
+                if self._blend_handling == "uberseg":
+                    self._check_central_seg_label(tile_cat.seg[i_tile], obj_id)
                 res, psf_res, psf_orig_res = do_ngmix_metacal(
                     stamp,
                     obj_prior,
                     flux_guess,
                     obj_rng,
                     centroid_source=self._centroid_source,
+                    blend_handling=self._blend_handling,
+                    object_number=obj_id,
+                    dilate_neighbour=self._dilate_neighbour,
                     metacal_psf=self._metacal_psf,
                 )
             except Exception as ee:
@@ -859,6 +1065,14 @@ class Ngmix(object):
                 continue
 
             res['obj_id'] = obj_id
+            # Neighbour flag: does the coadd seg stamp hold any non-central,
+            # non-zero label? Systematics-test hook (shapepipe#776); computed
+            # from the raw coadd seg, 0 when uberseg is off / seg absent.
+            res['neighbour_flag'] = int(
+                seg_has_neighbour(tile_cat.seg[i_tile], obj_id)
+                if getattr(tile_cat, "seg", None) is not None
+                else 0
+            )
             # epochs that survived the PSF fit and entered the model,
             # not the number of epochs submitted (v1 contract)
             res['n_epoch_model'] = psf_res['n_epoch']
@@ -966,6 +1180,17 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
         if stamp.megacam_flip and tile_vign is not None:
             tile_vign = Ngmix.MegaCamFlip(tile_vign, int(ccd_n))
 
+        # Coadd-frame segmentation stamp for this object, MegaCam-flipped to
+        # match the (flipped) galaxy stamp so the overlay stays registered.
+        # The SAME coadd seg rides every epoch (shapepipe#776: no reprojection).
+        tile_seg = (
+            np.copy(tile_cat.seg[i_tile])
+            if getattr(tile_cat, "seg", None) is not None
+            else None
+        )
+        if stamp.megacam_flip and tile_seg is not None:
+            tile_seg = Ngmix.MegaCamFlip(tile_seg, int(ccd_n))
+
         flag_vign = (
             vignet.flag_vign_cat[str(obj_id)][expccd_name]['VIGNET']
         )
@@ -1014,6 +1239,8 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
         stamp.weights.append(weight_vign_scaled)
         stamp.flags.append(flag_vign)
         stamp.bkg_rms.append(bkg_rms_vign_scaled)
+        if tile_seg is not None:
+            stamp.segs.append(tile_seg)
         stamp.jacobs.append(jacob)
         # For the "wcs" centroid source (see make_ngmix_observation).
         stamp.wcs.append(epoch_wcs)
@@ -1154,7 +1381,164 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
 
     return sig_noise
 
-def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
+def central_seg_label(seg):
+    """Centre-pixel label of a seg stamp — a *diagnostic*, not the central id.
+
+    The authoritative central label is the object's SExtractor ``NUMBER``
+    (``obj_id``), which is plumbed straight through: segmentation labels ARE
+    the NUMBERs of the same SE run, so ``obj_id`` names the central footprint
+    directly (shapepipe#776). This helper reads the centre pixel only as a
+    registration cross-check — a few-pixel coadd-vs-epoch overlay offset can
+    put a NEIGHBOUR's label on the centre pixel, which is exactly why the
+    centre pixel must NOT define the central object (trusting it there would
+    invert the uberseg mask). See :meth:`Ngmix._check_central_seg_label`.
+
+    Parameters
+    ----------
+    seg : numpy.ndarray
+        Segmentation stamp (integer SExtractor labels; 0 for sky).
+
+    Returns
+    -------
+    int
+        Label at the centre pixel — the central object's segmentation id.
+
+    Raises
+    ------
+    ValueError
+        If the centre pixel is sky (label 0): the cutout is not centred on any
+        detected footprint (bad centroid / dropped detection), so uberseg
+        cannot define a central object. Fail fast and loud; the object is then
+        dropped by the per-object ``try/except`` in :meth:`Ngmix.process`.
+    """
+    cy, cx = seg.shape[0] // 2, seg.shape[1] // 2
+    label = int(seg[cy, cx])
+    if label == 0:
+        raise ValueError(
+            "central_seg_label: centre pixel is sky (label 0); the"
+            + " segmentation stamp is not centred on a detected object."
+        )
+    return label
+
+
+def seg_has_neighbour(seg, object_number):
+    """Whether a seg stamp holds any non-central, non-zero label.
+
+    The per-object neighbour flag (shapepipe#776, a systematics-test hook):
+    ``True`` when the coadd segmentation stamp contains a footprint other than
+    the central object's, i.e. the object is blended.
+
+    Parameters
+    ----------
+    seg : numpy.ndarray
+        Segmentation stamp (integer SExtractor labels; 0 for sky).
+    object_number : int
+        Central object's segmentation label.
+
+    Returns
+    -------
+    bool
+        ``True`` if any non-zero label differs from ``object_number``.
+    """
+    labels = seg[seg != 0]
+    return bool(labels.size and np.any(labels != object_number))
+
+
+def uberseg_weight(weight, seg, object_number, dilate_neighbour=0):
+    """Zero a stamp's weight on neighbour-side pixels — the UberSeg treatment.
+
+    UberSeg is Erin Sheldon's MEDS/ngmix neighbour mask (``esheldon/meds``,
+    https://github.com/esheldon/meds — ``MEDS.get_uberseg`` /
+    ``meds._uberseg.uberseg_tree``, in MEDS itself "adapted from Niall MacCrann
+    and Joe Zuntz", and used in the DES shear pipeline). Each stamp pixel is
+    assigned to the object whose segmentation footprint it lies nearest to — a
+    nearest-segment Voronoi partition — and only pixels assigned to the central
+    object keep their weight.
+
+    This function **reimplements** the partition rather than depending on
+    ``meds``: it is a five-line ``scipy.spatial.cKDTree`` nearest-neighbour
+    query, and pulling in the whole MEDS-file library — plus ``esutil`` and a
+    C-extension build (``fitsio`` is already in the ShapePipe stack; ``esutil``
+    is not) — for one standard geometric operation is disproportionate. The
+    reimplementation was validated bit-for-bit against Sheldon's own reference
+    ``get_uberseg`` over a battery of synthetic and random multi-object seg
+    maps: the two masks agree on every pixel except exact Voronoi-boundary ties
+    (a measure-zero tie-break convention — ``argmin`` first-min vs cKDTree
+    order — scientifically inert). See the ``uberseg`` fiber's ``validation/``
+    harness for the equivalence proof and figures. The cKDTree stands in for
+    the C k-d tree; results are identical up to that boundary convention.
+
+    Because the partition is by distance to the nearest footprint, the pixels
+    surviving around a compact central object form a single connected,
+    roughly circular core; the "circularisation" is emergent geometry, not a
+    separate aperture. Unlike the noise-fill treatment, masked pixels are
+    handed to ngmix as a hard mask (weight = 0), never replaced by a noise
+    realisation.
+
+    Parameters
+    ----------
+    weight : numpy.ndarray
+        Per-pixel weight (inverse variance) map for the stamp.
+    seg : numpy.ndarray
+        Segmentation map on the same grid as ``weight``: 0 for sky, the
+        SExtractor object number for each detected object's footprint.
+    object_number : int
+        Segmentation label of the central object — its SExtractor ``NUMBER``
+        (``obj_id``), authoritative because seg labels are the NUMBERs of the
+        same SE run. Not the centre-pixel label, which a few-pixel coadd-vs-
+        epoch offset can steal for a neighbour and so invert this mask.
+    dilate_neighbour : int, optional
+        Enlarge the neighbour mask by this many binary-dilation iterations
+        (4-connected, ~one pixel per iteration) on top of the base Voronoi
+        partition, to absorb the few-pixel coadd-vs-epoch registration offset
+        the coadd-seg overlay accepts (shapepipe#776, decision on seg source).
+        ``0`` (the default) recovers the pure Sheldon UberSeg mask, byte-for-
+        byte. The dilation is additive: it only ever zeros more pixels, never
+        restores a base-masked one, so over-masking a boundary pixel costs a
+        little central-object S/N but never leaks neighbour flux into the fit.
+
+    Returns
+    -------
+    numpy.ndarray
+        Copy of ``weight`` with neighbour-side pixels zeroed.
+    """
+    weight = np.copy(weight)
+
+    obj_pix = np.argwhere(seg != 0)
+    # No detected footprint, or only sky plus the central object: there is
+    # no neighbour to mask, so the weight is unchanged (cf. MEDS' early
+    # ``len(np.unique(seg)) == 2`` return).
+    if obj_pix.shape[0] == 0:
+        return weight
+    labels = seg[seg != 0]
+    if np.all(labels == object_number):
+        return weight
+
+    # Nearest segmentation pixel for every stamp pixel; zero the weight
+    # wherever that nearest footprint belongs to a neighbour rather than to
+    # the central object.
+    grid = np.indices(seg.shape).reshape(2, -1).T
+    _, nearest = cKDTree(obj_pix).query(grid)
+    nearest_label = labels[nearest].reshape(seg.shape)
+    weight[nearest_label != object_number] = 0.0
+
+    # Enlarge the neighbour mask to absorb the coadd-vs-epoch offset: zero any
+    # pixel within ``dilate_neighbour`` of a neighbour footprint. Purely
+    # additive over the base Voronoi result above.
+    if dilate_neighbour > 0:
+        neighbour_mask = binary_dilation(
+            (seg != 0) & (seg != object_number),
+            iterations=dilate_neighbour,
+        )
+        weight[neighbour_mask] = 0.0
+
+    return weight
+
+def prepare_ngmix_weights(
+    gal, weight, flag, rng, bkg_rms=None,
+    blend_handling="noisefill", seg=None, object_number=None,
+    dilate_neighbour=0,
+):
     """bookkeeping for ngmix weights. runs on a single galaxy and epoch
         pixel scale and galaxy guess
         TO DO: decide if we want galaxy guess stuff
@@ -1170,16 +1554,39 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
     bkg_rms : numpy.ndarray, optional
         Per-pixel background RMS map. If supplied, unmasked pixels use
         ``1 / bkg_rms**2`` as the ngmix inverse variance.
+    blend_handling : {"noisefill", "uberseg"}, optional
+        How to treat pixels shared with a neighbour. ``"noisefill"`` (default)
+        replaces flagged pixels with a noise realisation and keeps their
+        inverse-variance weight — the historical behaviour. ``"uberseg"``
+        instead hard-masks (weight = 0) every pixel closer to a neighbour's
+        segmentation footprint than to the central object's, leaving the
+        image untouched (see :func:`uberseg_weight`).
+    seg : numpy.ndarray, optional
+        Segmentation map on the stamp grid (object NUMBERs). Required for
+        ``blend_handling="uberseg"``; ignored otherwise.
+    object_number : int, optional
+        Central object's segmentation label. Required for
+        ``blend_handling="uberseg"``; ignored otherwise.
+    dilate_neighbour : int, optional
+        Neighbour-mask dilation iterations, passed to :func:`uberseg_weight`
+        under ``blend_handling="uberseg"``; ignored otherwise.
 
     Returns
     -------
     numpy.ndarray
-        Galaxy image with masked pixels replaced by noise.
+        Galaxy image. For ``"noisefill"`` masked pixels are replaced by noise;
+        for ``"uberseg"`` the image is returned untouched.
     numpy.ndarray
         Variance map for NGMIX.
     numpy.ndarray
         Noise image.
     """
+    if blend_handling not in BLEND_HANDLINGS:
+        raise ValueError(
+            f"Unknown blend_handling '{blend_handling}'; expected one of"
+            + f" {BLEND_HANDLINGS}"
+        )
+
     mask = np.copy(weight) != 0
     mask[flag != 0] = False
 
@@ -1219,7 +1626,23 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
     noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
 
     gal_masked = np.copy(gal)
-    if (~mask).any():
+    if blend_handling == "uberseg":
+        # Hard-mask neighbour-side pixels (weight -> 0) from the segmentation
+        # geometry; the image is left untouched (the masked pixels carry no
+        # weight, so ngmix ignores them in the likelihood). Bad/flagged
+        # pixels already sit at weight 0 from the mask above.
+        if seg is None or object_number is None:
+            raise ValueError(
+                "blend_handling='uberseg' requires a segmentation map and the"
+                + " central object_number; none reached prepare_ngmix_weights."
+                + " Set SEG_VIGNET_PATH on the ngmix run (see"
+                + " CosmoStat/shapepipe#776)."
+            )
+        weight_map = uberseg_weight(
+            weight_map, seg, object_number, dilate_neighbour=dilate_neighbour
+        )
+    elif (~mask).any():
+        # noisefill (default): replace masked pixels with a noise realisation.
         gal_masked[~mask] = noise_img_gal[~mask]
 
     return gal_masked, weight_map, noise_img
@@ -1227,6 +1650,8 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
 def make_ngmix_observation(
     gal, weight, flag, psf, wcs, rng,
     bkg_rms=None, centroid_source="hsm", wcs_full=None, ra=None, dec=None,
+    blend_handling="noisefill", seg=None, object_number=None,
+    dilate_neighbour=0,
 ):
     """Build an ngmix Observation for a single galaxy epoch.
 
@@ -1265,6 +1690,18 @@ def make_ngmix_observation(
     ra, dec : float, optional
         Object sky position in degrees. Required for
         ``centroid_source="wcs"`` (ignored for ``"hsm"``).
+    blend_handling : {"noisefill", "uberseg"}, optional
+        Neighbour treatment passed through to :func:`prepare_ngmix_weights`;
+        the default ``"noisefill"`` is the historical behaviour.
+    seg : numpy.ndarray, optional
+        Segmentation map on the stamp grid. Required for
+        ``blend_handling="uberseg"`` (ignored otherwise).
+    object_number : int, optional
+        Central object's segmentation label. Required for
+        ``blend_handling="uberseg"`` (ignored otherwise).
+    dilate_neighbour : int, optional
+        Neighbour-mask dilation iterations passed through to
+        :func:`prepare_ngmix_weights` under ``blend_handling="uberseg"``.
 
     Returns
     -------
@@ -1290,7 +1727,9 @@ def make_ngmix_observation(
     psf_obs = Observation(psf, weight=psf_wt, jacobian=psf_jacob)
 
     gal_masked, weight_map, noise_img = prepare_ngmix_weights(
-        gal, weight, flag, rng, bkg_rms=bkg_rms
+        gal, weight, flag, rng, bkg_rms=bkg_rms,
+        blend_handling=blend_handling, seg=seg, object_number=object_number,
+        dilate_neighbour=dilate_neighbour,
     )
 
     if centroid_source == "hsm":
@@ -1509,7 +1948,9 @@ def make_runners(prior, flux_guess, rng):
 
 
 def do_ngmix_metacal(
-    stamp, prior, flux_guess, rng, centroid_source="hsm", metacal_psf="fitgauss"
+    stamp, prior, flux_guess, rng, centroid_source="hsm",
+    blend_handling="noisefill", object_number=None, dilate_neighbour=0,
+    metacal_psf="fitgauss",
 ):
     """Do Ngmix Metacal.
 
@@ -1532,6 +1973,19 @@ def do_ngmix_metacal(
         adaptive-moment centroid); ``"wcs"`` uses the catalog sky position
         projected through the WCS — see that function for the star-vs-galaxy
         rationale.
+    blend_handling : {"noisefill", "uberseg"}, optional
+        Neighbour treatment passed through to
+        :func:`make_ngmix_observation`; the default ``"noisefill"`` is the
+        historical behaviour. ``"uberseg"`` consumes ``stamp.segs`` and
+        ``object_number``.
+    object_number : int, optional
+        Central object's segmentation label — its SExtractor ``NUMBER``
+        (``obj_id``), authoritative because seg labels are the NUMBERs of the
+        same SE run (shapepipe#776). Required for ``blend_handling="uberseg"``
+        (ignored otherwise).
+    dilate_neighbour : int, optional
+        Neighbour-mask dilation iterations passed through to
+        :func:`make_ngmix_observation` under ``blend_handling="uberseg"``.
     metacal_psf : {"fitgauss", "gauss", "dilate", "azgauss"}, optional
         The metacal reconvolution-kernel scheme passed to ngmix as
         ``metacal_pars['psf']``. The default ``"fitgauss"`` fits a Gaussian to
@@ -1573,6 +2027,10 @@ def do_ngmix_metacal(
             wcs_full=stamp.wcs[n_e] if n_e < len(stamp.wcs) else None,
             ra=stamp.ra[n_e] if n_e < len(stamp.ra) else None,
             dec=stamp.dec[n_e] if n_e < len(stamp.dec) else None,
+            blend_handling=blend_handling,
+            seg=stamp.segs[n_e] if n_e < len(stamp.segs) else None,
+            object_number=object_number,
+            dilate_neighbour=dilate_neighbour,
         )
         gal_obs_list.append(gal_obs)
 
