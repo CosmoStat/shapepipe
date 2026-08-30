@@ -53,7 +53,6 @@ an under-masked exposure.
 
 import argparse
 import json
-import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -62,9 +61,12 @@ import numpy as np
 import healpy as hp
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from astropy.io import fits
 from astropy.table import Table, vstack
-from astropy.wcs import WCS
+
+# The PYTHONPATH pin in profiles/nibi puts this checkout's src/ on the path (see
+# exposure.smk's in_container), the same way the vizier helper is reached below.
+from shapepipe.utilities.file_io import write_atomic
+from shapepipe.utilities.focal_plane import focal_plane_disc
 
 # GSC 2.3. The same catalogue the mask module's own CDS path uses
 # (mask.py: _CDS_cat_ID), so the store is a drop-in for it.
@@ -133,25 +135,6 @@ def pixel_cone(ipix: int) -> tuple[float, float, float]:
     return float(ra_c), float(dec_c), float((radius + MARGIN_DEG) * 60.0)
 
 
-def write_atomic(table: Table, path: Path) -> None:
-    """Publish ``table`` at ``path`` all-or-nothing.
-
-    The store's only cache test is ``Path.exists``, so a write killed part-way
-    (timeout, OOM, node failure) would otherwise leave a truncated FITS that
-    every later run trusts forever. The temp keeps the ``.fits`` suffix because
-    astropy picks its writer from the extension, and is dot-prefixed and
-    PID-tagged so it stays out of the ``star_chunk-*`` globs and two concurrent
-    writers cannot collide.
-    """
-    tmp = path.parent / f".tmp-{os.getpid()}-{path.name}"
-    try:
-        table.write(tmp, overwrite=True)
-        os.replace(tmp, path)
-    finally:
-        if tmp.exists():
-            tmp.unlink()
-
-
 def read_chunks(store: Path, ipixels: list[int]) -> Table:
     """Load and deduplicate the given chunks.
 
@@ -173,50 +156,10 @@ def read_chunks(store: Path, ipixels: list[int]) -> Table:
 
 
 # --- exposure footprint -----------------------------------------------------
-
-
-def _wcs(header) -> WCS:
-    """Build the WCS by hand, from the linear terms only.
-
-    Same construction as ``scripts/python/create_star_cat.py``: it sidesteps
-    distortion-convention incompatibilities between headers and astropy, and a
-    focal-plane footprint needs nothing finer.
-    """
-    w = WCS(naxis=2)
-    w.wcs.ctype = [header["CTYPE1"], header["CTYPE2"]]
-    try:
-        w.wcs.cunit = [header["CUNIT1"], header["CUNIT2"]]
-    except KeyError:
-        w.wcs.cunit = ["deg", "deg"]
-    w.wcs.crpix = [header["CRPIX1"], header["CRPIX2"]]
-    w.wcs.crval = [header["CRVAL1"], header["CRVAL2"]]
-    w.wcs.cd = [[header["CD1_1"], header["CD1_2"]],
-                [header["CD2_1"], header["CD2_2"]]]
-    return w
-
-
-def focal_plane_disc(image: Path, n_ccd: int = 40) -> tuple[float, float, float]:
-    """(ra, dec, radius_deg) of the disc covering all CCDs of one exposure."""
-    # ONE open for all 40 CCDs. `fits.getheader(image, ext)` opens the file,
-    # walks the HDU list to `ext` and closes again, so the loop cost 40 opens and
-    # O(n^2) header seeks over a compressed multi-extension exposure.
-    centers, radii = [], []
-    with fits.open(image) as hdul:
-        for ext in range(1, n_ccd + 1):
-            h = hdul[ext].header
-            w = _wcs(h)
-            (ra_c, dec_c), (ra_0, dec_0) = w.all_pix2world(
-                [[h["NAXIS1"] / 2.0, h["NAXIS2"] / 2.0], [0, 0]], 1)
-            centers.append(SkyCoord(ra_c * u.deg, dec_c * u.deg))
-            radii.append(centers[-1].separation(
-                SkyCoord(ra_0 * u.deg, dec_0 * u.deg)).deg)
-
-    ras = np.array([c.ra.deg for c in centers])
-    decs = np.array([c.dec.deg for c in centers])
-    center = SkyCoord(ras.mean() * u.deg, decs.mean() * u.deg)
-    seps = center.separation(SkyCoord(ras * u.deg, decs * u.deg)).deg
-    return (float(center.ra.deg), float(center.dec.deg),
-            float(np.max(seps + np.array(radii))))
+# The WCS construction and the focal-plane disc live in
+# shapepipe.utilities.focal_plane, beside the vizier helper and imported the same
+# way: create_star_cat.py needs exactly the same geometry, and the two must not
+# be able to disagree about which sky an exposure covers.
 
 
 def exposure_image(images_dir: Path) -> Path:
