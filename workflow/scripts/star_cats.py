@@ -197,15 +197,19 @@ def _wcs(header) -> WCS:
 
 def focal_plane_disc(image: Path, n_ccd: int = 40) -> tuple[float, float, float]:
     """(ra, dec, radius_deg) of the disc covering all CCDs of one exposure."""
+    # ONE open for all 40 CCDs. `fits.getheader(image, ext)` opens the file,
+    # walks the HDU list to `ext` and closes again, so the loop cost 40 opens and
+    # O(n^2) header seeks over a compressed multi-extension exposure.
     centers, radii = [], []
-    for ext in range(1, n_ccd + 1):
-        h = fits.getheader(image, ext)
-        w = _wcs(h)
-        (ra_c, dec_c), (ra_0, dec_0) = w.all_pix2world(
-            [[h["NAXIS1"] / 2.0, h["NAXIS2"] / 2.0], [0, 0]], 1)
-        centers.append(SkyCoord(ra_c * u.deg, dec_c * u.deg))
-        radii.append(centers[-1].separation(
-            SkyCoord(ra_0 * u.deg, dec_0 * u.deg)).deg)
+    with fits.open(image) as hdul:
+        for ext in range(1, n_ccd + 1):
+            h = hdul[ext].header
+            w = _wcs(h)
+            (ra_c, dec_c), (ra_0, dec_0) = w.all_pix2world(
+                [[h["NAXIS1"] / 2.0, h["NAXIS2"] / 2.0], [0, 0]], 1)
+            centers.append(SkyCoord(ra_c * u.deg, dec_c * u.deg))
+            radii.append(centers[-1].separation(
+                SkyCoord(ra_0 * u.deg, dec_0 * u.deg)).deg)
 
     ras = np.array([c.ra.deg for c in centers])
     decs = np.array([c.dec.deg for c in centers])

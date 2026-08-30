@@ -95,7 +95,6 @@ COMPLETENESS = {
 
     # --- tile post ---
     "tile_merge_headers": {"merge_headers_runner": dict(expect=1, floor=1)},
-    "tile_mask":          {"mask_runner":          dict(expect=1, floor=1)},
     "tile_detect":        {"sextractor_runner":    dict(expect=2, floor=2)},
     "tile_vignets": {
         "psfex_interp_runner":     dict(expect=1, floor=1),
@@ -112,13 +111,32 @@ COMPLETENESS = {
 
 
 def count_products(run_dir, runner, spec):
-    """Count files in ``run_dir/<runner>/output[/<subpath>]/`` (live links only)."""
+    """Count files in ``run_dir/<runner>/output[/<subpath>]/`` (live links only).
+
+    scandir, not iterdir: the dirent already says whether an entry is a symlink,
+    so only the symlinks need the follow-stat that drops dead links. A plain
+    ``p.exists()`` per entry stats every one of them, and at DR6 scale this runs
+    once per runner per job over directories of tens to hundreds of files on a
+    network filesystem.
+    """
     out = run_dir / runner / "output"
     if "subpath" in spec:
         out = out / spec["subpath"]
     if not out.is_dir():
         return 0
-    return sum(1 for p in out.iterdir() if p.exists())  # p.exists() drops dead links
+    n = 0
+    try:
+        with os.scandir(out) as entries:
+            for e in entries:
+                # A dead symlink is the one thing that must not count (the bash
+                # `ls | wc -l` semantics this ports counted live files only), and
+                # a symlink is the only entry that can be dead — so it is the
+                # only one worth a follow-stat.
+                if not e.is_symlink() or os.path.exists(e.path):
+                    n += 1
+    except OSError:
+        return 0
+    return n
 
 
 def check_floor(stage, run_dir):
@@ -143,6 +161,13 @@ def check_floor(stage, run_dir):
 # committed configs' RUN_NAMEs (RUN_DATETIME=False makes them fixed, PRD D2), so
 # the check never resolves a run-log. The ngmix entry interpolates the same env
 # var its config does, so chunk K's check looks at chunk K's dir.
+#
+# EVERY ENTRY HERE (and in COMPLETENESS above) HAS A RULE. The table used to
+# carry two stages that did not: `tile_mask` (run_sp_tile_Ma, mask_runner 1/1)
+# and `tile_detect_uc` (run_sp_tile_Uc). The committed config chain is the
+# "sx_nomask" tile_detect variant and no tile-mask config was committed, so both
+# were unreachable — tile.smk's docstring is where the masked variant is argued,
+# and it is a config plus a rule plus these two rows, added back together.
 STAGE_DIR = {
     "tile_get_images":     ("tile", "run_sp_tile_Git"),
     "tile_uncompress":     ("tile", "run_sp_tile_Uz"),
@@ -152,9 +177,7 @@ STAGE_DIR = {
     "exp_mask":            ("exp",  "run_sp_exp_Ma"),
     "exp_psf":             ("exp",  "run_sp_exp_SxSePsfPi"),
     "tile_merge_headers":  ("tile", "run_sp_tile_Mh_exp"),
-    "tile_mask":           ("tile", "run_sp_tile_Ma"),
     "tile_detect":         ("tile", "run_sp_tile_Sx"),
-    "tile_detect_uc":      ("tile", "run_sp_tile_Uc"),
     "tile_vignets":        ("tile", "run_sp_tile_PiViVi"),
     "tile_ngmix":          ("tile", "run_sp_tile_ngmix_Ng${SP_NGMIX_CHUNK}u"),
     "tile_merge_cats":     ("tile", "run_sp_Ms"),

@@ -40,9 +40,13 @@ No disk scanning: counting products is the *check's* job, done once at the momen
 the products were fresh. A unit with no manifest for a stage is "not run" — which
 is a real and distinct answer from "ran and produced nothing".
 
-Records are discovered by glob (``tiles/**/manifests/*.json`` and
-``tiles/**/logs/*.json``), not by constructed path: the unit stores are sharded
-(``tiles/<prefix>/<ID>/``) and the sharding depth is not this script's business.
+Records are discovered by glob (``tiles/*/*/manifests/*.json`` and
+``tiles/*/*/logs/*.json``), not by constructed path: units are found rather than
+named, so a store holding a unit the index never heard of still reports. The
+depth is FIXED at two, because the sharded layout is exactly two levels
+(``tiles/<prefix>/<ID>/``) — a ``**`` walked the whole tree, including every
+``output/`` a run has not reclaimed yet, to find records that can only ever be
+at one depth.
 """
 
 import argparse
@@ -123,8 +127,8 @@ def load_manifests(run_dir: Path, sub: str) -> dict:
     ours, which is what keeps a stray JSON deeper in the tree inert.
     """
     out: dict = defaultdict(dict)
-    paths = sorted((run_dir / sub).glob("**/manifests/*.json")) \
-        + sorted((run_dir / sub).glob("**/logs/*.json"))
+    paths = sorted((run_dir / sub).glob("*/*/manifests/*.json")) \
+        + sorted((run_dir / sub).glob("*/*/logs/*.json"))
     for path in paths:
         try:
             m = json.loads(path.read_text())
@@ -179,7 +183,7 @@ def absorb_tombstones(run_dir: Path, sub: str, manifests: dict,
     record belongs to, which nothing here records today.
     """
     cleaned = set()
-    for path in sorted((run_dir / sub).glob("**/cleaned.json")):
+    for path in sorted((run_dir / sub).glob("*/*/cleaned.json")):
         unit = path.parent.name
         try:
             tomb = json.loads(path.read_text())
@@ -238,7 +242,11 @@ def tally_level(units, stages, manifests, cleaned=frozenset()) -> dict:
     """
     per_stage = {}
     for stage in stages:
-        t = {"complete": 0, "warn": [], "failed": [], "not_run": [], "cleaned": []}
+        # All five status keys are unit-id LISTS, "complete" included: it used
+        # to be a bare int, which made it the one key a caller had to special-
+        # case. The emitted JSON gains the complete-unit list; the printed
+        # counts are len() of it.
+        t = {"complete": [], "warn": [], "failed": [], "not_run": [], "cleaned": []}
         agg = defaultdict(lambda: {"found": 0, "expect": 0, "by_unit": {}})
         for u in units:
             m = manifests.get(u, {}).get(stage)
@@ -249,10 +257,7 @@ def tally_level(units, stages, manifests, cleaned=frozenset()) -> dict:
                 t["cleaned"].append(u)
             status = m.get("status", "failed")
             status = status if status in ("complete", "warn") else "failed"
-            if status == "complete":
-                t["complete"] += 1
-            else:
-                t[status].append(u)
+            t[status].append(u)
             if status == "failed":
                 # Failed units are named above, never folded into the attrition
                 # aggregate: a whole-unit failure is not per-CCD attrition, and
@@ -315,7 +320,7 @@ def print_stage_table(title, per_stage, n_units):
     for stage, t in per_stage.items():
         att = [f"{r} {a['found']}/{a['expect']}"
                for r, a in t["products"].items() if a["found"] < a["expect"]]
-        print(f"  {stage:<20} {t['complete']:>6} {len(t['warn']):>6} "
+        print(f"  {stage:<20} {len(t['complete']):>6} {len(t['warn']):>6} "
               f"{len(t['failed']):>6} {len(t['not_run']):>8} "
               f"{len(t.get('cleaned', [])):>8}  {', '.join(att)[:60]}")
 
@@ -395,7 +400,7 @@ def main() -> None:
     blocked = {t: sorted(set(tile_exp.get(t, [])) & bad_exp) for t in tiles}
     report["tiles_blocked_by_exposures"] = {t: e for t, e in blocked.items() if e}
 
-    done = report["tile_stages"]["tile_make_cat"]["complete"]
+    done = len(report["tile_stages"]["tile_make_cat"]["complete"])
     report["final_cats"] = {"present": done, "of": len(tiles)}
 
     out = args.out or (args.index.parent / "run_report.json")
