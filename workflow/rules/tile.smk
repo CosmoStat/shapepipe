@@ -742,3 +742,122 @@ rule tile_make_cat:
         ' | head -1)" {output.final_cat}\n'
         "fi\n"
         "exit $rc\n"
+
+
+# --- tile reclamation (D5) --------------------------------------------------
+# The tile-side counterpart of clean_exposure, and the differences are the whole
+# design. Read that rule's commentary in exposure.smk first; this one only says
+# where the tile case departs from it.
+#
+# WHY IT EXISTS. clean_exposure reclaims exposure stores; nothing reclaimed
+# tiles, so a FINISHED tile held 1.19 GiB across 137 inodes on scratch forever
+# (measured on 186.307; the per-directory breakdown is in clean_tile.py). At
+# DR6's 23,114 tiles that is 26.9 TiB against a 1 TiB quota and 3.17M inodes
+# against a 1M one. BOTH BOUNDS BIND, and the byte one binds first: without this
+# rule no batch may exceed ~859 tiles. The inode arithmetic is why the whole
+# directory goes rather than just `output/` — the 62 non-output inodes per tile
+# are still 1.43M at DR6, i.e. over quota on their own.
+#
+# ELIGIBILITY IS TRIVIAL, AND THAT IS THE POINT. An exposure's consumer set
+# closes over the CAMPAIGN (~7-10 tiles read each one), which is why
+# clean_targets() has to test every consumer and why clean_exposure carries the
+# set in params so a late append makes the tombstone stale. A tile's store has
+# NO consumer outside that tile: tiles read exposures, and nothing reads another
+# tile's store. So there is no consumer set, no eligibility test, no staleness
+# to detect — only an ordering edge on the tile's own final_cat.
+#
+# THE INPUT IS final_cat, ON THE PERSISTENT ROOT, AND NOT ancient(). It is
+# already the campaign's designated tile-finished marker (see final_cat()'s
+# docstring and tile_finished() above), and an ordinary input is what orders the
+# clean after the tile — which is what makes reclamation ROLLING: within one
+# invocation a tile is reclaimed as soon as its own chain lands, so the scratch
+# high-water tracks the tiles in flight instead of the tiles in the batch. That
+# is the whole reason the rule is worth having; ancient() would keep the
+# dependency but drop the ordering, and the batch would peak at its full size.
+#
+# SCOPE: TILES_READY only, never every tile in the index. clean_targets() has to
+# reason about eligibility; this one has to reason about the converse, and for a
+# different reason. Requesting an OUT-OF-SCOPE tile's tombstone would put that
+# tile's final_cat — hence its tile_make_cat job, hence the whole fused
+# tile_shape group — into this DAG, where the `params` rerun-trigger can find it
+# out of date (see the TILE_LOCAL warning above) and reschedule a finished tile
+# against exposure stores clean_exposure has already reclaimed. In scope, that
+# costs nothing: `rule all` requests the same final_cat anyway, so the clean adds
+# an edge and no jobs. Deferral, never loss: the tile list accumulates, so every
+# later invocation has the tile in scope and picks it up — which is also how
+# flipping `clean_tiles` on later reclaims retroactively (the tiles already
+# cleaned are exactly the ones with a tombstone).
+#
+# FOUR SURVIVORS, not one, and clean_tile.py argues each. Two of them are the
+# corrections this rule's first design needed: `manifests/tile_find_exposures.json`
+# (rule prepare_all_tiles declares it for EVERY tile in the list, and the list
+# accumulates — delete it and the prepare group reruns per cleaned tile per
+# invocation, writing uncompress's 382 MB back into the store) and the Fe
+# exposure list under `output/` (build_index.exp_list_path re-reads it at EVERY
+# compute parse; delete it and the default SP_MISSING_THRESHOLD of 0.0 makes the
+# first `sp run` after the first reclamation a fatal parse). Ten inodes per tile
+# survive in total, ~231k at DR6.
+#
+# THE SURVIVING tile_vignets.json DOES NOT TRIP TILE_VIGNET_REQUIRED, AND THE
+# REASON IS WHAT GETS DELETED, NOT WHAT GETS KEPT. Read that guard above first.
+# A cleaned tile is, on its face, exactly the state it exists to catch: a valid
+# tile_vignets manifest over a node-local store that is not there (here because
+# it never outlived its job, rather than because a fused group half-ran).
+# smk-g4's job_head.sh carries a runbook sweep for that state, and it skips any
+# tile with a final_cat — i.e. every tile this rule ever touches — so a cleaned
+# tile is invisible to it either way.
+#
+# Force a cleaned tile back anyway (delete its final_cat) and tile_vignets IS
+# rescheduled, so the store is rebuilt and no chunk trips the guard. Measured on
+# the fixture: 19 jobs, the whole chain from tile_get_images, tile_vignets inside
+# the tile_shape group. Snakemake names the mechanism itself --
+#   reason: Input files updated by another job: .../exp_forest,
+#           .../manifests/tile_find_exposures.json, .../manifests/tile_detect.json
+# -- and it is NOT the `mtime` trigger. It is the structural propagation that
+# makes every dependent of a rerunning job rerun, the same edge the cascade
+# commentary above says ancient() cannot suppress. Worth the distinction: that
+# propagation is not in profiles/nibi's rerun-triggers list and so cannot be
+# switched off there, where an mtime argument could be.
+#
+# So the guard stays silent only because tile_detect.json and exp_forest/ GO.
+# Counterfactual on the same fixture, upstream manifests restored and mtimes
+# controlled so nothing reruns on timestamp -- i.e. the "delete only output/"
+# design -- schedules 8 x tile_ngmix + tile_merge_cats + tile_make_cat with
+# tile_vignets ABSENT, and every chunk trips the guard.
+# ADDING A MANIFEST TO THE SURVIVOR LIST IS THEREFORE NOT FREE: tile_vignets is
+# safe because nothing upstream of it survives, and tile_detect.json in
+# particular must never join the list.
+#
+# A LOCALRULE (declared in the Snakefile), same as clean_exposure: it is an
+# rmtree, not science, and one sbatch per tile is ~23k scheduler submissions at
+# DR6 scale for work shorter than the scheduling latency. Unlike exp_star_cat it
+# is a DAG LEAF, so being local can never make it both a dependency and a
+# dependent of a group and there is no cycle to avoid — no `group:` label here,
+# and none possible.
+#
+# WHAT THIS SHARPENS ELSEWHERE: the TILE_LOCAL warning above says an edit to
+# tile_local() mid-campaign reruns finished tiles unsatisfiably because their
+# EXPOSURE stores are reclaimed. With this rule on, the tile's own store is gone
+# too, so the rerun has even less to stand on. The recommendation is unchanged —
+# land those edits between campaigns — but the margin for being wrong is smaller.
+rule clean_tile:
+    input:
+        # The tile-finished marker, on the persistent root. A lambda rather than
+        # the PROD_TILE_DIR pattern so there is exactly one definition of this
+        # path (final_cat() in the Snakefile), the same way clean_exposure keys
+        # off wildcards.exp alone.
+        lambda wc: final_cat(wc.tile)
+    output:
+        tombstone = f"{TILE_DIR}/cleaned.json"
+    params:
+        # clean_tile.py is external to the shell string, so the `code`
+        # rerun-trigger cannot see it — same reason SCRIPT_HASH exists.
+        script_hash = CLEAN_TILE_HASH
+    threads: 1
+    resources:
+        mem_mb = 2000,
+        runtime = 30
+    shell:
+        f"python {SCRIPTS}/clean_tile.py"
+        " --tile-dir $(dirname {output.tombstone}) --tile {wildcards.tile}"
+        " --tombstone {output.tombstone}"
