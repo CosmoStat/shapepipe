@@ -16,6 +16,11 @@ rebuilding it changes which jobs exist without invalidating completed work; it
 ACCUMULATES across invocations, so a later clean_exposure (S5) sees every
 consuming tile of the whole campaign, not just this tile list.
 
+Neither invocation reads the checkout: `sp run` snapshots the code into the
+campaign's state dir and points snakemake at THAT tree, so `workflow.basedir`
+below is the snapshot and mid-campaign edits are inert. The mechanism and its
+rationale live in bin/sp.
+
 The atom (D2): one rule == one `shapepipe_run` on one unit; its single declared
 output is its MANIFEST (`<unit dir>/manifests/<stage>.json`), written by
 `completeness.py check`. Product files are not declared — a missing CCD is often

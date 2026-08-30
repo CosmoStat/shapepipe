@@ -36,19 +36,23 @@ software-deployment-method: [apptainer]
 #  --home /home/cdaley wins over the SDM's --home <cwd>; restores cadcproxy.pem for vos/vcp
 #                      >>> EDIT THIS: THE ONE NON-PORTABLE LINE IN THIS FILE. <<<
 #                      The apptainer-args string below hardcodes one user's home
-#                      (--home /home/cdaley) and one checkout's src/ (the
-#                      PYTHONPATH pin). A different user must edit both by hand.
+#                      (--home /home/cdaley). A different user must edit it by hand.
 #                      IT CANNOT BE FIXED HERE: YAML cannot splice an env var, and
 #                      snakemake escapes a literal `$` before the string reaches
 #                      any shell (see the $SLURM_TMPDIR post-mortem below, which
-#                      cost a whole campaign). Nor can bin/sp inject it: snakemake's
-#                      --apptainer-args REPLACES the profile value rather than
-#                      appending to it, so the launcher would have to restate this
-#                      whole string -- and workflow/scripts/container.py reads THIS
-#                      LINE to give `sp container exec` the same environment jobs
-#                      get, so a second definition is exactly the divergence that
-#                      mechanism exists to prevent. One edited line beats two
-#                      sources of truth.
+#                      cost a whole campaign). Nor can bin/sp inject it through
+#                      --apptainer-args: that REPLACES the profile value rather
+#                      than appending to it, so the launcher would have to restate
+#                      this whole string -- and workflow/scripts/container.py reads
+#                      THIS LINE to give `sp container exec` the same environment
+#                      jobs get, so a second definition is exactly the divergence
+#                      that mechanism exists to prevent.
+#                      THE PYTHONPATH PIN IS THE ONE EXCEPTION, and it is not
+#                      edited by hand: `sp run` copies this whole file into the
+#                      campaign's code snapshot and rewrites that ONE path to the
+#                      snapshot's src/ (bin/sp, "the launch code snapshot"). Still
+#                      one source of truth for the flags -- the copy is generated,
+#                      never edited -- and jobs stop reading a live checkout.
 #  --bind /local       NODE-LOCAL NVME. $SLURM_TMPDIR on nibi is
 #                      /local/scratch/<user>.<jobid>.0, and the mount is /local
 #                      (/dev/nvme0n1, ext4, 3.5 TB) -- binding /localscratch is
@@ -106,6 +110,11 @@ software-deployment-method: [apptainer]
 #                      live p3-batch1 job reads it) and not the sif default
 #                      (frozen pre-#843, and pre-#873). Production later rebuilds
 #                      the sif at the validated commit and DROPS this --env line.
+#                      The path written HERE is the checkout's, and is what
+#                      `sp container exec` uses; the value JOBS see is the
+#                      snapshot's src/, substituted per the paragraph above. So a
+#                      running campaign holds its launch code even after this
+#                      line (or the tree it names) changes.
 apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/project/def-mjhudson/cdaley/shapepipe-snakemake/src --home /home/cdaley --bind /project --bind /scratch --bind /local"
 
 latency-wait: 60                 # NFS: wait for outputs to appear after a job

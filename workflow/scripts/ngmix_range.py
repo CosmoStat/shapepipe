@@ -61,10 +61,11 @@ same file, produced by one process from one read of the sexcat, so sibling
 chunks cannot disagree even in principle — the boundaries are a fact of the
 group job rather than a computation eight processes each have to land on. The
 mechanism that closes is a real one: this script used to run independently in
-each chunk's shell, and a group holds its chunks open over the LIVE checkout for
-hours (smk-g4: 6,236-7,762 s of elapsed per chunk), so an edit landed mid-flight
-was read by some chunks and not others. Observed once, live — the transcript is
-at tile.smk's range_hash, which is the home for that history.
+each chunk's shell, and a group holds its chunks open for hours (smk-g4:
+6,236-7,762 s of elapsed per chunk), reading — as every job did before the launch
+code snapshot (bin/sp) — the LIVE checkout, so an edit landed mid-flight was read
+by some chunks and not others. Observed once, live — the transcript is at
+tile.smk's range_hash, which is the home for that history.
 
 The rest of the determinism discipline stays, because it is what makes the
 written file trustworthy rather than merely shared: integer arithmetic end to

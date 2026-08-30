@@ -102,6 +102,26 @@ therefore two snakemake invocations over one Snakefile:
 `sp run` chains both so the UX is one command; both exit codes are checked
 and the run fails if either phase failed.
 
+## The launch code snapshot
+
+`sp run` copies the code it is about to launch — `workflow/` (config symlinks
+dereferenced), `src/` and the profile — into `<state dir>/code`, records HEAD
+plus a dirty flag in `<state dir>/code/snapshot.json`, and runs the campaign
+entirely out of that copy. It matters because a campaign is not one process: the
+SLURM executor re-invokes snakemake on every job's node, so jobs re-parse the
+Snakefile and read `workflow/scripts/*` and the ini chain hours after launch.
+**Editing the checkout while a campaign runs is therefore harmless; a change
+takes effect on the next `sp run`.**
+
+Everything workflow-internal hangs off `workflow.basedir`, which *is* the
+snapshot, so it follows for free. The one exception is the profile's `PYTHONPATH`
+pin, which YAML cannot interpolate: `sp run` rewrites that single path in the
+snapshot's copy of the profile and launches `--profile` at the copy. The snapshot
+is refreshed wholesale on every `sp run` — a new `sp run` *is* the relaunch — and
+the other verbs run out of the existing snapshot, `sp container` excepted (it is
+about the image you are working with now, not about a campaign). The mechanism
+and its rationale live in one place: `bin/sp`.
+
 ## Execution mode: one SLURM job per rule
 
 The profile (`profiles/nibi/config.yaml`) sets `executor: slurm`. Every rule
@@ -131,7 +151,7 @@ profile-only pass.
 workflow/
   Snakefile              parse-time index load; global container:; onsuccess/onerror report hooks
   config.yaml            the run: tile list, paths, container, chunk count
-  bin/sp                 committed launcher (module load + /project venv + run/report/container/cancel)
+  bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
     exposure.smk         per-exposure: get_images, star_cat, split, mask, psf (no temp())

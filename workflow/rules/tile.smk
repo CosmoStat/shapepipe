@@ -127,8 +127,10 @@ across INPUT_DIRs, so a shared pool cannot be symlinked in wholesale).
 #     whole exposure edge set, rebuilding the reclaimed chains from VOS. That is
 #     the rerun avalanche D5 exists to prevent, arriving through the params
 #     trigger instead of through inputs.
-# So: land changes to this function BETWEEN campaigns, never mid-campaign. If a
-# resume is genuinely needed after an edit, run it once with
+# So: land changes to this function BETWEEN campaigns. An edit cannot reach a
+# RUNNING one (the launch code snapshot, bin/sp) -- the hazard is the `sp run`
+# after it, which is a resume against finished tiles. If that resume is genuinely
+# needed, run it once with
 # `--rerun-triggers mtime code software-env`, accepting that clean_exposure's
 # consumer-set staleness detection (which rides on params) is off for that
 # invocation.
@@ -581,9 +583,10 @@ rule tile_ngmix:
         # design only reads as over-careful until you have seen this. The eight
         # chunks used to each run ngmix_range.py in their own shell and trust the
         # others to have landed on the same boundaries. A fused group holds them
-        # open over the LIVE checkout for hours (smk-g4: 6,236-7,762 s elapsed
-        # per chunk), and each chunk read the script only when its own shell
-        # started, so an edit landed mid-flight was read by some and not others.
+        # open for hours (smk-g4: 6,236-7,762 s elapsed per chunk), and each chunk
+        # read the script only when its own shell started -- against the LIVE
+        # checkout, as every job did before the launch code snapshot (bin/sp) --
+        # so an edit landed mid-flight was read by some and not others.
         # Seen once, live: an invocation four seconds after a rewrite returned
         # chunk 5 of 186.307 as 17649..22060 where the other seven had been split
         # 17129..21229 — 520 objects orphaned, 831 measured twice, and
