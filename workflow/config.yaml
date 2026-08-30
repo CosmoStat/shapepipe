@@ -6,15 +6,17 @@
 
 # The tile list that scopes this run (one "IDra.IDdec" per line).
 # The campaign grows by appending to this file — parse-time config, so
-# completed work is never invalidated. Current contents: the 34-tile smk-g4
-# benchmark set, identical to the tile list smk-g3 finished (the 186/187 quad
-# plus the first 30 p3-batch1 tiles), so the two campaigns' catalogues are
-# comparable object for object. It lives on the persistent root because it
-# defines the campaign and must outlive the scratch purge.
+# completed work is never invalidated. Current contents: smk-g5, ONE tile
+# (186.307), the paired control for the two fixes landed after smk-g4 — the
+# node-local WCS sqlite and tile_ngmix's mem_mb 14000 -> 5000. That tile ran
+# ALONE as smk-g4 job 20799387 (elapsed 8063 s, chunk median 6813 s, chunk mean
+# load 59%, MaxRSS 26.6 GiB), so the baseline carries no concurrency confound
+# and the contrast is same tile, same solitude, two commits apart.
+# The 34-tile smk-g4 set is preserved at smk-g4/tiles34.txt.
 # (The 210/211 quad used earlier is unusable: its tile images are symlinks into
 # anaennis' moved processed_tiles tree — ~8.5k of the 10.3k staged tiles are
 # broken.)
-tile_list: /project/def-mjhudson/cdaley/sp-products/smk-g4/tiles34.txt
+tile_list: /project/def-mjhudson/cdaley/sp-products/smk-g5/tiles1.txt
 
 # The container every job runs inside (apptainer software-deployment in the profile).
 container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
@@ -25,7 +27,7 @@ container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
 # intermediates, sized so a batch finishes inside the 60-day purge window. The
 # sharded per-unit stores live under it:
 #   <run_dir>/tiles/<2-char prefix>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
-run_dir: /scratch/cdaley/shapepipe-output/smk-g4
+run_dir: /scratch/cdaley/shapepipe-output/smk-g5
 
 # products_dir is the PERSISTENT root: the durable, low-volume products — the
 # final catalogues (<products_dir>/tiles/<prefix>/<ID>/final_cat-<ID>.fits,
@@ -42,7 +44,7 @@ run_dir: /scratch/cdaley/shapepipe-output/smk-g4
 #
 # Snakemake's own state is the one durable-looking thing that stays on scratch
 # (<run_dir>-state; bin/sp explains why).
-products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g4
+products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g5
 
 # There is no config_src knob: the config chain is workflow/config/cfis, resolved
 # relative to the Snakefile. The configs interpolate $SP_RUN / $SP_UNIT_NUM /
@@ -79,16 +81,17 @@ star_cats: /project/def-mjhudson/cdaley/sp-products/star-cat-cache
 # On the persistent root with the catalogues (D5): the index is the record of
 # which tile reads which exposure, so it is what a post-purge reconstruction
 # would otherwise have to rebuild from tile headers.
-index_db: /project/def-mjhudson/cdaley/sp-products/smk-g4/index/run_index.sqlite
+index_db: /project/def-mjhudson/cdaley/sp-products/smk-g5/index/run_index.sqlite
 
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
 # that exposure has its vignets, deletes the exposure's store AND its manifests,
 # and leaves `cleaned.json`, which absorbs the manifests — `sp report` reads them
-# back out of the tombstone and reports the exposure as `cleaned`. On for smk-g4:
-# reclamation is part of what this campaign measures, and at 34 tiles from
-# scratch the un-cleaned exposure high-water is the run's binding disk constraint.
-clean: true
+# back out of the tombstone and reports the exposure as `cleaned`. OFF for smk-g5:
+# this is a one-tile control, its ~8 exposure stores cost ~54 GiB against 979 GiB
+# free, reclamation is already measured exactly by smk-g4, and keeping the stores
+# means a re-measurement re-runs only the shape chain instead of the whole tile.
+clean: false
 
 # Tiles that may NOT pin an exposure store (default: empty).
 #
