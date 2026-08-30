@@ -24,7 +24,7 @@ Distinct tiles share no edge, so each is one group job per tile:
 * ``group: TILE_GROUP`` ("tile_shape") — tile_vignets -> 8 x tile_ngmix ->
   tile_merge_cats -> tile_make_cat, THE WHOLE SHAPE CHAIN AS ONE JOB. This is
   not a latency optimisation; it is what lets the 5.6 GB vignette store live on
-  node-local NVMe and never touch /scratch (see the TILE_LOCAL block below).
+  node-local NVMe and never touch /scratch (see tile_local() below).
   Composition, verified against snakemake 9.23.1 and a real sbatch:
   cpus = max over levels of summed siblings = max(8, 8x1, 8, 8) = 8;
   mem_mb = max(32000, 8x14000, 16000, 16000) = 112000;
@@ -77,19 +77,23 @@ across INPUT_DIRs, so a shared pool cannot be symlinked in wholesale).
 # config_tile_PiViVi.ini (OUTPUT_DIR = $SP_VIGNET_OUT) and
 # config_tile_Ng_template.ini / config_tile_Mc.ini ($NGMIX_VIGNET_DIR).
 #
-# WHY IT NEEDS THE GROUP. $SLURM_TMPDIR is per SLURM JOB. Unfused, tile_vignets
-# and tile_ngmix are different jobs on different nodes and the store MUST be on
-# shared storage. Fused, all members share one job, one node and one
-# $SLURM_TMPDIR, so the store written by the first member is simply there for
-# the rest. (Verified: group members see the same $SLURM_TMPDIR.)
+# WHY IT NEEDS THE GROUP. The store is node-local, so it exists only on the
+# machine that wrote it and only while that job lives. Unfused, tile_vignets and
+# tile_ngmix are different jobs on (usually) different nodes, and the store would
+# have to be on shared storage -- which is the whole problem. Fused, all members
+# run in one allocation on one node, so the store the first member writes is
+# simply there for the rest. (Verified live: group members share the directory.)
 #
-# HOW $SLURM_TMPDIR GETS IN HERE. profiles/nibi passes --bind /local and
-# --env SLURM_TMPDIR=$SLURM_TMPDIR through apptainer-args; --cleanenv strips
-# the real one. See that file for why {resources.tmpdir} is NOT usable (it
-# resolves to /tmp, a RAM-backed tmpfs) and why the expansion happens in the
-# job. The guard below turns any breakage in that chain into a hard failure
-# rather than a silent fall back onto NFS -- or, worse, a 5.6 GB write into a
-# tmpfs charged to the job's memory cgroup.
+# HOW THE PATH GETS IN HERE. Not through the environment. profiles/nibi passes
+# --bind /local, and tile_local() below builds the path from the tile wildcard,
+# which snakemake substitutes at DAG time. $SLURM_TMPDIR was the obvious choice
+# and does not work: snakemake escapes the `$` when it splices apptainer-args
+# into the job command, so the container gets the literal string and every fused
+# job dies on the guard (campaign 20798193, cancelled after 8 minutes). The guard
+# stays, because its job now is to catch a missing --bind rather than a missing
+# variable -- and either way the failure must be loud, never a silent fall back
+# onto NFS or into /tmp, which in this container is a tmpfs charged to the job's
+# memory cgroup.
 #
 # THE COST WE ACCEPT: a failure anywhere in the tile re-runs the WHOLE tile,
 # not one chunk, because the store dies with the job. At ~1 h per fused tile
@@ -99,19 +103,51 @@ across INPUT_DIRs, so a shared pool cannot be symlinked in wholesale).
 # prologue (unit_pre) and completeness.py are untouched by design: both are
 # fingerprinted into every rule, and changing either would invalidate the whole
 # campaign, including the 117 finished exposure chains.
-TILE_LOCAL = r"""
-if [ -z "${SLURM_TMPDIR:-}" ] || [ ! -d "${SLURM_TMPDIR}" ]; then
+def tile_local(tile):
+    """The node-local prologue, as bash, for one tile.
+
+    A FUNCTION of the tile rather than a constant, because the path has to be
+    literal by the time apptainer sees it. `$SLURM_TMPDIR` cannot be used:
+    snakemake escapes the `$` when it splices `apptainer-args` into the job
+    command, so the container receives the eight characters `$SLURM_TMPDIR`
+    and every fused job dies (observed live, campaign 20798193). Passing it
+    through `--env` fails the same way, and `APPTAINERENV_*` would have to be
+    exported by the job wrapper, which is snakemake's and not ours.
+
+    So the path is derived instead of communicated. `/local/scratch` on nibi is
+    `drwxrwxrwt root:root` -- world-writable with the sticky bit, verified in
+    the container (probe job 20798618) -- and the tile id is a wildcard
+    snakemake substitutes at DAG time, so the shell string carries a concrete
+    path with no `$` left for anything to escape. One group job per tile means
+    the name cannot collide; the sticky bit means nobody else can remove it.
+
+    What we give up is Slurm's own cleanup of `$SLURM_TMPDIR`. TILE_VIGNET_FRESH
+    reclaims a stale directory on the next attempt for the same tile, the trap
+    in the last group member removes it on the way out, and the sweep below
+    catches what a hard kill leaves behind -- on a shared node that last one is
+    manners, not housekeeping.
+
+    NOT `/tmp`: inside the container that is a 378 GB tmpfs, i.e. RAM charged to
+    the job's cgroup, so a 5.6 GB store there would be paid for twice.
+    """
+    return f'''
+if [ ! -d /local/scratch ]; then
   echo "tile_shape: node-local storage unavailable." >&2
-  echo "  SLURM_TMPDIR=${SLURM_TMPDIR:-<unset>} is not a directory in the container." >&2
-  echo "  profiles/nibi/config.yaml apptainer-args must carry BOTH" >&2
-  echo "    --bind /local   and   --env SLURM_TMPDIR=\$SLURM_TMPDIR" >&2
+  echo "  /local/scratch is not a directory inside the container." >&2
+  echo "  profiles/nibi/config.yaml apptainer-args must carry --bind /local" >&2
   exit 1
 fi
-export SP_LOCAL="$SLURM_TMPDIR/sp-tile"
+export SP_LOCAL="/local/scratch/sp-{tile}"
 export SP_VIGNET_OUT="$SP_LOCAL/output"
 export NGMIX_VIGNET_DIR="$SP_LOCAL/output/run_sp_tile_PiViVi"
-mkdir -p "$SP_VIGNET_OUT"
-"""
+mkdir -p "$SP_VIGNET_OUT" || {{
+  echo "tile_shape: cannot create $SP_LOCAL on this node." >&2
+  exit 1
+}}
+find /local/scratch -maxdepth 1 -name 'sp-*.*' -user "$(id -u)" -mmin +1440 \
+     -exec rm -rf {{}} + 2>/dev/null || true
+'''
+
 
 # Every member of a group job must agree on a STRING resource or snakemake
 # raises "Resource slurm_extra is a string but not all jobs in group require
@@ -370,7 +406,7 @@ rule tile_vignets:
     params:
         pre = lambda wc: unit_pre("tile_vignets", "tile", wc.tile,
                                   forest=forest_dir(wc.tile),
-                                  pre_run=[TILE_LOCAL, TILE_VIGNET_FRESH]),
+                                  pre_run=[tile_local(wc.tile), TILE_VIGNET_FRESH]),
         script_hash = SCRIPT_HASH
     # 8, not 16, for the same reason tile_ngmix is 1: `-b {threads}` is SMP
     # batch size over input FILE SETS, and a tile is one set -- this run's own
@@ -443,7 +479,7 @@ rule tile_ngmix:
                      f'"$SP_RUN" --chunk {wc.chunk} --n-chunks {NGMIX_CHUNKS}) '
                      f'|| exit 1',
                      'eval "$ngmix_range_out"',
-                     TILE_LOCAL, TILE_VIGNET_REQUIRED]),
+                     tile_local(wc.tile), TILE_VIGNET_REQUIRED]),
         script_hash = SCRIPT_HASH
     # ONE core, not four. `-b {threads}` is shapepipe_run's SMP BATCH SIZE
     # (pipeline/args.py) -- joblib Parallel(n_jobs=batch_size) over
@@ -556,7 +592,7 @@ rule tile_make_cat:
         f"{TILE_DIR}/logs/tile_make_cat.json"
     params:
         pre = lambda wc: unit_pre("tile_make_cat", "tile", wc.tile,
-                                  pre_run=[TILE_LOCAL, TILE_VIGNET_REQUIRED,
+                                  pre_run=[tile_local(wc.tile), TILE_VIGNET_REQUIRED,
                                            TILE_CLEAN]),
         script_hash = SCRIPT_HASH
     threads: 8

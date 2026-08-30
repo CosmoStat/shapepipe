@@ -50,7 +50,7 @@ software-deployment-method: [apptainer]
 #                      modules) --
 #                      snakemake/persistence/__init__.py::_software_stack_hash,
 #                      v9.23.1 -- and apptainer-args is not in that hash.
-#  --env SLURM_TMPDIR=$SLURM_TMPDIR
+# 
 #                      HOW the in-container shell LEARNS its node-local dir.
 #                      --cleanenv strips the real SLURM_TMPDIR, and the two
 #                      alternatives do not work here:
@@ -87,7 +87,7 @@ software-deployment-method: [apptainer]
 #                      live p3-batch1 job reads it) and not the sif default
 #                      (frozen pre-#843, and pre-#873). Production later rebuilds
 #                      the sif at the validated commit and DROPS this --env line.
-apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/project/def-mjhudson/cdaley/shapepipe-snakemake/src --home /home/cdaley --bind /project --bind /scratch --bind /local --env SLURM_TMPDIR=$SLURM_TMPDIR"
+apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/project/def-mjhudson/cdaley/shapepipe-snakemake/src --home /home/cdaley --bind /project --bind /scratch --bind /local"
 
 latency-wait: 60                 # NFS: wait for outputs to appear after a job
 keep-going: true                 # a failed job poisons only its cone; siblings run on
