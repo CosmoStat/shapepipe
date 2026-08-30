@@ -13,11 +13,9 @@ It reads two things and nothing else (PRD D3):
     tile->exposure edges that let an exposure failure be blamed on the tiles it
     blocks;
   * the **verdicts** written by ``completeness.py check`` — per-runner
-    found/expect/floor and log-scraped failure reasons — which land in two places
-    with two different lifetimes. Every run writes the unit's ``logs/<stage>.json``
-    (the rule's snakemake ``log:``, which snakemake never deletes); a run whose
-    verdict is a success ADDITIONALLY writes ``manifests/<stage>.json``, the
-    rule's declared output, which snakemake deletes when the job fails.
+    found/expect/floor and log-scraped failure reasons — in the unit's
+    ``logs/`` (every run) and ``manifests/`` (successes only; completeness.py
+    argues the split).
 
 Both dirs are read here and the status comes from the file BODY, so a failed
 stage speaks through its log while a successful one is corroborated by two
@@ -146,12 +144,10 @@ def absorb_tombstones(run_dir: Path, sub: str, manifests: dict,
                       survivors: frozenset = frozenset()) -> set:
     """Fill in reclaimed units from their ``cleaned.json``; return their ids.
 
-    A cleaned exposure has neither ``manifests/`` nor ``logs/`` —
-    ``clean_exposure`` deleted both, after copying every manifest verbatim into
-    the tombstone (the logs duplicate them). Read them back, or
-    the report inverts the truth exactly when reclamation works: the exposure
-    shows as "not run" and blocks the very tiles whose completion authorised the
-    deletion.
+    A cleaned exposure has neither ``manifests/`` nor ``logs/``; every manifest
+    was copied verbatim into the tombstone first. Read them back, or the report
+    inverts the truth exactly when reclamation works: the exposure shows as "not
+    run" and blocks the very tiles whose completion authorised the deletion.
 
     Manifests on disk win if both exist — that is a re-built chain, and the
     tombstone is then a stale record of the previous generation.
@@ -233,12 +229,8 @@ def tally_level(units, stages, manifests, cleaned=frozenset()) -> dict:
     exactly, including a warn on any one of the eight ngmix chunks (keep_worst
     is what makes that true on the tombstone path as well as on disk).
 
-    The per-runner ``products`` aggregate is NOT a per-chunk total, before or
-    after reclamation: a stage contributes the runners of its one surviving
-    record, so tile_ngmix attrition is counted over one chunk of eight. Reading
-    it as a whole-tile figure over-states completeness by 8x. That is a property
-    of collapsing the chunks to one stage row, not of cleaning, and the two
-    paths now agree on it.
+    The per-runner ``products`` aggregate is NOT a per-chunk total: reading it
+    as a whole-tile figure over-states completeness by 8x (see ``keep_worst``).
     """
     per_stage = {}
     for stage in stages:

@@ -11,10 +11,7 @@
 #   sp report [ARGS...]  emit run_report.json now (mid-run is fine).
 #   sp container VERB    manage the image every job runs inside: pull, status,
 #                      sandbox, exec, resolve. `sp container --help` documents
-#                      the two layers and the resolution order (sandbox -> your
-#                      cached SIF -> the `container:` path in config.yaml).
-#                      `pull` needs the network: run it on a login node or in an
-#                      salloc allocation, never from a batch job.
+#                      the layers and the resolution order.
 #
 # Anything else is passed straight through to snakemake with the same profile and
 # state dir (the escape hatch: `sp --unlock`, `sp exp_psf ...`, `sp --dag`).
@@ -49,9 +46,9 @@ RUN_DIR="$(cfg run_dir)"; INDEX_DB="$(cfg index_db)"
 # "durable, low-volume products go on /project". It is neither: one small, hot
 # metadata file per output, rewritten on every job, which at DR6 is >170k files
 # of churn against a backed-up filesystem with a 1M-inode group quota. It is also
-# reconstructible — losing it costs a re-parse, not a re-run. (The lesson arrived
-# the hard way: a hard 27/27 TiB group quota killed a metadata write mid-run,
-# live. The quota has since eased; the placement is right on its own merits.)
+# reconstructible — losing it costs a re-parse, not a re-run. (A hard 27/27 TiB
+# group quota killed a metadata write mid-run, live. The quota has since eased;
+# the placement is right on its own merits.)
 # --directory only moves state: all data paths are absolute, and the Snakefile
 # resolves its own configfile.
 STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"; mkdir -p "$STATE_DIR"

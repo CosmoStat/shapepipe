@@ -30,9 +30,9 @@ slowest chunk at 1.131x-1.627x its tile's median predicted cost (worst
 200.302), the new ones at 1.0000x-1.0002x, and the sum over tiles of
 slowest-chunk cost falls 132,875 -> 113,710 predicted CPU-s, 14.4%.
 
-Moving the boundaries is scientifically free: ngmix seeds its RNG from object
-POSITION (SEED_FROM_POSITION), so which chunk an object falls in cannot change
-its measurement.
+Moving the boundaries is scientifically free: ngmix's RNG is seeded per object
+from its sky position, so which chunk an object falls in cannot change its
+measurement (see ``ngmix_package.ngmix.position_seed``).
 
 DETERMINISM HERE IS CORRECTNESS, NOT TIDINESS. The n_chunks chunks are separate
 processes that each run this script independently and must derive the IDENTICAL
@@ -46,9 +46,8 @@ the chunks that hit the failure, shredding the tile's coverage instead of
 failing it.
 
 The cross-TIME case is not covered here and cannot be. NGMIX_RANGE_HASH
-(Snakefile) makes a RESUME across an edit rerun the chunks rather than mix two
-partitions, but a fused group holds its eight chunks open over the LIVE
-checkout for hours — smk-g4 measured 6,236-7,762 s of elapsed per chunk — and
+(Snakefile) handles a RESUME across an edit, but a fused group holds its eight
+chunks open over the LIVE checkout for hours — smk-g4 measured 6,236-7,762 s of elapsed per chunk — and
 each chunk reads this file only when its own shell starts. An edit landed
 mid-flight is therefore read by some chunks and not others. Seen once, live: an
 invocation four seconds after a rewrite returned chunk 5 of 186.307 as

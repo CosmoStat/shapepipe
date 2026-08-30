@@ -104,9 +104,7 @@ def main() -> None:
                   args.exp_dir / "star_cat_exp", args.exp_dir / "star_cat_tiles")
     targets = [t for t in candidates if t.is_symlink() or t.exists()]
 
-    # Tombstone first, complete, fsync'd — then delete. See the module docstring:
-    # the crash window has to sit where the data still exists, not where the
-    # record does not.
+    # Tombstone first, complete — then delete (see the module docstring).
     args.tombstone.parent.mkdir(parents=True, exist_ok=True)
     tmp = args.tombstone.with_suffix(".json.tmp")
     tmp.write_text(json.dumps({
@@ -120,8 +118,7 @@ def main() -> None:
 
     removed = []
     for target in targets:
-        # NEVER rmtree a symlink: star_cat_exp is a link into the shared pool in
-        # legacy unit dirs, and rmtree would follow it and empty that pool.
+        # NEVER rmtree a symlink (see the module docstring).
         if target.is_symlink():
             target.unlink()
         else:

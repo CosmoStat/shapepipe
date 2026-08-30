@@ -34,15 +34,8 @@ which ``bin/sp`` sets — after the PREPARE invocation has produced the tiles'
 find_exposures output. No other parse builds anything: a prepare parse or a
 passthrough invocation (``sp --unlock``, ``sp --dag``) just loads whatever is
 already on disk. (There is no ``sp index`` verb; the CLI below stays for
-hand-inspection.) It
-iterates the *declared* tile list and checks each tile's Fe output at its
-deterministic path (no globbing — O(tile-list) existence checks, respecting the
-no-``ls``-at-scale ban). A bad tile costs only that tile: it is recorded in
-``missing.json`` and the index is built over the rest. The build fails only if
-the missing *fraction* exceeds ``missing_threshold`` (``None`` disables the check
-entirely), so a keep-going download storm that lost a few tiles does not cost the
-run. The threshold is checked BEFORE anything is written, so a failed build
-leaves the previous index and ``missing.json`` intact.
+hand-inspection.) ``build`` below documents the missing-tile policy and the
+write ordering.
 
 Exposure IDs are stored with their trailing single-char suffix stripped
 (``2243881p`` -> ``2243881``); that ``exp_base`` is the dedup key and the

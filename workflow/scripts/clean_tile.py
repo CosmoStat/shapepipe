@@ -90,8 +90,9 @@ here: teach ``sp_tilecost.py`` to fall back to ``cleaned.json`` for a tile whose
 benchmark TSVs are gone. Until it does, per-chunk cost attribution stops at the
 first reclaimed tile even though the numbers are still on disk.
 
-DELETION IS SYMLINK-SAFE, and here that is not a nicety. A finished tile holds
-NINE symlinks in TWO classes, and the second is the one that matters:
+DELETION IS SYMLINK-SAFE (``clean_exposure`` gives the general reason), and here
+that is not a nicety. A finished tile holds NINE symlinks in TWO classes, and
+the second is the one that matters:
 
   * ``exp_forest/<shard>/<exp>/output`` — 7 links into the EXPOSURE stores,
     each shared with 7-10 other tiles. Rebuildable, but only by re-running those
@@ -112,29 +113,20 @@ the fixture: every link unlinked, no target followed. Whoever edits ``prune``
 next should know that the worst case is not a scratch store they could rebuild —
 it is a rmtree walking into half a terabyte of shared, backed-up survey data.
 
-LOGS ARE DELETED, NOT ABSORBED, for the same reason ``clean_exposure`` deletes
-them: on a finished tile every ``logs/<stage>.json`` is BYTE-IDENTICAL to the
-``manifests/<stage>.json`` beside it (verified across all 16 stage records of
-186.307), because completeness.py writes the same verdict to both and a tile
-with a failed stage has no final_cat and so is never cleaned. Absorbing them
-would duplicate the manifests the tombstone already carries.
+LOGS ARE DELETED, NOT ABSORBED, as in ``clean_exposure``, and here the
+duplication is exact: on a finished tile every ``logs/<stage>.json`` is
+BYTE-IDENTICAL to the ``manifests/<stage>.json`` beside it (verified across all
+16 stage records of 186.307), because a tile with a failed stage has no
+final_cat and so is never cleaned.
 
-ORDER: tombstone FIRST, complete and atomically renamed, and only then any
-deletion — the reverse of the obvious order, and the same choice
-``clean_exposure`` makes. A crash between the two leaves a tombstone beside a
-store that still exists: the next invocation treats the tile as cleaned and only
-disk is lost. Deleting first would put the crash window where the record that
-replaces the store was never written.
+ORDER: tombstone FIRST, then deletion — ``clean_exposure``'s docstring argues
+the crash window.
 
 There is no ``consumers`` field and no consumer-set staleness to detect, because
-a tile has no consumers. What reruns this job is the ordinary machinery: the
-``script_hash`` param carries this file's content hash (the ``code`` trigger
-hashes only the rule's shell string, not the scripts it calls), and the ``mtime``
-trigger fires if final_cat is ever rewritten. A rerun over an already-pruned tree
-deletes nothing — and, because absorption is ADDITIVE over the existing
-tombstone, does not blank the record either. See ``previous_record``: a naive
-re-absorption reduced a 16-manifest tombstone to the two surviving manifests,
-found by re-running the fixture clean twice.
+a tile has no consumers. What reruns this job is the ordinary machinery
+(``script_hash``, and ``mtime`` if final_cat is rewritten). A rerun over an
+already-pruned tree deletes nothing and, because absorption is ADDITIVE, does
+not blank the record either — see ``previous_record``.
 """
 
 import argparse
@@ -198,12 +190,11 @@ def previous_record(tombstone: Path) -> tuple:
     THE ABSORPTION IS ADDITIVE, and this is why. A second clean of an
     already-cleaned tile finds only the two surviving manifests on disk, so a
     fresh absorption would overwrite a complete record with a two-entry one and
-    the tile's history would be gone — silently, and for good. That is not a
-    hypothetical rerun: the ``script_hash`` param reruns this job on any edit to
-    this file, and the ``mtime`` trigger reruns it if final_cat is ever
-    rewritten. So the previous record is the BASE and what is on disk is laid
-    over it: a rebuilt stage's fresh manifest still wins, and a reclaimed one
-    keeps the only copy that exists.
+    the tile's history would be gone — silently, and for good. Found by running
+    the fixture clean twice; not hypothetical, since ``script_hash`` reruns this
+    job on any edit to this file. So the previous record is the BASE and what is
+    on disk is laid over it: a rebuilt stage's fresh manifest still wins, and a
+    reclaimed one keeps the only copy that exists.
     """
     if not tombstone.exists():
         return {}, {}
@@ -262,10 +253,8 @@ def prune(root: Path, keep: set, removed: list) -> None:
     survivor, recursed into iff it is a real directory on the way to one, and
     deleted otherwise.
 
-    ``is_symlink()`` is tested BEFORE ``is_dir()`` and before the recursion,
-    both for the reason ``clean_exposure`` gives (a dangling link is invisible to
-    ``exists()``) and for a sharper one here: ``exp_forest/`` holds ~8 links into
-    the shared exposure stores.
+    ``is_symlink()`` is tested BEFORE ``is_dir()`` and before the recursion —
+    see the module docstring on the two symlink classes.
     """
     ancestors = {p for k in keep for p in k.parents}
     for entry in sorted(root.iterdir()):
@@ -298,9 +287,7 @@ def main() -> None:
     manifests.update(absorb_manifests(mdir))
     benchmarks.update(absorb_benchmarks(mdir))
 
-    # Tombstone first, complete — then delete. See the module docstring: the
-    # crash window has to sit where the data still exists, not where the record
-    # does not.
+    # Tombstone first, complete — then delete (see the module docstring).
     args.tombstone.parent.mkdir(parents=True, exist_ok=True)
     tmp = args.tombstone.with_suffix(".json.tmp")
     tmp.write_text(json.dumps({
