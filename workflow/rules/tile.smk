@@ -519,20 +519,13 @@ rule tile_vignets:
         runtime = 20,
         slurm_extra = TILE_SLURM_EXTRA
     shell:
-        # sp_shell's body, except that the completeness check is pointed at the
-        # NODE-LOCAL run root. completeness.py is unmodified: --run-dir is its
-        # own documented override for "$SP_RUN", and --unit keeps the manifest's
-        # unit field the tile ID instead of the basename of the local root (it
-        # would otherwise default to "sp-tile"). Passing --unit also keeps the
-        # manifest CONTENT independent of the ephemeral local path, which the
-        # mtime rerun-trigger depends on.
-        "{params.pre}\n"
-        "rc=0\n"
-        'shapepipe_run -c "$SP_CONFIG/config_tile_PiViVi.ini" -b {threads} || rc=$?\n'
-        f"python {SCRIPTS}/completeness.py check tile_vignets {{output.manifest}}"
-        ' --run-dir "$SP_LOCAL" --unit {wildcards.tile}'
-        " --log {log} --job-rc \"$rc\" || rc=1\n"
-        "exit $rc\n"
+        # The completeness check is pointed at the NODE-LOCAL run root.
+        # completeness.py is unmodified: --run-dir is its own documented override
+        # for "$SP_RUN", and --unit keeps the manifest's unit field the tile ID
+        # instead of the basename of the local root (it would otherwise default
+        # to "sp-tile"). See sp_shell for the rest.
+        sp_shell("tile_vignets", "config_tile_PiViVi.ini",
+                 check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}')
 
 # ngmix shape measurement — N chunks per tile (D4). Each chunk computes its own
 # CLOSED object-ID range at EXECUTION time from this tile's own sexcat: a params
@@ -802,22 +795,15 @@ rule tile_make_cat:
         runtime = 15,
         slurm_extra = TILE_SLURM_EXTRA
     shell:
-        # sp_shell's body, plus the catalogue publish: a real file, so it is a
-        # real declared output (and it persists — never temp()). `--job-rc` is
-        # composed in for the same reason it is everywhere else (see sp_shell) —
-        # without it a job whose counts cleared their floors but whose
-        # shapepipe_run died writes a "complete" log for a manifest snakemake is
-        # about to delete.
-        "{params.pre}\n"
-        "rc=0\n"
-        'shapepipe_run -c "$SP_CONFIG/config_tile_Mc.ini" -b {threads} || rc=$?\n'
-        f"python {SCRIPTS}/completeness.py check tile_make_cat {{output.manifest}}"
-        ' --log {log} --job-rc "$rc" || rc=1\n'
-        "if [ $rc -eq 0 ]; then\n"
-        '  cp -f "$(ls -1 "$SP_RUN"/output/run_sp_Mc/make_cat_runner/output/final_cat*.fits'
-        ' | head -1)" {output.final_cat}\n'
-        "fi\n"
-        "exit $rc\n"
+        # The plain body plus the catalogue publish: final_cat is a real file, so
+        # it is a real declared output (and it persists — never temp()). The
+        # publish is guarded on rc, so a job whose shapepipe_run died never
+        # publishes a catalogue for a manifest snakemake is about to delete.
+        sp_shell("tile_make_cat", "config_tile_Mc.ini",
+                 post="if [ $rc -eq 0 ]; then\n"
+                      '  cp -f "$(ls -1 "$SP_RUN"/output/run_sp_Mc/make_cat_runner'
+                      '/output/final_cat*.fits | head -1)" {output.final_cat}\n'
+                      "fi\n")
 
 
 # --- tile reclamation (D5) --------------------------------------------------

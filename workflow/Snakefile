@@ -557,8 +557,19 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     return "\n".join(lines)
 
 
-def sp_shell(stage, config_name):
+def sp_shell(stage, config_name, *, check_args="", post=""):
     """The rule's shell string: prologue, one shapepipe_run, one completeness check.
+
+    EVERY rule that runs shapepipe_run goes through here, including the two that
+    need a little more than the plain body — they pass it rather than restating
+    it, so the rc composition below has exactly one definition:
+      * ``check_args`` — extra flags for the completeness check. tile_vignets
+        points it at the NODE-LOCAL run root (``--run-dir "$SP_LOCAL"``) and keeps
+        the manifest's unit field the tile ID rather than the local root's
+        basename (``--unit``), which also keeps the manifest content independent
+        of an ephemeral path the mtime rerun-trigger reads.
+      * ``post`` — bash between the check and the ``exit``. tile_make_cat
+        publishes its final_cat there, guarded on ``rc``.
 
     ``{threads}``, ``{output}`` and ``{log}`` are placeholders HERE and nowhere
     else (see unit_pre). ``-b {threads}`` makes SMP fork width and cpus_per_task
@@ -585,7 +596,9 @@ def sp_shell(stage, config_name):
         "rc=0\n"
         f"shapepipe_run -c \"$SP_CONFIG/{config_name}\" -b {{threads}} || rc=$?\n"
         f"python {SCRIPTS}/completeness.py check {stage} {{output.manifest}}"
+        f"{check_args}"
         " --log {log} --job-rc \"$rc\" || rc=1\n"
+        f"{post}"
         "exit $rc\n"
     )
 
