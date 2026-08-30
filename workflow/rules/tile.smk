@@ -528,14 +528,28 @@ rule tile_ngmix:
         # deliberate — it is what makes all eight run as one wave, and one wave
         # is what makes the group's runtime ONE chunk's runtime instead of eight.
         mem_mb = lambda wc, attempt: 14000 * attempt,
-        # 120, not 720. MEASURED on tile 198.305 chunk 1 with the store
-        # node-local (job 20795277): ~76 min elapsed for 3547 objects, against a
-        # 7h34m median on NFS — the same ~50 min of TotalCPU either way, so the
-        # six-fold collapse is pure I/O. 120 is that plus ~60% margin for a
-        # richer tile. It is the dominant term in the group's runtime sum, so
-        # the old 12 h ceiling is not free any more: at 720 the fused job would
-        # declare 12h45m and drop out of every 3 h partition.
-        runtime = 120,
+        # 120 on the FIRST attempt, and ATTEMPT-SCALED after it. MEASURED
+        # two ways, and the second is why the margin is thinner than it looks:
+        #   * alone (job 20795277, tile 198.305 chunk 1): ~76 min for 3547
+        #     objects = 1.29 s/object, against a 7h34m median on NFS -- the
+        #     same ~50 min of TotalCPU either way, so the collapse is pure I/O.
+        #   * EIGHT-WIDE on one node (job 20799387, tile 186.307, 4412
+        #     objects/chunk): 1.54 s/object steady-state, i.e. concurrency
+        #     costs ~19%, and the chunk lands at ~113 min. The campaign's
+        #     largest tile (198.306, 4678 objects/chunk) projects to ~120 --
+        #     exactly this number, with nothing left over.
+        #
+        # Inside a group SLURM enforces only the GROUP's wall (165 min), never
+        # a member's, so 120 is a budgeting term rather than a kill line and
+        # the worst tile still lands ~127 min inside 165. What is NOT safe is a
+        # flat retry: a group that TIMEOUTs re-queues against the identical
+        # wall and fails identically, burning three 165-minute allocations to
+        # learn nothing. Scaling with `attempt` keeps the happy path in
+        # cpubase_bycore_b1 (20+120+10+15 = 165 <= 180) and gives a retry real
+        # headroom (285 min, which is b2) instead of a rerun of the same
+        # failure. Attempt 1 is unchanged, so this does not perturb the
+        # benchmark -- it only makes the failure branch mean something.
+        runtime = lambda wc, attempt: 120 * attempt,
         slurm_extra = TILE_SLURM_EXTRA
     shell:
         sp_shell("tile_ngmix", "config_tile_Ng_template.ini")
