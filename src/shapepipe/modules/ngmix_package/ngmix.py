@@ -1000,13 +1000,24 @@ class Ngmix(object):
             id_last = obj_id
             count += 1
 
-            # Skip objects with no multi-epoch PSF or vignet data
-            if (vignet_cat.psf_vign_cat[str(obj_id)] == 'empty'
-                    or vignet_cat.gal_vign_cat[str(obj_id)] == 'empty'):
+            # Skip objects with no multi-epoch PSF or vignet data.
+            # Read each store once here and pass the dicts down: every
+            # sqlitedict access unpickles the object's whole all-epoch dict.
+            psf_obj = vignet_cat.psf_vign_cat[str(obj_id)]
+            gal_obj = vignet_cat.gal_vign_cat[str(obj_id)]
+            if psf_obj == 'empty' or gal_obj == 'empty':
                 n_empty_cat += 1
                 continue
 
-            stamp = prepare_postage_stamps(vignet_cat, obj_id, i_tile, tile_cat, self._bkg_sub)
+            stamp = prepare_postage_stamps(
+                vignet_cat,
+                obj_id,
+                i_tile,
+                tile_cat,
+                self._bkg_sub,
+                psf_obj,
+                gal_obj,
+            )
 
             if len(stamp.gals) == 0:
                 n_no_epoch += 1
@@ -1134,25 +1145,49 @@ class Ngmix(object):
         # Log mean ellipticity statistics
         self.log_mean_ellipticity()
 
-def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
+def prepare_postage_stamps(
+    vignet,
+    obj_id,
+    i_tile,
+    tile_cat,
+    bkg_sub=True,
+    psf_obj=None,
+    gal_obj=None,
+):
     # define per-object lists of individual exposures to go into ngmix
     stamp = Postage_stamp(bkg_sub=bkg_sub)
+    # Read each store's per-object dict ONCE: every sqlitedict access
+    # unpickles the object's whole all-epoch dict, so keeping these out of
+    # the epoch loop below saves O(n_epoch) full unpickles per store.
+    if psf_obj is None:
+        psf_obj = vignet.psf_vign_cat[str(obj_id)]
+    if gal_obj is None:
+        gal_obj = vignet.gal_vign_cat[str(obj_id)]
+    bkg_obj = (
+        vignet.bkg_vign_cat[str(obj_id)]
+        if stamp.bkg_sub and vignet.bkg_vign_cat is not None
+        else None
+    )
+    flag_obj = vignet.flag_vign_cat[str(obj_id)]
+    weight_obj = vignet.weight_vign_cat[str(obj_id)]
+    bkg_rms_obj = (
+        vignet.bkg_rms_vign_cat[str(obj_id)]
+        if vignet.bkg_rms_vign_cat is not None
+        else None
+    )
+    wcs_cache = {}
     #identify exposure and ccd number from psf catalog
-    psf_expccd_names = list(vignet.psf_vign_cat[str(obj_id)].keys())
+    psf_expccd_names = list(psf_obj.keys())
     for expccd_name in psf_expccd_names:
         exp_name, ccd_n = re.split('-', expccd_name)
 
-        gal_vign = (
-            vignet.gal_vign_cat[str(obj_id)][expccd_name]['VIGNET']
-        )
+        gal_vign = gal_obj[expccd_name]['VIGNET']
 
         if np.all(gal_vign == 0):
             continue
         
         if stamp.bkg_sub:
-            bkg_vign = (
-                vignet.bkg_vign_cat[str(obj_id)][expccd_name]['VIGNET']
-            )
+            bkg_vign = bkg_obj[expccd_name]['VIGNET']
             gal_vign_sub_bkg = background_subtract(
                 gal_vign,
                 bkg_vign
@@ -1185,9 +1220,7 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
         if stamp.megacam_flip and tile_seg is not None:
             tile_seg = Ngmix.MegaCamFlip(tile_seg, int(ccd_n))
 
-        flag_vign = (
-            vignet.flag_vign_cat[str(obj_id)][expccd_name]['VIGNET']
-        )
+        flag_vign = flag_obj[expccd_name]['VIGNET']
         if tile_vign is not None:
             flag_vign[np.where(tile_vign == -1e30)] = 2**10
         v_flag_tmp = flag_vign.ravel()
@@ -1195,23 +1228,27 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
         if len(np.where(v_flag_tmp != 0)[0]) / v_flag_tmp.size > 1 / 3.0:
             continue
 
-        weight_vign = vignet.weight_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+        weight_vign = weight_obj[expccd_name]['VIGNET']
         bkg_rms_vign = (
-            vignet.bkg_rms_vign_cat[str(obj_id)][expccd_name]['VIGNET']
-            if vignet.bkg_rms_vign_cat is not None
+            bkg_rms_obj[expccd_name]['VIGNET']
+            if bkg_rms_obj is not None
             else None
         )
 
-        epoch_wcs = vignet.f_wcs_file[exp_name][int(ccd_n)]['WCS']
+        # One unpickle per exposure (all CCDs), reused across this object's
+        # epochs; the cache is per-call, so bounded by the object's exposures
+        if exp_name not in wcs_cache:
+            wcs_cache[exp_name] = vignet.f_wcs_file[exp_name]
+        ccd_wcs = wcs_cache[exp_name][int(ccd_n)]
+
+        epoch_wcs = ccd_wcs['WCS']
         jacob = get_galsim_jacobian(
             epoch_wcs,
             tile_cat.ra[i_tile],
             tile_cat.dec[i_tile]
         )
 
-        header = fits.Header.fromstring(
-            vignet.f_wcs_file[exp_name][int(ccd_n)]['header']
-        )
+        header = fits.Header.fromstring(ccd_wcs['header'])
 
         # rescale by relative zero-points
         (
@@ -1227,9 +1264,7 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
 
         # gather postage stamps in all of the epochs
         stamp.gals.append(gal_vign_scaled)
-        stamp.psfs.append(
-            vignet.psf_vign_cat[str(obj_id)][expccd_name]['VIGNET']
-        )
+        stamp.psfs.append(psf_obj[expccd_name]['VIGNET'])
         stamp.weights.append(weight_vign_scaled)
         stamp.flags.append(flag_vign)
         stamp.bkg_rms.append(bkg_rms_vign_scaled)
