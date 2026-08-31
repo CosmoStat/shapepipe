@@ -6,9 +6,11 @@ from astropy.io import fits
 from astropy.wcs import WCS
 import numpy as np
 import numpy.testing as npt
+import pytest
 
 from shapepipe.modules.vignetmaker_package.vignetmaker import (
     VignetMaker,
+    get_stamps,
     make_mask,
 )
 
@@ -83,13 +85,131 @@ def test_get_stamp_preserves_count_and_stamp_shape(tmp_path):
     maker = VignetMaker.__new__(VignetMaker)
     maker._w_log = SimpleNamespace(info=lambda message: None)
 
-    stamps = maker._get_stamp(
+    positions = np.array([[10.0, 10.0], [14.2, 15.8]])
+    stamps, int_pos, offsets = maker._get_stamp(
         str(image_path),
-        np.array([[10.0, 10.0], [14.2, 15.8]]),
+        positions,
         rad=2,
     )
 
     assert stamps.shape == (2, 5, 5)
+    npt.assert_array_equal(int_pos, np.round(positions).astype(int))
+    npt.assert_allclose(offsets, positions - np.round(positions))
+
+
+def test_get_stamps_extracts_around_rounded_pixel():
+    """In-bounds stamps equal a manual zero-padded slice; bookkeeping holds."""
+    rng = np.random.default_rng(0)
+    image = rng.normal(size=(40, 40)).astype(np.float32)
+    rad = 3
+    positions = np.array([[10.0, 12.0], [20.4, 5.6], [0.0, 39.0], [39.0, 0.0]])
+
+    stamps, int_pos, offsets = get_stamps(image, positions, rad)
+
+    assert stamps.shape == (4, 2 * rad + 1, 2 * rad + 1)
+    npt.assert_array_equal(int_pos, np.round(positions).astype(int))
+    npt.assert_allclose(offsets, positions - np.round(positions))
+
+    padded = np.pad(image, ((rad, rad), (rad, rad)), mode="constant")
+    for stamp, (row, col) in zip(stamps, int_pos):
+        npt.assert_array_equal(
+            stamp, padded[row : row + 2 * rad + 1, col : col + 2 * rad + 1]
+        )
+
+
+def test_get_stamps_zero_pads_edges():
+    """A corner object is zero-padded on the out-of-frame side."""
+    image = np.ones((10, 10))
+    rad = 2
+
+    stamps, _, _ = get_stamps(image, np.array([[0.0, 0.0]]), rad)
+
+    expected = np.ones((5, 5))
+    expected[:2, :] = 0.0  # rows above the top edge
+    expected[:, :2] = 0.0  # cols left of the left edge
+    npt.assert_array_equal(stamps[0], expected)
+
+
+def test_get_stamps_offset_is_subpixel():
+    """Offset is the catalog float minus its rounded pixel, in [-0.5, 0.5]."""
+    image = np.zeros((20, 20))
+    positions = np.array([[10.3, 10.0], [10.7, 9.4], [10.5, 10.5]])
+
+    _, int_pos, offsets = get_stamps(image, positions, 2)
+
+    npt.assert_allclose(offsets, positions - int_pos)
+    assert np.all(np.abs(offsets) <= 0.5 + 1e-12)
+
+
+@pytest.mark.parametrize(
+    "positions",
+    [
+        np.array([[-1.0, 5.0]]),  # above the top edge
+        np.array([[5.0, 10.0]]),  # past the right edge (shape is 10)
+        np.array([[5.0, 5.0], [10.0, 5.0]]),  # one good, one out
+    ],
+)
+def test_get_stamps_raises_out_of_bounds(positions):
+    """Unlike sf_tools' modulo wrap, an out-of-bounds centre raises."""
+    image = np.zeros((10, 10))
+    with pytest.raises(ValueError, match="outside the image"):
+        get_stamps(image, positions, 2)
+
+
+def test_get_stamps_golden():
+    """Pin the extraction behavior with hand-derived expected values.
+
+    The bit-identity test against sf_tools below self-skips once sf_tools is
+    uninstalled (it is dropped as a dependency by this code), so this golden
+    test is what keeps the extraction pinned in CI: expected stamps are built
+    by arithmetic (``value = 10 * row + col``), independent of the pad/slice
+    implementation, and cover the two behaviors that matter — numpy's
+    round-half-to-even at a ``.5`` tie, and zero-padding past the image edge.
+    """
+    image = np.arange(100, dtype=float).reshape(10, 10)  # value = 10*r + c
+    rad = 2
+
+    # (4.5, 6.5) ties round half-to-even -> (4, 6); (3.5, 2.5) -> (4, 2).
+    positions = np.array([[4.5, 6.5], [3.5, 2.5], [0.4, 0.6]])
+    stamps, int_pos, offsets = get_stamps(image, positions, rad)
+
+    npt.assert_array_equal(int_pos, [[4, 6], [4, 2], [0, 1]])
+    npt.assert_allclose(offsets, [[0.5, 0.5], [-0.5, 0.5], [0.4, -0.4]])
+
+    def expected(r0, c0):
+        return [
+            [
+                10.0 * r + c if 0 <= r < 10 and 0 <= c < 10 else 0.0
+                for c in range(c0 - rad, c0 + rad + 1)
+            ]
+            for r in range(r0 - rad, r0 + rad + 1)
+        ]
+
+    for stamp, (r0, c0) in zip(stamps, int_pos):
+        npt.assert_array_equal(stamp, expected(r0, c0))
+
+
+@pytest.mark.parametrize("rad", [2, 3, 5])
+def test_get_stamps_matches_fetchstamps(rad):
+    """Bit-identical to sf_tools FetchStamps for in-bounds objects.
+
+    The extraction is pure slicing of a zero-padded array, so it is
+    value-independent: random data with positions spanning the interior and
+    the padded edges exercises exactly what a real exposure would. Skipped
+    once sf_tools is no longer installed (it is being dropped as a dep).
+    """
+    stamp_mod = pytest.importorskip("sf_tools.image.stamp")
+    rng = np.random.default_rng(42)
+    image = rng.normal(size=(60, 60))
+    # In-bounds positions, including edges (padding) — but never out of
+    # bounds, where FetchStamps wraps and get_stamps deliberately raises.
+    positions = rng.uniform(0.0, 59.0, size=(50, 2))
+
+    stamps, _, _ = get_stamps(image, positions, rad)
+
+    fetch = stamp_mod.FetchStamps(image, int(rad))
+    fetch.get_pixels(np.round(positions).astype(int))
+    npt.assert_array_equal(stamps, fetch.scan())
 
 
 def test_make_mask_replaces_only_sentinel_pixels(tmp_path):

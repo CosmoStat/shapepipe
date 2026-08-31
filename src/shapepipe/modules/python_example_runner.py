@@ -24,7 +24,6 @@ from shapepipe.modules.python_example_package import python_example
         "pandas",
         "pysap",
         "scipy",
-        "sf_tools",
         "sqlitedict",
     ],
     run_method="parallel",
