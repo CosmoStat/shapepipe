@@ -1,16 +1,24 @@
 ## SETools configuration file for star/galaxy separation based on size/mag properties
 ##
-## Two independent mask cuts, and they come from different places:
+## ONE mask cut, and it is the instrument flags:
 ##   IMAFLAGS_ISO == 0  the instrument flag image (bad columns, saturation),
-##                      delivered with the exposure and read by SExtractor;
-##   FLAG_EXT == 0      the external healsparse masks, queried per detection by
-##                      the mask_query module. Which maps reach FLAG_EXT is that
-##                      module's MASK_PATHS config, and the shipped diet is
-##                      deliberately narrow: the star-body map (bit 2) only, no
-##                      halos (they flag, they do not reject stars) and no
-##                      MaxiMask.
-## SETools expressions have no bitwise operators, so mask_query does the bit
-## selection and this file only tests for zero.
+##                      delivered with the exposure and read by SExtractor.
+##
+## The external healsparse masks are NOT cut on here. mask_query queries them
+## per detection and writes FLAG_EXT into this catalogue, but the selection
+## ships permissive: the column is carried for transparency and measurement,
+## and the star sample is defended by outlier rejection instead. Flag
+## transparently, cut downstream.
+##
+## To feed the external masks to the star selection after all, add
+##
+##     FLAG_EXT == 0
+##
+## beside each IMAFLAGS_ISO line below. That is the whole change — one line per
+## mask block — and it is the intended escape hatch if outlier rejection turns
+## out not to be robust enough. Which maps reach FLAG_EXT is mask_query's
+## MASK_PATHS config; SETools has no bitwise operators, so the bit selection
+## happens there and this file would only ever test for zero.
 
 [MASK:preselect]
 MAG_AUTO > 0
@@ -19,13 +27,11 @@ FWHM_IMAGE > 0.3 / 0.187
 FWHM_IMAGE < 1.5 / 0.187
 FLAGS == 0
 IMAFLAGS_ISO == 0
-FLAG_EXT == 0
 NO_SAVE
 
 [MASK:flag]
 FLAGS == 0
 IMAFLAGS_ISO == 0
-FLAG_EXT == 0
 NO_SAVE
 
 
@@ -37,7 +43,6 @@ FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
 FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
 FLAGS == 0
 IMAFLAGS_ISO == 0
-FLAG_EXT == 0
 
 [MASK:fwhm_mag_cut]
 FWHM_IMAGE > 0
@@ -45,7 +50,6 @@ FWHM_IMAGE < 40
 MAG_AUTO < 35
 FLAGS == 0
 IMAFLAGS_ISO == 0
-FLAG_EXT == 0
 NO_SAVE
 
 # Split the 'star_selection' sample into

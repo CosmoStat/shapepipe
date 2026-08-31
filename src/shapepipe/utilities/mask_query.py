@@ -15,7 +15,8 @@ Two callers share the primitive defined here:
 * ``mask_query`` writes a single integer ``FLAG_EXT`` column onto the exposure
   SExtractor catalogue, combining the configured maps into "clean (0) or
   flagged (nonzero)" so that ``setools`` — whose expression language has no
-  bitwise operators — can cut on ``FLAG_EXT == 0``.
+  bitwise operators — *could* cut on ``FLAG_EXT == 0``. The shipped selection
+  does not; the column is carried for measurement (see that module).
 
 Partial reads
 -------------

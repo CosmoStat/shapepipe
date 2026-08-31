@@ -174,7 +174,7 @@ shapepipe_run -c cfis/config_tile_Uz.ini
 
 There is no masking step. `ShapePipe` generates no masks: the sky-fixed
 healsparse maps are queried once per object, by `mask_query` on the exposure
-catalogues (`FLAG_EXT`, cut by `setools`) and by `make_cat` on the final tile
+catalogues (`FLAG_EXT`, recorded but not cut on) and by `make_cat` on the tile
 catalogue (`MASK_<band>` columns). Point the `MASK_PATHS` / `MASK_EXT_PATHS`
 config entries at the maps and nothing else is needed — no star-catalogue
 download, no rasterization, no `combine_runs.bash -c flag_*`. The only mask that

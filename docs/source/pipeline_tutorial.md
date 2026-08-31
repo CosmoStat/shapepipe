@@ -196,14 +196,22 @@ consumed by *querying them at object positions*, never by rasterizing them onto
 pixels. Two modules do the querying, from the same shared lookup
 (`shapepipe.utilities.mask_query`): `mask_query` runs between `sextractor` and
 `setools` on the single-exposure single-CCD catalogues and writes one integer
-`FLAG_EXT` column (0 = clean), which `star_selection.setools` cuts on so that
-masked objects never enter the PSF star sample — a deliberately narrow diet,
-the star-body map (bit 2) only, since halos flag objects without disqualifying
-them as PSF stars; `make_cat` writes one
+`FLAG_EXT` column (0 = clean), recording the star-body map (bit 2) against every
+detection; `make_cat` writes one
 `MASK_<band>` column per band onto the final tile catalogue, carrying the map
 value verbatim so downstream selections choose their own cuts. Map paths and
 bit selections live in the config files (`MASK_PATHS` / `MASK_BITS` and
 `MASK_EXT_PATHS`), so regenerated mask products cost a config edit and no code.
+
+**Nothing in the pipeline cuts on these columns.** The PSF star selection ships
+permissive: `star_selection.setools` rejects on the instrument flags
+(`IMAFLAGS_ISO == 0`) and nothing else, leaning on outlier rejection for the
+rest, and the final catalogue's `MASK_<band>` columns are written unfiltered.
+The principle is to flag transparently and cut downstream, so the effect of a
+mask can be measured before it is imposed. If outlier rejection turns out not to
+be robust enough, feeding the external masks to the star selection is one line
+per mask block — add `FLAG_EXT == 0` beside each `IMAFLAGS_ISO == 0` — and that
+file's header documents the change.
 
 No internet access is needed at any point, and there is no reference star
 catalogue to download.
