@@ -29,6 +29,13 @@ BLEND_HANDLINGS = ("noisefill", "uberseg")
 
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
 
+# Bit set in mcal_flags when a metacal type carries no fit result at all
+# (absent entry or missing 'flags' key), or when a nominally clean fit
+# returns non-finite shear. Absence of evidence of success is failure,
+# not success: previously an absent flag defaulted to 0 and a silently
+# failing fitter produced an all-zero flag column.
+FLAG_NO_RESULT = 2**30
+
 # Noise budget for the PSF observation's flat weight map (psf_wt =
 # 1/PSF_NOISE**2). Mirrors the esheldon/aguinot pattern (sigma ~ 1e-5/1e-6);
 # 1e-5 is the value Axel Guinot's #749 reproduction used. The fit is driven
@@ -81,7 +88,8 @@ def get_mcal_flags(res):
         OR of all per-type ``flags``.
     """
     return int(np.bitwise_or.reduce(
-        [res.get(name, {}).get('flags', 0) for name in METACAL_TYPES]
+        [res.get(name, {}).get('flags', FLAG_NO_RESULT)
+         for name in METACAL_TYPES]
     ))
 
 
@@ -1008,6 +1016,7 @@ class Ngmix(object):
         n_no_epoch = 0
         n_ngmix_fail = 0
         n_fitted = 0
+        n_flagged = 0
         id_first = -1
         id_last = -1
         count_batch = 0
@@ -1107,9 +1116,20 @@ class Ngmix(object):
             # rename to mcal_types_fail / NGMIX_MCAL_TYPES_FAIL.)
             res['mcal_types_fail'] = sum(
                 1 for k in METACAL_TYPES
-                if res.get(k, {}).get('flags', 0) != 0
+                if res.get(k, {}).get('flags', FLAG_NO_RESULT) != 0
             )
             res['mcal_flags'] = get_mcal_flags(res)
+            # A "successful" fit whose noshear shear is non-finite is a
+            # silent failure (sentinel output with flags == 0): flag it.
+            if res['mcal_flags'] == 0 and not np.all(np.isfinite(
+                np.asarray(
+                    res.get('noshear', {}).get('g', (np.nan, np.nan)),
+                    dtype=float,
+                )
+            )):
+                res['mcal_flags'] = FLAG_NO_RESULT
+            if res['mcal_flags'] != 0:
+                n_flagged += 1
             # Two distinct PSF families (shapepipe#749), each carrying its own
             # ellipticity AND size: the metacal reconvolution kernel (psf_res)
             # and the original image PSF (psf_orig_res). Tag both into res from
@@ -1153,6 +1173,20 @@ class Ngmix(object):
             + f" {n_ngmix_fail} fit failed,"
             + f" {n_fitted} fitted"
         )
+
+        if count > 0 and n_fitted == 0:
+            raise RuntimeError(
+                f'ngmix: all {count} objects failed the metacal fit'
+                ' (0 fitted) -- likely an upstream library/PSF problem,'
+                ' not a data property; aborting instead of writing an'
+                ' empty catalogue.'
+            )
+        if n_fitted > 0 and n_flagged == n_fitted:
+            self._w_log.error(
+                f'ngmix: 100% of {n_fitted} fitted objects carry nonzero'
+                ' mcal_flags -- the metacal fit failed wholesale; outputs'
+                ' are unusable.'
+            )
 
         vignet_cat.close()
 
