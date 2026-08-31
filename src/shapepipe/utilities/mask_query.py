@@ -33,7 +33,7 @@ is ~23 kB, so the padding costs under a megabyte and buys immunity to any
 edge convention we did not think of. ``test_partial_read_matches_full`` is
 what actually holds the two paths equal.
 
-Measured on the DR6 star map (``mask_r_nside131072_n4.hsp``, 583 MB,
+Measured on the DR6 star map (``mask_ugriz_nside131072_n4.hsp``, 583 MB,
 ``nside_coverage=128``) for 2000 positions in one CCD-sized box, one process
 each: partial 0.102 s / 157 MiB peak RSS, full 12.8 s / 3364 MiB, identical
 values. Per 40-CCD exposure that is ~4 s against ~8.5 min of map reading, and
