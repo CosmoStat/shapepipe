@@ -309,61 +309,23 @@ shapepipe_run -c $SP_CONFIG/config_Pl_$psf.ini
 
 #### Collate star catalogues
 
-Collate all input validation PSF files into star catalogues, gathering positions
-(X/Y/RA/DEC) and the MCCD CCD id.
+```{warning}
+**This step no longer ships.** `collate_star_cat.py` gathered each validation
+PSF run's star positions (X/Y/RA/DEC) and MCCD CCD id into the
+`validation_psf_conv-*.fits` files the merge below consumes, and it was deleted
+with the star-catalogue tooling the removed mask module needed (PR #847). The
+merge step that follows therefore has no producer for its input in this repo
+until the collation is reimplemented, and the `star_cat/` + `combine_runs.bash
+-c psf_conv` staging around it does not apply either.
 
-Note: HSM shapes are no longer rotated into world coordinates at this step. The
-PSF/star ellipticities and sizes are now measured directly in sky coordinates
-during PSF interpolation (galsim `FindAdaptiveMom(use_sky_coords=True)`), so
-`collate_star_cat.py` only collates and passes the shapes through.
-
-> **v2.0 is patch-less.** Runs up to `v1.6` are organised in sky patches
-> `P1`..`P<n>`, each patch a run directory. `v2.0` removes the patch concept: a
-> single run root, outputs directly under it. `v2.0` is the default; select an
-> older layout with `-V` (e.g. `-V v1.6`). For `v2.0` the patch loop and the
-> `-P` option no longer apply, and the patch token drops from the output
-> filename (`validation_psf_conv-<idx>.fits` instead of
-> `validation_psf_conv-<patchnum>-<idx>.fits`).
-
-```bash
-cd /path/to/version
-mkdir star_cat
-cd star_cat
+Nothing about the PSF measurement itself changed: HSM shapes are measured
+directly in sky coordinates during PSF interpolation (galsim
+`FindAdaptiveMom(use_sky_coords=True)`), which is why the collation was a
+pass-through for shapes and is straightforward to rebuild.
 ```
 
-For `v2.0` (the default), run once against the patch-less run root, producing
-files `validation_psf_conv-<idx>.fits`:
-
-```bash
-collate_star_cat.py -i .. -v
-```
-
-For `v1.x`, pass the version explicitly and run once per patch, creating a
-directory per patch `P?` and producing files
-`validation_psf_conv-<patchnum>-<idx>.fits` (for the v1.4 setup only one file):
-
-```bash
-collate_star_cat.py -i .. -V v1.6 -P $patchnum -v
-```
-
-Combine previously created files as links within one ShapePipe run directory (for the v1.4 setup only one link).
-First (and optiohnal), create a subdir for a run and link to the input patches:
-
-```bash
-cd /path/to/version/star_cat
-mkdir v1.6
-ln -s ../P1
-ln -s ../P2
-...
-```
-
-Next, create links to all `validation_conv` runs:
-
-```bash
-combine_runs.bash -p psfex -c psf_conv
-```
-
-Merge all converted star catalogues and create `final-starcat.fits`:
+Merge all converted star catalogues and create `final-starcat.fits` (this
+reads the `validation_psf_conv` files the collation above used to produce):
 
 ```bash
 export SP_RUN=`pwd`
