@@ -299,3 +299,14 @@ def test_mask_query_empty_ccd(tmp_path):
     assert flag.shape == (0,)
     assert "FLAG_EXT" in names
     assert any("No detections" in m for m in log.info_msgs)
+
+
+def test_empty_coverage_raises_clearly(tmp_path):
+    """A map with no coverage at all fails with a message naming the file.
+
+    The probe read in query_map_coverage indexes the first covered pixel; with
+    nothing covered that would be an IndexError from deep inside the utility.
+    """
+    path = _write_map(tmp_path / "empty.hsp", 4, n_covered=0)
+    with pytest.raises(ValueError):
+        mask_query_util.query_map_coverage(path, RA, DEC)

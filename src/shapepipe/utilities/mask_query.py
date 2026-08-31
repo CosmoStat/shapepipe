@@ -169,9 +169,13 @@ def query_map_coverage(path, ra, dec):
         # the empty case is answered without asking it: load one arbitrary
         # coverage pixel purely to learn the dtype and sentinel, and return
         # that sentinel everywhere. Same answer, one small read.
-        probe = int(np.flatnonzero(coverage.coverage_mask)[0])
-        mask_map = healsparse.HealSparseMap.read(path, pixels=[probe])
-        values = np.full(ra.size, mask_map._sentinel, dtype=mask_map.dtype)
+        covered = np.flatnonzero(coverage.coverage_mask)
+        if covered.size == 0:
+            raise ValueError(f"healsparse map {path} has empty coverage")
+        mask_map = healsparse.HealSparseMap.read(
+            path, pixels=[int(covered[0])]
+        )
+        values = np.full(ra.size, mask_map.sentinel, dtype=mask_map.dtype)
         return values, in_coverage
 
     mask_map = healsparse.HealSparseMap.read(
