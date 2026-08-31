@@ -14,8 +14,8 @@ onto it, so the check runs — and the verdict is recorded — even when
 ``shapepipe_run`` failed::
 
     rc=0
-    shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini -b {threads} || rc=$?
-    completeness.py check exp_mask {output} --log {log} --job-rc "$rc" || rc=1
+    shapepipe_run -c $SP_CONFIG/config_exp_Sp.ini -b {threads} || rc=$?
+    completeness.py check exp_split {output} --log {log} --job-rc "$rc" || rc=1
     exit $rc
 
 It counts the unit's products under ``$SP_RUN`` and exits nonzero iff a mandatory
@@ -82,12 +82,18 @@ COMPLETENESS = {
     # --- exposure chain ---
     "exp_get_images": {"get_images_runner": dict(expect=3, floor=3)},
     "exp_split":      {"split_exp_runner":  dict(expect=121, floor=41)},
-    "exp_mask":       {"mask_runner":       dict(expect=40, floor=1)},
     # sextractor expect is nibi-flavor: 3 files/CCD (sexcat + background +
     # background_rms; v2.0's 80 assumed 2/CCD), verified against the P0 tree
     # AND the bash baseline (both 120/exposure).
+    #
+    # mask_query is one sexcat_ext per CCD — the count the deleted exp_mask
+    # stage used to carry, now inside this chain because querying a healsparse
+    # map at ~2k detections needs no rule of its own. Its floor tracks the
+    # runners either side of it: setools tolerates sparse-CCD attrition, so a
+    # hard 40 here would fail exposures the chain is designed to survive.
     "exp_psf": {
         "sextractor_runner":   dict(expect=120, floor=2),
+        "mask_query_runner":   dict(expect=40, floor=2),
         "setools_runner":      dict(expect=80, floor=2, subpath="rand_split"),
         "psfex_runner":        dict(expect=80, floor=2),
         "psfex_interp_runner": dict(expect=40, floor=0, warn=True),
@@ -163,18 +169,17 @@ def check_floor(stage, run_dir):
 # var its config does, so chunk K's check looks at chunk K's dir.
 #
 # EVERY ENTRY HERE (and in COMPLETENESS above) HAS A RULE. The table used to
-# carry two stages that did not: `tile_mask` (run_sp_tile_Ma, mask_runner 1/1)
-# and `tile_detect_uc` (run_sp_tile_Uc). The committed config chain is the
-# "sx_nomask" tile_detect variant and no tile-mask config was committed, so both
-# were unreachable — tile.smk's docstring is where the masked variant is argued,
-# and it is a config plus a rule plus these two rows, added back together.
+# carry stages that did not — `tile_mask` (run_sp_tile_Ma) and `tile_detect_uc`
+# (run_sp_tile_Uc) — and, until PR #847, an `exp_mask` stage that did. ShapePipe
+# now generates no masks at all: the sky-fixed healsparse maps are queried per
+# object inside the exp_psf and tile_make_cat chains, so masking has no stage
+# of its own on either side and is not coming back.
 STAGE_DIR = {
     "tile_get_images":     ("tile", "run_sp_tile_Git"),
     "tile_uncompress":     ("tile", "run_sp_tile_Uz"),
     "tile_find_exposures": ("tile", "run_sp_tile_Fe"),
     "exp_get_images":      ("exp",  "run_sp_exp_Gie"),
     "exp_split":           ("exp",  "run_sp_exp_Sp"),
-    "exp_mask":            ("exp",  "run_sp_exp_Ma"),
     "exp_psf":             ("exp",  "run_sp_exp_SxSePsfPi"),
     "tile_merge_headers":  ("tile", "run_sp_tile_Mh_exp"),
     "tile_detect":         ("tile", "run_sp_tile_Sx"),

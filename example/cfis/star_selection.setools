@@ -1,4 +1,13 @@
 ## SETools configuration file for star/galaxy separation based on size/mag properties
+##
+## Two independent mask cuts, and they come from different places:
+##   IMAFLAGS_ISO == 0  the instrument flag image (bad columns, saturation),
+##                      delivered with the exposure and read by SExtractor;
+##   FLAG_EXT == 0      the external healsparse masks, queried per detection by
+##                      the mask_query module (which map bits reach FLAG_EXT is
+##                      that module's MASK_PATHS / MASK_BITS config).
+## SETools expressions have no bitwise operators, so mask_query does the bit
+## selection and this file only tests for zero.
 
 [MASK:preselect]
 MAG_AUTO > 0
@@ -7,11 +16,13 @@ FWHM_IMAGE > 0.3 / 0.187
 FWHM_IMAGE < 1.5 / 0.187
 FLAGS == 0
 IMAFLAGS_ISO == 0
+FLAG_EXT == 0
 NO_SAVE
 
 [MASK:flag]
 FLAGS == 0
 IMAFLAGS_ISO == 0
+FLAG_EXT == 0
 NO_SAVE
 
 
@@ -23,6 +34,7 @@ FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
 FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
 FLAGS == 0
 IMAFLAGS_ISO == 0
+FLAG_EXT == 0
 
 [MASK:fwhm_mag_cut]
 FWHM_IMAGE > 0
@@ -30,6 +42,7 @@ FWHM_IMAGE < 40
 MAG_AUTO < 35
 FLAGS == 0
 IMAFLAGS_ISO == 0
+FLAG_EXT == 0
 NO_SAVE
 
 # Split the 'star_selection' sample into

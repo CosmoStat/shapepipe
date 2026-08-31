@@ -12,7 +12,9 @@ from shapepipe.modules.random_cat_package.random_cat import RandomCat
 
 @module_runner(
     version="1.1",
-    file_pattern=["image", "pipeline_flag"],
+    # The mask image is an external input: ShapePipe generates no tile masks
+    # (the healsparse-native replacement for this module is issue #797).
+    file_pattern=["image", "mask"],
     file_ext=[".fits", "fits"],
     depends=["astropy"],
     numbering_scheme="_0",

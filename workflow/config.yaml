@@ -53,30 +53,6 @@ products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g6
 
 # Pre-staged inputs (P3 data already on /project; get_images RETRIEVE=symlink).
 
-# The mask star-catalogue root — run-independent, shared by every campaign, and
-# holding two things:
-#   <root>/I_305_out/nside32/star_chunk-<ipix>.fits   the SKY store, one GSC 2.3
-#       query per HEALPix chunk (~3.4 deg^2, ~25k rows), written by
-#       `star_catalogue` over the tile list's footprint and never fetched twice;
-#   <root>/exp/star_cat-<exp>.fits                     the per-exposure cuts
-#       `exp_star_cat` makes from those chunks, with no network at all.
-# Network therefore scales with SKY AREA, not exposure count: exposures overlap
-# ~7-10 deep, so a full-UNIONS footprint is ~1.5k queries against ~25k exposures.
-#
-# On the PERSISTENT root: the sky store is a durable science product bought with
-# ~1.5k catalogue-server queries at DR6 scale, and re-buying it after a scratch
-# purge is the one cost in this workflow that cannot be paid with local compute.
-# (It sat on scratch through smk-g3 only because def-mjhudson /project was then
-# hard-full at 27/27 TiB.)
-#
-# THE STORE IS NOT KEYED BY SCRIPT VERSION. A semantic change to
-# workflow/scripts/star_cats.py (padding, catalogue ID, column set) does rerun
-# both rules — the script's hash is a param on each — but a chunk already on disk
-# is skipped and only re-cut. Clear the store by hand when the change must reach
-# the data. Changing NSIDE or the catalogue ID is the exception: those name the
-# directory, so a change there fetches into a new one beside the old.
-star_cats: /project/def-mjhudson/cdaley/sp-products/star-cat-cache
-
 # The run index, and — sharing its directory — missing.json and run_report.json.
 # On the persistent root with the catalogues (D5): the index is the record of
 # which tile reads which exposure, so it is what a post-purge reconstruction
@@ -142,7 +118,7 @@ clean_tiles: true
 #
 # READ THIS BEFORE ADDING A TILE. Ignoring a tile is a decision to give up its
 # exposures' stores. If you later retry that tile, those exposure chains are
-# gone and will be REBUILT from scratch — get_images, split, mask, psf, per
+# gone and will be REBUILT from scratch — get_images, split, psf, per
 # exposure. That is correct, and expensive. Ignore a tile when you have decided
 # it is dead, not while you are still debugging it.
 clean_ignore_tiles: []
