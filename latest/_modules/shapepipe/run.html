@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.run</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;SHAPEPIPE RUN.</span>
+<span></span><span class="sd">"""SHAPEPIPE RUN.</span>
 
 <span class="sd">This module sets up a given run of the shape measurement pipeline.</span>
 
 <span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
@@ -587,7 +587,7 @@
 <span class="c1"># ``srun --mpi=pmi2`` sets PMI_RANK and ``srun --mpi=pmix`` sets</span>
 <span class="c1"># PMIX_RANK. A bare ``shapepipe_run`` (login node, compute-node shell,</span>
 <span class="c1"># container) runs in SMP mode without ever touching MPI.</span>
-<span class="n">_MPI_LAUNCHER_VARS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;OMPI_COMM_WORLD_SIZE&quot;</span><span class="p">,</span> <span class="s2">&quot;PMI_RANK&quot;</span><span class="p">,</span> <span class="s2">&quot;PMIX_RANK&quot;</span><span class="p">)</span>
+<span class="n">_MPI_LAUNCHER_VARS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"OMPI_COMM_WORLD_SIZE"</span><span class="p">,</span> <span class="s2">"PMI_RANK"</span><span class="p">,</span> <span class="s2">"PMIX_RANK"</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">var</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">_MPI_LAUNCHER_VARS</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
@@ -603,11 +603,11 @@
 <div class="viewcode-block" id="ShapePipe">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ShapePipe</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;ShapePipe.</span>
+<span class="w">    </span><span class="sd">"""ShapePipe.</span>
 
 <span class="sd">    ShapePipe runner class.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
@@ -616,17 +616,17 @@
 <div class="viewcode-block" id="ShapePipe.set_up">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe.set_up">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_up</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set Up.</span>
+<span class="w">        </span><span class="sd">"""Set Up.</span>
 
 <span class="sd">        Set up ShapePipe properties.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_args</span> <span class="o">=</span> <span class="n">create_arg_parser</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">create_config_parser</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_args</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_run_name</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s2">&quot;EXECUTION&quot;</span><span class="p">,</span> <span class="s2">&quot;MODULE&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;EXECUTION&quot;</span><span class="p">,</span> <span class="s2">&quot;MODE&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="s2">&quot;DEFAULT&quot;</span><span class="p">,</span> <span class="s2">&quot;VERBOSE&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s2">"EXECUTION"</span><span class="p">,</span> <span class="s2">"MODULE"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"EXECUTION"</span><span class="p">,</span> <span class="s2">"MODE"</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="s2">"DEFAULT"</span><span class="p">,</span> <span class="s2">"VERBOSE"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span> <span class="o">=</span> <span class="n">FileHandler</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_run_name</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">,</span>
@@ -640,37 +640,37 @@
 <div class="viewcode-block" id="ShapePipe._set_run_name">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe._set_run_name">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_set_run_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set Run Name.</span>
+<span class="w">        </span><span class="sd">"""Set Run Name.</span>
 
 <span class="sd">        Set the name of the current pipeline run.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_run_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DEFAULT&quot;</span><span class="p">,</span> <span class="s2">&quot;RUN_NAME&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"DEFAULT"</span><span class="p">,</span> <span class="s2">"RUN_NAME"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="s2">&quot;DEFAULT&quot;</span><span class="p">,</span> <span class="s2">&quot;RUN_DATETIME&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_run_name</span> <span class="o">+=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;_%Y-%m-</span><span class="si">%d</span><span class="s2">_%H-%M-%S&quot;</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="s2">"DEFAULT"</span><span class="p">,</span> <span class="s2">"RUN_DATETIME"</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_name</span> <span class="o">+=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"_%Y-%m-</span><span class="si">%d</span><span class="s2">_%H-%M-%S"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ShapePipe._create_pipeline_log">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe._create_pipeline_log">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_create_pipeline_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create Pipeline Log.</span>
+<span class="w">        </span><span class="sd">"""Create Pipeline Log.</span>
 
 <span class="sd">        Create a general logging instance for the pipeline run.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">set_up_log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">log_name</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-        <span class="n">start_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Starting ShapePipe Run: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">start_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Starting ShapePipe Run: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_name</span><span class="si">}</span><span class="s2">"</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">shapepipe_logo</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">start_text</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">shapepipe_logo</span><span class="p">(</span><span class="n">colour</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">start_text</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
 
         <span class="c1"># Temporary fix to give file handler access to the log. This should</span>
         <span class="c1"># be improved at some point.</span>
@@ -680,7 +680,7 @@
 <div class="viewcode-block" id="ShapePipe.close_pipeline_log">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe.close_pipeline_log">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">close_pipeline_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Close Pipeline Log.</span>
+<span class="w">        </span><span class="sd">"""Close Pipeline Log.</span>
 
 <span class="sd">        Close general logging instance for the pipeline run.</span>
 
@@ -689,15 +689,15 @@
 <span class="sd">        RunTimeError</span>
 <span class="sd">            if error occurs during pipeline run</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">plur</span> <span class="o">=</span> <span class="s2">&quot; was&quot;</span>
+            <span class="n">plur</span> <span class="o">=</span> <span class="s2">" was"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">plur</span> <span class="o">=</span> <span class="s2">&quot;s were&quot;</span>
+            <span class="n">plur</span> <span class="o">=</span> <span class="s2">"s were"</span>
         <span class="n">final_error_count</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;A total of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">error_count</span><span class="si">}</span><span class="s2"> error</span><span class="si">{</span><span class="n">plur</span><span class="si">}</span><span class="s2"> recorded.&quot;</span>
+            <span class="sa">f</span><span class="s2">"A total of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">error_count</span><span class="si">}</span><span class="s2"> error</span><span class="si">{</span><span class="n">plur</span><span class="si">}</span><span class="s2"> recorded."</span>
         <span class="p">)</span>
-        <span class="n">end_text</span> <span class="o">=</span> <span class="s2">&quot;Finishing ShapePipe Run&quot;</span>
+        <span class="n">end_text</span> <span class="o">=</span> <span class="s2">"Finishing ShapePipe Run"</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">final_error_count</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">end_text</span><span class="p">)</span>
@@ -716,7 +716,7 @@
 <div class="viewcode-block" id="ShapePipe._get_module_depends">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe._get_module_depends">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_module_depends</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">property</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Module Dependencies.</span>
+<span class="w">        </span><span class="sd">"""Get Module Dependencies.</span>
 
 <span class="sd">        List the Python packages and executables needed to run the modules.</span>
 
@@ -730,7 +730,7 @@
 <span class="sd">        tuple</span>
 <span class="sd">            List of python dependencies, list of system executables</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">prop_list</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="n">module_runners</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">module_runners</span>
@@ -757,26 +757,26 @@
 <div class="viewcode-block" id="ShapePipe._check_dependencies">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe._check_dependencies">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check Dependencies.</span>
+<span class="w">        </span><span class="sd">"""Check Dependencies.</span>
 
 <span class="sd">        Check that all pipeline dependencies have been installed.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">module_dep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_module_depends</span><span class="p">(</span><span class="s2">&quot;depends&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">__installs__</span>
-        <span class="n">module_exe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_module_depends</span><span class="p">(</span><span class="s2">&quot;executes&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">module_dep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_module_depends</span><span class="p">(</span><span class="s2">"depends"</span><span class="p">)</span> <span class="o">+</span> <span class="n">__installs__</span>
+        <span class="n">module_exe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_module_depends</span><span class="p">(</span><span class="s2">"executes"</span><span class="p">)</span>
 
-        <span class="n">module_dep</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;mpi4py&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">import_mpi</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="n">module_dep</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">"mpi4py"</span><span class="p">]</span> <span class="k">if</span> <span class="n">import_mpi</span> <span class="k">else</span> <span class="p">[]</span>
 
         <span class="n">exe_to_module</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">exe</span><span class="p">:</span> <span class="n">module</span>
             <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">module_runners</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">exe</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span><span class="n">module</span><span class="p">],</span> <span class="s2">&quot;executes&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">for</span> <span class="n">exe</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span><span class="n">module</span><span class="p">],</span> <span class="s2">"executes"</span><span class="p">,</span> <span class="p">[])</span>
         <span class="p">}</span>
 
         <span class="n">dh</span> <span class="o">=</span> <span class="n">DependencyHandler</span><span class="p">(</span><span class="n">module_dep</span><span class="p">,</span> <span class="n">module_exe</span><span class="p">,</span> <span class="n">exe_to_module</span><span class="p">)</span>
 
-        <span class="n">dep_text</span> <span class="o">=</span> <span class="s2">&quot;Checking Python Dependencies:&quot;</span>
-        <span class="n">exe_text</span> <span class="o">=</span> <span class="s2">&quot;Checking System Executables:&quot;</span>
+        <span class="n">dep_text</span> <span class="o">=</span> <span class="s2">"Checking Python Dependencies:"</span>
+        <span class="n">exe_text</span> <span class="o">=</span> <span class="s2">"Checking System Executables:"</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">dep_text</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
@@ -789,9 +789,9 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="n">dep</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">exe_text</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
@@ -804,20 +804,20 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="n">exe</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ShapePipe._check_module_versions">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe._check_module_versions">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_module_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check Module Version.</span>
+<span class="w">        </span><span class="sd">"""Check Module Version.</span>
 
 <span class="sd">        Check versions of the modules.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">ver_text</span> <span class="o">=</span> <span class="s2">&quot;Checking Module Versions:&quot;</span>
+<span class="sd">        """</span>
+        <span class="n">ver_text</span> <span class="o">=</span> <span class="s2">"Checking Module Versions:"</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">ver_text</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
@@ -826,47 +826,47 @@
         <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">):</span>
 
             <span class="n">module_txt</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot; - </span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span><span class="n">module</span><span class="p">]</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">" - </span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span><span class="n">module</span><span class="p">]</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">module_txt</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="n">module_txt</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ShapePipe._check_system_setup">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe._check_system_setup">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_system_setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check System Set Up.</span>
+<span class="w">        </span><span class="sd">"""Check System Set Up.</span>
 
 <span class="sd">        Check the set up of the machine on which the pipeline is running.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">setup_text</span> <span class="o">=</span> <span class="s2">&quot;Checking System Set Up:&quot;</span>
-        <span class="n">cpu_info</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; - Number of available CPUs: </span><span class="si">{</span><span class="n">cpu_count</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="sd">        """</span>
+        <span class="n">setup_text</span> <span class="o">=</span> <span class="s2">"Checking System Set Up:"</span>
+        <span class="n">cpu_info</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">" - Number of available CPUs: </span><span class="si">{</span><span class="n">cpu_count</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">setup_text</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">cpu_info</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">setup_text</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">cpu_info</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ShapePipe._get_module_run_methods">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe._get_module_run_methods">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_module_run_methods</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Module Run Method.</span>
+<span class="w">        </span><span class="sd">"""Get Module Run Method.</span>
 
 <span class="sd">        Create a dictionary of modules with corresponding run methods.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run_method</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
@@ -879,11 +879,11 @@
 <div class="viewcode-block" id="ShapePipe._prep_run">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe._prep_run">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_prep_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare Run.</span>
+<span class="w">        </span><span class="sd">"""Prepare Run.</span>
 
 <span class="sd">        Prepare to run the pipeline.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Make output directories for the pipeline run</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">create_global_run_dirs</span><span class="p">()</span>
 
@@ -906,18 +906,18 @@
 <div class="viewcode-block" id="ShapePipe.record_mode">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.ShapePipe.record_mode">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">record_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Record Mode.</span>
+<span class="w">        </span><span class="sd">"""Record Mode.</span>
 
 <span class="sd">        Log mode in which ShapePipe is running.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">mode_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Running ShapePipe using </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="sd">        """</span>
+        <span class="n">mode_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Running ShapePipe using </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">"</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">mode_text</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">mode_text</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span></div>
 </div>
 
 
@@ -925,7 +925,7 @@
 <div class="viewcode-block" id="run_smp">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.run_smp">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">run_smp</span><span class="p">(</span><span class="n">pipe</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run SMP.</span>
+<span class="w">    </span><span class="sd">"""Run SMP.</span>
 
 <span class="sd">    Run ShapePipe using SMP.</span>
 
@@ -934,7 +934,7 @@
 <span class="sd">    pipe : ShapePipe</span>
 <span class="sd">        ShapePipe instance</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Loop through modules to be run</span>
     <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">pipe</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
 
@@ -966,7 +966,7 @@
 <div class="viewcode-block" id="run_mpi">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.run_mpi">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">run_mpi</span><span class="p">(</span><span class="n">pipe</span><span class="p">,</span> <span class="n">comm</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run MPI.</span>
+<span class="w">    </span><span class="sd">"""Run MPI.</span>
 
 <span class="sd">    Run ShapePipe using MPI.</span>
 
@@ -977,7 +977,7 @@
 <span class="sd">    comm : MPI.COMM_WORLD</span>
 <span class="sd">        MPI common world instance</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Assign master node</span>
     <span class="n">master</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span>
 
@@ -1006,7 +1006,7 @@
                 <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
                 <span class="n">log</span><span class="o">=</span><span class="n">pipe</span><span class="o">.</span><span class="n">log</span><span class="p">,</span>
                 <span class="n">job_type</span><span class="o">=</span><span class="n">pipe</span><span class="o">.</span><span class="n">run_method</span><span class="p">[</span><span class="n">module</span><span class="p">],</span>
-                <span class="n">parallel_mode</span><span class="o">=</span><span class="s2">&quot;mpi&quot;</span><span class="p">,</span>
+                <span class="n">parallel_mode</span><span class="o">=</span><span class="s2">"mpi"</span><span class="p">,</span>
                 <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
                 <span class="n">batch_size</span><span class="o">=</span><span class="n">pipe</span><span class="o">.</span><span class="n">_args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
             <span class="p">)</span>
@@ -1015,7 +1015,7 @@
             <span class="n">job_type</span> <span class="o">=</span> <span class="n">jh</span><span class="o">.</span><span class="n">job_type</span>
 
             <span class="c1"># Handle serial jobs</span>
-            <span class="k">if</span> <span class="n">job_type</span> <span class="o">==</span> <span class="s2">&quot;serial&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">job_type</span> <span class="o">==</span> <span class="s2">"serial"</span><span class="p">:</span>
                 <span class="n">jh</span><span class="o">.</span><span class="n">submit_jobs</span><span class="p">()</span>
 
             <span class="c1"># Handle parallel jobs</span>
@@ -1040,7 +1040,7 @@
         <span class="c1"># Broadcast job type to all nodes</span>
         <span class="n">job_type</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">job_type</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">job_type</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">job_type</span> <span class="o">==</span> <span class="s2">"parallel"</span><span class="p">:</span>
 
             <span class="c1"># Broadcast objects to all nodes</span>
             <span class="n">run_dirs</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">run_dirs</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1092,11 +1092,11 @@
 <div class="viewcode-block" id="run">
 <a class="viewcode-back" href="../../shapepipe.run.html#shapepipe.run.run">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run ShapePipe.</span>
+<span class="w">    </span><span class="sd">"""Run ShapePipe.</span>
 
 <span class="sd">    This function runs ShapePipe.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
 
         <span class="k">if</span> <span class="n">import_mpi</span><span class="p">:</span>
@@ -1113,13 +1113,13 @@
             <span class="n">pipe</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">mode</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="n">mode</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">import_mpi</span> <span class="k">else</span> <span class="s2">&quot;smp&quot;</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">import_mpi</span> <span class="k">else</span> <span class="s2">"smp"</span>
 
         <span class="k">if</span> <span class="n">master</span><span class="p">:</span>
             <span class="n">pipe</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
             <span class="n">pipe</span><span class="o">.</span><span class="n">record_mode</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;mpi&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"mpi"</span><span class="p">:</span>
             <span class="n">run_mpi</span><span class="p">(</span><span class="n">pipe</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">run_smp</span><span class="p">(</span><span class="n">pipe</span><span class="p">)</span>

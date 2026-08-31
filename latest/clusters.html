@@ -619,18 +619,18 @@ protocol as the host launcher (see the candide section below).</p>
 ships ready job scripts in <code class="docutils literal notranslate"><span class="pre">example/pbs/</span></code> — <code class="docutils literal notranslate"><span class="pre">candide_smp.sh</span></code> (single node,
 parallelised with joblib) and <code class="docutils literal notranslate"><span class="pre">candide_mpi.sh</span></code> (multi-node, hybrid MPI). To run
 the bundled single-tile example end to end:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Keep the SIF and Apptainer&#39;s scratch off the quota-limited $HOME.</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Keep the SIF and Apptainer's scratch off the quota-limited $HOME.</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">DATA</span><span class="o">=</span>/n17data/<span class="nv">$USER</span><span class="w">                 </span><span class="c1"># adjust to your data partition</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">APPTAINER_CACHEDIR</span><span class="o">=</span><span class="nv">$DATA</span>/.apptainer
 
 <span class="c1"># Pull the runtime image (~850 MB).</span>
-apptainer<span class="w"> </span>pull<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$DATA</span><span class="s2">/shapepipe-runtime.sif&quot;</span><span class="w"> </span><span class="se">\</span>
+apptainer<span class="w"> </span>pull<span class="w"> </span><span class="s2">"</span><span class="nv">$DATA</span><span class="s2">/shapepipe-runtime.sif"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>docker://ghcr.io/cosmostat/shapepipe:develop-runtime
 
 <span class="c1"># Submit. SPDIR is your clone, bind-mounted at the same path inside the</span>
 <span class="c1"># container; SP_IMAGE is the SIF. The same script serves the example and a real</span>
 <span class="c1"># run — point the config inside it at your own pipeline.</span>
-<span class="nv">SP_IMAGE</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$DATA</span><span class="s2">/shapepipe-runtime.sif&quot;</span><span class="w"> </span><span class="nv">SPDIR</span><span class="o">=</span><span class="s2">&quot;/path/to/shapepipe&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="nv">SP_IMAGE</span><span class="o">=</span><span class="s2">"</span><span class="nv">$DATA</span><span class="s2">/shapepipe-runtime.sif"</span><span class="w"> </span><span class="nv">SPDIR</span><span class="o">=</span><span class="s2">"/path/to/shapepipe"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>sbatch<span class="w"> </span>example/pbs/candide_smp.sh
 </pre></div>
 </div>

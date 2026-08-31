@@ -552,11 +552,11 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.utilities.summary</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;SUMMARY</span>
+<span></span><span class="sd">"""SUMMARY</span>
 
 <span class="sd">Author: Martin Kilbinger &lt;martin.kilbinger@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -577,8 +577,8 @@
     <span class="c1"># Numbers updated at runtime</span>
     <span class="n">par_runtime</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">&quot;n_tile_IDs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_tile_IDs</span><span class="p">)</span>
-    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">&quot;list_tile_IDs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">list_tile_IDs</span>
+    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">"n_tile_IDs"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_tile_IDs</span><span class="p">)</span>
+    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">"list_tile_IDs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">list_tile_IDs</span>
 
     <span class="k">return</span> <span class="n">par_runtime</span></div>
 
@@ -589,13 +589,13 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">update_par_runtime_after_find_exp</span><span class="p">(</span><span class="n">par_runtime</span><span class="p">,</span> <span class="n">all_exposures</span><span class="p">):</span>
 
     <span class="c1"># Single-exposure images</span>
-    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">&quot;n_exposures&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_exposures</span><span class="p">)</span>
-    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">&quot;list_exposures&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_exposures</span>
+    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">"n_exposures"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_exposures</span><span class="p">)</span>
+    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">"list_exposures"</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_exposures</span>
 
     <span class="c1"># Single-HDU single exposure images</span>
     <span class="n">n_CCD</span> <span class="o">=</span> <span class="mi">40</span>
-    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">&quot;n_shdus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_par_runtime</span><span class="p">(</span><span class="n">par_runtime</span><span class="p">,</span> <span class="s2">&quot;exposures&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_CCD</span>
-    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">&quot;list_shdus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_all_shdus</span><span class="p">(</span><span class="n">all_exposures</span><span class="p">,</span> <span class="n">n_CCD</span><span class="p">)</span>
+    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">"n_shdus"</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_par_runtime</span><span class="p">(</span><span class="n">par_runtime</span><span class="p">,</span> <span class="s2">"exposures"</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_CCD</span>
+    <span class="n">par_runtime</span><span class="p">[</span><span class="s2">"list_shdus"</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_all_shdus</span><span class="p">(</span><span class="n">all_exposures</span><span class="p">,</span> <span class="n">n_CCD</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">par_runtime</span></div>
 
@@ -604,10 +604,10 @@
 <div class="viewcode-block" id="get_IDs_from_file">
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.get_IDs_from_file">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_IDs_from_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get IDs From File.</span>
+<span class="w">    </span><span class="sd">"""Get IDs From File.</span>
 
 <span class="sd">    Return IDs from text file. Removes letters and replaces</span>
-<span class="sd">    dots &quot;.&quot; with dashes &quot;-&quot;.</span>
+<span class="sd">    dots "." with dashes "-".</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -619,12 +619,12 @@
 <span class="sd">    list</span>
 <span class="sd">        IDs</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">numbers</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_in</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f_in</span><span class="p">:</span>
             <span class="n">entry</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
-            <span class="n">number</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;[a-zA-Z]&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
+            <span class="n">number</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"[a-zA-Z]"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
             <span class="n">numbers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">numbers</span></div>
@@ -634,7 +634,7 @@
 <div class="viewcode-block" id="get_all_exposures">
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.get_all_exposures">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_all_exposures</span><span class="p">(</span><span class="n">exp_number_file_list</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get All Exposures.</span>
+<span class="w">    </span><span class="sd">"""Get All Exposures.</span>
 
 <span class="sd">    Return all exposure names from a list of text files.</span>
 
@@ -643,7 +643,7 @@
 <span class="sd">    exp_number_list: list</span>
 <span class="sd">        input file names</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">exposures</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">exp_number_file_list</span><span class="p">):</span>
         <span class="n">exps</span> <span class="o">=</span> <span class="n">get_IDs_from_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
@@ -656,7 +656,7 @@
 <div class="viewcode-block" id="get_all_shdus">
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.get_all_shdus">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_all_shdus</span><span class="p">(</span><span class="n">exposures</span><span class="p">,</span> <span class="n">n_CCD</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get All SHDUs.</span>
+<span class="w">    </span><span class="sd">"""Get All SHDUs.</span>
 
 <span class="sd">    Return all single-exposure single-HDU (CCD) IDs.</span>
 
@@ -672,11 +672,11 @@
 <span class="sd">    list</span>
 <span class="sd">        single-exposure single-HDU IDs</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">shdus</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">exposure</span> <span class="ow">in</span> <span class="n">exposures</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">idx_CCD</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_CCD</span><span class="p">):</span>
-            <span class="n">shdus</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exposure</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">idx_CCD</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">shdus</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">exposure</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">idx_CCD</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">shdus</span></div>
 
@@ -685,7 +685,7 @@
 <div class="viewcode-block" id="set_as_list">
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.set_as_list">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_as_list</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set As List.</span>
+<span class="w">    </span><span class="sd">"""Set As List.</span>
 
 <span class="sd">    Return input as list.</span>
 
@@ -711,7 +711,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    list</span>
 <span class="sd">        input item(s) as list</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">my_n</span> <span class="o">=</span> <span class="n">n</span> <span class="ow">or</span> <span class="mi">1</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">item</span><span class="p">:</span>
@@ -721,7 +721,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">item</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">!=</span> <span class="n">my_n</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;item has length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"item has length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">result</span></div>
 
@@ -738,75 +738,75 @@
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
             <span class="n">entry</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
 
-            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">&quot;setools_runner&quot;</span><span class="p">:</span>
-                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;Nb stars = (\S*)&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">"setools_runner"</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"Nb stars = (\S*)"</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
                     <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
                     <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
                         <span class="n">code</span> <span class="o">=</span> <span class="mi">0</span>
                         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Not enough stars for random split:&quot;</span>
-                            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;  #stars = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="sa">f</span><span class="s2">"Not enough stars for random split:"</span>
+                            <span class="o">+</span> <span class="sa">f</span><span class="s2">"  #stars = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span>
                         <span class="p">)</span>
                         <span class="k">return</span> <span class="n">msg</span><span class="p">,</span> <span class="n">code</span>
                     <span class="k">break</span>
-                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;Mode computation failed&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"Mode computation failed"</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
                     <span class="n">code</span> <span class="o">=</span> <span class="mi">1</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Mode computation of stellar locus failed&quot;</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">"Mode computation of stellar locus failed"</span>
                     <span class="k">return</span> <span class="n">msg</span><span class="p">,</span> <span class="n">code</span>
 
-            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">&quot;psfex_interp_runner&quot;</span><span class="p">:</span>
-                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;Key N_EPOCH not found&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">"psfex_interp_runner"</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"Key N_EPOCH not found"</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
                     <span class="n">code</span> <span class="o">=</span> <span class="mi">2</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;N_EPOCH not in SEx cat, rerun job 16&quot;</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">"N_EPOCH not in SEx cat, rerun job 16"</span>
                     <span class="k">return</span> <span class="n">msg</span><span class="p">,</span> <span class="n">code</span>
 
                 <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
-                    <span class="s2">&quot;ValueError: cannot reshape array of size 0 into shape&quot;</span><span class="p">,</span>
+                    <span class="s2">"ValueError: cannot reshape array of size 0 into shape"</span><span class="p">,</span>
                     <span class="n">line</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
                     <span class="n">code</span> <span class="o">=</span> <span class="mi">3</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;found array of size 0&quot;</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">"found array of size 0"</span>
                     <span class="k">return</span> <span class="n">msg</span><span class="p">,</span> <span class="n">code</span>
 
-            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">&quot;mask_runner&quot;</span><span class="p">:</span>
-                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;Empty or corrupt FITS file&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">"mask_runner"</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"Empty or corrupt FITS file"</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
                     <span class="n">code</span> <span class="o">=</span> <span class="mi">4</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;empty or corrult FITS file&quot;</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">"empty or corrult FITS file"</span>
                     <span class="k">return</span> <span class="n">msg</span><span class="p">,</span> <span class="n">code</span>
 
-            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">&quot;sextractor_runner&quot;</span><span class="p">:</span>
-                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;sextracted 0&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">"sextractor_runner"</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"sextracted 0"</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
                     <span class="n">code</span> <span class="o">=</span> <span class="mi">5</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;No object detected (weight might be 0 everywhere)&quot;</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">"No object detected (weight might be 0 everywhere)"</span>
                     <span class="k">return</span> <span class="n">msg</span><span class="p">,</span> <span class="n">code</span>
-                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;astropy\.wcs\.wcs\.NoConvergence&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"astropy\.wcs\.wcs\.NoConvergence"</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
                     <span class="n">code</span> <span class="o">=</span> <span class="mi">8</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;WCS world2pix did not converge&quot;</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">"WCS world2pix did not converge"</span>
                     <span class="k">return</span> <span class="n">msg</span><span class="p">,</span> <span class="n">code</span>
 
-            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">&quot;ngmix_runner&quot;</span><span class="p">:</span>
-                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;finished&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">"ngmix_runner"</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"finished"</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
                     <span class="n">ngmix_finished</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">break</span>
 
-            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">&quot;merge_sep_cats_runner&quot;</span><span class="p">:</span>
-                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;Input catalogue&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">"merge_sep_cats_runner"</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"Input catalogue"</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
                     <span class="n">code</span> <span class="o">=</span> <span class="mi">7</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;One or more ngmix catalogues not found for merge&quot;</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">"One or more ngmix catalogues not found for merge"</span>
                     <span class="k">return</span> <span class="n">msg</span><span class="p">,</span> <span class="n">code</span>
 
-    <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">&quot;ngmix_runner&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ngmix_finished</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">"ngmix_runner"</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ngmix_finished</span><span class="p">:</span>
         <span class="n">code</span> <span class="o">=</span> <span class="mi">6</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;ngmix incomplete&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">"ngmix incomplete"</span>
         <span class="k">return</span> <span class="n">msg</span><span class="p">,</span> <span class="n">code</span>
 
 
@@ -817,7 +817,7 @@
 <div class="viewcode-block" id="job_data">
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">job_data</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Job Data.</span>
+<span class="w">    </span><span class="sd">"""Job Data.</span>
 
 <span class="sd">    Class to handle a job.</span>
 
@@ -838,16 +838,16 @@
 <span class="sd">    pattern: list, optional</span>
 <span class="sd">        if not None, file pattern to match; defafult is `None`</span>
 <span class="sd">    path_main: str, optional</span>
-<span class="sd">        main (left-most) part of output directory, default is &quot;.&quot;</span>
+<span class="sd">        main (left-most) part of output directory, default is "."</span>
 <span class="sd">    path_left: str, optional</span>
-<span class="sd">        left (first) part of output directory, default is &quot;./output&quot;</span>
+<span class="sd">        left (first) part of output directory, default is "./output"</span>
 <span class="sd">    output_subdirs: str, optional</span>
 <span class="sd">        output subdirectories if not `None`; default is `None`</span>
 <span class="sd">    path_right: str, optional</span>
 <span class="sd">        right (last) part of output subdir suffix if not `None`;</span>
 <span class="sd">        default is `None`</span>
 <span class="sd">    path_output: str, optional</span>
-<span class="sd">        module output path, default is &quot;output&quot;</span>
+<span class="sd">        module output path, default is "output"</span>
 <span class="sd">    output_path_missing_IDs: list, optional</span>
 <span class="sd">        output path of missing ID, if `None` (default) will be</span>
 <span class="sd">        given by job bit and module.</span>
@@ -857,7 +857,7 @@
 <span class="sd">    verbose: bool, optional</span>
 <span class="sd">        verbose output if True; default is False</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -867,11 +867,11 @@
         <span class="n">key_expected</span><span class="p">,</span>
         <span class="n">n_mult</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">path_main</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">,</span>
-        <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+        <span class="n">path_main</span><span class="o">=</span><span class="s2">"."</span><span class="p">,</span>
+        <span class="n">path_left</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
         <span class="n">output_subdirs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">path_right</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">path_output</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+        <span class="n">path_output</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
         <span class="n">output_path_missing_IDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">special</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -881,19 +881,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span> <span class="o">=</span> <span class="n">modules</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_key_expected</span> <span class="o">=</span> <span class="n">set_as_list</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="n">key_expected</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_n_mult</span> <span class="o">=</span> <span class="n">set_as_list</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="n">n_mult</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">set_as_list</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="n">pattern</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">set_as_list</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="n">pattern</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_path_main</span> <span class="o">=</span> <span class="n">path_main</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_path_left</span> <span class="o">=</span> <span class="n">path_left</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_output_subdirs</span> <span class="o">=</span> <span class="n">output_subdirs</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_subdirs</span> <span class="o">=</span> <span class="n">output_subdirs</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">""</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_path_right</span> <span class="o">=</span> <span class="n">set_as_list</span><span class="p">(</span>
             <span class="n">path_right</span><span class="p">,</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">),</span>
-            <span class="n">default</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="s2">"."</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_path_output</span> <span class="o">=</span> <span class="n">set_as_list</span><span class="p">(</span>
             <span class="n">path_output</span><span class="p">,</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">),</span>
-            <span class="n">default</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_path_missing_IDs</span> <span class="o">=</span> <span class="n">output_path_missing_IDs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_special</span> <span class="o">=</span> <span class="n">set_as_list</span><span class="p">(</span>
@@ -901,35 +901,35 @@
             <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">),</span>
             <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_path_right</span> <span class="o">=</span> <span class="n">set_as_list</span><span class="p">(</span><span class="n">path_right</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path_right</span> <span class="o">=</span> <span class="n">set_as_list</span><span class="p">(</span><span class="n">path_right</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s2">"."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_path_missing_IDs</span> <span class="o">=</span> <span class="n">output_path_missing_IDs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span> <span class="o">=</span> <span class="n">verbose</span>
 
 <div class="viewcode-block" id="job_data.print_intro">
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.print_intro">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">print_intro</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print Intro.</span>
+<span class="w">        </span><span class="sd">"""Print Intro.</span>
 
 <span class="sd">        Print header line for job statistics.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; # Job </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_bit</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">" # Job </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_bit</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="job_data.print_stats_header">
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.print_stats_header">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">print_stats_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print Stats Header.</span>
+<span class="w">        </span><span class="sd">"""Print Stats Header.</span>
 
 <span class="sd">        Print overall header information for stats output.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;module                          expected     found&quot;</span>
-            <span class="o">+</span> <span class="s2">&quot;   missing uniq_miss  fr_found&quot;</span>
+            <span class="s2">"module                          expected     found"</span>
+            <span class="o">+</span> <span class="s2">"   missing uniq_miss  fr_found"</span>
         <span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span></div>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="job_data.print_stats">
@@ -943,7 +943,7 @@
         <span class="n">n_missing</span><span class="p">,</span>
         <span class="n">idx</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print Stats.</span>
+<span class="w">        </span><span class="sd">"""Print Stats.</span>
 
 <span class="sd">        Print output file statistics.</span>
 
@@ -962,7 +962,7 @@
 <span class="sd">        idx: int</span>
 <span class="sd">            module index</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">module_str</span> <span class="o">=</span> <span class="n">module</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_special</span><span class="p">[</span><span class="n">idx</span><span class="p">]:</span>
@@ -974,7 +974,7 @@
             <span class="n">n_missing_per_mult</span> <span class="o">=</span> <span class="n">n_missing</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_mult</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
             
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">module_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module_str</span><span class="si">}</span><span class="s2"> (special)&quot;</span>
+            <span class="n">module_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">module_str</span><span class="si">}</span><span class="s2"> (special)"</span>
             <span class="n">n_found</span> <span class="o">=</span> <span class="n">n_special</span>
             <span class="n">n_missing</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
             <span class="n">n_missing_per_mult</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
@@ -982,9 +982,9 @@
             <span class="n">n_expected</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module_str</span><span class="si">:</span><span class="s2">30s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">n_expected</span><span class="si">:</span><span class="s2">9d</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">n_found</span><span class="si">:</span><span class="s2">9d</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">n_missing</span><span class="si">:</span><span class="s2">9d</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">n_missing_per_mult</span><span class="si">:</span><span class="s2">9.1f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">fraction_found</span><span class="si">:</span><span class="s2">9.1%</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">module_str</span><span class="si">:</span><span class="s2">30s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">n_expected</span><span class="si">:</span><span class="s2">9d</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">n_found</span><span class="si">:</span><span class="s2">9d</span><span class="si">}</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">n_missing</span><span class="si">:</span><span class="s2">9d</span><span class="si">}</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">n_missing_per_mult</span><span class="si">:</span><span class="s2">9.1f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">fraction_found</span><span class="si">:</span><span class="s2">9.1%</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span></div>
 
 
@@ -1008,7 +1008,7 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">replace_dot_dash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">numbers</span><span class="p">):</span>
 
-        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;\.&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span> <span class="k">for</span> <span class="n">number</span> <span class="ow">in</span> <span class="n">numbers</span><span class="p">]</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"\."</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span> <span class="k">for</span> <span class="n">number</span> <span class="ow">in</span> <span class="n">numbers</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">results</span></div>
 
@@ -1018,8 +1018,8 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">replace_dash_dot_if_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">numbers</span><span class="p">):</span>
 
-        <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\d</span><span class="si">{3}</span><span class="s2">)-(\d</span><span class="si">{3}</span><span class="s2">)&quot;</span><span class="p">)</span>
-        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">pattern</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\1.\2&quot;</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span> <span class="k">for</span> <span class="n">number</span> <span class="ow">in</span> <span class="n">numbers</span><span class="p">]</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(\d</span><span class="si">{3}</span><span class="s2">)-(\d</span><span class="si">{3}</span><span class="s2">)"</span><span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">pattern</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\1.\2"</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span> <span class="k">for</span> <span class="n">number</span> <span class="ow">in</span> <span class="n">numbers</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">results</span></div>
 
@@ -1035,7 +1035,7 @@
         <span class="k">if</span> <span class="n">n_all</span> <span class="o">!=</span> <span class="n">n_unique</span><span class="p">:</span>
             <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>  <span class="c1"># self._verbose:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_all</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">n_unique</span><span class="si">}</span><span class="s2"> duplicates removed from </span><span class="si">{</span><span class="n">n_all</span><span class="si">}</span><span class="s2"> IDs&quot;</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n_all</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">n_unique</span><span class="si">}</span><span class="s2"> duplicates removed from </span><span class="si">{</span><span class="n">n_all</span><span class="si">}</span><span class="s2"> IDs"</span>
                 <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">names_unique</span></div>
@@ -1045,7 +1045,7 @@
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.write_IDs_to_file">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">write_IDs_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">IDs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write IDs to file.</span>
+<span class="w">        </span><span class="sd">"""Write IDs to file.</span>
 
 <span class="sd">        Write list if image IDs to text file.</span>
 
@@ -1056,11 +1056,11 @@
 <span class="sd">        IDs: list</span>
 <span class="sd">            image IDs</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">IDs_dot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_dash_dot_if_tile</span><span class="p">(</span><span class="n">IDs</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">IDs_dot</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># Write IDs to file</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_out</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_out</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">ID</span> <span class="ow">in</span> <span class="n">IDs_dot</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="n">ID</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f_out</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_path</span><span class="p">):</span>
@@ -1087,18 +1087,18 @@
                         <span class="n">messages</span><span class="p">[</span><span class="n">code</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
                     <span class="c1"># Append file name, message, and code </span>
-                    <span class="n">messages</span><span class="p">[</span><span class="n">code</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">messages</span><span class="p">[</span><span class="n">code</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="c1"># Loop over codes = key in messages dict</span>
                 <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">:</span>
                     <span class="c1"># Create output file for this code</span>
                     <span class="n">output_path</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_main</span><span class="si">}</span><span class="s2">/summary/special_job_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_bit</span><span class="si">}</span><span class="s2">&quot;</span>
-                        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">.txt&quot;</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_main</span><span class="si">}</span><span class="s2">/summary/special_job_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_bit</span><span class="si">}</span><span class="s2">"</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">"_</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">.txt"</span>
                     <span class="p">)</span>
                     <span class="c1"># Write all messages</span>
-                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_out</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_out</span><span class="p">:</span>
                         <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">[</span><span class="n">code</span><span class="p">]:</span>
                             <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f_out</span><span class="p">)</span>
 
@@ -1115,30 +1115,30 @@
         <span class="n">idx</span><span class="p">,</span>
         <span class="n">par_runtime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Output Missing.</span>
+<span class="w">        </span><span class="sd">"""Output Missing.</span>
 
 <span class="sd">        Writes IDs of missing images to disk.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">key_expected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key_expected</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
         <span class="n">names_in_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names_in_dir</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
         <span class="n">paths_in_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paths_in_dir</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
         <span class="n">n_mult</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_mult</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
 
-        <span class="n">list_expected</span> <span class="o">=</span> <span class="n">get_par_runtime</span><span class="p">(</span><span class="n">par_runtime</span><span class="p">,</span> <span class="n">key_expected</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;list&quot;</span><span class="p">)</span>
+        <span class="n">list_expected</span> <span class="o">=</span> <span class="n">get_par_runtime</span><span class="p">(</span><span class="n">par_runtime</span><span class="p">,</span> <span class="n">key_expected</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"list"</span><span class="p">)</span>
 
         <span class="c1"># Count image IDs in names that were found earlier</span>
 
         <span class="c1"># Get file name pattern</span>
-        <span class="k">if</span> <span class="n">module</span> <span class="o">!=</span> <span class="s2">&quot;split_exp_runner&quot;</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bit</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bit</span> <span class="o">!=</span> <span class="mi">4096</span><span class="p">):</span>
-            <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(?:\d</span><span class="si">{3}</span><span class="s2">-\d</span><span class="si">{3}</span><span class="s2">|\d</span><span class="si">{7}</span><span class="s2">-\d+|\d</span><span class="si">{7}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">module</span> <span class="o">!=</span> <span class="s2">"split_exp_runner"</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bit</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bit</span> <span class="o">!=</span> <span class="mi">4096</span><span class="p">):</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(?:\d</span><span class="si">{3}</span><span class="s2">-\d</span><span class="si">{3}</span><span class="s2">|\d</span><span class="si">{7}</span><span class="s2">-\d+|\d</span><span class="si">{7}</span><span class="s2">)"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># split_exp_runner with sp_local=0: input is exp, output is shdu</span>
             <span class="c1"># (images) and exp (header); ignore hdu number.</span>
             <span class="c1"># If sp_local=1 set bit to != 2</span>
             <span class="c1"># Update 11/2025: No longer working for P9 4096. Solution: set n_mult=3.</span>
             <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-                <span class="sa">r</span><span class="s2">&quot;(?:\d</span><span class="si">{3}</span><span class="s2">-\d</span><span class="si">{3}</span><span class="s2">|\d</span><span class="si">{7}</span><span class="s2">)&quot;</span>
+                <span class="sa">r</span><span class="s2">"(?:\d</span><span class="si">{3}</span><span class="s2">-\d</span><span class="si">{3}</span><span class="s2">|\d</span><span class="si">{7}</span><span class="s2">)"</span>
             <span class="p">)</span>
 
         <span class="c1">## Extract image IDs from names</span>
@@ -1150,9 +1150,9 @@
                 <span class="n">ID</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">()</span>
                 <span class="n">IDs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;No ID found in </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"No ID found in </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span>
                 <span class="c1">#raise ValueError(msg)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">, continuing&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Warning: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">, continuing"</span><span class="p">)</span>
 
         <span class="c1"># For split_exp_runner P8, IDs now contain exps and sdus,</span>
         <span class="c1"># not matching mult.</span>
@@ -1172,8 +1172,8 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_path_missing_IDs</span><span class="p">:</span>
             <span class="c1"># Default name using bit and module</span>
             <span class="n">output_path</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_main</span><span class="si">}</span><span class="s2">/summary/missing_job_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_bit</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">.txt&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_main</span><span class="si">}</span><span class="s2">/summary/missing_job_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_bit</span><span class="si">}</span><span class="s2">"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"_</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">.txt"</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># User-defined name (e.g. ngmix_runner_X)</span>
@@ -1187,7 +1187,7 @@
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.output_missing_job">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">output_missing_job</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">output_path</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_main</span><span class="si">}</span><span class="s2">/summary/missing_job_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_bit</span><span class="si">}</span><span class="s2">_all.txt&quot;</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_main</span><span class="si">}</span><span class="s2">/summary/missing_job_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_bit</span><span class="si">}</span><span class="s2">_all.txt"</span>
         <span class="p">)</span>
 
         <span class="n">missing_IDs_all</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_missing_IDs_job</span><span class="p">)</span>
@@ -1199,11 +1199,11 @@
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.get_last_full_path">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_last_full_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_and_subdir</span><span class="p">,</span> <span class="n">matches</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Last Full Path</span>
+<span class="w">        </span><span class="sd">"""Get Last Full Path</span>
 
 <span class="sd">        Return full path of last file in list.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Sort according to creation time</span>
         <span class="n">matches_sorted</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
             <span class="n">matches</span><span class="p">,</span>
@@ -1223,12 +1223,12 @@
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.get_module_output_dir">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_module_output_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_path</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">path_output</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Module Output Dir.</span>
+<span class="w">        </span><span class="sd">"""Get Module Output Dir.</span>
 
 <span class="sd">        Return output directory name for given module.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">directory</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">full_path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">path_output</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="sd">        """</span>
+        <span class="n">directory</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">full_path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">path_output</span><span class="si">}</span><span class="s2">"</span>
 
         <span class="k">return</span> <span class="n">directory</span></div>
 
@@ -1241,7 +1241,7 @@
         <span class="c1"># os.path.whether exists is twice faster than try/except</span>
 
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
-            <span class="n">pattern</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">*&quot;</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">*"</span>
             <span class="k">for</span> <span class="n">entry2</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
                 <span class="k">if</span> <span class="p">(</span>
                     <span class="n">entry2</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span>
@@ -1266,12 +1266,12 @@
         <span class="c1"># Loop over subdirs</span>
         <span class="k">for</span> <span class="n">jdx</span><span class="p">,</span> <span class="n">subdir</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
             <span class="n">base_and_subdir</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_main</span><span class="si">}</span><span class="s2">/&quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_left</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">subdir</span><span class="si">}</span><span class="s2">/&quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_right</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_main</span><span class="si">}</span><span class="s2">/"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_left</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">subdir</span><span class="si">}</span><span class="s2">/"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_right</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**** base_and_subdir </span><span class="si">{</span><span class="n">base_and_subdir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"**** base_and_subdir </span><span class="si">{</span><span class="n">base_and_subdir</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">base_and_subdir</span><span class="p">):</span>
 
@@ -1284,7 +1284,7 @@
                         <span class="c1"># Append directory name if matches module</span>
                         <span class="k">if</span> <span class="p">(</span>
                             <span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_dir</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
-                            <span class="ow">and</span> <span class="ow">not</span> <span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;prev&quot;</span><span class="p">)</span>
+                            <span class="ow">and</span> <span class="ow">not</span> <span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"prev"</span><span class="p">)</span>
                         <span class="p">):</span>
                             <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
 
@@ -1293,7 +1293,7 @@
                         <span class="k">continue</span>
 
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
-                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;**** Matching entries: &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">"**** Matching entries: "</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
                         <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
                             <span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
@@ -1309,33 +1309,33 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">_path_output</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
                     <span class="p">)</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
-                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**** Output dir = </span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"**** Output dir = </span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                     <span class="c1"># Find matching file names and paths</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">get_matches_final</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Directory </span><span class="si">{</span><span class="n">base_and_subdir</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span></div>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Directory </span><span class="si">{</span><span class="n">base_and_subdir</span><span class="si">}</span><span class="s2"> not found"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="job_data.update_subdirs">
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.update_subdirs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_subdirs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_runtime</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update Subdirs.</span>
+<span class="w">        </span><span class="sd">"""Update Subdirs.</span>
 
 <span class="sd">        Update subdir names with runtime information if required.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_subdirs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_output_subdirs</span> <span class="o">=</span> <span class="n">get_par_runtime</span><span class="p">(</span>
-                <span class="n">par_runtime</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_subdirs</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;list&quot;</span>
+                <span class="n">par_runtime</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_subdirs</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"list"</span>
             <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="job_data.check_numbers">
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.check_numbers">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_numbers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_runtime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check Numbers.</span>
+<span class="w">        </span><span class="sd">"""Check Numbers.</span>
 
 <span class="sd">        Check output file numbers and IDs.</span>
 
@@ -1347,7 +1347,7 @@
 <span class="sd">            if not None (default), only check modules corresponding</span>
 <span class="sd">            to indices</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Update subdirs if not already set as list</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_subdirs</span><span class="p">(</span><span class="n">par_runtime</span><span class="p">)</span>
 
@@ -1363,15 +1363,15 @@
                 <span class="k">continue</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;** module </span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"** module </span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="c1"># Look over subdirs</span>
             <span class="n">iterable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_subdirs</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
-                <span class="n">iterable</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;subdirs&quot;</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">iterable</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"subdirs"</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;*** subdirs </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_subdirs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"*** subdirs </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_subdirs</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="c1"># Get output file names and paths</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">get_names_in_dir</span><span class="p">(</span>
@@ -1384,7 +1384,7 @@
             <span class="c1"># and set as integer</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_key_expected</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="n">n_expected_base</span> <span class="o">=</span> <span class="n">get_par_runtime</span><span class="p">(</span>
-                    <span class="n">par_runtime</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key_expected</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;n&quot;</span>
+                    <span class="n">par_runtime</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key_expected</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"n"</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">n_expected_base</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key_expected</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
@@ -1420,7 +1420,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_missing_IDs_job</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">missing_IDs</span><span class="p">)</span>
 
         <span class="c1"># Empty line after job</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
 
         <span class="c1"># Write missing IDs for entire job to file</span>
         <span class="c1"># if n_missing_job &gt; 0:</span>
@@ -1431,8 +1431,8 @@
 
 <div class="viewcode-block" id="get_par_runtime">
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary.html#shapepipe.utilities.summary.get_par_runtime">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_par_runtime</span><span class="p">(</span><span class="n">par_runtime</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;n&quot;</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Par RunTime.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_par_runtime</span><span class="p">(</span><span class="n">par_runtime</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"n"</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Get Par RunTime.</span>
 
 <span class="sd">    Return runtime parameter value.</span>
 
@@ -1443,8 +1443,8 @@
 <span class="sd">    key: str</span>
 <span class="sd">        key</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">combined_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="sd">    """</span>
+    <span class="n">combined_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="k">return</span> <span class="n">par_runtime</span><span class="p">[</span><span class="n">combined_key</span><span class="p">]</span></div>
 
@@ -1455,18 +1455,18 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">print_par_runtime</span><span class="p">(</span><span class="n">par_runtime</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="c1"># Print runtime parameter values</span>
     <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===========&quot;</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;par_runtime&quot;</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;-----------&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"==========="</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"par_runtime"</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"-----------"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">par_runtime</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">):</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">:</span><span class="s2">30s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">6d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"list"</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">:</span><span class="s2">30s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">6d</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># logging.info(f&quot;{key:30s} {len(value):6d} entries&quot;)</span>
+                <span class="c1"># logging.info(f"{key:30s} {len(value):6d} entries")</span>
                 <span class="k">pass</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===========&quot;</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"==========="</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span></div>
 
 </pre></div>
 

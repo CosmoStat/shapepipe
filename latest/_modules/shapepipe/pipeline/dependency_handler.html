@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.pipeline.dependency_handler</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;DEPENDENCY HANDLER.</span>
+<span></span><span class="sd">"""DEPENDENCY HANDLER.</span>
 
 <span class="sd">This module defines a class for handling pipeline dependencies.</span>
 
 <span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -569,7 +569,7 @@
 <div class="viewcode-block" id="DependencyHandler">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DependencyHandler</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dependency Handler.</span>
+<span class="w">    </span><span class="sd">"""Dependency Handler.</span>
 
 <span class="sd">    This class manages the required Python packages and system executables</span>
 <span class="sd">    required to run the pipeline.</span>
@@ -581,17 +581,17 @@
 <span class="sd">    executables : list</span>
 <span class="sd">        List of system executables</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">executables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exe_to_module</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">depend</span> <span class="o">=</span> <span class="n">dependencies</span> <span class="k">if</span> <span class="n">dependencies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">execute</span> <span class="o">=</span> <span class="n">executables</span> <span class="k">if</span> <span class="n">executables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_exe_to_module</span> <span class="o">=</span> <span class="n">exe_to_module</span> <span class="k">if</span> <span class="n">exe_to_module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_greq</span> <span class="o">=</span> <span class="s2">&quot;&gt;=&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_equal</span> <span class="o">=</span> <span class="s2">&quot;==&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_great</span> <span class="o">=</span> <span class="s2">&quot;&gt;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_less</span> <span class="o">=</span> <span class="s2">&quot;&lt;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_greq</span> <span class="o">=</span> <span class="s2">"&gt;="</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_equal</span> <span class="o">=</span> <span class="s2">"=="</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_great</span> <span class="o">=</span> <span class="s2">"&gt;"</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_less</span> <span class="o">=</span> <span class="s2">"&lt;"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dependency_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">executable_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">))</span>
 
@@ -601,33 +601,33 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">depend</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Input Dependency List.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Input Dependency List."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_depend</span>
 
     <span class="nd">@depend</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">depend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Input must be list type.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Input must be list type."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;List elements must be strings.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"List elements must be strings."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_depend</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Input Executable List.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Input Executable List."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span>
 
     <span class="nd">@execute</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Input must be list type.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Input must be list type."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;List elements must be strings.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"List elements must be strings."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span> <span class="o">=</span> <span class="n">value</span>
 
@@ -635,7 +635,7 @@
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._convert_to_float">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_convert_to_float</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert String to Float.</span>
+<span class="w">        </span><span class="sd">"""Convert String to Float.</span>
 
 <span class="sd">        This method converts numerical strings to floats.</span>
 
@@ -649,7 +649,7 @@
 <span class="sd">        float</span>
 <span class="sd">            Converted value</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -662,7 +662,7 @@
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._slice_1d">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_slice_1d</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Slice 1D.</span>
+<span class="w">        </span><span class="sd">"""Slice 1D.</span>
 
 <span class="sd">        Slice 1D list by indices.</span>
 
@@ -678,7 +678,7 @@
 <span class="sd">        list</span>
 <span class="sd">            Sliced list</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">array</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">]</span></div>
 
 
@@ -686,7 +686,7 @@
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._slice_2d">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_slice_2d</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Slice 2D.</span>
+<span class="w">        </span><span class="sd">"""Slice 2D.</span>
 
 <span class="sd">        Slice a list of lists by indices.</span>
 
@@ -702,7 +702,7 @@
 <span class="sd">        list</span>
 <span class="sd">            Sliced list</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="n">_slice_1d</span><span class="p">(</span><span class="n">sublist</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">array</span><span class="p">]</span></div>
 
 
@@ -710,7 +710,7 @@
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._get_indices">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_indices</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Indices.</span>
+<span class="w">        </span><span class="sd">"""Get Indices.</span>
 
 <span class="sd">        Get indices of array elements equal to input value.</span>
 
@@ -726,7 +726,7 @@
 <span class="sd">        list</span>
 <span class="sd">            List of indices</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="n">index</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">element</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">array</span><span class="p">)</span> <span class="k">if</span> <span class="n">element</span> <span class="o">==</span> <span class="n">value</span>
         <span class="p">]</span></div>
@@ -736,7 +736,7 @@
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._slice_col_val">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_slice_col_val</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Slice by Column and Value.</span>
+<span class="w">        </span><span class="sd">"""Slice by Column and Value.</span>
 
 <span class="sd">        Slice a list of lists by elements in a given column equal to a given</span>
 <span class="sd">        value.</span>
@@ -755,7 +755,7 @@
 <span class="sd">        list</span>
 <span class="sd">            Slices list</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_slice_2d</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_get_indices</span><span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">value</span><span class="p">))</span></div>
 
 
@@ -763,7 +763,7 @@
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._check_executable">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_executable</span><span class="p">(</span><span class="n">exe_name</span><span class="p">,</span> <span class="n">module_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if Input is Executable.</span>
+<span class="w">        </span><span class="sd">"""Check if Input is Executable.</span>
 
 <span class="sd">        This method checks if the input executable exists.</span>
 
@@ -783,9 +783,9 @@
 <span class="sd">        TypeError</span>
 <span class="sd">            For invalid input type</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exe_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Executable name must be a string.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Executable name must be a string."</span><span class="p">)</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">is_exe</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">X_OK</span><span class="p">)</span>
@@ -796,7 +796,7 @@
             <span class="n">res</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
                 <span class="p">[</span>
                     <span class="n">is_exe</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">exe_name</span><span class="p">))</span>
-                    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"PATH"</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="p">)</span>
                 <span class="p">]</span>
             <span class="p">)</span>
 
@@ -805,13 +805,13 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exe_name</span><span class="si">}</span><span class="s2"> does not appear to be a valid executable on &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;this system.&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">exe_name</span><span class="si">}</span><span class="s2"> does not appear to be a valid executable on "</span>
+                <span class="o">+</span> <span class="s2">"this system."</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">module_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">+=</span> <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot; Check the &#39;executes&#39; option in the module runner &quot;</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">.py.&quot;</span>
+                    <span class="sa">f</span><span class="s2">" Check the 'executes' option in the module runner "</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">.py."</span>
                 <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
 
@@ -819,7 +819,7 @@
 <div class="viewcode-block" id="DependencyHandler._split_string">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._split_string">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_split_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Split String.</span>
+<span class="w">        </span><span class="sd">"""Split String.</span>
 
 <span class="sd">        This method splits the version number from the input module string.</span>
 
@@ -833,21 +833,21 @@
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Array of string components</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_greq</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_greq</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_greq</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equal</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_equal</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_equal</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_great</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_great</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_great</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_less</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&quot;&lt;&quot; not permitted in package version string.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'"&lt;" not permitted in package version string.'</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="p">[</span><span class="n">string</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="p">[</span><span class="n">string</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">""</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">val</span></div>
 
@@ -855,11 +855,11 @@
 <div class="viewcode-block" id="DependencyHandler._split_strings">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._split_strings">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_split_strings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Split Strings.</span>
+<span class="w">        </span><span class="sd">"""Split Strings.</span>
 
 <span class="sd">        This method splits the input dependency modules strings.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_depend_arr</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
             <span class="nb">map</span><span class="p">(</span>
                 <span class="nb">list</span><span class="p">,</span>
@@ -872,11 +872,11 @@
 <div class="viewcode-block" id="DependencyHandler._unique_dependencies">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._unique_dependencies">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_unique_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create Unique Dependencies.</span>
+<span class="w">        </span><span class="sd">"""Create Unique Dependencies.</span>
 
 <span class="sd">        This method creates a unique list of depencies.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">package_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dependency_set</span><span class="p">:</span>
 
             <span class="n">subset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slice_col_val</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_depend_arr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">package_name</span><span class="p">)</span>
@@ -884,7 +884,7 @@
             <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_equal</span> <span class="ow">in</span> <span class="n">element</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">):</span>
                 <span class="n">subset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slice_col_val</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equal</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">ver</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span> <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">[</span><span class="mi">2</span><span class="p">]]):</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">ver</span> <span class="o">!=</span> <span class="s2">""</span> <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">[</span><span class="mi">2</span><span class="p">]]):</span>
                 <span class="n">subset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slice_col_val</span><span class="p">(</span>
                     <span class="n">subset</span><span class="p">,</span>
                     <span class="mi">2</span><span class="p">,</span>
@@ -895,13 +895,13 @@
 
             <span class="n">subset</span> <span class="o">=</span> <span class="p">[</span><span class="n">element</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slice_2d</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">dependency_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subset</span><span class="p">))</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dependency_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subset</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="DependencyHandler.check_dependencies">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler.check_dependencies">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check Dependencies.</span>
+<span class="w">        </span><span class="sd">"""Check Dependencies.</span>
 
 <span class="sd">        This method checks that the required dependencies are installed.</span>
 
@@ -910,7 +910,7 @@
 <span class="sd">        list</span>
 <span class="sd">            List of depenecies with versions and paths</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">dependency_status_list</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">dependency</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dependency_set</span><span class="p">:</span>
@@ -919,23 +919,23 @@
                 <span class="n">package</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">dependency</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Could not import pipeline dependency </span><span class="si">{</span><span class="n">dependency</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Could not import pipeline dependency </span><span class="si">{</span><span class="n">dependency</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
 
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="s2">&quot;__version__&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="s2">"__version__"</span><span class="p">):</span>
                 <span class="n">version</span> <span class="o">=</span> <span class="n">package</span><span class="o">.</span><span class="n">__version__</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;N/A&quot;</span>
+                <span class="n">version</span> <span class="o">=</span> <span class="s2">"N/A"</span>
 
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="s2">&quot;__path__&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="s2">"__path__"</span><span class="p">):</span>
                 <span class="n">path</span> <span class="o">=</span> <span class="n">package</span><span class="o">.</span><span class="n">__path__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="s2">&quot;__file__&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="s2">"__file__"</span><span class="p">):</span>
                 <span class="n">path</span> <span class="o">=</span> <span class="n">package</span><span class="o">.</span><span class="vm">__file__</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;N/A&quot;</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="s2">"N/A"</span>
 
             <span class="n">dependency_status_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot; - </span><span class="si">{</span><span class="n">package</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">" - </span><span class="si">{</span><span class="n">package</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">dependency_status_list</span></div>
@@ -944,7 +944,7 @@
 <div class="viewcode-block" id="DependencyHandler.check_executables">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler.check_executables">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_executables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check Executables.</span>
+<span class="w">        </span><span class="sd">"""Check Executables.</span>
 
 <span class="sd">        This method checks that the required executables are installed.</span>
 
@@ -953,7 +953,7 @@
 <span class="sd">        list</span>
 <span class="sd">            List of executables with paths</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">executable_status_list</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">executable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">executable_list</span><span class="p">:</span>
@@ -961,13 +961,13 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_check_executable</span><span class="p">(</span><span class="n">executable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exe_to_module</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">executable</span><span class="p">))</span>
 
             <span class="n">exe_path</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;which </span><span class="si">{</span><span class="n">executable</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">"which </span><span class="si">{</span><span class="n">executable</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                 <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
                 <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
             <span class="p">)</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
 
-            <span class="n">string</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39; - </span><span class="si">{</span><span class="n">executable</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">exe_path</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">' - </span><span class="si">{</span><span class="n">executable</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">exe_path</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
 
             <span class="n">executable_status_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 

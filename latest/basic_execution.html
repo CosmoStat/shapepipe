@@ -633,10 +633,10 @@ slot, and the OpenMPI bundled in the image wires the ranks together.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># one-time: pull the runtime image</span>
 apptainer<span class="w"> </span>pull<span class="w"> </span>shapepipe.sif<span class="w"> </span>docker://ghcr.io/cosmostat/shapepipe:develop-runtime
 
-<span class="c1"># load a host MPI in the same family as the image&#39;s OpenMPI (5.0.x), then launch</span>
+<span class="c1"># load a host MPI in the same family as the image's OpenMPI (5.0.x), then launch</span>
 module<span class="w"> </span>load<span class="w"> </span>openmpi
 mpirun<span class="w"> </span>-n<span class="w"> </span>&lt;NUMBER<span class="w"> </span>OF<span class="w"> </span>RANKS&gt;<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>apptainer<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>--bind<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$PWD</span><span class="s2">:</span><span class="nv">$PWD</span><span class="s2">&quot;</span><span class="w"> </span>shapepipe.sif<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>apptainer<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>--bind<span class="w"> </span><span class="s2">"</span><span class="nv">$PWD</span><span class="s2">:</span><span class="nv">$PWD</span><span class="s2">"</span><span class="w"> </span>shapepipe.sif<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>shapepipe_run<span class="w"> </span>-c<span class="w"> </span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>CONFIG<span class="w"> </span>FILE&gt;
 </pre></div>
 </div>

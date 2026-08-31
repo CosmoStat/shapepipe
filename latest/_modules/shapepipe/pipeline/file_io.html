@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.pipeline.file_io</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;FILE IO.</span>
+<span></span><span class="sd">"""FILE IO.</span>
 
 <span class="sd">This file contains methods for file I/O handling.</span>
 
 <span class="sd">:Author: Marc Gentile and Axel Guinot</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
@@ -571,7 +571,7 @@
 <div class="viewcode-block" id="BaseCatalogue">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseCatalogue</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base catalogue.</span>
+<span class="w">    </span><span class="sd">"""Base catalogue.</span>
 
 <span class="sd">    Base catalogue management class.</span>
 
@@ -584,7 +584,7 @@
 <span class="sd">    -----</span>
 <span class="sd">    This class is not meant to be used directly</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullpath</span><span class="p">):</span>
 
@@ -597,45 +597,45 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">fullpath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set Full Path.</span>
+<span class="w">        </span><span class="sd">"""Set Full Path.</span>
 
 <span class="sd">        Get the full path of the catalogue file</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set Directory.</span>
+<span class="w">        </span><span class="sd">"""Set Directory.</span>
 
 <span class="sd">        Get the directory of the catalogue file</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_directory</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">filename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set File Name.</span>
+<span class="w">        </span><span class="sd">"""Set File Name.</span>
 
 <span class="sd">        Get the name of the catalogue file</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Format.</span>
+<span class="w">        </span><span class="sd">"""Format.</span>
 
 <span class="sd">        Get the default input/output format of the catalogue</span>
 <span class="sd">        (e.g. Text, SExtractor, FITS)</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format</span>
 
 <div class="viewcode-block" id="BaseCatalogue.get_nb_rows">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.get_nb_rows">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_nb_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Number of Rows.</span>
+<span class="w">        </span><span class="sd">"""Get Number of Rows.</span>
 
 <span class="sd">        Get the number of rows in the catalogue</span>
 
@@ -644,14 +644,14 @@
 <span class="sd">        int</span>
 <span class="sd">            Number of rows</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;get_nb_rows()&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"get_nb_rows()"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.get_nb_cols">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.get_nb_cols">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_nb_cols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Number of Columns.</span>
+<span class="w">        </span><span class="sd">"""Get Number of Columns.</span>
 
 <span class="sd">        Get the number of columns in the catalogue</span>
 
@@ -659,14 +659,14 @@
 <span class="sd">        -------</span>
 <span class="sd">        int</span>
 <span class="sd">            Number of columns</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;get_nb_cols()&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"get_nb_cols()"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.get_col_names">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.get_col_names">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_col_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Column Names.</span>
+<span class="w">        </span><span class="sd">"""Get Column Names.</span>
 
 <span class="sd">        Get the list of column names in the catalogue</span>
 
@@ -674,19 +674,19 @@
 <span class="sd">        -------</span>
 <span class="sd">        list</span>
 <span class="sd">            list of column names</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;get_col_names()&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"get_col_names()"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.get_col_formats">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.get_col_formats">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_col_formats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Column Formats.</span>
+<span class="w">        </span><span class="sd">"""Get Column Formats.</span>
 
 <span class="sd">        Get the list of column formats in the order of columns</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;get_col_names()&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"get_col_names()"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.add_col">
@@ -698,7 +698,7 @@
         <span class="n">col_comment</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">col_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add Column.</span>
+<span class="w">        </span><span class="sd">"""Add Column.</span>
 
 <span class="sd">        Add a Column to the catalogue</span>
 
@@ -713,14 +713,14 @@
 <span class="sd">        col_data : numpy.ndarray</span>
 <span class="sd">            Column data as a numpy array</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;add_col()&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"add_col()"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue._file_exists">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue._file_exists">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_file_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;File Exists.</span>
+<span class="w">        </span><span class="sd">"""File Exists.</span>
 
 <span class="sd">        Check if input file path is a valid file.</span>
 
@@ -729,7 +729,7 @@
 <span class="sd">        filepath : str</span>
 <span class="sd">            Path to file</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span>
@@ -739,7 +739,7 @@
 <div class="viewcode-block" id="BaseCatalogue.InputFormat">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">InputFormat</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Supported input catalogue formats.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Supported input catalogue formats."""</span>
 
         <span class="n">Undefined</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">TabulatedText</span> <span class="o">=</span> <span class="mi">1</span>
@@ -751,111 +751,111 @@
 <div class="viewcode-block" id="BaseCatalogue.OpenMode">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">OpenMode</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Supported input catalogue open modes.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Supported input catalogue open modes."""</span>
 
-        <span class="n">ReadOnly</span> <span class="o">=</span> <span class="s2">&quot;readonly&quot;</span>
-        <span class="n">ReadWrite</span> <span class="o">=</span> <span class="s2">&quot;update&quot;</span>
-        <span class="n">Append</span> <span class="o">=</span> <span class="s2">&quot;append&quot;</span></div>
+        <span class="n">ReadOnly</span> <span class="o">=</span> <span class="s2">"readonly"</span>
+        <span class="n">ReadWrite</span> <span class="o">=</span> <span class="s2">"update"</span>
+        <span class="n">Append</span> <span class="o">=</span> <span class="s2">"append"</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.Column">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.Column">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">Column</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Column.</span>
+<span class="w">        </span><span class="sd">"""Column.</span>
 
 <span class="sd">        Represents a column in the catalogue.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cat_col</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="nd">@property</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Set Name.</span>
+<span class="w">            </span><span class="sd">"""Set Name.</span>
 
 <span class="sd">            Get the name of the column</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;column.name&quot;</span><span class="p">)</span>
+<span class="sd">            """</span>
+            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"column.name"</span><span class="p">)</span>
 
         <span class="nd">@property</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Format.</span>
+<span class="w">            </span><span class="sd">"""Format.</span>
 
 <span class="sd">            Get the format of the column</span>
 
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;column.format&quot;</span><span class="p">)</span>
+<span class="sd">            """</span>
+            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"column.format"</span><span class="p">)</span>
 
         <span class="nd">@property</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Set Data.</span>
+<span class="w">            </span><span class="sd">"""Set Data.</span>
 
 <span class="sd">            Get the data associated with the column</span>
 
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;column.data&quot;</span><span class="p">)</span>
+<span class="sd">            """</span>
+            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"column.data"</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BaseCatalogue.Column.get_nb_rows">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_nb_rows">[docs]</a>
         <span class="k">def</span><span class="w"> </span><span class="nf">get_nb_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Get Number of Rows.</span>
+<span class="w">            </span><span class="sd">"""Get Number of Rows.</span>
 
 <span class="sd">            Retrieve the number of rows of the column.</span>
 
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;get_nb_rows()&quot;</span><span class="p">)</span></div>
+<span class="sd">            """</span>
+            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"get_nb_rows()"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.Column.get_info">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_info">[docs]</a>
         <span class="k">def</span><span class="w"> </span><span class="nf">get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Get Information.</span>
+<span class="w">            </span><span class="sd">"""Get Information.</span>
 
 <span class="sd">            Retrieve information about the column.</span>
 
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;get_info()&quot;</span><span class="p">)</span></div>
+<span class="sd">            """</span>
+            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"get_info()"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.Column.get_type">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_type">[docs]</a>
         <span class="k">def</span><span class="w"> </span><span class="nf">get_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Get Type.</span>
+<span class="w">            </span><span class="sd">"""Get Type.</span>
 
 <span class="sd">            Get the data type of the column</span>
 
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;get_type()&quot;</span><span class="p">)</span></div>
+<span class="sd">            """</span>
+            <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"get_type()"</span><span class="p">)</span></div>
 </div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.FeatureNotImplemented">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.FeatureNotImplemented">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">FeatureNotImplemented</span><span class="p">(</span><span class="ne">NotImplementedError</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Feature Not Implemented.</span>
+<span class="w">        </span><span class="sd">"""Feature Not Implemented.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        msg : str</span>
 <span class="sd">            Message</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_msg</span> <span class="o">=</span> <span class="n">msg</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;File IO *** ERROR ***: Feature: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_msg</span><span class="si">}</span><span class="s2"> is not &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;implemented in this class&quot;</span>
+                <span class="sa">f</span><span class="s2">"File IO *** ERROR ***: Feature: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_msg</span><span class="si">}</span><span class="s2"> is not "</span>
+                <span class="o">+</span> <span class="s2">"implemented in this class"</span>
             <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.catalogueNotOpen">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.catalogueNotOpen">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">catalogueNotOpen</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Catalogue Not Open.</span>
+<span class="w">        </span><span class="sd">"""Catalogue Not Open.</span>
 
 <span class="sd">        Catalogue has not been open yet.</span>
 
@@ -864,22 +864,22 @@
 <span class="sd">        filepath : str</span>
 <span class="sd">            Path to file</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span> <span class="o">=</span> <span class="n">filepath</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;File IO *** ERROR ***: catalogue: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span><span class="si">}</span><span class="s2"> &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;is not open&quot;</span>
+                <span class="sa">f</span><span class="s2">"File IO *** ERROR ***: catalogue: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span><span class="si">}</span><span class="s2"> "</span>
+                <span class="o">+</span> <span class="s2">"is not open"</span>
             <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.DataNotFound">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.DataNotFound">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">DataNotFound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Data Not Found.</span>
+<span class="w">        </span><span class="sd">"""Data Not Found.</span>
 
 <span class="sd">        No data found (at given hdu).</span>
 
@@ -890,7 +890,7 @@
 <span class="sd">        hdu : int</span>
 <span class="sd">            HDU number</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">,</span> <span class="n">hdu</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span> <span class="o">=</span> <span class="n">filepath</span>
@@ -898,15 +898,15 @@
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;File IO *** ERROR ***: File &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span><span class="si">}</span><span class="s2">&#39;, &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;hdu=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu</span><span class="si">}</span><span class="s2">: data not found&quot;</span>
+                <span class="sa">f</span><span class="s2">"File IO *** ERROR ***: File '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span><span class="si">}</span><span class="s2">', "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"hdu=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu</span><span class="si">}</span><span class="s2">: data not found"</span>
             <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.catalogueFileNotFound">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.catalogueFileNotFound">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">catalogueFileNotFound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Catalogue File Not Found.</span>
+<span class="w">        </span><span class="sd">"""Catalogue File Not Found.</span>
 
 <span class="sd">        Exception thrown when a catalogue file is not found on disk.</span>
 
@@ -915,20 +915,20 @@
 <span class="sd">        filepath : str</span>
 <span class="sd">            Path to file</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span> <span class="o">=</span> <span class="n">filepath</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Set string representation of the exception object.&quot;&quot;&quot;</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;File IO *** ERROR ***: file </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span><span class="si">}</span><span class="s2"> no found&quot;</span></div>
+<span class="w">            </span><span class="sd">"""Set string representation of the exception object."""</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"File IO *** ERROR ***: file </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span><span class="si">}</span><span class="s2"> no found"</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.ColumnNotFound">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.ColumnNotFound">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">ColumnNotFound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Column Not Found.</span>
+<span class="w">        </span><span class="sd">"""Column Not Found.</span>
 
 <span class="sd">        Exception thrown when a named catalogue column could not be found</span>
 
@@ -937,20 +937,20 @@
 <span class="sd">        col_name : str</span>
 <span class="sd">            Column name</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_name</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_col_name</span> <span class="o">=</span> <span class="n">col_name</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Set string representation of the exception object.&quot;&quot;&quot;</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;File IO *** ERROR ***: column </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_col_name</span><span class="si">}</span><span class="s2"> no found&quot;</span></div>
+<span class="w">            </span><span class="sd">"""Set string representation of the exception object."""</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"File IO *** ERROR ***: column </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_col_name</span><span class="si">}</span><span class="s2"> no found"</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.catalogueNotCreated">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.catalogueNotCreated">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">catalogueNotCreated</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Catalogue Not Created.</span>
+<span class="w">        </span><span class="sd">"""Catalogue Not Created.</span>
 
 <span class="sd">        Catalogue could not be created.</span>
 
@@ -959,22 +959,22 @@
 <span class="sd">        filepath : str</span>
 <span class="sd">            Path to file</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span> <span class="o">=</span> <span class="n">filepath</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;File IO *** ERROR ***: catalogue: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span><span class="si">}</span><span class="s2"> could &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;not be created&quot;</span>
+                <span class="sa">f</span><span class="s2">"File IO *** ERROR ***: catalogue: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span><span class="si">}</span><span class="s2"> could "</span>
+                <span class="o">+</span> <span class="s2">"not be created"</span>
             <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.OpenModeNotSupported">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.OpenModeNotSupported">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">OpenModeNotSupported</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Open Mode Not Supported.</span>
+<span class="w">        </span><span class="sd">"""Open Mode Not Supported.</span>
 
 <span class="sd">        Opening mode not supported by this version.</span>
 
@@ -985,7 +985,7 @@
 <span class="sd">        open_mode : OpenMode</span>
 <span class="sd">            File opening mode</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">,</span> <span class="n">open_mode</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span> <span class="o">=</span> <span class="n">filepath</span>
@@ -993,15 +993,15 @@
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;File IO *** ERROR ***: catalogue: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span><span class="si">}</span><span class="s2"> &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;Open Mode </span><span class="si">{self._open_mode}</span><span class="s2"> not supported&quot;</span>
+                <span class="sa">f</span><span class="s2">"File IO *** ERROR ***: catalogue: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span><span class="si">}</span><span class="s2"> "</span>
+                <span class="o">+</span> <span class="s2">"Open Mode </span><span class="si">{self._open_mode}</span><span class="s2"> not supported"</span>
             <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseCatalogue.OpenModeConflict">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.OpenModeConflict">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">OpenModeConflict</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Open Mode Conflict.</span>
+<span class="w">        </span><span class="sd">"""Open Mode Conflict.</span>
 
 <span class="sd">        Opening mode is in conflict with an action.</span>
 
@@ -1012,7 +1012,7 @@
 <span class="sd">        open_mode_needed : OpenMode</span>
 <span class="sd">            File opening mode needed</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">open_mode</span><span class="p">,</span> <span class="n">open_mode_needed</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_open_mode</span> <span class="o">=</span> <span class="n">open_mode</span>
@@ -1020,8 +1020,8 @@
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="s2">&quot;File IO *** ERROR ***: catalogue has to be open as : &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_mode_needed</span><span class="si">}</span><span class="s2"> , Mode used : </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_mode</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="s2">"File IO *** ERROR ***: catalogue has to be open as : "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_mode_needed</span><span class="si">}</span><span class="s2"> , Mode used : </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_mode</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span></div>
 </div>
 
@@ -1030,7 +1030,7 @@
 <div class="viewcode-block" id="FITSCatalogue">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FITSCatalogue</span><span class="p">(</span><span class="n">BaseCatalogue</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;FITS Catalogue.</span>
+<span class="w">    </span><span class="sd">"""FITS Catalogue.</span>
 
 <span class="sd">    Catalogues management in .FITS format.</span>
 
@@ -1050,7 +1050,7 @@
 <span class="sd">        Option to specify if the input is a SExtractor catalogue;</span>
 <span class="sd">        default is ``False``</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1083,23 +1083,23 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">info</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_info</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_info</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">info</span> <span class="o">=</span> <span class="s2">&quot;No information&quot;</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="s2">"No information"</span>
         <span class="k">return</span> <span class="n">info</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">hdu_no</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set HDU Number.</span>
+<span class="w">        </span><span class="sd">"""Set HDU Number.</span>
 
 <span class="sd">        Get the HDU index of the table.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hdu_no</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">open_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set Open Mode.</span>
+<span class="w">        </span><span class="sd">"""Set Open Mode.</span>
 
 <span class="sd">        Return the catalogue opening mode.</span>
 
@@ -1107,16 +1107,16 @@
 <span class="sd">        --------</span>
 <span class="sd">        FITSCatalogue.OpenMode</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_open_mode</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">use_memmap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use Memory Map.</span>
+<span class="w">        </span><span class="sd">"""Use Memory Map.</span>
 
 <span class="sd">        If True, use memory mapping.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_memmap</span>
 
     <span class="nd">@hdu_no</span><span class="o">.</span><span class="n">setter</span>
@@ -1134,11 +1134,11 @@
 <div class="viewcode-block" id="FITSCatalogue.open">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.open">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Open.</span>
+<span class="w">        </span><span class="sd">"""Open.</span>
 
 <span class="sd">        Open an existing catalogue.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullpath</span><span class="p">):</span>
 
             <span class="c1"># Open catalogue file</span>
@@ -1155,7 +1155,7 @@
 <div class="viewcode-block" id="FITSCatalogue.create">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.create">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ext_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">s_hdu</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sex_cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create.</span>
+<span class="w">        </span><span class="sd">"""Create.</span>
 
 <span class="sd">        Create an empty catalogue in FITS format.</span>
 
@@ -1168,7 +1168,7 @@
 <span class="sd">        sex_cat_path : str</span>
 <span class="sd">            Path to SEXtractor catalogue</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">primary_hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">PrimaryHDU</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SEx_catalogue</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">sex_cat_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1184,8 +1184,8 @@
                     <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">catalogueFileNotFound</span><span class="p">(</span><span class="n">sex_cat_path</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;sex_cat_path needs to be provided to create a &quot;</span>
-                    <span class="o">+</span> <span class="s2">&quot;SEXtractor catalogue&quot;</span>
+                    <span class="s2">"sex_cat_path needs to be provided to create a "</span>
+                    <span class="o">+</span> <span class="s2">"SEXtractor catalogue"</span>
                 <span class="p">)</span>
         <span class="k">elif</span> <span class="n">s_hdu</span><span class="p">:</span>
             <span class="n">secondary_hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="p">(</span>
@@ -1203,7 +1203,7 @@
 <div class="viewcode-block" id="FITSCatalogue.copy_hdu">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.copy_hdu">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">copy_hdu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fits_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hdu_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy HDU.</span>
+<span class="w">        </span><span class="sd">"""Copy HDU.</span>
 
 <span class="sd">        Copy an HDU from a FITS file.</span>
 
@@ -1216,7 +1216,7 @@
 <span class="sd">        hdu_name : str</span>
 <span class="sd">            HDU name</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">fits_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">fits_file</span> <span class="o">=</span> <span class="bp">self</span>
 
@@ -1245,7 +1245,7 @@
         <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">hdu_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply Mask.</span>
+<span class="w">        </span><span class="sd">"""Apply Mask.</span>
 
 <span class="sd">        Apply a mask to data for a specified HDU.</span>
 
@@ -1264,7 +1264,7 @@
 <span class="sd">        -----</span>
 <span class="sd">        This will create a new HDU containing data[mask]</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">fits_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">fits_file</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1272,9 +1272,9 @@
         <span class="k">if</span> <span class="n">fits_file</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">catalogueNotOpen</span><span class="p">(</span><span class="n">fits_file</span><span class="o">.</span><span class="n">fullpath</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Mask not provided&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Mask not provided"</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Mask need to be a numpy.ndarray&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Mask need to be a numpy.ndarray"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">hdu_no</span> <span class="o">=</span> <span class="n">fits_file</span><span class="o">.</span><span class="n">hdu_no</span>
 
@@ -1297,7 +1297,7 @@
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Mask type must be of type int or bool&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Mask type must be of type int or bool"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FITSCatalogue.save_as_fits">
@@ -1312,7 +1312,7 @@
         <span class="n">image_header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save as FITS.</span>
+<span class="w">        </span><span class="sd">"""Save as FITS.</span>
 
 <span class="sd">        Save data into an existing FITS file or into a new one.</span>
 
@@ -1347,7 +1347,7 @@
 <span class="sd">        To create a SExtractor-like FITS file you need to specify</span>
 <span class="sd">        ``SEx_catalogue=True`` when declaring the FITSCatalogue object.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span> <span class="o">!=</span> <span class="n">FITSCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenModeConflict</span><span class="p">(</span>
                 <span class="n">open_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span><span class="p">,</span>
@@ -1355,7 +1355,7 @@
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Data not provided&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Data not provided"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">image</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
@@ -1395,7 +1395,7 @@
                         <span class="n">names</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span>
                         <span class="n">it</span> <span class="o">=</span> <span class="n">names</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Names not provided&quot;</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Names not provided"</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">it</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_save_to_fits</span><span class="p">(</span>
@@ -1409,7 +1409,7 @@
 
             <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Names not provided&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Names not provided"</span><span class="p">)</span>
                 <span class="n">it</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">))</span>
                 <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_save_to_fits</span><span class="p">(</span>
@@ -1423,7 +1423,7 @@
 
             <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="ow">is</span> <span class="n">Table</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Names not provided&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Names not provided"</span><span class="p">)</span>
                 <span class="n">it</span> <span class="o">=</span> <span class="n">names</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_save_to_fits</span><span class="p">(</span>
                     <span class="n">data</span><span class="p">,</span>
@@ -1442,7 +1442,7 @@
                     <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Data need to be a numpy.ndarray&quot;</span><span class="p">)</span></div>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Data need to be a numpy.ndarray"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FITSCatalogue.create_from_numpy">
@@ -1455,7 +1455,7 @@
         <span class="n">ext_ver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create from Numpy.</span>
+<span class="w">        </span><span class="sd">"""Create from Numpy.</span>
 
 <span class="sd">        Create a new catalogue from a two-dimensional numpy array.</span>
 
@@ -1470,10 +1470,10 @@
 <span class="sd">        ext_ver : str</span>
 <span class="sd">            Extension version</span>
 <span class="sd">        header : list</span>
-<span class="sd">            List of dictionaries with keys: &#39;card&#39;, name&#39;, &#39;value&#39;,</span>
-<span class="sd">            &#39;value_orig&#39;, &#39;comment&#39;</span>
+<span class="sd">            List of dictionaries with keys: 'card', name', 'value',</span>
+<span class="sd">            'value_orig', 'comment'</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">col_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">col_names</span><span class="p">:</span>
             <span class="n">icol</span> <span class="o">=</span> <span class="n">col_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span>
@@ -1506,7 +1506,7 @@
 <div class="viewcode-block" id="FITSCatalogue.close">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.close">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Close.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Close."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span> <span class="o">==</span> <span class="n">FITSCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
@@ -1520,7 +1520,7 @@
 <div class="viewcode-block" id="FITSCatalogue.save">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Save."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span> <span class="o">==</span> <span class="n">FITSCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1533,7 +1533,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_nb_rows">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_nb_rows">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_nb_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Number of Rows.</span>
+<span class="w">        </span><span class="sd">"""Get Number of Rows.</span>
 
 <span class="sd">        Get the number of rows in the catalogue.</span>
 
@@ -1547,7 +1547,7 @@
 <span class="sd">        int</span>
 <span class="sd">            Number of rows or 0 if None</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">nb_rows</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">catalogueNotOpen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullpath</span><span class="p">)</span>
@@ -1565,7 +1565,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_nb_cols">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_nb_cols">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_nb_cols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Number of Columns.</span>
+<span class="w">        </span><span class="sd">"""Get Number of Columns.</span>
 
 <span class="sd">        Get the number of columns in the catalogue.</span>
 
@@ -1579,7 +1579,7 @@
 <span class="sd">        int</span>
 <span class="sd">            Number of columns or 0 if None</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">catalogueNotOpen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullpath</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1590,7 +1590,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_col_names">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_col_names">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_col_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Column Names.</span>
+<span class="w">        </span><span class="sd">"""Get Column Names.</span>
 
 <span class="sd">        Get the list of column names in the catalogue.</span>
 
@@ -1604,7 +1604,7 @@
 <span class="sd">        list</span>
 <span class="sd">            list of column names</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">catalogueNotOpen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullpath</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1616,7 +1616,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_info">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_info">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Information.</span>
+<span class="w">        </span><span class="sd">"""Get Information.</span>
 
 <span class="sd">        Retrieve some information about the catalogue.</span>
 
@@ -1629,7 +1629,7 @@
 <span class="sd">        -----</span>
 <span class="sd">        See the fitsio documentation of the info() function for the details</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1639,7 +1639,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_ext_name">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_ext_name">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_ext_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Extension Name.</span>
+<span class="w">        </span><span class="sd">"""Get Extension Name.</span>
 
 <span class="sd">        Return the name of an extansion or all of them.</span>
 
@@ -1653,7 +1653,7 @@
 <span class="sd">        str or list</span>
 <span class="sd">            The hdu name or a list of strings</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">n</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">))]</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1665,7 +1665,7 @@
 <div class="viewcode-block" id="FITSCatalogue.col_exists">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.col_exists">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">col_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Column Exists.</span>
+<span class="w">        </span><span class="sd">"""Column Exists.</span>
 
 <span class="sd">        Check whether a named column exists.</span>
 
@@ -1680,14 +1680,14 @@
 <span class="sd">        -------</span>
 <span class="sd">        bool</span>
 <span class="sd">            True if column exists, False otherwise</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_col_names</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="FITSCatalogue.get_col_index">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_col_index">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_col_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Column Index.</span>
+<span class="w">        </span><span class="sd">"""Get Column Index.</span>
 
 <span class="sd">        Get the column index from a column name.</span>
 
@@ -1703,7 +1703,7 @@
 <span class="sd">        int</span>
 <span class="sd">            Column index (zero-based)</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">col_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_col_names</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">col_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">col_names</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">ColumnNotFound</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span>
@@ -1713,7 +1713,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_col_data">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_col_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_col_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Column Data.</span>
+<span class="w">        </span><span class="sd">"""Get Column Data.</span>
 
 <span class="sd">        Return the data of a column from its index.</span>
 
@@ -1729,7 +1729,7 @@
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Data associated with the column</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">hdu_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hdu_no</span>
@@ -1746,7 +1746,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_named_col_data">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_named_col_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_named_col_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Named Column Data.</span>
+<span class="w">        </span><span class="sd">"""Get Named Column Data.</span>
 
 <span class="sd">        Return the data of a column from its index (zero-based).</span>
 
@@ -1762,7 +1762,7 @@
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Data associated with the column</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">hdu_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hdu_no</span>
@@ -1779,7 +1779,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_data">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Data.</span>
+<span class="w">        </span><span class="sd">"""Get Data.</span>
 
 <span class="sd">        Return data of the specified hdu.</span>
 
@@ -1793,7 +1793,7 @@
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Data associated with the HDU</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">hdu_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hdu_no</span>
@@ -1811,7 +1811,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_header">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_header">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Header.</span>
+<span class="w">        </span><span class="sd">"""Get Header.</span>
 
 <span class="sd">        Return the catalogue header as a list of dictionaries.</span>
 
@@ -1829,7 +1829,7 @@
 <span class="sd">        -----</span>
 <span class="sd">        See astropy documentation</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">hdu_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hdu_no</span>
@@ -1841,7 +1841,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_header_value">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_header_value">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_header_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Header Value.</span>
+<span class="w">        </span><span class="sd">"""Get Header Value.</span>
 
 <span class="sd">        Return the value of a parameters or a linear combination of parameters</span>
 <span class="sd">        and/or numbers.</span>
@@ -1858,18 +1858,18 @@
 <span class="sd">        float</span>
 <span class="sd">            Result of the request</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">request</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;request not provided&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"request not provided"</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">request</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;request has to be a string&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"request has to be a string"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">hdu_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hdu_no</span>
 
         <span class="n">header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_header</span><span class="p">(</span><span class="n">hdu_no</span><span class="o">=</span><span class="n">hdu_no</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">header</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Empty header in the hdu : </span><span class="si">{</span><span class="n">hdu_no</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Empty header in the hdu : </span><span class="si">{</span><span class="n">hdu_no</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">interpreter</span><span class="p">(</span><span class="n">string</span><span class="o">=</span><span class="n">request</span><span class="p">,</span> <span class="n">catalogue</span><span class="o">=</span><span class="n">header</span><span class="p">)</span><span class="o">.</span><span class="n">result</span></div>
 
@@ -1877,7 +1877,7 @@
 <div class="viewcode-block" id="FITSCatalogue.add_header_card">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.add_header_card">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_header_card</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add Header Card.</span>
+<span class="w">        </span><span class="sd">"""Add Header Card.</span>
 
 <span class="sd">        Add a card in the header of the specified HDU.</span>
 
@@ -1892,7 +1892,7 @@
 <span class="sd">        hdu_no : int</span>
 <span class="sd">            HDU index</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span> <span class="o">!=</span> <span class="n">FITSCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenModeConflict</span><span class="p">(</span>
                 <span class="n">open_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span><span class="p">,</span>
@@ -1907,7 +1907,7 @@
 
         <span class="n">card</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;key not provided&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"key not provided"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">card</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
@@ -1915,7 +1915,7 @@
             <span class="n">card</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">comment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">card</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">card</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">comment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">card</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comment</span><span class="p">)</span>
@@ -1928,7 +1928,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_headers">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_headers">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Headers.</span>
+<span class="w">        </span><span class="sd">"""Get Headers.</span>
 
 <span class="sd">        Return the catalogue header as a list of dictionaries.</span>
 
@@ -1937,7 +1937,7 @@
 <span class="sd">        list</span>
 <span class="sd">            list of headers</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">headers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">hdu</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">:</span>
@@ -1951,7 +1951,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_comments">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_comments">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_comments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Comments.</span>
+<span class="w">        </span><span class="sd">"""Get Comments.</span>
 
 <span class="sd">        Return the list catalogue comments.</span>
 
@@ -1965,7 +1965,7 @@
 <span class="sd">        list</span>
 <span class="sd">            List of catalogue comments</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">hdu_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hdu_no</span>
@@ -1980,7 +1980,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_col_comments">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_col_comments">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_col_comments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Column Comments.</span>
+<span class="w">        </span><span class="sd">"""Get Column Comments.</span>
 
 <span class="sd">        Return the list of column comments.</span>
 
@@ -1994,14 +1994,14 @@
 <span class="sd">        list</span>
 <span class="sd">            List of column comments</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">hdu_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hdu_no</span>
             <span class="n">hdr_col_types</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">tt</span>
                 <span class="k">for</span> <span class="n">tt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-                <span class="k">if</span> <span class="s2">&quot;TTYPE&quot;</span> <span class="ow">in</span> <span class="n">tt</span>
+                <span class="k">if</span> <span class="s2">"TTYPE"</span> <span class="ow">in</span> <span class="n">tt</span>
             <span class="p">]</span>
             <span class="k">return</span> <span class="p">[</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">comments</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">hdr_col_types</span>
@@ -2014,7 +2014,7 @@
 <div class="viewcode-block" id="FITSCatalogue.get_col_formats">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_col_formats">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_col_formats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Column Formats.</span>
+<span class="w">        </span><span class="sd">"""Get Column Formats.</span>
 
 <span class="sd">        Get the list of python column formats in the order of columns.</span>
 
@@ -2028,7 +2028,7 @@
 <span class="sd">        list</span>
 <span class="sd">            List of column formats</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">hdu_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hdu_no</span>
@@ -2048,7 +2048,7 @@
         <span class="n">new_cat</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">new_cat_inst</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add Column.</span>
+<span class="w">        </span><span class="sd">"""Add Column.</span>
 
 <span class="sd">        Add a Column to the catalogue.</span>
 
@@ -2067,7 +2067,7 @@
 <span class="sd">        new_cat_inst : io.FITSCatalogue</span>
 <span class="sd">            New catalogue object</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">new_cat</span><span class="p">:</span>
             <span class="n">open_mode</span> <span class="o">=</span> <span class="n">new_cat_inst</span><span class="o">.</span><span class="n">open_mode</span>
             <span class="n">output_path</span> <span class="o">=</span> <span class="n">new_cat_inst</span><span class="o">.</span><span class="n">fullpath</span>
@@ -2085,7 +2085,7 @@
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;col_data must be a numpy.ndarray&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"col_data must be a numpy.ndarray"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">hdu_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hdu_no</span>
@@ -2111,7 +2111,7 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">data_shape</span><span class="p">:</span>
                 <span class="n">mem_size</span> <span class="o">*=</span> <span class="n">k</span>
-            <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">new_col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ColDefs</span><span class="p">(</span>
                 <span class="p">[</span>
                     <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
@@ -2123,9 +2123,9 @@
                 <span class="p">]</span>
             <span class="p">)</span>
             <span class="n">col_list</span> <span class="o">+=</span> <span class="n">new_col</span>
-        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">"A"</span><span class="p">:</span>
             <span class="n">mem_size</span> <span class="o">*=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">col_data</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">))</span>
-            <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">new_col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ColDefs</span><span class="p">(</span>
                 <span class="p">[</span>
                     <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
@@ -2138,7 +2138,7 @@
             <span class="p">)</span>
             <span class="n">col_list</span> <span class="o">+=</span> <span class="n">new_col</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">new_col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ColDefs</span><span class="p">(</span>
                 <span class="p">[</span>
                     <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
@@ -2169,7 +2169,7 @@
 <div class="viewcode-block" id="FITSCatalogue.remove_col">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.remove_col">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">remove_col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_index</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove Column.</span>
+<span class="w">        </span><span class="sd">"""Remove Column.</span>
 
 <span class="sd">        Delete a column from its index.</span>
 
@@ -2178,14 +2178,14 @@
 <span class="sd">        col_index : int</span>
 <span class="sd">            Index of the column to delete</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">&quot;remove_col()&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">FeatureNotImplemented</span><span class="p">(</span><span class="s2">"remove_col()"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FITSCatalogue.remove_named_col">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.remove_named_col">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">remove_named_col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove Named Column.</span>
+<span class="w">        </span><span class="sd">"""Remove Named Column.</span>
 
 <span class="sd">        Delete a column from its index.</span>
 
@@ -2194,7 +2194,7 @@
 <span class="sd">        col_name : str</span>
 <span class="sd">            Name of the column to delete</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">col_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_col_index</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">remove_col</span><span class="p">(</span><span class="n">col_index</span><span class="p">)</span>
@@ -2205,7 +2205,7 @@
 <div class="viewcode-block" id="FITSCatalogue._append_col">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue._append_col">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_append_col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Append Column.</span>
+<span class="w">        </span><span class="sd">"""Append Column.</span>
 
 <span class="sd">        Append a Column object.</span>
 
@@ -2216,7 +2216,7 @@
 <span class="sd">        hdu_no : int</span>
 <span class="sd">            HDU index</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">new_col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
                 <span class="n">name</span><span class="o">=</span><span class="n">column</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
@@ -2251,7 +2251,7 @@
 <div class="viewcode-block" id="FITSCatalogue._get_fits_col_type">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_fits_col_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_data</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get FITS Column Type.</span>
+<span class="w">        </span><span class="sd">"""Get FITS Column Type.</span>
 
 <span class="sd">        Get the FITS data type of a given column.</span>
 
@@ -2265,23 +2265,23 @@
 <span class="sd">        str</span>
 <span class="sd">            Column FITS data type</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">col_data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">&quot;D&quot;</span>
+            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">"D"</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">col_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">in</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">]:</span>
-            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">&quot;I&quot;</span>
+            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">"I"</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">col_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">in</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">]:</span>
-            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">&quot;J&quot;</span>
+            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">"J"</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">col_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">]:</span>
-            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">&quot;K&quot;</span>
+            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">"K"</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">col_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float16</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
-            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">&quot;D&quot;</span>
+            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">"D"</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">col_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">bool</span><span class="p">:</span>
-            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">&quot;L&quot;</span>
+            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">"L"</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">col_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">]:</span>
-            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">&quot;A&quot;</span>
+            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">"A"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">&quot;D&quot;</span>
+            <span class="n">col_type</span> <span class="o">=</span> <span class="s2">"D"</span>
 
         <span class="k">return</span> <span class="n">col_type</span></div>
 
@@ -2289,7 +2289,7 @@
 <div class="viewcode-block" id="FITSCatalogue._get_python_col_type">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue._get_python_col_type">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_python_col_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_type</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Python Column Type.</span>
+<span class="w">        </span><span class="sd">"""Get Python Column Type.</span>
 
 <span class="sd">        Get the Python data type of a given column.</span>
 
@@ -2303,17 +2303,17 @@
 <span class="sd">        str</span>
 <span class="sd">            Column Python data type</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">col_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="s2">&quot;J&quot;</span><span class="p">,</span> <span class="s2">&quot;K&quot;</span><span class="p">]:</span>
-            <span class="n">pcol_type</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">&quot;</span>
-        <span class="k">elif</span> <span class="n">col_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">]:</span>
-            <span class="n">pcol_type</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%f</span><span class="s2">&quot;</span>
-        <span class="k">elif</span> <span class="n">col_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">]:</span>
-            <span class="n">pcol_type</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span>
-        <span class="k">elif</span> <span class="n">col_type</span> <span class="o">==</span> <span class="s2">&quot;L&quot;</span><span class="p">:</span>
-            <span class="n">pcol_type</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">col_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"B"</span><span class="p">,</span> <span class="s2">"I"</span><span class="p">,</span> <span class="s2">"J"</span><span class="p">,</span> <span class="s2">"K"</span><span class="p">]:</span>
+            <span class="n">pcol_type</span> <span class="o">=</span> <span class="s2">"</span><span class="si">%d</span><span class="s2">"</span>
+        <span class="k">elif</span> <span class="n">col_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"D"</span><span class="p">,</span> <span class="s2">"E"</span><span class="p">]:</span>
+            <span class="n">pcol_type</span> <span class="o">=</span> <span class="s2">"</span><span class="si">%f</span><span class="s2">"</span>
+        <span class="k">elif</span> <span class="n">col_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"A"</span><span class="p">,</span> <span class="s2">"C"</span><span class="p">,</span> <span class="s2">"M"</span><span class="p">]:</span>
+            <span class="n">pcol_type</span> <span class="o">=</span> <span class="s2">"</span><span class="si">%s</span><span class="s2">"</span>
+        <span class="k">elif</span> <span class="n">col_type</span> <span class="o">==</span> <span class="s2">"L"</span><span class="p">:</span>
+            <span class="n">pcol_type</span> <span class="o">=</span> <span class="s2">"</span><span class="si">%s</span><span class="s2">"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">pcol_type</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%f</span><span class="s2">&quot;</span>
+            <span class="n">pcol_type</span> <span class="o">=</span> <span class="s2">"</span><span class="si">%f</span><span class="s2">"</span>
 
         <span class="k">return</span> <span class="n">pcol_type</span></div>
 
@@ -2329,7 +2329,7 @@
         <span class="n">sex_cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save to FITS.</span>
+<span class="w">        </span><span class="sd">"""Save to FITS.</span>
 
 <span class="sd">        Save array of data as fits with their associated column names.</span>
 
@@ -2348,26 +2348,26 @@
 <span class="sd">        overwrite : bool</span>
 <span class="sd">            Option to overwrite an existing catalogue</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Data not provided&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Data not provided"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullpath</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">ext_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">&quot;new&quot;</span>
+                <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">"new"</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SEx_catalogue</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">s_hdu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sex_cat_path</span><span class="o">=</span><span class="n">sex_cat_path</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">ext_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">&quot;LDAC_OBJECTS&quot;</span>
+                    <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">"LDAC_OBJECTS"</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">s_hdu</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">ext_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">&quot;new&quot;</span>
+                    <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">"new"</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">data</span><span class="p">])</span>
@@ -2381,7 +2381,7 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">data_shape</span><span class="p">:</span>
                     <span class="n">mem_size</span> <span class="o">*=</span> <span class="n">shape</span>
-                <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">"</span>
                 <span class="n">col_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
                         <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
@@ -2390,9 +2390,9 @@
                         <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">"A"</span><span class="p">:</span>
                 <span class="n">mem_size</span> <span class="o">*=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">))</span>
-                <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">"</span>
                 <span class="n">col_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
                         <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
@@ -2402,7 +2402,7 @@
                     <span class="p">)</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">"</span>
                 <span class="n">col_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
                         <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
@@ -2424,7 +2424,7 @@
         <span class="n">sex_cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save From Record Array.</span>
+<span class="w">        </span><span class="sd">"""Save From Record Array.</span>
 
 <span class="sd">        Save a numpy.recarray or astropy.io.fits.fitsrec.FITS_rec into a FITS</span>
 <span class="sd">        file.</span>
@@ -2440,15 +2440,15 @@
 <span class="sd">        overwrite : bool</span>
 <span class="sd">            Option to overwrite an existing catalogue</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Data not provided&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Data not provided"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullpath</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">ext_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">&quot;new&quot;</span>
+                <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">"new"</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">ext_name</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -2456,14 +2456,14 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">s_hdu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sex_cat_path</span><span class="o">=</span><span class="n">sex_cat_path</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">ext_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">&quot;LDAC_OBJECTS&quot;</span>
+                    <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">"LDAC_OBJECTS"</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">ext_name</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">s_hdu</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">ext_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">&quot;new&quot;</span>
+                    <span class="n">ext_name</span> <span class="o">=</span> <span class="s2">"new"</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">ext_name</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
@@ -2471,7 +2471,7 @@
 <div class="viewcode-block" id="FITSCatalogue._save_image">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue._save_image">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_save_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save Image.</span>
+<span class="w">        </span><span class="sd">"""Save Image.</span>
 
 <span class="sd">        Save an image into a FITS file.</span>
 
@@ -2484,20 +2484,20 @@
 <span class="sd">        overwrite : bool</span>
 <span class="sd">            Option to overwrite an existing catalogue</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">fits</span><span class="o">.</span><span class="n">PrimaryHDU</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">fullpath</span><span class="p">,</span>
                 <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Data or names not provided&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Data or names not provided"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FITSCatalogue.Column">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.Column">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">Column</span><span class="p">(</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">Column</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Column.</span>
+<span class="w">        </span><span class="sd">"""Column.</span>
 
 <span class="sd">        Represents a column in the catalogue.</span>
 
@@ -2512,7 +2512,7 @@
 <span class="sd">        data : numpy.ndarray</span>
 <span class="sd">            Associated column data</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
             <span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">Column</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -2520,7 +2520,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
 
             <span class="k">if</span> <span class="nb">format</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="nb">format</span> <span class="o">=</span> <span class="s2">&quot;D&quot;</span>
+                <span class="nb">format</span> <span class="o">=</span> <span class="s2">"D"</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_format</span> <span class="o">=</span> <span class="nb">format</span>
 
             <span class="k">if</span> <span class="n">comment</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -2536,43 +2536,43 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
 
         <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="n">info</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_col</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_col</span><span class="si">}</span><span class="s2">"</span>
             <span class="k">return</span> <span class="n">info</span>
 
         <span class="nd">@property</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Set Name.</span>
+<span class="w">            </span><span class="sd">"""Set Name.</span>
 
 <span class="sd">            Get the name of the column.</span>
 
-<span class="sd">            &quot;&quot;&quot;</span>
+<span class="sd">            """</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
 
         <span class="nd">@property</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Format.</span>
+<span class="w">            </span><span class="sd">"""Format.</span>
 
 <span class="sd">            Get the format of the column.</span>
 
-<span class="sd">            &quot;&quot;&quot;</span>
+<span class="sd">            """</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format</span>
 
         <span class="nd">@property</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">comment</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Comment.</span>
+<span class="w">            </span><span class="sd">"""Comment.</span>
 
 <span class="sd">            Get the comment string associated with the column.</span>
 
-<span class="sd">            &quot;&quot;&quot;</span>
+<span class="sd">            """</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comment</span>
 
         <span class="nd">@property</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Set Data.</span>
+<span class="w">            </span><span class="sd">"""Set Data.</span>
 
 <span class="sd">            Get the data associated with the column.</span>
 
-<span class="sd">            &quot;&quot;&quot;</span>
+<span class="sd">            """</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
 
         <span class="nd">@name</span><span class="o">.</span><span class="n">setter</span>
@@ -2597,7 +2597,7 @@
 <div class="viewcode-block" id="get_unit_from_fits_header">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.get_unit_from_fits_header">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_unit_from_fits_header</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Unit From FITS Header.</span>
+<span class="w">    </span><span class="sd">"""Get Unit From FITS Header.</span>
 
 <span class="sd">    Return coordinate unit corresponding to column with name ``key``.</span>
 
@@ -2618,12 +2618,12 @@
 <span class="sd">    astropy.units.Unit</span>
 <span class="sd">        Unit object</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Loop over column names to find key</span>
     <span class="n">idx</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">idx_found</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">ttype_idx</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;TTYPE</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">ttype_idx</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"TTYPE</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">if</span> <span class="n">ttype_idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">header</span><span class="p">:</span>
             <span class="c1"># Reached beyond last column</span>
             <span class="k">break</span>
@@ -2635,13 +2635,13 @@
         <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
 
     <span class="k">if</span> <span class="n">idx_found</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; not found in FITS header&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Column '</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">' not found in FITS header"</span><span class="p">)</span>
 
     <span class="c1"># Extract coordinate unit string from header</span>
-    <span class="n">tcunit_idx</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;TCUNI</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">tcunit_idx</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"TCUNI</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">"</span>
     <span class="k">if</span> <span class="n">tcunit_idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">header</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;No coordinate unit found for column &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39;&quot;</span> <span class="s2">&quot; in FITS header&quot;</span>
+            <span class="sa">f</span><span class="s2">"No coordinate unit found for column '</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">'"</span> <span class="s2">" in FITS header"</span>
         <span class="p">)</span>
     <span class="n">unit_str</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="n">tcunit_idx</span><span class="p">]</span>
 

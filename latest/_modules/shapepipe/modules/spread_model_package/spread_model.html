@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.spread_model_package.spread_model</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;SPREAD MODEL.</span>
+<span></span><span class="sd">"""SPREAD MODEL.</span>
 
 <span class="sd">Class to compute the spread model, criterion to select galaxies</span>
 
 <span class="sd">:Author: Axel Guinot</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">galsim</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -571,7 +571,7 @@
 <div class="viewcode-block" id="get_sm">
 <a class="viewcode-back" href="../../../../shapepipe.modules.spread_model_package.spread_model.html#shapepipe.modules.spread_model_package.spread_model.get_sm">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_sm</span><span class="p">(</span><span class="n">obj_vign</span><span class="p">,</span> <span class="n">psf_vign</span><span class="p">,</span> <span class="n">model_vign</span><span class="p">,</span> <span class="n">weight_vign</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Spread Model.</span>
+<span class="w">    </span><span class="sd">"""Get Spread Model.</span>
 
 <span class="sd">    This method compute the spread moel for an object.</span>
 
@@ -591,7 +591,7 @@
 <span class="sd">    tuple</span>
 <span class="sd">        Spread model and corresponding error values</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Mask invalid pixels</span>
     <span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">obj_vign</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mf">1e29</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">weight_vign</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
@@ -637,7 +637,7 @@
 <div class="viewcode-block" id="get_model">
 <a class="viewcode-back" href="../../../../shapepipe.modules.spread_model_package.spread_model.html#shapepipe.modules.spread_model_package.spread_model.get_model">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">img_shape</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Model.</span>
+<span class="w">    </span><span class="sd">"""Get Model.</span>
 
 <span class="sd">    This method computes</span>
 <span class="sd">     - an exponential galaxy model with scale radius = 1/16 FWHM</span>
@@ -663,7 +663,7 @@
 <span class="sd">    tuple</span>
 <span class="sd">        Vignet of the galaxy model and of the PSF model</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Get scale radius (pixels)</span>
     <span class="n">scale_radius</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">16</span> <span class="o">*</span> <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_fwhm</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
 
@@ -692,7 +692,7 @@
 <div class="viewcode-block" id="SpreadModel">
 <a class="viewcode-back" href="../../../../shapepipe.modules.spread_model_package.spread_model.html#shapepipe.modules.spread_model_package.spread_model.SpreadModel">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SpreadModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The Spread Model Class.</span>
+<span class="w">    </span><span class="sd">"""The Spread Model Class.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -716,7 +716,7 @@
 <span class="sd">    - ``add`` will output a copy of the input SExtractor with the columns</span>
 <span class="sd">      ``sm`` and ``sm_err``</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -736,19 +736,19 @@
 <div class="viewcode-block" id="SpreadModel.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.spread_model_package.spread_model.html#shapepipe.modules.spread_model_package.spread_model.SpreadModel.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process.</span>
+<span class="w">        </span><span class="sd">"""Process.</span>
 
 <span class="sd">        Process the spread model computation</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Get data</span>
         <span class="n">sex_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sex_cat_path</span><span class="p">,</span> <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">sex_cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-        <span class="n">obj_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sex_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;NUMBER&quot;</span><span class="p">])</span>
-        <span class="n">obj_vign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sex_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;VIGNET&quot;</span><span class="p">])</span>
+        <span class="n">obj_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sex_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
+        <span class="n">obj_vign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sex_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"VIGNET"</span><span class="p">])</span>
         <span class="n">obj_mag</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_mode</span> <span class="o">==</span> <span class="s2">&quot;new&quot;</span><span class="p">:</span>
-            <span class="n">obj_mag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sex_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;MAG_AUTO&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_mode</span> <span class="o">==</span> <span class="s2">"new"</span><span class="p">:</span>
+            <span class="n">obj_mag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sex_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"MAG_AUTO"</span><span class="p">])</span>
         <span class="n">sex_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="n">psf_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_psf_cat_path</span><span class="p">)</span>
@@ -758,7 +758,7 @@
             <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">weight_cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-        <span class="n">weigh_vign</span> <span class="o">=</span> <span class="n">weight_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;VIGNET&quot;</span><span class="p">]</span>
+        <span class="n">weigh_vign</span> <span class="o">=</span> <span class="n">weight_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"VIGNET"</span><span class="p">]</span>
         <span class="n">weight_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="c1"># Get spread model</span>
@@ -768,7 +768,7 @@
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">id_tmp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">obj_id</span><span class="p">):</span>
             <span class="n">sigma_list</span> <span class="o">=</span> <span class="p">[]</span>
 
-            <span class="k">if</span> <span class="n">psf_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">id_tmp</span><span class="p">)]</span> <span class="o">==</span> <span class="s2">&quot;empty&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">psf_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">id_tmp</span><span class="p">)]</span> <span class="o">==</span> <span class="s2">"empty"</span><span class="p">:</span>
                 <span class="n">spread_model_final</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
                 <span class="n">spread_model_err_final</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
                 <span class="k">continue</span>
@@ -780,7 +780,7 @@
                 <span class="c1"># The HSM grammar stores PSF size as T = 2 sigma^2 under</span>
                 <span class="c1"># HSM_T_PSF; spread model needs the Gaussian sigma (pixels).</span>
                 <span class="n">sigma_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="n">cs_size</span><span class="o">.</span><span class="n">T_to_sigma</span><span class="p">(</span><span class="n">psf_cat_id_ccd</span><span class="p">[</span><span class="s2">&quot;SHAPES&quot;</span><span class="p">][</span><span class="s2">&quot;HSM_T_PSF&quot;</span><span class="p">])</span>
+                    <span class="n">cs_size</span><span class="o">.</span><span class="n">T_to_sigma</span><span class="p">(</span><span class="n">psf_cat_id_ccd</span><span class="p">[</span><span class="s2">"SHAPES"</span><span class="p">][</span><span class="s2">"HSM_T_PSF"</span><span class="p">])</span>
                 <span class="p">)</span>
 
             <span class="n">obj_sigma_tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">sigma_list</span><span class="p">)</span>
@@ -804,10 +804,10 @@
             <span class="n">spread_model_final</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj_sm</span><span class="p">)</span>
             <span class="n">spread_model_err_final</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj_sm_err</span><span class="p">)</span>
 
-        <span class="n">spread_model_final</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">spread_model_final</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+        <span class="n">spread_model_final</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">spread_model_final</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">)</span>
         <span class="n">spread_model_err_final</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="n">spread_model_err_final</span><span class="p">,</span>
-            <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="n">psf_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -820,7 +820,7 @@
 <div class="viewcode-block" id="SpreadModel.save_results">
 <a class="viewcode-back" href="../../../../shapepipe.modules.spread_model_package.spread_model.html#shapepipe.modules.spread_model_package.spread_model.SpreadModel.save_results">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">sm_err</span><span class="p">,</span> <span class="n">mag</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save Results.</span>
+<span class="w">        </span><span class="sd">"""Save Results.</span>
 
 <span class="sd">        Save output catalogue with spread model and errors.</span>
 
@@ -840,23 +840,23 @@
 <span class="sd">        ValueError</span>
 <span class="sd">            For incorrect output mode</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_mode</span> <span class="o">==</span> <span class="s2">&quot;new&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_mode</span> <span class="o">==</span> <span class="s2">"new"</span><span class="p">:</span>
             <span class="n">new_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span><span class="p">,</span>
                 <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">dict_data</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;NUMBER&quot;</span><span class="p">:</span> <span class="n">number</span><span class="p">,</span>
-                <span class="s2">&quot;MAG&quot;</span><span class="p">:</span> <span class="n">mag</span><span class="p">,</span>
-                <span class="s2">&quot;SPREAD_MODEL&quot;</span><span class="p">:</span> <span class="n">sm</span><span class="p">,</span>
-                <span class="s2">&quot;SPREADERR_MODEL&quot;</span><span class="p">:</span> <span class="n">sm_err</span><span class="p">,</span>
+                <span class="s2">"NUMBER"</span><span class="p">:</span> <span class="n">number</span><span class="p">,</span>
+                <span class="s2">"MAG"</span><span class="p">:</span> <span class="n">mag</span><span class="p">,</span>
+                <span class="s2">"SPREAD_MODEL"</span><span class="p">:</span> <span class="n">sm</span><span class="p">,</span>
+                <span class="s2">"SPREADERR_MODEL"</span><span class="p">:</span> <span class="n">sm_err</span><span class="p">,</span>
             <span class="p">}</span>
             <span class="n">new_cat</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span>
                 <span class="n">data</span><span class="o">=</span><span class="n">dict_data</span><span class="p">,</span> <span class="n">sex_cat_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sex_cat_path</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_mode</span> <span class="o">==</span> <span class="s2">&quot;add&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_mode</span> <span class="o">==</span> <span class="s2">"add"</span><span class="p">:</span>
             <span class="n">ori_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sex_cat_path</span><span class="p">,</span>
                 <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -868,15 +868,15 @@
                 <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">ori_cat</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span>
-                <span class="s2">&quot;SPREAD_MODEL&quot;</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">new_cat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">new_cat_inst</span><span class="o">=</span><span class="n">new_cat</span>
+                <span class="s2">"SPREAD_MODEL"</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">new_cat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">new_cat_inst</span><span class="o">=</span><span class="n">new_cat</span>
             <span class="p">)</span>
-            <span class="n">ori_cat</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">&quot;SPREAD_MODEL&quot;</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">new_cat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">new_cat_inst</span><span class="o">=</span><span class="n">new_cat</span><span class="p">)</span>
+            <span class="n">ori_cat</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"SPREAD_MODEL"</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">new_cat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">new_cat_inst</span><span class="o">=</span><span class="n">new_cat</span><span class="p">)</span>
             <span class="n">ori_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="n">new_cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-            <span class="n">new_cat</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">&quot;SPREADERR_MODEL&quot;</span><span class="p">,</span> <span class="n">sm_err</span><span class="p">)</span>
+            <span class="n">new_cat</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"SPREADERR_MODEL"</span><span class="p">,</span> <span class="n">sm_err</span><span class="p">)</span>
             <span class="n">new_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Mode must be in [new, add].&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Mode must be in [new, add]."</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

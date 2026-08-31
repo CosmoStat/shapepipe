@@ -552,7 +552,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.merge_starcat_package.merge_starcat</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;MERGE STAR CATALOGUES.</span>
+<span></span><span class="sd">"""MERGE STAR CATALOGUES.</span>
 
 <span class="sd">This module contains a class to identify single exposures that were used</span>
 <span class="sd">to create tiles.</span>
@@ -560,7 +560,7 @@
 <span class="sd">:Authors: Martin Kilbinger &lt;martin.kilbinger@cea.fr&gt;, Tobias Liaudat,</span>
 <span class="sd">    Morgan Schmitz, Axel Guinot</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
@@ -574,7 +574,7 @@
 <div class="viewcode-block" id="MergeStarCatMCCD">
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MergeStarCatMCCD</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge Star Catalogue MCCD.</span>
+<span class="w">    </span><span class="sd">"""Merge Star Catalogue MCCD.</span>
 
 <span class="sd">    Merge star catalogues of MCCD PSF model output.</span>
 
@@ -596,7 +596,7 @@
 <span class="sd">        Input catalogue type, added to outupt header; default is ``None``,</span>
 <span class="sd">        in which no key is added</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -621,7 +621,7 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD.rmse_calc">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">rmse_calc</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">sizes</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate RMSE.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Calculate RMSE.</span>
 
 <span class="sd">        Calculate square root of mean over input values.</span>
 <span class="sd">        If ``values`` is an array with element :math:`j` being</span>
@@ -646,7 +646,7 @@
 <span class="sd">        --------</span>
 <span class="sd">        MergeStarCatMCCD.mean_calc</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">MergeStarCatMCCD</span><span class="o">.</span><span class="n">mean_calc</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">sizes</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">rmse</span></div>
@@ -656,7 +656,7 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD.rmse_calc_2">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">rmse_calc_2</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">sizes</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate RMSE 2.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Calculate RMSE 2.</span>
 
 <span class="sd">        Calculate square root of mean over squared input valuess.</span>
 <span class="sd">        If ``values`` is an array with element :math:`j` being</span>
@@ -677,7 +677,7 @@
 <span class="sd">        float</span>
 <span class="sd">            Root mean square error</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sizes</span><span class="p">)))</span>
 
         <span class="k">return</span> <span class="n">rmse</span></div>
@@ -687,7 +687,7 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD.mean_calc">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">mean_calc</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">sizes</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate Mean.</span>
+<span class="w">        </span><span class="sd">"""Calculate Mean.</span>
 
 <span class="sd">        Calculate pixel mean over all input images.</span>
 
@@ -703,7 +703,7 @@
 <span class="sd">        float</span>
 <span class="sd">            Mean</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sizes</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">mean</span></div>
@@ -713,7 +713,7 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD.std_calc">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">std_calc</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate Standard Deviation.</span>
+<span class="w">        </span><span class="sd">"""Calculate Standard Deviation.</span>
 
 <span class="sd">        Calculate pixel standard deviation over all input images.</span>
 
@@ -729,7 +729,7 @@
 <span class="sd">        float</span>
 <span class="sd">            Standard deviation</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">std</span></div>
@@ -739,7 +739,7 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD.stats_calculator">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">stats_calculator</span><span class="p">(</span><span class="n">val_ref</span><span class="p">,</span> <span class="n">val_model</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate Stats.</span>
+<span class="w">        </span><span class="sd">"""Calculate Stats.</span>
 
 <span class="sd">        Calculate RMSE, mean, and standard deviation of residuals.</span>
 
@@ -755,7 +755,7 @@
 <span class="sd">        tuple</span>
 <span class="sd">            Root mean square error, mean and standard deviation</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">residual</span> <span class="o">=</span> <span class="n">val_ref</span> <span class="o">-</span> <span class="n">val_model</span>
 
         <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">residual</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
@@ -768,11 +768,11 @@
 <div class="viewcode-block" id="MergeStarCatMCCD.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process.</span>
+<span class="w">        </span><span class="sd">"""Process.</span>
 
 <span class="sd">        Process merging.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">g1_psf</span><span class="p">,</span> <span class="n">g2_psf</span><span class="p">,</span> <span class="n">size_psf</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
@@ -815,13 +815,13 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">starcat_j</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ignore_missing_simple</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error for file </span><span class="si">{</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, check FITS file integrity&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error for file </span><span class="si">{</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, check FITS file integrity"</span><span class="p">)</span>
                 <span class="c1">#raise</span>
                 <span class="k">continue</span>
 
-            <span class="n">stars</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;VIGNET_LIST&quot;</span><span class="p">])</span>
+            <span class="n">stars</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"VIGNET_LIST"</span><span class="p">])</span>
             <span class="n">stars</span><span class="p">[</span><span class="n">stars</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">1e6</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">psfs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;PSF_VIGNET_LIST&quot;</span><span class="p">])</span>
+            <span class="n">psfs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"PSF_VIGNET_LIST"</span><span class="p">])</span>
 
             <span class="c1"># Pixel mse calculation</span>
             <span class="n">pix_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">stars</span> <span class="o">-</span> <span class="n">psfs</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
@@ -890,21 +890,21 @@
 
             <span class="c1"># positions</span>
             <span class="n">x</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;GLOB_POSITION_IMG_LIST&quot;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"GLOB_POSITION_IMG_LIST"</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
             <span class="p">)</span>
             <span class="n">y</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;GLOB_POSITION_IMG_LIST&quot;</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"GLOB_POSITION_IMG_LIST"</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
             <span class="p">)</span>
 
             <span class="c1"># RA and DEC positions</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">ra</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;RA_LIST&quot;</span><span class="p">][:])</span>
-                <span class="n">dec</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;DEC_LIST&quot;</span><span class="p">][:])</span>
+                <span class="n">ra</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"RA_LIST"</span><span class="p">][:])</span>
+                <span class="n">dec</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"DEC_LIST"</span><span class="p">][:])</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="n">ra</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
                         <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span>
-                        <span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;GLOB_POSITION_IMG_LIST&quot;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
+                        <span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"GLOB_POSITION_IMG_LIST"</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
                         <span class="o">.</span><span class="n">shape</span><span class="p">,</span>
                         <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
                     <span class="p">)</span>
@@ -912,7 +912,7 @@
                 <span class="n">dec</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
                         <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span>
-                        <span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;GLOB_POSITION_IMG_LIST&quot;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
+                        <span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"GLOB_POSITION_IMG_LIST"</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
                         <span class="o">.</span><span class="n">shape</span><span class="p">,</span>
                         <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
                     <span class="p">)</span>
@@ -920,34 +920,34 @@
 
             <span class="c1"># shapes (convert sigmas to T = 2 sigma^2)</span>
             <span class="n">g1_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;PSF_MOM_LIST&quot;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"PSF_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
             <span class="p">)</span>
             <span class="n">g2_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;PSF_MOM_LIST&quot;</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"PSF_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
             <span class="p">)</span>
             <span class="n">size_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
                 <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_T</span><span class="p">(</span>
-                    <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;PSF_MOM_LIST&quot;</span><span class="p">][:,</span> <span class="mi">2</span><span class="p">]</span>
+                    <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"PSF_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">2</span><span class="p">]</span>
                 <span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">g1</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;STAR_MOM_LIST&quot;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">])</span>
-            <span class="n">g2</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;STAR_MOM_LIST&quot;</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">g1</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"STAR_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">g2</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"STAR_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">])</span>
             <span class="n">size</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
                 <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_T</span><span class="p">(</span>
-                    <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;STAR_MOM_LIST&quot;</span><span class="p">][:,</span> <span class="mi">2</span><span class="p">]</span>
+                    <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"STAR_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">2</span><span class="p">]</span>
                 <span class="p">)</span>
             <span class="p">)</span>
 
             <span class="c1"># flags</span>
             <span class="n">flag_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;PSF_MOM_LIST&quot;</span><span class="p">][:,</span> <span class="mi">3</span><span class="p">]</span>
+                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"PSF_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">3</span><span class="p">]</span>
             <span class="p">)</span>
             <span class="n">flag_star</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;STAR_MOM_LIST&quot;</span><span class="p">][:,</span> <span class="mi">3</span><span class="p">]</span>
+                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"STAR_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">3</span><span class="p">]</span>
             <span class="p">)</span>
 
             <span class="c1"># ccd id list</span>
-            <span class="n">ccd_nb</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;CCD_ID_LIST&quot;</span><span class="p">])</span>
+            <span class="n">ccd_nb</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"CCD_ID_LIST"</span><span class="p">])</span>
 
             <span class="n">starcat_j</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -957,43 +957,43 @@
         <span class="c1"># Regular pixel RMSE</span>
         <span class="n">tot_pixel_rmse</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">rmse_calc</span><span class="p">(</span><span class="n">pixel_mse</span><span class="p">,</span> <span class="n">size_mse</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;MCCD_merge_starcat: Regular Total pixel RMSE =&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">tot_pixel_rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"MCCD_merge_starcat: Regular Total pixel RMSE ="</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">tot_pixel_rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="c1"># Regular Total pixel mean</span>
         <span class="n">tot_pixel_mean</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">mean_calc</span><span class="p">(</span><span class="n">pixel_sum</span><span class="p">,</span> <span class="n">size_mse</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;MCCD_merge_starcat: Regular Total pixel mean =&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">tot_pixel_mean</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"MCCD_merge_starcat: Regular Total pixel mean ="</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">tot_pixel_mean</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="c1"># Regular Total MASKED pixel RMSE</span>
         <span class="n">tot_masked_pixel_rmse</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">rmse_calc</span><span class="p">(</span><span class="n">masked_pixel_mse</span><span class="p">,</span> <span class="n">masked_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;MCCD_merge_starcat: Regular Total MASKED pixel RMSE =&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">tot_masked_pixel_rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"MCCD_merge_starcat: Regular Total MASKED pixel RMSE ="</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">tot_masked_pixel_rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="c1"># Regular Total MASKED pixel mean</span>
         <span class="n">tot_masked_pixel_mean</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">mean_calc</span><span class="p">(</span><span class="n">masked_pixel_sum</span><span class="p">,</span> <span class="n">masked_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;MCCD_merge_starcat: Regular Total MASKED pixel mean =&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">tot_masked_pixel_mean</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"MCCD_merge_starcat: Regular Total MASKED pixel mean ="</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">tot_masked_pixel_mean</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="c1"># Normalized pixel RMSE</span>
         <span class="n">tot_pix_norm_rmse</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">rmse_calc</span><span class="p">(</span><span class="n">pix_norm_mse</span><span class="p">,</span> <span class="n">size_norm_mse</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;MCCD_merge_starcat: Normalized Total pixel RMSE =&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">tot_pix_norm_rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">"MCCD_merge_starcat: Normalized Total pixel RMSE ="</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">tot_pix_norm_rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="c1"># Normalized filtered pixel RMSE</span>
         <span class="n">tot_pix_filt_rmse</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">rmse_calc</span><span class="p">(</span><span class="n">pix_filt_mse</span><span class="p">,</span> <span class="n">size_filt_mse</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;MCCD_merge_starcat: Filtered Total pixel RMSE =&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">tot_pix_filt_rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">"MCCD_merge_starcat: Filtered Total pixel RMSE ="</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">tot_pix_filt_rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="n">concat_model_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model_var</span><span class="p">))</span>
@@ -1004,9 +1004,9 @@
         <span class="n">std_model_var</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">std_calc</span><span class="p">(</span><span class="n">concat_model_var</span><span class="p">)</span>
         <span class="n">rmse_model_var</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">rmse_calc_2</span><span class="p">(</span><span class="n">concat_model_var</span><span class="p">,</span> <span class="n">model_var_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;MCCD-RCA variance:</span><span class="se">\n</span><span class="s2">Mean Variance= </span><span class="si">{</span><span class="n">mean_model_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;Std Variance= </span><span class="si">{</span><span class="n">std_model_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;RMSE Variance= </span><span class="si">{</span><span class="n">rmse_model_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"MCCD-RCA variance:</span><span class="se">\n</span><span class="s2">Mean Variance= </span><span class="si">{</span><span class="n">mean_model_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"Std Variance= </span><span class="si">{</span><span class="n">std_model_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"RMSE Variance= </span><span class="si">{</span><span class="n">rmse_model_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="c1"># Star Noise Variance</span>
@@ -1014,9 +1014,9 @@
         <span class="n">std_star_var</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">std_calc</span><span class="p">(</span><span class="n">concat_star_noise_var</span><span class="p">)</span>
         <span class="n">rmse_star_var</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">rmse_calc_2</span><span class="p">(</span><span class="n">concat_star_noise_var</span><span class="p">,</span> <span class="n">star_noise_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Masked stars variance:</span><span class="se">\n</span><span class="s2">Mean Variance= </span><span class="si">{</span><span class="n">mean_star_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;Std Variance= </span><span class="si">{</span><span class="n">std_star_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;RMSE Variance= </span><span class="si">{</span><span class="n">rmse_star_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Masked stars variance:</span><span class="se">\n</span><span class="s2">Mean Variance= </span><span class="si">{</span><span class="n">mean_star_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"Std Variance= </span><span class="si">{</span><span class="n">std_star_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"RMSE Variance= </span><span class="si">{</span><span class="n">rmse_star_var</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="c1"># Mask and transform to numpy arrays</span>
@@ -1032,57 +1032,57 @@
 
         <span class="n">rmse</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std_dev</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">stats_calculator</span><span class="p">(</span><span class="n">star_e1</span><span class="p">,</span> <span class="n">psf_e1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Moment residual e1:</span><span class="se">\n</span><span class="s2">Mean= </span><span class="si">{</span><span class="n">mean</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Std Dev= </span><span class="si">{</span><span class="n">std_dev</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;RMSE= </span><span class="si">{</span><span class="n">rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Moment residual e1:</span><span class="se">\n</span><span class="s2">Mean= </span><span class="si">{</span><span class="n">mean</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Std Dev= </span><span class="si">{</span><span class="n">std_dev</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"RMSE= </span><span class="si">{</span><span class="n">rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="n">rmse</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std_dev</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">stats_calculator</span><span class="p">(</span><span class="n">star_e2</span><span class="p">,</span> <span class="n">psf_e2</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Moment residual e2:</span><span class="se">\n</span><span class="s2">Mean= </span><span class="si">{</span><span class="n">mean</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Std Dev= </span><span class="si">{</span><span class="n">std_dev</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;RMSE= </span><span class="si">{</span><span class="n">rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Moment residual e2:</span><span class="se">\n</span><span class="s2">Mean= </span><span class="si">{</span><span class="n">mean</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Std Dev= </span><span class="si">{</span><span class="n">std_dev</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"RMSE= </span><span class="si">{</span><span class="n">rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="n">rmse</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std_dev</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">stats_calculator</span><span class="p">(</span><span class="n">star_r2</span><span class="p">,</span> <span class="n">psf_r2</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Moment residual R2:</span><span class="se">\n</span><span class="s2">Mean= </span><span class="si">{</span><span class="n">mean</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Std Dev= </span><span class="si">{</span><span class="n">std_dev</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;RMSE= </span><span class="si">{</span><span class="n">rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Moment residual R2:</span><span class="se">\n</span><span class="s2">Mean= </span><span class="si">{</span><span class="n">mean</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Std Dev= </span><span class="si">{</span><span class="n">std_dev</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"RMSE= </span><span class="si">{</span><span class="n">rmse</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MCCD: Number of stars: </span><span class="si">{</span><span class="n">star_e1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MCCD: Number of stars: </span><span class="si">{</span><span class="n">star_e1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Prepare output FITS catalogue</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/full_starcat-0000000.fits&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/full_starcat-0000000.fits"</span><span class="p">,</span>
             <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
             <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># Collect columns (size stored as T = 2 sigma^2)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
-            <span class="s2">&quot;Y&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span>
-            <span class="s2">&quot;RA&quot;</span><span class="p">:</span> <span class="n">ra</span><span class="p">,</span>
-            <span class="s2">&quot;DEC&quot;</span><span class="p">:</span> <span class="n">dec</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_G1_PSF&quot;</span><span class="p">:</span> <span class="n">g1_psf</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_G2_PSF&quot;</span><span class="p">:</span> <span class="n">g2_psf</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_T_PSF&quot;</span><span class="p">:</span> <span class="n">size_psf</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_G1_STAR&quot;</span><span class="p">:</span> <span class="n">g1</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_G2_STAR&quot;</span><span class="p">:</span> <span class="n">g2</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_T_STAR&quot;</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_FLAG_PSF&quot;</span><span class="p">:</span> <span class="n">flag_psf</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_FLAG_STAR&quot;</span><span class="p">:</span> <span class="n">flag_star</span><span class="p">,</span>
-            <span class="s2">&quot;CCD_NB&quot;</span><span class="p">:</span> <span class="n">ccd_nb</span><span class="p">,</span>
+            <span class="s2">"X"</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+            <span class="s2">"Y"</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span>
+            <span class="s2">"RA"</span><span class="p">:</span> <span class="n">ra</span><span class="p">,</span>
+            <span class="s2">"DEC"</span><span class="p">:</span> <span class="n">dec</span><span class="p">,</span>
+            <span class="s2">"HSM_G1_PSF"</span><span class="p">:</span> <span class="n">g1_psf</span><span class="p">,</span>
+            <span class="s2">"HSM_G2_PSF"</span><span class="p">:</span> <span class="n">g2_psf</span><span class="p">,</span>
+            <span class="s2">"HSM_T_PSF"</span><span class="p">:</span> <span class="n">size_psf</span><span class="p">,</span>
+            <span class="s2">"HSM_G1_STAR"</span><span class="p">:</span> <span class="n">g1</span><span class="p">,</span>
+            <span class="s2">"HSM_G2_STAR"</span><span class="p">:</span> <span class="n">g2</span><span class="p">,</span>
+            <span class="s2">"HSM_T_STAR"</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
+            <span class="s2">"HSM_FLAG_PSF"</span><span class="p">:</span> <span class="n">flag_psf</span><span class="p">,</span>
+            <span class="s2">"HSM_FLAG_STAR"</span><span class="p">:</span> <span class="n">flag_star</span><span class="p">,</span>
+            <span class="s2">"CCD_NB"</span><span class="p">:</span> <span class="n">ccd_nb</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="c1"># Write file</span>
         <span class="n">output</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sex_cat_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
         <span class="c1"># MKDEBUG; Implement this in file_io</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_cat_type</span><span class="p">:</span>
-            <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;update&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdu_list</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"update"</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdu_list</span><span class="p">:</span>
                 <span class="n">header</span> <span class="o">=</span> <span class="n">hdu_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
     
                 <span class="c1"># Add a new key-value pair</span>
-                <span class="n">header</span><span class="p">[</span><span class="s1">&#39;CATTYPE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_cat_type</span><span class="p">,</span> <span class="s2">&quot;Input catalogue type&quot;</span><span class="p">)</span>
+                <span class="n">header</span><span class="p">[</span><span class="s1">'CATTYPE'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_cat_type</span><span class="p">,</span> <span class="s2">"Input catalogue type"</span><span class="p">)</span>
     
                 <span class="c1"># Save changes to the FITS file</span>
                 <span class="n">hdu_list</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
@@ -1094,7 +1094,7 @@
 <div class="viewcode-block" id="MergeStarCatPSFEX">
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatPSFEX">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MergeStarCatPSFEX</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge Star Catalogue PSFEx.</span>
+<span class="w">    </span><span class="sd">"""Merge Star Catalogue PSFEx.</span>
 
 <span class="sd">    Merge star catalogues of PSFEx PSF model output.</span>
 
@@ -1112,7 +1112,7 @@
 <span class="sd">        Input catalogue type, added to outupt header; default is ``None``,</span>
 <span class="sd">        in which no key is added</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1131,11 +1131,11 @@
 <div class="viewcode-block" id="MergeStarCatPSFEX.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatPSFEX.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process.</span>
+<span class="w">        </span><span class="sd">"""Process.</span>
 
 <span class="sd">        Process merging.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">g1_psf</span><span class="p">,</span> <span class="n">g2_psf</span><span class="p">,</span> <span class="n">size_psf</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">g1</span><span class="p">,</span> <span class="n">g2</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
@@ -1144,62 +1144,62 @@
         <span class="n">ccd_nb</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Merging </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> star catalogues&quot;</span>
+            <span class="sa">f</span><span class="s2">"Merging </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> star catalogues"</span>
         <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">starcat_j</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ignore_missing_simple</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error while opening file &#39;</span><span class="si">{</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error while opening file '</span><span class="si">{</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
                 <span class="c1">#raise</span>
                 <span class="k">continue</span>
 
             <span class="n">data_j</span> <span class="o">=</span> <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
 
             <span class="c1"># positions</span>
-            <span class="n">x</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">])</span>
-            <span class="n">y</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;Y&quot;</span><span class="p">])</span>
-            <span class="n">ra</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;RA&quot;</span><span class="p">])</span>
-            <span class="n">dec</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;DEC&quot;</span><span class="p">])</span>
+            <span class="n">x</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"X"</span><span class="p">])</span>
+            <span class="n">y</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"Y"</span><span class="p">])</span>
+            <span class="n">ra</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"RA"</span><span class="p">])</span>
+            <span class="n">dec</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"DEC"</span><span class="p">])</span>
 
             <span class="c1"># shapes (size column already holds T = 2 sigma^2)</span>
-            <span class="n">g1_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;HSM_G1_PSF&quot;</span><span class="p">])</span>
-            <span class="n">g2_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;HSM_G2_PSF&quot;</span><span class="p">])</span>
-            <span class="n">size_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;HSM_T_PSF&quot;</span><span class="p">])</span>
-            <span class="n">g1</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;HSM_G1_STAR&quot;</span><span class="p">])</span>
-            <span class="n">g2</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;HSM_G2_STAR&quot;</span><span class="p">])</span>
-            <span class="n">size</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;HSM_T_STAR&quot;</span><span class="p">])</span>
+            <span class="n">g1_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G1_PSF"</span><span class="p">])</span>
+            <span class="n">g2_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G2_PSF"</span><span class="p">])</span>
+            <span class="n">size_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_T_PSF"</span><span class="p">])</span>
+            <span class="n">g1</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G1_STAR"</span><span class="p">])</span>
+            <span class="n">g2</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G2_STAR"</span><span class="p">])</span>
+            <span class="n">size</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_T_STAR"</span><span class="p">])</span>
 
             <span class="c1"># flags</span>
-            <span class="n">flag_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;HSM_FLAG_PSF&quot;</span><span class="p">])</span>
-            <span class="n">flag_star</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;HSM_FLAG_STAR&quot;</span><span class="p">])</span>
+            <span class="n">flag_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_FLAG_PSF"</span><span class="p">])</span>
+            <span class="n">flag_star</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_FLAG_STAR"</span><span class="p">])</span>
 
             <span class="c1"># misc</span>
 
             <span class="c1"># MKDEBUG: The following columns do not exist (yet)</span>
             <span class="c1"># for psf converted (pix2wcs) files.</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">mag</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;MAG&quot;</span><span class="p">])</span>
+                <span class="n">mag</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"MAG"</span><span class="p">])</span>
             <span class="k">except</span><span class="p">:</span>
-                <span class="n">mag</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">]))</span>
+                <span class="n">mag</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"X"</span><span class="p">]))</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">snr</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;SNR&quot;</span><span class="p">])</span>
+                <span class="n">snr</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"SNR"</span><span class="p">])</span>
             <span class="k">except</span><span class="p">:</span>
-                <span class="n">snr</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">]))</span>
+                <span class="n">snr</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"X"</span><span class="p">]))</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">psfex_acc</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;ACCEPTED&quot;</span><span class="p">])</span>
+                <span class="n">psfex_acc</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"ACCEPTED"</span><span class="p">])</span>
             <span class="k">except</span><span class="p">:</span>
-                <span class="n">psfex_acc</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">]))</span>
+                <span class="n">psfex_acc</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"X"</span><span class="p">]))</span>
 
             <span class="c1"># CCD number</span>
-            <span class="n">ccd_nb</span> <span class="o">+=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\-([0-9]*)\-([0-9]+)\.&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="o">-</span><span class="mi">2</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span>
-                <span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;RA&quot;</span><span class="p">]</span>
+            <span class="n">ccd_nb</span> <span class="o">+=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\-([0-9]*)\-([0-9]+)\."</span><span class="p">,</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="o">-</span><span class="mi">2</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span>
+                <span class="n">data_j</span><span class="p">[</span><span class="s2">"RA"</span><span class="p">]</span>
             <span class="p">)</span>
 
         <span class="c1"># Prepare output FITS catalogue</span>
         <span class="c1"># MKDEBUG: SEx_cat=True -&gt; False</span>
-        <span class="n">out_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/full_starcat-0000000.fits&quot;</span>
+        <span class="n">out_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/full_starcat-0000000.fits"</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
             <span class="n">out_path</span><span class="p">,</span>
             <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
@@ -1208,22 +1208,22 @@
 
         <span class="c1"># Collect columns (size stored as T = 2 sigma^2)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
-            <span class="s2">&quot;Y&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span>
-            <span class="s2">&quot;RA&quot;</span><span class="p">:</span> <span class="n">ra</span><span class="p">,</span>
-            <span class="s2">&quot;DEC&quot;</span><span class="p">:</span> <span class="n">dec</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_G1_PSF&quot;</span><span class="p">:</span> <span class="n">g1_psf</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_G2_PSF&quot;</span><span class="p">:</span> <span class="n">g2_psf</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_T_PSF&quot;</span><span class="p">:</span> <span class="n">size_psf</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_G1_STAR&quot;</span><span class="p">:</span> <span class="n">g1</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_G2_STAR&quot;</span><span class="p">:</span> <span class="n">g2</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_T_STAR&quot;</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_FLAG_PSF&quot;</span><span class="p">:</span> <span class="n">flag_psf</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_FLAG_STAR&quot;</span><span class="p">:</span> <span class="n">flag_star</span><span class="p">,</span>
-            <span class="s2">&quot;MAG&quot;</span><span class="p">:</span> <span class="n">mag</span><span class="p">,</span>
-            <span class="s2">&quot;SNR&quot;</span><span class="p">:</span> <span class="n">snr</span><span class="p">,</span>
-            <span class="s2">&quot;ACCEPTED&quot;</span><span class="p">:</span> <span class="n">psfex_acc</span><span class="p">,</span>
-            <span class="s2">&quot;CCD_NB&quot;</span><span class="p">:</span> <span class="n">ccd_nb</span><span class="p">,</span>
+            <span class="s2">"X"</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+            <span class="s2">"Y"</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span>
+            <span class="s2">"RA"</span><span class="p">:</span> <span class="n">ra</span><span class="p">,</span>
+            <span class="s2">"DEC"</span><span class="p">:</span> <span class="n">dec</span><span class="p">,</span>
+            <span class="s2">"HSM_G1_PSF"</span><span class="p">:</span> <span class="n">g1_psf</span><span class="p">,</span>
+            <span class="s2">"HSM_G2_PSF"</span><span class="p">:</span> <span class="n">g2_psf</span><span class="p">,</span>
+            <span class="s2">"HSM_T_PSF"</span><span class="p">:</span> <span class="n">size_psf</span><span class="p">,</span>
+            <span class="s2">"HSM_G1_STAR"</span><span class="p">:</span> <span class="n">g1</span><span class="p">,</span>
+            <span class="s2">"HSM_G2_STAR"</span><span class="p">:</span> <span class="n">g2</span><span class="p">,</span>
+            <span class="s2">"HSM_T_STAR"</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
+            <span class="s2">"HSM_FLAG_PSF"</span><span class="p">:</span> <span class="n">flag_psf</span><span class="p">,</span>
+            <span class="s2">"HSM_FLAG_STAR"</span><span class="p">:</span> <span class="n">flag_star</span><span class="p">,</span>
+            <span class="s2">"MAG"</span><span class="p">:</span> <span class="n">mag</span><span class="p">,</span>
+            <span class="s2">"SNR"</span><span class="p">:</span> <span class="n">snr</span><span class="p">,</span>
+            <span class="s2">"ACCEPTED"</span><span class="p">:</span> <span class="n">psfex_acc</span><span class="p">,</span>
+            <span class="s2">"CCD_NB"</span><span class="p">:</span> <span class="n">ccd_nb</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="c1"># Write file</span>
@@ -1236,11 +1236,11 @@
         <span class="p">)</span>
         <span class="c1"># MKDEBUG; Implement this in file_io</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_cat_type</span><span class="p">:</span>
-            <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;update&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdu_list</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"update"</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdu_list</span><span class="p">:</span>
                 <span class="n">header</span> <span class="o">=</span> <span class="n">hdu_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
     
                 <span class="c1"># Add a new key-value pair</span>
-                <span class="n">header</span><span class="p">[</span><span class="s1">&#39;CATTYPE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_cat_type</span><span class="p">,</span> <span class="s2">&quot;Input catalogue type&quot;</span><span class="p">)</span>
+                <span class="n">header</span><span class="p">[</span><span class="s1">'CATTYPE'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_cat_type</span><span class="p">,</span> <span class="s2">"Input catalogue type"</span><span class="p">)</span>
     
                 <span class="c1"># Save changes to the FITS file</span>
                 <span class="n">hdu_list</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
@@ -1251,7 +1251,7 @@
 <div class="viewcode-block" id="MergeStarCatSetools">
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatSetools">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MergeStarCatSetools</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge Star Catalogue Setools.</span>
+<span class="w">    </span><span class="sd">"""Merge Star Catalogue Setools.</span>
 
 <span class="sd">    Merge star catalogues of Setools output.</span>
 
@@ -1266,7 +1266,7 @@
 <span class="sd">    hdu_table : int, optional</span>
 <span class="sd">        HDU number; default is ``2``</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_file_list</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">w_log</span><span class="p">,</span> <span class="n">hdu_table</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
 
@@ -1279,7 +1279,7 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatSetools.get_moments">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_moments</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Moments.</span>
+<span class="w">        </span><span class="sd">"""Get Moments.</span>
 
 <span class="sd">        Return second-order moments.</span>
 
@@ -1297,12 +1297,12 @@
 <span class="sd">        m02 : float</span>
 <span class="sd">            second-order moment along y</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># SExtractor output. First and second moments are normalised.</span>
         <span class="c1"># Second moments are centred.</span>
-        <span class="n">q11</span> <span class="o">=</span> <span class="s2">&quot;X2WIN_IMAGE&quot;</span>
-        <span class="n">q22</span> <span class="o">=</span> <span class="s2">&quot;Y2WIN_IMAGE&quot;</span>
-        <span class="n">q12</span> <span class="o">=</span> <span class="s2">&quot;XYWIN_IMAGE&quot;</span>
+        <span class="n">q11</span> <span class="o">=</span> <span class="s2">"X2WIN_IMAGE"</span>
+        <span class="n">q22</span> <span class="o">=</span> <span class="s2">"Y2WIN_IMAGE"</span>
+        <span class="n">q12</span> <span class="o">=</span> <span class="s2">"XYWIN_IMAGE"</span>
 
         <span class="c1"># Second moments</span>
         <span class="n">m11</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">q12</span><span class="p">]</span>
@@ -1316,7 +1316,7 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatSetools.get_ellipticity">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_ellipticity</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span><span class="p">,</span> <span class="n">typ</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Ellipticity.</span>
+<span class="w">        </span><span class="sd">"""Get Ellipticity.</span>
 
 <span class="sd">        Compute ellipticity from second-order moments.</span>
 
@@ -1329,21 +1329,21 @@
 <span class="sd">        m02 : float</span>
 <span class="sd">            second-order moment along y</span>
 <span class="sd">        typ : str</span>
-<span class="sd">            ellipticity type, allowed are &#39;epsilon&#39;, &#39;chi&#39;</span>
+<span class="sd">            ellipticity type, allowed are 'epsilon', 'chi'</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        list</span>
 <span class="sd">            ellipticity components</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">typ</span> <span class="o">==</span> <span class="s2">&quot;epsilon&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">typ</span> <span class="o">==</span> <span class="s2">"epsilon"</span><span class="p">:</span>
             <span class="c1"># Determinant = (Q_11 Q_22 - Q_12^2)^(1/2)</span>
             <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">m20</span> <span class="o">*</span> <span class="n">m02</span> <span class="o">-</span> <span class="n">m11</span> <span class="o">*</span> <span class="n">m11</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">typ</span> <span class="o">==</span> <span class="s2">&quot;chi&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">typ</span> <span class="o">==</span> <span class="s2">"chi"</span><span class="p">:</span>
             <span class="n">det</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid ellipticity type </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid ellipticity type </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Denominator = Q_11 + Q_22 [ + 2 * det]</span>
         <span class="n">den</span> <span class="o">=</span> <span class="n">m20</span> <span class="o">+</span> <span class="n">m02</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">det</span>
@@ -1351,7 +1351,7 @@
         <span class="c1"># Ellipticity = (Q_11 - Q_22 + 2 i Q_12) / den</span>
         <span class="n">ell</span> <span class="o">=</span> <span class="p">(</span><span class="n">m20</span> <span class="o">-</span> <span class="n">m02</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">m11</span><span class="p">)</span> <span class="o">/</span> <span class="n">den</span>
 
-        <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;chi&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">"chi"</span><span class="p">:</span>
             <span class="c1"># chi estimates 2*g, so to get g we have to divide by 2</span>
             <span class="n">ell</span> <span class="o">=</span> <span class="n">ell</span> <span class="o">/</span> <span class="mi">2</span>
 
@@ -1361,11 +1361,11 @@
 <div class="viewcode-block" id="MergeStarCatSetools.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatSetools.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process.</span>
+<span class="w">        </span><span class="sd">"""Process.</span>
 
 <span class="sd">        Process merging.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">eps1</span><span class="p">,</span> <span class="n">ep2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">flags</span><span class="p">,</span> <span class="n">flags_ext</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
@@ -1373,7 +1373,7 @@
         <span class="n">ccd_nb</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Merging </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> star catalogues&quot;</span>
+            <span class="sa">f</span><span class="s2">"Merging </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> star catalogues"</span>
         <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">:</span>
@@ -1382,33 +1382,33 @@
             <span class="n">data_j</span> <span class="o">=</span> <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
 
             <span class="c1"># positions</span>
-            <span class="n">x</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;XWIN_IMAGE&quot;</span><span class="p">])</span>
-            <span class="n">y</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;YWIN_IMAGE&quot;</span><span class="p">])</span>
-            <span class="n">ra</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;XWIN_WORLD&quot;</span><span class="p">])</span>
-            <span class="n">dec</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;YWIN_WORLD&quot;</span><span class="p">])</span>
+            <span class="n">x</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"XWIN_IMAGE"</span><span class="p">])</span>
+            <span class="n">y</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"YWIN_IMAGE"</span><span class="p">])</span>
+            <span class="n">ra</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"XWIN_WORLD"</span><span class="p">])</span>
+            <span class="n">dec</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"YWIN_WORLD"</span><span class="p">])</span>
 
             <span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_moments</span><span class="p">(</span><span class="n">data_j</span><span class="p">)</span>
-            <span class="n">eps1</span><span class="p">,</span> <span class="n">eps2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ellipticity</span><span class="p">(</span><span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span><span class="p">,</span> <span class="s2">&quot;epsilon&quot;</span><span class="p">)</span>
-            <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ellipticity</span><span class="p">(</span><span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span><span class="p">,</span> <span class="s2">&quot;chi&quot;</span><span class="p">)</span>
+            <span class="n">eps1</span><span class="p">,</span> <span class="n">eps2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ellipticity</span><span class="p">(</span><span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span><span class="p">,</span> <span class="s2">"epsilon"</span><span class="p">)</span>
+            <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ellipticity</span><span class="p">(</span><span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span><span class="p">,</span> <span class="s2">"chi"</span><span class="p">)</span>
 
-            <span class="n">size</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;FLUX_RADIUS&quot;</span><span class="p">])</span>
+            <span class="n">size</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"FLUX_RADIUS"</span><span class="p">])</span>
 
             <span class="c1"># flags</span>
-            <span class="n">flags</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;FLAGS_WIN&quot;</span><span class="p">])</span>
-            <span class="n">flags_ext</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;IMAFLAGS_ISO&quot;</span><span class="p">])</span>
+            <span class="n">flags</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"FLAGS_WIN"</span><span class="p">])</span>
+            <span class="n">flags_ext</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"IMAFLAGS_ISO"</span><span class="p">])</span>
 
             <span class="c1"># misc</span>
-            <span class="n">mag</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;MAG_WIN&quot;</span><span class="p">])</span>
-            <span class="n">snr</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;SNR_WIN&quot;</span><span class="p">])</span>
+            <span class="n">mag</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"MAG_WIN"</span><span class="p">])</span>
+            <span class="n">snr</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"SNR_WIN"</span><span class="p">])</span>
 
             <span class="c1"># CCD number</span>
-            <span class="n">ccd_nb</span> <span class="o">+=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\-([0-9]*)\-([0-9]+)\.&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="o">-</span><span class="mi">2</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span>
-                <span class="n">data_j</span><span class="p">[</span><span class="s2">&quot;XWIN_IMAGE&quot;</span><span class="p">]</span>
+            <span class="n">ccd_nb</span> <span class="o">+=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\-([0-9]*)\-([0-9]+)\."</span><span class="p">,</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="o">-</span><span class="mi">2</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span>
+                <span class="n">data_j</span><span class="p">[</span><span class="s2">"XWIN_IMAGE"</span><span class="p">]</span>
             <span class="p">)</span>
 
         <span class="c1"># Prepare output FITS catalogue</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/full_starcat-0000000.fits&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/full_starcat-0000000.fits"</span><span class="p">,</span>
             <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
             <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
@@ -1416,20 +1416,20 @@
         <span class="c1"># Collect columns</span>
         <span class="c1"># convert back to sigma for consistency</span>
         <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
-            <span class="s2">&quot;Y&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span>
-            <span class="s2">&quot;RA&quot;</span><span class="p">:</span> <span class="n">ra</span><span class="p">,</span>
-            <span class="s2">&quot;DEC&quot;</span><span class="p">:</span> <span class="n">dec</span><span class="p">,</span>
-            <span class="s2">&quot;EPS1&quot;</span><span class="p">:</span> <span class="n">eps1</span><span class="p">,</span>
-            <span class="s2">&quot;EPS2&quot;</span><span class="p">:</span> <span class="n">eps2</span><span class="p">,</span>
-            <span class="s2">&quot;CHI1&quot;</span><span class="p">:</span> <span class="n">chi1</span><span class="p">,</span>
-            <span class="s2">&quot;CHI2&quot;</span><span class="p">:</span> <span class="n">chi2</span><span class="p">,</span>
-            <span class="s2">&quot;SIZE&quot;</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
-            <span class="s2">&quot;FLAGS&quot;</span><span class="p">:</span> <span class="n">flags</span><span class="p">,</span>
-            <span class="s2">&quot;FLAGS_EXT&quot;</span><span class="p">:</span> <span class="n">flags_ext</span><span class="p">,</span>
-            <span class="s2">&quot;MAG&quot;</span><span class="p">:</span> <span class="n">mag</span><span class="p">,</span>
-            <span class="s2">&quot;SNR&quot;</span><span class="p">:</span> <span class="n">snr</span><span class="p">,</span>
-            <span class="s2">&quot;CCD_NB&quot;</span><span class="p">:</span> <span class="n">ccd_nb</span><span class="p">,</span>
+            <span class="s2">"X"</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+            <span class="s2">"Y"</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span>
+            <span class="s2">"RA"</span><span class="p">:</span> <span class="n">ra</span><span class="p">,</span>
+            <span class="s2">"DEC"</span><span class="p">:</span> <span class="n">dec</span><span class="p">,</span>
+            <span class="s2">"EPS1"</span><span class="p">:</span> <span class="n">eps1</span><span class="p">,</span>
+            <span class="s2">"EPS2"</span><span class="p">:</span> <span class="n">eps2</span><span class="p">,</span>
+            <span class="s2">"CHI1"</span><span class="p">:</span> <span class="n">chi1</span><span class="p">,</span>
+            <span class="s2">"CHI2"</span><span class="p">:</span> <span class="n">chi2</span><span class="p">,</span>
+            <span class="s2">"SIZE"</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
+            <span class="s2">"FLAGS"</span><span class="p">:</span> <span class="n">flags</span><span class="p">,</span>
+            <span class="s2">"FLAGS_EXT"</span><span class="p">:</span> <span class="n">flags_ext</span><span class="p">,</span>
+            <span class="s2">"MAG"</span><span class="p">:</span> <span class="n">mag</span><span class="p">,</span>
+            <span class="s2">"SNR"</span><span class="p">:</span> <span class="n">snr</span><span class="p">,</span>
+            <span class="s2">"CCD_NB"</span><span class="p">:</span> <span class="n">ccd_nb</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="c1"># Write file</span>

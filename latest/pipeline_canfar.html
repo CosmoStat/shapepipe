@@ -670,13 +670,13 @@ or any remote terminal that has the canfar library installed.</p>
 </pre></div>
 </div>
 <p>For convenience, the current PSF model can be set as environment variable, e.g.:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">psf</span><span class="o">=</span><span class="s2">&quot;psfex&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">psf</span><span class="o">=</span><span class="s2">"psfex"</span>
 </pre></div>
 </div>
 <p>Allowed are <code class="docutils literal notranslate"><span class="pre">psfex</span></code> and <code class="docutils literal notranslate"><span class="pre">mccd</span></code>.</p>
 <p>Setting the terminal title to display the patch can be useful for long jobs, to keep track of which terminal
 runs which patch:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span>-ne<span class="w"> </span><span class="s2">&quot;\033]0;</span><span class="nv">$patch</span><span class="s2">\007&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span>-ne<span class="w"> </span><span class="s2">"\033]0;</span><span class="nv">$patch</span><span class="s2">\007"</span>
 </pre></div>
 </div>
 </section>
@@ -893,7 +893,7 @@ cp<span class="w"> </span>summary/missing_job_32_all.txt<span class="w"> </span>
 <h3>Merge all final catalogues<a class="headerlink" href="#merge-all-final-catalogues" title="Link to this heading">#</a></h3>
 <p>The last step of <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing is, per patch, to merget all final catalogues. This is done via a python script, as follows.
 First, change to parent directory <code class="docutils literal notranslate"><span class="pre">/path/to/version</span></code> and run the following command for all patches</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">patchnum</span><span class="o">=</span><span class="sb">`</span>tr<span class="w"> </span><span class="nv">$patch</span><span class="w"> </span>P<span class="w"> </span><span class="s1">&#39;&#39;</span><span class="sb">`</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">patchnum</span><span class="o">=</span><span class="sb">`</span>tr<span class="w"> </span><span class="nv">$patch</span><span class="w"> </span>P<span class="w"> </span><span class="s1">''</span><span class="sb">`</span>
 create_final_cat.py<span class="w"> </span>-m<span class="w"> </span>final_cat_<span class="nv">$patch</span>.hdf5<span class="w"> </span>-i<span class="w"> </span>.<span class="w"> </span>-p<span class="w"> </span><span class="nv">$patch</span>/cfis/final_cat.param<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-P<span class="w"> </span><span class="nv">$patchnum</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">$patch</span>/n_tiles_final.txt<span class="w"> </span>-v
 </pre></div>
@@ -1092,7 +1092,7 @@ merge_psf_cat.py<span class="w"> </span><span class="o">[</span>-V<span class="w
 <h2>Extra Utilities<a class="headerlink" href="#extra-utilities" title="Link to this heading">#</a></h2>
 <section id="run-in-terminal-in-parallel">
 <h3>Run in Terminal in Parallel<a class="headerlink" href="#run-in-terminal-in-parallel" title="Link to this heading">#</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>IDs.txt<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-I<span class="w"> </span><span class="o">{}</span><span class="w"> </span>-P<span class="w"> </span><span class="m">16</span><span class="w"> </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;init_run_exclusive_canfar.sh -j 512 -e {}&#39;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>IDs.txt<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-I<span class="w"> </span><span class="o">{}</span><span class="w"> </span>-P<span class="w"> </span><span class="m">16</span><span class="w"> </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s1">'init_run_exclusive_canfar.sh -j 512 -e {}'</span>
 </pre></div>
 </div>
 </section>

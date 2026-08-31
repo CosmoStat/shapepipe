@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.utilities.file_system</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;FILE SYSTEM TOOLS.</span>
+<span></span><span class="sd">"""FILE SYSTEM TOOLS.</span>
 
 <span class="sd">This module defines methods for managing actions on the file system.</span>
 
 <span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
@@ -566,11 +566,11 @@
 <div class="viewcode-block" id="FileSystemError">
 <a class="viewcode-back" href="../../../shapepipe.utilities.file_system.html#shapepipe.utilities.file_system.FileSystemError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FileSystemError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;File System Error.</span>
+<span class="w">    </span><span class="sd">"""File System Error.</span>
 
 <span class="sd">    Generic error that is raised by the file system.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">pass</span></div>
 
@@ -579,7 +579,7 @@
 <div class="viewcode-block" id="check_dir">
 <a class="viewcode-back" href="../../../shapepipe.utilities.file_system.html#shapepipe.utilities.file_system.check_dir">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">check_dir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check Directory.</span>
+<span class="w">    </span><span class="sd">"""Check Directory.</span>
 
 <span class="sd">    Check if directory exists.</span>
 
@@ -593,10 +593,10 @@
 <span class="sd">    TypeError</span>
 <span class="sd">        If directory name is not a string</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dir_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Directory name must be of type string, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Directory name must be of type string, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span></div>
@@ -606,7 +606,7 @@
 <div class="viewcode-block" id="mkdir">
 <a class="viewcode-back" href="../../../shapepipe.utilities.file_system.html#shapepipe.utilities.file_system.mkdir">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">mkdir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">,</span> <span class="n">check_created</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make Directory.</span>
+<span class="w">    </span><span class="sd">"""Make Directory.</span>
 
 <span class="sd">    This method creates a directory in the specified path.</span>
 
@@ -628,12 +628,12 @@
 <span class="sd">    FileSystemError</span>
 <span class="sd">        If directory not properly created</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dir_name</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="n">exist_ok</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">check_created</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">check_dir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">):</span>
         <span class="k">raise</span> <span class="n">FileSystemError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;Directory &quot;</span><span class="si">{</span><span class="n">dir_name</span><span class="si">}</span><span class="s1">&quot; not found after mkdir command.&#39;</span>
+            <span class="sa">f</span><span class="s1">'Directory "</span><span class="si">{</span><span class="n">dir_name</span><span class="si">}</span><span class="s1">" not found after mkdir command.'</span>
         <span class="p">)</span></div>
 
 </pre></div>

@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.make_cat_package.make_cat</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;MAKE CATALOGUE.</span>
+<span></span><span class="sd">"""MAKE CATALOGUE.</span>
 
 <span class="sd">This module contains a class to create a shear catalogue.</span>
 
 <span class="sd">:Authors: Axel Guinot, Martin Kilbinger</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
@@ -575,7 +575,7 @@
 <div class="viewcode-block" id="get_output_name">
 <a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.get_output_name">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_output_name</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">file_number_string</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Output Name.</span>
+<span class="w">    </span><span class="sd">"""Get Output Name.</span>
 
 <span class="sd">    Return output file name.</span>
 
@@ -591,15 +591,15 @@
 <span class="sd">    str</span>
 <span class="sd">        output path name</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">/final_cat</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2">.fits&quot;</span></div>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">/final_cat</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2">.fits"</span></div>
 
 
 
 <div class="viewcode-block" id="prepare_final_cat_file">
 <a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.prepare_final_cat_file">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">prepare_final_cat_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">file_number_string</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepare Final Catalogue File.</span>
+<span class="w">    </span><span class="sd">"""Prepare Final Catalogue File.</span>
 
 <span class="sd">    Create a ``FITSCatalogue`` object for the current file.</span>
 
@@ -615,7 +615,7 @@
 <span class="sd">    file_io.FITSCatalogue</span>
 <span class="sd">        Output FITS file</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">output_name</span> <span class="o">=</span> <span class="n">get_output_name</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">file_number_string</span><span class="p">)</span>
 
@@ -629,7 +629,7 @@
 <div class="viewcode-block" id="remove_field_name">
 <a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.remove_field_name">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">remove_field_name</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove Field Name.</span>
+<span class="w">    </span><span class="sd">"""Remove Field Name.</span>
 
 <span class="sd">    Remove a column of a structured array from the given name.</span>
 
@@ -645,7 +645,7 @@
 <span class="sd">    numpy.ndarray</span>
 <span class="sd">        The structured array with the field removed</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
         <span class="n">names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
@@ -657,7 +657,7 @@
 <div class="viewcode-block" id="save_sextractor_data">
 <a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.save_sextractor_data">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">save_sextractor_data</span><span class="p">(</span><span class="n">final_cat_file</span><span class="p">,</span> <span class="n">sexcat_path</span><span class="p">,</span> <span class="n">remove_vignet</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save SExtractor Data.</span>
+<span class="w">    </span><span class="sd">"""Save SExtractor Data.</span>
 
 <span class="sd">    Save the SExtractor catalogue into the final one.</span>
 
@@ -675,20 +675,20 @@
 <span class="sd">    int</span>
 <span class="sd">        Number of objects saved</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">sexcat_file</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="n">sexcat_path</span><span class="p">,</span> <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">sexcat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sexcat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">())</span>
     <span class="k">if</span> <span class="n">remove_vignet</span><span class="p">:</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">remove_field_name</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;VIGNET&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">remove_field_name</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"VIGNET"</span><span class="p">)</span>
 
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ext_name</span><span class="o">=</span><span class="s2">&quot;RESULTS&quot;</span><span class="p">)</span>
+    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ext_name</span><span class="o">=</span><span class="s2">"RESULTS"</span><span class="p">)</span>
 
     <span class="n">cat_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
     <span class="n">tile_id</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
-        <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-            <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sexcat_path</span><span class="p">)[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">])[</span>
+        <span class="s2">"."</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"-"</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sexcat_path</span><span class="p">)[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">])[</span>
                 <span class="mi">1</span><span class="p">:</span>
             <span class="p">]</span>
         <span class="p">)</span>
@@ -696,7 +696,7 @@
     <span class="n">tile_id_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">cat_size</span><span class="p">)</span> <span class="o">*</span> <span class="n">tile_id</span>
 
     <span class="n">final_cat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">&quot;TILE_ID&quot;</span><span class="p">,</span> <span class="n">tile_id_array</span><span class="p">)</span>
+    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"TILE_ID"</span><span class="p">,</span> <span class="n">tile_id_array</span><span class="p">)</span>
 
     <span class="n">sexcat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -714,7 +714,7 @@
     <span class="n">gal_thresh</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
     <span class="n">n_obj</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Save Spread-Model Data.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Save Spread-Model Data.</span>
 
 <span class="sd">    Save the spread-model data into the final catalogue.</span>
 
@@ -742,7 +742,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    int</span>
 <span class="sd">        Number of objects saved</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">final_cat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="n">sexcat_sm_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -752,8 +752,8 @@
         <span class="p">)</span>
         <span class="n">sexcat_sm_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
 
-        <span class="n">sm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sexcat_sm_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;SPREAD_MODEL&quot;</span><span class="p">])</span>
-        <span class="n">sm_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sexcat_sm_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;SPREADERR_MODEL&quot;</span><span class="p">])</span>
+        <span class="n">sm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sexcat_sm_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"SPREAD_MODEL"</span><span class="p">])</span>
+        <span class="n">sm_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sexcat_sm_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"SPREADERR_MODEL"</span><span class="p">])</span>
 
         <span class="n">sexcat_sm_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -761,16 +761,16 @@
         <span class="n">sm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_obj</span><span class="p">)</span> <span class="o">*</span> <span class="mi">99</span>
         <span class="n">sm_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_obj</span><span class="p">)</span> <span class="o">*</span> <span class="mi">99</span>
 
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">&quot;SPREAD_MODEL&quot;</span><span class="p">,</span> <span class="n">sm</span><span class="p">)</span>
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">&quot;SPREADERR_MODEL&quot;</span><span class="p">,</span> <span class="n">sm_err</span><span class="p">)</span>
+    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"SPREAD_MODEL"</span><span class="p">,</span> <span class="n">sm</span><span class="p">)</span>
+    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"SPREADERR_MODEL"</span><span class="p">,</span> <span class="n">sm_err</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">do_classif</span><span class="p">:</span>
-        <span class="n">obj_flag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">sm</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int16&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="n">obj_flag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">sm</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int16"</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
         <span class="n">classif</span> <span class="o">=</span> <span class="n">sm</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">sm_err</span>
         <span class="n">obj_flag</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">classif</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">star_thresh</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">obj_flag</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">classif</span> <span class="o">&gt;</span> <span class="n">gal_thresh</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
 
-        <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">&quot;SPREAD_CLASS&quot;</span><span class="p">,</span> <span class="n">obj_flag</span><span class="p">)</span>
+        <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"SPREAD_CLASS"</span><span class="p">,</span> <span class="n">obj_flag</span><span class="p">)</span>
 
     <span class="n">final_cat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -781,7 +781,7 @@
 <div class="viewcode-block" id="SaveCatalogue">
 <a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SaveCatalogue</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save Catalogue.</span>
+<span class="w">    </span><span class="sd">"""Save Catalogue.</span>
 
 <span class="sd">    Class to save catalogue.</span>
 
@@ -794,7 +794,7 @@
 <span class="sd">    w_log : logging.Logger</span>
 <span class="sd">        Logging instance</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_cat_file</span><span class="p">,</span> <span class="n">cat_size_target</span><span class="p">,</span> <span class="n">w_log</span><span class="p">):</span>
 
@@ -806,11 +806,11 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
         <span class="n">cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">moments</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process Catalogue.</span>
+<span class="w">        </span><span class="sd">"""Process Catalogue.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -826,22 +826,22 @@
 <span class="sd">        str</span>
 <span class="sd">            error message if failure; `None` if success</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_final_cat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_final_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;NUMBER&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_final_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
 
         <span class="n">err_msg</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;ngmix&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"ngmix"</span><span class="p">:</span>
             <span class="n">err_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_save_ngmix_data</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">moments</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;psf&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"psf"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_save_psf_data</span><span class="p">(</span><span class="n">cat_path</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Invalid process mode (</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">) for &quot;</span>
-                <span class="o">+</span> <span class="s1">&#39;``make_cat.Savecatalogue``. Options are &quot;ngmix&quot; &#39;</span>
-                <span class="o">+</span> <span class="s1">&#39;or &quot;psf&quot;.&#39;</span>
+                <span class="sa">f</span><span class="s2">"Invalid process mode (</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">) for "</span>
+                <span class="o">+</span> <span class="s1">'``make_cat.Savecatalogue``. Options are "ngmix" '</span>
+                <span class="o">+</span> <span class="s1">'or "psf".'</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">err_msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -857,7 +857,7 @@
 <div class="viewcode-block" id="SaveCatalogue._update_dict">
 <a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._update_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_string</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update Dictionary.</span>
+<span class="w">        </span><span class="sd">"""Update Dictionary.</span>
 
 <span class="sd">        Update dictionary with value for all keys matching key string.</span>
 
@@ -868,11 +868,11 @@
 <span class="sd">        value : numpy.ndarray</span>
 <span class="sd">            Value to be assigned to the keys</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span> <span class="o">=</span> <span class="p">{</span>
             <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span><span class="p">,</span>
             <span class="o">**</span><span class="p">{</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_string</span><span class="si">}{</span><span class="n">key_end</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_string</span><span class="si">}{</span><span class="n">key_end</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">key_end</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key_ends</span>
             <span class="p">},</span>
         <span class="p">}</span></div>
@@ -881,7 +881,7 @@
 <div class="viewcode-block" id="SaveCatalogue._add2dict">
 <a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._add2dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_add2dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add to Dictionary.</span>
+<span class="w">        </span><span class="sd">"""Add to Dictionary.</span>
 
 <span class="sd">        Add key, value pair to output dictionary.</span>
 
@@ -894,7 +894,7 @@
 <span class="sd">        index : int</span>
 <span class="sd">            Dictionary element index</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">else</span><span class="p">:</span>
@@ -904,7 +904,7 @@
 <div class="viewcode-block" id="SaveCatalogue._save_ngmix_data">
 <a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_ngmix_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_save_ngmix_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngmix_cat_path</span><span class="p">,</span> <span class="n">moments</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save NGMIX Data.</span>
+<span class="w">        </span><span class="sd">"""Save NGMIX Data.</span>
 
 <span class="sd">        Save the NGMIX catalogue into the final one.</span>
 
@@ -931,49 +931,49 @@
 <span class="sd">        moments : bool, optional</span>
 <span class="sd">            If True, write the parallel ``NGMIXm_*`` (moments-branch) columns.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_key_ends</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;1M&quot;</span><span class="p">,</span> <span class="s2">&quot;1P&quot;</span><span class="p">,</span> <span class="s2">&quot;2M&quot;</span><span class="p">,</span> <span class="s2">&quot;2P&quot;</span><span class="p">,</span> <span class="s2">&quot;NOSHEAR&quot;</span><span class="p">]</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_key_ends</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"1M"</span><span class="p">,</span> <span class="s2">"1P"</span><span class="p">,</span> <span class="s2">"2M"</span><span class="p">,</span> <span class="s2">"2P"</span><span class="p">,</span> <span class="s2">"NOSHEAR"</span><span class="p">]</span>
 
         <span class="n">ngmix_cat_file</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="n">ngmix_cat_path</span><span class="p">)</span>
         <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
 
-        <span class="n">ngmix_n_epoch</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;n_epoch_model&quot;</span><span class="p">]</span>
+        <span class="n">ngmix_n_epoch</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"n_epoch_model"</span><span class="p">]</span>
         <span class="c1"># Low number of ngmix objects could be due to</span>
         <span class="c1"># (1) shape measurement failures (e.g. missing PSF): ok, continue</span>
         <span class="c1"># (2) previous processing errors, e.g. premature run of</span>
         <span class="c1"># merge_sep_cats_runner: raise error</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ngmix_n_epoch</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_size_target</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
             <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Merged shape catalogue </span><span class="si">{</span><span class="n">ngmix_cat_path</span><span class="si">}</span><span class="s2"> has very different&quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; size (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ngmix_n_epoch</span><span class="p">)</span><span class="si">}</span><span class="s2">) compared to target size&quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_size_target</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="sa">f</span><span class="s2">"Merged shape catalogue </span><span class="si">{</span><span class="n">ngmix_cat_path</span><span class="si">}</span><span class="s2"> has very different"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">" size (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ngmix_n_epoch</span><span class="p">)</span><span class="si">}</span><span class="s2">) compared to target size"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_size_target</span><span class="si">}</span><span class="s2">)"</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
             <span class="c1">#ngmix_cat_file.close()</span>
             <span class="c1">#return err_msg</span>
 
-        <span class="n">ngmix_mcal_types_fail</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;mcal_types_fail&quot;</span><span class="p">]</span>
+        <span class="n">ngmix_mcal_types_fail</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"mcal_types_fail"</span><span class="p">]</span>
         <span class="c1"># Per-object blend flag (shapepipe#776): the seg stamp held a</span>
         <span class="c1"># non-central footprint. Galaxy-only (non-moments), like N_EPOCH.</span>
-        <span class="n">ngmix_neighbour_flag</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;neighbour_flag&quot;</span><span class="p">]</span>
+        <span class="n">ngmix_neighbour_flag</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"neighbour_flag"</span><span class="p">]</span>
         <span class="c1"># Needed in both moments and non-moments modes (used unconditionally</span>
         <span class="c1"># below), so read them outside the branch.</span>
-        <span class="n">ngmix_mcal_flags</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;mcal_flags&quot;</span><span class="p">]</span>
-        <span class="n">ngmix_id</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+        <span class="n">ngmix_mcal_flags</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"mcal_flags"</span><span class="p">]</span>
+        <span class="n">ngmix_id</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"id"</span><span class="p">]</span>
 
         <span class="n">n_obj</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;writing ngmix info for </span><span class="si">{</span><span class="n">n_obj</span><span class="si">}</span><span class="s2"> objects&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"writing ngmix info for </span><span class="si">{</span><span class="n">n_obj</span><span class="si">}</span><span class="s2"> objects"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">moments</span><span class="p">:</span>
-            <span class="n">m</span> <span class="o">=</span> <span class="s2">&quot;m&quot;</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="s2">"m"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">m</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="s2">""</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">&quot;NGMIX_N_EPOCH&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">&quot;NGMIX_MCAL_TYPES_FAIL&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">&quot;NGMIX_NEIGHBOUR_FLAG&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_N_EPOCH"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_MCAL_TYPES_FAIL"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_NEIGHBOUR_FLAG"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
 
-        <span class="n">prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;NGMIX</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"NGMIX</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">"</span>
 
         <span class="c1"># Galaxy (no object token), original image PSF (PSF_ORIG) and metacal</span>
         <span class="c1"># reconvolution kernel (PSF_RECONV); see ngmix.average_original_psf /</span>
@@ -982,42 +982,42 @@
         <span class="c1"># sizes/fluxes/mags/flags 0, *_ERR fluxes/mags -1, ellipticities -10,</span>
         <span class="c1"># *_ERR sizes 1e30.</span>
         <span class="k">for</span> <span class="n">key_str</span> <span class="ow">in</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_SNR_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLUX_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MAG_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLAGS_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_PSF_ORIG_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_PSF_RECONV_&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_SNR_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLUX_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MAG_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLAGS_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_PSF_ORIG_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_PSF_RECONV_"</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_dict</span><span class="p">(</span><span class="n">key_str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">key_str</span> <span class="ow">in</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLUX_ERR_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MAG_ERR_&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLUX_ERR_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MAG_ERR_"</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_dict</span><span class="p">(</span><span class="n">key_str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_obj</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key_str</span> <span class="ow">in</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_ERR_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_ERR_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_PSF_ORIG_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_PSF_ORIG_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_ERR_PSF_ORIG_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_ERR_PSF_ORIG_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_PSF_RECONV_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_PSF_RECONV_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_ERR_PSF_RECONV_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_ERR_PSF_RECONV_&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_ERR_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_ERR_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_PSF_ORIG_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_PSF_ORIG_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_ERR_PSF_ORIG_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_ERR_PSF_ORIG_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_PSF_RECONV_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_PSF_RECONV_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_ERR_PSF_RECONV_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_ERR_PSF_RECONV_"</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_dict</span><span class="p">(</span><span class="n">key_str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_obj</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key_str</span> <span class="ow">in</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_ERR_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_ERR_PSF_ORIG_&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_ERR_PSF_RECONV_&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_ERR_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_ERR_PSF_ORIG_"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_ERR_PSF_RECONV_"</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_dict</span><span class="p">(</span><span class="n">key_str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_obj</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e30</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MCAL_FLAGS&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MCAL_FLAGS"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">id_tmp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">):</span>
             <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">id_tmp</span> <span class="o">==</span> <span class="n">ngmix_id</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
@@ -1029,47 +1029,47 @@
 
                     <span class="c1"># Galaxy shape, size and photometry.</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;g1&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"g1"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;g2&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"g2"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;g1_err&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"g1_err"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;g2_err&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"g2_err"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"T"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;T_err&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"T_err"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_SNR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;s2n&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_SNR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"s2n"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLUX_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;flux&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLUX_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"flux"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLUX_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;flux_err&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLUX_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"flux_err"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MAG_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;mag&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MAG_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"mag"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MAG_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;mag_err&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MAG_ERR_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"mag_err"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLAGS_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">&quot;flags&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLAGS_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                        <span class="n">ncf_data</span><span class="p">[</span><span class="s2">"flags"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                     <span class="p">)</span>
 
                     <span class="c1"># Original image PSF (average_original_psf) and metacal</span>
@@ -1078,53 +1078,53 @@
                     <span class="c1"># name (``{obj}``) and the res-key it reads (``{family}``)</span>
                     <span class="c1"># are generated from the same pair and cannot drift apart.</span>
                     <span class="k">for</span> <span class="n">family</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="p">(</span>
-                        <span class="p">(</span><span class="s2">&quot;orig&quot;</span><span class="p">,</span> <span class="s2">&quot;PSF_ORIG&quot;</span><span class="p">),</span>
-                        <span class="p">(</span><span class="s2">&quot;reconv&quot;</span><span class="p">,</span> <span class="s2">&quot;PSF_RECONV&quot;</span><span class="p">),</span>
+                        <span class="p">(</span><span class="s2">"orig"</span><span class="p">,</span> <span class="s2">"PSF_ORIG"</span><span class="p">),</span>
+                        <span class="p">(</span><span class="s2">"reconv"</span><span class="p">,</span> <span class="s2">"PSF_RECONV"</span><span class="p">),</span>
                     <span class="p">):</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;g1_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">"g1_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                         <span class="p">)</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;g2_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">"g2_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                         <span class="p">)</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_ERR_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;g1_err_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G1_ERR_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">"g1_err_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                         <span class="p">)</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_ERR_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;g2_err_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_G2_ERR_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">"g2_err_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                         <span class="p">)</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;T_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">"T_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                         <span class="p">)</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_ERR_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;T_err_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
+                            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_ERR_</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                            <span class="n">ncf_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">"T_err_psf_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">"</span><span class="p">][</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">idx</span>
                         <span class="p">)</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;NGMIX</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">_MCAL_FLAGS&quot;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">"NGMIX</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">_MCAL_FLAGS"</span><span class="p">,</span>
                     <span class="n">ngmix_mcal_flags</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
                     <span class="n">idx</span><span class="p">,</span>
                 <span class="p">)</span>
 
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">moments</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;NGMIX</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">_N_EPOCH&quot;</span><span class="p">,</span>
+                        <span class="sa">f</span><span class="s2">"NGMIX</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">_N_EPOCH"</span><span class="p">,</span>
                         <span class="n">ngmix_n_epoch</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
                         <span class="n">idx</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;NGMIX</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">_MCAL_TYPES_FAIL&quot;</span><span class="p">,</span>
+                        <span class="sa">f</span><span class="s2">"NGMIX</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">_MCAL_TYPES_FAIL"</span><span class="p">,</span>
                         <span class="n">ngmix_mcal_types_fail</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
                         <span class="n">idx</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                        <span class="s2">&quot;NGMIX_NEIGHBOUR_FLAG&quot;</span><span class="p">,</span>
+                        <span class="s2">"NGMIX_NEIGHBOUR_FLAG"</span><span class="p">,</span>
                         <span class="n">ngmix_neighbour_flag</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
                         <span class="n">idx</span><span class="p">,</span>
                     <span class="p">)</span>
@@ -1137,7 +1137,7 @@
 <div class="viewcode-block" id="SaveCatalogue._save_psf_data">
 <a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_psf_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_save_psf_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">galaxy_psf_path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save PSF data.</span>
+<span class="w">        </span><span class="sd">"""Save PSF data.</span>
 
 <span class="sd">        Save the PSF catalogue into the final one.</span>
 
@@ -1146,34 +1146,34 @@
 <span class="sd">        galaxy_psf_path : str</span>
 <span class="sd">            Path to the PSF catalogue to save</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">galaxy_psf_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="n">galaxy_psf_path</span><span class="p">)</span>
 
-        <span class="n">max_epoch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_final_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;N_EPOCH&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">max_epoch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_final_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"N_EPOCH"</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="sa">f</span><span class="s2">&quot;HSM_G1_PSF_</span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">))</span> <span class="o">*</span> <span class="o">-</span><span class="mf">10.0</span>
+            <span class="sa">f</span><span class="s2">"HSM_G1_PSF_</span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">))</span> <span class="o">*</span> <span class="o">-</span><span class="mf">10.0</span>
             <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_epoch</span><span class="p">)</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span> <span class="o">=</span> <span class="p">{</span>
             <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span><span class="p">,</span>
             <span class="o">**</span><span class="p">{</span>
-                <span class="sa">f</span><span class="s2">&quot;HSM_G2_PSF_</span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">))</span> <span class="o">*</span> <span class="o">-</span><span class="mf">10.0</span>
+                <span class="sa">f</span><span class="s2">"HSM_G2_PSF_</span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">))</span> <span class="o">*</span> <span class="o">-</span><span class="mf">10.0</span>
                 <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_epoch</span><span class="p">)</span>
             <span class="p">},</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span> <span class="o">=</span> <span class="p">{</span>
             <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span><span class="p">,</span>
             <span class="o">**</span><span class="p">{</span>
-                <span class="sa">f</span><span class="s2">&quot;HSM_T_PSF_</span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">))</span>
+                <span class="sa">f</span><span class="s2">"HSM_T_PSF_</span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">))</span>
                 <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_epoch</span><span class="p">)</span>
             <span class="p">},</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span> <span class="o">=</span> <span class="p">{</span>
             <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span><span class="p">,</span>
             <span class="o">**</span><span class="p">{</span>
-                <span class="sa">f</span><span class="s2">&quot;HSM_FLAG_PSF_</span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
-                    <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int16&quot;</span>
+                <span class="sa">f</span><span class="s2">"HSM_FLAG_PSF_</span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int16"</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_epoch</span><span class="p">)</span>
             <span class="p">},</span>
@@ -1181,35 +1181,35 @@
 
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">id_tmp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">):</span>
 
-            <span class="k">if</span> <span class="n">galaxy_psf_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">id_tmp</span><span class="p">)]</span> <span class="o">==</span> <span class="s2">&quot;empty&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">galaxy_psf_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">id_tmp</span><span class="p">)]</span> <span class="o">==</span> <span class="s2">"empty"</span><span class="p">:</span>
                 <span class="k">continue</span>
 
             <span class="k">for</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">galaxy_psf_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">id_tmp</span><span class="p">)]</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
 
                 <span class="n">gpc_data</span> <span class="o">=</span> <span class="n">galaxy_psf_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">id_tmp</span><span class="p">)][</span><span class="n">key</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="n">gpc_data</span><span class="p">[</span><span class="s2">&quot;SHAPES&quot;</span><span class="p">][</span><span class="s2">&quot;HSM_FLAG_PSF&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">gpc_data</span><span class="p">[</span><span class="s2">"SHAPES"</span><span class="p">][</span><span class="s2">"HSM_FLAG_PSF"</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">continue</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;HSM_G1_PSF_</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                    <span class="n">gpc_data</span><span class="p">[</span><span class="s2">&quot;SHAPES&quot;</span><span class="p">][</span><span class="s2">&quot;HSM_G1_PSF&quot;</span><span class="p">],</span> <span class="n">idx</span>
+                    <span class="sa">f</span><span class="s2">"HSM_G1_PSF_</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                    <span class="n">gpc_data</span><span class="p">[</span><span class="s2">"SHAPES"</span><span class="p">][</span><span class="s2">"HSM_G1_PSF"</span><span class="p">],</span> <span class="n">idx</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;HSM_G2_PSF_</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                    <span class="n">gpc_data</span><span class="p">[</span><span class="s2">&quot;SHAPES&quot;</span><span class="p">][</span><span class="s2">&quot;HSM_G2_PSF&quot;</span><span class="p">],</span> <span class="n">idx</span>
+                    <span class="sa">f</span><span class="s2">"HSM_G2_PSF_</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                    <span class="n">gpc_data</span><span class="p">[</span><span class="s2">"SHAPES"</span><span class="p">][</span><span class="s2">"HSM_G2_PSF"</span><span class="p">],</span> <span class="n">idx</span>
                 <span class="p">)</span>
 
                 <span class="c1"># HSM_T_PSF already holds T (sigma_to_T applied at the</span>
-                <span class="c1"># producer&#39;s _interpolate_me); read straight through.</span>
+                <span class="c1"># producer's _interpolate_me); read straight through.</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;HSM_T_PSF_</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                    <span class="n">gpc_data</span><span class="p">[</span><span class="s2">&quot;SHAPES&quot;</span><span class="p">][</span><span class="s2">&quot;HSM_T_PSF&quot;</span><span class="p">],</span> <span class="n">idx</span>
+                    <span class="sa">f</span><span class="s2">"HSM_T_PSF_</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                    <span class="n">gpc_data</span><span class="p">[</span><span class="s2">"SHAPES"</span><span class="p">][</span><span class="s2">"HSM_T_PSF"</span><span class="p">],</span> <span class="n">idx</span>
                 <span class="p">)</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;HSM_FLAG_PSF_</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                    <span class="n">gpc_data</span><span class="p">[</span><span class="s2">&quot;SHAPES&quot;</span><span class="p">][</span><span class="s2">&quot;HSM_FLAG_PSF&quot;</span><span class="p">],</span> <span class="n">idx</span>
+                    <span class="sa">f</span><span class="s2">"HSM_FLAG_PSF_</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                    <span class="n">gpc_data</span><span class="p">[</span><span class="s2">"SHAPES"</span><span class="p">][</span><span class="s2">"HSM_FLAG_PSF"</span><span class="p">],</span> <span class="n">idx</span>
                 <span class="p">)</span>
 
         <span class="n">galaxy_psf_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>

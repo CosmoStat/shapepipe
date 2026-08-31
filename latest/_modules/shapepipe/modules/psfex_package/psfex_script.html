@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.psfex_package.psfex_script</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;PSFEX SCRIPT.</span>
+<span></span><span class="sd">"""PSFEX SCRIPT.</span>
 
 <span class="sd">This module contains a wrapper class to prepare the PSFEx command line.</span>
 
 <span class="sd">:Author: Axel Guinot</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
@@ -567,7 +567,7 @@
 <div class="viewcode-block" id="PSFExCaller">
 <a class="viewcode-back" href="../../../../shapepipe.modules.psfex_package.psfex_script.html#shapepipe.modules.psfex_package.psfex_script.PSFExCaller">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PSFExCaller</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The PSFEx Caller.</span>
+<span class="w">    </span><span class="sd">"""The PSFEx Caller.</span>
 
 <span class="sd">    This class contains method to generate a PSFex command line.</span>
 
@@ -586,7 +586,7 @@
 <span class="sd">    check_image_list: list</span>
 <span class="sd">        List of check images</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -607,7 +607,7 @@
 <div class="viewcode-block" id="PSFExCaller.generate_command">
 <a class="viewcode-back" href="../../../../shapepipe.modules.psfex_package.psfex_script.html#shapepipe.modules.psfex_package.psfex_script.PSFExCaller.generate_command">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">generate_command</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate Command.</span>
+<span class="w">        </span><span class="sd">"""Generate Command.</span>
 
 <span class="sd">        This method generates a command line for running PSFEx.</span>
 
@@ -616,19 +616,19 @@
 <span class="sd">        str</span>
 <span class="sd">            Command line with correct and complete paths for PSFEx execution</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Prepare command line</span>
         <span class="n">command_line</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">psfex_executable_path</span><span class="si">}</span><span class="s2"> &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">input_file_path</span><span class="si">}</span><span class="s2"> &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;-c </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">psfex_config_file</span><span class="si">}</span><span class="s2"> &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;-PSF_DIR </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="si">}</span><span class="s2"> &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;-OUTCAT_NAME </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">outcatalog_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">psfex_executable_path</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">input_file_path</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"-c </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">psfex_config_file</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"-PSF_DIR </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"-OUTCAT_NAME </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">outcatalog_name</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_image_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_image_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
-            <span class="n">check_type_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;NONE&quot;</span><span class="p">]</span>
-            <span class="n">check_name_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;none&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_image_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_image_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">""</span><span class="p">):</span>
+            <span class="n">check_type_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"NONE"</span><span class="p">]</span>
+            <span class="n">check_name_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"none"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Get pattern for filenaming from file in list</span>
             <span class="n">input_file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">input_file_path</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -640,16 +640,16 @@
             <span class="k">for</span> <span class="n">check_image</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_image_list</span><span class="p">:</span>
                 <span class="n">check_type_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">check_image</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
                 <span class="n">check_name_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">check_image</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2">.fits&quot;</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">"/</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">check_image</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2">.fits"</span>
                 <span class="p">)</span>
 
         <span class="c1"># Add checks to command line</span>
         <span class="n">command_line</span> <span class="o">+=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39; -CHECKIMAGE_TYPE </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">check_type_list</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39; -CHECKIMAGE_NAME </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">check_name_list</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">' -CHECKIMAGE_TYPE </span><span class="si">{</span><span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">check_type_list</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s1">' -CHECKIMAGE_NAME </span><span class="si">{</span><span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">check_name_list</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">command_line</span> <span class="o">=</span> <span class="n">command_line</span>
@@ -660,7 +660,7 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.psfex_package.psfex_script.html#shapepipe.modules.psfex_package.psfex_script.PSFExCaller.parse_errors">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse_errors</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="n">stdout</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse Errors.</span>
+<span class="w">        </span><span class="sd">"""Parse Errors.</span>
 
 <span class="sd">        This methoid moves errors from the standard output of PSFEx to the</span>
 <span class="sd">        standard error.</span>
@@ -677,12 +677,12 @@
 <span class="sd">        tuple</span>
 <span class="sd">            Updated standard output and error</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">check_error</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
-        <span class="n">check_error2</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;all done&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+<span class="sd">        """</span>
+        <span class="n">check_error</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">"error"</span><span class="p">,</span> <span class="n">stdout</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="n">check_error2</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">"all done"</span><span class="p">,</span> <span class="n">stdout</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
 
         <span class="k">if</span> <span class="n">check_error</span> <span class="o">==</span> <span class="p">[]:</span>
-            <span class="n">stderr2</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">stderr2</span> <span class="o">=</span> <span class="s2">""</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">stderr2</span> <span class="o">=</span> <span class="n">stdout</span>
 

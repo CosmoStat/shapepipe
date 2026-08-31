@@ -552,14 +552,14 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.find_exposures_package.find_exposures</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;FIND EXPOSURES SCRIPT.</span>
+<span></span><span class="sd">"""FIND EXPOSURES SCRIPT.</span>
 
 <span class="sd">This module contains a class to identify single exposures that were used</span>
 <span class="sd">to create tiles.</span>
 
 <span class="sd">:Author: Martin Kilbinger &lt;martin.kilbinger@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
@@ -569,7 +569,7 @@
 <div class="viewcode-block" id="FindExposures">
 <a class="viewcode-back" href="../../../../shapepipe.modules.find_exposures_package.find_exposures.html#shapepipe.modules.find_exposures_package.find_exposures.FindExposures">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FindExposures</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find Exposures.</span>
+<span class="w">    </span><span class="sd">"""Find Exposures.</span>
 
 <span class="sd">    This class finds exposures that are used for a given tile.</span>
 
@@ -585,7 +585,7 @@
 <span class="sd">        column number for exposure name in fits header</span>
 <span class="sd">    prefix: str</span>
 <span class="sd">        prefix for exposures</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img_tile_path</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">w_log</span><span class="p">,</span> <span class="n">colnum</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
 
@@ -598,16 +598,16 @@
 <div class="viewcode-block" id="FindExposures.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.find_exposures_package.find_exposures.html#shapepipe.modules.find_exposures_package.find_exposures.FindExposures.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process.</span>
+<span class="w">        </span><span class="sd">"""Process.</span>
 
 <span class="sd">        Main function to identify exposures.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Get list of exposures</span>
         <span class="n">exp_list_uniq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_exposure_list</span><span class="p">()</span>
 
         <span class="c1"># Write list to output ascii file</span>
-        <span class="n">f_out</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">f_out</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_list_uniq</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">exp_list_uniq</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f_out</span><span class="p">)</span>
@@ -617,7 +617,7 @@
 <div class="viewcode-block" id="FindExposures.get_exposure_list">
 <a class="viewcode-back" href="../../../../shapepipe.modules.find_exposures_package.find_exposures.html#shapepipe.modules.find_exposures_package.find_exposures.FindExposures.get_exposure_list">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_exposure_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Exposure List.</span>
+<span class="w">        </span><span class="sd">"""Get Exposure List.</span>
 
 <span class="sd">        Return list of exposure file used for the tile in process, from tiles</span>
 <span class="sd">        FITS header.</span>
@@ -627,39 +627,39 @@
 <span class="sd">        list</span>
 <span class="sd">            List of exposure basenames</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Get history from tiles FITS header</span>
             <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_img_tile_path</span><span class="p">)</span>
-            <span class="n">hist</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;HISTORY&quot;</span><span class="p">]</span>
+            <span class="n">hist</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">"HISTORY"</span><span class="p">]</span>
 
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="c1"># Key word not found -&gt; raise error</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="s2">&quot;Error while reading tile image FITS file &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_img_tile_path</span><span class="si">}</span><span class="s2">, continuing...&quot;</span>
+                <span class="s2">"Error while reading tile image FITS file "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_img_tile_path</span><span class="si">}</span><span class="s2">, continuing..."</span>
             <span class="p">)</span>
 
         <span class="n">exp_list</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># Get exposure file names</span>
         <span class="c1"># History entries have format as the following example:</span>
-        <span class="c1"># &quot;input image 2243881p.fits 6 extension(s)&quot;</span>
+        <span class="c1"># "input image 2243881p.fits 6 extension(s)"</span>
         <span class="k">for</span> <span class="n">_hist</span> <span class="ow">in</span> <span class="n">hist</span><span class="p">:</span>
-            <span class="n">temp</span> <span class="o">=</span> <span class="n">_hist</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="n">_hist</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
 
-            <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;(.*)\.</span><span class="si">{1}</span><span class="s2">.*&quot;</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"(.*)\.</span><span class="si">{1}</span><span class="s2">.*"</span>
             <span class="n">pattern_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">temp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_colnum</span><span class="p">])</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">pattern_match</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;re match &#39;</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&#39; failed for filename&quot;</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; &#39;</span><span class="si">{</span><span class="n">temp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_colnum</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                    <span class="sa">f</span><span class="s2">"re match '</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">' failed for filename"</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">" '</span><span class="si">{</span><span class="n">temp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_colnum</span><span class="p">]</span><span class="si">}</span><span class="s2">'"</span>
                 <span class="p">)</span>
 
             <span class="n">exp_name</span> <span class="o">=</span> <span class="n">pattern_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">exp_name</span> <span class="o">=</span> <span class="n">exp_name</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">)</span>
-            <span class="c1"># LSB exposure names have &#39;s&#39;, header still says &#39;p&#39;</span>
-            <span class="c1"># exp_name = re.sub(r&#39;p&#39;, &#39;s&#39;, exp_name)</span>
+            <span class="c1"># LSB exposure names have 's', header still says 'p'</span>
+            <span class="c1"># exp_name = re.sub(r'p', 's', exp_name)</span>
 
             <span class="n">exp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exp_name</span><span class="p">)</span>
 
@@ -669,8 +669,8 @@
         <span class="c1"># For log output</span>
         <span class="n">n_exp_uniq</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_list_uniq</span><span class="p">)</span>
         <span class="n">n_duplicate</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_exp_uniq</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="n">n_exp_uniq</span><span class="si">}</span><span class="s2"> exposures used in tile&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_duplicate</span><span class="si">}</span><span class="s2"> duplicates were removed&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Found </span><span class="si">{</span><span class="n">n_exp_uniq</span><span class="si">}</span><span class="s2"> exposures used in tile"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n_duplicate</span><span class="si">}</span><span class="s2"> duplicates were removed"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">exp_list_uniq</span></div>
 </div>

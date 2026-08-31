@@ -552,14 +552,14 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;READ EXTERNAL SEXCAT.</span>
+<span></span><span class="sd">"""READ EXTERNAL SEXCAT.</span>
 
 <span class="sd">Convert an ASCII SExtractor-format catalogue to FITS-LDAC for use in</span>
 <span class="sd">ShapePipe tile processing.</span>
 
 <span class="sd">:Author: Martin Kilbinger</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">ascii</span> <span class="k">as</span> <span class="n">asc</span>
@@ -569,7 +569,7 @@
 <div class="viewcode-block" id="_build_ldac_imhead">
 <a class="viewcode-back" href="../../../../shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._build_ldac_imhead">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_ldac_imhead</span><span class="p">(</span><span class="n">img_header</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build LDAC_IMHEAD extension from a FITS image header.</span>
+<span class="w">    </span><span class="sd">"""Build LDAC_IMHEAD extension from a FITS image header.</span>
 
 <span class="sd">    The LDAC_IMHEAD binary table has one row and one column containing</span>
 <span class="sd">    the image header cards as an array of 80-character strings.  The</span>
@@ -586,20 +586,20 @@
 <span class="sd">    astropy.io.fits.BinTableHDU</span>
 <span class="sd">        LDAC_IMHEAD extension</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cards</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">card</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">80</span><span class="p">)[:</span><span class="mi">80</span><span class="p">]</span> <span class="k">for</span> <span class="n">card</span> <span class="ow">in</span> <span class="n">img_header</span><span class="o">.</span><span class="n">cards</span><span class="p">]</span>
     <span class="n">n_cards</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cards</span><span class="p">)</span>
-    <span class="n">header_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cards</span><span class="p">)</span>
+    <span class="n">header_str</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cards</span><span class="p">)</span>
 
-    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">header_str</span><span class="o">.</span><span class="n">encode</span><span class="p">()],</span> <span class="n">dtype</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;S</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">header_str</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">header_str</span><span class="o">.</span><span class="n">encode</span><span class="p">()],</span> <span class="n">dtype</span><span class="o">=</span><span class="sa">f</span><span class="s2">"S</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">header_str</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Field Header Card&quot;</span><span class="p">,</span>
-        <span class="nb">format</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">header_str</span><span class="p">)</span><span class="si">}</span><span class="s2">A&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"Field Header Card"</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">header_str</span><span class="p">)</span><span class="si">}</span><span class="s2">A"</span><span class="p">,</span>
         <span class="n">array</span><span class="o">=</span><span class="n">arr</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="o">.</span><span class="n">from_columns</span><span class="p">([</span><span class="n">col</span><span class="p">])</span>
-    <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;TDIM1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(80,</span><span class="si">{</span><span class="n">n_cards</span><span class="si">}</span><span class="s2">)&quot;</span>
-    <span class="n">hdu</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;LDAC_IMHEAD&quot;</span>
+    <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">"TDIM1"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"(80,</span><span class="si">{</span><span class="n">n_cards</span><span class="si">}</span><span class="s2">)"</span>
+    <span class="n">hdu</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">"LDAC_IMHEAD"</span>
     <span class="k">return</span> <span class="n">hdu</span></div>
 
 
@@ -607,7 +607,7 @@
 <div class="viewcode-block" id="_extract_vignets">
 <a class="viewcode-back" href="../../../../shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._extract_vignets">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_extract_vignets</span><span class="p">(</span><span class="n">image_data</span><span class="p">,</span> <span class="n">x_pos</span><span class="p">,</span> <span class="n">y_pos</span><span class="p">,</span> <span class="n">stamp_size</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract postage stamps from a tile image array.</span>
+<span class="w">    </span><span class="sd">"""Extract postage stamps from a tile image array.</span>
 
 <span class="sd">    For each object position, a ``stamp_size x stamp_size`` cutout is</span>
 <span class="sd">    extracted.  Objects whose stamp falls partially outside the image are</span>
@@ -629,7 +629,7 @@
 <span class="sd">    numpy.ndarray</span>
 <span class="sd">        Array of shape ``(n_obj, stamp_size, stamp_size)``, dtype float32</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">ny</span><span class="p">,</span> <span class="n">nx</span> <span class="o">=</span> <span class="n">image_data</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">half</span> <span class="o">=</span> <span class="n">stamp_size</span> <span class="o">//</span> <span class="mi">2</span>
     <span class="n">n_obj</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_pos</span><span class="p">)</span>
@@ -657,7 +657,7 @@
 <div class="viewcode-block" id="_build_ldac_objects">
 <a class="viewcode-back" href="../../../../shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._build_ldac_objects">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_ldac_objects</span><span class="p">(</span><span class="n">cat_data</span><span class="p">,</span> <span class="n">unique_id</span><span class="p">,</span> <span class="n">vignets</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build LDAC_OBJECTS extension from an astropy table.</span>
+<span class="w">    </span><span class="sd">"""Build LDAC_OBJECTS extension from an astropy table.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -673,7 +673,7 @@
 <span class="sd">    astropy.io.fits.BinTableHDU</span>
 <span class="sd">        LDAC_OBJECTS extension</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">stamp_size</span> <span class="o">=</span> <span class="n">vignets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">n_pix</span> <span class="o">=</span> <span class="n">stamp_size</span> <span class="o">*</span> <span class="n">stamp_size</span>
 
@@ -681,23 +681,23 @@
     <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">cat_data</span><span class="o">.</span><span class="n">colnames</span><span class="p">:</span>
         <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cat_data</span><span class="p">[</span><span class="n">colname</span><span class="p">])</span>
         <span class="n">kind</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span>
-        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;i&quot;</span><span class="p">,</span> <span class="s2">&quot;u&quot;</span><span class="p">):</span>
-            <span class="n">fmt</span> <span class="o">=</span> <span class="s2">&quot;J&quot;</span>
-        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;f&quot;</span><span class="p">:</span>
-            <span class="n">fmt</span> <span class="o">=</span> <span class="s2">&quot;E&quot;</span> <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">&lt;=</span> <span class="mi">4</span> <span class="k">else</span> <span class="s2">&quot;D&quot;</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"i"</span><span class="p">,</span> <span class="s2">"u"</span><span class="p">):</span>
+            <span class="n">fmt</span> <span class="o">=</span> <span class="s2">"J"</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"f"</span><span class="p">:</span>
+            <span class="n">fmt</span> <span class="o">=</span> <span class="s2">"E"</span> <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">&lt;=</span> <span class="mi">4</span> <span class="k">else</span> <span class="s2">"D"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">fmt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="si">}</span><span class="s2">A&quot;</span>
+            <span class="n">fmt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="si">}</span><span class="s2">A"</span>
         <span class="n">fits_cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">colname</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">fmt</span><span class="p">,</span> <span class="n">array</span><span class="o">=</span><span class="n">arr</span><span class="p">))</span>
 
     <span class="n">fits_cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-        <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;TILE_UNIQUE_ID&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;K&quot;</span><span class="p">,</span> <span class="n">array</span><span class="o">=</span><span class="n">unique_id</span><span class="p">)</span>
+        <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"TILE_UNIQUE_ID"</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"K"</span><span class="p">,</span> <span class="n">array</span><span class="o">=</span><span class="n">unique_id</span><span class="p">)</span>
     <span class="p">)</span>
 
     <span class="n">_aliases</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;XWIN_IMAGE&quot;</span><span class="p">:</span> <span class="s2">&quot;X_IMAGE&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;YWIN_IMAGE&quot;</span><span class="p">:</span> <span class="s2">&quot;Y_IMAGE&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;XWIN_WORLD&quot;</span><span class="p">:</span> <span class="s2">&quot;ALPHA_J2000&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;YWIN_WORLD&quot;</span><span class="p">:</span> <span class="s2">&quot;DELTA_J2000&quot;</span><span class="p">,</span>
+        <span class="s2">"XWIN_IMAGE"</span><span class="p">:</span> <span class="s2">"X_IMAGE"</span><span class="p">,</span>
+        <span class="s2">"YWIN_IMAGE"</span><span class="p">:</span> <span class="s2">"Y_IMAGE"</span><span class="p">,</span>
+        <span class="s2">"XWIN_WORLD"</span><span class="p">:</span> <span class="s2">"ALPHA_J2000"</span><span class="p">,</span>
+        <span class="s2">"YWIN_WORLD"</span><span class="p">:</span> <span class="s2">"DELTA_J2000"</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">col_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">fits_cols</span><span class="p">}</span>
     <span class="k">for</span> <span class="n">alias</span><span class="p">,</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">_aliases</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -712,15 +712,15 @@
             <span class="p">)</span>
 
     <span class="n">vignet_col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;VIGNET&quot;</span><span class="p">,</span>
-        <span class="nb">format</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_pix</span><span class="si">}</span><span class="s2">E&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"VIGNET"</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n_pix</span><span class="si">}</span><span class="s2">E"</span><span class="p">,</span>
         <span class="n">array</span><span class="o">=</span><span class="n">vignets</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vignets</span><span class="p">),</span> <span class="n">n_pix</span><span class="p">),</span>
-        <span class="n">dim</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">stamp_size</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">stamp_size</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">stamp_size</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">stamp_size</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">fits_cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vignet_col</span><span class="p">)</span>
 
     <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="o">.</span><span class="n">from_columns</span><span class="p">(</span><span class="n">fits_cols</span><span class="p">)</span>
-    <span class="n">hdu</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;LDAC_OBJECTS&quot;</span>
+    <span class="n">hdu</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">"LDAC_OBJECTS"</span>
     <span class="k">return</span> <span class="n">hdu</span></div>
 
 
@@ -728,9 +728,9 @@
 <div class="viewcode-block" id="_tile_id_from_file_number_string">
 <a class="viewcode-back" href="../../../../shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._tile_id_from_file_number_string">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_tile_id_from_file_number_string</span><span class="p">(</span><span class="n">file_number_string</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode file-number string into a collision-free tile ID.</span>
+<span class="w">    </span><span class="sd">"""Decode file-number string into a collision-free tile ID.</span>
 
-<span class="sd">    CFIS tile file-number strings are of the form ``&#39;-RRR-DDD&#39;`` where</span>
+<span class="sd">    CFIS tile file-number strings are of the form ``'-RRR-DDD'`` where</span>
 <span class="sd">    ``RRR`` is the RA grid index and ``DDD`` the dec grid index (both</span>
 <span class="sd">    3-digit).  The encoded tile_id is ``RRR * 1000 + DDD``; the 3-digit</span>
 <span class="sd">    assumption is an invariant of the CFIS grid, not a data assumption,</span>
@@ -739,7 +739,7 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    file_number_string : str</span>
-<span class="sd">        Pipeline file-number string, e.g. ``&#39;-301-279&#39;``</span>
+<span class="sd">        Pipeline file-number string, e.g. ``'-301-279'``</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -751,13 +751,13 @@
 <span class="sd">    ValueError</span>
 <span class="sd">        If either grid component exceeds three digits.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">parts</span> <span class="o">=</span> <span class="n">file_number_string</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">file_number_string</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span>
     <span class="n">ra_idx</span><span class="p">,</span> <span class="n">dec_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">ra_idx</span> <span class="o">&lt;</span> <span class="mi">1000</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">dec_idx</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;file_number_string </span><span class="si">{</span><span class="n">file_number_string</span><span class="si">!r}</span><span class="s2">: both grid &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;components must be in [0, 1000); got ra=</span><span class="si">{</span><span class="n">ra_idx</span><span class="si">}</span><span class="s2">, dec=</span><span class="si">{</span><span class="n">dec_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"file_number_string </span><span class="si">{</span><span class="n">file_number_string</span><span class="si">!r}</span><span class="s2">: both grid "</span>
+            <span class="sa">f</span><span class="s2">"components must be in [0, 1000); got ra=</span><span class="si">{</span><span class="n">ra_idx</span><span class="si">}</span><span class="s2">, dec=</span><span class="si">{</span><span class="n">dec_idx</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">ra_idx</span> <span class="o">*</span> <span class="mi">1000</span> <span class="o">+</span> <span class="n">dec_idx</span></div>
 
@@ -773,7 +773,7 @@
     <span class="n">stamp_size</span><span class="o">=</span><span class="mi">51</span><span class="p">,</span>
     <span class="n">w_log</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert an external ASCII catalogue to FITS-LDAC format.</span>
+<span class="w">    </span><span class="sd">"""Convert an external ASCII catalogue to FITS-LDAC format.</span>
 
 <span class="sd">    Reads an ASCII catalogue in SExtractor format (column definitions as</span>
 <span class="sd">    ``#  N  NAME  ...`` comment lines followed by data rows), attaches the</span>
@@ -787,7 +787,7 @@
 
 <span class="sd">    The unique ID is computed as ``tile_id * 10**6 + NUMBER`` where</span>
 <span class="sd">    ``tile_id`` is derived from the tile RA/Dec grid coordinates encoded in</span>
-<span class="sd">    ``file_number_string`` (e.g. ``&#39;-301-279&#39;`` → ``tile_id = 301279``).</span>
+<span class="sd">    ``file_number_string`` (e.g. ``'-301-279'`` → ``tile_id = 301279``).</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -798,21 +798,21 @@
 <span class="sd">    output_cat_path : str</span>
 <span class="sd">        Path to the output FITS-LDAC catalogue</span>
 <span class="sd">    file_number_string : str</span>
-<span class="sd">        Pipeline file-number string, e.g. ``&#39;-301-279&#39;``</span>
+<span class="sd">        Pipeline file-number string, e.g. ``'-301-279'``</span>
 <span class="sd">    stamp_size : int, optional</span>
 <span class="sd">        Side length of the square postage stamp in pixels, default 51</span>
 <span class="sd">    w_log : logging.Logger, optional</span>
 <span class="sd">        Pipeline logger</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">cat_data</span> <span class="o">=</span> <span class="n">asc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">input_cat_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;sextractor&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">cat_data</span> <span class="o">=</span> <span class="n">asc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">input_cat_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"sextractor"</span><span class="p">)</span>
     <span class="n">n_obj</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cat_data</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">w_log</span><span class="p">:</span>
-        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Read </span><span class="si">{</span><span class="n">n_obj</span><span class="si">}</span><span class="s2"> objects from </span><span class="si">{</span><span class="n">input_cat_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Read </span><span class="si">{</span><span class="n">n_obj</span><span class="si">}</span><span class="s2"> objects from </span><span class="si">{</span><span class="n">input_cat_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">tile_id</span> <span class="o">=</span> <span class="n">_tile_id_from_file_number_string</span><span class="p">(</span><span class="n">file_number_string</span><span class="p">)</span>
     <span class="n">unique_id</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">tile_id</span> <span class="o">*</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cat_data</span><span class="p">[</span><span class="s2">&quot;NUMBER&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="n">tile_id</span> <span class="o">*</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cat_data</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="p">)</span>
 
     <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
@@ -821,12 +821,12 @@
 
     <span class="k">if</span> <span class="n">w_log</span><span class="p">:</span>
         <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Extracting </span><span class="si">{</span><span class="n">stamp_size</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="n">stamp_size</span><span class="si">}</span><span class="s2"> vignets from </span><span class="si">{</span><span class="n">image_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Extracting </span><span class="si">{</span><span class="n">stamp_size</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="n">stamp_size</span><span class="si">}</span><span class="s2"> vignets from </span><span class="si">{</span><span class="n">image_path</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
     <span class="n">vignets</span> <span class="o">=</span> <span class="n">_extract_vignets</span><span class="p">(</span>
         <span class="n">image_data</span><span class="p">,</span>
-        <span class="n">cat_data</span><span class="p">[</span><span class="s2">&quot;X_IMAGE&quot;</span><span class="p">],</span>
-        <span class="n">cat_data</span><span class="p">[</span><span class="s2">&quot;Y_IMAGE&quot;</span><span class="p">],</span>
+        <span class="n">cat_data</span><span class="p">[</span><span class="s2">"X_IMAGE"</span><span class="p">],</span>
+        <span class="n">cat_data</span><span class="p">[</span><span class="s2">"Y_IMAGE"</span><span class="p">],</span>
         <span class="n">stamp_size</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -837,7 +837,7 @@
     <span class="n">hdul_out</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">output_cat_path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">w_log</span><span class="p">:</span>
-        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Written FITS-LDAC catalogue to </span><span class="si">{</span><span class="n">output_cat_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Written FITS-LDAC catalogue to </span><span class="si">{</span><span class="n">output_cat_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 </pre></div>
 

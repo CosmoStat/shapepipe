@@ -552,7 +552,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.split_exp_package.split_exp</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;SPLIT EXPOSURE.</span>
+<span></span><span class="sd">"""SPLIT EXPOSURE.</span>
 
 <span class="sd">Class to split single-exposure multi-CCD mosaic images into single-exposure</span>
 <span class="sd">single-CCD files, one HDU per CCD.</span>
@@ -562,7 +562,7 @@
 
 <span class="sd">:Author: Axel Guinot</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">fits</span>
@@ -574,7 +574,7 @@
 <div class="viewcode-block" id="SplitExposures">
 <a class="viewcode-back" href="../../../../shapepipe.modules.split_exp_package.split_exp.html#shapepipe.modules.split_exp_package.split_exp.SplitExposures">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SplitExposures</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split Exposures.</span>
+<span class="w">    </span><span class="sd">"""Split Exposures.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -589,7 +589,7 @@
 <span class="sd">    n_hdu : int</span>
 <span class="sd">        Number of HDUs (CCDs) of input files</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -609,17 +609,17 @@
 <div class="viewcode-block" id="SplitExposures.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.split_exp_package.split_exp.html#shapepipe.modules.split_exp_package.split_exp.SplitExposures.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process.</span>
+<span class="w">        </span><span class="sd">"""Process.</span>
 
 <span class="sd">        Process the splitting of single-exposure images.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">exp_path</span><span class="p">,</span> <span class="n">output_suffix</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_suffix</span>
         <span class="p">):</span>
 
-            <span class="n">transf_int</span> <span class="o">=</span> <span class="s2">&quot;flag&quot;</span> <span class="ow">in</span> <span class="n">output_suffix</span>
-            <span class="n">save_header</span> <span class="o">=</span> <span class="s2">&quot;image&quot;</span> <span class="ow">in</span> <span class="n">output_suffix</span>
+            <span class="n">transf_int</span> <span class="o">=</span> <span class="s2">"flag"</span> <span class="ow">in</span> <span class="n">output_suffix</span>
+            <span class="n">save_header</span> <span class="o">=</span> <span class="s2">"image"</span> <span class="ow">in</span> <span class="n">output_suffix</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">create_hdus</span><span class="p">(</span><span class="n">exp_path</span><span class="p">,</span> <span class="n">output_suffix</span><span class="p">,</span> <span class="n">transf_int</span><span class="p">,</span> <span class="n">save_header</span><span class="p">)</span></div>
 
@@ -627,7 +627,7 @@
 <div class="viewcode-block" id="SplitExposures.create_hdus">
 <a class="viewcode-back" href="../../../../shapepipe.modules.split_exp_package.split_exp.html#shapepipe.modules.split_exp_package.split_exp.SplitExposures.create_hdus">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">create_hdus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exp_path</span><span class="p">,</span> <span class="n">output_suffix</span><span class="p">,</span> <span class="n">transf_int</span><span class="p">,</span> <span class="n">save_header</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create HDUs.</span>
+<span class="w">        </span><span class="sd">"""Create HDUs.</span>
 
 <span class="sd">        Split a single exposures CCDs into separate files.</span>
 
@@ -642,14 +642,14 @@
 <span class="sd">        save_header : bool</span>
 <span class="sd">            Save WCS information if ``True``</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">header_file</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_hdu</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;O&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">header_file</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_hdu</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"O"</span><span class="p">)</span>
 
         <span class="n">hdu_list</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">exp_path</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hdu_list</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_hdu</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Image </span><span class="si">{</span><span class="n">exp_path</span><span class="si">}</span><span class="s2"> has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">hdu_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> + 1 HDUs,&quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; expected were </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_hdu</span><span class="si">}</span><span class="s2"> + 1&quot;</span>
+                <span class="sa">f</span><span class="s2">"Image </span><span class="si">{</span><span class="n">exp_path</span><span class="si">}</span><span class="s2"> has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">hdu_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> + 1 HDUs,"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">" expected were </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_hdu</span><span class="si">}</span><span class="s2"> + 1"</span>
             <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_hdu</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
@@ -661,8 +661,8 @@
                 <span class="n">d</span> <span class="o">=</span> <span class="n">hdu_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
             <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Error retrieving data of HDU #</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2"> of image </span><span class="si">{</span><span class="n">exp_path</span><span class="si">}</span><span class="s2">.&quot;</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; Check if image file is complete.&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Error retrieving data of HDU #</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2"> of image </span><span class="si">{</span><span class="n">exp_path</span><span class="si">}</span><span class="s2">."</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">" Check if image file is complete."</span>
                 <span class="p">)</span>
                 <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
                 <span class="k">raise</span>
@@ -671,8 +671,8 @@
                 <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
             <span class="n">file_name</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">output_suffix</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">.fits&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">output_suffix</span><span class="si">}</span><span class="s2">"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">.fits"</span>
             <span class="p">)</span>
 
             <span class="n">new_file</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
@@ -684,13 +684,13 @@
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">w</span> <span class="o">=</span> <span class="n">WCS</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;WCS error for file </span><span class="si">{</span><span class="n">exp_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"WCS error for file </span><span class="si">{</span><span class="n">exp_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                     <span class="k">raise</span>
-                <span class="n">header_file</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;WCS&quot;</span><span class="p">:</span> <span class="n">w</span><span class="p">,</span> <span class="s2">&quot;header&quot;</span><span class="p">:</span> <span class="n">h</span><span class="o">.</span><span class="n">tostring</span><span class="p">()}</span>
+                <span class="n">header_file</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"WCS"</span><span class="p">:</span> <span class="n">w</span><span class="p">,</span> <span class="s2">"header"</span><span class="p">:</span> <span class="n">h</span><span class="o">.</span><span class="n">tostring</span><span class="p">()}</span>
 
         <span class="k">if</span> <span class="n">save_header</span><span class="p">:</span>
             <span class="n">file_name</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/headers</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="si">}</span><span class="s2">.npy&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/headers</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="si">}</span><span class="s2">.npy"</span>
             <span class="p">)</span>
             <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">header_file</span><span class="p">)</span></div>
 </div>

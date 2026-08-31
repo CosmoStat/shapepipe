@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.sextractor_package.sextractor_script</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;SEXTRACTOR SCRIPT.</span>
+<span></span><span class="sd">"""SEXTRACTOR SCRIPT.</span>
 
 <span class="sd">This module builds the SExtractor command line.</span>
 
 <span class="sd">:Author: Axel Guinot, Martin Kilbinger</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
@@ -573,7 +573,7 @@
 <div class="viewcode-block" id="get_header_value">
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.get_header_value">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_header_value</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Header Value.</span>
+<span class="w">    </span><span class="sd">"""Get Header Value.</span>
 
 <span class="sd">    This function reads a value from the header image.</span>
 
@@ -589,7 +589,7 @@
 <span class="sd">    float</span>
 <span class="sd">        Value associated to the key provided</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">h</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="n">image_path</span><span class="p">)</span>
 
     <span class="n">val</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
@@ -598,7 +598,7 @@
         <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;The key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> does not return a float value. Got </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"The key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> does not return a float value. Got </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">val</span></div>
@@ -608,9 +608,9 @@
 <div class="viewcode-block" id="ccd_candidate_mask">
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.ccd_candidate_mask">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">ccd_candidate_mask</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">ccd_size</span><span class="p">,</span> <span class="n">margin_frac</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;CCD Candidate Mask.</span>
+<span class="w">    </span><span class="sd">"""CCD Candidate Mask.</span>
 
-<span class="sd">    Flag catalogue positions that lie near a CCD&#39;s sky footprint.</span>
+<span class="sd">    Flag catalogue positions that lie near a CCD's sky footprint.</span>
 
 <span class="sd">    The footprint is obtained by forward-projecting (pixel to world) the</span>
 <span class="sd">    CCD centre and corners, which is always well defined.  The returned</span>
@@ -637,7 +637,7 @@
 <span class="sd">    numpy.ndarray</span>
 <span class="sd">        Boolean mask over the input positions</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_size</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
     <span class="n">corners_x</span> <span class="o">=</span> <span class="p">[</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="p">(</span><span class="n">xmin</span> <span class="o">+</span> <span class="n">xmax</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">]</span>
@@ -667,7 +667,7 @@
 <div class="viewcode-block" id="make_post_process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.make_post_process">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">make_post_process</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">f_wcs_path</span><span class="p">,</span> <span class="n">pos_params</span><span class="p">,</span> <span class="n">ccd_size</span><span class="p">,</span> <span class="n">w_log</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make Post Processing.</span>
+<span class="w">    </span><span class="sd">"""Make Post Processing.</span>
 
 <span class="sd">    This function will add one HDU for each epoch to the SExtractor catalogue.</span>
 <span class="sd">    Note that this only works for tiles.</span>
@@ -696,7 +696,7 @@
 <span class="sd">    IOError</span>
 <span class="sd">        If SQL file not found</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
         <span class="n">cat_path</span><span class="p">,</span>
         <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -705,46 +705,46 @@
     <span class="n">cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
 
     <span class="n">f_wcs</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="n">f_wcs_path</span><span class="p">)</span>
-    <span class="c1"># Tile-level logs from merge_headers carry a &quot;TILE_ID&quot; metadata entry</span>
+    <span class="c1"># Tile-level logs from merge_headers carry a "TILE_ID" metadata entry</span>
     <span class="c1"># (inserted first); n_hdu must be derived from a real exposure entry,</span>
     <span class="c1"># otherwise it measures the tile ID string and truncates the CCD scan.</span>
-    <span class="n">exp_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">f_wcs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">&quot;TILE_ID&quot;</span><span class="p">]</span>
+    <span class="n">exp_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">f_wcs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">"TILE_ID"</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_keys</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not read sql file &#39;</span><span class="si">{</span><span class="n">f_wcs_path</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not read sql file '</span><span class="si">{</span><span class="n">f_wcs_path</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
     <span class="n">n_hdu</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">f_wcs</span><span class="p">[</span><span class="n">exp_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
 
     <span class="n">history</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;HISTORY&quot;</span><span class="p">,</span> <span class="n">idx</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"HISTORY"</span><span class="p">,</span> <span class="n">idx</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">""</span><span class="p">:</span>
             <span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
 
     <span class="n">exp_list</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;([0-9]+)p?\.(.*)&quot;</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"([0-9]+)p?\.(.*)"</span>
     <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="n">history</span><span class="p">:</span>
         <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">hist</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Could not parse exposure ID from HISTORY entry: &#39;</span><span class="si">{</span><span class="n">hist</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                <span class="sa">f</span><span class="s2">"Could not parse exposure ID from HISTORY entry: '</span><span class="si">{</span><span class="n">hist</span><span class="si">}</span><span class="s2">'"</span>
             <span class="p">)</span>
         <span class="n">exp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 
-    <span class="n">obj_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;NUMBER&quot;</span><span class="p">])</span>
+    <span class="n">obj_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
 
     <span class="n">ra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
     <span class="n">dec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
 
-    <span class="n">n_epoch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+    <span class="n">n_epoch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int32"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">exp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">exp_list</span><span class="p">):</span>
-        <span class="n">pos_tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">pos_tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int32"</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
         <span class="k">for</span> <span class="n">idx_j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_hdu</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">exp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">f_wcs</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Exposure </span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s2"> used in image </span><span class="si">{</span><span class="n">cat_path</span><span class="si">}</span><span class="s2"> but not&quot;</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; found in header file </span><span class="si">{</span><span class="n">f_wcs_path</span><span class="si">}</span><span class="s2">. Make sure this&quot;</span>
-                    <span class="o">+</span> <span class="s2">&quot; file is complete.&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Exposure </span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s2"> used in image </span><span class="si">{</span><span class="n">cat_path</span><span class="si">}</span><span class="s2"> but not"</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">" found in header file </span><span class="si">{</span><span class="n">f_wcs_path</span><span class="si">}</span><span class="s2">. Make sure this"</span>
+                    <span class="o">+</span> <span class="s2">" file is complete."</span>
                 <span class="p">)</span>
-            <span class="n">w</span> <span class="o">=</span> <span class="n">f_wcs</span><span class="p">[</span><span class="n">exp</span><span class="p">][</span><span class="n">idx_j</span><span class="p">][</span><span class="s2">&quot;WCS&quot;</span><span class="p">]</span>
-            <span class="c1"># Only inverse-project objects near this CCD&#39;s footprint.</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">f_wcs</span><span class="p">[</span><span class="n">exp</span><span class="p">][</span><span class="n">idx_j</span><span class="p">][</span><span class="s2">"WCS"</span><span class="p">]</span>
+            <span class="c1"># Only inverse-project objects near this CCD's footprint.</span>
             <span class="c1"># Positions far outside the distortion domain make the</span>
             <span class="c1"># iterative inversion in (all_)world2pix diverge with</span>
             <span class="c1"># InvalidCoordinateError, killing the whole tile; they can</span>
@@ -757,9 +757,9 @@
             <span class="k">except</span> <span class="n">InvalidCoordinateError</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">w_log</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;WCS inversion diverged for </span><span class="si">{</span><span class="n">near</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2"> objects&quot;</span>
-                        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; near exposure </span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s2"> HDU </span><span class="si">{</span><span class="n">idx_j</span><span class="si">}</span><span class="s2">;&quot;</span>
-                        <span class="o">+</span> <span class="s2">&quot; no epoch recorded for them&quot;</span>
+                        <span class="sa">f</span><span class="s2">"WCS inversion diverged for </span><span class="si">{</span><span class="n">near</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2"> objects"</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">" near exposure </span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s2"> HDU </span><span class="si">{</span><span class="n">idx_j</span><span class="si">}</span><span class="s2">;"</span>
+                        <span class="o">+</span> <span class="s2">" no epoch recorded for them"</span>
                     <span class="p">)</span>
                 <span class="k">continue</span>
             <span class="n">ind_near</span> <span class="o">=</span> <span class="p">(</span>
@@ -776,17 +776,17 @@
         <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[(</span><span class="n">obj_id</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">exp_name</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">pos_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_name</span><span class="p">))],</span>
             <span class="n">dtype</span><span class="o">=</span><span class="p">[</span>
-                <span class="p">(</span><span class="s2">&quot;NUMBER&quot;</span><span class="p">,</span> <span class="n">obj_id</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">&quot;EXP_NAME&quot;</span><span class="p">,</span> <span class="n">exp_name</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">&quot;CCD_N&quot;</span><span class="p">,</span> <span class="n">pos_tmp</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"NUMBER"</span><span class="p">,</span> <span class="n">obj_id</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"EXP_NAME"</span><span class="p">,</span> <span class="n">exp_name</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"CCD_N"</span><span class="p">,</span> <span class="n">pos_tmp</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
             <span class="p">],</span>
         <span class="p">)</span>
-        <span class="n">cat</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">ext_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;EPOCH_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">cat</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">ext_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"EPOCH_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
 
     <span class="n">f_wcs</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-    <span class="n">cat</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">&quot;N_EPOCH&quot;</span><span class="p">,</span> <span class="n">n_epoch</span><span class="p">)</span>
+    <span class="n">cat</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"N_EPOCH"</span><span class="p">,</span> <span class="n">n_epoch</span><span class="p">)</span>
 
     <span class="n">cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
@@ -795,7 +795,7 @@
 <div class="viewcode-block" id="SExtractorCaller">
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SExtractorCaller</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The SExtractor Caller.</span>
+<span class="w">    </span><span class="sd">"""The SExtractor Caller.</span>
 
 <span class="sd">    This class constructs the command line to call SExtractor based on the</span>
 <span class="sd">    input files and parameters.</span>
@@ -837,7 +837,7 @@
 <span class="sd">    output_prefix: str, optional</span>
 <span class="sd">        If provided, add a prefix to the output file names</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -860,8 +860,8 @@
         <span class="n">output_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">cmd_line</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd_line</span> <span class="o">=</span> <span class="s2">""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">=</span> <span class="s2">""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_meas_img_path</span> <span class="o">=</span> <span class="n">path_input_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span> <span class="o">=</span> <span class="n">path_input_files</span>
@@ -890,7 +890,7 @@
 <div class="viewcode-block" id="SExtractorCaller.get_output_name">
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.get_output_name">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_output_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Output Names.</span>
+<span class="w">        </span><span class="sd">"""Get Output Names.</span>
 
 <span class="sd">        Construct the output file path.</span>
 
@@ -904,17 +904,17 @@
 <span class="sd">        str</span>
 <span class="sd">            Full path of the output file</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_prefix</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="s2">""</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">output_prefix</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">output_prefix</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">output_prefix</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">output_prefix</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">output_prefix</span> <span class="o">!=</span> <span class="s2">""</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">output_prefix</span> <span class="o">+</span> <span class="s2">"_"</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="s2">""</span>
 
-        <span class="n">output_file_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;sexcat</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_str</span><span class="si">}</span><span class="s2">.fits&quot;</span>
-        <span class="n">output_file_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_output_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">output_file_name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">output_file_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">"sexcat</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_str</span><span class="si">}</span><span class="s2">.fits"</span>
+        <span class="n">output_file_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_output_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">output_file_name</span><span class="si">}</span><span class="s2">"</span>
 
         <span class="k">return</span> <span class="n">output_file_path</span></div>
 
@@ -929,7 +929,7 @@
         <span class="n">use_detect_img</span><span class="p">,</span>
         <span class="n">use_detect_weight</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set Input Files.</span>
+<span class="w">        </span><span class="sd">"""Set Input Files.</span>
 
 <span class="sd">        Set up all of the input image files.</span>
 
@@ -951,7 +951,7 @@
 <span class="sd">        ValueError</span>
 <span class="sd">            For invalid detection weight</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">extra</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="n">use_weight</span><span class="p">:</span>
@@ -960,13 +960,13 @@
 
         <span class="k">if</span> <span class="n">use_flag</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="s2">&quot; -FLAG_IMAGE &quot;</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span><span class="p">[</span><span class="n">extra</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="s2">" -FLAG_IMAGE "</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span><span class="p">[</span><span class="n">extra</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
             <span class="n">extra</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="n">use_psf</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="s2">&quot; -PSF_NAME &quot;</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span><span class="p">[</span><span class="n">extra</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="s2">" -PSF_NAME "</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span><span class="p">[</span><span class="n">extra</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
             <span class="n">extra</span> <span class="o">+=</span> <span class="mi">1</span>
 
@@ -975,12 +975,12 @@
         <span class="c1"># First, consistency checks</span>
         <span class="k">if</span> <span class="n">use_detect_weight</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_detect_img</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;DETECTION_WEIGHT cannot be True &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;if DETECTION_IMAGE is False&quot;</span>
+                <span class="s2">"DETECTION_WEIGHT cannot be True "</span>
+                <span class="o">+</span> <span class="s2">"if DETECTION_IMAGE is False"</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">use_detect_weight</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_weight</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;DETECTION_WEIGHT cannot be True &quot;</span> <span class="o">+</span> <span class="s2">&quot;if WEIGHT_FILE is False&quot;</span>
+                <span class="s2">"DETECTION_WEIGHT cannot be True "</span> <span class="o">+</span> <span class="s2">"if WEIGHT_FILE is False"</span>
             <span class="p">)</span>
 
         <span class="c1"># Check for separate image file for detection and measurement</span>
@@ -1001,24 +1001,24 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">detect_weight_path</span> <span class="o">=</span> <span class="n">weight_image</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot; -WEIGHT_IMAGE </span><span class="si">{</span><span class="n">detect_weight_path</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;,</span><span class="si">{</span><span class="n">weight_image</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">" -WEIGHT_IMAGE </span><span class="si">{</span><span class="n">detect_weight_path</span><span class="si">}</span><span class="s2">"</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">",</span><span class="si">{</span><span class="n">weight_image</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="s2">&quot; -WEIGHT_TYPE None&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="s2">" -WEIGHT_TYPE None"</span>
 
         <span class="k">if</span> <span class="n">extra</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Incoherence between input file number and keys &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;related to extra files: 1 regular + </span><span class="si">{</span><span class="n">extra</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s2"> extra &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;files not compatible with total file list &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;length of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="s2">"Incoherence between input file number and keys "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"related to extra files: 1 regular + </span><span class="si">{</span><span class="n">extra</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s2"> extra "</span>
+                <span class="o">+</span> <span class="s2">"files not compatible with total file list "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"length of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SExtractorCaller.get_zero_point">
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.get_zero_point">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_zero_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_zp</span><span class="p">,</span> <span class="n">zp_key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Zero Point.</span>
+<span class="w">        </span><span class="sd">"""Get Zero Point.</span>
 
 <span class="sd">        Use a zero point from an input image header.</span>
 
@@ -1029,16 +1029,16 @@
 <span class="sd">        zp_key: str</span>
 <span class="sd">            Header key corresponding to the zero point</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">use_zp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">zp_key</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
             <span class="n">zp_value</span> <span class="o">=</span> <span class="n">get_header_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meas_img_path</span><span class="p">,</span> <span class="n">zp_key</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; -MAG_ZEROPOINT </span><span class="si">{</span><span class="n">zp_value</span><span class="si">}</span><span class="s2">&quot;</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">" -MAG_ZEROPOINT </span><span class="si">{</span><span class="n">zp_value</span><span class="si">}</span><span class="s2">"</span></div>
 
 
 <div class="viewcode-block" id="SExtractorCaller.get_background">
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.get_background">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_background</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_bkg</span><span class="p">,</span> <span class="n">bkg_key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Background.</span>
+<span class="w">        </span><span class="sd">"""Get Background.</span>
 
 <span class="sd">        Use a background value from an input image header.</span>
 
@@ -1049,18 +1049,18 @@
 <span class="sd">        bkg_key: str</span>
 <span class="sd">            Header key corresponding to the background value</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">use_bkg</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bkg_key</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
             <span class="n">bkg_value</span> <span class="o">=</span> <span class="n">get_header_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meas_img_path</span><span class="p">,</span> <span class="n">bkg_key</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot; -BACK_TYPE MANUAL -BACK_VALUE </span><span class="si">{</span><span class="n">bkg_value</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">" -BACK_TYPE MANUAL -BACK_VALUE </span><span class="si">{</span><span class="n">bkg_value</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SExtractorCaller.get_check_image">
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.get_check_image">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_check_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_image</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Check Image.</span>
+<span class="w">        </span><span class="sd">"""Get Check Image.</span>
 
 <span class="sd">        Handle the check images if any are requested.</span>
 
@@ -1069,10 +1069,10 @@
 <span class="sd">        check_image: list</span>
 <span class="sd">            List of SExtractor keys corresponding to check images</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">check_image</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">check_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
-            <span class="n">check_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;NONE&quot;</span><span class="p">]</span>
-            <span class="n">check_name</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;none&quot;</span><span class="p">]</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">check_image</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">check_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">""</span><span class="p">):</span>
+            <span class="n">check_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"NONE"</span><span class="p">]</span>
+            <span class="n">check_name</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"none"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">check_type</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">check_name</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1080,23 +1080,23 @@
                 <span class="n">check_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
                 <span class="n">check_name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_path_output_dir</span>
-                    <span class="o">+</span> <span class="s2">&quot;/&quot;</span>
+                    <span class="o">+</span> <span class="s2">"/"</span>
                     <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span>
                     <span class="o">+</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
                     <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_str</span>
-                    <span class="o">+</span> <span class="s2">&quot;.fits&quot;</span>
+                    <span class="o">+</span> <span class="s2">".fits"</span>
                 <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39; -CHECKIMAGE_TYPE </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">check_type</span><span class="p">)</span><span class="si">}</span><span class="s1"> &#39;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;-CHECKIMAGE_NAME </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">check_name</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">' -CHECKIMAGE_TYPE </span><span class="si">{</span><span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">check_type</span><span class="p">)</span><span class="si">}</span><span class="s1"> '</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s1">'-CHECKIMAGE_NAME </span><span class="si">{</span><span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">check_name</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SExtractorCaller.make_command_line">
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.make_command_line">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">make_command_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exec_path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make Command Line.</span>
+<span class="w">        </span><span class="sd">"""Make Command Line.</span>
 
 <span class="sd">        This method constructs the command line to run SExtractor.</span>
 
@@ -1110,17 +1110,17 @@
 <span class="sd">        str</span>
 <span class="sd">            Full command line to call SExtractor</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Base arguments for SExtractor</span>
         <span class="n">command_line_base</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exec_path</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_detect_img_path</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_meas_img_path</span><span class="si">}</span><span class="s2"> &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;-c </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_dot_sex</span><span class="si">}</span><span class="s2"> &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;-PARAMETERS_NAME </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_dot_param</span><span class="si">}</span><span class="s2"> &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;-FILTER_NAME </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_dot_conv</span><span class="si">}</span><span class="s2"> &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;-CATALOG_NAME </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path_output_file</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">exec_path</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_detect_img_path</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_meas_img_path</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"-c </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_dot_sex</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"-PARAMETERS_NAME </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_dot_param</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"-FILTER_NAME </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_dot_conv</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"-CATALOG_NAME </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path_output_file</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
-        <span class="n">command_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">command_line_base</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">command_line_base</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span><span class="si">}</span><span class="s2">"</span>
 
         <span class="k">return</span> <span class="n">command_line</span></div>
 
@@ -1129,7 +1129,7 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.parse_errors">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse_errors</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="n">stdout</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse Errors.</span>
+<span class="w">        </span><span class="sd">"""Parse Errors.</span>
 
 <span class="sd">        This methoid moves errors from the standard output of SExtractor to</span>
 <span class="sd">        the standard error.</span>
@@ -1146,12 +1146,12 @@
 <span class="sd">        tuple</span>
 <span class="sd">            Updated standard output and error</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">check_error</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
-        <span class="n">check_error2</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;all done&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+<span class="sd">        """</span>
+        <span class="n">check_error</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">"error"</span><span class="p">,</span> <span class="n">stdout</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="n">check_error2</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">"all done"</span><span class="p">,</span> <span class="n">stdout</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
 
         <span class="k">if</span> <span class="n">check_error</span> <span class="o">==</span> <span class="p">[]:</span>
-            <span class="n">stderr2</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">stderr2</span> <span class="o">=</span> <span class="s2">""</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">stderr2</span> <span class="o">=</span> <span class="n">stdout</span>
 

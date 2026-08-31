@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.testing.simulate</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Simulation utilities for ShapePipe validation tests.</span>
+<span></span><span class="sd">"""Simulation utilities for ShapePipe validation tests.</span>
 
 <span class="sd">Stable across shapepipe branches and ngmix versions — contains only galsim</span>
 <span class="sd">and numpy, no shapepipe processing or ngmix fitting code.</span>
 
 <span class="sd">Author: Axel Guinot</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">galsim</span>
@@ -581,7 +581,7 @@
     <span class="n">wcs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">return_centers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate an exponential galaxy with Moffat PSF.</span>
+<span class="w">    </span><span class="sd">"""Simulate an exponential galaxy with Moffat PSF.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -621,7 +621,7 @@
 <span class="sd">        sensitivity axis) switches the shift draw to PIXEL space (uniform</span>
 <span class="sd">        ±0.5 pixel per axis), guaranteeing the object lands within half a</span>
 <span class="sd">        pixel of the stamp centre — the contract that round-to-nearest-pixel</span>
-<span class="sd">        centroid logic (e.g. ngmix ``centroid_source=&quot;wcs&quot;``) depends on.</span>
+<span class="sd">        centroid logic (e.g. ngmix ``centroid_source="wcs"``) depends on.</span>
 <span class="sd">        Note ``psfs_sigmas`` are HSM pixel-unit sigmas of the *WCS-drawn*</span>
 <span class="sd">        PSF stamp; under a sheared WCS they are not circularly symmetric</span>
 <span class="sd">        measures.</span>
@@ -640,7 +640,7 @@
 <span class="sd">    flags : list of numpy.ndarray</span>
 <span class="sd">    jacob_lists : list of galsim.BaseWCS</span>
 <span class="sd">    centers : list of galsim.PositionD, only if ``return_centers``</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">psf_noise</span> <span class="o">=</span> <span class="mf">1.0e-6</span>
     <span class="n">scale</span> <span class="o">=</span> <span class="n">pixel_scale</span>
 
@@ -725,7 +725,7 @@
     <span class="n">pixel_scale</span><span class="o">=</span><span class="mf">0.1857</span><span class="p">,</span>
     <span class="n">img_size</span><span class="o">=</span><span class="mi">201</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate galaxies at multiple shear values sharing the same noise per epoch.</span>
+<span class="w">    </span><span class="sd">"""Simulate galaxies at multiple shear values sharing the same noise per epoch.</span>
 
 <span class="sd">    Implements the Pujol (2018) denoising approach: all shear variants receive</span>
 <span class="sd">    the identical noise and sub-pixel shift each epoch, so noise contributions</span>
@@ -750,7 +750,7 @@
 <span class="sd">    list of tuple</span>
 <span class="sd">        One ``(gals, psfs, psfs_sigmas, weights, flags, jacob_lists)`` per</span>
 <span class="sd">        entry in ``shear_list``, all sharing identical per-epoch noise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">psf_noise_sigma</span> <span class="o">=</span> <span class="mf">1.0e-6</span>
     <span class="n">scale</span> <span class="o">=</span> <span class="n">pixel_scale</span>
     <span class="n">wcs</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">PixelScale</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>

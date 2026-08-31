@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.get_images_package.get_images</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;GET IMAGES.</span>
+<span></span><span class="sd">"""GET IMAGES.</span>
 
 <span class="sd">This module copies all images required for processing.</span>
 
 <span class="sd">:Author: Martin Kilbinger &lt;martin.kilbinger@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -573,7 +573,7 @@
 <div class="viewcode-block" id="read_image_numbers">
 <a class="viewcode-back" href="../../../../shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.read_image_numbers">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">read_image_numbers</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read Image Numbers.</span>
+<span class="w">    </span><span class="sd">"""Read Image Numbers.</span>
 
 <span class="sd">    Read image numbers from file.</span>
 
@@ -587,7 +587,7 @@
 <span class="sd">    list</span>
 <span class="sd">        Image numbers</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">image_number_list</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">file</span><span class="p">:</span>
@@ -600,7 +600,7 @@
 <div class="viewcode-block" id="in2out_pattern">
 <a class="viewcode-back" href="../../../../shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.in2out_pattern">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">in2out_pattern</span><span class="p">(</span><span class="n">number</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get In2out Pattern.</span>
+<span class="w">    </span><span class="sd">"""Get In2out Pattern.</span>
 
 <span class="sd">    Transform input to output number pattern or image ID.</span>
 
@@ -614,15 +614,15 @@
 <span class="sd">    str</span>
 <span class="sd">        Output number</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># replace dots (&#39;.&#39;) with dashes (&#39;-&#39;) to avoid confusion</span>
+<span class="sd">    """</span>
+    <span class="c1"># replace dots ('.') with dashes ('-') to avoid confusion</span>
     <span class="c1"># with file extension delimiters</span>
-    <span class="n">number_final</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\.&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+    <span class="n">number_final</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\."</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
 
     <span class="c1"># remove letters in number</span>
-    <span class="n">number_final</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;[a-zA-Z]&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">number_final</span><span class="p">)</span>
+    <span class="n">number_final</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"[a-zA-Z]"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">number_final</span><span class="p">)</span>
     <span class="c1"># make robust for more generalized file names</span>
-    <span class="n">number_final</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">number_final</span><span class="p">)</span>
+    <span class="n">number_final</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"_"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">number_final</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">number_final</span></div>
 
 
@@ -630,7 +630,7 @@
 <div class="viewcode-block" id="GetImages">
 <a class="viewcode-back" href="../../../../shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.GetImages">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">GetImages</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Images.</span>
+<span class="w">    </span><span class="sd">"""Get Images.</span>
 
 <span class="sd">    Class handling retrieval of input images.</span>
 
@@ -661,7 +661,7 @@
 <span class="sd">    n_try : int, optional</span>
 <span class="sd">        Number of attempts for VOs download, default is ``3``</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -693,7 +693,7 @@
 <div class="viewcode-block" id="GetImages.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.GetImages.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process.</span>
+<span class="w">        </span><span class="sd">"""Process.</span>
 
 <span class="sd">        Main function to process GetImages.</span>
 
@@ -704,7 +704,7 @@
 <span class="sd">        output_dir : str</span>
 <span class="sd">            Output directory</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Input image numbers from all input tile files</span>
         <span class="n">all_image_numbers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">input_file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">:</span>
@@ -713,12 +713,12 @@
 
         <span class="c1"># List of unique input images</span>
         <span class="n">flat_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">all_image_numbers</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sublist</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of total image IDs = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">flat_list</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of total image IDs = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">flat_list</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Get unique number list</span>
         <span class="n">image_number_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">flat_list</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Number of unique image IDs = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">image_number_list</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Number of unique image IDs = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">image_number_list</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="c1"># Create array to make it compatible with input dir</span>
@@ -738,11 +738,11 @@
             <span class="p">]</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Lists INPUT_PATH (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">input_dir</span><span class="p">)</span><span class="si">}</span><span class="s2">), &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;INPUT_FILE_PATTERN (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_pattern</span><span class="p">)</span><span class="si">}</span><span class="s2">), &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;INPUT_FILE_EXT (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_ext</span><span class="p">)</span><span class="si">}</span><span class="s2">), &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;OUTPUT_FILE_PATTERN (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_file_pattern</span><span class="p">)</span><span class="si">}</span><span class="s2">) &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;need to have equal length&quot;</span>
+                <span class="sa">f</span><span class="s2">"Lists INPUT_PATH (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">input_dir</span><span class="p">)</span><span class="si">}</span><span class="s2">), "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"INPUT_FILE_PATTERN (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_pattern</span><span class="p">)</span><span class="si">}</span><span class="s2">), "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"INPUT_FILE_EXT (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_ext</span><span class="p">)</span><span class="si">}</span><span class="s2">), "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"OUTPUT_FILE_PATTERN (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_file_pattern</span><span class="p">)</span><span class="si">}</span><span class="s2">) "</span>
+                <span class="o">+</span> <span class="s2">"need to have equal length"</span>
             <span class="p">)</span>
 
         <span class="c1"># Assemble input and output file lists</span>
@@ -768,7 +768,7 @@
         <span class="n">dest_dir</span><span class="p">,</span>
         <span class="n">use_output_file_pattern</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get File List.</span>
+<span class="w">        </span><span class="sd">"""Get File List.</span>
 
 <span class="sd">        Return lists of file paths to retrieve.</span>
 
@@ -787,7 +787,7 @@
 <span class="sd">        list</span>
 <span class="sd">            Complete file paths, one list for each input file type</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">list_all_files</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dest_dir</span><span class="p">)):</span>
             <span class="n">in_path</span> <span class="o">=</span> <span class="n">dest_dir</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
@@ -804,22 +804,22 @@
 
                     <span class="c1"># Keep initial dot in extension</span>
                     <span class="n">x</span> <span class="o">=</span> <span class="n">in_ext</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-                    <span class="n">x2</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+                    <span class="n">x2</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\."</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
                     <span class="n">ext_final</span> <span class="o">=</span> <span class="n">in_ext</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">x2</span>
-                    <span class="n">fbase</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_file_pattern</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}{</span><span class="n">number_final</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">fbase</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_file_pattern</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}{</span><span class="n">number_final</span><span class="si">}</span><span class="s2">"</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">fbase</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_numbering</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">in_pattern</span><span class="p">)</span>
                     <span class="n">ext_final</span> <span class="o">=</span> <span class="n">in_ext</span>
 
                 <span class="k">if</span> <span class="p">(</span>
                     <span class="n">use_output_file_pattern</span>
-                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_file_pattern</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;*&quot;</span>
+                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_file_pattern</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"*"</span>
                 <span class="p">):</span>
                     <span class="c1"># retrieve all input files to output dir, do not append</span>
                     <span class="c1"># extension</span>
                     <span class="n">fpath</span> <span class="o">=</span> <span class="n">in_path</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">fpath</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">in_path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">fbase</span><span class="si">}{</span><span class="n">ext_final</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">fpath</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">in_path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">fbase</span><span class="si">}{</span><span class="n">ext_final</span><span class="si">}</span><span class="s2">"</span>
 
                 <span class="n">list_files_per_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span>
             <span class="n">list_all_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">list_files_per_type</span><span class="p">)</span>
@@ -830,7 +830,7 @@
 <div class="viewcode-block" id="GetImages.retrieve">
 <a class="viewcode-back" href="../../../../shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.GetImages.retrieve">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">retrieve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_inputs</span><span class="p">,</span> <span class="n">all_outputs_orig</span><span class="p">,</span> <span class="n">all_outputs_renamed</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve.</span>
+<span class="w">        </span><span class="sd">"""Retrieve.</span>
 
 <span class="sd">        Retrieve all files.</span>
 
@@ -841,7 +841,7 @@
 <span class="sd">        all_outputs: list</span>
 <span class="sd">            Output file paths, one list for each input file type</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">in_per_type</span><span class="p">,</span> <span class="n">out_per_type_orig</span><span class="p">,</span> <span class="n">out_per_type_renamed</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
             <span class="n">all_inputs</span><span class="p">,</span> <span class="n">all_outputs_orig</span><span class="p">,</span> <span class="n">all_outputs_renamed</span>
         <span class="p">):</span>
@@ -849,27 +849,27 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="p">:</span>
                     <span class="n">out_base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">out_per_type_orig</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
                     <span class="n">path</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="si">}</span><span class="s2">/**/</span><span class="si">{</span><span class="n">out_base</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="si">}</span><span class="s2">/**/</span><span class="si">{</span><span class="n">out_base</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                         <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
                         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_expected</span><span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> found, skipping download&quot;</span>
+                                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> found, skipping download"</span>
                             <span class="p">)</span>
                             <span class="k">continue</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_expected</span><span class="si">}</span><span class="s2"> &quot;</span>
-                                <span class="o">+</span> <span class="s2">&quot;existing files found at&quot;</span>
-                                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="si">}</span><span class="s2">&quot;</span>
-                                <span class="o">+</span> <span class="s2">&quot;, downloading images&quot;</span>
+                                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_expected</span><span class="si">}</span><span class="s2"> "</span>
+                                <span class="o">+</span> <span class="s2">"existing files found at"</span>
+                                <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="si">}</span><span class="s2">"</span>
+                                <span class="o">+</span> <span class="s2">", downloading images"</span>
                             <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                            <span class="s2">&quot;No existing images found at&quot;</span>
-                            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="si">}</span><span class="s2">,&quot;</span>
-                            <span class="o">+</span> <span class="s2">&quot; downloading images&quot;</span>
+                            <span class="s2">"No existing images found at"</span>
+                            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="si">}</span><span class="s2">,"</span>
+                            <span class="o">+</span> <span class="s2">" downloading images"</span>
                         <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_one</span><span class="p">(</span>
                     <span class="n">in_per_type</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
@@ -881,7 +881,7 @@
 <div class="viewcode-block" id="GetImages.retrieve_one">
 <a class="viewcode-back" href="../../../../shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.GetImages.retrieve_one">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">retrieve_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_path</span><span class="p">,</span> <span class="n">out_path_orig</span><span class="p">,</span> <span class="n">out_path_renamed</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve One.</span>
+<span class="w">        </span><span class="sd">"""Retrieve One.</span>
 
 <span class="sd">        Retrieve one file.</span>
 
@@ -892,18 +892,18 @@
 <span class="sd">        out_path : str</span>
 <span class="sd">            Output path</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_method</span> <span class="o">==</span> <span class="s2">&quot;vos&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_method</span> <span class="o">==</span> <span class="s2">"vos"</span><span class="p">:</span>
             <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;vcp&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"vcp"</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_options</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_options</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_options</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">):</span>
                     <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
             <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">in_path</span><span class="p">)</span>
             <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out_path_orig</span><span class="p">)</span>
 
-            <span class="n">log_cmd</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
-            <span class="n">vcp</span> <span class="o">=</span> <span class="n">vosHandler</span><span class="p">(</span><span class="s2">&quot;vcp&quot;</span><span class="p">)</span>
+            <span class="n">log_cmd</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+            <span class="n">vcp</span> <span class="o">=</span> <span class="n">vosHandler</span><span class="p">(</span><span class="s2">"vcp"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">log_cmd</span><span class="p">)</span>
 
             <span class="c1"># Download file from VOSpace</span>
@@ -912,15 +912,15 @@
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">vcp</span><span class="p">()</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="s2">&quot;Success of command vcp after &quot;</span>
-                        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_try</span><span class="si">}</span><span class="s2"> attempts&quot;</span>
+                        <span class="s2">"Success of command vcp after "</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_try</span><span class="si">}</span><span class="s2"> attempts"</span>
                     <span class="p">)</span>
                     <span class="k">break</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="n">attempt</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="s2">&quot;Error with command vcp, attempt &quot;</span>
-                        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_try</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="s2">"Error with command vcp, attempt "</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_try</span><span class="si">}</span><span class="s2">"</span>
                     <span class="p">)</span>
 
             <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="kc">None</span>
@@ -929,22 +929,22 @@
             <span class="c1"># link name in ShapePipe numbering format</span>
             <span class="n">os</span><span class="o">.</span><span class="n">symlink</span><span class="p">(</span><span class="n">out_path_orig</span><span class="p">,</span> <span class="n">out_path_renamed</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_method</span> <span class="o">==</span> <span class="s2">&quot;symlink&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_method</span> <span class="o">==</span> <span class="s2">"symlink"</span><span class="p">:</span>
             <span class="n">src</span> <span class="o">=</span> <span class="n">in_path</span>
 
-            <span class="c1"># Get all input file names if INPUT_FILE_PATTERN contains &#39;*&#39;</span>
+            <span class="c1"># Get all input file names if INPUT_FILE_PATTERN contains '*'</span>
             <span class="n">all_src</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_src</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;No input file found corresponding to &#39;</span><span class="si">{</span><span class="n">src</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                    <span class="sa">f</span><span class="s2">"No input file found corresponding to '</span><span class="si">{</span><span class="n">src</span><span class="si">}</span><span class="s2">'"</span>
                 <span class="p">)</span>
 
             <span class="n">dst</span> <span class="o">=</span> <span class="n">out_path_renamed</span>
             <span class="k">for</span> <span class="n">src</span> <span class="ow">in</span> <span class="n">all_src</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dst</span><span class="p">):</span>
-                    <span class="c1"># OUTPUT_FILE_PATTERN is &#39;*&#39;, so dst is not regular file</span>
+                    <span class="c1"># OUTPUT_FILE_PATTERN is '*', so dst is not regular file</span>
                     <span class="c1"># but directory. Append input file name</span>
-                    <span class="n">dst_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dst</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">src</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">dst_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">dst</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">src</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># dst is regular file</span>
                     <span class="n">dst_name</span> <span class="o">=</span> <span class="n">dst</span>

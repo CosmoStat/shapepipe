@@ -552,14 +552,14 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.random_cat_package.random_cat</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;RANDOM CATALOGUE.</span>
+<span></span><span class="sd">"""RANDOM CATALOGUE.</span>
 
 <span class="sd">This module contains a class to create a random catalogue, and to compute</span>
 <span class="sd">the tile area accounting for overlapping and masked regions.</span>
 
 <span class="sd">:Author: Martin Kilbinger &lt;martin.kilbinger@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
@@ -579,7 +579,7 @@
 <div class="viewcode-block" id="RandomCat">
 <a class="viewcode-back" href="../../../../shapepipe.modules.random_cat_package.random_cat.html#shapepipe.modules.random_cat_package.random_cat.RandomCat">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RandomCat</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Random Catalogue.</span>
+<span class="w">    </span><span class="sd">"""Random Catalogue.</span>
 
 <span class="sd">    This class creates a random catalogue given a mask FITS file.</span>
 
@@ -603,7 +603,7 @@
 <span class="sd">        Logging instance</span>
 <span class="sd">    healpix_options : dict</span>
 <span class="sd">        Parameters for HEALPix output mask file</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -631,7 +631,7 @@
 <div class="viewcode-block" id="RandomCat.save_as_healpix">
 <a class="viewcode-back" href="../../../../shapepipe.modules.random_cat_package.random_cat.html#shapepipe.modules.random_cat_package.random_cat.RandomCat.save_as_healpix">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save_as_healpix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdu_mask</span><span class="p">,</span> <span class="n">header</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save As Healpix.</span>
+<span class="w">        </span><span class="sd">"""Save As Healpix.</span>
 
 <span class="sd">        Save mask as healpix FITS file.</span>
 
@@ -642,26 +642,26 @@
 <span class="sd">        header : class Header</span>
 <span class="sd">            Image header with WCS information</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="n">mask_1d</span><span class="p">,</span> <span class="n">footprint</span> <span class="o">=</span> <span class="n">reproject_to_healpix</span><span class="p">(</span>
             <span class="p">(</span><span class="n">hdu_mask</span><span class="p">,</span> <span class="n">header</span><span class="p">),</span>
-            <span class="s1">&#39;galactic&#39;</span><span class="p">,</span>
-            <span class="n">nside</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span><span class="p">[</span><span class="s1">&#39;OUT_NSIDE&#39;</span><span class="p">]</span>
+            <span class="s1">'galactic'</span><span class="p">,</span>
+            <span class="n">nside</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span><span class="p">[</span><span class="s1">'OUT_NSIDE'</span><span class="p">]</span>
         <span class="p">)</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">()</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;flux&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask_1d</span>
-        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;ORDERING&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;RING&#39;</span>
-        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;COORDSYS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;G&#39;</span>
-        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;NSIDE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span><span class="p">[</span><span class="s1">&#39;OUT_NSIDE&#39;</span><span class="p">]</span>
-        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;INDXSCHM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;IMPLICIT&#39;</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'flux'</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask_1d</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">'ORDERING'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'RING'</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">'COORDSYS'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'G'</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">'NSIDE'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span><span class="p">[</span><span class="s1">'OUT_NSIDE'</span><span class="p">]</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">'INDXSCHM'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'IMPLICIT'</span>
 
         <span class="n">output_path</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span><span class="p">[</span><span class="s2">&quot;FILE_BASE&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">-&#39;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s1">.fits&#39;</span>
+            <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span><span class="p">[</span><span class="s2">"FILE_BASE"</span><span class="p">]</span><span class="si">}</span><span class="s1">-'</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s1">.fits'</span>
         <span class="p">)</span>
         <span class="n">t</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span></div>
 
@@ -669,11 +669,11 @@
 <div class="viewcode-block" id="RandomCat.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.random_cat_package.random_cat.html#shapepipe.modules.random_cat_package.random_cat.RandomCat.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process.</span>
+<span class="w">        </span><span class="sd">"""Process.</span>
 
 <span class="sd">        Main function to identify exposures.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Read image FITS file header</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">img</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_image_path</span><span class="p">)</span>
@@ -731,14 +731,14 @@
             <span class="c1"># Check that a reasonably large number of pixels is not masked</span>
             <span class="k">if</span> <span class="n">n_unmasked</span> <span class="o">&lt;</span> <span class="n">n_obj</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Number of un-masked pixels </span><span class="si">{</span><span class="n">n_unmasked</span><span class="si">}</span><span class="s2"> is smaller &quot;</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;than number of random objects requested </span><span class="si">{</span><span class="n">n_obj</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Number of un-masked pixels </span><span class="si">{</span><span class="n">n_unmasked</span><span class="si">}</span><span class="s2"> is smaller "</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">"than number of random objects requested </span><span class="si">{</span><span class="n">n_obj</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">n_obj</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating </span><span class="si">{</span><span class="n">n_obj</span><span class="si">}</span><span class="s2"> random objects&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Creating </span><span class="si">{</span><span class="n">n_obj</span><span class="si">}</span><span class="s2"> random objects"</span><span class="p">)</span>
 
         <span class="c1"># Draw points until n are in mask</span>
         <span class="n">n_found</span> <span class="o">=</span> <span class="mi">0</span>
@@ -770,17 +770,17 @@
 
         <span class="c1"># Tile ID</span>
         <span class="n">output_path</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_file_pattern</span><span class="si">}</span><span class="s2">-&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="si">}</span><span class="s2">.fits&quot;</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_file_pattern</span><span class="si">}</span><span class="s2">-"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="si">}</span><span class="s2">.fits"</span>
         <span class="p">)</span>
         <span class="n">file_base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file_name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">tile_ID_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">file_base</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
-        <span class="n">tile_id</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tile_ID_str</span><span class="p">))</span>
+        <span class="n">tile_ID_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"-"</span><span class="p">,</span> <span class="n">file_base</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">tile_id</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"."</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tile_ID_str</span><span class="p">))</span>
         <span class="n">tile_id_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_obj</span><span class="p">)</span> <span class="o">*</span> <span class="n">tile_id</span>
 
         <span class="c1"># Write to output</span>
         <span class="n">cat_out</span> <span class="o">=</span> <span class="p">[</span><span class="n">ra_rand</span><span class="p">,</span> <span class="n">dec_rand</span><span class="p">,</span> <span class="n">x_rand</span><span class="p">,</span> <span class="n">y_rand</span><span class="p">,</span> <span class="n">tile_id_array</span><span class="p">]</span>
-        <span class="n">column_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;RA&quot;</span><span class="p">,</span> <span class="s2">&quot;DEC&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;TILE_ID&quot;</span><span class="p">]</span>
+        <span class="n">column_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"RA"</span><span class="p">,</span> <span class="s2">"DEC"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">,</span> <span class="s2">"TILE_ID"</span><span class="p">]</span>
 
         <span class="c1"># TODO: Add units to header</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
@@ -789,10 +789,10 @@
         <span class="n">output</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">cat_out</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">column_names</span><span class="p">)</span>
 
         <span class="c1"># Write area information to log file</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total area = </span><span class="si">{</span><span class="n">area_deg2</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> deg^2&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unmasked area = </span><span class="si">{</span><span class="n">area_deg2_eff</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> deg^2&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total area = </span><span class="si">{</span><span class="n">area_deg2</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> deg^2"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unmasked area = </span><span class="si">{</span><span class="n">area_deg2_eff</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> deg^2"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Ratio masked to total pixels = </span><span class="si">{</span><span class="n">n_unmasked</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">n_pix</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Ratio masked to total pixels = </span><span class="si">{</span><span class="n">n_unmasked</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">n_pix</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span></div>
 </div>
 

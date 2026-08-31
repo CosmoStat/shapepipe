@@ -592,24 +592,24 @@
 <p>In this example a Python script using a <code class="docutils literal notranslate"><span class="pre">Dummy()</span></code> class is implemented. This module does not read inputs from any preceding module, but looks for files in the <code class="docutils literal notranslate"><span class="pre">INPUT_DIR</span></code> that match the file patterns <code class="docutils literal notranslate"><span class="pre">'numbers'</span></code> and <code class="docutils literal notranslate"><span class="pre">'letters'</span></code> with file extension <code class="docutils literal notranslate"><span class="pre">'.txt'</span></code>. This module depends on <code class="docutils literal notranslate"><span class="pre">numpy</span></code>.</p>
 <p>As this module does not implement any system executable, it is not necessary to return a <code class="docutils literal notranslate"><span class="pre">stderr</span></code>. Instead any output content that should be recorded in the log can be returned, otherwise the module runner should simply
 return <code class="docutils literal notranslate"><span class="pre">None,</span> <span class="pre">None</span></code>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;PYTHON MODULE EXAMPLE.</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">"""PYTHON MODULE EXAMPLE.</span>
 
 <span class="sd">This module defines methods for an example Python module.</span>
 
 <span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.modules.module_decorator</span><span class="w"> </span><span class="kn">import</span> <span class="n">module_runner</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.modules.python_example_package</span><span class="w"> </span><span class="kn">import</span> <span class="n">python_example</span>
 
 
 <span class="nd">@module_runner</span><span class="p">(</span>
-    <span class="n">version</span><span class="o">=</span><span class="s1">&#39;1.1&#39;</span><span class="p">,</span>
-    <span class="n">file_pattern</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;numbers&#39;</span><span class="p">,</span> <span class="s1">&#39;letters&#39;</span><span class="p">],</span>
-    <span class="n">file_ext</span><span class="o">=</span><span class="s1">&#39;.txt&#39;</span><span class="p">,</span>
-    <span class="n">depends</span><span class="o">=</span><span class="s1">&#39;numpy&#39;</span><span class="p">,</span>
-    <span class="n">run_method</span><span class="o">=</span><span class="s1">&#39;parallel&#39;</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="s1">'1.1'</span><span class="p">,</span>
+    <span class="n">file_pattern</span><span class="o">=</span><span class="p">[</span><span class="s1">'numbers'</span><span class="p">,</span> <span class="s1">'letters'</span><span class="p">],</span>
+    <span class="n">file_ext</span><span class="o">=</span><span class="s1">'.txt'</span><span class="p">,</span>
+    <span class="n">depends</span><span class="o">=</span><span class="s1">'numpy'</span><span class="p">,</span>
+    <span class="n">run_method</span><span class="o">=</span><span class="s1">'parallel'</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">python_example_runner</span><span class="p">(</span>
     <span class="n">input_file_list</span><span class="p">,</span>
@@ -619,14 +619,14 @@ return <code class="docutils literal notranslate"><span class="pre">None,</span>
     <span class="n">module_config_sec</span><span class="p">,</span>
     <span class="n">w_log</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Define The Python Example Runner.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Define The Python Example Runner."""</span>
     <span class="c1"># Set output file name</span>
     <span class="n">output_file_name</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">run_dirs</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">/pyex_output</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s1">.cat&#39;</span>
+        <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">run_dirs</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span><span class="si">}</span><span class="s1">/pyex_output</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s1">.cat'</span>
     <span class="p">)</span>
 
     <span class="c1"># Retrieve log message from config file</span>
-    <span class="n">message</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">module_config_sec</span><span class="p">,</span> <span class="s1">&#39;MESSAGE&#39;</span><span class="p">)</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">module_config_sec</span><span class="p">,</span> <span class="s1">'MESSAGE'</span><span class="p">)</span>
 
     <span class="c1"># Create an instance of the Python example class</span>
     <span class="n">py_ex_inst</span> <span class="o">=</span> <span class="n">python_example</span><span class="o">.</span><span class="n">PythonExample</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -645,25 +645,25 @@ return <code class="docutils literal notranslate"><span class="pre">None,</span>
 <section id="executable-example">
 <h2>Executable Example<a class="headerlink" href="#executable-example" title="Link to this heading">#</a></h2>
 <p>In this example the module runner call the system executable <code class="docutils literal notranslate"><span class="pre">head</span></code>. This module read input files from the <code class="docutils literal notranslate"><span class="pre">python_example</span></code> module output that match the file pattern <code class="docutils literal notranslate"><span class="pre">'process'</span></code> with file extension <code class="docutils literal notranslate"><span class="pre">'.cat'</span></code>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;EXECUTE MODULE EXAMPLE.</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">"""EXECUTE MODULE EXAMPLE.</span>
 
 <span class="sd">This module defines methods for an example command line execution module.</span>
 
 <span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.modules.module_decorator</span><span class="w"> </span><span class="kn">import</span> <span class="n">module_runner</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline.execute</span><span class="w"> </span><span class="kn">import</span> <span class="n">execute</span>
 
 
 <span class="nd">@module_runner</span><span class="p">(</span>
-    <span class="n">input_module</span><span class="o">=</span><span class="s1">&#39;python_example_runner&#39;</span><span class="p">,</span>
-    <span class="n">version</span><span class="o">=</span><span class="s1">&#39;1.0&#39;</span><span class="p">,</span>
-    <span class="n">file_pattern</span><span class="o">=</span><span class="s1">&#39;pyex_output&#39;</span><span class="p">,</span>
-    <span class="n">file_ext</span><span class="o">=</span><span class="s1">&#39;.cat&#39;</span><span class="p">,</span>
-    <span class="n">executes</span><span class="o">=</span><span class="s1">&#39;head&#39;</span><span class="p">,</span>
-    <span class="n">run_method</span><span class="o">=</span><span class="s1">&#39;parallel&#39;</span><span class="p">,</span>
+    <span class="n">input_module</span><span class="o">=</span><span class="s1">'python_example_runner'</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="s1">'1.0'</span><span class="p">,</span>
+    <span class="n">file_pattern</span><span class="o">=</span><span class="s1">'pyex_output'</span><span class="p">,</span>
+    <span class="n">file_ext</span><span class="o">=</span><span class="s1">'.cat'</span><span class="p">,</span>
+    <span class="n">executes</span><span class="o">=</span><span class="s1">'head'</span><span class="p">,</span>
+    <span class="n">run_method</span><span class="o">=</span><span class="s1">'parallel'</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">execute_example_runner</span><span class="p">(</span>
     <span class="n">input_file_list</span><span class="p">,</span>
@@ -673,15 +673,15 @@ return <code class="docutils literal notranslate"><span class="pre">None,</span>
     <span class="n">module_config_sec</span><span class="p">,</span>
     <span class="n">w_log</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Define The Execute Example Runner.&quot;&quot;&quot;</span>
-    <span class="n">command_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;head </span><span class="si">{</span><span class="n">input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+<span class="w">    </span><span class="sd">"""Define The Execute Example Runner."""</span>
+    <span class="n">command_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'head </span><span class="si">{</span><span class="n">input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">'</span>
     <span class="n">output_file_name</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">run_dirs</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">/head_output</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s1">.txt&#39;</span>
+        <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">run_dirs</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span><span class="si">}</span><span class="s1">/head_output</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s1">.txt'</span>
     <span class="p">)</span>
 
     <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span> <span class="o">=</span> <span class="n">execute</span><span class="p">(</span><span class="n">command_line</span><span class="p">)</span>
 
-    <span class="n">text_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">text_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span>
     <span class="n">text_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span>

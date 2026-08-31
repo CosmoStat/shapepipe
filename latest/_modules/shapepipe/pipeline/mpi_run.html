@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.pipeline.mpi_run</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;MPI RUN.</span>
+<span></span><span class="sd">"""MPI RUN.</span>
 
 <span class="sd">This module includes functions for handling the distribution of MPI jobs.</span>
 
 <span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline.worker_handler</span><span class="w"> </span><span class="kn">import</span> <span class="n">WorkerHandler</span>
 
@@ -566,7 +566,7 @@
 <div class="viewcode-block" id="split_mpi_jobs">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.mpi_run.html#shapepipe.pipeline.mpi_run.split_mpi_jobs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">split_mpi_jobs</span><span class="p">(</span><span class="n">jobs</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split MPI Jobs.</span>
+<span class="w">    </span><span class="sd">"""Split MPI Jobs.</span>
 
 <span class="sd">    Split the number of MPI jobs over the number of processes.</span>
 
@@ -582,7 +582,7 @@
 <span class="sd">    list</span>
 <span class="sd">        Split list of jobs</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">jobs</span><span class="p">[</span><span class="n">_i</span><span class="p">::</span><span class="n">batch_size</span><span class="p">]</span> <span class="k">for</span> <span class="n">_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span></div>
 
 
@@ -599,11 +599,11 @@
     <span class="n">worker_log</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Submit MPI Jobs.</span>
+<span class="w">    </span><span class="sd">"""Submit MPI Jobs.</span>
 
 <span class="sd">    This method distributes the jobs to the workers using MPI.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">process</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">:</span>

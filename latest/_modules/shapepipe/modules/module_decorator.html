@@ -552,28 +552,28 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.module_decorator</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;MODULE DECORATOR.</span>
+<span></span><span class="sd">"""MODULE DECORATOR.</span>
 
 <span class="sd">This module defines the module runner dectorator.</span>
 
 <span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <div class="viewcode-block" id="module_runner">
 <a class="viewcode-back" href="../../../shapepipe.modules.module_decorator.html#shapepipe.modules.module_decorator.module_runner">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">module_runner</span><span class="p">(</span>
-    <span class="n">version</span><span class="o">=</span><span class="s2">&quot;0.0&quot;</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="s2">"0.0"</span><span class="p">,</span>
     <span class="n">input_module</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">file_pattern</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-    <span class="n">file_ext</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="n">file_pattern</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
+    <span class="n">file_ext</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
     <span class="n">depends</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">executes</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">numbering_scheme</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">run_method</span><span class="o">=</span><span class="s2">&quot;parallel&quot;</span><span class="p">,</span>
+    <span class="n">run_method</span><span class="o">=</span><span class="s2">"parallel"</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap Module Runners.</span>
+<span class="w">    </span><span class="sd">"""Wrap Module Runners.</span>
 
 <span class="sd">    This method adds properties to module runners.</span>
 
@@ -584,17 +584,17 @@
 <span class="sd">    input_module : str or list, optional</span>
 <span class="sd">        Input module name, default is ``None``</span>
 <span class="sd">    file_pattern : str or list, optional</span>
-<span class="sd">        File pattern, default is ``&#39;&#39;``</span>
+<span class="sd">        File pattern, default is ``''``</span>
 <span class="sd">    file_ext : str or list, optional</span>
-<span class="sd">        File extension, default is ``&#39;&#39;``</span>
+<span class="sd">        File extension, default is ``''``</span>
 <span class="sd">    depends : str or list, optional</span>
 <span class="sd">        Module dependencies, default is ``[]``</span>
 <span class="sd">    executes : str or list, optional</span>
 <span class="sd">        Module executables, default is ``[]``</span>
 <span class="sd">    numbering_scheme : str, optional</span>
 <span class="sd">        Module numbering scheme, default is ``None``</span>
-<span class="sd">    run_method : {&#39;parallel&#39;, &#39;serial&#39;}, optional</span>
-<span class="sd">        Module run method, default is ``&#39;parallel&#39;``</span>
+<span class="sd">    run_method : {'parallel', 'serial'}, optional</span>
+<span class="sd">        Module run method, default is ``'parallel'``</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
@@ -617,51 +617,51 @@
 <span class="sd">    ValueError</span>
 <span class="sd">        If length of ``file_pattern`` and ``file_ext`` lists do not match</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Module version must be a string.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Module version must be a string."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_module</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">input_module</span> <span class="o">=</span> <span class="p">[</span><span class="n">input_module</span><span class="p">]</span>
     <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_module</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Input module must be a list or a string.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Input module must be a list or a string."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_pattern</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">file_pattern</span> <span class="o">=</span> <span class="p">[</span><span class="n">file_pattern</span><span class="p">]</span>
     <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_pattern</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;File pattern must be a string or a list of strings.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"File pattern must be a string or a list of strings."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_ext</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">file_ext</span> <span class="o">=</span> <span class="p">[</span><span class="n">file_ext</span><span class="p">]</span>
     <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_ext</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;File extension must be a string or a list of strings.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"File extension must be a string or a list of strings."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">depends</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">depends</span> <span class="o">=</span> <span class="p">[</span><span class="n">depends</span><span class="p">]</span>
     <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">depends</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Dependencies must be a string or a list of strings.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Dependencies must be a string or a list of strings."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">executes</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">executes</span> <span class="o">=</span> <span class="p">[</span><span class="n">executes</span><span class="p">]</span>
     <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">executes</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Executables must be a string or a list of strings.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Executables must be a string or a list of strings."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">numbering_scheme</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Numbering scheme must be a string, found &#39;</span><span class="si">{</span><span class="n">numbering_scheme</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+            <span class="sa">f</span><span class="s2">"Numbering scheme must be a string, found '</span><span class="si">{</span><span class="n">numbering_scheme</span><span class="si">}</span><span class="s2">'."</span>
         <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">run_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;parallel&quot;</span><span class="p">,</span> <span class="s2">&quot;serial&quot;</span><span class="p">}:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Run method must be a &quot;parallel&quot; or &quot;serial&quot;.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">run_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">"parallel"</span><span class="p">,</span> <span class="s2">"serial"</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Run method must be a "parallel" or "serial".'</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">file_ext</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">file_pattern</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
         <span class="n">file_ext</span> <span class="o">=</span> <span class="p">[</span><span class="n">file_ext</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">file_pattern</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_ext</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_pattern</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;The number of file_ext values (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">file_ext</span><span class="p">)</span><span class="si">}</span><span class="s2">) does not match &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;the number of file_pattern values (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">file_pattern</span><span class="p">)</span><span class="si">}</span><span class="s2">) in &quot;</span>
-            <span class="o">+</span> <span class="s2">&quot;the module decorator.&quot;</span>
+            <span class="sa">f</span><span class="s2">"The number of file_ext values (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">file_ext</span><span class="p">)</span><span class="si">}</span><span class="s2">) does not match "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"the number of file_pattern values (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">file_pattern</span><span class="p">)</span><span class="si">}</span><span class="s2">) in "</span>
+            <span class="o">+</span> <span class="s2">"the module decorator."</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>

@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.pipeline.run_log</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;RUN LOG HANDLING.</span>
+<span></span><span class="sd">"""RUN LOG HANDLING.</span>
 
 <span class="sd">This module defines methods for creating a run log.</span>
 
 <span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
@@ -568,7 +568,7 @@
 <div class="viewcode-block" id="RunLog">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.RunLog">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RunLog</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run Log Class.</span>
+<span class="w">    </span><span class="sd">"""Run Log Class.</span>
 
 <span class="sd">    This class manages the run log for ShapePipe.</span>
 
@@ -581,12 +581,12 @@
 <span class="sd">    current_run : str</span>
 <span class="sd">        Name of the current run</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_log_file</span><span class="p">,</span> <span class="n">module_list</span><span class="p">,</span> <span class="n">current_run</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">run_log_file</span> <span class="o">=</span> <span class="n">run_log_file</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span> <span class="o">=</span> <span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_list</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_run</span> <span class="o">=</span> <span class="n">current_run</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_runs</span> <span class="o">=</span> <span class="n">get_list</span><span class="p">(</span><span class="n">run_log_file</span><span class="p">)</span>
@@ -594,19 +594,19 @@
 <div class="viewcode-block" id="RunLog._write">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.RunLog._write">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_write</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write.</span>
+<span class="w">        </span><span class="sd">"""Write.</span>
 
 <span class="sd">        Write current run to the run log.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_log_file</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">run_log</span><span class="p">:</span>
-            <span class="n">run_log</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_run</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_log_file</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">run_log</span><span class="p">:</span>
+            <span class="n">run_log</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_run</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RunLog.get_run">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.RunLog.get_run">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">search_string</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Run.</span>
+<span class="w">        </span><span class="sd">"""Get Run.</span>
 
 <span class="sd">        Get a specific run that matches the input search string.</span>
 
@@ -627,21 +627,21 @@
 <span class="sd">        RuntimeError</span>
 <span class="sd">            If more than one run is found matches the search string</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">runs</span> <span class="o">=</span> <span class="p">[</span><span class="n">run</span> <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runs</span> <span class="k">if</span> <span class="n">search_string</span> <span class="ow">in</span> <span class="n">run</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">runs</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;No runs found matching search string &#39;</span><span class="si">{</span><span class="n">search_string</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+                <span class="sa">f</span><span class="s2">"No runs found matching search string '</span><span class="si">{</span><span class="n">search_string</span><span class="si">}</span><span class="s2">'."</span>
             <span class="p">)</span>
 
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">runs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="s2">&quot;More than one run found matching search string &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">search_string</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                <span class="s2">"More than one run found matching search string "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">search_string</span><span class="si">}</span><span class="s2">'"</span>
             <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">runs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="n">runs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
 </div>
 
 
@@ -649,7 +649,7 @@
 <div class="viewcode-block" id="get_list">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.get_list">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_list</span><span class="p">(</span><span class="n">run_log_file</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get List.</span>
+<span class="w">    </span><span class="sd">"""Get List.</span>
 
 <span class="sd">    Get a list of all runs in the run log.</span>
 
@@ -663,8 +663,8 @@
 <span class="sd">    list</span>
 <span class="sd">        Run log file entries</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">run_log_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">run_log</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">run_log_file</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">run_log</span><span class="p">:</span>
         <span class="n">lines</span> <span class="o">=</span> <span class="n">run_log</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
 
     <span class="n">runs</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">]</span>
@@ -676,7 +676,7 @@
 <div class="viewcode-block" id="get_all">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.get_all">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_all</span><span class="p">(</span><span class="n">runs</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get All.</span>
+<span class="w">    </span><span class="sd">"""Get All.</span>
 
 <span class="sd">    Get all previous pipeline runs of a given model.</span>
 
@@ -697,12 +697,12 @@
 <span class="sd">    list</span>
 <span class="sd">        All run paths for a given module</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">module_base</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">split_module_run</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
 
-    <span class="n">all_runs</span> <span class="o">=</span> <span class="p">[</span><span class="n">run</span> <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">runs</span> <span class="k">if</span> <span class="n">module_base</span> <span class="ow">in</span> <span class="n">run</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+    <span class="n">all_runs</span> <span class="o">=</span> <span class="p">[</span><span class="n">run</span> <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">runs</span> <span class="k">if</span> <span class="n">module_base</span> <span class="ow">in</span> <span class="n">run</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_runs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No previous run of module &#39;</span><span class="si">{</span><span class="n">module_base</span><span class="si">}</span><span class="s2">&#39; found&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No previous run of module '</span><span class="si">{</span><span class="n">module_base</span><span class="si">}</span><span class="s2">' found"</span><span class="p">)</span>
 
     <span class="n">all_runs</span> <span class="o">=</span> <span class="n">all_runs</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
@@ -713,7 +713,7 @@
 <div class="viewcode-block" id="get_last">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.get_last">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_last</span><span class="p">(</span><span class="n">runs</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Last.</span>
+<span class="w">    </span><span class="sd">"""Get Last.</span>
 
 <span class="sd">    Get the last run of the pipeline for a given module.</span>
 
@@ -729,18 +729,18 @@
 <span class="sd">    str</span>
 <span class="sd">        The last run for a given module</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">all_runs</span> <span class="o">=</span> <span class="n">get_all</span><span class="p">(</span><span class="n">runs</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span>
     <span class="n">last_run</span> <span class="o">=</span> <span class="n">all_runs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">last_run</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+    <span class="k">return</span> <span class="n">last_run</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
 
 
 
 <div class="viewcode-block" id="get_all_dirs">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.get_all_dirs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_all_dirs</span><span class="p">(</span><span class="n">run_log_file</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get All Dirs.</span>
+<span class="w">    </span><span class="sd">"""Get All Dirs.</span>
 
 <span class="sd">    Return directory paths corresponding to all runs of given module.</span>
 
@@ -756,14 +756,14 @@
 <span class="sd">    list</span>
 <span class="sd">        Directory names of all module runs</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">runs</span> <span class="o">=</span> <span class="n">get_list</span><span class="p">(</span><span class="n">run_log_file</span><span class="p">)</span>
     <span class="n">all_runs</span> <span class="o">=</span> <span class="n">get_all</span><span class="p">(</span><span class="n">runs</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span>
 
     <span class="n">all_dirs</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">all_runs</span><span class="p">:</span>
-        <span class="n">dir_name</span> <span class="o">=</span> <span class="n">run</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">all_dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dir_name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">/output&quot;</span><span class="p">)</span>
+        <span class="n">dir_name</span> <span class="o">=</span> <span class="n">run</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">all_dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">dir_name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">/output"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">all_dirs</span></div>
 
@@ -772,7 +772,7 @@
 <div class="viewcode-block" id="get_last_dir">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.get_last_dir">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_last_dir</span><span class="p">(</span><span class="n">run_log_file</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Last Dir.</span>
+<span class="w">    </span><span class="sd">"""Get Last Dir.</span>
 
 <span class="sd">    Return directory path corresponding to last run of given module.</span>
 
@@ -788,7 +788,7 @@
 <span class="sd">    str</span>
 <span class="sd">        Directory name of last module run</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">all_dirs</span> <span class="o">=</span> <span class="n">get_all_dirs</span><span class="p">(</span><span class="n">run_log_file</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span>
     <span class="n">last_dir</span> <span class="o">=</span> <span class="n">all_dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 

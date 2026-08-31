@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.pipeline.shared</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;SHARED.</span>
+<span></span><span class="sd">"""SHARED.</span>
 
 <span class="sd">The module defines functions that can be shared between pipeline modules.</span>
 
 <span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">glob</span><span class="w"> </span><span class="kn">import</span> <span class="n">glob</span>
 
@@ -566,7 +566,7 @@
 <div class="viewcode-block" id="check_duplicate">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.shared.html#shapepipe.pipeline.shared.check_duplicate">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">check_duplicate</span><span class="p">(</span><span class="n">input_list</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check Duplicate.</span>
+<span class="w">    </span><span class="sd">"""Check Duplicate.</span>
 
 <span class="sd">    Check whether input list contains at least one duplicate.</span>
 
@@ -580,7 +580,7 @@
 <span class="sd">    str</span>
 <span class="sd">        Duplicate element, empty string if none found</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">input_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
     <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">input_list</span><span class="p">:</span>
@@ -589,14 +589,14 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">input_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+    <span class="k">return</span> <span class="s2">""</span></div>
 
 
 
 <div class="viewcode-block" id="find_files">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.shared.html#shapepipe.pipeline.shared.find_files">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">find_files</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find Files.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_files</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="s2">"*"</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s2">"*"</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Find Files.</span>
 
 <span class="sd">    This method recursively retrieves file names from a given path that</span>
 <span class="sd">    match a given pattern and/or have a given extension.</span>
@@ -606,9 +606,9 @@
 <span class="sd">    path : str</span>
 <span class="sd">        Full path to files</span>
 <span class="sd">    pattern : str, optional</span>
-<span class="sd">        File pattern, default is &#39;*&#39;</span>
+<span class="sd">        File pattern, default is '*'</span>
 <span class="sd">    ext : str, optional</span>
-<span class="sd">        File extension, default is &#39;*&#39;</span>
+<span class="sd">        File extension, default is '*'</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -618,29 +618,29 @@
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
-<span class="sd">        For &#39;*&#39; in pattern</span>
+<span class="sd">        For '*' in pattern</span>
 <span class="sd">    ValueError</span>
-<span class="sd">        For &#39;*&#39; in extension</span>
+<span class="sd">        For '*' in extension</span>
 <span class="sd">    ValueError</span>
 <span class="sd">        For invalid extension format</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">dot</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span>
-    <span class="n">star</span> <span class="o">=</span> <span class="s2">&quot;*&quot;</span>
+<span class="sd">    """</span>
+    <span class="n">dot</span> <span class="o">=</span> <span class="s2">"."</span>
+    <span class="n">star</span> <span class="o">=</span> <span class="s2">"*"</span>
 
     <span class="k">if</span> <span class="n">pattern</span> <span class="o">!=</span> <span class="n">star</span> <span class="ow">and</span> <span class="n">star</span> <span class="ow">in</span> <span class="n">pattern</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Do not include &quot;*&quot; in pattern.&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Do not include "*" in pattern.'</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">ext</span> <span class="o">!=</span> <span class="n">star</span> <span class="ow">and</span> <span class="n">star</span> <span class="ow">in</span> <span class="n">ext</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Do not include &quot;*&quot; in extension.&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Do not include "*" in extension.'</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">ext</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">dot</span><span class="p">)</span> <span class="ow">and</span> <span class="n">dot</span> <span class="ow">in</span> <span class="n">ext</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ext</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">dot</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid extension format: &quot;</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s1">&quot;.&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Invalid extension format: "</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s1">".'</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">ext</span> <span class="o">!=</span> <span class="n">star</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ext</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">dot</span><span class="p">):</span>
         <span class="n">ext</span> <span class="o">=</span> <span class="n">dot</span> <span class="o">+</span> <span class="n">ext</span>
 
-    <span class="n">search_string</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">/**/*</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">*</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">search_string</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">/**/*</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">*</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="k">return</span> <span class="n">glob</span><span class="p">(</span><span class="n">search_string</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
@@ -649,7 +649,7 @@
 <div class="viewcode-block" id="split_module_run">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.shared.html#shapepipe.pipeline.shared.split_module_run">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">split_module_run</span><span class="p">(</span><span class="n">module_str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split Module Run.</span>
+<span class="w">    </span><span class="sd">"""Split Module Run.</span>
 
 <span class="sd">    Extract module name and run from input string.</span>
 
@@ -668,13 +668,13 @@
 <span class="sd">    TypeError</span>
 <span class="sd">        If input is not a string</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module_str</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Input module_str must be a string not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">module_str</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="sa">f</span><span class="s2">"Input module_str must be a string not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">module_str</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
         <span class="p">)</span>
 
-    <span class="n">run_split</span> <span class="o">=</span> <span class="s2">&quot;_run_&quot;</span>
+    <span class="n">run_split</span> <span class="o">=</span> <span class="s2">"_run_"</span>
     <span class="n">module_run</span> <span class="o">=</span> <span class="n">module_str</span>
 
     <span class="k">if</span> <span class="n">run_split</span> <span class="ow">in</span> <span class="n">module_str</span><span class="p">:</span>

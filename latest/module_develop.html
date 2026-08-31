@@ -595,7 +595,7 @@ with the module name followed by <code class="docutils literal notranslate"><spa
 and put it in <code class="docutils literal notranslate"><span class="pre">src/shapepipe/modules</span></code>. Inside this directory you will need to
 include a Python file (ideally named after your module, e.g.
 <code class="docutils literal notranslate"><span class="pre">my_new_module.py</span></code>) and a <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file with the following content.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;MY NEW MODULE PACKAGE.</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">"""MY NEW MODULE PACKAGE.</span>
 
 <span class="sd">This package contains the module for ``my_new_module``.</span>
 
@@ -614,9 +614,9 @@ include a Python file (ideally named after your module, e.g.
 <span class="sd">Module-specific config file entries</span>
 <span class="sd">===================================</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;my_new_module.py&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'my_new_module.py'</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>You should provide a description of what your module does, what the config file
@@ -691,7 +691,7 @@ process.</p></li>
 configuration file parameter values. Module specific parameters can be
 passed using the following structure:</p></li>
 </ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span> <span class="n">parameter_value</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">module_config_sec</span><span class="p">,</span> <span class="s1">&#39;PARAMETER&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span> <span class="n">parameter_value</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">module_config_sec</span><span class="p">,</span> <span class="s1">'PARAMETER'</span><span class="p">)</span>
 </pre></div>
 </div>
 <ol class="arabic simple" start="5">
@@ -700,7 +700,7 @@ current module.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">w_log</span></code> : The worker log instance, which can be used to record additional
 messages in the module output logs using the following structure:</p></li>
 </ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;MESSAGE&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'MESSAGE'</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>

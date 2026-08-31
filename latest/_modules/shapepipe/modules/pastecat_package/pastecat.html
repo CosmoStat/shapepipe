@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.pastecat_package.pastecat</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;PASTE CATALOGUES.</span>
+<span></span><span class="sd">"""PASTE CATALOGUES.</span>
 
 <span class="sd">Class to paste different (SExtractor) catalogues of objects.</span>
 
 <span class="sd">:Author: Martin Kilbinger &lt;martin.kilbinger@cea.fr&gt;, Axel Guinot</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
@@ -574,7 +574,7 @@
 <div class="viewcode-block" id="PasteCat">
 <a class="viewcode-back" href="../../../../shapepipe.modules.pastecat_package.pastecat.html#shapepipe.modules.pastecat_package.pastecat.PasteCat">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PasteCat</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Paste Catalogues.</span>
+<span class="w">    </span><span class="sd">"""Paste Catalogues.</span>
 
 <span class="sd">    This class pastes (or concatenates) a series of SExtractor output</span>
 <span class="sd">    catalogues into a single output catalogue.</span>
@@ -596,7 +596,7 @@
 <span class="sd">        HDU numbers of the input catalogue; by default set to ``2`` for all</span>
 <span class="sd">        input files</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -621,11 +621,11 @@
 <div class="viewcode-block" id="PasteCat.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.pastecat_package.pastecat.html#shapepipe.modules.pastecat_package.pastecat.PasteCat.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process.</span>
+<span class="w">        </span><span class="sd">"""Process.</span>
 
 <span class="sd">        Process the pasting of catalogues.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Create output catalogue</span>
         <span class="n">pasted_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span><span class="p">,</span>
@@ -634,7 +634,7 @@
 
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">input_file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">):</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pasting catalogue &#39;</span><span class="si">{</span><span class="n">input_file</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Pasting catalogue '</span><span class="si">{</span><span class="n">input_file</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
 
             <span class="c1"># Read input data</span>
             <span class="n">cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
@@ -648,17 +648,17 @@
                 <span class="k">if</span> <span class="n">idx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_col_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">col_names</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;CHECK_COL_NAME key &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_col_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-                            <span class="o">+</span> <span class="s2">&quot;not found in input catalogue&quot;</span>
+                            <span class="sa">f</span><span class="s2">"CHECK_COL_NAME key '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_col_name</span><span class="si">}</span><span class="s2">'"</span>
+                            <span class="o">+</span> <span class="s2">"not found in input catalogue"</span>
                         <span class="p">)</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
                         <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_col_name</span><span class="p">]</span> <span class="o">==</span> <span class="n">data_prev</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_col_name</span><span class="p">]</span>
                     <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
                         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Column check using key&quot;</span>
-                            <span class="o">+</span> <span class="s2">&quot;&#39;</span><span class="si">{self._check_col_name}</span><span class="s2">&#39;&quot;</span>
-                            <span class="o">+</span> <span class="s2">&quot;failed for input catalogues &quot;</span>
-                            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;#</span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> and #</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="sa">f</span><span class="s2">"Column check using key"</span>
+                            <span class="o">+</span> <span class="s2">"'</span><span class="si">{self._check_col_name}</span><span class="s2">'"</span>
+                            <span class="o">+</span> <span class="s2">"failed for input catalogues "</span>
+                            <span class="o">+</span> <span class="sa">f</span><span class="s2">"#</span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> and #</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">"</span>
                         <span class="p">)</span>
                 <span class="n">data_prev</span> <span class="o">=</span> <span class="n">data</span>
 

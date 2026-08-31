@@ -552,14 +552,14 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;MCCD AUXILIARY FUNCTIONS.</span>
+<span></span><span class="sd">"""MCCD AUXILIARY FUNCTIONS.</span>
 
 <span class="sd">This module contains auxiliary functions for the MCCD package that are needed</span>
 <span class="sd">by the MCCD runners.</span>
 
 <span class="sd">:Author: Tobias Liaudat</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pprint</span>
@@ -573,7 +573,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.modules.psfex_interp_package.psfex_interp</span><span class="w"> </span><span class="kn">import</span> <span class="n">local_wcs_list</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
 
-<span class="n">NOT_ENOUGH_STARS</span> <span class="o">=</span> <span class="s2">&quot;Not enough stars to train the model.&quot;</span>
+<span class="n">NOT_ENOUGH_STARS</span> <span class="o">=</span> <span class="s2">"Not enough stars to train the model."</span>
 
 
 <div class="viewcode-block" id="mccd_preprocessing_pipeline">
@@ -583,21 +583,21 @@
     <span class="n">output_path</span><span class="p">,</span>
     <span class="n">input_file_position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="n">min_n_stars</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-    <span class="n">separator</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span>
+    <span class="n">separator</span><span class="o">=</span><span class="s2">"-"</span><span class="p">,</span>
     <span class="n">CCD_id_filter_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">outlier_std_max</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span>
     <span class="n">save_masks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">save_name</span><span class="o">=</span><span class="s2">&quot;train_star_selection&quot;</span><span class="p">,</span>
-    <span class="n">save_extension</span><span class="o">=</span><span class="s2">&quot;.fits&quot;</span><span class="p">,</span>
+    <span class="n">save_name</span><span class="o">=</span><span class="s2">"train_star_selection"</span><span class="p">,</span>
+    <span class="n">save_extension</span><span class="o">=</span><span class="s2">".fits"</span><span class="p">,</span>
     <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">print_fun</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Preprocess Input Catalogue.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Preprocess Input Catalogue.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    input_file_list: list</span>
-<span class="sd">        Input file list as taken from shapepipe&#39;s input</span>
+<span class="sd">        Input file list as taken from shapepipe's input</span>
 <span class="sd">    output_path: str</span>
 <span class="sd">        Path to the folder where to save the preprocessed files</span>
 <span class="sd">    input_file_position: int</span>
@@ -608,7 +608,7 @@
 <span class="sd">        ``20``</span>
 <span class="sd">    separator: str</span>
 <span class="sd">        Separator string that separates the catalogue id and the CCD id;</span>
-<span class="sd">        default is ``&#39;-&#39;``</span>
+<span class="sd">        default is ``'-'``</span>
 <span class="sd">    CCD_id_filter_list: list</span>
 <span class="sd">        A list that corresponds to the CCDs that should be preprocessed,</span>
 <span class="sd">        if it is ``None``, all the CCDs are preprocessed</span>
@@ -634,7 +634,7 @@
 <span class="sd">    mccd.mccd_utils.MccdInputs</span>
 <span class="sd">        An instance of ``MccdInputs`` class used for the input preprocessing</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">mccd_star_nb</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="k">if</span> <span class="n">CCD_id_filter_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -653,7 +653,7 @@
         <span class="k">def</span><span class="w"> </span><span class="nf">print_fun</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
             <span class="k">pass</span>
 
-    <span class="n">print_fun</span><span class="p">(</span><span class="s2">&quot;Processing dataset..&quot;</span><span class="p">)</span>
+    <span class="n">print_fun</span><span class="p">(</span><span class="s2">"Processing dataset.."</span><span class="p">)</span>
     <span class="n">mccd_inputs</span> <span class="o">=</span> <span class="n">mccd</span><span class="o">.</span><span class="n">mccd_utils</span><span class="o">.</span><span class="n">MccdInputs</span><span class="p">(</span><span class="n">separator</span><span class="o">=</span><span class="n">separator</span><span class="p">)</span>
     <span class="n">catalog_ids</span> <span class="o">=</span> <span class="n">mccd_inputs</span><span class="o">.</span><span class="n">proprocess_pipeline_data</span><span class="p">(</span>
         <span class="n">input_file_list</span><span class="p">,</span> <span class="n">element_position</span><span class="o">=</span><span class="n">input_file_position</span>
@@ -720,22 +720,22 @@
                             <span class="n">mccd_DEC_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DEC_list</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Not enough stars in catalog_id </span><span class="si">{</span><span class="n">catalog_id</span><span class="si">}</span><span class="s2"> &quot;</span>
-                            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;,ccd </span><span class="si">{</span><span class="n">ccd_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">. &quot;</span>
-                            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;Total stars = </span><span class="si">{</span><span class="n">n_stars</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">.&quot;</span>
+                            <span class="sa">f</span><span class="s2">"Not enough stars in catalog_id </span><span class="si">{</span><span class="n">catalog_id</span><span class="si">}</span><span class="s2"> "</span>
+                            <span class="o">+</span> <span class="sa">f</span><span class="s2">",ccd </span><span class="si">{</span><span class="n">ccd_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">. "</span>
+                            <span class="o">+</span> <span class="sa">f</span><span class="s2">"Total stars = </span><span class="si">{</span><span class="n">n_stars</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">."</span>
                         <span class="p">)</span>
                         <span class="n">print_fun</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Warning! Problem detected in catalog_id &quot;</span>
-                        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">catalog_id</span><span class="si">}</span><span class="s2"> ,ccd </span><span class="si">{</span><span class="n">ccd_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">"Warning! Problem detected in catalog_id "</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">catalog_id</span><span class="si">}</span><span class="s2"> ,ccd </span><span class="si">{</span><span class="n">ccd_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">"</span>
                     <span class="p">)</span>
                     <span class="n">print_fun</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">mccd_pos_list</span><span class="p">:</span>
             <span class="c1"># If the list is not empty</span>
-            <span class="c1"># Concatenate, as fits can&#39;t handle list of numpy arrays and</span>
+            <span class="c1"># Concatenate, as fits can't handle list of numpy arrays and</span>
             <span class="c1"># turn into reg format</span>
             <span class="n">mccd_stars</span> <span class="o">=</span> <span class="n">mccd</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">reg_format</span><span class="p">(</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">mccd_star_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -768,13 +768,13 @@
 
             <span class="c1"># Save the fits file</span>
             <span class="n">train_dic</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;VIGNET_LIST&quot;</span><span class="p">:</span> <span class="n">mccd_stars</span><span class="p">,</span>
-                <span class="s2">&quot;GLOB_POSITION_IMG_LIST&quot;</span><span class="p">:</span> <span class="n">mccd_poss</span><span class="p">,</span>
-                <span class="s2">&quot;MASK_LIST&quot;</span><span class="p">:</span> <span class="n">mccd_masks</span><span class="p">,</span>
-                <span class="s2">&quot;CCD_ID_LIST&quot;</span><span class="p">:</span> <span class="n">mccd_ccds</span><span class="p">,</span>
-                <span class="s2">&quot;SNR_WIN_LIST&quot;</span><span class="p">:</span> <span class="n">mccd_SNRs</span><span class="p">,</span>
-                <span class="s2">&quot;RA_LIST&quot;</span><span class="p">:</span> <span class="n">mccd_RAs</span><span class="p">,</span>
-                <span class="s2">&quot;DEC_LIST&quot;</span><span class="p">:</span> <span class="n">mccd_DECs</span><span class="p">,</span>
+                <span class="s2">"VIGNET_LIST"</span><span class="p">:</span> <span class="n">mccd_stars</span><span class="p">,</span>
+                <span class="s2">"GLOB_POSITION_IMG_LIST"</span><span class="p">:</span> <span class="n">mccd_poss</span><span class="p">,</span>
+                <span class="s2">"MASK_LIST"</span><span class="p">:</span> <span class="n">mccd_masks</span><span class="p">,</span>
+                <span class="s2">"CCD_ID_LIST"</span><span class="p">:</span> <span class="n">mccd_ccds</span><span class="p">,</span>
+                <span class="s2">"SNR_WIN_LIST"</span><span class="p">:</span> <span class="n">mccd_SNRs</span><span class="p">,</span>
+                <span class="s2">"RA_LIST"</span><span class="p">:</span> <span class="n">mccd_RAs</span><span class="p">,</span>
+                <span class="s2">"DEC_LIST"</span><span class="p">:</span> <span class="n">mccd_DECs</span><span class="p">,</span>
             <span class="p">}</span>
 
             <span class="n">saving_path</span> <span class="o">=</span> <span class="p">(</span>
@@ -786,8 +786,8 @@
             <span class="p">)</span>
             <span class="n">mccd</span><span class="o">.</span><span class="n">mccd_utils</span><span class="o">.</span><span class="n">save_to_fits</span><span class="p">(</span><span class="n">train_dic</span><span class="p">,</span> <span class="n">saving_path</span><span class="p">)</span>
 
-    <span class="n">print_fun</span><span class="p">(</span><span class="s2">&quot;Finished the training dataset processing.&quot;</span><span class="p">)</span>
-    <span class="n">print_fun</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total stars processed = </span><span class="si">{</span><span class="n">mccd_star_nb</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">print_fun</span><span class="p">(</span><span class="s2">"Finished the training dataset processing."</span><span class="p">)</span>
+    <span class="n">print_fun</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total stars processed = </span><span class="si">{</span><span class="n">mccd_star_nb</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">mccd_inputs</span></div>
 
@@ -801,10 +801,10 @@
     <span class="n">mccd_parser</span><span class="p">,</span>
     <span class="n">output_dir</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">,</span>
-    <span class="n">saving_name</span><span class="o">=</span><span class="s2">&quot;fitted_model&quot;</span><span class="p">,</span>
+    <span class="n">saving_name</span><span class="o">=</span><span class="s2">"fitted_model"</span><span class="p">,</span>
     <span class="n">w_log</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fit MCCD Model.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Fit MCCD Model.</span>
 
 <span class="sd">    Fit the MCCD model to the Observations.</span>
 
@@ -825,24 +825,24 @@
 <span class="sd">    w_log : logging.Logger</span>
 <span class="sd">        Logging instance</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Extract the MCCD parameters from the parser</span>
     <span class="n">mccd_inst_kw</span> <span class="o">=</span> <span class="n">mccd_parser</span><span class="o">.</span><span class="n">get_instance_kw</span><span class="p">()</span>
     <span class="n">mccd_fit_kw</span> <span class="o">=</span> <span class="n">mccd_parser</span><span class="o">.</span><span class="n">get_fit_kw</span><span class="p">()</span>
-    <span class="n">use_SNR_weight</span> <span class="o">=</span> <span class="n">mccd_parser</span><span class="o">.</span><span class="n">get_extra_kw</span><span class="p">(</span><span class="s2">&quot;use_SNR_weight&quot;</span><span class="p">)</span>
+    <span class="n">use_SNR_weight</span> <span class="o">=</span> <span class="n">mccd_parser</span><span class="o">.</span><span class="n">get_extra_kw</span><span class="p">(</span><span class="s2">"use_SNR_weight"</span><span class="p">)</span>
 
     <span class="c1"># Print the model configuration so that it is saved in log files</span>
-    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;MCCD configuration parameters:&quot;</span><span class="p">)</span>
-    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[INPUTS]&quot;</span><span class="p">)</span>
-    <span class="n">inputs_dict_str</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">({</span><span class="s2">&quot;use_SNR_weight&quot;</span><span class="p">:</span> <span class="n">use_SNR_weight</span><span class="p">})</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"MCCD configuration parameters:"</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"[INPUTS]"</span><span class="p">)</span>
+    <span class="n">inputs_dict_str</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">({</span><span class="s2">"use_SNR_weight"</span><span class="p">:</span> <span class="n">use_SNR_weight</span><span class="p">})</span>
     <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">inputs_dict_str</span><span class="p">)</span>
-    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[INSTANCE]&quot;</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"[INSTANCE]"</span><span class="p">)</span>
     <span class="n">inst_dict_str</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">mccd_inst_kw</span><span class="p">)</span>
     <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">inst_dict_str</span><span class="p">)</span>
-    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[FIT]&quot;</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"[FIT]"</span><span class="p">)</span>
     <span class="n">fit_dict_str</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">mccd_fit_kw</span><span class="p">)</span>
     <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">fit_dict_str</span><span class="p">)</span>
-    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;End of MCCD configuration parameters.&quot;</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"End of MCCD configuration parameters."</span><span class="p">)</span>
 
     <span class="c1"># Open fits file</span>
     <span class="n">starcat</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">trainstar_path</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -874,7 +874,7 @@
     <span class="n">w_log</span><span class="p">,</span>
     <span class="n">val_saving_name</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Validate MCCD Pipeline.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Validate MCCD Pipeline.</span>
 
 <span class="sd">    Validate the MCCD trained model against a set of observations.</span>
 
@@ -895,11 +895,11 @@
 <span class="sd">    val_saving_name : str</span>
 <span class="sd">        Name for validation file</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validating catalogue </span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2">..&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Validating catalogue </span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2">.."</span><span class="p">)</span>
 
     <span class="c1"># Get MCCD parameters</span>
-    <span class="n">save_extension</span> <span class="o">=</span> <span class="s2">&quot;.fits&quot;</span>
+    <span class="n">save_extension</span> <span class="o">=</span> <span class="s2">".fits"</span>
     <span class="n">mccd_val_kw</span> <span class="o">=</span> <span class="n">mccd_parser</span><span class="o">.</span><span class="n">get_val_kw</span><span class="p">()</span>
     <span class="n">testcat</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">teststar_path</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
@@ -922,12 +922,12 @@
         <span class="c1"># Save validation dictionary to fits file</span>
         <span class="n">mccd</span><span class="o">.</span><span class="n">mccd_utils</span><span class="o">.</span><span class="n">save_to_fits</span><span class="p">(</span><span class="n">val_dict</span><span class="p">,</span> <span class="n">val_saving_path</span><span class="p">)</span>
 
-        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation catalogue &lt; </span><span class="si">{</span><span class="n">val_saving_path</span><span class="si">}</span><span class="s2"> &gt; saved.&quot;</span><span class="p">)</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Validation catalogue &lt; </span><span class="si">{</span><span class="n">val_saving_path</span><span class="si">}</span><span class="s2"> &gt; saved."</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Fitted model corresponding to catalog&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2"> was not found.&quot;</span>
+            <span class="sa">f</span><span class="s2">"Fitted model corresponding to catalog"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2"> was not found."</span>
         <span class="p">)</span></div>
 
 
@@ -937,7 +937,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">mccd_interpolation_pipeline</span><span class="p">(</span>
     <span class="n">mccd_model_path</span><span class="p">,</span> <span class="n">galcat_path</span><span class="p">,</span> <span class="n">pos_params</span><span class="p">,</span> <span class="n">ccd_id</span><span class="p">,</span> <span class="n">saving_path</span><span class="p">,</span> <span class="n">get_shapes</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Interpolate the MCCD Model.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Interpolate the MCCD Model.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -959,7 +959,7 @@
 <span class="sd">    str or ``None``</span>
 <span class="sd">        String returned if not enough stars found</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Import MCCD model</span>
     <span class="n">mccd_model</span> <span class="o">=</span> <span class="n">mccd</span><span class="o">.</span><span class="n">mccd_quickload</span><span class="p">(</span><span class="n">mccd_model_path</span><span class="p">)</span>
     <span class="c1"># Open galaxy catalog</span>
@@ -971,7 +971,7 @@
     <span class="n">interp_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_pos</span><span class="p">,</span> <span class="n">y_pos</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
     <span class="c1"># CCD image WCS, stored as a card list in the FITS_LDAC LDAC_IMHEAD HDU</span>
     <span class="n">wcs_header</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Header</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span>
-        <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">galcat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">galcat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
     <span class="p">)</span>
     <span class="c1"># Close catalog</span>
     <span class="n">galcat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -1026,10 +1026,10 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">shapepipe_write_output</span><span class="p">(</span>
     <span class="n">saving_path</span><span class="p">,</span> <span class="n">example_fits_path</span><span class="p">,</span> <span class="n">get_shapes</span><span class="p">,</span> <span class="n">interp_PSFs</span><span class="p">,</span> <span class="n">PSF_shapes</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Write ShapePipe Output.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Write ShapePipe Output.</span>
 
 <span class="sd">    Save interpolated PSFs dictionary to FITS file. The saved files are</span>
-<span class="sd">    compatible with the previous ShapePipe&#39;s standard.</span>
+<span class="sd">    compatible with the previous ShapePipe's standard.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1044,7 +1044,7 @@
 <span class="sd">    PSF_shapes : numpy.ndarray</span>
 <span class="sd">        PSF shapes</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
         <span class="n">saving_path</span><span class="p">,</span>
         <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
@@ -1053,14 +1053,14 @@
 
     <span class="k">if</span> <span class="n">get_shapes</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;VIGNET&quot;</span><span class="p">:</span> <span class="n">interp_PSFs</span><span class="p">,</span>
-            <span class="s2">&quot;HSM_G1_PSF&quot;</span><span class="p">:</span> <span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
-            <span class="s2">&quot;HSM_G2_PSF&quot;</span><span class="p">:</span> <span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
-            <span class="s2">&quot;HSM_T_PSF&quot;</span><span class="p">:</span> <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_T</span><span class="p">(</span><span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]),</span>
-            <span class="s2">&quot;HSM_FLAG_PSF&quot;</span><span class="p">:</span> <span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+            <span class="s2">"VIGNET"</span><span class="p">:</span> <span class="n">interp_PSFs</span><span class="p">,</span>
+            <span class="s2">"HSM_G1_PSF"</span><span class="p">:</span> <span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="s2">"HSM_G2_PSF"</span><span class="p">:</span> <span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="s2">"HSM_T_PSF"</span><span class="p">:</span> <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_T</span><span class="p">(</span><span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]),</span>
+            <span class="s2">"HSM_FLAG_PSF"</span><span class="p">:</span> <span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
         <span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;VIGNET&quot;</span><span class="p">:</span> <span class="n">interp_PSFs</span><span class="p">}</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"VIGNET"</span><span class="p">:</span> <span class="n">interp_PSFs</span><span class="p">}</span>
 
     <span class="n">output</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sex_cat_path</span><span class="o">=</span><span class="n">example_fits_path</span><span class="p">)</span></div>
 

@@ -647,7 +647,7 @@ apptainer<span class="w"> </span>shell<span class="w"> </span>shapepipe.sif
 <span class="c1"># inside the container — every path under / is read-only except /tmp,</span>
 <span class="c1"># $HOME, and a few system mounts. This is the right posture for *running*</span>
 <span class="c1"># things: pipelines, tests, scripts.</span>
-<span class="nb">cd</span><span class="w"> </span>/app<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w">         </span><span class="c1"># works — see &quot;How read-only mode works&quot;</span>
+<span class="nb">cd</span><span class="w"> </span>/app<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w">         </span><span class="c1"># works — see "How read-only mode works"</span>
 shapepipe_run<span class="w"> </span>-c<span class="w"> </span>/app/example/config.ini
 </pre></div>
 </div>
@@ -670,7 +670,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 
 <span class="c1"># Ad-hoc additions during exploration:</span>
 uv<span class="w"> </span>add<span class="w"> </span>some-package<span class="w">        </span><span class="c1"># mutates pyproject.toml + uv.lock inside container</span>
-uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>foo<span class="w">         </span><span class="c1"># throwaway install, doesn&#39;t touch pyproject</span>
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>foo<span class="w">         </span><span class="c1"># throwaway install, doesn't touch pyproject</span>
 
 <span class="c1"># When you decide an addition should stick, copy the mutated pyproject /</span>
 <span class="c1"># uv.lock back to the host repo, commit, and rebuild the image.</span>
@@ -725,9 +725,9 @@ trick is knowing which one to edit when something changes.</p>
 shapepipe itself, and optional extras (<code class="docutils literal notranslate"><span class="pre">test</span></code>, <code class="docutils literal notranslate"><span class="pre">jupyter</span></code>, <code class="docutils literal notranslate"><span class="pre">doc</span></code>, …). Uses
 <em>minimum</em> version constraints, not exact pins:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="s2">&quot;astropy&gt;=7.0&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;numpy&gt;=2.0&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;galsim&gt;=2.8&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"astropy&gt;=7.0"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"numpy&gt;=2.0"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"galsim&gt;=2.8"</span><span class="p">,</span>
 <span class="w">    </span><span class="err">...</span>
 <span class="err">]</span>
 </pre></div>
@@ -750,7 +750,7 @@ hand-edited.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>lock<span class="w">                              </span><span class="c1"># regenerate from pyproject</span>
 uv<span class="w"> </span>lock<span class="w"> </span>--upgrade<span class="w">                    </span><span class="c1"># bump every pin to latest compatible</span>
 uv<span class="w"> </span>lock<span class="w"> </span>--upgrade-package<span class="w"> </span>astropy<span class="w">    </span><span class="c1"># bump only one package</span>
-uv<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;foo&gt;=1.2&#39;</span><span class="w">                    </span><span class="c1"># adds to pyproject AND uv.lock</span>
+uv<span class="w"> </span>add<span class="w"> </span><span class="s1">'foo&gt;=1.2'</span><span class="w">                    </span><span class="c1"># adds to pyproject AND uv.lock</span>
 </pre></div>
 </div>
 <p>Commit <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> to the repo — that’s how reproducibility transfers

@@ -552,14 +552,14 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.mccd_package.mccd_plot_utilities</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;MCCD PLOTS UTILITIES.</span>
+<span></span><span class="sd">"""MCCD PLOTS UTILITIES.</span>
 
 <span class="sd">This module is used to generate a series of plots from the merged validation</span>
 <span class="sd">catalogues. It plots the Mean shape plots for the merged validation catalogue.</span>
 
 <span class="sd">:Authors: Tobias Liaudat, Martin Kilbinger</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
@@ -568,31 +568,31 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">fits</span>
 
 <span class="c1"># Define the backend for matplotlib</span>
-<span class="n">mpl</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;agg&quot;</span><span class="p">)</span>
+<span class="n">mpl</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">"agg"</span><span class="p">)</span>
 
 <span class="c1"># MegaCam -&gt; plt.subplot correspondance, as given by:</span>
-<span class="sd">&quot;&quot;&quot;        &#39;COMMENT Unique detector IDs for MegaCam&#39;,</span>
-<span class="sd">           &#39;COMMENT (North on top, East to the left)&#39;,</span>
-<span class="sd">           &#39;COMMENT    --------------------------&#39;,</span>
-<span class="sd">           &#39;COMMENT    ba ba ba ba ba ba ba ba ba&#39;,</span>
-<span class="sd">           &#39;COMMENT    00 01 02 03 04 05 06 07 08&#39;,</span>
-<span class="sd">           &#39;COMMENT --------------------------------&#39;,</span>
-<span class="sd">           &#39;COMMENT ba ba ba ba ba ba ba ba ba ba ba&#39;,</span>
-<span class="sd">           &#39;COMMENT 36 09 10 11 12 13 14 15 16 17 37&#39;,</span>
-<span class="sd">           &#39;COMMENT --------------------------------&#39;,</span>
-<span class="sd">           &#39;COMMENT 38 18 19 20 21 22 23 24 25 26 39&#39;,</span>
-<span class="sd">           &#39;COMMENT ab ab ab ab ab ab ab ab ab ab ab&#39;,</span>
-<span class="sd">           &#39;COMMENT --------------------------------&#39;,</span>
-<span class="sd">           &#39;COMMENT    27 28 29 30 31 32 33 34 35&#39;,</span>
-<span class="sd">           &#39;COMMENT    ab ab ab ab ab ab ab ab ab&#39;,</span>
-<span class="sd">           &#39;COMMENT    __________________________&#39;</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""        'COMMENT Unique detector IDs for MegaCam',</span>
+<span class="sd">           'COMMENT (North on top, East to the left)',</span>
+<span class="sd">           'COMMENT    --------------------------',</span>
+<span class="sd">           'COMMENT    ba ba ba ba ba ba ba ba ba',</span>
+<span class="sd">           'COMMENT    00 01 02 03 04 05 06 07 08',</span>
+<span class="sd">           'COMMENT --------------------------------',</span>
+<span class="sd">           'COMMENT ba ba ba ba ba ba ba ba ba ba ba',</span>
+<span class="sd">           'COMMENT 36 09 10 11 12 13 14 15 16 17 37',</span>
+<span class="sd">           'COMMENT --------------------------------',</span>
+<span class="sd">           'COMMENT 38 18 19 20 21 22 23 24 25 26 39',</span>
+<span class="sd">           'COMMENT ab ab ab ab ab ab ab ab ab ab ab',</span>
+<span class="sd">           'COMMENT --------------------------------',</span>
+<span class="sd">           'COMMENT    27 28 29 30 31 32 33 34 35',</span>
+<span class="sd">           'COMMENT    ab ab ab ab ab ab ab ab ab',</span>
+<span class="sd">           'COMMENT    __________________________'</span>
+<span class="sd">"""</span>
 
 
 <div class="viewcode-block" id="megacam_pos">
 <a class="viewcode-back" href="../../../../shapepipe.modules.mccd_package.mccd_plot_utilities.html#shapepipe.modules.mccd_package.mccd_plot_utilities.megacam_pos">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">megacam_pos</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle MegaCam Positions.</span>
+<span class="w">    </span><span class="sd">"""Handle MegaCam Positions.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -604,7 +604,7 @@
 <span class="sd">    int</span>
 <span class="sd">        Updated index</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">9</span><span class="p">:</span>
         <span class="c1"># first row - shift by one</span>
         <span class="k">return</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span>
@@ -626,7 +626,7 @@
 <div class="viewcode-block" id="megacam_flip">
 <a class="viewcode-back" href="../../../../shapepipe.modules.mccd_package.mccd_plot_utilities.html#shapepipe.modules.mccd_package.mccd_plot_utilities.megacam_flip">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">megacam_flip</span><span class="p">(</span><span class="n">xbins</span><span class="p">,</span> <span class="n">ybins</span><span class="p">,</span> <span class="n">ccd_nb</span><span class="p">,</span> <span class="n">nb_pixel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flip MegaCam.</span>
+<span class="w">    </span><span class="sd">"""Flip MegaCam.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -644,7 +644,7 @@
 <span class="sd">    tuple</span>
 <span class="sd">        Number of bins in the x and y axes</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">ccd_nb</span> <span class="o">&lt;</span> <span class="mi">18</span> <span class="ow">or</span> <span class="n">ccd_nb</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">36</span><span class="p">,</span> <span class="mi">37</span><span class="p">]:</span>
         <span class="c1"># swap x axis so origin is on top-right</span>
         <span class="n">xbins</span> <span class="o">=</span> <span class="n">nb_pixel</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">xbins</span> <span class="o">+</span> <span class="mi">1</span>
@@ -659,7 +659,7 @@
 <div class="viewcode-block" id="megacam_flip_2">
 <a class="viewcode-back" href="../../../../shapepipe.modules.mccd_package.mccd_plot_utilities.html#shapepipe.modules.mccd_package.mccd_plot_utilities.megacam_flip_2">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">megacam_flip_2</span><span class="p">(</span><span class="n">xbins</span><span class="p">,</span> <span class="n">ybins</span><span class="p">,</span> <span class="n">ccd_nb</span><span class="p">,</span> <span class="n">nb_pixel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flip MegaCam 2.</span>
+<span class="w">    </span><span class="sd">"""Flip MegaCam 2.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -677,7 +677,7 @@
 <span class="sd">    tuple</span>
 <span class="sd">        Number of bins in the x and y axes</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">ccd_nb</span> <span class="o">&lt;</span> <span class="mi">18</span> <span class="ow">or</span> <span class="n">ccd_nb</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">36</span><span class="p">,</span> <span class="mi">37</span><span class="p">]:</span>
         <span class="c1"># swap x axis so origin is on top-right</span>
         <span class="c1"># xbins = nb_pixel[0] - xbins + 1</span>
@@ -693,9 +693,9 @@
 <div class="viewcode-block" id="mean_shapes_plot">
 <a class="viewcode-back" href="../../../../shapepipe.modules.mccd_package.mccd_plot_utilities.html#shapepipe.modules.mccd_package.mccd_plot_utilities.mean_shapes_plot">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">mean_shapes_plot</span><span class="p">(</span>
-    <span class="n">ccd_maps</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">colorbar_ampl</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bwr&quot;</span>
+    <span class="n">ccd_maps</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">colorbar_ampl</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">"bwr"</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Mean Shapes Plot.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Mean Shapes Plot.</span>
 
 <span class="sd">    Plot mean shapes from CCD maps.</span>
 
@@ -715,7 +715,7 @@
 <span class="sd">    cmap : str, optional</span>
 <span class="sd">        Colour map; default is ``bwr``</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># colorbar amplitude</span>
     <span class="k">if</span> <span class="n">wind</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">vmax</span> <span class="o">=</span> <span class="p">(</span>
@@ -730,20 +730,20 @@
     <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
     <span class="c1"># remove corner axes (above and below ears)</span>
     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">11</span><span class="p">]:</span>
-        <span class="n">axes</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">ccd_nb</span><span class="p">,</span> <span class="n">ccd_map</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">):</span>
         <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">megacam_pos</span><span class="p">(</span><span class="n">ccd_nb</span><span class="p">)]</span>
         <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
-            <span class="n">ccd_map</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;Nearest&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span>
+            <span class="n">ccd_map</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">"Nearest"</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span>
         <span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rmse=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">ccd_map</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="mi">2</span><span class="p">))</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"rmse=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">ccd_map</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="mi">2</span><span class="p">))</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># TODO: fix title</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">right</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
     <span class="n">cbar_ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.85</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">])</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">cax</span><span class="o">=</span><span class="n">cbar_ax</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">.png"</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
@@ -759,14 +759,14 @@
     <span class="n">remove_outliers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">plot_meanshapes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">plot_histograms</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">psf_model_type</span><span class="o">=</span><span class="s2">&quot;mccd&quot;</span><span class="p">,</span>
+    <span class="n">psf_model_type</span><span class="o">=</span><span class="s2">"mccd"</span><span class="p">,</span>
     <span class="n">max_e</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">max_de</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">min_r2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">max_r2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">max_dr2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot Mean Shapes.</span>
+<span class="w">    </span><span class="sd">"""Plot Mean Shapes.</span>
 
 <span class="sd">    Plot mean shapes, sizes, and histograms</span>
 
@@ -808,7 +808,7 @@
 <span class="sd">        maximum value for focal plane residual size plots, default is ``None``;</span>
 <span class="sd">        set according to data</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># READ FULL STARCAT</span>
     <span class="n">starcat</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">starcat_path</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
@@ -822,28 +822,28 @@
     <span class="p">)</span>
 
     <span class="c1"># Flag mask</span>
-    <span class="n">star_flags</span> <span class="o">=</span> <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HSM_FLAG_STAR&quot;</span><span class="p">]</span>
-    <span class="n">psf_flags</span> <span class="o">=</span> <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HSM_FLAG_PSF&quot;</span><span class="p">]</span>
+    <span class="n">star_flags</span> <span class="o">=</span> <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"HSM_FLAG_STAR"</span><span class="p">]</span>
+    <span class="n">psf_flags</span> <span class="o">=</span> <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"HSM_FLAG_PSF"</span><span class="p">]</span>
     <span class="n">flagmask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">star_flags</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">psf_flags</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="c1"># size column already holds T = 2 sigma^2</span>
     <span class="n">all_star_shapes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
         <span class="p">[</span>
-            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HSM_G1_STAR&quot;</span><span class="p">],</span>
-            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HSM_G2_STAR&quot;</span><span class="p">],</span>
-            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HSM_T_STAR&quot;</span><span class="p">],</span>
+            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"HSM_G1_STAR"</span><span class="p">],</span>
+            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"HSM_G2_STAR"</span><span class="p">],</span>
+            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"HSM_T_STAR"</span><span class="p">],</span>
         <span class="p">]</span>
     <span class="p">)</span>
     <span class="n">all_psf_shapes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
         <span class="p">[</span>
-            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HSM_G1_PSF&quot;</span><span class="p">],</span>
-            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HSM_G2_PSF&quot;</span><span class="p">],</span>
-            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HSM_T_PSF&quot;</span><span class="p">],</span>
+            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"HSM_G1_PSF"</span><span class="p">],</span>
+            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"HSM_G2_PSF"</span><span class="p">],</span>
+            <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"HSM_T_PSF"</span><span class="p">],</span>
         <span class="p">]</span>
     <span class="p">)</span>
-    <span class="n">all_CCDs</span> <span class="o">=</span> <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;CCD_NB&quot;</span><span class="p">]</span>
-    <span class="n">all_X</span> <span class="o">=</span> <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">]</span>
-    <span class="n">all_Y</span> <span class="o">=</span> <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Y&quot;</span><span class="p">]</span>
+    <span class="n">all_CCDs</span> <span class="o">=</span> <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"CCD_NB"</span><span class="p">]</span>
+    <span class="n">all_X</span> <span class="o">=</span> <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"X"</span><span class="p">]</span>
+    <span class="n">all_Y</span> <span class="o">=</span> <span class="n">starcat</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"Y"</span><span class="p">]</span>
 
     <span class="c1"># Remove stars/PSFs where the measured size is zero</span>
     <span class="c1"># Sometimes the HSM shape measurement gives objects with measured</span>
@@ -880,7 +880,7 @@
             <span class="n">all_star_shapes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
         <span class="p">)</span>
         <span class="n">bad_stars</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">all_star_shapes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:])</span> <span class="o">&gt;</span> <span class="n">R2_thresh</span>
-        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Nb of outlier stars: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">bad_stars</span><span class="p">)</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nb of outlier stars: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">bad_stars</span><span class="p">)</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="c1"># Remove outlier PSFs</span>
         <span class="n">all_star_shapes</span> <span class="o">=</span> <span class="n">all_star_shapes</span><span class="p">[:,</span> <span class="o">~</span><span class="n">bad_stars</span><span class="p">]</span>
         <span class="n">all_psf_shapes</span> <span class="o">=</span> <span class="n">all_psf_shapes</span><span class="p">[:,</span> <span class="o">~</span><span class="n">bad_stars</span><span class="p">]</span>
@@ -892,9 +892,9 @@
     <span class="n">e1_res_rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">all_star_shapes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">all_psf_shapes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
     <span class="n">e2_res_rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">all_star_shapes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">all_psf_shapes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
     <span class="n">R2_res_rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">all_star_shapes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">all_psf_shapes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
-    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TOTAL e1 residual RMSE: </span><span class="si">{</span><span class="n">e1_res_rmse</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TOTAL e2 residual RMSE: </span><span class="si">{</span><span class="n">e2_res_rmse</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TOTAL R2 residual RMSE: </span><span class="si">{</span><span class="n">R2_res_rmse</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"TOTAL e1 residual RMSE: </span><span class="si">{</span><span class="n">e1_res_rmse</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"TOTAL e2 residual RMSE: </span><span class="si">{</span><span class="n">e2_res_rmse</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"TOTAL R2 residual RMSE: </span><span class="si">{</span><span class="n">R2_res_rmse</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># CCDs x star/model x (e1,e2,R2,nstars) x xpos x ypos</span>
     <span class="n">ccd_maps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">40</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="n">nb_pixel</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
@@ -902,7 +902,7 @@
     <span class="k">for</span> <span class="n">ccd_nb</span><span class="p">,</span> <span class="n">ccd_map</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">):</span>
 
         <span class="c1"># handle different input catalogue types</span>
-        <span class="k">if</span> <span class="n">psf_model_type</span> <span class="o">==</span> <span class="s2">&quot;mccd&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">psf_model_type</span> <span class="o">==</span> <span class="s2">"mccd"</span><span class="p">:</span>
 
             <span class="n">ccd_mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">all_CCDs</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="o">==</span> <span class="n">ccd_nb</span><span class="p">)</span> <span class="o">*</span> <span class="n">flagmask</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
                 <span class="nb">bool</span>
@@ -912,7 +912,7 @@
             <span class="c1"># coordinates</span>
             <span class="n">x_shift</span><span class="p">,</span> <span class="n">y_shift</span> <span class="o">=</span> <span class="n">loc2glob</span><span class="o">.</span><span class="n">shift_coord</span><span class="p">(</span><span class="n">ccd_nb</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="n">psf_model_type</span> <span class="o">==</span> <span class="s2">&quot;psfex&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">psf_model_type</span> <span class="o">==</span> <span class="s2">"psfex"</span><span class="p">:</span>
 
             <span class="n">ccd_mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">all_CCDs</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">ccd_nb</span><span class="p">))</span> <span class="o">*</span> <span class="n">flagmask</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
 
@@ -921,14 +921,14 @@
 
         <span class="k">else</span><span class="p">:</span>
 
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid psf model type </span><span class="si">{</span><span class="n">psf_model_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid psf model type </span><span class="si">{</span><span class="n">psf_model_type</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="n">star_shapes</span> <span class="o">=</span> <span class="n">all_star_shapes</span><span class="p">[:,</span> <span class="n">ccd_mask</span><span class="p">]</span>
         <span class="n">psf_shapes</span> <span class="o">=</span> <span class="n">all_psf_shapes</span><span class="p">[:,</span> <span class="n">ccd_mask</span><span class="p">]</span>
 
         <span class="n">xs_loc</span><span class="p">,</span> <span class="n">ys_loc</span> <span class="o">=</span> <span class="n">all_X</span><span class="p">[</span><span class="n">ccd_mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_shift</span><span class="p">,</span> <span class="n">all_Y</span><span class="p">[</span><span class="n">ccd_mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_shift</span>
 
-        <span class="k">if</span> <span class="n">psf_model_type</span> <span class="o">==</span> <span class="s2">&quot;mccd&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">psf_model_type</span> <span class="o">==</span> <span class="s2">"mccd"</span><span class="p">:</span>
             <span class="c1"># swap axes to match CCD orientation and origin convention</span>
             <span class="n">ys_loc</span> <span class="o">=</span> <span class="n">loc2glob</span><span class="o">.</span><span class="n">y_npix</span> <span class="o">-</span> <span class="n">ys_loc</span> <span class="o">+</span> <span class="mi">1</span>
 
@@ -936,7 +936,7 @@
         <span class="n">xbins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">digitize</span><span class="p">(</span><span class="n">xs_loc</span><span class="p">,</span> <span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">ybins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">digitize</span><span class="p">(</span><span class="n">ys_loc</span><span class="p">,</span> <span class="n">grid</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="n">psf_model_type</span> <span class="o">==</span> <span class="s2">&quot;psfex&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">psf_model_type</span> <span class="o">==</span> <span class="s2">"psfex"</span><span class="p">:</span>
             <span class="n">xbins</span><span class="p">,</span> <span class="n">ybins</span> <span class="o">=</span> <span class="n">megacam_flip</span><span class="p">(</span><span class="n">xbins</span><span class="p">,</span> <span class="n">ybins</span><span class="p">,</span> <span class="n">ccd_nb</span><span class="p">,</span> <span class="n">nb_pixel</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">xb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_pixel</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
@@ -959,29 +959,29 @@
         <span class="n">vmin</span> <span class="o">=</span> <span class="o">-</span><span class="n">vmax</span>
         <span class="n">wind</span> <span class="o">=</span> <span class="p">[</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">]</span>
         <span class="n">title</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;e_1 (stars), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"e_1 (stars), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">mean_shapes_plot</span><span class="p">(</span>
-            <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;e1s&quot;</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span>
+            <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"e1s"</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span>
         <span class="p">)</span>
-        <span class="n">mean_shapes_plot</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;e1s&quot;</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">)</span>
+        <span class="n">mean_shapes_plot</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"e1s"</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">)</span>
 
         <span class="n">title</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;e_1 (model), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"e_1 (model), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">mean_shapes_plot</span><span class="p">(</span>
-            <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;e1m&quot;</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span>
+            <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"e1m"</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span>
         <span class="p">)</span>
-        <span class="n">mean_shapes_plot</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;e1m&quot;</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">)</span>
+        <span class="n">mean_shapes_plot</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"e1m"</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">auto_colorbar</span><span class="p">:</span>
             <span class="n">wind</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">e1_res</span> <span class="o">=</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">e1_res</span> <span class="o">=</span> <span class="n">e1_res</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">e1_res</span><span class="p">)]</span>
         <span class="n">rmse_e1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">e1_res</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
-        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bins: e1 residual RMSE: </span><span class="si">{</span><span class="n">rmse_e1</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Bins: e1 residual RMSE: </span><span class="si">{</span><span class="n">rmse_e1</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">max_de</span><span class="p">:</span>
             <span class="n">vmax</span> <span class="o">=</span> <span class="n">max_de</span>
         <span class="k">else</span><span class="p">:</span>
@@ -989,12 +989,12 @@
         <span class="n">vmin</span> <span class="o">=</span> <span class="o">-</span><span class="n">vmax</span>
         <span class="n">wind</span> <span class="o">=</span> <span class="p">[</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">]</span>
         <span class="n">title</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;e_1 res, rmse=</span><span class="si">{</span><span class="n">rmse_e1</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">vmax=</span><span class="si">{</span><span class="n">vmax</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2"> , &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"e_1 res, rmse=</span><span class="si">{</span><span class="n">rmse_e1</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">vmax=</span><span class="si">{</span><span class="n">vmax</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2"> , "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">mean_shapes_plot</span><span class="p">(</span>
             <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
-            <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;e1res&quot;</span><span class="p">,</span>
+            <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"e1res"</span><span class="p">,</span>
             <span class="n">title</span><span class="p">,</span>
             <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">,</span>
             <span class="n">colorbar_ampl</span><span class="o">=</span><span class="n">colorbar_ampl</span><span class="p">,</span>
@@ -1011,21 +1011,21 @@
         <span class="n">vmin</span> <span class="o">=</span> <span class="o">-</span><span class="n">vmax</span>
         <span class="n">wind</span> <span class="o">=</span> <span class="p">[</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">]</span>
         <span class="n">title</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;e_2 (stars), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"e_2 (stars), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">mean_shapes_plot</span><span class="p">(</span>
-            <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;e2s&quot;</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span>
+            <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"e2s"</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span>
         <span class="p">)</span>
-        <span class="n">mean_shapes_plot</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;e2s&quot;</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">)</span>
+        <span class="n">mean_shapes_plot</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"e2s"</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">)</span>
         <span class="n">title</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;e_2 (model), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"e_2 (model), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">mean_shapes_plot</span><span class="p">(</span>
-            <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;e2m&quot;</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span>
+            <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"e2m"</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span>
         <span class="p">)</span>
-        <span class="n">mean_shapes_plot</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;e2m&quot;</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">)</span>
+        <span class="n">mean_shapes_plot</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"e2m"</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">auto_colorbar</span><span class="p">:</span>
             <span class="n">wind</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1034,7 +1034,7 @@
         <span class="n">e2_res</span> <span class="o">=</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">e2_res</span> <span class="o">=</span> <span class="n">e2_res</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">e2_res</span><span class="p">)]</span>
         <span class="n">rmse_e2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">e2_res</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
-        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bins: e2 residual RMSE: </span><span class="si">{</span><span class="n">rmse_e2</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Bins: e2 residual RMSE: </span><span class="si">{</span><span class="n">rmse_e2</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">max_de</span><span class="p">:</span>
             <span class="n">vmax</span> <span class="o">=</span> <span class="n">max_de</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1042,12 +1042,12 @@
         <span class="n">vmin</span> <span class="o">=</span> <span class="o">-</span><span class="n">vmax</span>
         <span class="n">wind</span> <span class="o">=</span> <span class="p">[</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">]</span>
         <span class="n">title</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;e_2 res, rmse=</span><span class="si">{</span><span class="n">rmse_e2</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">vmax=</span><span class="si">{</span><span class="n">vmax</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2"> , &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"e_2 res, rmse=</span><span class="si">{</span><span class="n">rmse_e2</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">vmax=</span><span class="si">{</span><span class="n">vmax</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2"> , "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">mean_shapes_plot</span><span class="p">(</span>
             <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
-            <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;e2res&quot;</span><span class="p">,</span>
+            <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"e2res"</span><span class="p">,</span>
             <span class="n">title</span><span class="p">,</span>
             <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">,</span>
             <span class="n">colorbar_ampl</span><span class="o">=</span><span class="n">colorbar_ampl</span><span class="p">,</span>
@@ -1065,26 +1065,26 @@
         <span class="n">wind</span> <span class="o">=</span> <span class="p">[</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">]</span>
         <span class="n">colorbar_ampl</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="n">title</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;R_2 (stars), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"R_2 (stars), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">mean_shapes_plot</span><span class="p">(</span>
             <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
-            <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;R2s&quot;</span><span class="p">,</span>
+            <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"R2s"</span><span class="p">,</span>
             <span class="n">title</span><span class="p">,</span>
             <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">,</span>
-            <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Reds&quot;</span><span class="p">,</span>
+            <span class="n">cmap</span><span class="o">=</span><span class="s2">"Reds"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">title</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;R_2 (model), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"R_2 (model), std=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"vmax=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">]))</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">mean_shapes_plot</span><span class="p">(</span>
             <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
-            <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;R2m&quot;</span><span class="p">,</span>
+            <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"R2m"</span><span class="p">,</span>
             <span class="n">title</span><span class="p">,</span>
             <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">,</span>
-            <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Reds&quot;</span><span class="p">,</span>
+            <span class="n">cmap</span><span class="o">=</span><span class="s2">"Reds"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">auto_colorbar</span><span class="p">:</span>
@@ -1101,7 +1101,7 @@
         <span class="n">R2_res</span> <span class="o">=</span> <span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
         <span class="n">R2_res</span> <span class="o">=</span> <span class="n">R2_res</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">R2_res</span><span class="p">)]</span>
         <span class="n">rmse_r2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">R2_res</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
-        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bins: R2 residual RMSE: </span><span class="si">{</span><span class="n">rmse_r2</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Bins: R2 residual RMSE: </span><span class="si">{</span><span class="n">rmse_r2</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">max_dr2</span><span class="p">:</span>
             <span class="n">vmax</span> <span class="o">=</span> <span class="n">max_dr2</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1113,30 +1113,30 @@
             <span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
         <span class="p">)</span>
         <span class="n">title</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;∆(R_2)/R_2 res, rmse=</span><span class="si">{</span><span class="n">rmse_r2</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">vmax=</span><span class="si">{</span><span class="n">vmax</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2"> , &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;std=</span><span class="si">{</span><span class="n">std_title</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"∆(R_2)/R_2 res, rmse=</span><span class="si">{</span><span class="n">rmse_r2</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="se">\n</span><span class="s2">vmax=</span><span class="si">{</span><span class="n">vmax</span><span class="si">:</span><span class="s2">.4e</span><span class="si">}</span><span class="s2"> , "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"std=</span><span class="si">{</span><span class="n">std_title</span><span class="si">:</span><span class="s2">.5e</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">remove_outliers</span><span class="p">:</span>
-            <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Outliers removed</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">title</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="s2">"Outliers removed</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="n">title</span>
 
         <span class="n">mean_shapes_plot</span><span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]),</span>
-            <span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;R2res&quot;</span><span class="p">,</span>
+            <span class="n">output_path</span> <span class="o">+</span> <span class="s2">"R2res"</span><span class="p">,</span>
             <span class="n">title</span><span class="p">,</span>
             <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">,</span>
             <span class="n">colorbar_ampl</span><span class="o">=</span><span class="n">colorbar_ampl</span><span class="p">,</span>
-            <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Reds&quot;</span><span class="p">,</span>
+            <span class="n">cmap</span><span class="o">=</span><span class="s2">"Reds"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># nstars</span>
         <span class="n">wind</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
-        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Number of stars</span><span class="se">\n</span><span class="s2">Total=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">])</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Number of stars</span><span class="se">\n</span><span class="s2">Total=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">ccd_maps</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">])</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
         <span class="n">mean_shapes_plot</span><span class="p">(</span>
             <span class="n">ccd_maps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">nstar&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">nstar"</span><span class="p">,</span>
             <span class="n">title</span><span class="p">,</span>
             <span class="n">wind</span><span class="o">=</span><span class="n">wind</span><span class="p">,</span>
-            <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;magma&quot;</span><span class="p">,</span>
+            <span class="n">cmap</span><span class="o">=</span><span class="s2">"magma"</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="c1"># Histograms</span>
@@ -1147,19 +1147,19 @@
             <span class="n">all_star_shapes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span>
             <span class="n">bins</span><span class="o">=</span><span class="n">hist_bins</span><span class="p">,</span>
             <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;stars&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">"stars"</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span>
             <span class="n">all_psf_shapes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span>
             <span class="n">bins</span><span class="o">=</span><span class="n">hist_bins</span><span class="p">,</span>
             <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;PSFs&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">"PSFs"</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;e1&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">e1_hist.png&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"best"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"e1"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">e1_hist.png"</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
@@ -1168,12 +1168,12 @@
             <span class="n">data_hist</span><span class="p">,</span>
             <span class="n">bins</span><span class="o">=</span><span class="n">hist_bins</span><span class="p">,</span>
             <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">data_hist</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">data_hist</span><span class="p">)],</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;err(star - psf)&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">"err(star - psf)"</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;e1 err&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;err_e1_hist.png&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"best"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"e1 err"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_path</span> <span class="o">+</span> <span class="s2">"err_e1_hist.png"</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
@@ -1181,19 +1181,19 @@
             <span class="n">all_star_shapes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:],</span>
             <span class="n">bins</span><span class="o">=</span><span class="n">hist_bins</span><span class="p">,</span>
             <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;stars&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">"stars"</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span>
             <span class="n">all_psf_shapes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:],</span>
             <span class="n">bins</span><span class="o">=</span><span class="n">hist_bins</span><span class="p">,</span>
             <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;PSFs&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">"PSFs"</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;e2&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;e2_hist.png&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"best"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"e2"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_path</span> <span class="o">+</span> <span class="s2">"e2_hist.png"</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
@@ -1202,12 +1202,12 @@
             <span class="n">data_hist</span><span class="p">,</span>
             <span class="n">bins</span><span class="o">=</span><span class="n">hist_bins</span><span class="p">,</span>
             <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">data_hist</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">data_hist</span><span class="p">)],</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;err(star - psf)&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">"err(star - psf)"</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;e2 err&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;err_e2_hist.png&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"best"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"e2 err"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_path</span> <span class="o">+</span> <span class="s2">"err_e2_hist.png"</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
@@ -1217,19 +1217,19 @@
             <span class="n">all_star_shapes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:],</span>
             <span class="n">bins</span><span class="o">=</span><span class="n">hist_bins</span><span class="p">,</span>
             <span class="nb">range</span><span class="o">=</span><span class="n">wind</span><span class="p">,</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;stars&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">"stars"</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span>
             <span class="n">all_psf_shapes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:],</span>
             <span class="n">bins</span><span class="o">=</span><span class="n">hist_bins</span><span class="p">,</span>
             <span class="nb">range</span><span class="o">=</span><span class="n">wind</span><span class="p">,</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;PSFs&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">"PSFs"</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;R2&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;R2_hist.png&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"best"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"R2"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_path</span> <span class="o">+</span> <span class="s2">"R2_hist.png"</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
@@ -1240,12 +1240,12 @@
             <span class="n">data_hist</span><span class="p">,</span>
             <span class="n">bins</span><span class="o">=</span><span class="n">hist_bins</span><span class="p">,</span>
             <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">data_hist</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">data_hist</span><span class="p">)],</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;err(star - psf)/star&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">"err(star - psf)/star"</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;R2 err&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_path</span> <span class="o">+</span> <span class="s2">&quot;err_R2_hist.png&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"best"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"R2 err"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_path</span> <span class="o">+</span> <span class="s2">"err_R2_hist.png"</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="n">starcat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>

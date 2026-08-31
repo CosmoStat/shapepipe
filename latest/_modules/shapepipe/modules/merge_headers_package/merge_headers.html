@@ -552,7 +552,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.merge_headers_package.merge_headers</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;MERGE HEADERS.</span>
+<span></span><span class="sd">"""MERGE HEADERS.</span>
 
 <span class="sd">This module merges the output *header* files of the ``split_exp``</span>
 <span class="sd">module. It creates a binnary file that contains the WCS of each CCD for each</span>
@@ -560,7 +560,7 @@
 
 <span class="sd">:Author: Axel Guinot</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
@@ -572,7 +572,7 @@
 <div class="viewcode-block" id="merge_headers">
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_headers_package.merge_headers.html#shapepipe.modules.merge_headers_package.merge_headers.merge_headers">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">merge_headers</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">tile_number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge Headers.</span>
+<span class="w">    </span><span class="sd">"""Merge Headers.</span>
 
 <span class="sd">    This function opens the files in the input file list and merges them into</span>
 <span class="sd">    a SqliteDict file provided they match the appropriate pattern.</span>
@@ -584,28 +584,28 @@
 <span class="sd">    output_dir : str</span>
 <span class="sd">        Output path</span>
 <span class="sd">    tile_number : str, optional</span>
-<span class="sd">        Tile number ID stored under the key ``&quot;TILE_ID&quot;``, default is ``None``</span>
+<span class="sd">        Tile number ID stored under the key ``"TILE_ID"``, default is ``None``</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    TypeError</span>
 <span class="sd">        For invalid ``output_dir`` type</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="s2">&quot;Output directory for merge headers must be a string &quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="s2">"Output directory for merge headers must be a string "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
         <span class="p">)</span>
 
     <span class="c1"># Open SqliteDict file</span>
-    <span class="n">suffix</span> <span class="o">=</span> <span class="n">tile_number</span> <span class="k">if</span> <span class="n">tile_number</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-    <span class="n">final_file</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">/log_exp_headers</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.sqlite&quot;</span><span class="p">)</span>
+    <span class="n">suffix</span> <span class="o">=</span> <span class="n">tile_number</span> <span class="k">if</span> <span class="n">tile_number</span> <span class="k">else</span> <span class="s2">""</span>
+    <span class="n">final_file</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">/log_exp_headers</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.sqlite"</span><span class="p">)</span>
     <span class="c1"># Set matching pattern</span>
-    <span class="n">pattern</span> <span class="o">=</span> <span class="s2">&quot;headers-&quot;</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="s2">"headers-"</span>
 
     <span class="k">if</span> <span class="n">tile_number</span><span class="p">:</span>
-        <span class="n">final_file</span><span class="p">[</span><span class="s2">&quot;TILE_ID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tile_number</span>
+        <span class="n">final_file</span><span class="p">[</span><span class="s2">"TILE_ID"</span><span class="p">]</span> <span class="o">=</span> <span class="n">tile_number</span>
 
     <span class="k">for</span> <span class="n">file_path</span> <span class="ow">in</span> <span class="n">input_file_list</span><span class="p">:</span>
         <span class="c1"># Extract file path</span>
@@ -616,7 +616,7 @@
         <span class="n">pattern_split</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">file_base_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pattern_split</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">&#39;Regex &quot;</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">&quot; not found in base name &quot;</span><span class="si">{</span><span class="n">file_base_name</span><span class="si">}</span><span class="s1">&quot;.&#39;</span>
+                <span class="sa">f</span><span class="s1">'Regex "</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">" not found in base name "</span><span class="si">{</span><span class="n">file_base_name</span><span class="si">}</span><span class="s1">".'</span>
             <span class="p">)</span>
         <span class="n">key</span> <span class="o">=</span> <span class="n">pattern_split</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="c1"># Load Numpy binary file</span>

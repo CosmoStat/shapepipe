@@ -563,29 +563,29 @@
 <div class="viewcode-block" id="set_jobs_v2_pre_v2">
 <a class="viewcode-back" href="../../../shapepipe.utilities.summary_params_pre_v2.html#shapepipe.utilities.summary_params_pre_v2.set_jobs_v2_pre_v2">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_jobs_v2_pre_v2</span><span class="p">(</span><span class="n">patch</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return information about shapepipe jobs&quot;&quot;&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set job info for patch </span><span class="si">{</span><span class="n">patch</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Return information about shapepipe jobs"""</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set job info for patch </span><span class="si">{</span><span class="n">patch</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Main input and output directory</span>
-    <span class="n">path_main</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;HOME&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/cosmostat/v2/pre_v2/psfex/</span><span class="si">{</span><span class="n">patch</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">path_main</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">'HOME'</span><span class="p">]</span><span class="si">}</span><span class="s2">/cosmostat/v2/pre_v2/psfex/</span><span class="si">{</span><span class="n">patch</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="c1"># Logging</span>
-    <span class="n">path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path_main</span><span class="si">}</span><span class="s2">/summary&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path_main</span><span class="si">}</span><span class="s2">/summary"</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
         <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-    <span class="n">log_file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">/summary_log.txt&quot;</span>
+    <span class="n">log_file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">/summary_log.txt"</span>
     <span class="n">handlers</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">log_file_name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">),</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">log_file_name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"w"</span><span class="p">),</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(),</span>
     <span class="p">]</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-        <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">handlers</span><span class="o">=</span><span class="n">handlers</span>
+        <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span> <span class="n">handlers</span><span class="o">=</span><span class="n">handlers</span>
     <span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Checking main directory = </span><span class="si">{</span><span class="n">path_main</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Checking main directory = </span><span class="si">{</span><span class="n">path_main</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Tile IDs</span>
-    <span class="n">tile_ID_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path_main</span><span class="si">}</span><span class="s2">/tile_numbers.txt&quot;</span>
+    <span class="n">tile_ID_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path_main</span><span class="si">}</span><span class="s2">/tile_numbers.txt"</span>
 
     <span class="c1">## Tile IDs with dots</span>
     <span class="n">list_tile_IDs_dot</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">get_IDs_from_file</span><span class="p">(</span><span class="n">tile_ID_path</span><span class="p">)</span>
@@ -594,236 +594,236 @@
 
     <span class="c1"># Set the first job (retrieve images)</span>
 
-    <span class="c1"># With &quot;CFIS_&quot; only the linked images are counted. The original</span>
+    <span class="c1"># With "CFIS_" only the linked images are counted. The original</span>
     <span class="c1"># ones do not match the IDdash pattern.</span>
     <span class="c1"># If images were downloaded in several runs:</span>
     <span class="c1"># - Only copy original images, then (re-)set links in SP numbering format</span>
     <span class="c1"># - get_images_runner_run_[12] consistent</span>
     <span class="c1"># - remove previous output dirs since only last is searched</span>
-    <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+    <span class="n">jobs</span><span class="p">[</span><span class="s2">"1"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
         <span class="mi">1</span><span class="p">,</span>
-        <span class="s2">&quot;run_sp_GitFeGie&quot;</span><span class="p">,</span>
+        <span class="s2">"run_sp_GitFeGie"</span><span class="p">,</span>
         <span class="p">[</span>
-            <span class="s2">&quot;get_images_runner_run_1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;find_exposures_runner&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;get_images_runner_run_2&quot;</span><span class="p">,</span>
+            <span class="s2">"get_images_runner_run_1"</span><span class="p">,</span>
+            <span class="s2">"find_exposures_runner"</span><span class="p">,</span>
+            <span class="s2">"get_images_runner_run_2"</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="p">[</span><span class="s2">&quot;tile_IDs&quot;</span><span class="p">,</span> <span class="s2">&quot;tile_IDs&quot;</span><span class="p">,</span> <span class="s2">&quot;exposures&quot;</span><span class="p">],</span>
-        <span class="n">pattern</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CFIS_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">],</span>
+        <span class="p">[</span><span class="s2">"tile_IDs"</span><span class="p">,</span> <span class="s2">"tile_IDs"</span><span class="p">,</span> <span class="s2">"exposures"</span><span class="p">],</span>
+        <span class="n">pattern</span><span class="o">=</span><span class="p">[</span><span class="s2">"CFIS_"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">""</span><span class="p">],</span>
         <span class="n">n_mult</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
         <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-        <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+        <span class="n">path_left</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">patch</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;P8&quot;</span><span class="p">,</span> <span class="s2">&quot;P9&quot;</span><span class="p">):</span>
-        <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+    <span class="k">if</span> <span class="n">patch</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"P8"</span><span class="p">,</span> <span class="s2">"P9"</span><span class="p">):</span>
+        <span class="n">jobs</span><span class="p">[</span><span class="s2">"2"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
             <span class="mi">2</span><span class="p">,</span>
-            <span class="p">[</span><span class="s2">&quot;run_sp_Uz&quot;</span><span class="p">,</span> <span class="s2">&quot;run_sp_exp_Sp_shdu&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;uncompress_fits_runner&quot;</span><span class="p">,</span> <span class="s2">&quot;split_exp_runner&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;tile_IDs&quot;</span><span class="p">,</span> <span class="s2">&quot;shdus&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"run_sp_Uz"</span><span class="p">,</span> <span class="s2">"run_sp_exp_Sp_shdu"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"uncompress_fits_runner"</span><span class="p">,</span> <span class="s2">"split_exp_runner"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"tile_IDs"</span><span class="p">,</span> <span class="s2">"shdus"</span><span class="p">],</span>
             <span class="n">n_mult</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
             <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-            <span class="n">path_left</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="s2">&quot;exp_runs&quot;</span><span class="p">],</span>
-            <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;shdus&quot;</span><span class="p">],</span>
-            <span class="n">path_right</span><span class="o">=</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">],</span>
+            <span class="n">path_left</span><span class="o">=</span><span class="p">[</span><span class="s2">"output"</span><span class="p">,</span> <span class="s2">"exp_runs"</span><span class="p">],</span>
+            <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"shdus"</span><span class="p">],</span>
+            <span class="n">path_right</span><span class="o">=</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"output"</span><span class="p">],</span>
             <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;4096&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+        <span class="n">jobs</span><span class="p">[</span><span class="s2">"4096"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
             <span class="mi">4096</span><span class="p">,</span>
-            <span class="p">[</span><span class="s2">&quot;run_sp_exp_Sp_shdu&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;split_exp_runner&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;shdus&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"run_sp_exp_Sp_shdu"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"split_exp_runner"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"shdus"</span><span class="p">],</span>
             <span class="n">n_mult</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
             <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-            <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;exp_runs&quot;</span><span class="p">,</span>
-            <span class="n">output_subdirs</span><span class="o">=</span><span class="s2">&quot;shdus&quot;</span><span class="p">,</span>
-            <span class="n">path_right</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+            <span class="n">path_left</span><span class="o">=</span><span class="s2">"exp_runs"</span><span class="p">,</span>
+            <span class="n">output_subdirs</span><span class="o">=</span><span class="s2">"shdus"</span><span class="p">,</span>
+            <span class="n">path_right</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
             <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+        <span class="n">jobs</span><span class="p">[</span><span class="s2">"2"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
             <span class="mi">2</span><span class="p">,</span>
-            <span class="p">[</span><span class="s2">&quot;run_sp_Uz&quot;</span><span class="p">,</span> <span class="s2">&quot;run_sp_exp_SpMh&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;uncompress_fits_runner&quot;</span><span class="p">,</span>  <span class="s2">&quot;split_exp_runner&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;tile_IDs&quot;</span><span class="p">,</span> <span class="s2">&quot;shdus&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"run_sp_Uz"</span><span class="p">,</span> <span class="s2">"run_sp_exp_SpMh"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"uncompress_fits_runner"</span><span class="p">,</span>  <span class="s2">"split_exp_runner"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"tile_IDs"</span><span class="p">,</span> <span class="s2">"shdus"</span><span class="p">],</span>
             <span class="n">n_mult</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span>  <span class="mi">121</span><span class="p">],</span>
             <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-            <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+            <span class="n">path_left</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
             <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;4&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+    <span class="n">jobs</span><span class="p">[</span><span class="s2">"4"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
         <span class="mi">4</span><span class="p">,</span>
-        <span class="p">[</span><span class="s2">&quot;run_sp_Ma_tile&quot;</span><span class="p">],</span>
-        <span class="p">[</span><span class="s2">&quot;mask_runner&quot;</span><span class="p">],</span>
-        <span class="p">[</span><span class="s2">&quot;tile_IDs&quot;</span><span class="p">],</span>
+        <span class="p">[</span><span class="s2">"run_sp_Ma_tile"</span><span class="p">],</span>
+        <span class="p">[</span><span class="s2">"mask_runner"</span><span class="p">],</span>
+        <span class="p">[</span><span class="s2">"tile_IDs"</span><span class="p">],</span>
         <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-        <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+        <span class="n">path_left</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">patch</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;P8&quot;</span><span class="p">,</span> <span class="s2">&quot;P9&quot;</span><span class="p">):</span>
-        <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;8&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+    <span class="k">if</span> <span class="n">patch</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"P8"</span><span class="p">,</span> <span class="s2">"P9"</span><span class="p">):</span>
+        <span class="n">jobs</span><span class="p">[</span><span class="s2">"8"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
             <span class="mi">8</span><span class="p">,</span>
-            <span class="p">[</span><span class="s2">&quot;run_sp_Ma_exp&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;mask_runner&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;shdus&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"run_sp_Ma_exp"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"mask_runner"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"shdus"</span><span class="p">],</span>
             <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-            <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+            <span class="n">path_left</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
             <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;8&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+        <span class="n">jobs</span><span class="p">[</span><span class="s2">"8"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
             <span class="mi">8</span><span class="p">,</span>
-            <span class="p">[</span><span class="s2">&quot;run_sp_exp_Ma&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;mask_runner&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;shdus&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"run_sp_exp_Ma"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"mask_runner"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"shdus"</span><span class="p">],</span>
             <span class="n">n_mult</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
             <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-            <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;exp_runs&quot;</span><span class="p">,</span>
-            <span class="n">output_subdirs</span><span class="o">=</span> <span class="s2">&quot;shdus&quot;</span><span class="p">,</span>
-            <span class="n">path_right</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+            <span class="n">path_left</span><span class="o">=</span><span class="s2">"exp_runs"</span><span class="p">,</span>
+            <span class="n">output_subdirs</span><span class="o">=</span> <span class="s2">"shdus"</span><span class="p">,</span>
+            <span class="n">path_right</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
             <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
         <span class="p">)</span>
 
 
-    <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;16&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+    <span class="n">jobs</span><span class="p">[</span><span class="s2">"16"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
         <span class="mi">16</span><span class="p">,</span>
-        <span class="s2">&quot;run_sp_tile_Sx&quot;</span><span class="p">,</span>
-        <span class="p">[</span><span class="s2">&quot;sextractor_runner&quot;</span><span class="p">,</span> <span class="s2">&quot;sextractor_runner&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;tile_IDs&quot;</span><span class="p">,</span>
+        <span class="s2">"run_sp_tile_Sx"</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">"sextractor_runner"</span><span class="p">,</span> <span class="s2">"sextractor_runner"</span><span class="p">],</span>
+        <span class="s2">"tile_IDs"</span><span class="p">,</span>
         <span class="n">n_mult</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
         <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-        <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;tile_runs&quot;</span><span class="p">,</span>
-        <span class="n">path_output</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="s2">&quot;logs&quot;</span><span class="p">],</span>
-        <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tile_ID</span><span class="si">}</span><span class="s2">/output&quot;</span> <span class="k">for</span> <span class="n">tile_ID</span> <span class="ow">in</span> <span class="n">list_tile_IDs_dot</span><span class="p">],</span>
+        <span class="n">path_left</span><span class="o">=</span><span class="s2">"tile_runs"</span><span class="p">,</span>
+        <span class="n">path_output</span><span class="o">=</span><span class="p">[</span><span class="s2">"output"</span><span class="p">,</span> <span class="s2">"logs"</span><span class="p">],</span>
+        <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">tile_ID</span><span class="si">}</span><span class="s2">/output"</span> <span class="k">for</span> <span class="n">tile_ID</span> <span class="ow">in</span> <span class="n">list_tile_IDs_dot</span><span class="p">],</span>
         <span class="n">special</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span>
         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;32&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+    <span class="n">jobs</span><span class="p">[</span><span class="s2">"32"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
         <span class="mi">32</span><span class="p">,</span>
         <span class="p">[</span>
-            <span class="s2">&quot;run_sp_exp_SxSePsf&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;run_sp_exp_SxSePsf&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;run_sp_exp_SxSePsf&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;run_sp_exp_SxSePsf&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;run_sp_exp_SxSePsf&quot;</span><span class="p">,</span>
+            <span class="s2">"run_sp_exp_SxSePsf"</span><span class="p">,</span>
+            <span class="s2">"run_sp_exp_SxSePsf"</span><span class="p">,</span>
+            <span class="s2">"run_sp_exp_SxSePsf"</span><span class="p">,</span>
+            <span class="s2">"run_sp_exp_SxSePsf"</span><span class="p">,</span>
+            <span class="s2">"run_sp_exp_SxSePsf"</span><span class="p">,</span>
         <span class="p">],</span>
         <span class="p">[</span>
-            <span class="s2">&quot;sextractor_runner&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;setools_runner&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;setools_runner&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;setools_runner&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;psfex_runner&quot;</span><span class="p">,</span>
+            <span class="s2">"sextractor_runner"</span><span class="p">,</span>
+            <span class="s2">"setools_runner"</span><span class="p">,</span>
+            <span class="s2">"setools_runner"</span><span class="p">,</span>
+            <span class="s2">"setools_runner"</span><span class="p">,</span>
+            <span class="s2">"psfex_runner"</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;shdus&quot;</span><span class="p">,</span>
+        <span class="s2">"shdus"</span><span class="p">,</span>
         <span class="n">n_mult</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
         <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-        <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;exp_runs&quot;</span><span class="p">,</span>
-        <span class="n">output_subdirs</span><span class="o">=</span><span class="s2">&quot;shdus&quot;</span><span class="p">,</span>
-        <span class="n">path_right</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+        <span class="n">path_left</span><span class="o">=</span><span class="s2">"exp_runs"</span><span class="p">,</span>
+        <span class="n">output_subdirs</span><span class="o">=</span><span class="s2">"shdus"</span><span class="p">,</span>
+        <span class="n">path_right</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
         <span class="n">path_output</span><span class="o">=</span><span class="p">[</span>
-            <span class="s2">&quot;output&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;output/rand_split&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;output/stat&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;logs&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;output&quot;</span><span class="p">,</span>
+            <span class="s2">"output"</span><span class="p">,</span>
+            <span class="s2">"output/rand_split"</span><span class="p">,</span>
+            <span class="s2">"output/stat"</span><span class="p">,</span>
+            <span class="s2">"logs"</span><span class="p">,</span>
+            <span class="s2">"output"</span><span class="p">,</span>
         <span class="p">],</span>
         <span class="n">special</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span>
         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;64&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
-        <span class="s2">&quot;64&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;run_sp_tile_PsViSmVi&quot;</span><span class="p">,</span>
+    <span class="n">jobs</span><span class="p">[</span><span class="s2">"64"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+        <span class="s2">"64"</span><span class="p">,</span>
+        <span class="s2">"run_sp_tile_PsViSmVi"</span><span class="p">,</span>
         <span class="p">[</span>
-            <span class="s2">&quot;psfex_interp_runner&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;psfex_interp_runner&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;vignetmaker_runner_run_1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;spread_model_runner&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;vignetmaker_runner_run_2&quot;</span><span class="p">,</span>
+            <span class="s2">"psfex_interp_runner"</span><span class="p">,</span>
+            <span class="s2">"psfex_interp_runner"</span><span class="p">,</span>
+            <span class="s2">"vignetmaker_runner_run_1"</span><span class="p">,</span>
+            <span class="s2">"spread_model_runner"</span><span class="p">,</span>
+            <span class="s2">"vignetmaker_runner_run_2"</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;tile_IDs&quot;</span><span class="p">,</span>
+        <span class="s2">"tile_IDs"</span><span class="p">,</span>
         <span class="n">n_mult</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
         <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-        <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;tile_runs&quot;</span><span class="p">,</span>
-        <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tile_ID</span><span class="si">}</span><span class="s2">/output&quot;</span> <span class="k">for</span> <span class="n">tile_ID</span> <span class="ow">in</span> <span class="n">list_tile_IDs_dot</span><span class="p">],</span>
-        <span class="n">path_output</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="s2">&quot;logs&quot;</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">],</span>
+        <span class="n">path_left</span><span class="o">=</span><span class="s2">"tile_runs"</span><span class="p">,</span>
+        <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">tile_ID</span><span class="si">}</span><span class="s2">/output"</span> <span class="k">for</span> <span class="n">tile_ID</span> <span class="ow">in</span> <span class="n">list_tile_IDs_dot</span><span class="p">],</span>
+        <span class="n">path_output</span><span class="o">=</span><span class="p">[</span><span class="s2">"output"</span><span class="p">,</span> <span class="s2">"logs"</span><span class="p">,</span> <span class="s2">"output"</span><span class="p">,</span> <span class="s2">"output"</span><span class="p">,</span> <span class="s2">"output"</span><span class="p">],</span>
         <span class="n">special</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span>
         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">patch</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;P2&quot;</span><span class="p">,</span> <span class="s2">&quot;P5&quot;</span><span class="p">,</span> <span class="s2">&quot;P8&quot;</span><span class="p">,</span> <span class="s2">&quot;P9&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">patch</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"P2"</span><span class="p">,</span> <span class="s2">"P5"</span><span class="p">,</span> <span class="s2">"P8"</span><span class="p">,</span> <span class="s2">"P9"</span><span class="p">):</span>
         <span class="n">n_sh</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">n_sh</span> <span class="o">=</span> <span class="mi">8</span>
-    <span class="n">run_dirs</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;run_sp_tile_ngmix_Ng</span><span class="si">{</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">u&quot;</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sh</span><span class="p">)]</span>
+    <span class="n">run_dirs</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"run_sp_tile_ngmix_Ng</span><span class="si">{</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">u"</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sh</span><span class="p">)]</span>
 
     <span class="c1"># Add special (unfinished run)</span>
-    <span class="n">run_dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;run_sp_tile_ngmix_Ng1u&quot;</span><span class="p">)</span>
+    <span class="n">run_dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"run_sp_tile_ngmix_Ng1u"</span><span class="p">)</span>
 
     <span class="n">output_path_missing_IDs</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path_main</span><span class="si">}</span><span class="s2">/summary/missing_job_128_ngmix_runner_</span><span class="si">{</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">.txt&quot;</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path_main</span><span class="si">}</span><span class="s2">/summary/missing_job_128_ngmix_runner_</span><span class="si">{</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">.txt"</span>
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sh</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
     <span class="p">]</span>
-    <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;128&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
-        <span class="s2">&quot;128&quot;</span><span class="p">,</span>
+    <span class="n">jobs</span><span class="p">[</span><span class="s2">"128"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+        <span class="s2">"128"</span><span class="p">,</span>
         <span class="n">run_dirs</span><span class="p">,</span>
-        <span class="p">[</span><span class="s2">&quot;ngmix_runner&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_sh</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-        <span class="s2">&quot;tile_IDs&quot;</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">"ngmix_runner"</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_sh</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="s2">"tile_IDs"</span><span class="p">,</span>
         <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-        <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;tile_runs&quot;</span><span class="p">,</span>
-        <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tile_ID</span><span class="si">}</span><span class="s2">/output&quot;</span> <span class="k">for</span> <span class="n">tile_ID</span> <span class="ow">in</span> <span class="n">list_tile_IDs_dot</span><span class="p">],</span>
-        <span class="n">path_output</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_sh</span> <span class="o">+</span>  <span class="p">[</span><span class="s2">&quot;logs&quot;</span><span class="p">],</span>
+        <span class="n">path_left</span><span class="o">=</span><span class="s2">"tile_runs"</span><span class="p">,</span>
+        <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">tile_ID</span><span class="si">}</span><span class="s2">/output"</span> <span class="k">for</span> <span class="n">tile_ID</span> <span class="ow">in</span> <span class="n">list_tile_IDs_dot</span><span class="p">],</span>
+        <span class="n">path_output</span><span class="o">=</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_sh</span> <span class="o">+</span>  <span class="p">[</span><span class="s2">"logs"</span><span class="p">],</span>
         <span class="n">special</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_sh</span> <span class="o">+</span> <span class="p">[</span><span class="kc">True</span><span class="p">],</span>
         <span class="n">output_path_missing_IDs</span><span class="o">=</span><span class="n">output_path_missing_IDs</span><span class="p">,</span>
         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;256&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
-        <span class="s2">&quot;256&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;run_sp_Ms&quot;</span><span class="p">,</span>
-        <span class="p">[</span><span class="s2">&quot;merge_sep_cats_runner&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
-        <span class="s2">&quot;tile_IDs&quot;</span><span class="p">,</span>
+    <span class="n">jobs</span><span class="p">[</span><span class="s2">"256"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+        <span class="s2">"256"</span><span class="p">,</span>
+        <span class="s2">"run_sp_Ms"</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">"merge_sep_cats_runner"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">"tile_IDs"</span><span class="p">,</span>
         <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-        <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;tile_runs&quot;</span><span class="p">,</span>
-        <span class="n">path_output</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="s2">&quot;logs&quot;</span><span class="p">],</span>
+        <span class="n">path_left</span><span class="o">=</span><span class="s2">"tile_runs"</span><span class="p">,</span>
+        <span class="n">path_output</span><span class="o">=</span><span class="p">[</span><span class="s2">"output"</span><span class="p">,</span> <span class="s2">"logs"</span><span class="p">],</span>
         <span class="n">special</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span>
-        <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tile_ID</span><span class="si">}</span><span class="s2">/output&quot;</span> <span class="k">for</span> <span class="n">tile_ID</span> <span class="ow">in</span> <span class="n">list_tile_IDs_dot</span><span class="p">],</span>
+        <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">tile_ID</span><span class="si">}</span><span class="s2">/output"</span> <span class="k">for</span> <span class="n">tile_ID</span> <span class="ow">in</span> <span class="n">list_tile_IDs_dot</span><span class="p">],</span>
         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;512&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
-        <span class="s2">&quot;512&quot;</span><span class="p">,</span>
-        <span class="p">[</span><span class="s2">&quot;run_sp_Mc&quot;</span><span class="p">],</span>
-        <span class="p">[</span><span class="s2">&quot;make_cat_runner&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;tile_IDs&quot;</span><span class="p">,</span>
+    <span class="n">jobs</span><span class="p">[</span><span class="s2">"512"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+        <span class="s2">"512"</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">"run_sp_Mc"</span><span class="p">],</span>
+        <span class="p">[</span><span class="s2">"make_cat_runner"</span><span class="p">],</span>
+        <span class="s2">"tile_IDs"</span><span class="p">,</span>
         <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-        <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;tile_runs&quot;</span><span class="p">,</span>
-        <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tile_ID</span><span class="si">}</span><span class="s2">/output&quot;</span> <span class="k">for</span> <span class="n">tile_ID</span> <span class="ow">in</span> <span class="n">list_tile_IDs_dot</span><span class="p">],</span>
+        <span class="n">path_left</span><span class="o">=</span><span class="s2">"tile_runs"</span><span class="p">,</span>
+        <span class="n">output_subdirs</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">tile_ID</span><span class="si">}</span><span class="s2">/output"</span> <span class="k">for</span> <span class="n">tile_ID</span> <span class="ow">in</span> <span class="n">list_tile_IDs_dot</span><span class="p">],</span>
         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Post-processing</span>
-    <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;1024&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
-        <span class="s2">&quot;1024&quot;</span><span class="p">,</span>
-        <span class="p">[</span><span class="s2">&quot;run_sp_combined_final&quot;</span><span class="p">],</span>
-        <span class="p">[</span><span class="s2">&quot;make_catalog_runner&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;tile_IDs&quot;</span><span class="p">,</span>
+    <span class="n">jobs</span><span class="p">[</span><span class="s2">"1024"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+        <span class="s2">"1024"</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">"run_sp_combined_final"</span><span class="p">],</span>
+        <span class="p">[</span><span class="s2">"make_catalog_runner"</span><span class="p">],</span>
+        <span class="s2">"tile_IDs"</span><span class="p">,</span>
         <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-        <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+        <span class="n">path_left</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">jobs</span><span class="p">[</span><span class="s2">&quot;2048&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
-        <span class="s2">&quot;2048&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;run_sp_combined_psf&quot;</span><span class="p">,</span>
-        <span class="p">[</span><span class="s2">&quot;psfex_interp_runner&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;shdus&quot;</span><span class="p">,</span>
+    <span class="n">jobs</span><span class="p">[</span><span class="s2">"2048"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">job_data</span><span class="p">(</span>
+        <span class="s2">"2048"</span><span class="p">,</span>
+        <span class="s2">"run_sp_combined_psf"</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">"psfex_interp_runner"</span><span class="p">],</span>
+        <span class="s2">"shdus"</span><span class="p">,</span>
         <span class="n">path_main</span><span class="o">=</span><span class="n">path_main</span><span class="p">,</span>
-        <span class="n">path_left</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
+        <span class="n">path_left</span><span class="o">=</span><span class="s2">"output"</span><span class="p">,</span>
         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
     <span class="p">)</span>
 

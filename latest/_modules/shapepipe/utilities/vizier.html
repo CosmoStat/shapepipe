@@ -552,7 +552,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.utilities.vizier</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;VIZIER QUERY UTILITY.</span>
+<span></span><span class="sd">"""VIZIER QUERY UTILITY.</span>
 
 <span class="sd">Consolidated Vizier query helper used by the mask module (to fetch the</span>
 <span class="sd">reference star catalogue) and by ``scripts/python/create_star_cat.py``.</span>
@@ -560,7 +560,7 @@
 
 <span class="sd">:Author: Martin Kilbinger</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
@@ -572,9 +572,9 @@
 
 
 <span class="n">VIZIER_SERVERS</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;vizier.cds.unistra.fr&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;vizier.cfa.harvard.edu&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;vizier.iucaa.in&quot;</span><span class="p">,</span>
+    <span class="s2">"vizier.cds.unistra.fr"</span><span class="p">,</span>
+    <span class="s2">"vizier.cfa.harvard.edu"</span><span class="p">,</span>
+    <span class="s2">"vizier.iucaa.in"</span><span class="p">,</span>
 <span class="p">]</span>
 
 <span class="n">VIZIER_TIMEOUTS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">40</span><span class="p">]</span>
@@ -583,7 +583,7 @@
 <div class="viewcode-block" id="query_vizier">
 <a class="viewcode-back" href="../../../shapepipe.utilities.vizier.html#shapepipe.utilities.vizier.query_vizier">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">query_vizier</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">radius_arcmin</span><span class="p">,</span> <span class="n">cat_id</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Query a Vizier catalogue with retries over timeouts and mirror servers.</span>
+<span class="w">    </span><span class="sd">"""Query a Vizier catalogue with retries over timeouts and mirror servers.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -594,7 +594,7 @@
 <span class="sd">    radius_arcmin : float</span>
 <span class="sd">        Cone-search radius in arcminutes.</span>
 <span class="sd">    cat_id : str</span>
-<span class="sd">        Vizier catalogue identifier (e.g. ``&quot;I/305/out&quot;`` for GSC 2.3).</span>
+<span class="sd">        Vizier catalogue identifier (e.g. ``"I/305/out"`` for GSC 2.3).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -606,11 +606,11 @@
 <span class="sd">    IndexError</span>
 <span class="sd">        If all server/timeout combinations return an empty result.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Empirically, single-precision input positions can cause Vizier to return</span>
     <span class="c1"># empty lists for some exposures; force double precision.</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;double&quot;</span><span class="p">)</span>
-    <span class="n">coord</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="s2">&quot;icrs&quot;</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"double"</span><span class="p">)</span>
+    <span class="n">coord</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="s2">"icrs"</span><span class="p">)</span>
 
     <span class="c1"># Stagger concurrent queries to avoid hammering a single mirror.</span>
     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
@@ -625,27 +625,27 @@
             <span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Vizier query successful &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;(server=</span><span class="si">{</span><span class="n">server</span><span class="si">}</span><span class="s2">, timeout=</span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2">s)&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Vizier query successful "</span>
+                    <span class="sa">f</span><span class="s2">"(server=</span><span class="si">{</span><span class="n">server</span><span class="si">}</span><span class="s2">, timeout=</span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2">s)"</span>
                 <span class="p">)</span>
                 <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Vizier returned empty list at </span><span class="si">{</span><span class="n">coord</span><span class="si">}</span><span class="s2">, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">radius_arcmin</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> arcmin, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;server=</span><span class="si">{</span><span class="n">server</span><span class="si">}</span><span class="s2">, timeout=</span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2">s&quot;</span>
+                <span class="sa">f</span><span class="s2">"Vizier returned empty list at </span><span class="si">{</span><span class="n">coord</span><span class="si">}</span><span class="s2">, "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">radius_arcmin</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> arcmin, "</span>
+                <span class="sa">f</span><span class="s2">"server=</span><span class="si">{</span><span class="n">server</span><span class="si">}</span><span class="s2">, timeout=</span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2">s"</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">VIZIER_TIMEOUTS</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">wait</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="mi">2</span><span class="o">**</span><span class="n">attempt</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;All servers failed, retrying in </span><span class="si">{</span><span class="n">wait</span><span class="si">}</span><span class="s2">s &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;(attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">VIZIER_TIMEOUTS</span><span class="p">)</span><span class="si">}</span><span class="s2">, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;next timeout=</span><span class="si">{</span><span class="n">VIZIER_TIMEOUTS</span><span class="p">[</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">s)&quot;</span>
+                <span class="sa">f</span><span class="s2">"All servers failed, retrying in </span><span class="si">{</span><span class="n">wait</span><span class="si">}</span><span class="s2">s "</span>
+                <span class="sa">f</span><span class="s2">"(attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">VIZIER_TIMEOUTS</span><span class="p">)</span><span class="si">}</span><span class="s2">, "</span>
+                <span class="sa">f</span><span class="s2">"next timeout=</span><span class="si">{</span><span class="n">VIZIER_TIMEOUTS</span><span class="p">[</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">s)"</span>
             <span class="p">)</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">wait</span><span class="p">)</span>
 
     <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Vizier astroquery returned empty list at </span><span class="si">{</span><span class="n">coord</span><span class="si">}</span><span class="s2">, &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;radius=</span><span class="si">{</span><span class="n">radius_arcmin</span><span class="si">}</span><span class="s2"> arcmin, catalog=</span><span class="si">{</span><span class="n">cat_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"Vizier astroquery returned empty list at </span><span class="si">{</span><span class="n">coord</span><span class="si">}</span><span class="s2">, "</span>
+        <span class="sa">f</span><span class="s2">"radius=</span><span class="si">{</span><span class="n">radius_arcmin</span><span class="si">}</span><span class="s2"> arcmin, catalog=</span><span class="si">{</span><span class="n">cat_id</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span></div>
 
 </pre></div>

@@ -597,7 +597,7 @@ data should be processed.</p>
 <h2>Container Installation (Recommended)<a class="headerlink" href="#container-installation-recommended" title="Link to this heading">#</a></h2>
 <p>The easiest way to install ShapePipe is via a container. Docker images are automatically built and pushed to the <a class="reference internal" href="#ghcr.io/cosmostat/shapepipe"><span class="xref myst">Github Container Registry (GHCR)</span></a> on every push. Two image targets are published per branch — the default tag is the rich <code class="docutils literal notranslate"><span class="pre">dev</span></code> image; <code class="docutils literal notranslate"><span class="pre">&lt;tag&gt;-runtime</span></code> is a slim variant for batch jobs. See <a class="reference internal" href="container.html"><span class="std std-doc">Container Workflow</span></a> for the full rationale and the relationship between <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>, and the <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>.</p>
 <p>We recommend running the image with <strong>Apptainer</strong> (formerly Singularity) which is installed on most HPC clusters. To simply run the image, use the following command:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># build writeable &quot;sandbox&quot; container in the current directory</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># build writeable "sandbox" container in the current directory</span>
 <span class="c1"># ./shapepipe will be a directory that functions like a vm</span>
 apptainer<span class="w"> </span>build<span class="w"> </span>--sandbox<span class="w"> </span>shapepipe<span class="w"> </span>docker://ghcr.io/cosmostat/shapepipe:develop
 
@@ -640,7 +640,7 @@ against the package, but not to run the full pipeline.</p>
 <p>For a development checkout with the test, lint, and doc tools, install the
 <code class="docutils literal notranslate"><span class="pre">dev</span></code> extra (ideally into a fresh virtual environment, e.g. one managed by
 <a class="reference external" href="https://docs.astral.sh/uv/">uv</a>):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev]"</span>
 </pre></div>
 </div>
 </section>

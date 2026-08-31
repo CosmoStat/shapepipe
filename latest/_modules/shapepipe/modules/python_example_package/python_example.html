@@ -552,7 +552,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.python_example_package.python_example</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;PYTHON EXAMPLE.</span>
+<span></span><span class="sd">"""PYTHON EXAMPLE.</span>
 
 <span class="sd">This module contains an example Python class.</span>
 
@@ -562,7 +562,7 @@
 <span class="sd">  This is a example module. It should only be used for running tests or as a</span>
 <span class="sd">  reference for developing new modules.</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
@@ -572,7 +572,7 @@
 <div class="viewcode-block" id="PythonExample">
 <a class="viewcode-back" href="../../../../shapepipe.modules.python_example_package.python_example.html#shapepipe.modules.python_example_package.python_example.PythonExample">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PythonExample</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Python Example.</span>
+<span class="w">    </span><span class="sd">"""Python Example.</span>
 
 <span class="sd">    An example Python class.</span>
 
@@ -581,7 +581,7 @@
 <span class="sd">    sleep_time : int</span>
 <span class="sd">        Sleep time in seconds</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sleep_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
@@ -594,18 +594,18 @@
 <div class="viewcode-block" id="PythonExample._wait">
 <a class="viewcode-back" href="../../../../shapepipe.modules.python_example_package.python_example.html#shapepipe.modules.python_example_package.python_example.PythonExample._wait">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wait.</span>
+<span class="w">        </span><span class="sd">"""Wait.</span>
 
 <span class="sd">        Wait for :math:`n` seconds.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sleep_time</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PythonExample._read_file">
 <a class="viewcode-back" href="../../../../shapepipe.modules.python_example_package.python_example.html#shapepipe.modules.python_example_package.python_example.PythonExample._read_file">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read File.</span>
+<span class="w">        </span><span class="sd">"""Read File.</span>
 
 <span class="sd">        Read input file content.</span>
 
@@ -619,9 +619,9 @@
 <span class="sd">        str</span>
 <span class="sd">            Content of file</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span> <span class="k">as</span> <span class="n">data_file</span><span class="p">:</span>
-            <span class="n">content</span> <span class="o">=</span> <span class="n">data_file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">data_file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">content</span></div>
 
@@ -629,7 +629,7 @@
 <div class="viewcode-block" id="PythonExample.read_files">
 <a class="viewcode-back" href="../../../../shapepipe.modules.python_example_package.python_example.html#shapepipe.modules.python_example_package.python_example.PythonExample.read_files">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">read_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name1</span><span class="p">,</span> <span class="n">file_name2</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read Files.</span>
+<span class="w">        </span><span class="sd">"""Read Files.</span>
 
 <span class="sd">        Read two input files.</span>
 
@@ -640,18 +640,18 @@
 <span class="sd">        file_name2 : str</span>
 <span class="sd">            Name of second file</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_wait</span><span class="p">()</span>
         <span class="n">content1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_file</span><span class="p">(</span><span class="n">file_name1</span><span class="p">)</span>
         <span class="n">content2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_file</span><span class="p">(</span><span class="n">file_name2</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">content1</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">content2</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">content1</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">content2</span><span class="si">}</span><span class="s2">"</span></div>
 
 
 <div class="viewcode-block" id="PythonExample.write_file">
 <a class="viewcode-back" href="../../../../shapepipe.modules.python_example_package.python_example.html#shapepipe.modules.python_example_package.python_example.PythonExample.write_file">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">write_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write File.</span>
+<span class="w">        </span><span class="sd">"""Write File.</span>
 
 <span class="sd">        Write content to file.</span>
 
@@ -662,10 +662,10 @@
 <span class="sd">        Message : str</span>
 <span class="sd">            Content to write to file</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">new_content</span> <span class="o">=</span> <span class="n">message</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
 
-        <span class="n">text_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">text_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span>
         <span class="n">text_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">new_content</span><span class="p">)</span>
         <span class="n">text_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 </div>

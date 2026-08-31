@@ -552,14 +552,14 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.modules.match_external_package.match_external</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;MATCH EXTERNAL.</span>
+<span></span><span class="sd">"""MATCH EXTERNAL.</span>
 
 <span class="sd">This module matches an external catalogue to a ShapePipe (SExtractor)</span>
 <span class="sd">catalogue.</span>
 
 <span class="sd">:Authors: Martin Kilbinger, Xavier Jimenez</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
@@ -571,7 +571,7 @@
 <div class="viewcode-block" id="get_cat">
 <a class="viewcode-back" href="../../../../shapepipe.modules.match_external_package.match_external.html#shapepipe.modules.match_external_package.match_external.get_cat">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_cat</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Catalogue.</span>
+<span class="w">    </span><span class="sd">"""Get Catalogue.</span>
 
 <span class="sd">    Open a FITS catalogue.</span>
 
@@ -585,7 +585,7 @@
 <span class="sd">    file_io.FITSCatalogue</span>
 <span class="sd">        Open FITS catalogue object</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="n">cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
 
@@ -596,7 +596,7 @@
 <div class="viewcode-block" id="get_data">
 <a class="viewcode-back" href="../../../../shapepipe.modules.match_external_package.match_external.html#shapepipe.modules.match_external_package.match_external.get_data">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_data</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">hdu_no</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Data.</span>
+<span class="w">    </span><span class="sd">"""Get Data.</span>
 
 <span class="sd">    Extract data from a given catalogue HDU.</span>
 
@@ -612,7 +612,7 @@
 <span class="sd">    tuple</span>
 <span class="sd">        Data, column names and extension names</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cat</span> <span class="o">=</span> <span class="n">get_cat</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">hdu_no</span><span class="p">)</span>
     <span class="n">col_names</span> <span class="o">=</span> <span class="n">cat</span><span class="o">.</span><span class="n">get_col_names</span><span class="p">(</span><span class="n">hdu_no</span><span class="o">=</span><span class="n">hdu_no</span><span class="p">)</span>
@@ -626,7 +626,7 @@
 <div class="viewcode-block" id="get_ra_dec">
 <a class="viewcode-back" href="../../../../shapepipe.modules.match_external_package.match_external.html#shapepipe.modules.match_external_package.match_external.get_ra_dec">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_ra_dec</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">col_ra</span><span class="p">,</span> <span class="n">col_dec</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get RA and Dec.</span>
+<span class="w">    </span><span class="sd">"""Get RA and Dec.</span>
 
 <span class="sd">    Get RA and Dec from input data array.</span>
 
@@ -644,7 +644,7 @@
 <span class="sd">    tuple</span>
 <span class="sd">        RA and Dec values</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">ra</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">col_ra</span><span class="p">]</span>
     <span class="n">dec</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">col_dec</span><span class="p">]</span>
 
@@ -655,7 +655,7 @@
 <div class="viewcode-block" id="MatchCats">
 <a class="viewcode-back" href="../../../../shapepipe.modules.match_external_package.match_external.html#shapepipe.modules.match_external_package.match_external.MatchCats">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MatchCats</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Match Catalogues.</span>
+<span class="w">    </span><span class="sd">"""Match Catalogues.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -687,7 +687,7 @@
 <span class="sd">    output_distance : bool, optional</span>
 <span class="sd">        Output distance between matches if ``True``, default is ``False``</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -727,11 +727,11 @@
 <div class="viewcode-block" id="MatchCats.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.match_external_package.match_external.html#shapepipe.modules.match_external_package.match_external.MatchCats.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process.</span>
+<span class="w">        </span><span class="sd">"""Process.</span>
 
 <span class="sd">        Process catalogues.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Load external and internal data</span>
         <span class="n">external_data</span><span class="p">,</span> <span class="n">dummy1</span><span class="p">,</span> <span class="n">dummy2</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_external_cat_path</span><span class="p">,</span>
@@ -742,14 +742,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_external_col_match</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_external_col_match</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
         <span class="p">)</span>
-        <span class="n">external_coord</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">external_ra</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">external_dec</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+        <span class="n">external_coord</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">external_ra</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">external_dec</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"deg"</span><span class="p">)</span>
 
         <span class="n">data</span><span class="p">,</span> <span class="n">col_names</span><span class="p">,</span> <span class="n">ext_names</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_hdu_no</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="n">get_ra_dec</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_col_match</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_col_match</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">coord</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">dec</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+        <span class="n">coord</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">dec</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"deg"</span><span class="p">)</span>
 
         <span class="c1"># Match objects in external cat to internal cat. indices=indices to</span>
         <span class="c1"># external object for each object in internal cat e.g.</span>
@@ -765,8 +765,8 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">indices_close</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;No match for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> with distance &lt; &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tolerance</span><span class="si">}</span><span class="s2"> arcsec found, no output created.&quot;</span>
+                <span class="sa">f</span><span class="s2">"No match for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> with distance &lt; "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tolerance</span><span class="si">}</span><span class="s2"> arcsec found, no output created."</span>
             <span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
@@ -793,7 +793,7 @@
                 <span class="n">id_ext</span> <span class="o">=</span> <span class="n">id_ext_sub</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">id_sub</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects matched out of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">id_sub</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects matched out of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
 
             <span class="c1"># Copy matched objects from internal catalogue to output data</span>
@@ -812,7 +812,7 @@
             <span class="c1"># Output distance if desired</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_distance</span><span class="p">:</span>
                 <span class="c1"># Output distance in arcsec</span>
-                <span class="n">matched</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d2d</span><span class="p">[</span><span class="n">id_data</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;arcsec&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">matched</span><span class="p">[</span><span class="s2">"distance"</span><span class="p">]</span> <span class="o">=</span> <span class="n">d2d</span><span class="p">[</span><span class="n">id_data</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">"arcsec"</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
 
             <span class="c1"># Write FITS file</span>
             <span class="n">out_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
@@ -822,13 +822,13 @@
             <span class="p">)</span>
             <span class="n">out_cat</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span>
                 <span class="n">data</span><span class="o">=</span><span class="n">matched</span><span class="p">,</span>
-                <span class="n">ext_name</span><span class="o">=</span><span class="s2">&quot;MATCHED&quot;</span><span class="p">,</span>
+                <span class="n">ext_name</span><span class="o">=</span><span class="s2">"MATCHED"</span><span class="p">,</span>
             <span class="p">)</span>
 
             <span class="c1"># Write all extensions if in multi-epoch mode</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">==</span> <span class="s2">&quot;MULTI-EPOCH&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">==</span> <span class="s2">"MULTI-EPOCH"</span><span class="p">:</span>
                 <span class="n">hdu_me_list</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ext_names</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;EPOCH&quot;</span> <span class="ow">in</span> <span class="n">name</span>
+                    <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ext_names</span><span class="p">)</span> <span class="k">if</span> <span class="s2">"EPOCH"</span> <span class="ow">in</span> <span class="n">name</span>
                 <span class="p">]</span>
                 <span class="k">for</span> <span class="n">hdu_me</span> <span class="ow">in</span> <span class="n">hdu_me_list</span><span class="p">:</span>
                     <span class="n">data_me</span><span class="p">,</span> <span class="n">col_names_me</span><span class="p">,</span> <span class="n">dummy</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span>

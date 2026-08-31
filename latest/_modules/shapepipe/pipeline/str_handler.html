@@ -552,13 +552,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for shapepipe.pipeline.str_handler</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;STRING HANDLER.</span>
+<span></span><span class="sd">"""STRING HANDLER.</span>
 
 <span class="sd">This module defines a class for handling string operations.</span>
 
 <span class="sd">:Author: Axel Guinot</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">operator</span>
@@ -571,7 +571,7 @@
 <div class="viewcode-block" id="StrInterpreter">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">StrInterpreter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;String Interpreter Class.</span>
+<span class="w">    </span><span class="sd">"""String Interpreter Class.</span>
 
 <span class="sd">    Class to handle operation/comparison in a string.</span>
 
@@ -590,12 +590,12 @@
 <span class="sd">    autorun : bool</span>
 <span class="sd">        If true return directly the result</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">catalogue</span><span class="p">,</span> <span class="n">make_compare</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mask_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">string</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;string has to be str type&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"string has to be str type"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_string</span> <span class="o">=</span> <span class="n">string</span>
 
@@ -608,7 +608,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_cat</span> <span class="o">=</span> <span class="n">catalogue</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;catalogue not provided&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"catalogue not provided"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_make_compare</span> <span class="o">=</span> <span class="n">make_compare</span>
 
@@ -617,12 +617,12 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_stat_function</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_comp_dict</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;&lt;&quot;</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">,</span>
-            <span class="s2">&quot;&gt;&quot;</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">gt</span><span class="p">,</span>
-            <span class="s2">&quot;&lt;=&quot;</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">le</span><span class="p">,</span>
-            <span class="s2">&quot;&gt;=&quot;</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">ge</span><span class="p">,</span>
-            <span class="s2">&quot;==&quot;</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">eq</span><span class="p">,</span>
-            <span class="s2">&quot;!=&quot;</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">ne</span><span class="p">,</span>
+            <span class="s2">"&lt;"</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">,</span>
+            <span class="s2">"&gt;"</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">gt</span><span class="p">,</span>
+            <span class="s2">"&lt;="</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">le</span><span class="p">,</span>
+            <span class="s2">"&gt;="</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">ge</span><span class="p">,</span>
+            <span class="s2">"=="</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">eq</span><span class="p">,</span>
+            <span class="s2">"!="</span><span class="p">:</span> <span class="n">operator</span><span class="o">.</span><span class="n">ne</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpret</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_string</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_compare</span><span class="p">)</span>
@@ -636,7 +636,7 @@
         <span class="n">make_func</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">make_operate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpret.</span>
+<span class="w">        </span><span class="sd">"""Interpret.</span>
 
 <span class="sd">        This function handles the different possible operations</span>
 
@@ -660,12 +660,12 @@
 <span class="sd">        -----</span>
 <span class="sd">        This is a recursive function.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">make_compare</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compare</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">make_operate</span><span class="p">:</span>
-                <span class="n">string_split</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\*|\/|\-|\+\s*(?![^()]*\))&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
+                <span class="n">string_split</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\*|\/|\-|\+\s*(?![^()]*\))"</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operate</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">string_split</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">make_func</span><span class="p">:</span>
@@ -679,7 +679,7 @@
 <div class="viewcode-block" id="StrInterpreter._compare">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._compare">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_compare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle Comparison in a String.</span>
+<span class="w">        </span><span class="sd">"""Handle Comparison in a String.</span>
 
 <span class="sd">        This function transform condition in a string to real condition.</span>
 
@@ -688,15 +688,15 @@
 <span class="sd">        string : str</span>
 <span class="sd">            strind containing the comparison.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">comp</span> <span class="o">=</span> <span class="s2">&quot;&lt;|&gt;|&lt;=|&gt;=|==|!=&quot;</span>
+<span class="sd">        """</span>
+        <span class="n">comp</span> <span class="o">=</span> <span class="s2">"&lt;|&gt;|&lt;=|&gt;=|==|!="</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">string</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                <span class="s2">&quot;Only one comparison in [&lt;, &gt;, &lt;=, &gt;=, ==, !=] per line&quot;</span>
+                <span class="s2">"Only one comparison in [&lt;, &gt;, &lt;=, &gt;=, ==, !=] per line"</span>
             <span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">operator</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;&lt;=&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;==&quot;</span><span class="p">,</span> <span class="s2">&quot;!=&quot;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">operator</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"&lt;="</span><span class="p">,</span> <span class="s2">"&gt;="</span><span class="p">,</span> <span class="s2">"&lt;"</span><span class="p">,</span> <span class="s2">"&gt;"</span><span class="p">,</span> <span class="s2">"=="</span><span class="p">,</span> <span class="s2">"!="</span><span class="p">]:</span>
             <span class="n">terms</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">terms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_make_compare</span> <span class="o">=</span> <span class="kc">False</span>
@@ -709,7 +709,7 @@
 <div class="viewcode-block" id="StrInterpreter._apply_func">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._apply_func">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse Input String for Function Name and Apply Function.</span>
+<span class="w">        </span><span class="sd">"""Parse Input String for Function Name and Apply Function.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -721,8 +721,8 @@
 <span class="sd">        float</span>
 <span class="sd">            result of the function</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">str_split</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\(|\)&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">str_split</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\(|\)"</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">str_split</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpret</span><span class="p">(</span>
@@ -732,7 +732,7 @@
                 <span class="n">make_operate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">str_split</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">str_split_2</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="n">str_split</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">str_split_2</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="n">str_split</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">str_split_2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">param</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">interpret</span><span class="p">(</span>
@@ -755,8 +755,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">str_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Invalid function &#39;</span><span class="si">{</span><span class="n">str_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39; in expression &quot;</span>
-                        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                        <span class="sa">f</span><span class="s2">"Invalid function '</span><span class="si">{</span><span class="n">str_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">' in expression "</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s2">'"</span>
                     <span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="n">str_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]](</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">interpret</span><span class="p">(</span>
@@ -768,41 +768,41 @@
                 <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                <span class="s2">&quot;Only one function can be applied. Problem with the &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;term: </span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="s2">"Only one function can be applied. Problem with the "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"term: </span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StrInterpreter._init_stat_function">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._init_stat_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_init_stat_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise Available Stat Functions.</span>
+<span class="w">        </span><span class="sd">"""Initialise Available Stat Functions.</span>
 
 <span class="sd">        Create a dictionary containing the functions.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;median&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;sqrt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;pow&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">pow</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;log10&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;exp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;var&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;sigma_mad&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_mad</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;len&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">&quot;homogen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_homogeneity</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"mean"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"median"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"mode"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"sqrt"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"pow"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">pow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"log"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"log10"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"exp"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"std"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"var"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"sigma_mad"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_mad</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"len"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"min"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"max"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"homogen"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_homogeneity</span></div>
 
 
 <div class="viewcode-block" id="StrInterpreter._mean">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._mean">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Mean.</span>
+<span class="w">        </span><span class="sd">"""Get Mean.</span>
 
 <span class="sd">        Compute the mean of a distribution.</span>
 
@@ -816,7 +816,7 @@
 <span class="sd">        float</span>
 <span class="sd">            mean, if input array has size &gt; 0; -1, otherwise</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">cat_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">cat_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
@@ -827,7 +827,7 @@
 <div class="viewcode-block" id="StrInterpreter._mode">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._mode">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">iter_max</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Mode.</span>
+<span class="w">        </span><span class="sd">"""Get Mode.</span>
 
 <span class="sd">        Compute the mode, the most frequent value of a continuous distribution.</span>
 
@@ -847,7 +847,7 @@
 <span class="sd">            median, if input array has &gt;0 and &lt;10 elements;</span>
 <span class="sd">            -1, if input array has 0 elements</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">cat_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">cat_size</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
             <span class="n">bins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">cat_size</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span><span class="p">)</span>
@@ -865,8 +865,8 @@
         <span class="k">while</span> <span class="n">diff</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Mode computation failed: zoom window emptied out&quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot; after </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2"> iterations&quot;</span>
+                    <span class="s2">"Mode computation failed: zoom window emptied out"</span>
+                    <span class="sa">f</span><span class="s2">" after </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2"> iterations"</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ptp</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">eps</span><span class="p">:</span>
                 <span class="c1"># The zoom window has degenerated: the remaining values span</span>
@@ -893,9 +893,9 @@
 
         <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="n">iter_max</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Mode computation did not converge after </span><span class="si">{</span><span class="n">iter_max</span><span class="si">}</span><span class="s2"> &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;iterations (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects left in zoom window, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;value range [</span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s2">])&quot;</span>
+                <span class="sa">f</span><span class="s2">"Mode computation did not converge after </span><span class="si">{</span><span class="n">iter_max</span><span class="si">}</span><span class="s2"> "</span>
+                <span class="sa">f</span><span class="s2">"iterations (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects left in zoom window, "</span>
+                <span class="sa">f</span><span class="s2">"value range [</span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s2">])"</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">mode</span> <span class="o">=</span> <span class="p">(</span><span class="n">b_min</span> <span class="o">+</span> <span class="n">b_max</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
@@ -905,7 +905,7 @@
 <div class="viewcode-block" id="StrInterpreter._sigma_mad">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._sigma_mad">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_sigma_mad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Mean Absolute Deviation.</span>
+<span class="w">        </span><span class="sd">"""Get Mean Absolute Deviation.</span>
 
 <span class="sd">        Compute median absolute deviation (MAD).</span>
 
@@ -920,7 +920,7 @@
 <span class="sd">            MAD, if input size &gt; 0;</span>
 <span class="sd">            -1 if input size is 0</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
@@ -930,7 +930,7 @@
 <div class="viewcode-block" id="StrInterpreter._test_homogeneity">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._test_homogeneity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_test_homogeneity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test Homogeneity.</span>
+<span class="w">        </span><span class="sd">"""Test Homogeneity.</span>
 
 <span class="sd">        Test homogeneity on 1D or 2D space.</span>
 
@@ -949,7 +949,7 @@
 <span class="sd">            Percentage of inhomogeneity compared to worse possible case</span>
 <span class="sd">            (based on the standard deviation)</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">n_param</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="n">param</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
@@ -960,18 +960,18 @@
             <span class="n">n_cells</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Inputs should be param_1, param_2 [optional], n_cells&quot;</span>
+                <span class="s2">"Inputs should be param_1, param_2 [optional], n_cells"</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">n_param</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Both param_1 and param_2 must have the same &quot;</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;length : </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="s2">"Both param_1 and param_2 must have the same "</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">"length : </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n_cells</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;N_cells must be a square number&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"N_cells must be a square number"</span><span class="p">)</span>
 
         <span class="n">n_tot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">homo_ratio</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_tot</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_cells</span><span class="p">)</span>
@@ -1038,9 +1038,9 @@
 <div class="viewcode-block" id="StrInterpreter._operate">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._operate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_operate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">string_split</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle Operation in a String.</span>
+<span class="w">        </span><span class="sd">"""Handle Operation in a String.</span>
 
-<span class="sd">        Make operation between catalogue&#39;s parameters and/or numbers.</span>
+<span class="sd">        Make operation between catalogue's parameters and/or numbers.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1056,57 +1056,57 @@
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
-<span class="sd">        It&#39;s used as a recursive function</span>
+<span class="sd">        It's used as a recursive function</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">op</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;\*|\/|\-|\+\s*(?![^()]*\))&quot;</span>
+<span class="sd">        """</span>
+        <span class="n">op</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"\*|\/|\-|\+\s*(?![^()]*\))"</span>
         <span class="k">if</span> <span class="n">string</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Parameter not specified&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Parameter not specified"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">string_split</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Parameters splited not specified&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Parameters splited not specified"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">string</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpret</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">make_operate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_string_op_func</span><span class="p">(</span>
-            <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\+\s*(?![^()]*\))&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>
+            <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\+\s*(?![^()]*\))"</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>
             <span class="n">string_split</span><span class="p">,</span>
             <span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">,</span>
             <span class="mi">0</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tmp</span> <span class="o">!=</span> <span class="s2">&quot;pass&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tmp</span> <span class="o">!=</span> <span class="s2">"pass"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">tmp</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_string_op_func</span><span class="p">(</span>
-                <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\-\s*(?![^()]*\))&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>
+                <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\-\s*(?![^()]*\))"</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>
                 <span class="n">string_split</span><span class="p">,</span>
                 <span class="n">operator</span><span class="o">.</span><span class="n">sub</span><span class="p">,</span>
-                <span class="s2">&quot;init&quot;</span><span class="p">,</span>
+                <span class="s2">"init"</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tmp</span> <span class="o">!=</span> <span class="s2">&quot;pass&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tmp</span> <span class="o">!=</span> <span class="s2">"pass"</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">tmp</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_string_op_func</span><span class="p">(</span>
-                    <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\*\s*(?![^()]*\))&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>
+                    <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\*\s*(?![^()]*\))"</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>
                     <span class="n">string_split</span><span class="p">,</span>
                     <span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">,</span>
                     <span class="mi">1</span><span class="p">,</span>
                 <span class="p">)</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tmp</span> <span class="o">!=</span> <span class="s2">&quot;pass&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tmp</span> <span class="o">!=</span> <span class="s2">"pass"</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">tmp</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_string_op_func</span><span class="p">(</span>
-                        <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\/\s*(?![^()]*\))&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>
+                        <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\/\s*(?![^()]*\))"</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>
                         <span class="n">string_split</span><span class="p">,</span>
                         <span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">,</span>
-                        <span class="s2">&quot;init&quot;</span><span class="p">,</span>
+                        <span class="s2">"init"</span><span class="p">,</span>
                     <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StrInterpreter._string_op_func">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._string_op_func">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_string_op_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string_op</span><span class="p">,</span> <span class="n">string_split</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">tmp</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Perform a Specified Operation.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Perform a Specified Operation.</span>
 
 <span class="sd">        This function handle the posible operation between parameters.</span>
 
@@ -1116,7 +1116,7 @@
 <span class="sd">            List of parameters to operate.</span>
 <span class="sd">        string_split : list</span>
 <span class="sd">            The different parameter splitted using</span>
-<span class="sd">            &#39;\*|\/|\-|\+\s*(?![^()]*\))&#39; as delimiter.</span>
+<span class="sd">            '\*|\/|\-|\+\s*(?![^()]*\))' as delimiter.</span>
 <span class="sd">        op : func</span>
 <span class="sd">            The kind of operation provided as an operator function</span>
 <span class="sd">            (Example : operator.sub).</span>
@@ -1127,12 +1127,12 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        float or str</span>
-<span class="sd">            Result of the operation or &#39;pass&#39; if there are remaining operations</span>
+<span class="sd">            Result of the operation or 'pass' if there are remaining operations</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">string_op</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">operator</span> <span class="ow">in</span> <span class="n">string_op</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">tmp</span> <span class="o">==</span> <span class="s2">&quot;init&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">tmp</span> <span class="o">==</span> <span class="s2">"init"</span><span class="p">:</span>
                     <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operate</span><span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="n">string_split</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">tmp</span> <span class="o">=</span> <span class="n">op</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operate</span><span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="n">string_split</span><span class="p">))</span>
@@ -1148,13 +1148,13 @@
                 <span class="n">second</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operate</span><span class="p">(</span><span class="n">string_op</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">string_split</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">op</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;pass&quot;</span></div>
+            <span class="k">return</span> <span class="s2">"pass"</span></div>
 
 
 <div class="viewcode-block" id="StrInterpreter._get_value">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._get_value">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Value.</span>
+<span class="w">        </span><span class="sd">"""Get Value.</span>
 
 <span class="sd">        Return the value of the corresponding parameter. Or return a float</span>
 <span class="sd">        with a number as parameter.</span>
@@ -1171,24 +1171,24 @@
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
-<span class="sd">        You can&#39;t perform operations here!</span>
+<span class="sd">        You can't perform operations here!</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">string</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Parameter not specified&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Parameter not specified"</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">string_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">string_value</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="n">str_split</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\{|\}&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
+            <span class="n">str_split</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\{|\}"</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">str_split</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat</span><span class="p">[</span><span class="n">string</span><span class="p">]</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="s2">&quot;String has to be a float or a catalogue parameter. &quot;</span>
-                        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s2"> not found&quot;</span>
+                        <span class="s2">"String has to be a float or a catalogue parameter. "</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s2"> not found"</span>
                     <span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">str_split</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">str_split</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -1196,13 +1196,13 @@
                         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat</span><span class="p">[</span><span class="n">str_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="bp">self</span><span class="o">.</span><span class="n">_mask</span><span class="p">[</span><span class="n">str_split</span><span class="p">[</span><span class="mi">1</span><span class="p">]]]</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                            <span class="s2">&quot;String has to be a catalogue parameter. &quot;</span>
-                            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">str_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span>
+                            <span class="s2">"String has to be a catalogue parameter. "</span>
+                            <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">str_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found"</span>
                         <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Mask has to be provided. </span><span class="si">{</span><span class="n">str_split</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> not &quot;</span>
-                        <span class="o">+</span> <span class="s2">&quot;found in mask&quot;</span>
+                        <span class="sa">f</span><span class="s2">"Mask has to be provided. </span><span class="si">{</span><span class="n">str_split</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> not "</span>
+                        <span class="o">+</span> <span class="s2">"found in mask"</span>
                     <span class="p">)</span></div>
 </div>
 
