@@ -38,8 +38,8 @@ docker pull ghcr.io/cosmostat/shapepipe:develop-runtime
 We do not currently build images for Apple Silicon/amr64; however the amd64 images should work on these systems, albeit with reduced performance.
 ```
 
-The image bundles the astromatic binaries (`source-extractor`, `psfex`,
-`weightwatcher`), MPI (`mpi4py` + OpenMPI), and every Python dependency, so
+The image bundles the astromatic binaries (`source-extractor`, `psfex`),
+MPI (`mpi4py` + OpenMPI), and every Python dependency, so
 there is nothing else to install or build. To process data on a cluster with
 MPI, run the pipeline through Apptainer the same way you would any MPI job.
 

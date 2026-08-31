@@ -44,11 +44,11 @@ Naming and numbering of the input files can closely follow the original image na
   A stacked image is also called *tile*. These files are used on input by `ShapePipe`.
   The pixel data can contain the observed image, a weight map, or a flag map. Tile images and weights are created in the
   case of CFIS by Stephen Gwyn using a combination of `swarp` and his own software. Examples of file names are
-  `CFIS.316.246.r.fits`, `CFIS.205.267.r.weight.fits.fz`, the latter is a compressed FITS file, see below. Tile flag files
-  are created the mask module of `ShapePipe` (see [Mask images](#mask-images)). The tile ID needs to be modified such that the `.` between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. For the same reason, the extension `.fits.fz` is changed to `.fitzfz`. In addition, for
+  `CFIS.316.246.r.fits`, `CFIS.205.267.r.weight.fits.fz`, the latter is a compressed FITS file, see below. Tiles have no flag file
+  (see [Masks](#masks)). The tile ID needs to be modified such that the `.` between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. For the same reason, the extension `.fits.fz` is changed to `.fitzfz`. In addition, for
   clarity, we include the string `image` for a tile image type.  
   Default convention: **<image_type>-<tile_number>.fits**  
-  Examples: `CFIS_image-277-282.fits`, `CFIS_weight-274-282.fitsfz`, `pipeline_flag-239-293.fits`
+  Examples: `CFIS_image-277-282.fits`, `CFIS_weight-274-282.fitsfz`
 
 - Database catalogue files  
   For very large files that combine information from multiple tiles or single exposures, `ShapePipe` creates `sqlite`
@@ -128,8 +128,6 @@ for all options.
 This script creates the subdirectory `$SP_RUN/output` to store all pipeline outputs
 (log files, diagnostics, statistics, output images, catalogues, single-exposure headers with WCS information).
 
-Optionally, the subdir `output_star_cat` is created by the used to store the external star catalogues for masking. This is only necessary if the pipeline is run on a cluster without internet connection to access star catalogues. In that case, the star catalogues need to be retrieved outside the pipeline, for example on a login node, and copied to `output_star_cat`.
-
 The job script automaticall performs a number of subsequent calls to the `ShapePipe` executable `shapepipe_run`, as
 ```bash
 shapepipe_run -c $SP_CONFIG/<config>.ini
@@ -189,32 +187,31 @@ Finally, the headers of all single-exposure single-CCD files are merged into a s
 Two output directories are created, `run_sp_Uz` for `uncompress_fits`, and `run_sp_exp_SpMh` for the output of the modules
 `split_exp` (`Sp`) and `merge_headers` (`Mh`).
 
-## Mask images
+## Masks
 
-Run
-```bash
-job_sp TILE_ID -j 4
-```
-to mask tile and single-exposure single-CCD images. Both tasks are performed by two calls to the `mask` runner.
+`ShapePipe` does not generate masks. Sky-fixed masks — star halos, stars,
+manual masks for large galaxies, per-band coverage, MaxiMask defects — are
+supplied as [healsparse](https://healsparse.readthedocs.io) maps and are
+consumed by *querying them at object positions*, never by rasterizing them onto
+pixels. Two modules do the querying, from the same shared lookup
+(`shapepipe.utilities.mask_query`): `mask_query` runs between `sextractor` and
+`setools` on the single-exposure single-CCD catalogues and writes one integer
+`FLAG_EXT` column (0 = clean), which `star_selection.setools` cuts on so that
+masked objects never enter the PSF star sample; `make_cat` writes one
+`MASK_<band>` column per band onto the final tile catalogue, carrying the map
+value verbatim so downstream selections choose their own cuts. Map paths and
+bit selections live in the config files (`MASK_PATHS` / `MASK_BITS` and
+`MASK_EXT_PATHS`), so regenerated mask products cost a config edit and no code.
 
-Note that internet access is required for this step, since a reference star catalogue is downloaded.
+No internet access is needed at any point, and there is no reference star
+catalogue to download.
 
-The output of both masking runs are stored in the output directory `run_sp_MaMa`, with run 1 (2) of
-`mask` corresponding to tiles (exposures).
-
-**Diagnostics:** Open a single-exposure single-CCD image and the corresponding pipeline flag
-in `ds9`, and display both frames next to each other. Example
-```bash
-ds9 image-2113737-10.fits pipeline_flag-2113737-10.fits
-```
-Choose `zoom fit` for both frames, click `scale zscale` for the image, and `color aips0` for the flag, to display something like this:
-
-<img width="250" src="img/diag_mask.png">
-
-By eye the correspondence between the different flag types and the image can be
-seen. Note that the two frames might not match perfectly, since (a) WCS
-information is not available in the flag file FITS headers; (b) the image can
-have a zero-padded pixel border, which is not accounted for by `ds9`.
+The one mask that still reaches pixels is the **instrument flag image**
+(`<exp>p.flag.fits.fz`) delivered with each exposure, which records bad columns
+and saturation. `split_exp` splits it per CCD beside the image and weight,
+`sextractor` reads it as `IMAFLAGS_ISO`, and `ngmix` zero-weights flagged
+pixels in its postage stamps. Tiles have no such image, so tile detection runs
+with `FLAG_IMAGE = False`.
 
 ## Detect objects on tiles and process stars on single exposures
 

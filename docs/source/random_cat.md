@@ -3,16 +3,25 @@
 This section describes how to create tile-based random catalogues and healpix
 masks, and combined randoms and masks for a selection of tiles.
 
-The masked regions are obtained on input from ShapePipe pixel mask ("pipeline flag")
-files.
+The masked regions are obtained on input from per-tile pixel mask images.
+
+```{warning}
+**ShapePipe no longer produces those images.** The pipeline generates no masks
+at all: sky-fixed masks are healsparse maps, queried once per object into
+catalogue columns (see [Masks](pipeline_tutorial.md#masks)), and tiles have no
+flag image. `random_cat_runner` therefore needs its mask images supplied from
+outside the pipeline — point its second `INPUT_DIR` entry at a directory of tile
+mask images matching its `NUMBERING_SCHEME`. The healsparse-native replacement
+for this whole procedure (an n_epoch / n_pointings survey-window map built from
+the maps directly) is issue #797.
+```
 
 ```{note}
 Parts of this procedure use the legacy canfar-VM / `vos` retrieval workflow (see
 [VOSpace retrieval](vos_retrieve.md)) and the obsolete `prepare_tiles_for_final`
-helper, which is no longer shipped. The `random_cat` module itself is current;
-the input-staging and joint-mask steps now overlap with
-[`sp_validation`](https://github.com/CosmoStat/sp_validation). The steps are
-retained for reference.
+helper, which is no longer shipped. The input-staging and joint-mask steps now
+overlap with [`sp_validation`](https://github.com/CosmoStat/sp_validation). The
+steps are retained for reference.
 ```
 
 ## Set up
@@ -41,46 +50,14 @@ If not, we can just download the headers to gain significant download time.
 shapepipe_run -c $SP_CONFIG/config_get_tiles_vos_headers.ini
 ```
 
-### Check pixel mask files
+### Stage the pixel mask files
 
-Make sure that all pixel mask files are present. If they have been downloaded from ``vos`` as ``.tgz`` files,
-type
-```bash
-canfar_avail_results -i tile_numbers.txt --input_path . -v -m -o missing_mask.txt
-```
-In case of missing mask files, check whether they are present in the ``vos`` remote directory,
-```bash
-canfar_avail_results -i tile_numbers.txt --input_path vos:cfis/vos-path/to/results -v -m
-```
-If missing on ``vos``, process those tiles. If processing only up the the mask is necessary,
-the following steps can be carried out,
-```bash
-job_sp -j 7 TILE_ID
-job_sp -j 128 TILE_ID
-```
-The first command processes the tile up to the mask; the second line uploads the mask files
-to ``vos``.
-
-Now, download the missing masks with
-```bash
-canfar_download_results -i missing_mask.txt --input_vos vos-path/to/results -m -v
-```
-Untar .tgz files if required,
-```bash
-while read p; do tar xvf pipeline_flag_$p.tgz; done <missing_mask.txt
-```
-
-### Prepare combined mask input directory
-
-To combine all mask files into one input directory, easy to find by the subsequent ``ShapePipe`` module
-``random_cat_runner``, type
-```bash
-prepare_tiles_for_final -c flag
-```
-To make sure everything went well, check the linked .fits files with
-```bash
-canfar_avail_results -i tile_numbers.txt --input_path output/run_sp_combined_flag/mask_runner/output -x fits -v -m
-```
+Collect the tile mask images into one directory that `random_cat_runner`'s
+`INPUT_DIR` points at, one file per tile ID in `tile_numbers.txt`, named to
+match the module's `FILE_PATTERN` and `NUMBERING_SCHEME` (`mask-<xxx>-<yyy>.fits`
+with the committed `config_Rc.ini`). How you obtain them is outside ShapePipe;
+older runs of the pipeline's own (now removed) mask module wrote them as
+`pipeline_flag-<xxx>-<yyy>.fits`, and those files still work.
 
 ## Create random catalogue and helapix mask per tile
 

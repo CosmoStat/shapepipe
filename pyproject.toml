@@ -19,13 +19,11 @@ requires-python = ">=3.12"
 # the code actually requires the newer API.
 dependencies = [
     "astropy>=7.0",          # major 6 → 7
-    "astroquery",
     "canfar",
     "cs_util>=0.2.1",
     "galsim>=2.8",
     "h5py",
     "healsparse",
-    "hpgeom",
     "joblib>=1.4",
     "matplotlib>=3.10",
     "mccd>=1.2.4",

@@ -22,8 +22,7 @@ uv venv /project/def-mjhudson/cdaley/snakemake-env --python 3.12
 source /project/def-mjhudson/cdaley/snakemake-env/bin/activate
 uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 
-# Edit workflow/config.yaml: tile_list, run_dir, container, star_cats (the
-# star-catalogue cache root).
+# Edit workflow/config.yaml: tile_list, run_dir, container.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -154,8 +153,8 @@ workflow/
   bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
-    exposure.smk         per-exposure: get_images, star_cat, split, mask, psf (no temp())
-    tile.smk             per-tile: exp forest, merge_headers, mask, detect, vignets, ngmix, merge, make_cat
+    exposure.smk         per-exposure: get_images, split, psf (no temp())
+    tile.smk             per-tile: exp forest, merge_headers, detect, vignets, ngmix, merge, make_cat
   scripts/
     sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count floor)
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
@@ -196,16 +195,19 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   committed under `workflow/config/cfis/` and version with the rules that set
   the env vars they interpolate — there is no `config_src` knob, and no per-unit
   config symlink; `$SP_CONFIG` points straight at the committed directory.
-- **Mask star catalogues are built in the DAG.** `exp_star_cat` runs one Vizier
-  cone query per exposure into the run-independent cache at `star_cats:`, then
-  fans it out into a real per-unit `star_cat_exp/` directory of 40 per-CCD
-  symlinks, which `exp_mask` consumes. The directory must be per-unit and real:
-  the file handler intersects the image numbers it finds across a config's
-  `INPUT_DIR`s, so a symlink to the whole cache contributes every other
-  exposure's numbers and the intersection comes out empty. It is a `localrule`,
-  so the queries run serially in the head process — CDS is never hammered, and
-  the scheduler never sees a six-second job. The cache makes reruns and later
-  campaigns free.
+- **There is no masking stage, on either side.** ShapePipe generates no masks
+  (PR #847). The one mask that reaches pixels is the instrument flag image
+  delivered with each exposure, which `exp_split` splits per CCD beside image
+  and weight and SExtractor reads as `IMAFLAGS_ISO`. Everything else — star
+  halos, manual masks, per-band coverage, MaxiMask — is supplied as sky-fixed
+  healsparse maps and QUERIED once per object: the `mask_query` module writes a
+  `FLAG_EXT` column onto each CCD's detection catalogue for setools' star cut
+  (inside `exp_psf`), and `make_cat` writes one `MASK_<band>` column per band
+  onto the final catalogue (inside `tile_make_cat`). Map paths are config, not
+  code, so regenerated products cost a config edit. Nothing is fetched from a
+  catalogue server, staged, or rasterized, which is why the old
+  `star_catalogue` / `exp_star_cat` / `exp_mask` rules and their cache root are
+  gone.
 - **The index is parse-time data, never a rule input.** Appending tiles
   changes which jobs exist without invalidating completed work.
 - **Exposure products are not `temp()`.** Exposures overlap tiles, so
