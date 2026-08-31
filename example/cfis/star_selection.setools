@@ -4,8 +4,11 @@
 ##   IMAFLAGS_ISO == 0  the instrument flag image (bad columns, saturation),
 ##                      delivered with the exposure and read by SExtractor;
 ##   FLAG_EXT == 0      the external healsparse masks, queried per detection by
-##                      the mask_query module (which map bits reach FLAG_EXT is
-##                      that module's MASK_PATHS / MASK_BITS config).
+##                      the mask_query module. Which maps reach FLAG_EXT is that
+##                      module's MASK_PATHS config, and the shipped diet is
+##                      deliberately narrow: the star-body map (bit 2) only, no
+##                      halos (they flag, they do not reject stars) and no
+##                      MaxiMask.
 ## SETools expressions have no bitwise operators, so mask_query does the bit
 ## selection and this file only tests for zero.
 

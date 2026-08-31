@@ -197,7 +197,9 @@ pixels. Two modules do the querying, from the same shared lookup
 (`shapepipe.utilities.mask_query`): `mask_query` runs between `sextractor` and
 `setools` on the single-exposure single-CCD catalogues and writes one integer
 `FLAG_EXT` column (0 = clean), which `star_selection.setools` cuts on so that
-masked objects never enter the PSF star sample; `make_cat` writes one
+masked objects never enter the PSF star sample — a deliberately narrow diet,
+the star-body map (bit 2) only, since halos flag objects without disqualifying
+them as PSF stars; `make_cat` writes one
 `MASK_<band>` column per band onto the final tile catalogue, carrying the map
 value verbatim so downstream selections choose their own cuts. Map paths and
 bit selections live in the config files (`MASK_PATHS` / `MASK_BITS` and

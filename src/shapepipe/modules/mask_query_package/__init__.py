@@ -34,6 +34,21 @@ The lookup itself lives in :mod:`shapepipe.utilities.mask_query`, shared with
 ``make_cat``'s per-band ``MASK_<band>`` columns, so the healsparse primitive is
 written once. That module's docstring documents the off-coverage convention.
 
+The diet is deliberately narrow
+===============================
+
+``MASK_PATHS`` is a *list of maps to reject PSF stars on*, not a list of every
+mask that exists. The committed configs name exactly one map — the UNIONS
+star-body product (bit 2) — beside the instrument flags SExtractor already
+reads. Halo bits 0 and 1 are excluded on purpose: halos flag objects for the
+final catalogue, they do not reject PSF stars (mask-force telecon, 2026-07-21).
+MaxiMask is not in the diet either.
+
+Widening it costs a config edit and no code — add a path. That is why the
+contract is a path list rather than a bit mask: the UNIONS products are one
+boolean map per bit, so choosing bits *is* choosing files, and ``MASK_BITS``
+exists only for integer maps that pack several bits into one file.
+
 Module-specific config file entries
 ===================================
 
