@@ -59,7 +59,7 @@ from pathlib import Path
 TILE_STAGES = ["tile_get_images", "tile_uncompress", "tile_find_exposures",
                "tile_merge_headers", "tile_detect", "tile_vignets",
                "tile_ngmix", "tile_merge_cats", "tile_make_cat"]
-EXP_STAGES = ["exp_get_images", "exp_star_cat", "exp_split", "exp_mask", "exp_psf"]
+EXP_STAGES = ["exp_get_images", "exp_split", "exp_psf"]
 
 # The manifests clean_tile leaves on disk (workflow/scripts/clean_tile.py names
 # the mechanism that owns each). Their presence is therefore NOT evidence that a

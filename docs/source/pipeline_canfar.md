@@ -170,22 +170,16 @@ The downloaded tile weights are compressed. The following call uncompresses all.
 shapepipe_run -c cfis/config_tile_Uz.ini
 ```
 
-### Mask tiles
+### Masks
 
-This step is done globally for all tiles. There might be job failures or interruptions. The following
-command to the `ShapePipe` job script can be run repeatedly; already created masks will be skipped.
-
-```bash
-job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 4
-```
-
-If masks were created in more than one run, i.e. situated in more than one output directory, these have to be
-combined for subsequent pipeline module runs. This is done by creating a new output directory with symbolic
-links, using the script
-
-```bash
-combine_runs.bash -c flag_tile
-```
+There is no masking step. `ShapePipe` generates no masks: the sky-fixed
+healsparse maps are queried once per object, by `mask_query` on the exposure
+catalogues (`MASK_EXT`, recorded but not cut on) and by `make_cat` on the tile
+catalogue (`MASK_<band>` columns). Point the `MASK_PATHS` / `MASK_EXT_PATHS`
+config entries at the maps and nothing else is needed — no star-catalogue
+download, no rasterization, no `combine_runs.bash -c flag_*`. The only mask that
+touches pixels is the instrument flag image shipped with each exposure, which
+`split_exp` splits per CCD.
 
 ## Tile detection
 
@@ -205,7 +199,7 @@ canfar_submit_job -j 16 -f tile_numbers.txt -P N_PAR -v -J JMAX
 
 ### Exposure Processing
 
-#### Option 0: Global split and exp masks (deprecated; used for earlier v1.x patch runs)
+#### Option 0: Global split (deprecated; used for earlier v1.x patch runs)
 
 For this option, set `sp_local=0`.
 
@@ -217,21 +211,7 @@ For `sp_local=-` both `mh_local` (0, 1) are ok:
 export mh_local=0
 ```
 
-#### Option 0: Mask exposures (deprecated)
-
-Run repeatedly if necessary:
-
-```bash
-job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 8
-```
-
-Combine all runs:
-
-```bash
-combine_runs.bash -c flag_exp
-```
-
-### Option 1: Local split and mask exposures (recommended)
+### Option 1: Local split exposures (recommended)
 
 Optional: Enable flags for local split processing and merge header runs as
 
@@ -256,12 +236,6 @@ First, determine the number of maximum jobs with the option `-s` (see above). Th
 
 ```bash
 canfar_submit_job -j 2 -v -f exp_shdu.txt -v -P N_PAR -J JMAX
-```
-
-### Mask exposures
-
-```bash
-canfar_submit_job -j 8 -f exp_shdu.txt -v -P N_PAR -J JMAX
 ```
 
 ### Exposure detection

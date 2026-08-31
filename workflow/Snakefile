@@ -82,10 +82,6 @@ RUN_DIR    = Path(config["run_dir"])
 # Defaults to RUN_DIR so a scratch-only run (a fixture, a smoke test) needs no
 # second path: one root, exactly the pre-D5 layout.
 PRODUCTS_DIR = Path(config.get("products_dir") or RUN_DIR)
-# Run-independent root for the mask star catalogues: the HEALPix chunk store the
-# star_catalogue rule fills, and the per-exposure cuts exp_star_cat makes from it
-# (config.yaml explains the placement).
-STAR_CATS  = Path(config["star_cats"])
 INDEX_DB   = Path(config["index_db"])
 SCRIPTS    = Path(workflow.basedir) / "scripts"
 # The config chain is the repo's own committed dir BY CONSTRUCTION (D2): the
@@ -309,13 +305,6 @@ SCRIPT_HASH = script_hash("completeness.py")
 FOREST_HASH = script_hash("build_forest.py")
 CLEAN_HASH  = script_hash("clean_exposure.py")
 CLEAN_TILE_HASH = script_hash("clean_tile.py")
-# Same argument for star_cats.py, which both star-cat rules call: their params
-# otherwise fingerprint nothing but paths, so an edit to the chunking or the cut
-# would never rerun them. ONE hash for both rules because it is one script — and
-# that is also why fetch and cut live in one module (they must agree on which
-# pixel holds which star). The hash does NOT key the store path — see
-# config.yaml's star_cats block on clearing the store after a semantic change.
-STAR_CAT_HASH = script_hash("star_cats.py")
 # ngmix_range.py earns a hash for a stronger reason than the others. What it
 # emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks are
 # a PARTITION of its object IDs: resume a tile across an edit to the split and
@@ -509,8 +498,7 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
         nothing. Written UNCONDITIONALLY: an exists-guard once pinned a stale
         pre-fix file with the bare id.
     There is no per-unit ``cfis`` symlink any more: $SP_CONFIG points straight at
-    the committed config dir, and ``star_cat_exp`` is a real per-unit directory
-    built by the ``exp_star_cat`` rule, not a symlink into a shared pool.
+    the committed config dir.
 
     Finally it ``rm -rf``s this stage's own fixed run dir — ShapePipe's
     FileHandler raises on an existing run dir, and it is how a rerun never sees
@@ -589,18 +577,16 @@ include: "rules/exposure.smk"
 include: "rules/tile.smk"
 
 # --- top-level targets ------------------------------------------------------
-# The aggregation targets, clean_exposure, clean_tile, star_catalogue and
-# exp_star_cat run in the head process. The two clean rules are seconds of rmtree
-# and hang off `all`; exp_star_cat is seconds of local FITS work; all three would
-# otherwise be ~20k (clean_exposure, exp_star_cat) or ~23k (clean_tile) sbatch
-# submissions at DR6 scale for work shorter than the scheduling latency.
-# star_catalogue is one job either way, and local keeps its CDS concurrency the
-# explicit number its thread pool sets (see exposure.smk).
+# The aggregation targets, clean_exposure and clean_tile run in the head
+# process. Both clean rules are seconds of rmtree and hang off `all`; submitted
+# they would be ~20k (clean_exposure) or ~23k (clean_tile) sbatch submissions at
+# DR6 scale for work shorter than the scheduling latency.
 #
-# star_catalogue and exp_star_cat are MID-CHAIN localrules, so they must stay out
-# of any future `group:` label: a local job cannot be fused into a submitted group.
-# The two clean rules are DAG leaves and have no such constraint.
-localrules: all, prepare_all_tiles, clean_exposure, clean_tile, star_catalogue, exp_star_cat
+# Both are DAG LEAVES, so neither constrains a `group:` label. (A mid-chain
+# localrule would: a local job cannot be fused into a submitted group. The old
+# star-catalogue rules were exactly that, and they are gone with the internal
+# mask generation.)
+localrules: all, prepare_all_tiles, clean_exposure, clean_tile
 
 rule all:
     input:

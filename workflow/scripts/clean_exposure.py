@@ -7,17 +7,12 @@ this executes, every campaign tile that reads this exposure has already extracte
 its postage stamps. Writer, then readers, then cleaner — DAG-ordered, race-free.
 
 What it deletes: the exposure's whole ``output/`` tree (the bulk store —
-run_sp_exp_Gie/Sp/Ma/SxSePsfPi), its ``manifests/`` and its ``logs/``, and its
-star-catalogue link farms (``star_cat_exp``, plus the legacy ``star_cat_tiles``). The farms are
-reclaimed for consistency, not for bytes: ``exp_star_cat``'s manifest is deleted
-here like every other, so the exposure's chain must read as unbuilt, and 40
-symlinks left behind are a farm no rule now owns. The catalogue itself lives in
-the run-independent cache, so rebuilding the farm costs a relink and no query.
+run_sp_exp_Gie/Sp/SxSePsfPi), its ``manifests/`` and its ``logs/``. That is the
+entire exposure store: since PR #847 removed ShapePipe's mask generation there
+is no run_sp_exp_Ma tree and no star-catalogue link farm to reclaim beside it.
 
 Deletion is SYMLINK-SAFE: a target that is itself a symlink is ``unlink``ed, not
-``rmtree``d. Legacy unit dirs carry ``star_cat_exp`` as a link into the old
-shared pool, and an rmtree would recurse through it and delete the shared cache
-for every other exposure in the campaign.
+``rmtree``d, so a link into a shared store can never be recursed through.
 
 Deleting the manifests is deliberate and load-bearing, not tidiness:
 
@@ -98,10 +93,9 @@ def main() -> None:
             except (OSError, json.JSONDecodeError) as exc:
                 manifests[f.stem] = {"unreadable": str(exc)}
 
-    # is_symlink() first, and OR'd with exists(): exists() follows the link, so a
-    # dangling legacy star_cat_exp would otherwise be skipped and survive.
-    candidates = (args.exp_dir / "output", mdir, args.exp_dir / "logs",
-                  args.exp_dir / "star_cat_exp", args.exp_dir / "star_cat_tiles")
+    # is_symlink() first, and OR'd with exists(): exists() follows the link, so
+    # a dangling link would otherwise be skipped and survive.
+    candidates = (args.exp_dir / "output", mdir, args.exp_dir / "logs")
     targets = [t for t in candidates if t.is_symlink() or t.exists()]
 
     # Tombstone first, complete — then delete (see the module docstring).
