@@ -580,6 +580,8 @@
     <span class="n">psf_shear</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
     <span class="n">wcs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">return_centers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">psf_model_fwhm_ratio</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">psf_model_shear</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Simulate an exponential galaxy with Moffat PSF.</span>
 
@@ -611,8 +613,7 @@
 <span class="sd">        Ellipticity (g1, g2) applied to the Moffat PSF. Default (0, 0), a</span>
 <span class="sd">        round PSF. A non-round PSF is what the PSF-leakage / additive-bias</span>
 <span class="sd">        guardrail needs: the PSF carries a shape that an unbiased deconvolution</span>
-<span class="sd">        must remove from a round galaxy. The same sheared PSF is used both to</span>
-<span class="sd">        convolve the object and as the PSF model stamp.</span>
+<span class="sd">        must remove from a round galaxy.</span>
 <span class="sd">    wcs : galsim.BaseWCS, optional</span>
 <span class="sd">        Uniform drawing WCS. Default None means ``galsim.PixelScale</span>
 <span class="sd">        (pixel_scale)`` with the legacy world-space sub-pixel shift draw —</span>
@@ -630,6 +631,24 @@
 <span class="sd">        ``galsim.PositionD`` in galsim image coordinates (1-based; stamp</span>
 <span class="sd">        centre is ``(img_size + 1) / 2``). Default False keeps the legacy</span>
 <span class="sd">        6-tuple return.</span>
+<span class="sd">    psf_model_fwhm_ratio : float, optional</span>
+<span class="sd">        Multiplicative size error injected into the PSF *model* stamp handed to</span>
+<span class="sd">        ngmix, relative to the *true* PSF that convolves the galaxy. Default 1.0</span>
+<span class="sd">        (no error: the same PSF object renders the galaxy and the model stamp,</span>
+<span class="sd">        byte-for-byte identical to the legacy behaviour). A value != 1.0 makes</span>
+<span class="sd">        the model PSF the wrong size — over-sized (&gt;1) over-deconvolves, under-</span>
+<span class="sd">        sized (&lt;1) leaves residual smoothing — so metacal deconvolves by a PSF</span>
+<span class="sd">        that does not match the one in the data. This is the controlled-PSF-</span>
+<span class="sd">        model-error knob: it tests whether metacal's response correction (which</span>
+<span class="sd">        is computed with the same wrong model) absorbs a deconvolution error,</span>
+<span class="sd">        the one shape-measurement systematic the zero-error sim could not probe.</span>
+<span class="sd">    psf_model_shear : tuple of float or None, optional</span>
+<span class="sd">        Extra ellipticity (Δg1, Δg2) added to the PSF *model* stamp on top of</span>
+<span class="sd">        ``psf_shear``, relative to the true PSF. Default None (no error). A</span>
+<span class="sd">        non-zero value mismodels the PSF shape, injecting a controlled additive</span>
+<span class="sd">        (PSF-leakage) error into the recovered shear. When both this is None and</span>
+<span class="sd">        ``psf_model_fwhm_ratio`` is 1.0 the model PSF *is* the true PSF object,</span>
+<span class="sd">        so the output is byte-for-byte the legacy result.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -688,7 +707,22 @@
             <span class="p">),</span>
         <span class="p">)</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span>
 
-        <span class="n">psf_im_</span> <span class="o">=</span> <span class="n">psf</span><span class="o">.</span><span class="n">drawImage</span><span class="p">(</span><span class="n">nx</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span> <span class="n">ny</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span> <span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">)</span>
+        <span class="c1"># The PSF *model* stamp handed to ngmix. By default it is the very same</span>
+        <span class="c1"># object that convolved the galaxy (zero model error, byte-for-byte). A</span>
+        <span class="c1"># size and/or shape error makes it differ from the true PSF, so metacal</span>
+        <span class="c1"># deconvolves by the wrong PSF — the systematic the zero-error sim could</span>
+        <span class="c1"># not exercise.</span>
+        <span class="k">if</span> <span class="n">psf_model_fwhm_ratio</span> <span class="o">==</span> <span class="mf">1.0</span> <span class="ow">and</span> <span class="n">psf_model_shear</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">psf_model</span> <span class="o">=</span> <span class="n">psf</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">psf_model</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">Moffat</span><span class="p">(</span>
+                <span class="n">beta</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="n">psf_fwhm</span> <span class="o">*</span> <span class="n">psf_model_fwhm_ratio</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">shear</span><span class="p">(</span>
+                <span class="n">g1</span><span class="o">=</span><span class="n">psf_shear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">psf_model_shear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">psf_model_shear</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">),</span>
+                <span class="n">g2</span><span class="o">=</span><span class="n">psf_shear</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">psf_model_shear</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">psf_model_shear</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="n">psf_im_</span> <span class="o">=</span> <span class="n">psf_model</span><span class="o">.</span><span class="n">drawImage</span><span class="p">(</span><span class="n">nx</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span> <span class="n">ny</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span> <span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">)</span>
         <span class="n">psfs_sigmas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">galsim</span><span class="o">.</span><span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">psf_im_</span><span class="p">)</span><span class="o">.</span><span class="n">moments_sigma</span><span class="p">)</span>
         <span class="n">psf_im</span> <span class="o">=</span> <span class="n">psf_im_</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
         <span class="n">im</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">drawImage</span><span class="p">(</span><span class="n">nx</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span> <span class="n">ny</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span> <span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">)</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
