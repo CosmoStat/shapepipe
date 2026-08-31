@@ -37,7 +37,6 @@ dependencies = [
     "python-pysap>=0.3",
     "PyQt5",
     "pyqtgraph",
-    "reproject>=0.19",
     "sf_tools>=2.0.4",
     "skaha>=1.7",
     "sqlitedict>=2.0",
