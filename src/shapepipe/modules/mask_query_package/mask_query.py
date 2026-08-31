@@ -67,8 +67,24 @@ class MaskQuery(object):
         )
         ori_cat.open()
         data = ori_cat.get_data()
-        ra = np.copy(data["XWIN_WORLD"])
-        dec = np.copy(data["YWIN_WORLD"])
+
+        # A CCD SExtractor found nothing on is tolerated all along this chain
+        # (setools' ~0.2% attrition, psfex_interp's floor=0 warn), so it must
+        # not be an error here either. An empty LDAC table has no columns to
+        # index, so read the positions only when there are rows, and still
+        # publish an output file — a missing sexcat_ext would look to the file
+        # handler like a crash rather than like an empty CCD.
+        if len(data) == 0:
+            ra = np.zeros(0)
+            dec = np.zeros(0)
+            if self._w_log is not None:
+                self._w_log.info(
+                    "No detections in "
+                    + f"{self._sexcat_path}; writing an empty FLAG_EXT column"
+                )
+        else:
+            ra = np.copy(data["XWIN_WORLD"])
+            dec = np.copy(data["YWIN_WORLD"])
 
         flag = mask_query_util.flag_positions(
             self._mask_paths,

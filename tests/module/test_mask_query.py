@@ -35,8 +35,17 @@ DEC = np.array([20.0, 20.1, 20.2, -40.0])
 
 
 class _NullLogger:
-    def info(self, *_args, **_kwargs):
-        pass
+    """Captures what the module logs, so coverage warnings can be asserted."""
+
+    def __init__(self):
+        self.info_msgs = []
+        self.warning_msgs = []
+
+    def info(self, msg, *_a, **_kw):
+        self.info_msgs.append(str(msg))
+
+    def warning(self, msg, *_a, **_kw):
+        self.warning_msgs.append(str(msg))
 
 
 def _write_map(path, value, dtype=np.int16, n_covered=2):
@@ -73,7 +82,7 @@ def _write_bool_map(path, n_covered=2):
     return str(path)
 
 
-def _write_sexcat(path):
+def _write_sexcat(path, n=None):
     """Write a synthetic LDAC SExtractor catalogue of known positions.
 
     Written with astropy rather than ``FITSCatalogue.save_as_fits``, because
@@ -81,6 +90,7 @@ def _write_sexcat(path):
     to copy the ``LDAC_IMHEAD`` HDU from. The three-HDU layout below is what
     SExtractor writes and what ``SEx_catalogue=True`` (``hdu_no=2``) indexes.
     """
+    n = len(RA) if n is None else n
     imhead = fits.BinTableHDU.from_columns(
         [
             fits.Column(
@@ -91,13 +101,11 @@ def _write_sexcat(path):
     )
     objects = fits.BinTableHDU.from_columns(
         [
-            fits.Column(name="NUMBER", format="J", array=np.arange(len(RA))),
-            fits.Column(name="XWIN_WORLD", format="D", array=RA),
-            fits.Column(name="YWIN_WORLD", format="D", array=DEC),
+            fits.Column(name="NUMBER", format="J", array=np.arange(n)),
+            fits.Column(name="XWIN_WORLD", format="D", array=RA[:n]),
+            fits.Column(name="YWIN_WORLD", format="D", array=DEC[:n]),
             fits.Column(
-                name="IMAFLAGS_ISO",
-                format="J",
-                array=np.zeros(len(RA), dtype="i4"),
+                name="IMAFLAGS_ISO", format="J", array=np.zeros(n, dtype="i4")
             ),
         ],
         name="LDAC_OBJECTS",
@@ -204,3 +212,90 @@ def test_mask_query_bits_and_all_clean(tmp_path):
     assert n_flagged == 0
     flag, _ = _read(out_path)
     npt.assert_array_equal(flag, [0, 0, 0, 0])
+
+
+def test_partial_read_matches_full(tmp_path):
+    """The partial read returns exactly what a full read of the map returns.
+
+    This is the guarantee that makes the optimisation safe: query_map loads
+    only the coverage pixels the positions touch, and must be indistinguishable
+    from HealSparseMap.read(path) at every queried position.
+    """
+    for dtype, writer in ((np.int16, _write_map), (np.bool_, None)):
+        path = (
+            _write_map(tmp_path / f"full_{dtype.__name__}.hsp", 7, n_covered=3)
+            if writer is not None
+            else _write_bool_map(tmp_path / "full_bool.hsp", n_covered=3)
+        )
+        full = healsparse.HealSparseMap.read(path)
+        expected = np.asarray(full.get_values_pos(RA, DEC, lonlat=True))
+        npt.assert_array_equal(
+            mask_query_util.query_map(path, RA, DEC), expected
+        )
+
+
+def test_coverage_reported_for_both_map_kinds(tmp_path):
+    """in_coverage is the coverage mask, not valid_mask.
+
+    For a boolean map healsparse stores only the True pixels, so valid_mask
+    would equal the value and could not distinguish an unmasked object from one
+    the map does not reach. The distant object must read as off-coverage while
+    the near, unflagged ones read as covered.
+    """
+    for path in (
+        _write_map(tmp_path / "int.hsp", 4, n_covered=2),
+        _write_bool_map(tmp_path / "bool.hsp", n_covered=2),
+    ):
+        _, in_coverage = mask_query_util.query_map_coverage(path, RA, DEC)
+        # The 4th position is 190 deg away; the first two are on the map.
+        assert in_coverage[0] and in_coverage[1]
+        assert not in_coverage[3]
+
+
+def test_all_off_coverage_warns(tmp_path):
+    """A map that reaches nothing warns, instead of logging a silent zero."""
+    path = _write_map(tmp_path / "elsewhere.hsp", 4, n_covered=2)
+    far_ra = np.array([200.0, 201.0])
+    far_dec = np.array([-40.0, -41.0])
+    log = _NullLogger()
+
+    flag = mask_query_util.flag_positions([path], far_ra, far_dec, w_log=log)
+
+    npt.assert_array_equal(flag, [0, 0])
+    assert any("NO object is inside" in m for m in log.warning_msgs)
+    assert any("2 outside coverage" in m for m in log.info_msgs)
+    # A map that DOES reach the objects must not warn.
+    log2 = _NullLogger()
+    mask_query_util.flag_positions([path], RA, DEC, w_log=log2)
+    assert not log2.warning_msgs
+
+
+def test_flag_positions_empty_input(tmp_path):
+    """Zero positions is not an error and reads no map."""
+    flag = mask_query_util.flag_positions(
+        [str(tmp_path / "does-not-exist.hsp")], np.zeros(0), np.zeros(0)
+    )
+    assert flag.shape == (0,)
+
+
+def test_mask_query_empty_ccd(tmp_path):
+    """A CCD with no detections still publishes a catalogue, not an error.
+
+    setools tolerates sparse-CCD attrition and psfex_interp's completeness
+    floor is 0/warn, so an empty sexcat must flow through rather than raise.
+    """
+    map_path = _write_map(tmp_path / "star.hsp", 4, n_covered=2)
+    in_path = _write_sexcat(tmp_path / "sexcat-000-2.fits", n=0)
+    out_path = tmp_path / "sexcat_ext-000-2.fits"
+    log = _NullLogger()
+
+    n_flagged = MaskQuery(
+        in_path, str(out_path), [map_path], w_log=log
+    ).process()
+
+    assert n_flagged == 0
+    assert out_path.exists()
+    flag, names = _read(out_path)
+    assert flag.shape == (0,)
+    assert "FLAG_EXT" in names
+    assert any("No detections" in m for m in log.info_msgs)

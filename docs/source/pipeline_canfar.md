@@ -317,12 +317,14 @@ with the star-catalogue tooling the removed mask module needed (PR #847). The
 merge step that follows therefore has no producer for its input in this repo
 until the collation is reimplemented, and the `star_cat/` + `combine_runs.bash
 -c psf_conv` staging around it does not apply either.
-
-Nothing about the PSF measurement itself changed: HSM shapes are measured
-directly in sky coordinates during PSF interpolation (galsim
-`FindAdaptiveMom(use_sky_coords=True)`), which is why the collation was a
-pass-through for shapes and is straightforward to rebuild.
 ```
+
+HSM shapes are **not** rotated into world coordinates at this step, and were not
+before it was removed. The PSF and star ellipticities and sizes are measured
+directly in sky coordinates during PSF interpolation (galsim
+`FindAdaptiveMom(use_sky_coords=True)`) — see `tests/module/test_hsm_sky_coords.py`,
+which pins that convention. The collation was a pass-through for shapes, which is
+both why it carried no science and why it is straightforward to rebuild.
 
 Merge all converted star catalogues and create `final-starcat.fits` (this
 reads the `validation_psf_conv` files the collation above used to produce):

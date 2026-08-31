@@ -20,9 +20,13 @@ in the ``LDAC_OBJECTS`` extension) and looks it up in the configured healsparse
 maps, writing one integer column:
 
 ``FLAG_EXT``
-    ``0`` for an object no configured map flags, nonzero otherwise. The nonzero
-    value is the bitwise OR of the contributing map values, so it says *which*
-    bits fired, but nothing downstream is required to read it that way.
+    ``0`` for an object no configured map flags, nonzero otherwise. What the
+    nonzero value *is* depends on the maps: a boolean map — which is what the
+    UNIONS per-bit products are, and what the shipped config names — can only
+    contribute ``1``, so with those the column is 0/1 and says nothing about
+    which map fired. An integer map contributes its own value (optionally
+    ``& MASK_BITS``), and contributions are OR-ed, so a bit-packed map does
+    carry its bits through. Nothing downstream reads more than ``== 0``.
 
 The single column exists because ``setools`` expressions support only
 ``< > <= >= == !=`` — no bitwise operators — so the bit selection has to
