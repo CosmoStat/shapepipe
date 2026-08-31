@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.26
 #
 # Two-target image:
 #   --target runtime  →  minimal, for canfar batch jobs and downstream stacks

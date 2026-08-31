@@ -290,6 +290,19 @@ class StrInterpreter(object):
 
         iteration = 0
         while diff > eps:
+            if len(data) == 0:
+                raise ValueError(
+                    "Mode computation failed: zoom window emptied out"
+                    f" after {iteration} iterations"
+                )
+            if np.ptp(data) <= eps:
+                # The zoom window has degenerated: the remaining values span
+                # less than the requested accuracy (e.g. near-identical
+                # float32 values, for which np.histogram cannot construct
+                # distinct bin edges). The surviving sample localises the
+                # mode to within eps, so return its median.
+                return np.median(data)
+
             hist = np.histogram(data, bins)
             if hist[0].max() == 1:
                 break
@@ -306,7 +319,11 @@ class StrInterpreter(object):
             iteration += 1
 
         if iteration == iter_max:
-            raise ValueError("Mode computation failed")
+            raise ValueError(
+                f"Mode computation did not converge after {iter_max} "
+                f"iterations ({len(data)} objects left in zoom window, "
+                f"value range [{data.min()}, {data.max()}])"
+            )
         else:
             mode = (b_min + b_max) / 2.0
             return mode

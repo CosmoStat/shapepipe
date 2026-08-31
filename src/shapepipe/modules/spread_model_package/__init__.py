@@ -25,8 +25,6 @@ Module-specific config file entries
 
 PREFIX : str, optional
     Ouput file prefix
-PIXEL_SCALE : float
-    Pixel scale in arcseconds
 OUTPUT_MODE : str
     Output mode, options are ``add`` to add the outputs to the input
     SExtractor catalogue or ``new`` to generte a new output catalogue

@@ -6,8 +6,9 @@ to lock in the column grammar ``ESTIMATOR_COMPONENT[_ERR]_OBJECT[_SHEAR]``
 ``GAL`` token (``NGMIX_G1_NOSHEAR``, never ``NGMIX_G1_GAL_NOSHEAR``), while
 the PSF families keep an explicit object token —
 ``NGMIX_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>`` for ``PSF_ORIG``/``PSF_RECONV`` —
-plus the three OBJECT/SHEAR-less metadata columns (``NGMIX[m]_MCAL_FLAGS``,
-``NGMIX_N_EPOCH``, ``NGMIX_MCAL_TYPES_FAIL``). The original image PSF
+plus the four OBJECT/SHEAR-less metadata columns (``NGMIX[m]_MCAL_FLAGS``,
+``NGMIX_N_EPOCH``, ``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG``). The
+original image PSF
 (``PSF_ORIG``) and the metacal reconvolution kernel (``PSF_RECONV``) are
 independent fits of *different* PSFs, no longer the single aliased value of
 the pre-#749 code.
@@ -34,6 +35,7 @@ NGMIX_KEYS = [
     "id",
     "n_epoch_model",
     "mcal_types_fail",
+    "neighbour_flag",
     "nfev_fit",
     "g1", "g1_err", "g2", "g2_err",
     "T", "T_err",
@@ -62,6 +64,7 @@ def _ngmix_row(obj_id):
         "id": obj_id,
         "n_epoch_model": 3,
         "mcal_types_fail": 0,
+        "neighbour_flag": 1,
         "nfev_fit": 7,
         "g1": 0.10, "g1_err": 0.011, "g2": -0.20, "g2_err": 0.022,
         "T": 0.30, "T_err": 0.033,
@@ -149,7 +152,10 @@ def test_save_ngmix_data_uses_new_grammar_and_no_old_names(tmp_path):
             assert col in out, f"missing {col}"
 
     # Object-level metadata columns carry no OBJECT/SHEAR token.
-    for col in ("NGMIX_MCAL_FLAGS", "NGMIX_N_EPOCH", "NGMIX_MCAL_TYPES_FAIL"):
+    for col in (
+        "NGMIX_MCAL_FLAGS", "NGMIX_N_EPOCH", "NGMIX_MCAL_TYPES_FAIL",
+        "NGMIX_NEIGHBOUR_FLAG",
+    ):
         assert col in out, f"missing {col}"
 
     # No old name survives anywhere in the produced columns.
@@ -271,6 +277,7 @@ def test_save_ngmix_data_matches_module_serialised_catalogue(tmp_path):
             "obj_id": oid,
             "n_epoch_model": row["n_epoch_model"],
             "mcal_types_fail": row["mcal_types_fail"],
+            "neighbour_flag": row["neighbour_flag"],
             "mcal_flags": row["mcal_flags"],
         }
         for key in NGMIX_KEYS:

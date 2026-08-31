@@ -16,6 +16,7 @@ import numpy as np
 from astropy.io import fits
 from cs_util import size as cs_size
 
+from shapepipe.modules.psfex_interp_package.psfex_interp import local_wcs_list
 from shapepipe.pipeline import file_io
 
 NOT_ENOUGH_STARS = "Not enough stars to train the model."
@@ -403,6 +404,10 @@ def mccd_interpolation_pipeline(
     x_pos = galcat[2].data[pos_params[0]]
     y_pos = galcat[2].data[pos_params[1]]
     interp_pos = np.array([x_pos, y_pos]).T
+    # CCD image WCS, stored as a card list in the FITS_LDAC LDAC_IMHEAD HDU
+    wcs_header = fits.Header.fromstring(
+        "\n".join(galcat[1].data[0][0]), sep="\n"
+    )
     # Close catalog
     galcat.close()
 
@@ -411,9 +416,18 @@ def mccd_interpolation_pipeline(
 
     if interp_PSFs is not None:
         if get_shapes:
+            # Local WCS at each object position lets HSM measure adaptive
+            # moments directly in world coordinates (use_sky_coords=True).
+            wcs_list = local_wcs_list(
+                galsim.AstropyWCS(header=wcs_header), interp_pos
+            )
             PSF_moms = [
-                galsim.hsm.FindAdaptiveMom(galsim.Image(psf), strict=False)
-                for psf in interp_PSFs
+                galsim.hsm.FindAdaptiveMom(
+                    galsim.Image(psf, wcs=wcs),
+                    strict=False,
+                    use_sky_coords=True,
+                )
+                for psf, wcs in zip(interp_PSFs, wcs_list)
             ]
 
             PSF_shapes = np.array(
