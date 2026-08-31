@@ -16,6 +16,7 @@ from astropy.wcs import WCS
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
+from shapepipe.utilities import mask_query
 
 
 def get_output_name(output_dir, file_number_string):
@@ -246,6 +247,9 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
     returns the map's sentinel — ``-1`` for integer maps — verbatim), which is
     the documented off-map flag.
 
+    The lookup itself is ``shapepipe.utilities.mask_query.query_map``,
+    shared with the ``mask_query`` module: one primitive, two consumers.
+
     Parameters
     ----------
     final_cat_file : file_io.FITSCatalogue
@@ -256,17 +260,14 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
         Logging instance
 
     """
-    import healsparse
-
     final_cat_file.open()
     ra = np.copy(final_cat_file.get_data()["XWIN_WORLD"])
     dec = np.copy(final_cat_file.get_data()["YWIN_WORLD"])
 
     for band, path in band_paths.items():
         w_log.info(f"Query external mask for band {band}: {path}")
-        mask_map = healsparse.HealSparseMap.read(path)
-        values = mask_map.get_values_pos(ra, dec, lonlat=True)
-        final_cat_file.add_col(f"MASK_{band}", np.asarray(values))
+        values = mask_query.query_map(path, ra, dec)
+        final_cat_file.add_col(f"MASK_{band}", values)
 
     final_cat_file.close()
 
