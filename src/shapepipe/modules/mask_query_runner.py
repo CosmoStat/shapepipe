@@ -39,14 +39,16 @@ def mask_query_runner(
     else:
         prefix = ""
 
-    mask_paths = mask_query_util.parse_map_paths(
-        config.getexpanded(module_config_sec, "MASK_PATHS")
-    )
-    if not mask_paths:
-        raise ValueError(
-            f"[{module_config_sec}] MASK_PATHS is empty; the module has"
-            + " nothing to query."
+    # Absent (or empty) MASK_PATHS is a no-op, not an error — the same gating
+    # make_cat gives MASK_EXT_PATHS. The module stays in the MODULE chain and
+    # passes the catalogue through, so enabling the query is a config edit and
+    # disabling it never means editing the chain.
+    if config.has_option(module_config_sec, "MASK_PATHS"):
+        mask_paths = mask_query_util.parse_map_paths(
+            config.getexpanded(module_config_sec, "MASK_PATHS")
         )
+    else:
+        mask_paths = []
 
     # Any nonzero map value flags unless a bit selection is given
     if config.has_option(module_config_sec, "MASK_BITS"):
@@ -67,7 +69,8 @@ def mask_query_runner(
     )
     n_flagged = mq_inst.process()
 
-    w_log.info(f"FLAG_EXT nonzero for {n_flagged} objects")
+    if mask_paths:
+        w_log.info(f"MASK_EXT nonzero for {n_flagged} objects")
 
     # No return objects
     return None, None

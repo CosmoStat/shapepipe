@@ -8,18 +8,34 @@ This package contains the module for ``mask_query``.
 
 :Input: Single-exposure single-CCD SExtractor catalogue
 
-:Output: The same catalogue with an added ``FLAG_EXT`` column
+:Output: The same catalogue with an added ``MASK_EXT`` column
+
+Two classes of mask
+===================
+
+ShapePipe distinguishes them, and they are not interchangeable:
+
+**Instrument flags** mark a CORRUPTED MEASUREMENT — bad columns, saturation —
+in the flag image delivered with each exposure. A flagged pixel carries no
+usable signal, so these are the only masks that reject anything inside the
+pipeline: ``setools`` drops flagged stars via ``IMAFLAGS_ISO``, and ``ngmix``
+zero-weights flagged pixels and drops epochs that lose too many.
+
+**Healsparse masks** are sky-fixed LOCATION flags — a star halo, a manual
+region, a band with no data. They say where an object is, not that its pixels
+are broken, so what to do about one is an analysis decision. They are queried
+into columns and every rejection happens downstream: ``MASK_EXT`` here,
+``MASK_<band>`` in ``make_cat``. Nothing in the pipeline cuts on either.
 
 Description
 ===========
 
-ShapePipe consumes sky-fixed masks by querying them, not by rasterizing them.
 This module sits between SExtractor and ``setools`` on the exposure chain: it
 reads each detection's windowed world position (``XWIN_WORLD``, ``YWIN_WORLD``
 in the ``LDAC_OBJECTS`` extension) and looks it up in the configured healsparse
 maps, writing one integer column:
 
-``FLAG_EXT``
+``MASK_EXT``
     ``0`` for an object no configured map flags, nonzero otherwise. What the
     nonzero value *is* depends on the maps: a boolean map — which is what the
     UNIONS per-bit products are, and what the shipped config names — can only
@@ -32,22 +48,24 @@ The single column exists because ``setools`` expressions support only
 ``< > <= >= == !=`` — no bitwise operators — so any bit selection has to happen
 here, leaving the config a plain test for zero.
 
-Nothing cuts on it by default
-=============================
+Off by default, and a no-op when off
+====================================
 
-The shipped ``star_selection.setools`` does NOT cut on ``FLAG_EXT``. The PSF
-star selection is permissive: it rejects on the instrument flags
-(``IMAFLAGS_ISO == 0``) and leans on outlier rejection for the rest. The
-column is written for transparency and measurement — so the effect of the
-external masks on the star sample can be *measured* before it is imposed —
-which is the same principle as ``make_cat``'s unfiltered ``MASK_<band>``
-columns: flag here, cut downstream.
+``MASK_PATHS`` ships COMMENTED OUT. With no maps configured the module is a
+strict no-op: the catalogue is copied through unchanged, with no ``MASK_EXT``
+column at all — the same gating ``make_cat`` gives ``MASK_EXT_PATHS``. It stays
+in the ``MODULE`` chain either way, so enabling the query is uncommenting one
+line and never editing the chain.
 
-Feeding the external masks to the star selection is a one-line change if
-outlier rejection turns out not to be robust enough: add ``FLAG_EXT == 0`` by
-each
+Even with maps configured, nothing cuts on the result. The PSF star selection
+deliberately starts from outlier rejection alone, rejecting only on the
+instrument flags, and ``MASK_EXT`` is the configurable pickup if that proves
+insufficient. Writing the column without cutting on it is what lets the effect
+of a mask on the star sample be *measured* before it is imposed.
+
+That pickup is one line: add ``MASK_EXT == 0`` beside each
 ``IMAFLAGS_ISO == 0`` in ``star_selection.setools``. The escape hatch is
-deliberate, and the file's header says so.
+deliberate, and that file's header says so.
 
 The lookup itself lives in :mod:`shapepipe.utilities.mask_query`, shared with
 ``make_cat``'s per-band ``MASK_<band>`` columns, so the healsparse primitive is

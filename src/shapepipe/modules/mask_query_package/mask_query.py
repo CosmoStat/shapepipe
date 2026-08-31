@@ -6,6 +6,8 @@ Class to flag SExtractor detections against external healsparse masks.
 
 """
 
+import shutil
+
 import numpy as np
 
 from shapepipe.pipeline import file_io
@@ -16,8 +18,15 @@ class MaskQuery(object):
     """Mask Query.
 
     Query external healsparse masks at every detection of a SExtractor
-    catalogue and write the result as a single ``FLAG_EXT`` column into a copy
+    catalogue and write the result as a single ``MASK_EXT`` column into a copy
     of that catalogue.
+
+    With no maps configured this is a strict no-op: the input catalogue is
+    copied through unchanged, with no ``MASK_EXT`` column, matching
+    ``make_cat``'s ``MASK_EXT_PATHS`` contract (absent key, nothing happens).
+    The copy is what keeps the module in the chain — ``setools`` reads this
+    module's output, so producing no file would break the chain rather than
+    disable the query.
 
     Parameters
     ----------
@@ -26,7 +35,7 @@ class MaskQuery(object):
     output_path : str
         Path to the output catalogue
     mask_paths : list
-        Paths to the healsparse maps to query
+        Paths to the healsparse maps to query; empty means no-op
     bits : int, optional
         Bit mask applied to integer maps; default ``None`` flags any nonzero
         value
@@ -61,6 +70,20 @@ class MaskQuery(object):
             Number of flagged objects
 
         """
+        if not self._mask_paths:
+            # No maps configured: copy the catalogue through byte-for-byte.
+            # A rewrite through FITSCatalogue would round-trip the LDAC HDUs
+            # for no reason; this way an unconfigured run is provably
+            # identical to its input.
+            shutil.copyfile(self._sexcat_path, self._output_path)
+            if self._w_log is not None:
+                self._w_log.info(
+                    "No MASK_PATHS configured; passing "
+                    + f"{self._sexcat_path} through unchanged, no MASK_EXT"
+                    + " column written"
+                )
+            return 0
+
         ori_cat = file_io.FITSCatalogue(
             self._sexcat_path,
             SEx_catalogue=True,
@@ -80,7 +103,7 @@ class MaskQuery(object):
             if self._w_log is not None:
                 self._w_log.info(
                     "No detections in "
-                    + f"{self._sexcat_path}; writing an empty FLAG_EXT column"
+                    + f"{self._sexcat_path}; writing an empty MASK_EXT column"
                 )
         else:
             ra = np.copy(data["XWIN_WORLD"])
@@ -103,7 +126,7 @@ class MaskQuery(object):
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
         )
         ori_cat.add_col(
-            "FLAG_EXT", flag, new_cat=True, new_cat_inst=new_cat
+            "MASK_EXT", flag, new_cat=True, new_cat_inst=new_cat
         )
         ori_cat.close()
 

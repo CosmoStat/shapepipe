@@ -12,10 +12,10 @@ Two callers share the primitive defined here:
 
 * ``make_cat`` writes one ``MASK_<band>`` column per configured map, carrying
   the map value verbatim (no interpretation, no filtering);
-* ``mask_query`` writes a single integer ``FLAG_EXT`` column onto the exposure
+* ``mask_query`` writes a single integer ``MASK_EXT`` column onto the exposure
   SExtractor catalogue, combining the configured maps into "clean (0) or
   flagged (nonzero)" so that ``setools`` — whose expression language has no
-  bitwise operators — *could* cut on ``FLAG_EXT == 0``. The shipped selection
+  bitwise operators — *could* cut on ``MASK_EXT == 0``. The shipped selection
   does not; the column is carried for measurement (see that module).
 
 Partial reads
@@ -34,11 +34,13 @@ is ~23 kB, so the padding costs under a megabyte and buys immunity to any
 edge convention we did not think of. ``test_partial_read_matches_full`` is
 what actually holds the two paths equal.
 
-Measured on the DR6 star map (``mask_ugriz_nside131072_n4.hsp``, 583 MB,
-``nside_coverage=128``) for 2000 positions in one CCD-sized box, one process
-each: partial 0.102 s / 157 MiB peak RSS, full 12.8 s / 3364 MiB, identical
-values. Per 40-CCD exposure that is ~4 s against ~8.5 min of map reading, and
-the query adds ~0.15 GB to a rule already asking for 16 GB.
+Measured on the DR6 star-body map — the bit-2 rung of the ladder the configs
+name ``mask_ugriz_nside131072_n4.hsp``, run against the staged single-band copy
+``mask_r_nside131072_n4.hsp``, 583 MB, ``nside_coverage=128`` — for 2000
+positions in one CCD-sized box, one process each: partial 0.102 s / 157 MiB
+peak RSS, full 12.8 s / 3364 MiB, identical values. Per 40-CCD exposure that
+is ~4 s against ~8.5 min of map reading, and the query adds ~0.15 GB to a rule
+already asking for 16 GB.
 
 Coverage
 --------
@@ -284,7 +286,7 @@ def flag_positions(paths, ra, dec, bits=None, w_log=None):
                 # and looks exactly like "nothing is masked here". Say it.
                 w_log.warning(
                     f"Mask query {path}: NO object is inside this map's"
-                    + " coverage — the resulting FLAG_EXT contribution is"
+                    + " coverage — the resulting MASK_EXT contribution is"
                     + " zero everywhere because the map does not reach these"
                     + " positions, not because they are clean."
                 )

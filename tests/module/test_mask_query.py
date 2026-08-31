@@ -3,7 +3,7 @@
 Exercises the exposure-side half of the query-everything mask design (PR #847):
 ``mask_query`` reads each SExtractor detection's windowed world position out of
 the ``LDAC_OBJECTS`` extension, looks it up in the configured healsparse maps,
-and writes a single integer ``FLAG_EXT`` column into a NEW catalogue beside the
+and writes a single integer ``MASK_EXT`` column into a NEW catalogue beside the
 input.
 
 What is locked in here: (1) boolean maps flag with ``1``, (2) integer maps
@@ -13,6 +13,8 @@ off-coverage sentinel (``-1``) never flags — the one place this differs from
 :mod:`shapepipe.utilities.mask_query` — (4) several maps OR together, and
 (5) the input catalogue is left untouched while the LDAC structure survives.
 """
+
+import pathlib
 
 import numpy as np
 import numpy.testing as npt
@@ -120,7 +122,7 @@ def _read(path):
     cat = file_io.FITSCatalogue(str(path), SEx_catalogue=True)
     cat.open()
     data = cat.get_data()
-    flag = np.copy(data["FLAG_EXT"])
+    flag = np.copy(data["MASK_EXT"])
     names = set(data.dtype.names)
     cat.close()
     return flag, names
@@ -171,7 +173,7 @@ def test_flag_positions_boolean_map(tmp_path):
 
 
 def test_mask_query_writes_flag_ext(tmp_path):
-    """The module writes FLAG_EXT into a new catalogue and counts the hits."""
+    """The module writes MASK_EXT into a new catalogue and counts the hits."""
     map_path = _write_map(tmp_path / "star.hsp", 4, n_covered=2)
     in_path = _write_sexcat(tmp_path / "sexcat-000-0.fits")
     out_path = tmp_path / "sexcat_ext-000-0.fits"
@@ -196,7 +198,7 @@ def test_mask_query_writes_flag_ext(tmp_path):
 
     # The input is not mutated: this module publishes a new file.
     with fits.open(in_path) as hdus:
-        assert "FLAG_EXT" not in hdus[2].data.dtype.names
+        assert "MASK_EXT" not in hdus[2].data.dtype.names
 
 
 def test_mask_query_bits_and_all_clean(tmp_path):
@@ -297,7 +299,7 @@ def test_mask_query_empty_ccd(tmp_path):
     assert out_path.exists()
     flag, names = _read(out_path)
     assert flag.shape == (0,)
-    assert "FLAG_EXT" in names
+    assert "MASK_EXT" in names
     assert any("No detections" in m for m in log.info_msgs)
 
 
@@ -310,3 +312,37 @@ def test_empty_coverage_raises_clearly(tmp_path):
     path = _write_map(tmp_path / "empty.hsp", 4, n_covered=0)
     with pytest.raises(ValueError):
         mask_query_util.query_map_coverage(path, RA, DEC)
+
+
+def test_mask_query_no_maps_is_noop(tmp_path):
+    """No MASK_PATHS means a strict pass-through, not a zero column.
+
+    The shipped configs comment MASK_PATHS out, so this is the DEFAULT path.
+    mask_query stays in the MODULE chain either way — setools reads its output
+    — so the no-op has to publish a file, and that file must be identical to
+    its input with no MASK_EXT column at all (the gating make_cat gives
+    MASK_EXT_PATHS).
+    """
+    in_path = _write_sexcat(tmp_path / "sexcat-000-3.fits")
+    out_path = tmp_path / "sexcat_ext-000-3.fits"
+    log = _NullLogger()
+
+    n_flagged = MaskQuery(in_path, str(out_path), [], w_log=log).process()
+
+    assert n_flagged == 0
+    assert out_path.exists()
+    assert out_path.read_bytes() == pathlib.Path(in_path).read_bytes()
+    with fits.open(str(out_path)) as hdus:
+        assert "MASK_EXT" not in hdus[2].data.dtype.names
+        assert [hdu.name for hdu in hdus] == [
+            "PRIMARY",
+            "LDAC_IMHEAD",
+            "LDAC_OBJECTS",
+        ]
+    assert any("No MASK_PATHS configured" in m for m in log.info_msgs)
+
+
+def test_flag_positions_no_maps(tmp_path):
+    """The utility with no paths returns an all-zero flag and reads nothing."""
+    flag = mask_query_util.flag_positions([], RA, DEC)
+    npt.assert_array_equal(flag, [0, 0, 0, 0])

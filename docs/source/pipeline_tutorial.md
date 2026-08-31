@@ -196,22 +196,30 @@ consumed by *querying them at object positions*, never by rasterizing them onto
 pixels. Two modules do the querying, from the same shared lookup
 (`shapepipe.utilities.mask_query`): `mask_query` runs between `sextractor` and
 `setools` on the single-exposure single-CCD catalogues and writes one integer
-`FLAG_EXT` column (0 = clean), recording the star-body map (bit 2) against every
+`MASK_EXT` column (0 = clean), recording the star-body map (bit 2) against every
 detection; `make_cat` writes one
 `MASK_<band>` column per band onto the final tile catalogue, carrying the map
 value verbatim so downstream selections choose their own cuts. Map paths and
 bit selections live in the config files (`MASK_PATHS` / `MASK_BITS` and
 `MASK_EXT_PATHS`), so regenerated mask products cost a config edit and no code.
 
-**Nothing in the pipeline cuts on these columns.** The PSF star selection ships
-permissive: `star_selection.setools` rejects on the instrument flags
-(`IMAFLAGS_ISO == 0`) and nothing else, leaning on outlier rejection for the
-rest, and the final catalogue's `MASK_<band>` columns are written unfiltered.
-The principle is to flag transparently and cut downstream, so the effect of a
-mask can be measured before it is imposed. If outlier rejection turns out not to
-be robust enough, feeding the external masks to the star selection is one line
-per mask block — add `FLAG_EXT == 0` beside each `IMAFLAGS_ISO == 0` — and that
-file's header documents the change.
+The distinction that drives all of this is what a mask *means*. An **instrument
+flag** marks a corrupted measurement — the pixels carry no usable signal — so
+these are the only masks that reject anything inside the pipeline. The
+**healsparse masks** are sky-fixed location flags: they say where an object
+sits, not that its pixels are broken, so what to do about one is an analysis
+decision and is made downstream.
+
+**Nothing in the pipeline cuts on the queried columns**, and on exposures the
+query ships off entirely: `MASK_PATHS` is commented out, which makes
+`mask_query` a strict no-op that passes the catalogue through with no
+`MASK_EXT` column (the module stays in the chain, so enabling it is
+uncommenting one line). `star_selection.setools` rejects on `IMAFLAGS_ISO == 0`
+and nothing else, deliberately starting from outlier rejection alone, and the
+final catalogue's `MASK_<band>` columns are written unfiltered. `MASK_EXT` is
+the configurable pickup if outlier rejection proves insufficient: add
+`MASK_EXT == 0` beside each `IMAFLAGS_ISO == 0`, one line per mask block, as
+that file's header documents.
 
 No internet access is needed at any point, and there is no reference star
 catalogue to download.

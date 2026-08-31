@@ -201,11 +201,14 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   and weight and SExtractor reads as `IMAFLAGS_ISO`. Everything else — star
   halos, manual masks, per-band coverage, MaxiMask — is supplied as sky-fixed
   healsparse maps and QUERIED once per object: the `mask_query` module writes a
-  `FLAG_EXT` column onto each CCD's detection catalogue (inside `exp_psf`), and
+  `MASK_EXT` column onto each CCD's detection catalogue (inside `exp_psf`), and
   `make_cat` writes one `MASK_<band>` column per band onto the final catalogue
-  (inside `tile_make_cat`). Neither is cut on in the pipeline: the PSF star
-  selection rejects on instrument flags alone and everything else is a
-  downstream decision. Map paths are config, not
+  (inside `tile_make_cat`). Neither is cut on in the pipeline: instrument flags
+  mark corrupted measurements and are the only masks that reject anything here,
+  while the healsparse masks are location flags and every decision about them is
+  downstream. On exposures the query ships off — `MASK_PATHS` is commented out,
+  making `mask_query` a no-op pass-through — so turning it on is a config edit,
+  not a chain edit. Map paths are config, not
   code, so regenerated products cost a config edit. Nothing is fetched from a
   catalogue server, staged, or rasterized, which is why the old
   `star_catalogue` / `exp_star_cat` / `exp_mask` rules and their cache root are
