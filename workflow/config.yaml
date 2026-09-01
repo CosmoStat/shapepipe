@@ -83,6 +83,65 @@ star_cats: /project/def-mjhudson/cdaley/sp-products/star-cat-cache
 # would otherwise have to rebuild from tile headers.
 index_db: /project/def-mjhudson/cdaley/sp-products/smk-g6/index/run_index.sqlite
 
+# Per-exposure PSF products to COPY onto the persistent root before the scratch
+# store goes (`exp_persist`, exposure.smk). A list of plain file-name globs,
+# matched recursively under the PSF chain's four module output dirs
+# (<run_dir>/exp/<shard>/<exp>/output/run_sp_exp_SxSePsfPi/*/output/ —
+# sextractor_runner, setools_runner, psfex_runner, psfex_interp_runner).
+# Matches land flat in <products_dir>/exp/<shard>/<exp>/psf/.
+#
+# WHY COPY RATHER THAN EXEMPT THESE FROM CLEANUP. Reclamation is not the threat.
+# run_dir is /scratch and is PURGED on a 60-day window whether or not
+# clean_exposure ever ran; products_dir is /project, backed up and not purged.
+# The only way a per-exposure product outlives its campaign is to leave the
+# filesystem. (Ordering is free: clean_exposure takes the exp_persist manifest
+# as an input, so a store is never reclaimed before its keepers are written.)
+#
+# EDITING THIS LIST IS CHEAP. It rides on exp_persist's `params`, so a change
+# reruns the copy (seconds) and NOT exp_psf (four hours per exposure). That
+# separation is the whole reason exp_persist is a rule of its own.
+#
+# The default is the minimum: the psfex_interp VALIDATION catalogue, one per
+# CCD, which is the input to the rho/tau statistics. Without it the PSF
+# diagnostics cannot be recomputed after a purge without rebuilding the exposure
+# chain from VOS.
+#
+# OPT-IN CANDIDATES, and what each buys (sizes to be measured):
+#   star_split_ratio_80-*.fits  setools' 80% TRAINING star sample, the set PSFEx
+#                               actually fitted. Refit or perturb the model.
+#                               <size TBD>
+#   star_split_ratio_20-*.fits  the 20% VALIDATION sample — the positions the
+#                               validation_psf rows correspond to, with the
+#                               measured star shapes beside them. <size TBD>
+#   star_selection-*.fits       the PRE-SPLIT selection (setools writes it under
+#                               mask/). The only file that can answer "which
+#                               stars were rejected, and why" — the split
+#                               samples have already lost the rejects.
+#                               <size TBD>
+#   star_stat-*.txt             setools' per-CCD STAT block (star counts,
+#                               stars/deg^2, FWHM mode and cuts, under stat/):
+#                               the selection's summary without its catalogue.
+#                               <size TBD>
+#   *.psf                       the PSFEx model itself. Keeping it means the PSF
+#                               can be re-interpolated at ANY position later
+#                               without rebuilding the exposure chain — the
+#                               single most capability-adding entry here.
+#                               <size TBD>
+#   psfex_cat*.cat              PSFEx's own output catalogue (FITS_LDAC).
+#                               <size TBD>
+# PSFEx residual/check images and its XML diagnostics are NOT candidates as the
+# chain stands: the committed default.psfex sets CHECKIMAGE_TYPE NONE and
+# WRITE_XML N, so nothing is emitted to match. They are a config change first,
+# a pattern second.
+#
+# NOTE ON products_dir DEFAULTING TO run_dir (a fixture or smoke test): the copy
+# then lands beside the store on the same filesystem and buys nothing, and the
+# manifest sits in the exposure's own manifests/ dir, which clean_exposure
+# deletes wholesale — so a one-root run re-persists after every reclamation.
+# Harmless, and exactly the pre-D5 behaviour a one-root run asks for.
+persist_exp:
+  - validation_psf-*.fits
+
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
 # that exposure has its vignets, deletes the exposure's store AND its manifests,
