@@ -1,6 +1,6 @@
 """Exposure chain — per exposure, keyed by exp base id (dedup is structural).
 
-    exp_get_images -> exp_split -----> exp_mask -> exp_psf
+    exp_get_images -> exp_split -----> exp_mask -> exp_psf -> exp_persist
                    -> exp_star_cat --/
     star_catalogue ---------------/
 
@@ -11,6 +11,12 @@ Each in the exposure's own sharded work dir, chained by manifests; every config
 reads fixed ``$SP_RUN/output/run_sp_exp_*`` INPUT_DIRs, so nothing resolves a
 run log. There is no `prepare_exposures` aggregation target: these chains hang
 off the compute DAG (`all` <- final_cat <- tile chain <- exposure manifests).
+
+``exp_persist`` is the one rule here that writes to the PERSISTENT root: it
+copies the PSF products named by `persist_exp:` off /scratch before the purge
+(or clean_exposure) can take them. It is a separate rule from exp_psf precisely
+so that editing that list costs a `cp` and not a four-hour refit; the full
+argument is in workflow/scripts/persist_exp.py.
 
 NO temp() anywhere in this file, ever (D5). Exposures overlap tiles by
 construction (~7-10 tiles each), so their consumer set closes over the CAMPAIGN,
@@ -315,6 +321,59 @@ rule exp_psf:
         sp_shell("exp_psf", "config_exp_psfex.ini")
 
 
+# --- persistence (D5) -------------------------------------------------------
+# The counterpart of reclamation, and it must come first in the DAG: this copies
+# the exposure's keepable PSF products onto the persistent root, and
+# clean_exposure below takes its manifest as an input so the store is never
+# reclaimed before the keepers have left /scratch. The purge would take them
+# anyway — that, not clean_exposure, is what this rule exists for
+# (persist_exp.py's docstring argues both halves, and config.yaml's
+# `persist_exp:` block carries the keep list and its candidates).
+#
+# A LOCALRULE (declared in the Snakefile), by exactly the arithmetic that made
+# exp_star_cat one: the body is `cp` of a few MB from one shared filesystem to
+# another, seconds of work, and one sbatch per exposure would be ~20k
+# submissions at DR6 scale for jobs shorter than the scheduling latency. The
+# grouping constraint that binds mid-chain localrules (this file's docstring)
+# does not bite here: exp_persist's only neighbours are exp_psf, which is too
+# heavy to ever fuse, and clean_exposure, which is local itself.
+#
+# ONE DECLARED OUTPUT, AND IT IS A MANIFEST, NOT A directory(). The copies are
+# not declared: a directory output would attest that a directory exists, where
+# what we want written down is WHICH files were copied and how big each was —
+# the provenance a rho-statistics run months from now needs in order to know
+# what it is reading. The manifest is byte-stable, so a no-op rerun does not
+# move its mtime and does not make clean_exposure look out of date.
+#
+# THE KEEP LIST RIDES ON params. That is the entire reason this is not three
+# lines of cp appended to exp_psf's shell: `params` is a rerun trigger, so
+# adding a pattern reruns the copy and leaves the PSF chain alone.
+rule exp_persist:
+    input:
+        rules.exp_psf.output.manifest
+    output:
+        manifest = f"{PROD_EXP_DIR}/manifests/exp_persist.json"
+    # No `log:`: the script's only failure modes are "nothing matched" and a
+    # name collision, both of which it reports on stderr and neither of which
+    # has a per-CCD verdict worth a completeness record.
+    params:
+        patterns    = " ".join(f"--pattern '{p}'" for p in PERSIST_EXP),
+        exp_dir     = lambda wc: exp_dir(wc.exp),
+        dest        = lambda wc: f"{prod_exp_dir(wc.exp)}/psf",
+        script_hash = PERSIST_HASH
+    threads: 1
+    retries: 2
+    resources:
+        mem_mb = 2000,
+        runtime = 10
+    shell:
+        "set -euo pipefail\n"
+        f"python {SCRIPTS}/persist_exp.py"
+        " --exp-dir '{params.exp_dir}' --exp {wildcards.exp}"
+        " --dest '{params.dest}' --manifest {output.manifest}"
+        " {params.patterns}"
+
+
 # --- reclamation (D5) -------------------------------------------------------
 # The one exception to "no reclamation in this file": clean_exposure OWNS
 # exposure-level deletion, and it is a real job, not temp() bookkeeping, because
@@ -346,7 +405,16 @@ rule clean_exposure:
         # spatial neighbours. In-scope consumers keep their edge: they may run in
         # this DAG, so the clean must be ordered after them.
         lambda wc: [tile_manifest(t, "tile_vignets")
-                    for t in clean_consumers(wc.exp) if t in READY_SET]
+                    for t in clean_consumers(wc.exp) if t in READY_SET],
+        # The keepers must be off /scratch before the store goes. Unlike the
+        # consumer edges above, this edge does not depend on scope: it is the
+        # same exposure's own rule, so it drags nothing into the DAG that this
+        # exposure's chain did not already put there. It is conditional only on
+        # there being a keep list at all — with `persist_exp:` empty, "keep
+        # nothing" is a coherent instruction and must not become a dependency on
+        # a rule that would fail for having nothing to copy.
+        lambda wc: ([prod_exp_manifest(wc.exp, "exp_persist")]
+                    if PERSIST_EXP else [])
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
     params:
