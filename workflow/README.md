@@ -154,7 +154,7 @@ workflow/
   bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
-    exposure.smk         per-exposure: get_images, star_cat, split, mask, psf (no temp())
+    exposure.smk         per-exposure: get_images, star_cat, split, mask, psf, persist (no temp())
     tile.smk             per-tile: exp forest, merge_headers, mask, detect, vignets, ngmix, merge, make_cat
   scripts/
     sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count floor)
@@ -163,6 +163,7 @@ workflow/
     completeness.py      the ported count-floor table (shared by sp_rule + run_report)
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
+    persist_exp.py       ONE exposure's keepable PSF products -> products_dir (the exp_persist rule)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
@@ -230,6 +231,20 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   trigger reads that cut as a reason to rerun the very tiles it protects.
   Know the consequence — `--forcerun` on a tile whose `final_cat` exists will
   not rebuild its reclaimed exposures. Delete the `final_cat` first.
+- **PSF products leave scratch before the purge does.** `exp_persist` copies
+  the files named by `persist_exp:` in `config.yaml` (default: the psfex_interp
+  `validation_psf-*.fits`, the rho/tau statistics input) from the exposure's
+  scratch store into `<products_dir>/exp/<prefix>/<base>/psf/`, and writes ONE
+  manifest beside them recording the patterns, the files and their sizes. The
+  threat it answers is the /scratch purge, not `clean_exposure` — the store goes
+  in 60 days whether or not the workflow reclaimed it — so it runs even with
+  `clean: false`, requested directly by `rule all`. `clean_exposure` takes its
+  manifest as an input, so reclamation can never overtake the copy. It is a
+  rule of its own rather than a `cp` on the end of `exp_psf` because the keep
+  list rides on `params`: adding a pattern reruns seconds of copying, not four
+  hours of PSF fitting per exposure. A pattern that matches nothing is a
+  recorded warning (setools rejects sparse CCDs); matching nothing at all is a
+  failure. A `localrule`, like `exp_star_cat` and for the same arithmetic.
 - **A dead tile can be told to stop pinning exposures.** An exposure is
   cleanable only once every consuming tile has its vignets, so one
   permanently-failed tile holds its ~80 exposures for the life of the
