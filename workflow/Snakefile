@@ -258,6 +258,7 @@ EXP_DIR  = str(RUN_DIR / "exp" / "{shard}" / "{exp}")
 # The persistent root mirrors the scratch one, shard for shard, so the two trees
 # read as the same campaign seen from two filesystems.
 PROD_TILE_DIR = str(PRODUCTS_DIR / "tiles" / "{shard}" / "{tile}")
+PROD_EXP_DIR  = str(PRODUCTS_DIR / "exp" / "{shard}" / "{exp}")
 
 def tile_dir(tile):
     return f"{RUN_DIR}/tiles/{tile[:2]}/{tile}"
@@ -270,6 +271,18 @@ def tile_manifest(tile, stage):
 
 def exp_manifest(exp, stage):
     return f"{exp_dir(exp)}/manifests/{stage}.json"
+
+def prod_exp_dir(exp):
+    """The exposure's dir on the PERSISTENT root — where exp_persist writes.
+
+    Sharded identically to the scratch one, so the two trees read as the same
+    campaign seen from two filesystems, exposure side as well as tile side."""
+    return f"{PRODUCTS_DIR}/exp/{exp[:2]}/{exp}"
+
+def prod_exp_manifest(exp, stage):
+    """A manifest that must SURVIVE reclamation, so it is not in the exposure's
+    scratch manifests/ dir (clean_exposure deletes that wholesale)."""
+    return f"{prod_exp_dir(exp)}/manifests/{stage}.json"
 
 def forest_dir(tile):
     return f"{tile_dir(tile)}/exp_forest"
@@ -309,6 +322,7 @@ SCRIPT_HASH = script_hash("completeness.py")
 FOREST_HASH = script_hash("build_forest.py")
 CLEAN_HASH  = script_hash("clean_exposure.py")
 CLEAN_TILE_HASH = script_hash("clean_tile.py")
+PERSIST_HASH = script_hash("persist_exp.py")
 # Same argument for star_cats.py, which both star-cat rules call: their params
 # otherwise fingerprint nothing but paths, so an edit to the chunking or the cut
 # would never rerun them. ONE hash for both rules because it is one script — and
@@ -433,6 +447,40 @@ def clean_targets():
                for t in tiles):
             out.append(tombstone(exp))
     return sorted(out)
+
+# --- persisted exposure products (D5) --------------------------------------
+# The keep list is config, not a rule input, and it is READ HERE so that exactly
+# one place converts it into the form the rule carries. An empty list is a
+# deliberate "keep nothing" and produces no jobs at all.
+PERSIST_EXP = list(config.get("persist_exp") or [])
+
+
+def persist_targets():
+    """Which exposures this invocation must pack PSF products off scratch for.
+
+    `rule all` requests these DIRECTLY rather than reaching them only through
+    clean_exposure. Persistence and reclamation are different concerns — the
+    /scratch purge takes the store whether or not `clean:` is on — and hanging
+    the copy off the clean rule alone would mean a campaign run with clean:false
+    persists nothing and loses everything at the purge.
+
+    Scope is the ready tiles' exposures, which `all` already builds through the
+    tile chain, so nothing new is pulled into the DAG by asking.
+
+    EXCEPT A CLEANED EXPOSURE. Its exp_psf manifest was deleted by
+    clean_exposure, so requesting its persist manifest would make the DAG
+    rebuild the whole exposure chain from VOS — the avalanche tile.smk's
+    reclaimed-edge cut exists to prevent, arriving through a new target instead.
+    A tombstone means the copy already happened (clean_exposure cannot run
+    before exp_persist), so there is nothing to ask for.
+
+    HEAD PROCESS ONLY, for the same reason as clean_targets() above.
+    """
+    if not PERSIST_EXP or not workflow.is_main_process:
+        return []
+    exps = {e for t in TILES_READY for e in tile_exposures(t)}
+    return sorted(prod_exp_manifest(e, "exp_persist") for e in exps
+                  if not Path(tombstone(e)).exists())
 
 # --- tile reclamation (D5) --------------------------------------------------
 # A SEPARATE FLAG from `clean:`, deliberately (config.yaml carries the full
@@ -589,22 +637,29 @@ include: "rules/exposure.smk"
 include: "rules/tile.smk"
 
 # --- top-level targets ------------------------------------------------------
-# The aggregation targets, clean_exposure, clean_tile, star_catalogue and
-# exp_star_cat run in the head process. The two clean rules are seconds of rmtree
+# The aggregation targets, clean_exposure, clean_tile, star_catalogue,
+# exp_star_cat and exp_persist run in the head process. The two clean rules are seconds of rmtree
 # and hang off `all`; exp_star_cat is seconds of local FITS work; all three would
 # otherwise be ~20k (clean_exposure, exp_star_cat) or ~23k (clean_tile) sbatch
 # submissions at DR6 scale for work shorter than the scheduling latency.
 # star_catalogue is one job either way, and local keeps its CDS concurrency the
 # explicit number its thread pool sets (see exposure.smk).
 #
+# exp_persist joins them for the same arithmetic — a few MB of `tar` per exposure,
+# ~20k of them at DR6 scale, each far shorter than the scheduling latency that
+# would submit it (exposure.smk argues the placement in full).
+#
 # star_catalogue and exp_star_cat are MID-CHAIN localrules, so they must stay out
 # of any future `group:` label: a local job cannot be fused into a submitted group.
-# The two clean rules are DAG leaves and have no such constraint.
-localrules: all, prepare_all_tiles, clean_exposure, clean_tile, star_catalogue, exp_star_cat
+# exp_persist sits between exp_psf and clean_exposure, both of which are outside
+# every group already (exp_psf is heavy, clean_exposure is local), so it adds no
+# new constraint. The two clean rules are DAG leaves and have none either.
+localrules: all, prepare_all_tiles, clean_exposure, clean_tile, star_catalogue, exp_star_cat, exp_persist
 
 rule all:
     input:
         [final_cat(t) for t in TILES_READY],
+        persist_targets(),
         clean_targets(),
         clean_tile_targets(),
 

@@ -83,6 +83,78 @@ star_cats: /project/def-mjhudson/cdaley/sp-products/star-cat-cache
 # would otherwise have to rebuild from tile headers.
 index_db: /project/def-mjhudson/cdaley/sp-products/smk-g6/index/run_index.sqlite
 
+# Per-exposure PSF products to carry onto the persistent root before the scratch
+# store goes (`exp_persist`, exposure.smk). A list of plain file-name globs,
+# matched recursively under the PSF chain's four module output dirs
+# (<run_dir>/exp/<shard>/<exp>/output/run_sp_exp_SxSePsfPi/*/output/ —
+# sextractor_runner, setools_runner, psfex_runner, psfex_interp_runner).
+# Matches are packed, flat, into ONE uncompressed tar per exposure:
+# <products_dir>/exp/<shard>/<exp>/psf/<exp>.tar, with a manifest listing the
+# members beside it. One tar rather than loose copies because inodes, not bytes,
+# bind on /project (~1 M-file group quota; loose copies would be ~200 files per
+# exposure, ~2 M at DR6 scale). FITS members read straight from the tar:
+# fits.open(io.BytesIO(tarfile.open(t).extractfile(m).read())).
+#
+# WHY COPY RATHER THAN EXEMPT THESE FROM CLEANUP. Reclamation is not the threat.
+# run_dir is /scratch and is PURGED on a 60-day window whether or not
+# clean_exposure ever ran; products_dir is /project, backed up and not purged.
+# The only way a per-exposure product outlives its campaign is to leave the
+# filesystem. (Ordering is free: clean_exposure takes the exp_persist manifest
+# as an input, so a store is never reclaimed before its keepers are written.)
+#
+# EDITING THIS LIST IS CHEAP. It rides on exp_persist's `params`, so a change
+# reruns the packing (seconds) and NOT exp_psf (four hours per exposure). That
+# separation is the whole reason exp_persist is a rule of its own.
+#
+# The default is the minimum: the psfex_interp VALIDATION catalogue, one per
+# CCD, which is the input to the rho/tau statistics. Without it the PSF
+# diagnostics cannot be recomputed after a purge without rebuilding the exposure
+# chain from VOS.
+#
+# OPT-IN CANDIDATES, and what each buys. Sizes are per exposure (40 CCDs),
+# measured on smk-m2 (127 exposures, 64 tiles); a 64-tile campaign with all of
+# the measured ones on came to 7.2 GB:
+#   validation_psf-*.fits       (the default)                        2.0 MB
+#   *.psf                       the PSFEx model itself. Keeping it means the PSF
+#                               can be re-interpolated at ANY position later
+#                               without rebuilding the exposure chain — the
+#                               single most capability-adding entry here.
+#                                                                    2.8 MB
+#   psfex_cat-*.cat             PSFEx's own output catalogue (FITS_LDAC): the
+#                               per-star FLAGS_PSF / CHI2_PSF, i.e. WHICH stars
+#                               outlier rejection clipped. Not recoverable from
+#                               anything else (the .psf header keeps only the
+#                               LOADED/ACCEPTED counts).           unmeasured
+#   star_selection-*.fits       the PRE-SPLIT selection (setools writes it under
+#                               mask/). The only file that can answer "which
+#                               stars were rejected by the selection cuts, and
+#                               why" — the split samples have already lost the
+#                               rejects.                            24.5 MB
+#   star_split_ratio_80-*.fits  setools' 80% TRAINING star sample, the set PSFEx
+#                               actually fitted. Rows duplicate star_selection.
+#                                                                   19.9 MB
+#   star_split_ratio_20-*.fits  the 20% VALIDATION sample — the positions the
+#                               validation_psf rows correspond to. Rows
+#                               duplicate star_selection.            7.1 MB
+#   star_stat-*.txt             setools' per-CCD STAT block (star counts,
+#                               stars/deg^2, FWHM mode and cuts, under stat/):
+#                               the selection's summary without its catalogue.
+#                                                                  unmeasured
+# A production keep list is `validation_psf` + `*.psf` + `psfex_cat` (~5 MB per
+# exposure); the star_split files are only worth it if star_selection is off.
+# PSFEx residual/check images and its XML diagnostics are NOT candidates as the
+# chain stands: the committed default.psfex sets CHECKIMAGE_TYPE NONE and
+# WRITE_XML N, so nothing is emitted to match. They are a config change first,
+# a pattern second.
+#
+# NOTE ON products_dir DEFAULTING TO run_dir (a fixture or smoke test): the tar
+# then lands beside the store on the same filesystem and buys nothing, and the
+# manifest sits in the exposure's own manifests/ dir, which clean_exposure
+# deletes wholesale — so a one-root run re-persists after every reclamation.
+# Harmless, and exactly the pre-D5 behaviour a one-root run asks for.
+persist_exp:
+  - validation_psf-*.fits
+
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
 # that exposure has its vignets, deletes the exposure's store AND its manifests,
