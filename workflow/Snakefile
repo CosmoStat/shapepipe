@@ -453,7 +453,7 @@ PERSIST_EXP = list(config.get("persist_exp") or [])
 
 
 def persist_targets():
-    """Which exposures this invocation must copy PSF products off scratch for.
+    """Which exposures this invocation must pack PSF products off scratch for.
 
     `rule all` requests these DIRECTLY rather than reaching them only through
     clean_exposure. Persistence and reclamation are different concerns — the
