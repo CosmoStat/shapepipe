@@ -13,9 +13,10 @@ run log. There is no `prepare_exposures` aggregation target: these chains hang
 off the compute DAG (`all` <- final_cat <- tile chain <- exposure manifests).
 
 ``exp_persist`` is the one rule here that writes to the PERSISTENT root: it
-copies the PSF products named by `persist_exp:` off /scratch before the purge
-(or clean_exposure) can take them. It is a separate rule from exp_psf precisely
-so that editing that list costs a `cp` and not a four-hour refit; the full
+packs the PSF products named by `persist_exp:` into one tar per exposure off
+/scratch before the purge (or clean_exposure) can take them. It is a separate
+rule from exp_psf precisely so that editing that list costs a `tar` and not a
+four-hour refit; the full
 argument is in workflow/scripts/persist_exp.py.
 
 NO temp() anywhere in this file, ever (D5). Exposures overlap tiles by
@@ -322,8 +323,8 @@ rule exp_psf:
 
 
 # --- persistence (D5) -------------------------------------------------------
-# The counterpart of reclamation, and it must come first in the DAG: this copies
-# the exposure's keepable PSF products onto the persistent root, and
+# The counterpart of reclamation, and it must come first in the DAG: this packs
+# the exposure's keepable PSF products into one tar on the persistent root, and
 # clean_exposure below takes its manifest as an input so the store is never
 # reclaimed before the keepers have left /scratch. The purge would take them
 # anyway — that, not clean_exposure, is what this rule exists for
@@ -331,23 +332,23 @@ rule exp_psf:
 # `persist_exp:` block carries the keep list and its candidates).
 #
 # A LOCALRULE (declared in the Snakefile), by exactly the arithmetic that made
-# exp_star_cat one: the body is `cp` of a few MB from one shared filesystem to
-# another, seconds of work, and one sbatch per exposure would be ~20k
+# exp_star_cat one: the body is a `tar` of a few MB from one shared filesystem
+# to another, seconds of work, and one sbatch per exposure would be ~20k
 # submissions at DR6 scale for jobs shorter than the scheduling latency. The
 # grouping constraint that binds mid-chain localrules (this file's docstring)
 # does not bite here: exp_persist's only neighbours are exp_psf, which is too
 # heavy to ever fuse, and clean_exposure, which is local itself.
 #
-# ONE DECLARED OUTPUT, AND IT IS A MANIFEST, NOT A directory(). The copies are
-# not declared: a directory output would attest that a directory exists, where
-# what we want written down is WHICH files were copied and how big each was —
+# ONE DECLARED OUTPUT, AND IT IS A MANIFEST, NOT THE TAR OR A directory(). The
+# tar is not declared: a directory output would attest that a directory exists,
+# where what we want written down is WHICH files were packed and how big each was —
 # the provenance a rho-statistics run months from now needs in order to know
 # what it is reading. The manifest is byte-stable, so a no-op rerun does not
 # move its mtime and does not make clean_exposure look out of date.
 #
 # THE KEEP LIST RIDES ON params. That is the entire reason this is not three
-# lines of cp appended to exp_psf's shell: `params` is a rerun trigger, so
-# adding a pattern reruns the copy and leaves the PSF chain alone.
+# lines of tar appended to exp_psf's shell: `params` is a rerun trigger, so
+# adding a pattern reruns the packing and leaves the PSF chain alone.
 rule exp_persist:
     input:
         rules.exp_psf.output.manifest

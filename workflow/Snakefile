@@ -456,7 +456,7 @@ PERSIST_EXP = list(config.get("persist_exp") or [])
 
 
 def persist_targets():
-    """Which exposures this invocation must copy PSF products off scratch for.
+    """Which exposures this invocation must pack PSF products off scratch for.
 
     `rule all` requests these DIRECTLY rather than reaching them only through
     clean_exposure. Persistence and reclamation are different concerns — the
@@ -645,7 +645,7 @@ include: "rules/tile.smk"
 # star_catalogue is one job either way, and local keeps its CDS concurrency the
 # explicit number its thread pool sets (see exposure.smk).
 #
-# exp_persist joins them for the same arithmetic — a few MB of `cp` per exposure,
+# exp_persist joins them for the same arithmetic — a few MB of `tar` per exposure,
 # ~20k of them at DR6 scale, each far shorter than the scheduling latency that
 # would submit it (exposure.smk argues the placement in full).
 #
