@@ -147,14 +147,20 @@ def main() -> None:
         ti.uname = ti.gname = ""
         return ti
 
+    # tmp-then-cmp-then-mv, and the tmp NEVER outlives a failure: an orphaned
+    # .tmp on /project is an inode nothing revisits — the leak this whole tar
+    # design exists to avoid, one per failed attempt at DR6 scale.
     tmp = tar_path.with_name(tar_path.name + ".tmp")
-    with tarfile.open(tmp, "w", format=tarfile.PAX_FORMAT) as tf:
-        for f in files:
-            tf.add(seen[f["name"]][0], arcname=f["name"], filter=anonymous)
-    if tar_path.exists() and filecmp.cmp(tmp, tar_path, shallow=False):
-        tmp.unlink()                      # unchanged: leave the mtime alone
-    else:
-        tmp.replace(tar_path)             # atomic: no half-written archive
+    try:
+        with tarfile.open(tmp, "w", format=tarfile.PAX_FORMAT) as tf:
+            for f in files:
+                tf.add(seen[f["name"]][0], arcname=f["name"], filter=anonymous)
+        if tar_path.exists() and filecmp.cmp(tmp, tar_path, shallow=False):
+            tmp.unlink()                  # unchanged: leave the mtime alone
+        else:
+            tmp.replace(tar_path)         # atomic: no half-written archive
+    finally:
+        tmp.unlink(missing_ok=True)
 
     body = {
         "stage": "exp_persist", "level": "exp", "unit": args.exp,
@@ -171,11 +177,14 @@ def main() -> None:
     }
     args.manifest.parent.mkdir(parents=True, exist_ok=True)
     tmp = args.manifest.with_name(args.manifest.name + ".tmp")
-    tmp.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n")
-    if args.manifest.exists() and filecmp.cmp(tmp, args.manifest, shallow=False):
-        tmp.unlink()                      # unchanged: leave the mtime alone
-    else:
-        tmp.replace(args.manifest)
+    try:
+        tmp.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n")
+        if args.manifest.exists() and filecmp.cmp(tmp, args.manifest, shallow=False):
+            tmp.unlink()                  # unchanged: leave the mtime alone
+        else:
+            tmp.replace(args.manifest)
+    finally:
+        tmp.unlink(missing_ok=True)
 
     warn = f" ({len(empty)} pattern(s) matched nothing: {empty})" if empty else ""
     print(f"[persist_exp] {args.exp}: {len(files)} file(s), "
