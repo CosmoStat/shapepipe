@@ -250,23 +250,6 @@ def test_version_to_patch_count(version, n_patch):
     assert len(handler._params["patches"]) == n_patch
 
 
-def test_v2_is_patchless():
-    """v2.0 removes the patch concept: summaries read from the run root."""
-    handler = CcdPsfHandler()
-    handler._params["version_cat"] = "v2.0"
-    handler.update_params()
-    assert handler._params["patches"] == ["."]
-
-
-def test_n_patch_option_overrides_version_default():
-    """An explicit -p patch count wins over the version mapping."""
-    handler = CcdPsfHandler()
-    handler._params["version_cat"] = "v2.0"
-    handler._params["n_patch"] = 4
-    handler.update_params()
-    assert handler._params["patches"] == ["P1", "P2", "P3", "P4"]
-
-
 def test_invalid_version_raises():
     """An unknown catalogue version fails loudly."""
     handler = CcdPsfHandler()

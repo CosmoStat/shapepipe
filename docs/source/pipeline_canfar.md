@@ -29,15 +29,7 @@ canfar auth switch default
 
 ### Set variables (optional)
 
-> **Patch convention by catalogue version.** Runs up to `v1.6` are organised
-> in sky patches `P1`–`P9` (7 patches for `v1.3`/`v1.4`, 8 for `v1.5`), each
-> patch a run directory of its own with its `summary/` subdirectory. **The
-> patch concept is removed in `v2.0`**: there is a single run root, and
-> summary files (`summary/missing_job_32_all.txt`, `exp_numbers.txt`) live
-> directly under it. Tools that take a catalogue version (e.g.
-> `get_ccds_with_psf -V`) follow this convention automatically.
-
-For a `v1.x` run, set the current patch in the shell as
+Set the current patch in the shell as
 
 ```bash
 patch=P[1-9]
@@ -526,15 +518,8 @@ summary_run $patch 1
 
 Now, create the list of single-CCD footprints that have a valid PSF model.
 Only these CCDs are stamped into the mask, so the accumulated map counts, per
-sky pixel, the number of exposures with a valid PSF. For a (patch-less) `v2.0`
-run — the default — call this from the run root; the list is written to
-`ccds_with_psf_v2.0.txt`:
-
-```bash
-get_ccds_with_psf -v -o ccds_with_psf_v2.0.txt
-```
-
-For an older, patched layout, select the version explicitly with `-V`:
+sky pixel, the number of exposures with a valid PSF. The list is written to
+`ccds_with_psf_v1.6.txt`:
 
 ```bash
 get_ccds_with_psf -v -V v1.6 -o ccds_with_psf_v1.6.txt
