@@ -19,18 +19,16 @@ what a survey coverage mask should do. The rule's comment says the same thing
 where a reader of the DAG will meet it.
 
 THE STAMPING IS NOT HERE. It is ``shapepipe.utilities.coverage_map_builder.
-build_map``, shared with the ``build_coverage_map`` CLI, so the RA-seam guard,
-the pole guard and the polygon accumulation have exactly one implementation. This
-script is the JSON-to-arrays half, and the records are raw sky: unwrapping across
-RA=0 happens once, inside build_map, at the moment a polygon is stamped.
+build_map``, which is where the RA-seam guard, the pole guard and the polygon
+accumulation live. This script is the JSON-to-arrays half, and the records are
+raw sky: unwrapping across RA=0 happens once, inside build_map, at the moment a
+polygon is stamped.
 
-NSIDE IS NOT DEFAULTED HERE. Both values are required arguments, carried from
-`coverage:` in config.yaml, because the production pair (128 / 131072) is NOT the
-CoverageMapBuilder default (32 / 2048) and the difference is invisible in the
-output: nside=131072 is ~0.1"/pixel, chosen to match the UNIONS bit-mask
-resolution so coverage and mask align pixel-wise. A map built at the class
-default would look entirely reasonable and would not align, and the consumer
-would not notice.
+NSIDE IS NOT DEFAULTED ANYWHERE. Both values are required arguments, carried
+from `coverage:` in config.yaml, and the difference they make is invisible in
+the output: nside=131072 is ~0.1"/pixel, chosen to match the UNIONS bit-mask
+resolution so coverage and mask align pixel-wise. A map built coarser would look
+entirely reasonable and would not align, and the consumer would not notice.
 """
 
 import argparse
