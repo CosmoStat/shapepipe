@@ -35,7 +35,7 @@ Data access &amp; infrastructure (CANFAR / UNIONS):
 | Package | Purpose |
 |---------|---------|
 | [vos](https://github.com/opencadc/vostools) | CADC / CANFAR VOSpace access |
-| canfar | CANFAR container-job submission |
+| canfar | CANFAR session monitoring |
 | [astroquery](https://astroquery.readthedocs.io/) | external catalogue queries |
 | [cs_util](https://github.com/CosmoStat/cs_util) | shared CosmoStat utilities |
 | [sqlitedict](https://github.com/RaRe-Technologies/sqlitedict) | on-disk pipeline state |
