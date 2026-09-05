@@ -83,7 +83,6 @@ dev = ["shapepipe[doc,jupyter,lint,plot,release,test,fitsio]"]
 
 [project.scripts]
 shapepipe_run       = "shapepipe.shapepipe_run:main"
-canfar_submit_job   = "shapepipe.canfar_run:run_job"
 canfar_monitor      = "shapepipe.canfar_run:run_log"
 canfar_monitor_log  = "shapepipe.canfar_run:run_monitor_log"
 plot_coverage_map   = "shapepipe.coverage_run:run_plot_coverage"

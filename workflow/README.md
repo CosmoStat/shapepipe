@@ -1,10 +1,11 @@
 # ShapePipe Snakemake orchestration
 
 Snakemake workflow that orchestrates real-data ShapePipe runs. It replaces the
-`curl_canfar_local.sh → run_job_sp_canfar_v2.0.bash → job_sp_canfar_v2.0.bash`
-bash layers and the per-site sbatch reimplementations. **Module code is
-untouched**: rules call `shapepipe_run -c <config>` on the existing config
-chains. Design and rationale:
+`run_job_sp_canfar_v2.0.bash → job_sp_canfar_v2.0.bash` bash layers, the CANFAR
+submission front end that drove them (`curl_canfar_local.sh`,
+`canfar_submit_job`, retired at `2ef07e45`), and the per-site sbatch
+reimplementations. **Module code is untouched**: rules call
+`shapepipe_run -c <config>` on the existing config chains. Design and rationale:
 [CosmoStat/shapepipe#848](https://github.com/CosmoStat/shapepipe/issues/848)
 (the living PRD).
 

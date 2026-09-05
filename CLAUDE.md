@@ -80,7 +80,7 @@ Full detail: `docs/source/installation.md` and `docs/source/container.md`.
 
 - `src/shapepipe/` — the package (src-layout). `modules/` holds the pipeline
   modules and their `*_runner.py` wrappers; `pipeline/` is execution and file
-  I/O; `utilities/`; `canfar/` is CANFAR/cluster job orchestration. Console entry
+  I/O; `utilities/`; `canfar/` monitors CANFAR sessions. Console entry
   points (`shapepipe_run`, `canfar_*`, `plot_coverage_map`) are defined under
   `[project.scripts]`.
 - `tests/` — the whole test suite, one discovery root: `module/` (per-module
