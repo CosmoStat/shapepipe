@@ -40,7 +40,6 @@
   :titlesonly:
   :caption: Miscellaneous
 
-  post_processing
   random_cat
 
 .. toctree::
