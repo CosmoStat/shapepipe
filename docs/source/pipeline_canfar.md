@@ -400,7 +400,7 @@ Rename to general PSF and star catalogue used for all ("a") sub-versions:
 
 
 ```bash
-cp output/run_sp_Ms/merge_starcat_runner/output/full_starcat-0000000.fits \
+cp output/run_sp_tile_Ms/merge_starcat_runner/output/full_starcat-0000000.fits \
     unions_shapepipe_psf_2024_v1.6.a.fits 
 ```
 

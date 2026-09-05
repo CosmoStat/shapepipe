@@ -193,7 +193,7 @@ def object_epochs(run_dir: Path):
     order and ``CCD_N < 0`` where the object misses that exposure. Summing
     ``CCD_N >= 0`` across them reproduces the final catalogue's ``N_EPOCH``
     column exactly — checked row by row against 186.307's
-    ``run_sp_Mc/.../final_cat-186-307.fits``, all 35,298 of them, 7 extensions,
+    ``run_sp_tile_Mc/.../final_cat-186-307.fits``, all 35,298 of them, 7 extensions,
     116,727 pairs, mean 3.31. The post-process is upstream of the whole
     tile_shape group, so the extensions always exist by the time ngmix runs;
     their absence is a broken tile, not a case to accommodate.

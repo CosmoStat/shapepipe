@@ -12,8 +12,8 @@ cleaner, and the DAG edge is the whole ordering argument.
 WHAT IT DELETES: the tile's whole ``<run_dir>/tiles/<shard>/<tile>/`` directory.
 Measured on 186.307 (smk-g4, a finished 34-tile-campaign tile): 1,279,231,196
 bytes across 137 inodes (71 regular files, 9 symlinks, 57 directories) —
-``output/run_sp_tile_Sx`` 745 MB, ``run_sp_tile_Uz`` 382 MB, ``run_sp_Mc``
-46 MB, ``run_sp_Ms`` 39 MB, ``run_sp_tile_Mh_exp`` 11 MB, and a non-``output/``
+``output/run_sp_tile_Sx`` 745 MB, ``run_sp_tile_Uz`` 382 MB, ``run_sp_tile_Mc``
+46 MB, ``run_sp_tile_Ms`` 39 MB, ``run_sp_tile_Mh_exp`` 11 MB, and a non-``output/``
 remainder of 62 inodes totalling 15,726 bytes. Deleting only ``output/`` is NOT
 enough: 62 x 23,114 DR6 tiles is 1.43M inodes against a 1M quota, so the inode
 bound binds on its own and the directory has to go as a whole.

@@ -328,8 +328,8 @@ Included are galaxy detection and basic measurement parameters, the PSF model at
 galaxy positions, the spread-model classification, and the shape measurement.
 
 Two output directories are created.
-The first one is `run_sp_Ms` for the `merge_sep` run.
-The second is `run_sp_Mc` for the `make_cat` task; the name is the same for both the `MCCD` and `PSFEx` PSF model.
+The first one is `run_sp_tile_Ms` for the `merge_sep` run.
+The second is `run_sp_tile_Mc` for the `make_cat` task; the name is the same for both the `MCCD` and `PSFEx` PSF model.
 
 
 ## Upload results

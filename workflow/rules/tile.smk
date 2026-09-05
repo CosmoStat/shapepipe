@@ -808,7 +808,7 @@ rule tile_make_cat:
         # publishes a catalogue for a manifest snakemake is about to delete.
         sp_shell("tile_make_cat", "config_tile_Mc.ini",
                  post="if [ $rc -eq 0 ]; then\n"
-                      '  cp -f "$(ls -1 "$SP_RUN"/output/run_sp_Mc/make_cat_runner'
+                      '  cp -f "$(ls -1 "$SP_RUN"/output/run_sp_tile_Mc/make_cat_runner'
                       '/output/final_cat*.fits | head -1)" {output.final_cat}\n'
                       "fi\n")
 

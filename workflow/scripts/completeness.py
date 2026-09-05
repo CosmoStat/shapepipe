@@ -180,8 +180,8 @@ STAGE_DIR = {
     "tile_detect":         ("tile", "run_sp_tile_Sx"),
     "tile_vignets":        ("tile", "run_sp_tile_PiViVi"),
     "tile_ngmix":          ("tile", "run_sp_tile_ngmix_Ng${SP_NGMIX_CHUNK}u"),
-    "tile_merge_cats":     ("tile", "run_sp_Ms"),
-    "tile_make_cat":       ("tile", "run_sp_Mc"),
+    "tile_merge_cats":     ("tile", "run_sp_tile_Ms"),
+    "tile_make_cat":       ("tile", "run_sp_tile_Mc"),
 }
 
 
