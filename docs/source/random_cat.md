@@ -3,28 +3,25 @@
 This section describes how to create tile-based random catalogues and healpix
 masks, and combined randoms and masks for a selection of tiles.
 
-The masked regions are obtained on input from ShapePipe pixel mask ("pipeline flag")
-files.
+The masked regions are obtained on input from ShapePipe pixel mask ("pipeline
+flag") files.
 
 ```{note}
-Parts of this procedure use the legacy canfar-VM / `vos` retrieval workflow (see
-[VOSpace retrieval](vos_retrieve.md)) and the obsolete `prepare_tiles_for_final`
-helper, which is no longer shipped. The `random_cat` module itself is current;
-the input-staging and joint-mask steps now overlap with
-[`sp_validation`](https://github.com/CosmoStat/sp_validation). The steps are
-retained for reference.
+The `random_cat` module itself is current. The staging and joint-mask steps
+below predate the Snakemake workflow and are retained for reference; the
+helpers they used to call (`prepare_tiles_for_final`, `merge_final_cat`,
+`canfar_avail_results`, `canfar_download_results`) are no longer shipped, and
+where a step named one it now says what the step has to achieve instead.
 ```
 
 ## Set up
 
 ### ID file and shell variables
 
-First, if if does not exist already, create the file ``tile_numbers.txt`` containing a list of tile IDs,
-one per line. This is the same format as the input file to ``get_images_runner``.
-For example, link to a patch ID list,
-```bash
-ln -s tiles_PX.txt tile_numbers.txt
-```
+First, if it does not exist already, create the file ``tile_numbers.txt``: a
+tile list, one ID per line. This is the same format as the input file to
+``get_images_runner``.
+
 Next, set the run and config paths,
 ```bash
 export SP_RUN=.
@@ -33,56 +30,23 @@ export SP_CONFIG=/path/to/config-files
 
 ### Get images or image headers
 
-We need to footprint of the image tiles. If they have been downloaded for a ``ShapePipe`` run,
-check that they are accessible as last run of the ``get_images_runner`` module.
+We need the footprint of the image tiles. If they have been downloaded for a
+``ShapePipe`` run, check that they are accessible as last run of the
+``get_images_runner`` module.
 
 If not, we can just download the headers to gain significant download time.
 ```bash
 shapepipe_run -c $SP_CONFIG/config_get_tiles_vos_headers.ini
 ```
 
-### Check pixel mask files
+### Collect the pixel mask files
 
-Make sure that all pixel mask files are present. If they have been downloaded from ``vos`` as ``.tgz`` files,
-type
-```bash
-canfar_avail_results -i tile_numbers.txt --input_path . -v -m -o missing_mask.txt
-```
-In case of missing mask files, check whether they are present in the ``vos`` remote directory,
-```bash
-canfar_avail_results -i tile_numbers.txt --input_path vos:cfis/vos-path/to/results -v -m
-```
-If missing on ``vos``, process those tiles. If processing only up the the mask is necessary,
-the following steps can be carried out,
-```bash
-job_sp -j 7 TILE_ID
-job_sp -j 128 TILE_ID
-```
-The first command processes the tile up to the mask; the second line uploads the mask files
-to ``vos``.
+``random_cat_runner`` reads all pixel mask files from a single input
+directory. Make sure every tile in ``tile_numbers.txt`` has its
+``pipeline_flag`` file there — by pointing the config at the ``mask_runner``
+output of the runs being combined, or by linking the files into one directory.
 
-Now, download the missing masks with
-```bash
-canfar_download_results -i missing_mask.txt --input_vos vos-path/to/results -m -v
-```
-Untar .tgz files if required,
-```bash
-while read p; do tar xvf pipeline_flag_$p.tgz; done <missing_mask.txt
-```
-
-### Prepare combined mask input directory
-
-To combine all mask files into one input directory, easy to find by the subsequent ``ShapePipe`` module
-``random_cat_runner``, type
-```bash
-prepare_tiles_for_final -c flag
-```
-To make sure everything went well, check the linked .fits files with
-```bash
-canfar_avail_results -i tile_numbers.txt --input_path output/run_sp_combined_flag/mask_runner/output -x fits -v -m
-```
-
-## Create random catalogue and helapix mask per tile
+## Create random catalogue and healpix mask per tile
 
 Run
 ```bash
@@ -93,11 +57,10 @@ a healpix mask FITS file, will be written to disk.
 
 ## Create joint random catalogue
 
-The individual tile-based random catalogues can be merged into a numpy
-binary (``.npy``) file with
-```bash
-merge_final_cat -i output/run_sp_Rc/random_cat_runner/output -n random_cat -v
-```
+The individual tile-based random catalogues are per-tile FITS files under
+``output/run_sp_Rc/random_cat_runner/output``. Merging them into a single
+numpy binary was done by ``merge_final_cat``, retired at `2ef07e45`; nothing
+in the workflow supersedes it, so the concatenation is currently a hand step.
 
 ### Results
 
@@ -112,17 +75,9 @@ and also compute the effective survey area,
 
 ## Create joint healpix mask
 
-First, for convenience all image headers with WCS information are
-linked from within one directory, with
-```bash
-prepare_tiles_for_final -i
-```
-
-Next, read all tile mask and WCS information, and create a joint full-sky
-healpix mask with
+Read all tile mask and WCS information, and create a joint full-sky healpix
+mask with
 ```bash
 /path/to/sp_validation/scripts/scripts/combine_hp_masks.py -p -v
 ```
 With the option ``-p`` the mask is plotted in Mollweid projection.
-
-

@@ -2,12 +2,16 @@
 
 ## Quick start
 
-Run the entire pipeline on a single example CFIS image with tile ID 246.290:
-1. [Install](installation.md) `ShapePipe` — the recommended path is the container image, which bundles everything needed to run the pipeline.
-3. Run the job script
+Production runs go through the [Snakemake workflow](workflow.md). Put the tile
+IDs in the file named by `tile_list` in `workflow/config.yaml`, one
+`IDra.IDdec` per line, and run
+
 ```bash
-job_sp 246.290 -j 127
+workflow/bin/sp run
 ```
+
+A single tile is a legal tile list and is the smallest useful end-to-end run.
+The sections below describe what that produces, stage by stage.
 
 ## Introduction
 
@@ -69,21 +73,21 @@ Naming and numbering of the input files can closely follow the original image na
   sheared images. This information is used in post-processing to compute calibrated shear estimates via metacalibration.
 
 - Summary statistic files  
-  The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII   
+  The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Detect objects](#detect-objects-on-tiles-and-process-stars-on-single-exposures)) also outputs ASCII   
   files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
   Example: `star_stat-2366993-18.txt`
 
 - Tile ID list  
-  ASCII file with a tile number on each line. Used for the `get_image_runner` module to download CFIS images (see [Download tiles](#download-tiles)).
+  ASCII file with a tile number on each line. Used for the `get_image_runner` module to download CFIS images (see [Retrieve input images](#retrieve-input-images)).
 
 - Single-exposure name list  
   ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
-  a given tile. See [Find exposures](#find-exposures)).
+  a given tile. See [Retrieve input images](#retrieve-input-images)).
 
 - Plots  
   The `SETools` module can also produce plots of the objects properties that were selected for a given CCD.
   The type of plot (histogram, scatter plot, ...) and quantities to plot as well as plot decorations can be specified in the
-  selection criteria config file (see [Select stars](#select-stars)).
+  selection criteria config file (see [Detect objects](#detect-objects-on-tiles-and-process-stars-on-single-exposures)).
   Example: `hist_mag_stars-2104133-5.png`
 
 - Log files  
@@ -94,7 +98,7 @@ Naming and numbering of the input files can closely follow the original image na
 
 `ShapePipe` splits the processing of CFIS images into several parts:
 These are the retrieval and preparation of input images, processing of single exposures,
-processing of tile images, creation and upload (optional) of _final_ shape catalogues.
+processing of tile images, and creation of _final_ shape catalogues.
 
 The following flowchart visualised the processing parts and steps.
 
@@ -104,46 +108,58 @@ Below, the individual processing steps are described in detail.
 
 ### Input and output paths
 
-All required paths are automatically set in the job script `job_sp`.
+The workflow's rules export every path a config interpolates before each
+`shapepipe_run` call, so nothing here needs setting by hand for a normal run.
 
-If an example config file is run outside this script,
-the following path variables might need to be defined.
+If a config file is run outside the workflow, the following variables need to be
+defined.
 - `$SP_RUN`: Run directory of `ShapePipe`. In general this is just `pwd`, and can be set via
   ```bash
   export SP_RUN=`pwd`
   ```
   but on a cluster this directory might be different.
 - `$SP_CONFIG`: Path to configuration files. In our example this is `$SP_BASE/example/cfis`.
+- `$SP_UNIT_NUM`: the tile or exposure this run is restricted to, in ShapePipe's
+  image-number convention — a leading dash, and dots replaced by dashes (tile
+  `210.282` becomes `-210-282`, exposure `2605805` becomes `-2605805`). The
+  configs interpolate it into `NUMBER_LIST`.
 
 In addition, the output path `$SP_RUN/output` needs to be created by the user before running `ShapePipe`.
 
-### Job and pipeline scripts
+### The rule chain
 
-The job script to run the pipeline in its entity or in parts is `job_sp[.bash]`. Type
-```bash
-job_sp -h
-```
-for all options.
+There is no monolithic job script. Every processing step below is a **rule**, and
+every rule instance is one `shapepipe_run` call on one unit — one tile, or one
+single exposure — inside that unit's own directory:
 
-This script creates the subdirectory `$SP_RUN/output` to store all pipeline outputs
-(log files, diagnostics, statistics, output images, catalogues, single-exposure headers with WCS information).
+| level | rule chain |
+| --- | --- |
+| tile, prepare phase | `tile_get_images` → `tile_uncompress` → `tile_find_exposures` |
+| exposure | `exp_get_images` → `exp_star_cat` → `exp_split` → `exp_mask` → `exp_psf` → `exp_persist` → `exp_footprint` → `clean_exposure` |
+| tile, compute phase | `tile_exp_forest` → `tile_merge_headers` → `tile_detect` → `tile_vignets` → `tile_ngmix` → `tile_merge_cats` → `tile_make_cat` → `clean_tile` |
 
-Optionally, the subdir `output_star_cat` is created by the used to store the external star catalogues for masking. This is only necessary if the pipeline is run on a cluster without internet connection to access star catalogues. In that case, the star catalogues need to be retrieved outside the pipeline, for example on a login node, and copied to `output_star_cat`.
+Each rule calls
 
-The job script automaticall performs a number of subsequent calls to the `ShapePipe` executable `shapepipe_run`, as
 ```bash
 shapepipe_run -c $SP_CONFIG/<config>.ini
 ```
-The config file `<config>.ini` contains the configuration for one or more modules.
-See the main `ShapePipe` readme for more details.
 
-The user specifies which steps are run with the command line option `-j JOB`. The integer value `JOB`
-is bit-coded such that arbitrary combinations of steps can be run with a single call to `job_sp`. For
-example, to run steps #1 and #2, type `job_sp -j 3`.
+on a config file committed under `workflow/config/cfis/`, containing the
+configuration for one or more modules. See [Configuration](configuration.md) for
+what goes in one. To run a single rule and its prerequisites and nothing else,
+name it as a snakemake target: `sp exp_psf ...`.
+
+Each unit directory holds an `output/` subdirectory with all pipeline outputs
+(log files, diagnostics, statistics, output images, catalogues, single-exposure
+headers with WCS information), beside the `manifests/` and `logs/` that are the
+workflow's own bookkeeping.
 
 ### Select tiles
 
-To run the job script, one or more CFIS tiles need to be chosen. If the tile IDs are known, they are provided to `job_sp` on the command line.
+The tiles to process are the lines of the tile list. The campaign grows by
+appending to that file: the tile-to-exposure index accumulates across
+invocations, so adding tiles later changes which jobs exist without invalidating
+completed work.
 
 If the tile IDs are not known a priori, they can be selected via sky coordinates, with the script `cfis_field_select`.
 For example, to find the tile number for a Planck cluster at R.A.=213.68 deg, dec=57.79 deg, run:
@@ -153,54 +169,57 @@ cfis_field_select -i /path/to/shapepipe/auxdir/CFIS/tiles_202007/tiles_all_order
 The input text file (provide via the flag `-i`) contains a list of CFIS tiles, this can also be directory containing the tile FITS files.
 
 
-The following sections describe the different steps that are performed with `job_sp`.
+The following sections describe the steps the rule chain performs.
 
 ## Run the pipeline
 
 ### Retrieve input images
 
-The command
-```bash
-job_sp TILE_ID -j 1
-```
-retrieves the image and weight corresponding to TILE_ID using the module `get_images`.
-It then identifies the exposures that were used to create the tile image via the `find_exposures` runner.
-Finally, another call to `get_images` retrieves the exposure images, weights, and flag files.
+`tile_get_images` retrieves the image and weight corresponding to a tile ID
+using the module `get_images`. `tile_find_exposures` then identifies the
+exposures that were used to create the tile image via the `find_exposures`
+runner, and `exp_get_images` retrieves each of those exposures' image, weight
+and flag files.
 
-For the retrieval method the user can choose betwen
-- download from VOspace (`-r vos`);
-- create symbolic link to existing file on disk (`-r symlink`).
+For the retrieval method the user can choose between
+- download from VOspace (`RETRIEVE = vos` in the config);
+- create symbolic link to existing file on disk (`RETRIEVE = symlink`).
 
 Note that internet access is required for this step if the download method is `vos`.
 
-An output directory `run_sp_GitFeGie` (in `output`) is created containing the results of `get_images` for tiles (`Git`),
-`find_exposures` (`Fe`), and `get_images` for exposures (`Gie`).
+These three rules are the workflow's PREPARE phase. The exposure half of the run
+cannot be scheduled before them, because which exposures exist is something
+`find_exposures` has to say first — which is why one run is two snakemake
+invocations over one Snakefile (see [the workflow page](workflow.md)).
 
 ## Prepare input images
 
-With
-```bash
-job_sp TILE_ID -j 2
-```
-the compressed tile weight image is uncompressed via the `uncompress_fits` module. Then, the single-exposure images, weight, and flags are split into single-exposure single-CCD file
-(one FITS file per CCD) with `split_exp`.
-Finally, the headers of all single-exposure single-CCD files are merged into a single `sqlite` file, to store the WCS information of the input exposures.
+`tile_uncompress` uncompresses the compressed tile weight image via the
+`uncompress_fits` module.
 
-Two output directories are created, `run_sp_Uz` for `uncompress_fits`, and `run_sp_exp_SpMh` for the output of the modules
-`split_exp` (`Sp`) and `merge_headers` (`Mh`).
+`exp_split` splits each single-exposure image, weight and flag into
+single-exposure single-CCD files (one FITS file per CCD) with `split_exp`, and
+writes that exposure's WCS information to `headers-<exposure_number>.npy`.
+
+`tile_merge_headers` then merges the headers of the exposures overlapping one
+tile into a single `sqlite` file, so the tile-side modules can look up the WCS of
+any of them.
 
 ## Mask images
 
-Run
-```bash
-job_sp TILE_ID -j 4
-```
-to mask tile and single-exposure single-CCD images. Both tasks are performed by two calls to the `mask` runner.
+`exp_mask` masks the single-exposure single-CCD images with the `mask` runner.
 
-Note that internet access is required for this step, since a reference star catalogue is downloaded.
+Masking needs a reference star catalogue, and no compute node needs internet
+access to get one: `star_catalogue` makes one Vizier cone query per HEALPix
+chunk of the campaign footprint into a run-independent cache, and `exp_star_cat`
+cuts each exposure's catalogue out of that cache with no network at all. Both
+are `localrule`s, so the queries run in the head process. Network cost therefore
+scales with sky area rather than with exposure count.
 
-The output of both masking runs are stored in the output directory `run_sp_MaMa`, with run 1 (2) of
-`mask` corresponding to tiles (exposures).
+There is no `tile_mask` rule: the committed config chain is the unmasked
+`tile_detect` variant. Adding the masked variant is a config plus one rule, and
+needs a tile-side analogue of `exp_star_cat` — tile star catalogues key on tile
+ID, so they are a separate cache namespace.
 
 **Diagnostics:** Open a single-exposure single-CCD image and the corresponding pipeline flag
 in `ds9`, and display both frames next to each other. Example
@@ -218,23 +237,23 @@ have a zero-padded pixel border, which is not accounted for by `ds9`.
 
 ## Detect objects on tiles and process stars on single exposures
 
-The call
-```bash
-job_sp TILE_ID -j 8
-```
-performs a number of steps. First, objects on the tiles are deteced with the `sextractor` runner.
-Next, the following tasks are run on the single-exposure single-CCD images:
-- Objects are deteced with `sextractor`.
-- Star candidates are selected via `setools`.
-- The PSF model is created, either with `psfex` for PSFex, or
-  with `mccd_preprocessing` and `mccd_fit_val` for MCCD.
-- The PSF model is interpolated to star positions for validation. For the PSFEx model, this is done
-  via a call to `psfex_interp`. For MCCD, the modules `merge_starcat`, `mccd_plots`, and
-  `mccd_interp` are called.
+`tile_detect` detects objects on the tile with the `sextractor` runner.
 
-The output directory for both the `mccd` and `psfex` options is `run_sp_tile_Sx_exp_SxSePsf`.
-This stores the output of SExtractor on the tiles (`tile_Sx`), on the exposures (`exp_Sx`),
-`setools` (`Se`), and the Psf model (`Psf`).  
+`exp_psf` runs the single-exposure single-CCD chain:
+- Objects are detected with `sextractor`.
+- Star candidates are selected via `setools`.
+- The PSF model is created with `psfex`.
+- The PSF model is interpolated to star positions for validation, via a call to
+  `psfex_interp`.
+
+The output directory is `run_sp_exp_SxSePsfPi`, holding the output of SExtractor
+on the exposures (`Sx`), `setools` (`Se`), the PSF model (`Psf`) and the
+validation interpolation (`Pi`).
+
+`exp_persist` then copies the products named by `persist_exp:` in
+`workflow/config.yaml` — by default the `validation_psf-*.fits` that the rho and
+tau statistics are computed from — off scratch onto the persistent root, before
+the purge or `clean_exposure` can take them.
 
 The following plots show an example of a single CCD, in the center of the focal plane.
 
@@ -282,60 +301,40 @@ several runs.
 
 ## Galaxy selection
 
-The focus of the next step,
-```bash
-job_sp TILE_ID -j 16
-```
-is the selection of galaxies as extended objects compared to the PSF.
-First, the PSF model is interpolated to galaxy positions, according to the PSF model
-with `psfex_interp` or `mccd_interp`. Next, postage stamps around galaxies
-of the weights maps are created via `vignetmaker`. Then, the spread model
-is computed by the `spread_model` module. Finally, postage stamps
-around galaxies of single-exposure data is extracted with another call
-to `vignetmaker`.
+`tile_vignets` selects galaxies as extended objects compared to the PSF.
+First, the PSF model is interpolated to galaxy positions with `psfex_interp`.
+Next, postage stamps around galaxies of the weight maps are created via
+`vignetmaker`. Then the spread model is computed by the `spread_model` module.
+Finally, postage stamps around galaxies of single-exposure data are extracted
+with another call to `vignetmaker` — `Pi`, `Vi`, `Sm`, `Vi`, hence the config
+name `config_tile_PiViVi.ini`.
 
-The output directory is
-- `run_sp_MiViSmVi` if the PSF model is `mccd`;
-- `run_sp_tile_PsViSmVi` for the `PSFEx` PSF model.
-
-This corresponds to the MCCD/PSFex interpolation (`Mi`/`Pi`), `vignetmaker` (`Vi`), `spread_model` (`Sm`), and the
-second call to `vignetmaker` (`Vi`).
+`tile_vignets` reads the exposure products through the symlink forest that
+`tile_exp_forest` built for this tile, and is the last stage that touches them:
+once every consuming tile has its vignets, an exposure store becomes
+reclaimable.
 
 
 ## Shape measurement
 
-The call
-```bash
-job_sp TILE_ID -j 32
-```
-computes galaxy shapes using the multi-epoch model-fitting method `ngmix`. At the same time,
-shapes of artifically sheared galaxies are obtained for metacalibration.
+`tile_ngmix` computes galaxy shapes using the multi-epoch model-fitting method
+`ngmix`. At the same time, shapes of artificially sheared galaxies are obtained
+for metacalibration.
 
-Shape measurement is performed in parallel for each tile, the number of processes can be specified
-by the user with the option `--nsh_jobs NJOB`. This creates `NJOB` output directories `run_sp_tile_ngmix_Ng<X>u`.
-with `X` = 1 ... `NJOB` containing the result of `ngmix`.
+Shape measurement is split into parallel chunks: `ngmix_chunks:` in
+`workflow/config.yaml` sets how many, and each chunk is its own rule instance
+writing its own `run_sp_tile_ngmix_Ng<X>u` output directory.
 
 
 ## Paste catalogues
 
-The last real processing step is
-```bash
-job_sp TILE_ID -j 64
-```
-This task first merges the `NJOB` parallel `ngmix` output files from the previous step into
-one output file. Then, previously obtained information are pasted into a _final_ shape catalogue via `make_cat`.
-Included are galaxy detection and basic measurement parameters, the PSF model at
-galaxy positions, the spread-model classification, and the shape measurement.
+`tile_merge_cats` merges the parallel `ngmix` output files from the previous
+step into one file with `merge_sep`, in `run_sp_Ms`.
 
-Two output directories are created.
-The first one is `run_sp_Ms` for the `merge_sep` run.
-The second is `run_sp_Mc` for the `make_cat` task; the name is the same for both the `MCCD` and `PSFEx` PSF model.
-
-
-## Upload results
-
-Optionally, after the pipeline is finished, results can be uploaded to VOspace via
-```bash
-job_sp TILE_ID -j 128
-```
-
+`tile_make_cat` then pastes the previously obtained information into a _final_
+shape catalogue via `make_cat`, in `run_sp_Mc`. Included are galaxy detection
+and basic measurement parameters, the PSF model at galaxy positions, the
+spread-model classification, and the shape measurement. The rule publishes that
+catalogue onto the persistent root as
+`<products_dir>/tiles/<prefix>/<ID>/final_cat-<ID>.fits` — the campaign's
+product, and also the marker that says this tile is finished.

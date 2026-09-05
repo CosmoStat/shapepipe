@@ -223,6 +223,52 @@ clean_ignore_tiles: []
 # per-tile, in-job, from the tile's own sexcat).
 ngmix_chunks: 8
 
+# COVERAGE MASK. `enabled: true` adds ONE campaign-level job, `coverage_map`
+# (workflow/rules/coverage.smk), which builds a HealSparse nexp map from every
+# exposure footprint on the products root. OFF by default because the map is a
+# campaign-END product: a half-finished campaign's map is a picture of how far it
+# has got, not of the survey. Turning it on costs one job and no rebuild — the
+# per-exposure records it reads are written all along, by `exp_footprint`,
+# whether or not this block is on (that rule is gated on the keep list below,
+# not on this flag: its input is on /scratch and the purge takes it).
+#
+# The map counts, per sky pixel, the number of exposures with a VALID PSF MODEL
+# — only CCDs whose PSF model was actually written are stamped. In the v1.x
+# chain that set was approximated by subtracting a summary-scrape file from all
+# 40*N candidates; in the workflow it is exact, read off exp_persist.json's
+# files[] (psfex_interp returns WITHOUT writing on NOT_ENOUGH_STARS / BAD_CHI2 /
+# FILE_NOT_FOUND). That makes `validation_psf-*.fits` in `persist_exp:` above a
+# PRECONDITION: empty that list and no valid-PSF record exists to build from.
+#
+# nside_coverage / nside: 128 / 131072 is the PRODUCTION pair, and NOTHING
+# defaults to it — build_map takes both as required arguments, and this block is
+# now the only place the pair is written down (the v1.x shell script that carried
+# it is retired). nside=131072 is ~0.1"/pixel, CHOSEN TO MATCH THE UNIONS
+# BIT-MASK RESOLUTION so that coverage and mask align pixel-wise. A coarser map
+# looks entirely reasonable and does not align, and the consumer would not
+# notice.
+#
+# Consumer: sp_validation applies these healsparse structural masks in
+# notebooks/demo_apply_hsp_masks.py (it reads the coverage .hsp and writes the
+# masked comprehensive catalogue).
+#
+# Plot windows are the two UNIONS sky regions, with the colourbar clipped to the
+# 1-5 exposure range; plotting stays OUT of the DAG (a human act on a durable
+# product), so these are defaults for `plot_coverage_map`, not rule params.
+#
+coverage:
+  enabled: false
+  nside_coverage: 128
+  nside: 131072
+  # Read by `plot_coverage_map`, not by any rule (plotting stays out of the DAG).
+  plot:
+    colorbar: true
+    n_exp_min: 1
+    n_exp_max: 5
+    regions:
+      SGC: {ra_min: -20, ra_max: 45, dec_min: 18, dec_max: 40}
+      NGC: {ra_min: 110, ra_max: 270, dec_min: 28, dec_max: 90}
+
 # The container's installed shapepipe is overridden by the prod worktree via
 # --env PYTHONPATH in profiles/nibi (settled call 3); no config knob here.
 # build_index.py's missing-tile fraction floor is passed by workflow/bin/sp

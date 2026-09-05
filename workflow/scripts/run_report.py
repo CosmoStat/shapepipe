@@ -61,12 +61,12 @@ TILE_STAGES = ["tile_get_images", "tile_uncompress", "tile_find_exposures",
                "tile_ngmix", "tile_merge_cats", "tile_make_cat"]
 EXP_STAGES = ["exp_get_images", "exp_star_cat", "exp_split", "exp_mask", "exp_psf"]
 
-# exp_persist is DELIBERATELY NOT in that list. This report disk-scans the
-# scratch run_dir, and exp_persist's manifest is the one exposure manifest that
-# lives on products_dir instead — that placement is what makes it survive
-# clean_exposure. Listed here it would read as "not run" for every exposure in
-# the campaign. Reporting on the persisted products means scanning the second
-# root, which is a report this one does not yet do.
+# exp_persist and exp_footprint are DELIBERATELY NOT in that list. This report
+# disk-scans the scratch run_dir, and those two are the exposure manifests that
+# live on products_dir instead — that placement is what makes them survive
+# clean_exposure. Listed here they would read as "not run" for every exposure
+# in the campaign. Reporting on the persisted products means scanning the
+# second root, which is a report this one does not yet do.
 
 # The manifests clean_tile leaves on disk (workflow/scripts/clean_tile.py names
 # the mechanism that owns each). Their presence is therefore NOT evidence that a

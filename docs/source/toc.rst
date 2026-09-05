@@ -33,14 +33,13 @@
   :caption: Running on a cluster
 
   clusters
-  pipeline_canfar
+  workflow
 
 .. toctree::
   :hidden:
   :titlesonly:
   :caption: Miscellaneous
 
-  post_processing
   random_cat
 
 .. toctree::
