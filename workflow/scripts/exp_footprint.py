@@ -137,7 +137,12 @@ def footprint(headers, exp, with_psf):
         # from the stored header text (module docstring).
         shape = _image_shape(Header.fromstring(entry["header"]))
         ra, dec = _ccd_corners(entry["WCS"], shape)
-        ccds.append({"id": ccd_id, "ra": ra, "dec": dec})
+        # float(), because _ccd_corners hands back numpy scalars and this record
+        # has to be byte-stable: a plain double's repr is, a numpy type's
+        # serialisation is json's business rather than ours.
+        ccds.append({"id": ccd_id,
+                     "ra": [float(x) for x in ra],
+                     "dec": [float(x) for x in dec]})
     return ccds, no_psf
 
 
