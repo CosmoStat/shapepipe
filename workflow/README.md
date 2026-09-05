@@ -266,11 +266,10 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   counting, per sky pixel, the exposures with a valid PSF there. That job is
   **campaign-cumulative**: its declared inputs are the in-scope footprints, but
   the script reads *every* record on the products root, reclaimed exposures
-  included, so appending tiles grows the map instead of replacing it. `nside`
-  defaults to the production 128/131072 pair, ~0.1"/pixel, chosen to align
-  pixel-wise with the UNIONS bit masks — not the `CoverageMapBuilder` class
-  defaults (32/2048), which would produce a plausible-looking map that does not
-  align. Plotting stays out of the DAG: run `plot_coverage_map -i
+  included, so appending tiles grows the map instead of replacing it. `nside` is
+  set in `config.yaml` to the production 128/131072 pair, ~0.1"/pixel, chosen to
+  align pixel-wise with the UNIONS bit masks; nothing defaults to it, and a
+  coarser map would look plausible and not align. Plotting stays out of the DAG: run `plot_coverage_map -i
   <products_dir>/coverage/coverage.hsp ...` by hand, with the sky windows under
   `coverage.plot` in `config.yaml`. sp_validation consumes the map in
   `notebooks/demo_apply_hsp_masks.py`.

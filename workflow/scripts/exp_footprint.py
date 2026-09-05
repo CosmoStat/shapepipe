@@ -69,7 +69,7 @@ from pathlib import Path
 import numpy as np
 from astropy.io.fits import Header
 
-from shapepipe.utilities.field_corners_extractor import (
+from shapepipe.utilities.ccd_footprint import (
     _ccd_corners,
     _image_shape,
 )

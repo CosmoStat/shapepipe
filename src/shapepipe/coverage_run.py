@@ -1,56 +1,18 @@
 """COVERAGE_RUN
 
-Call coverage processing classes.
+Console entry point for plotting a coverage map.
+
+Building the map is the Snakemake ``coverage_map`` rule's job; plotting a
+finished ``.hsp`` is a human act on a durable product, so it stays a
+hand-run command, on the same argument that keeps ``run_report.py`` out of the
+DAG. The plot windows for the UNIONS SGC and NGC fields are in
+``workflow/config.yaml``'s ``coverage:`` block.
 
 Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 
-import sys
-
-from shapepipe.utilities.field_corners_extractor import FieldCornersExtractor
-from shapepipe.utilities.coverage_map_builder import CoverageMapBuilder
 from shapepipe.utilities.coverage_plotter import CoveragePlotter
-
-
-def run_extract_corners(args=None):
-    """Run Extract Corners.
-
-    Extract per-CCD sky-footprint corner coordinates from FITS headers.
-
-    Parameters
-    ----------
-    args : list, optional
-        command line arguments
-
-    Returns
-    -------
-    int
-        exit code
-
-    """
-    obj = FieldCornersExtractor()
-    return obj.run(args=args)
-
-
-def run_build_coverage(args=None):
-    """Run Build Coverage.
-
-    Build HealSparse coverage maps from per-CCD corner coordinates.
-
-    Parameters
-    ----------
-    args : list, optional
-        command line arguments
-
-    Returns
-    -------
-    int
-        exit code
-
-    """
-    obj = CoverageMapBuilder()
-    return obj.run(args=args)
 
 
 def run_plot_coverage(args=None):
@@ -71,13 +33,3 @@ def run_plot_coverage(args=None):
     """
     obj = CoveragePlotter()
     return obj.run(args=args)
-
-
-def main(argv=None):
-    """Main.
-
-    Main program.
-
-    """
-    # Scripts to call coverage classes are created by pyproject.toml
-    return 0

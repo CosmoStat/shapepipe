@@ -240,11 +240,13 @@ ngmix_chunks: 8
 # FILE_NOT_FOUND). That makes `validation_psf-*.fits` in `persist_exp:` above a
 # PRECONDITION: empty that list and no valid-PSF record exists to build from.
 #
-# nside_coverage / nside: 128 / 131072 is the PRODUCTION pair, and it is not the
-# CoverageMapBuilder default (32 / 2048, meant for lighter-weight offline use).
-# nside=131072 is ~0.1"/pixel, CHOSEN TO MATCH THE UNIONS BIT-MASK RESOLUTION so
-# that coverage and mask align pixel-wise. Inheriting the class defaults yields a
-# mask that does not align, and the consumer would not notice.
+# nside_coverage / nside: 128 / 131072 is the PRODUCTION pair, and NOTHING
+# defaults to it — build_map takes both as required arguments, and this block is
+# now the only place the pair is written down (the v1.x shell script that carried
+# it is retired). nside=131072 is ~0.1"/pixel, CHOSEN TO MATCH THE UNIONS
+# BIT-MASK RESOLUTION so that coverage and mask align pixel-wise. A coarser map
+# looks entirely reasonable and does not align, and the consumer would not
+# notice.
 #
 # Consumer: sp_validation applies these healsparse structural masks in
 # notebooks/demo_apply_hsp_masks.py (it reads the coverage .hsp and writes the
