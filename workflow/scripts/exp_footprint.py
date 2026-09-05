@@ -69,7 +69,10 @@ from pathlib import Path
 import numpy as np
 from astropy.io.fits import Header
 
-from shapepipe.utilities.field_corners_extractor import _ccd_corners, _image_shape
+from shapepipe.utilities.field_corners_extractor import (
+    _ccd_corners,
+    _image_shape,
+)
 
 # The split stage's run dir (RUN_NAME in config_exp_Sp.ini) and its module
 # output dir. Hardcoded rather than passed, for persist_exp.py's reason: this

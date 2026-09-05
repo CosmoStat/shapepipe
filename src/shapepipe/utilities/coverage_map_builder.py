@@ -55,10 +55,10 @@ def unwrap_ra(ra):
 def load_corners(input_file):
     """Read per-CCD corners from an ``exp_ra_dec.txt``.
 
-    The nine-column text format the pre-Snakemake chain appended to: column 0 is
-    a ``<expnum>-<ccd_idx>`` string ID, the remaining eight are the 4 RA then the
-    4 Dec corners. The Snakemake workflow feeds :func:`build_map` arrays
-    directly instead (one JSON record per exposure, written by the
+    The nine-column text format the pre-Snakemake chain appended to: column
+    0 is a ``<expnum>-<ccd_idx>`` string ID, the remaining eight are the 4 RA
+    then the 4 Dec corners. The Snakemake workflow feeds :func:`build_map`
+    arrays directly instead (one JSON record per exposure, written by the
     ``exp_footprint`` rule), so this loader exists only for the CLI.
 
     Parameters
@@ -86,16 +86,16 @@ def build_map(
     """Stamp one polygon per CCD footprint into a HealSparse nexp map.
 
     The array entry point, and the one both callers go through: the
-    ``build_coverage_map`` CLI (which reads its arrays out of a text file with
-    :func:`load_corners`) and the Snakemake ``coverage_map`` rule (which reads
-    them out of the per-exposure ``exp_footprint.json`` records). Keeping the
-    stamping in one place is what keeps the two ways of getting the same map
-    from drifting — the RA-seam and pole guards below are survey geometry, not
+    ``build_coverage_map`` CLI (which reads its arrays out of a text file
+    with :func:`load_corners`) and the Snakemake ``coverage_map`` rule (which
+    reads them out of the per-exposure ``exp_footprint.json`` records). The
+    stamping stays in one place so the two ways of getting the same map cannot
+    drift — the RA-seam and pole guards below are survey geometry, not
     input-format handling.
 
-    Since the CCDs of a single exposure do not overlap, accumulating value 1 per
-    CCD polygon makes the map count, per sky pixel, the number of exposures with
-    a valid PSF model covering it.
+    Since the CCDs of a single exposure do not overlap, accumulating value 1
+    per CCD polygon makes the map count, per sky pixel, the number of
+    exposures with a valid PSF model covering it.
 
     Parameters
     ----------
