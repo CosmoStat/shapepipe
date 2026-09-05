@@ -2,10 +2,14 @@
 
 Snakemake workflow that orchestrates real-data ShapePipe runs. It is the one
 production orchestration. It replaced the bit-coded bash layers
-(`run_job_sp_canfar_v2.0.bash → job_sp_canfar_v2.0.bash`), the CANFAR submission
-front end that drove them (`curl_canfar_local.sh`, `canfar_submit_job`) and the
-per-site sbatch reimplementations; all of those were retired, last carried at
-`2ef07e45`. **Module code is untouched**: rules call
+(`run_job_sp_canfar_v2.0.bash → job_sp_canfar_v2.0.bash`) for real data, and
+retired the CANFAR submission front end that drove them
+(`curl_canfar_local.sh`, `canfar_submit_job`) and the per-site sbatch
+reimplementations — those were last carried at `2ef07e45`. The two Gen-2 bash
+scripts are still in the tree and still installed (`pyproject.toml`'s
+`[tool.setuptools] script-files`): sp_validation's image-simulation workflow
+calls `run_job_sp_canfar_v2.0.bash` by path, so they retire when that chain is
+ported or parked, not with this one. **Module code is untouched**: rules call
 `shapepipe_run -c <config>` on the existing config chains. Design and rationale:
 [CosmoStat/shapepipe#848](https://github.com/CosmoStat/shapepipe/issues/848)
 (the living PRD).

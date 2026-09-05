@@ -104,8 +104,11 @@ Full detail: `docs/source/installation.md` and `docs/source/container.md`.
 **There is no concept of a catalogue version in the code.** Nothing branches on
 `v1.3`..`v1.6` or `v2.0`, and there are no sky patches (`P1`..`P9`): a campaign
 is a tile list, and the version of a catalogue is the git tag of the code that
-produced it. The pre-Snakemake bash and CANFAR layers that carried those
-constructs were retired, last carried at `2ef07e45`.
+produced it. The CANFAR layers and the summary scrape that carried those
+constructs were retired, last carried at `2ef07e45`. The pre-Snakemake bash job
+layer (`scripts/sh/run_job_sp_canfar_v2.0.bash`, `job_sp_canfar_v2.0.bash`,
+`job_list_help.bash`, `functions.sh`) stays — it is version-free, and
+sp_validation's image-simulation workflow calls it.
 
 ## Development workflow
 
