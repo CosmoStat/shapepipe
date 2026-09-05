@@ -35,7 +35,6 @@ import pytest
 from astropy.io.fits import Header
 from astropy.wcs import WCS
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = REPO_ROOT / "workflow" / "scripts" / "exp_footprint.py"
 

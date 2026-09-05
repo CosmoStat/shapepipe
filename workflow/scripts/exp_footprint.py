@@ -69,7 +69,10 @@ from pathlib import Path
 import numpy as np
 from astropy.io.fits import Header
 
-from shapepipe.utilities.field_corners_extractor import _ccd_corners, _image_shape
+from shapepipe.utilities.field_corners_extractor import (
+    _ccd_corners,
+    _image_shape,
+)
 
 # Same directory; the rule invokes this file by path, so it is sys.path[0].
 import persist_exp
