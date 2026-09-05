@@ -771,7 +771,7 @@ rule tile_merge_cats:
         runtime = 10,
         slurm_extra = TILE_SLURM_EXTRA
     shell:
-        sp_shell("tile_merge_cats", "config_merge_sep_cats.ini")
+        sp_shell("tile_merge_cats", "config_tile_Ms.ini")
 
 # The run's science product. make_cat also reads the vignette store's
 # psfex_interp output, so it — not ngmix — is the store's last reader.
