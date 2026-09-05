@@ -21,7 +21,7 @@ neighbours the next time a tile is appended.
 
 GROUPING (``group: "exp_short"``) covers exp_split and exp_mask, and only them —
 one sbatch per exposure for two jobs whose medians are 1:28 and 1:54, well under
-the 15-minute floor Alliance policy asks us to bundle away. The composition
+the 15-minute runtime limit Alliance policy asks us to bundle away. The composition
 rules are in prepare.smk's docstring; this chain is linear too, so the group
 asks max(mem_mb) = 8000*attempt, max(threads) = 8, sum(runtime) = 240 min.
 

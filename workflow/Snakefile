@@ -584,7 +584,7 @@ def sp_shell(stage, config_name, *, check_args="", post=""):
 
     The rc is CAPTURED rather than ``&&``-ed onto, so the check still runs when
     shapepipe_run failed, and it is passed back as ``--job-rc "$rc"`` so the
-    verdict composes the count floors with shapepipe_run's own exit status. Both
+    verdict composes the count checks with shapepipe_run's own exit status. Both
     halves are argued in completeness.py's docstring.
     """
     return (

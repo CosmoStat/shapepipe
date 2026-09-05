@@ -677,7 +677,7 @@ rule tile_ngmix:
         # memory.current, which under cgroup v2 CHARGES PAGE CACHE to the job.
         # Cache is reclaimable — the kernel evicts it before it kills anything —
         # so the cgroup high-water is an upper bound on what the job NEEDS, not
-        # a floor. What a tight reservation can still do is squeeze the cache
+        # a hard requirement. What a tight reservation can still do is squeeze the cache
         # that keeps the node-local store resident, which is part of why the
         # fused tile is fast.
         #
@@ -707,7 +707,7 @@ rule tile_ngmix:
         # fairshare target is ~250 CE, which buys 9 tiles in flight at 28 and 25
         # at 10, and DR6's wall clock is (tiles / tiles-in-flight) x elapsed.
         #
-        # 4000 is the floor and is NOT recommended yet: it would take the group
+        # 4000 is the current lower bound and is NOT recommended yet: it would take the group
         # to 32000 MiB, where tile_vignets' own 32000 becomes the binding term
         # and the group finally bills its 8 real cores — but that is a 1.14x
         # margin over the worst tile measured, and the first thing to give would

@@ -159,10 +159,10 @@ workflow/
     exposure.smk         per-exposure: get_images, star_cat, split, mask, psf (no temp())
     tile.smk             per-tile: exp forest, merge_headers, mask, detect, vignets, ngmix, merge, make_cat
   scripts/
-    sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count floor)
+    sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count check)
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
-    completeness.py      the ported count-floor table (shared by sp_rule + run_report)
+    completeness.py      the ported count table (shared by sp_rule + run_report)
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
@@ -178,7 +178,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   millions of paths.
 - **Manifests are the DAG's currency, and they are success-only.**
   `completeness.py check` writes its full verdict — per-runner counts against
-  floors, scraped failure reasons, the `shapepipe_run` exit status when nonzero
+  expected counts, scraped failure reasons, the `shapepipe_run` exit status when nonzero
   — to the rule's `log:` (`<unit dir>/logs/<stage>.json`) on *every* run, and
   additionally to the declared `<stage>.json` manifest only when that verdict is
   a success. So `<stage>.json` on disk means "this stage succeeded", and a
@@ -187,10 +187,10 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   output natively and never touches its log, which is why the profile runs
   *without* `keep-incomplete`. `sp report` reads both dirs — the manifest for
   success, the log for failure — and a unit with neither ran nothing.
-- **Completeness is a count floor, not a taxonomy.** After a run,
+- **Completeness is an exact-count check, not a taxonomy.** After a run,
   `sp_rule.py` counts products per mandatory runner against
-  `completeness.py`'s floor and exits nonzero below it. Per-CCD attrition
-  between floor and `expect` is tolerated. No 3-class taxonomy, no
+  `completeness.py`'s expected count and exits nonzero below it. A shortfall
+  below `expect` fails unless `warn` is set. No 3-class taxonomy, no
   error-signature whitelist. `--keep-going` isolates a failure to its own
   DAG cone.
 - **Stores are sharded.** Every tile/exposure runs its own `shapepipe_run`

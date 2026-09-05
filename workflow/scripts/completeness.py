@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
-"""The count-floor completeness table — the single failure policy.
+"""The count-based completeness table — the single failure policy.
 
 This is the ported ``complete_check`` count table from the v2.0 bash layer
-(``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4). It is the *only*
-failure policy in the design: there is no 3-class taxonomy and no error-signature
-whitelist. A stage is a real failure iff a mandatory runner produced fewer than
-its ``floor`` files; per-CCD attrition (a sparse CCD setools rejects, ~0.2%)
-sits between ``floor`` and ``expect`` and is tolerated.
+(``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4). Across smk-g6
+(127 exposures, 64 tiles, and 512 ngmix chunks), every non-warning runner
+produced exactly its ``expect`` count; the v2.0 layer likewise used exact counts,
+with only ``psfex_interp`` marked ``:warn``. The formerly ported lower bounds
+(and the unsupported ~0.2% setools-attrition claim) therefore have no basis:
+setools produced 80/80 in all 127 exposures. ``split_exp`` is also structurally
+all-or-nothing because it raises on an HDU-count mismatch.
+
+A runner below ``expect`` fails its unit unless it has ``warn=True``; such a
+shortfall gives the unit status ``warn``. There is no 3-class taxonomy and no
+error-signature whitelist.
 
 This file is also the ``check`` CLI, the second half of every rule's shell line
 (PRD D2/D3). The rules capture ShapePipe's return code rather than ``&&``-ing
@@ -19,15 +25,14 @@ onto it, so the check runs — and the verdict is recorded — even when
     exit $rc
 
 It counts the unit's products under ``$SP_RUN`` and exits nonzero iff a mandatory
-runner is below its floor OR ``--job-rc`` is nonzero — the verdict is COMPOSED of
+runner is below ``expect`` OR ``--job-rc`` is nonzero — the verdict is COMPOSED of
 the counts and shapepipe_run's own exit status, because a runner can raise after
 the counted ones have written their files.
 
-The verdict is written to two files with different
-different jobs:
+The verdict is written to two files with different jobs:
 
   * the LOG (``--log``, the rule's snakemake ``log:``) gets the full verdict on
-    EVERY run, success or failure — counts against floors, per-runner detail,
+    EVERY run, success or failure — counts against ``expect``, per-runner detail,
     scraped failure reasons, ``job_rc`` when nonzero. Snakemake never deletes a
     log file, so it survives the failed job that wrote it and is the post-mortem
     evidence ``run_report.py`` reads.
@@ -50,10 +55,9 @@ UNMOVED mtime, or the mtime rerun-trigger churns the cone on every unrelated
 ``--forcerun``.
 
 Per-runner fields:
-    expect   nominal file count for a fully complete unit (report yardstick)
-    floor    the fail-loud minimum (below this the job exits nonzero)
-    warn     if True the runner never fails the unit at all (bash ``:warn`` —
-             e.g. psfex_interp on tiles missing some epochs)
+    expect   nominal file count for a fully complete unit; below it fails
+    warn     if True a shortfall warns instead of failing the unit (bash
+             ``:warn`` — e.g. psfex_interp on tiles missing some epochs)
     subpath  count files in ``<runner>/output/<subpath>/`` instead of
              ``<runner>/output/`` (bash ``:rand_split`` — setools split cats)
 
@@ -68,7 +72,7 @@ import re
 import sys
 from pathlib import Path
 
-# stage -> {runner_subdir: {expect, floor, [warn], [subpath]}}
+# stage -> {runner_subdir: {expect, [warn], [subpath]}}
 # exp_psf and tile_vignets are selected by $SP_PSF at check time.
 COMPLETENESS = {
     # --- tile prepare (phase A) ---
@@ -76,65 +80,66 @@ COMPLETENESS = {
     # for the canfar vos flavor; the nibi symlink configs produce one file per
     # INPUT_FILE_PATTERN entry (tile: image+weight=2; exp: image+weight+flag=3),
     # verified against the p3-batch1 baseline tree (100 files / 50 tiles).
-    "tile_get_images":     {"get_images_runner":      dict(expect=2, floor=2)},
-    "tile_uncompress":     {"uncompress_fits_runner": dict(expect=1, floor=1)},
-    "tile_find_exposures": {"find_exposures_runner":  dict(expect=1, floor=1)},
+    "tile_get_images":     {"get_images_runner":      dict(expect=2)},
+    "tile_uncompress":     {"uncompress_fits_runner": dict(expect=1)},
+    "tile_find_exposures": {"find_exposures_runner":  dict(expect=1)},
 
     # --- exposure chain ---
-    "exp_get_images": {"get_images_runner": dict(expect=3, floor=3)},
-    "exp_split":      {"split_exp_runner":  dict(expect=121, floor=41)},
-    "exp_mask":       {"mask_runner":       dict(expect=40, floor=1)},
+    "exp_get_images": {"get_images_runner": dict(expect=3)},
+    "exp_split":      {"split_exp_runner":  dict(expect=121)},
+    "exp_mask":       {"mask_runner":       dict(expect=40)},
     # sextractor expect is nibi-flavor: 3 files/CCD (sexcat + background +
     # background_rms; v2.0's 80 assumed 2/CCD), verified against the P0 tree
     # AND the bash baseline (both 120/exposure).
     "exp_psf": {
         "psfex": {
-            "sextractor_runner":   dict(expect=120, floor=2),
-            "setools_runner":      dict(expect=80, floor=2, subpath="rand_split"),
-            "psfex_runner":         dict(expect=80, floor=2),
-            "psfex_interp_runner":  dict(expect=40, floor=0, warn=True),
+            "sextractor_runner":   dict(expect=120),
+            "setools_runner":      dict(expect=80, subpath="rand_split"),
+            "psfex_runner":         dict(expect=80),
+            "psfex_interp_runner":  dict(expect=40, warn=True),
         },
         # MCCD counts are derived from config_exp_mccd.ini and its per-CCD
         # runners, but this chain has not been exercised through this workflow.
         # Keep the expected counts visible while making the unverified branch
-        # warning-only until a real campaign validates its floors.
+        # warning-only until a real campaign validates its counts.
         "mccd": {
-            "sextractor_runner":          dict(expect=120, floor=0, warn=True),
-            "setools_runner":             dict(expect=80, floor=0, warn=True,
+            "sextractor_runner":          dict(expect=120, warn=True),
+            "setools_runner":             dict(expect=80, warn=True,
                                                 subpath="rand_split"),
-            "mccd_preprocessing_runner":  dict(expect=80, floor=0, warn=True),
+            "mccd_preprocessing_runner":  dict(expect=80, warn=True),
             # Fit/validation is exposure-wide: one model and one validation
             # catalogue, unlike the per-CCD preprocessing outputs.
-            "mccd_fit_val_runner":        dict(expect=2, floor=0, warn=True),
-            "merge_starcat_runner":       dict(expect=1, floor=0, warn=True),
+            "mccd_fit_val_runner":        dict(expect=2, warn=True),
+            "merge_starcat_runner":       dict(expect=1, warn=True),
             # config_exp_mccd enables the ten meanshape and six histogram plots.
-            "mccd_plots_runner":          dict(expect=16, floor=0, warn=True),
+            "mccd_plots_runner":          dict(expect=16, warn=True),
         },
     },
 
     # --- tile post ---
-    "tile_merge_headers": {"merge_headers_runner": dict(expect=1, floor=1)},
-    "tile_detect":        {"sextractor_runner":    dict(expect=2, floor=2)},
+    "tile_merge_headers": {"merge_headers_runner": dict(expect=1)},
+    "tile_detect":        {"sextractor_runner":    dict(expect=2)},
     "tile_vignets": {
         "psfex": {
-            "psfex_interp_runner":     dict(expect=1, floor=1),
-            "vignetmaker_runner_run_1": dict(expect=1, floor=1),
+            "psfex_interp_runner":     dict(expect=1),
+            "vignetmaker_runner_run_1": dict(expect=1),
             # 5 sqlites/tile on nibi (image/weight/flag/background/background_rms);
-            # v2.0's 4 was the canfar flavor. floor follows the tile-post pattern
-            # (expect=floor: all-or-nothing, every vignette feeds ngmix).
-            "vignetmaker_runner_run_2": dict(expect=5, floor=5),
+            # v2.0's 4 was the canfar flavor. every vignette feeds ngmix, so the expected count is all-or-nothing.
+            "vignetmaker_runner_run_2": dict(expect=5),
         },
         # MCCD is wired but unvalidated here; retain the expected runner names
         # and counts as warnings until a workflow campaign exercises them.
         "mccd": {
-            "mccd_interp_runner":        dict(expect=1, floor=0, warn=True),
-            "vignetmaker_runner_run_1":   dict(expect=1, floor=0, warn=True),
-            "vignetmaker_runner_run_2":   dict(expect=5, floor=0, warn=True),
+            "mccd_interp_runner":        dict(expect=1, warn=True),
+            "vignetmaker_runner_run_1":   dict(expect=1, warn=True),
+            "vignetmaker_runner_run_2":   dict(expect=5, warn=True),
         },
     },
-    "tile_ngmix":     {"ngmix_runner":          dict(expect=1, floor=1)},
-    "tile_merge_cats": {"merge_sep_cats_runner": dict(expect=1, floor=1)},
-    "tile_make_cat":  {"make_cat_runner":       dict(expect=1, floor=1)},
+    # One check runs inside run_sp_tile_ngmix_Ng${SP_NGMIX_CHUNK}u per chunk,
+    # so expect=1 is the correct per-chunk count.
+    "tile_ngmix":     {"ngmix_runner":          dict(expect=1)},
+    "tile_merge_cats": {"merge_sep_cats_runner": dict(expect=1)},
+    "tile_make_cat":  {"make_cat_runner":       dict(expect=1)},
 }
 
 
@@ -167,10 +172,10 @@ def count_products(run_dir, runner, spec):
     return n
 
 
-def check_floor(stage, run_dir):
-    """Return (ok, details). ok is False iff a mandatory runner is below floor.
+def check_counts(stage, run_dir):
+    """Return (ok, details); mandatory shortfalls below expect make ok false.
 
-    ``details`` is a list of (runner, n_found, floor, expect, warn) tuples.
+    ``details`` is a list of (runner, n_found, expect, warn) tuples.
     """
     table = COMPLETENESS[stage]
     if stage in ("exp_psf", "tile_vignets"):
@@ -184,9 +189,9 @@ def check_floor(stage, run_dir):
     details, ok = [], True
     for runner, spec in table.items():
         n = count_products(run_dir, runner, spec)
-        details.append((runner, n, spec["floor"], spec["expect"],
-                        spec.get("warn", False)))
-        if not spec.get("warn", False) and n < spec["floor"]:
+        warn = spec.get("warn", False)
+        details.append((runner, n, spec["expect"], warn))
+        if not warn and n < spec["expect"]:
             ok = False
     return ok, details
 
@@ -225,7 +230,7 @@ STAGE_DIR = {
 
 # Lines worth showing a human who asks "why is this runner short?". Deliberately
 # crude: the point is a pointer into the logs, not a taxonomy (there is no error
-# whitelist in this design — the count floor is the policy).
+# whitelist in this design — the count policy is the policy).
 _ERROR_RE = re.compile(
     r"traceback|exception|\berror\b|\bfailed\b|no such file|not found|"
     r"killed|out of memory|oom|segmentation fault|bad chi2",
@@ -286,7 +291,7 @@ def scrape_reasons(stage_dir, runner):
 def build_manifest(stage, run_dir, unit, stage_subdir=None):
     """Count, classify and (on shortfall) scrape. Returns (manifest, ok).
 
-    Stages absent from the table fall back to the zero-output floor: any product
+    Stages absent from the table fall back to a zero-output check: any product
     anywhere under the stage dir passes, nothing at all fails.
     """
     level, subdir = STAGE_DIR.get(stage, (None, None))
@@ -309,25 +314,25 @@ def build_manifest(stage, run_dir, unit, stage_subdir=None):
         manifest["n_products"] = len(produced)
         if not ok:
             manifest["failures"].append(
-                {"runner": None, "found": 0, "floor": 1,
-                 "reasons": [f"zero output under {stage_dir}"]})
+                {"runner": None, "found": 0, "expect": 1, "warn": False,
+                 "status": "failed", "reasons": [f"zero output under {stage_dir}"]})
         return manifest, ok
 
-    ok, details = check_floor(stage, stage_dir)
+    ok, details = check_counts(stage, stage_dir)
     short = False
-    for runner, n, floor, expect, warn in details:
-        below = n < floor
-        if n < expect:
+    for runner, n, expect, warn in details:
+        below = n < expect
+        if below:
             short = True
+        status = "complete" if not below else "warn" if warn else "failed"
         manifest["runners"][runner] = {
-            "found": n, "expect": expect, "floor": floor, "warn": warn,
-            "status": ("complete" if n >= expect else
-                       "warn" if (warn or not below) else "below_floor"),
+            "found": n, "expect": expect, "warn": warn, "status": status,
         }
         if below:
             manifest["failures"].append({
-                "runner": runner, "found": n, "floor": floor, "expect": expect,
-                "warn": warn, "reasons": scrape_reasons(stage_dir, runner),
+                "runner": runner, "found": n, "expect": expect,
+                "warn": warn, "status": status,
+                "reasons": scrape_reasons(stage_dir, runner),
             })
     manifest["status"] = "failed" if not ok else ("warn" if short else "complete")
     return manifest, ok
@@ -379,10 +384,10 @@ def main(argv=None) -> int:
 
     manifest, ok = build_manifest(args.stage, Path(run_dir), unit, args.stage_dir)
 
-    # The verdict is COMPOSED of two independent statements: the count floors
+    # The verdict is COMPOSED of two independent statements: the count checks
     # (above) and shapepipe_run's own exit status (here). Counts alone are not
     # enough — a runner can raise AFTER the counted runners have written their
-    # files, so the floors are met while the job died. Without this, such a job
+    # files, so the counts are met while the job died. Without this, such a job
     # publishes a SUCCESS manifest that snakemake then deletes as a failed job's
     # output — and the log would claim "complete" for a stage with no manifest,
     # which reads as a bookkeeping bug rather than as the failure it is.
@@ -394,10 +399,10 @@ def main(argv=None) -> int:
         manifest["status"] = "failed"
         manifest["job_rc"] = args.job_rc
         manifest["failures"].append({
-            "runner": "shapepipe_run", "found": 0, "floor": 1, "expect": 1,
-            "warn": False,
+            "runner": "shapepipe_run", "found": 0, "expect": 1,
+            "warn": False, "status": "failed",
             "reasons": [f"shapepipe_run exited {args.job_rc} "
-                        f"(counts above floor)"],
+                        f"(counts met expect)"],
         })
 
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
@@ -413,9 +418,9 @@ def main(argv=None) -> int:
         write_if_changed(args.manifest, text)
 
     for runner, r in manifest["runners"].items():
-        tag = {"complete": "OK", "warn": "warn", "below_floor": "<-- BELOW floor"}
+        tag = {"complete": "OK", "warn": "warn", "failed": "<-- BELOW expect"}
         print(f"[completeness]   {runner}: {r['found']}/{r['expect']} "
-              f"(floor {r['floor']}) {tag[r['status']]}", file=sys.stderr)
+              f"{tag[r['status']]}", file=sys.stderr)
     print(f"[completeness] {args.stage} {unit}: {manifest['status']} "
           f"-> {args.log}" + (f" + {args.manifest}" if ok else ""), file=sys.stderr)
     for f in manifest["failures"]:

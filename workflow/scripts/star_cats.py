@@ -224,7 +224,7 @@ def write_manifest(args, tile_ids, needed, n_fetched) -> None:
     """The rule's declared output.
 
     Not a ``completeness.py`` verdict: this rule runs no ``shapepipe_run`` and
-    has no per-runner count floors, so there is nothing to compose and no
+    has no per-runner count checks, so there is nothing to compose and no
     separate ``log:`` — under ``set -euo pipefail`` the job either completes or
     aborts at the failing query, and snakemake's captured stderr is the evidence.
     The manifest keeps the workflow's "one rule, one manifest" currency: written

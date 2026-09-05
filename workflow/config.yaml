@@ -162,5 +162,5 @@ ngmix_chunks: 8
 
 # The container's installed shapepipe is overridden by the prod worktree via
 # --env PYTHONPATH in profiles/nibi (settled call 3); no config knob here.
-# build_index.py's missing-tile fraction floor is passed by workflow/bin/sp
+# build_index.py's missing-tile fraction threshold is passed by workflow/bin/sp
 # (SP_MISSING_THRESHOLD, default 0.0 = any missing tile is fatal).

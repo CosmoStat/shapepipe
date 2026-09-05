@@ -50,7 +50,7 @@ def _manifest(stage, status="complete", found=1, expect=1):
     return {
         "stage": stage, "level": "tile", "unit": TILE, "status": status,
         "runners": {f"{stage}_runner": {
-            "found": found, "expect": expect, "floor": found,
+            "found": found, "expect": expect,
             "status": status, "warn": status == "warn"}},
         "failures": [],
     }
