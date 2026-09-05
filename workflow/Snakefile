@@ -37,6 +37,7 @@ import json
 import os
 import sqlite3
 import sys
+from fnmatch import fnmatch
 from pathlib import Path
 
 from snakemake.exceptions import WorkflowError
@@ -323,6 +324,7 @@ FOREST_HASH = script_hash("build_forest.py")
 CLEAN_HASH  = script_hash("clean_exposure.py")
 CLEAN_TILE_HASH = script_hash("clean_tile.py")
 PERSIST_HASH = script_hash("persist_exp.py")
+FOOTPRINT_HASH = script_hash("exp_footprint.py")
 # Same argument for star_cats.py, which both star-cat rules call: their params
 # otherwise fingerprint nothing but paths, so an edit to the chunking or the cut
 # would never rerun them. ONE hash for both rules because it is one script — and
@@ -480,6 +482,46 @@ def persist_targets():
         return []
     exps = {e for t in TILES_READY for e in tile_exposures(t)}
     return sorted(prod_exp_manifest(e, "exp_persist") for e in exps
+                  if not Path(tombstone(e)).exists())
+
+# --- per-CCD sky footprints (the coverage map's raw material) ---------------
+# `exp_footprint` reads the valid-PSF CCD set off exp_persist.json's MEMBERS, so
+# `persist_exp:` naming the psfex_interp product is that rule's PRECONDITION, not
+# a preference: with those files unpacked the manifest carries no valid-PSF set
+# and there is nothing to build a footprint from. Asked by matching a
+# hypothetical member name rather than by string-matching the pattern, so any
+# spelling that would have packed them counts (exp_footprint.py asks the same
+# question of the manifest it actually reads).
+#
+# Absent the pattern, the footprint rule is simply OFF — no jobs, no error. It is
+# `coverage:` being on that turns the same missing pattern into a parse-time
+# failure (coverage.smk), because there the user asked for a map.
+PSF_PRODUCT_PROBE = "validation_psf-0000000-0.fits"
+PERSIST_HAS_PSF = any(fnmatch(PSF_PRODUCT_PROBE, pat) for pat in PERSIST_EXP)
+
+
+def footprint_targets():
+    """Which exposures this invocation must record a per-CCD sky footprint for.
+
+    REQUESTED BY `rule all` DIRECTLY, AND NOT GATED ON `coverage:`. The record is
+    derived from `headers-<exp>.npy`, which lives on /scratch and which the
+    60-day purge takes whether or not this campaign ever builds a map — so
+    building it only when a map is asked for means that turning coverage on a
+    month later finds the WCS gone and no way back short of re-downloading the
+    exposures. This is persist_targets' argument above, applied to the other
+    scratch-only input coverage needs: milliseconds and a few KB now, against an
+    irrecoverable loss later.
+
+    Scope, and the tombstone exclusion, are persist_targets' exactly: a cleaned
+    exposure's footprint was written before its store went (clean_exposure takes
+    this manifest as an input), and asking again would rebuild the chain from VOS.
+
+    HEAD PROCESS ONLY, for the same reason as clean_targets() above.
+    """
+    if not PERSIST_HAS_PSF or not workflow.is_main_process:
+        return []
+    exps = {e for t in TILES_READY for e in tile_exposures(t)}
+    return sorted(prod_exp_manifest(e, "exp_footprint") for e in exps
                   if not Path(tombstone(e)).exists())
 
 # --- tile reclamation (D5) --------------------------------------------------
@@ -647,19 +689,21 @@ include: "rules/tile.smk"
 #
 # exp_persist joins them for the same arithmetic — a few MB of `tar` per exposure,
 # ~20k of them at DR6 scale, each far shorter than the scheduling latency that
-# would submit it (exposure.smk argues the placement in full).
+# would submit it (exposure.smk argues the placement in full). exp_footprint sits
+# beside it and is smaller still: one pickle load and ~160 pixel_to_world calls.
 #
 # star_catalogue and exp_star_cat are MID-CHAIN localrules, so they must stay out
 # of any future `group:` label: a local job cannot be fused into a submitted group.
 # exp_persist sits between exp_psf and clean_exposure, both of which are outside
 # every group already (exp_psf is heavy, clean_exposure is local), so it adds no
 # new constraint. The two clean rules are DAG leaves and have none either.
-localrules: all, prepare_all_tiles, clean_exposure, clean_tile, star_catalogue, exp_star_cat, exp_persist
+localrules: all, prepare_all_tiles, clean_exposure, clean_tile, star_catalogue, exp_star_cat, exp_persist, exp_footprint
 
 rule all:
     input:
         [final_cat(t) for t in TILES_READY],
         persist_targets(),
+        footprint_targets(),
         clean_targets(),
         clean_tile_targets(),
 
