@@ -140,3 +140,19 @@ def test_no_records_is_a_loud_failure(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as exc:
         run(products, tmp_path, monkeypatch)
     assert "nothing to build a map from" in str(exc.value)
+
+
+def test_records_naming_no_ccd_is_a_loud_failure(tmp_path, monkeypatch):
+    """Records that name no CCD are the quieter empty map, and equally fatal.
+
+    Every exposure on the root having lost every CCD is a broken PSF stage, not
+    a survey with no coverage — but the .hsp it would write is valid and
+    plausible, and its consumer would mask everything.
+    """
+    products = tmp_path / "products"
+    write_footprint(products, "1000001", [])
+    write_footprint(products, "2000001", [])
+
+    with pytest.raises(SystemExit) as exc:
+        run(products, tmp_path, monkeypatch)
+    assert "not one names a CCD with a PSF model" in str(exc.value)

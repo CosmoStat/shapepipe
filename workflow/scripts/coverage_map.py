@@ -70,6 +70,17 @@ def read_footprints(products_dir):
             ccd_ids.append(ccd["id"])
             ra.append(ccd["ra"])
             dec.append(ccd["dec"])
+
+    # Records but no CCDs is the other empty map, and it is the quieter one: it
+    # means every exposure on the root lost every CCD, which is a broken PSF
+    # stage rather than a survey with no coverage. Written out it would be a
+    # valid, plausible-looking .hsp full of nothing, and its consumer masks
+    # everything.
+    if not ccd_ids:
+        sys.exit(f"coverage_map: {len(paths)} footprint record(s) under "
+                 f"{products_dir}, and not one names a CCD with a PSF model; "
+                 f"there is nothing to stamp")
+
     return (np.array(ccd_ids, dtype=str),
             np.array(ra, dtype=float).reshape(-1, 4),
             np.array(dec, dtype=float).reshape(-1, 4),
