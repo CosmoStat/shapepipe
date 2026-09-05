@@ -30,6 +30,7 @@ candide   needs the candide cluster and/or its real data; auto-skipped elsewhere
 ```
 
 `--strict-markers` is on, so a typo'd marker is an error, not a silent no-op.
+Use `pytest -m "not unions"` to run the survey-generic tests.
 
 A `candide`-marked test is **collected everywhere** (so `--collect-only` shows
 it exists) but **skipped off-cluster** with a clear reason. Candide is detected

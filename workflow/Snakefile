@@ -1,0 +1,648 @@
+"""ShapePipe real-data orchestration — Snakemake workflow.
+
+Design / rationale: CosmoStat/shapepipe#848, D1-D5.
+
+`sp run` is TWO snakemake invocations over this one Snakefile:
+
+    SP_PHASE=prepare snakemake prepare_all_tiles   # Git -> Uz -> Fe, per tile
+    SP_PHASE=compute snakemake all                 # everything else
+
+They are two because the exposure job set is *data-derived*: it comes from the
+tiles' find_exposures output, and a Snakemake DAG is fixed at parse time. The
+join between them is the tile<->exposure index, built HERE at parse time of
+invocation 2 (build_index.build(), imported — there is no `sp index` verb) and
+loaded into plain dicts. The index is never a rule input, so appending tiles and
+rebuilding it changes which jobs exist without invalidating completed work; it
+ACCUMULATES across invocations, so a later clean_exposure (S5) sees every
+consuming tile of the whole campaign, not just this tile list.
+
+Neither invocation reads the checkout: `sp run` snapshots the code into the
+campaign's state dir and points snakemake at THAT tree, so `workflow.basedir`
+below is the snapshot and mid-campaign edits are inert. The mechanism and its
+rationale live in bin/sp.
+
+The atom (D2): one rule == one `shapepipe_run` on one unit; its single declared
+output is its MANIFEST (`<unit dir>/manifests/<stage>.json`), written by
+`completeness.py check`. Product files are not declared — a missing CCD is often
+legitimate, and at DR6 scale per-CCD declaration means millions of paths.
+
+Failure evidence rides on the rule's `log:` (`<unit dir>/logs/<stage>.json`):
+the manifest says "this stage succeeded", the log says "here is what happened"
+(the contract is argued in completeness.py's docstring).
+"""
+
+import functools
+import hashlib
+import json
+import os
+import sqlite3
+import sys
+from pathlib import Path
+
+from snakemake.exceptions import WorkflowError
+
+# Resolved relative to THIS file, not the working directory: snakemake runs with
+# --directory on /scratch (bin/sp) so .snakemake/ state never lands on /project
+# (group quota is a hard 27/27 TiB — a metadata write mid-run died on it live).
+configfile: str(Path(workflow.snakefile).parent / "config.yaml")
+
+# Every job's shell runs inside this container (apptainer software-deployment in
+# the profile); the user never types apptainer. WHICH image is the one resolution
+# order `sp container` exposes — this user's writable sandbox if they built one,
+# else their cached SIF if they pulled one, else `container:` above. An empty
+# cache therefore lands on exactly the shared /project image the workflow has
+# always run, and a package installed into a sandbox reaches the jobs too.
+sys.path.insert(0, str(Path(workflow.snakefile).parent / "scripts"))
+import container as _container                          # noqa: E402
+
+# Loud at PARSE time, both ways: a broken SP_CONTAINER override, or nothing to
+# resolve at all (empty cache AND no `container:` key). The empty string the
+# resolver returns for "none" is a valid-looking container directive that passes
+# dry-run and only fails once jobs reach a node.
+try:
+    _image, _kind = _container.resolve_image()
+except _container.ContainerError as _exc:
+    raise WorkflowError(str(_exc))
+if _kind == "none":
+    raise WorkflowError(
+        f"No container image resolved: no sandbox, no cached SIF, and no "
+        f"'{_container.CONFIG_KEY}:' key in {_container.CONFIG_FILE}. "
+        f"Run `sp container pull`, or restore the key.")
+
+container: _image
+
+PSF_MODELS = {"psfex", "mccd"}
+PSF_MODEL = config.get("psf_model", "psfex")
+if PSF_MODEL not in PSF_MODELS:
+    raise WorkflowError(
+        f"Invalid psf_model={PSF_MODEL!r}; expected one of "
+        f"{sorted(PSF_MODELS)}.")
+
+# --- paths -----------------------------------------------------------------
+# RUN_DIR is the scratch root: bulk intermediates, sized so a batch finishes
+# inside the purge window. PRODUCTS_DIR is the persistent root
+# for the durable, low-volume products — the final catalogues, the index, the
+# report. Snakemake's own state is the one durable-looking thing that stays on
+# scratch (bin/sp explains why: tens of thousands of small, hot metadata writes
+# against a backed-up, file-count-limited filesystem).
+INPUTS = config["inputs"]
+OUTPUTS = config["outputs"]
+RUN_DIR    = Path(OUTPUTS["run_dir"])
+# Defaults to RUN_DIR so a scratch-only run (a fixture, a smoke test) needs no
+# second path: one root, exactly the pre-D5 layout.
+PRODUCTS_DIR = Path(OUTPUTS.get("products_dir") or RUN_DIR)
+# Run-independent root for the mask star catalogues: the HEALPix chunk store the
+# star_catalogue rule fills, and the per-exposure cuts exp_star_cat makes from it
+# (config.yaml explains the placement).
+STAR_CATS  = Path(OUTPUTS["star_cats"])
+INDEX_DB   = Path(OUTPUTS["index_db"])
+SCRIPTS    = Path(workflow.basedir) / "scripts"
+# The config chain is the repo's committed directory (D2). The configs and
+# rules that set their environment variables must be versioned together. There
+# is no `config_src` knob.
+CONFIG_DIR = Path(workflow.basedir) / "config" / "cfis"
+
+sys.path.insert(0, str(SCRIPTS))
+import build_index                                     # noqa: E402
+from completeness import STAGE_DIR                     # noqa: E402
+
+# SP_PHASE is set by bin/sp and NOWHERE else: `prepare`/`compute` on the two
+# invocations of `sp run`, `passthrough` on direct commands (`sp --unlock`, `sp
+# --dag`, `sp exp_psf ...`). It gates the two parse-time side effects — the index
+# build and the report hooks — so that a passthrough parse never mutates durable
+# state or dies on a threshold it was not asked about.
+#
+# Requiring it to be SET is the point of the check below: a bare `snakemake`
+# would otherwise parse as a passthrough, find `rule all` gated on an index it
+# never built, and exit 0 on an empty DAG. Jobs re-parse this file under the
+# slurm executor and inherit the head process's environment, so a submitted job
+# always carries the launching phase.
+PHASE = os.environ.get("SP_PHASE", "")
+if not PHASE:
+    raise WorkflowError(
+        "SP_PHASE is not set — run the workflow through workflow/bin/sp "
+        "(`sp run`), which exports it. A bare snakemake invocation would "
+        "silently build an empty DAG.")
+if PHASE not in ("prepare", "compute", "passthrough"):
+    raise WorkflowError(
+        f"SP_PHASE={PHASE!r} is not one of prepare, compute, passthrough.")
+
+with open(config["tile_list"]) as f:
+    TILES = [ln.strip() for ln in f if ln.strip()]
+
+# --- ngmix scatter (D4) ----------------------------------------------------
+# Native directive: `--set-scatter ngmix=N` overrides it, N=1 degenerates to one
+# ngmix job per tile. We take the count and drive our own integer `chunk`
+# wildcard rather than snakemake's `{scatteritem}` ("3-of-8") token, because the
+# chunk number is not ours alone: it names the run dir
+# (`run_sp_tile_ngmix_Ng<k>u`, from the template's RUN_NAME), and
+# merge_sep_cats derives chunks 2..N from chunk 1's path by substituting the
+# chunk number in that run-directory name — which only works for bare integers.
+scattergather:
+    ngmix=int(config.get("ngmix_chunks", 8))
+
+NGMIX_CHUNKS = workflow._scatter["ngmix"]
+
+# --- parse-time index build + load (D1) ------------------------------------
+# The COMPUTE invocation's parse IS the index build, and it runs UNCONDITIONALLY
+# there — no "some Fe output exists" guard. That guard used to make a
+# totally-failed prepare produce an empty index, an empty DAG and a green exit 0;
+# with it gone, zero Fe outputs means a missing fraction of 1.0, which trips the
+# SP_MISSING_THRESHOLD gate.
+#
+# In every other phase (prepare, or unset for a passthrough invocation) the parse
+# builds NOTHING and only loads whatever index is already on disk.
+#
+# is_main_process matters as much as PHASE: the SLURM executor re-invokes
+# snakemake inside every job, that re-invocation parses this file again, and it
+# inherits SP_PHASE=compute from the submitting environment. Without the guard,
+# every one of the run's jobs re-runs the build — hundreds of concurrent sqlite
+# writers on Lustre, which previously caused "database is locked" errors
+# (2026-07-31). Job parses only LOAD the index below.
+if PHASE == "compute" and workflow.is_main_process:
+    build_index.build(
+        TILES, RUN_DIR, INDEX_DB,
+        missing_threshold=float(os.environ.get("SP_MISSING_THRESHOLD", "0.0")))
+
+# EXP: exposure base-id -> original name (2605805 -> 2605805p; the name goes
+# verbatim into the fabricated per-unit exp_numbers list so get_images matches
+# <name>.fits.fz in the store).  TILE_EXP: tile -> [exp_ids].
+# EXP_TILES is the inverse edge — the CAMPAIGN-WIDE consumer set clean_exposure
+# is keyed on (D5).
+#
+# SLURPED ONLY IN THE HEAD PROCESS. The executor re-parses this file inside every
+# job (~800 per run), and each of those parses needs at most its own unit's edges
+# — reading the whole campaign's tile_exposures table there is pure waste that
+# grows with the campaign rather than with the job. Job parses get the same three
+# lookups backed by memoised single-row queries instead (the table's primary key
+# indexes both), so every input function returns exactly what it would have.
+EXP, TILE_EXP, EXP_TILES = {}, {}, {}
+if INDEX_DB.exists() and workflow.is_main_process:
+    # timeout=60: Lustre lock handoffs are slow; the default 5 s trips on
+    # nothing more sinister than a reader in another job's parse.
+    _con = sqlite3.connect(INDEX_DB, timeout=60)
+    EXP = dict(_con.execute("SELECT exp_id, name FROM exposures"))
+    for _tile, _exp in _con.execute("SELECT tile_id, exp_id FROM tile_exposures"):
+        TILE_EXP.setdefault(_tile, []).append(_exp)
+        EXP_TILES.setdefault(_exp, []).append(_tile)
+    _con.close()
+
+
+if workflow.is_main_process:
+
+    def exp_name(exp):
+        """The exposure's original name (get_images matches <name>.fits.fz)."""
+        return EXP[exp]
+
+    def tile_exposures(tile):
+        """This tile's exposure base-ids, sorted as the index stores them."""
+        return TILE_EXP.get(tile, [])
+
+    def exp_consumers(exp):
+        """Every tile in the campaign that reads this exposure (D5)."""
+        return EXP_TILES.get(exp, [])
+
+else:
+    # One connection for the whole parse, and lru_cache over it: a job parse asks
+    # about a handful of units, each of them several times (params, input, log).
+    _JOB_CON = sqlite3.connect(INDEX_DB, timeout=60) if INDEX_DB.exists() else None
+
+    @functools.lru_cache(maxsize=None)
+    def exp_name(exp):
+        row = _JOB_CON.execute(
+            "SELECT name FROM exposures WHERE exp_id = ?", (exp,)).fetchone()
+        if row is None:
+            raise KeyError(exp)          # same failure as EXP[exp] would give
+        return row[0]
+
+    @functools.lru_cache(maxsize=None)
+    def tile_exposures(tile):
+        if _JOB_CON is None:
+            return []
+        # ORDER BY rowid, not by exp_id: the eager slurp above is a table scan,
+        # so its lists are in INSERTION order, and the two paths must hand the
+        # DAG the same list and not merely the same set.
+        return [r[0] for r in _JOB_CON.execute(
+            "SELECT exp_id FROM tile_exposures WHERE tile_id = ? ORDER BY rowid",
+            (tile,))]
+
+    @functools.lru_cache(maxsize=None)
+    def exp_consumers(exp):
+        if _JOB_CON is None:
+            return []
+        # Unindexed on exp_id (the PK leads with tile_id), so this is a scan —
+        # harmless because the only caller, clean_consumers, is reachable from
+        # the head process alone (clean_exposure is a localrule).
+        return [r[0] for r in _JOB_CON.execute(
+            "SELECT tile_id FROM tile_exposures WHERE exp_id = ? ORDER BY rowid",
+            (exp,))]
+
+# Tiles this run can actually compute: declared AND indexed. The index spans the
+# campaign, so it is intersected with the declared list, not used as it.
+TILES_READY = [t for t in TILES if tile_exposures(t)]
+READY_SET = set(TILES_READY)
+
+# A compute invocation with nothing to compute is never a success. Without this,
+# an empty intersection yields `rule all` with no inputs, an empty DAG and exit
+# 0 — the silent green run the threshold gate exists to prevent.
+if PHASE == "compute" and not TILES_READY:
+    raise WorkflowError(
+        f"No declared tile has an indexed exposure list: 0 of {len(TILES)} tiles "
+        f"are ready to compute (index {INDEX_DB}). Run the prepare phase first "
+        f"(`sp run`), or check {INDEX_DB.parent / 'missing.json'}.")
+
+wildcard_constraints:
+    tile  = r"\d{3}\.\d{3}",
+    exp   = r"\d{6,7}",
+    shard = r"\d{2}",
+    chunk = r"\d+",
+
+# --- the sharded stores (D2) ----------------------------------------------
+# tiles/<2-char prefix>/<ID>/ and exp/<2-char prefix>/<base>/ — no directory
+# exceeds ~1k entries at full-UNIONS scale. Rules carry the shard as its own
+# wildcard because an output pattern cannot compute it; every path the DAG uses
+# is built by these helpers, so a mismatched (shard, id) pair is never requested.
+TILE_DIR = str(RUN_DIR / "tiles" / "{shard}" / "{tile}")
+EXP_DIR  = str(RUN_DIR / "exp" / "{shard}" / "{exp}")
+# The persistent root mirrors the scratch one, shard for shard, so the two trees
+# read as the same campaign seen from two filesystems.
+PROD_TILE_DIR = str(PRODUCTS_DIR / "tiles" / "{shard}" / "{tile}")
+
+def tile_dir(tile):
+    return f"{RUN_DIR}/tiles/{tile[:2]}/{tile}"
+
+def exp_dir(exp):
+    return f"{RUN_DIR}/exp/{exp[:2]}/{exp}"
+
+def tile_manifest(tile, stage):
+    return f"{tile_dir(tile)}/manifests/{stage}.json"
+
+def exp_manifest(exp, stage):
+    return f"{exp_dir(exp)}/manifests/{stage}.json"
+
+def forest_dir(tile):
+    return f"{tile_dir(tile)}/exp_forest"
+
+def final_cat(tile):
+    """The campaign's science product, and its tile-finished marker.
+
+    It lives on the PERSISTENT root, not the scratch one, and both halves of
+    that sentence are load-bearing. As a product: it is what the campaign is
+    for, and a 60-day purge must not eat it. As a marker: tile_finished() keys
+    on this path to cut a finished tile's exposure edges (D5), so if a purge
+    could remove it, finished tiles would re-declare inputs against exposure
+    stores that reclamation deleted — the rerun avalanche the cut exists to
+    prevent, arriving by way of the purge instead.
+    """
+    return f"{PRODUCTS_DIR}/tiles/{tile[:2]}/{tile}/final_cat-{tile}.fits"
+
+def unit_num(unit):
+    """$SP_UNIT_NUM: ShapePipe's image-number convention, dot -> dash, leading
+    dash (tile ``210.282`` -> ``-210-282``; exposure ``2605805`` -> ``-2605805``).
+    The RULES do this transform; the configs just interpolate $SP_UNIT_NUM into
+    NUMBER_LIST (the `set_config_number_list` mechanism that replaced the retired
+    -e/--exclusive flag, #746)."""
+    return "-" + unit.replace(".", "-")
+
+# Content hash of completeness.py, computed once at parse time and carried as a
+# param on every rule: the default rerun-triggers' `code` trigger hashes only the
+# rule's own shell string, NOT external scripts it calls — without this, a fix to
+# the count table silently leaves stale manifests in place (bitten live). Scoped
+# to completeness.py alone, the one script every shell line runs; build_forest.py
+# gets its own hash, on the forest rule only.
+def script_hash(name):
+    """The 12-hex fingerprint of one script under workflow/scripts/."""
+    return hashlib.md5((SCRIPTS / name).read_bytes()).hexdigest()[:12]
+
+SCRIPT_HASH = script_hash("completeness.py")
+FOREST_HASH = script_hash("build_forest.py")
+CLEAN_HASH  = script_hash("clean_exposure.py")
+CLEAN_TILE_HASH = script_hash("clean_tile.py")
+# Same argument for star_cats.py, which both star-cat rules call: their params
+# otherwise fingerprint nothing but paths, so an edit to the chunking or the cut
+# would never rerun them. ONE hash for both rules because it is one script — and
+# that is also why fetch and cut live in one module (they must agree on which
+# pixel holds which star). The hash does NOT key the store path — see
+# config.yaml's star_cats block on clearing the store after a semantic change.
+STAR_CAT_HASH = script_hash("star_cats.py")
+# ngmix_range.py earns a hash for a stronger reason than the others. What it
+# emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks are
+# a PARTITION of its object IDs: resume a tile across an edit to the split and
+# the chunks that already succeeded keep the old ranges while the reruns take the
+# new ones, so within one tile some objects are measured twice and others by
+# nobody. merge_sep_cats concatenates whatever it is handed, so the tile
+# completes green with a corrupt catalogue and no error anywhere.
+#
+# ACROSS TIME IS ALL THIS GUARDS NOW. The within-group version of the same
+# corruption — eight sibling chunks each computing the split and disagreeing — is
+# structurally closed: the partition is materialised ONCE per tile, by
+# tile_vignets, and the chunks only look their row up (tile.smk's
+# TILE_NGMIX_RANGES, which also keeps the incident transcript). So this hash buys
+# REPRODUCIBILITY of the file across attempts and resumes, not agreement between
+# siblings. It therefore fingerprints the script that PRODUCES the file, and
+# is used by both tile_vignets and tile_ngmix because either rule can produce
+# the file.
+#
+# Land this hash, and any later edit to the split, at a campaign boundary on a
+# fresh root: a resume across it re-measures the tile, and the failure modes a
+# mid-campaign params change can reach are catalogued at tile.smk's range_hash.
+NGMIX_RANGE_HASH = script_hash("ngmix_range.py")
+
+# --- exposure reclamation (D5, S5) -----------------------------------------
+
+
+def flag(value, default=False):
+    """Truthiness for a config value that may arrive as a STRING.
+
+    `--config clean=false` delivers the string "false", and every non-empty
+    string is truthy in Python — a plain bool() read that as ON and scheduled
+    the deletions the user had just switched off. YAML booleans pass through
+    unchanged; only strings are parsed, and an unparseable one is an error, not
+    a guess.
+    """
+    if value is None:
+        return default
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in ("1", "true", "yes", "on"):
+            return True
+        if v in ("0", "false", "no", "off", ""):
+            return False
+        raise WorkflowError(f"Cannot read {value!r} as a boolean (use true/false).")
+    return bool(value)
+
+
+# `clean:` in config.yaml gates the whole mechanism. Off => the rule generates no
+# jobs at all (nothing requests a tombstone); flipping it on later reclaims
+# RETROACTIVELY, because the exposures already cleaned are exactly the ones with
+# a tombstone, so the missing tombstones schedule exactly the clean jobs.
+# Only ever active under SP_PHASE=compute: the prepare and passthrough parses
+# read no index of their own and must schedule no deletions.
+CLEAN = flag(config.get("clean", False)) and PHASE == "compute"
+
+# Reclamation REQUIRES the `input` rerun-trigger to be off (see tile.smk's
+# tile_finished cascade note). The gate is structural rather than asserted: CLEAN
+# needs SP_PHASE=compute, only bin/sp sets it, and bin/sp always launches with
+# profiles/nibi — so the incompatible combination is unreachable. A runtime
+# assertion is impossible (workflow.dag_settings is None until the DAG is built).
+
+# Tiles that must not pin an exposure's store. See config.yaml: a permanently
+# failed tile otherwise holds every exposure it touches (~80) forever, because
+# its vignets manifest will never exist and its exposures are therefore never
+# eligible. Listing it here drops it from the consumer sets.
+CLEAN_IGNORE_TILES = set(config.get("clean_ignore_tiles") or [])
+
+
+def tombstone(exp):
+    """The clean_exposure output. Lives BESIDE manifests/ and logs/, not inside
+    either: the clean job deletes both wholesale, and `sp report` scans it."""
+    return f"{exp_dir(exp)}/cleaned.json"
+
+
+def clean_consumers(exp):
+    """Every tile in the campaign that reads this exposure — the set whose
+    vignets must all exist before the store may go — minus the ignored tiles."""
+    return sorted(t for t in exp_consumers(exp)
+                  if t not in CLEAN_IGNORE_TILES)
+
+
+def clean_targets():
+    """Which exposures this invocation may clean.
+
+    An exposure is eligible only when every consuming tile is either in this
+    run's scope or has already produced its vignets on disk. Without that test,
+    requesting a tombstone for an exposure shared with a LATER batch would drag
+    that batch's whole tile chain into this DAG through the clean rule's input —
+    cleanup would otherwise expand the scope. Ineligible
+    exposures are simply skipped; the invocation that finishes their last
+    consumer picks them up. Deferral, never loss.
+
+    Consumer sets are the IGNORE-FILTERED ones (clean_consumers), so a tile in
+    `clean_ignore_tiles` neither gates eligibility nor appears in the job's
+    input — which is the purpose of that list.
+
+    HEAD PROCESS ONLY. This feeds `rule all` at module level, so it runs on every
+    parse — including the ~800 per-job re-parses under the slurm executor, none of
+    which can ever schedule `all`. Each of those was stat()ing the whole
+    campaign's tile_vignets manifests for nothing. The empty list a job parse
+    returns costs it exactly the target it could not have used anyway.
+    """
+    if not CLEAN or not workflow.is_main_process:
+        return []
+    out = []
+    for exp, raw in EXP_TILES.items():
+        if not raw:
+            continue
+        # An empty set AFTER filtering means every consumer is ignored: nothing
+        # is left that could ever read this exposure, so it is eligible now.
+        # all() of an empty set is True, so this case is eligible.
+        tiles = clean_consumers(exp)
+        if all(t in READY_SET or Path(tile_manifest(t, "tile_vignets")).exists()
+               for t in tiles):
+            out.append(tombstone(exp))
+    return sorted(out)
+
+# --- tile reclamation (D5) --------------------------------------------------
+# A separate flag from `clean:` (config.yaml carries the full
+# argument): exposure reclamation costs nothing but a rebuild if a tile is
+# appended later, while tile reclamation destroys the per-tile AUDIT TRAIL that
+# the campaign's cost model was derived from. They are not the same decision and
+# must not be made by the same switch. Gated on SP_PHASE=compute exactly as
+# CLEAN is, and read through flag() for the same reason (`--config
+# clean_tiles=false` arrives as the string "false").
+CLEAN_TILES = flag(config.get("clean_tiles", False)) and PHASE == "compute"
+
+
+def tile_tombstone(tile):
+    """The clean_tile output. Beside manifests/ and logs/, not inside either —
+    same placement and same reason as the exposure tombstone() above."""
+    return f"{tile_dir(tile)}/cleaned.json"
+
+
+def clean_tile_targets():
+    """Which tiles this invocation may clean: the in-scope ones, and no test.
+
+    No eligibility test, because a tile's store has no consumer outside that
+    tile (clean_tile.py argues the asymmetry with clean_targets()). Every ready
+    tile is eligible the moment its own final_cat exists, and the rule's input
+    is exactly that.
+
+    The restriction to TILES_READY is therefore scope containment, not
+    eligibility, and it runs the opposite way from the exposure case: an
+    OUT-OF-SCOPE tile's tombstone would drag that tile's final_cat, its
+    tile_make_cat job and the whole fused tile_shape group into this DAG, where
+    the `params` rerun-trigger can find a finished tile out of date and rerun it
+    against reclaimed exposure stores (see the TILE_LOCAL warning in tile.smk).
+    In scope the edge is free: `rule all` already requests the same final_cat.
+    Nothing is lost by skipping an out-of-scope tile — the tile list only ever
+    grows, so a later invocation has it in scope.
+
+    HEAD PROCESS ONLY, for the same reason as clean_targets() above.
+    """
+    if not CLEAN_TILES or not workflow.is_main_process:
+        return []
+    return sorted(tile_tombstone(t) for t in TILES_READY)
+
+# --- the shell every rule runs (D2) ----------------------------------------
+
+_THREAD_CAPS = " ".join(
+    f"{k}={v}" for k, v in (
+        ("OMP_NUM_THREADS", 1), ("OPENBLAS_NUM_THREADS", 1),
+        ("MKL_NUM_THREADS", 1), ("NUMEXPR_NUM_THREADS", 1),
+        ("MALLOC_ARENA_MAX", 2), ("MALLOC_TRIM_THRESHOLD_", 0)))
+
+
+def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
+             pre_run=()):
+    """The unit-furniture + environment prologue, as bash.
+
+    Returned as a rule ``params`` value, NEVER inlined into the ``shell:``
+    string: snakemake formats a shell string ONCE, so a ``{output}``/``{threads}``
+    placeholder inside a params value would survive literally — and, conversely,
+    the literal ``${SP_NGMIX_CHUNK}`` braces this prologue needs would blow up
+    that formatting if they lived in the shell string. Params values are
+    substituted after formatting, so both hazards go away together.
+
+    What it materialises (the proven v2.0 isolation-by-work-dir-content, NOT
+    -e/--exclusive):
+      * ``output/``, ``manifests/`` and ``logs/`` — the last two are a SIBLING
+        pair, not one dir with two naming conventions, because clean_exposure
+        deletes both wholesale (clean_exposure.py says why). The benchmark tsv
+        is deliberately outside both: it measures the job, not the store, so
+        reclamation must not eat it.
+      * tile: ``tile_numbers.txt`` (dot format — what get_images reads);
+      * exposure: a fabricated pseudo-Fe ``exp_numbers-000-000.txt`` holding the
+        ORIGINAL exposure name from the index (``2605805p``), so get_images
+        matches ``<name>.fits.fz`` in the store — the bare base id matches
+        nothing. Written UNCONDITIONALLY: an exists-guard once pinned a stale
+        pre-fix file with the bare id.
+    There is no per-unit ``cfis`` symlink any more: $SP_CONFIG points straight at
+    the committed config dir, and ``star_cat_exp`` is a real per-unit directory
+    built by the ``exp_star_cat`` rule, not a symlink into a shared pool.
+
+    It also exports the configured input roots as ``SP_INPUT_TILES`` and
+    ``SP_INPUT_EXPOSURES`` and the PSF choice as ``SP_PSF`` for the committed
+    ini chain.
+
+    Finally it ``rm -rf``s this stage's own fixed run dir — ShapePipe's
+    FileHandler raises on an existing run dir, and it is how a rerun never sees
+    stale products (D2: the job clears its run dir at start).
+    """
+    # The stage table already knows both halves of "where this stage writes":
+    # its level and its run dir. Taking them from there rather than from an
+    # argument means a caller cannot disagree with completeness.py about which
+    # store a stage belongs to.
+    level, subdir = STAGE_DIR[stage]
+    work = tile_dir(unit) if level == "tile" else exp_dir(unit)
+    lines = [
+        "set -euo pipefail",
+        f"export SP_RUN='{work}'",
+        f"export SP_UNIT_NUM='{unit_num(unit)}'",
+        f"export SP_CONFIG='{CONFIG_DIR}'",
+        f"export SP_INPUT_TILES='{INPUTS['tiles']}'",
+        f"export SP_INPUT_EXPOSURES='{INPUTS['exposures']}'",
+        f"export SP_PSF='{PSF_MODEL}'",
+        # Also set via apptainer-args in the profile; kept here so a hand-run of
+        # this same line outside snakemake behaves identically.
+        f"export {_THREAD_CAPS}",
+        'mkdir -p "$SP_RUN/output" "$SP_RUN/manifests" "$SP_RUN/logs"',
+    ]
+    if forest:
+        lines.append(f"export SP_EXP='{forest}'")
+    for k, v in (env or {}).items():
+        lines.append(f"export {k}='{v}'")
+
+    if level == "tile":
+        lines.append(f"printf '%s\\n' '{unit}' > \"$SP_RUN/tile_numbers.txt\"")
+    else:
+        fe = "$SP_RUN/output/run_sp_tile_Fe/find_exposures_runner/output"
+        lines += [f'mkdir -p "{fe}"',
+                  f"printf '%s\\n' '{exp_name or unit}' > \"{fe}/exp_numbers-000-000.txt\""]
+
+    lines += list(pre_run)
+    lines += [f'rm -rf "$SP_RUN/output/{subdir}"', 'cd "$SP_RUN"']
+    return "\n".join(lines)
+
+
+def sp_shell(stage, config_name, *, check_args="", post=""):
+    """The rule's shell string: prologue, one shapepipe_run, one completeness check.
+
+    EVERY rule that runs shapepipe_run goes through here, including the two that
+    need a little more than the plain body — they pass it rather than restating
+    it, so the rc composition below has exactly one definition:
+      * ``check_args`` — extra flags for the completeness check. tile_vignets
+        points it at the NODE-LOCAL run root (``--run-dir "$SP_LOCAL"``) and keeps
+        the manifest's unit field the tile ID rather than the local root's
+        basename (``--unit``), which also keeps the manifest content independent
+        of an ephemeral path the mtime rerun-trigger reads.
+      * ``post`` — bash between the check and the ``exit``. tile_make_cat
+        publishes its final_cat there, guarded on ``rc``.
+
+    ``{threads}``, ``{output}`` and ``{log}`` are placeholders HERE and nowhere
+    else (see unit_pre). ``-b {threads}`` makes SMP fork width and cpus_per_task
+    one number by construction (D4).
+
+    The rc is CAPTURED rather than ``&&``-ed onto, so the check still runs when
+    shapepipe_run failed, and it is passed back as ``--job-rc "$rc"`` so the
+    verdict composes the count checks with shapepipe_run's own exit status. Both
+    halves are argued in completeness.py's docstring.
+    """
+    return (
+        "{params.pre}\n"
+        "rc=0\n"
+        f"shapepipe_run -c \"$SP_CONFIG/{config_name}\" -b {{threads}} || rc=$?\n"
+        f"python {SCRIPTS}/completeness.py check {stage} {{output.manifest}}"
+        f"{check_args}"
+        " --log {log} --job-rc \"$rc\" || rc=1\n"
+        f"{post}"
+        "exit $rc\n"
+    )
+
+
+include: "rules/prepare.smk"
+include: "rules/exposure.smk"
+include: "rules/tile.smk"
+
+# --- top-level targets ------------------------------------------------------
+# The aggregation targets, clean_exposure, clean_tile, star_catalogue and
+# exp_star_cat run in the head process. The two clean rules are seconds of rmtree
+# and hang off `all`; exp_star_cat is seconds of local FITS work; all three would
+# otherwise be ~20k (clean_exposure, exp_star_cat) or ~23k (clean_tile) sbatch
+# submissions at DR6 scale for work shorter than the scheduling latency.
+# star_catalogue is one job either way, and local keeps its CDS concurrency the
+# explicit number its thread pool sets (see exposure.smk).
+#
+# star_catalogue and exp_star_cat are MID-CHAIN localrules, so they must stay out
+# of any future `group:` label: a local job cannot be fused into a submitted group.
+# The two clean rules are DAG leaves and have no such constraint.
+localrules: all, prepare_all_tiles, clean_exposure, clean_tile, star_catalogue, exp_star_cat
+
+rule all:
+    input:
+        [final_cat(t) for t in TILES_READY],
+        clean_targets(),
+        clean_tile_targets(),
+
+# Invocation 1 — the static per-tile DAG, known from the tile list alone.
+# keep-going makes tile failures independent; the ones that lose their exposure
+# list are dropped by the index build at invocation 2's parse.
+rule prepare_all_tiles:
+    input:
+        [tile_manifest(t, "tile_find_exposures") for t in TILES]
+
+# --- report hooks -----------------------------------------------------------
+# run_report is NOT a DAG node (a descendant of every job would be poisoned by
+# any hard failure — the exact case it exists for). It is a standalone script,
+# emitted automatically at the end of the COMPUTE invocation, runnable any time
+# via `sp report`.
+def _report(status):
+    shell(f"python {SCRIPTS}/run_report.py --run-dir {RUN_DIR} "
+          f"--index {INDEX_DB} --status {status} || true")
+
+if PHASE == "compute":
+
+    onsuccess:
+        _report("success")
+
+    onerror:
+        _report("error")

@@ -64,8 +64,16 @@ def query_vizier(ra, dec, radius_arcmin, cat_id):
             v = Vizier(
                 row_limit=-1, timeout=timeout, vizier_server=server
             )
+            # cache=False: astroquery otherwise pickles every HTTP response into
+            # $HOME/.astropy/cache/astroquery/Vizier, ~2 MB per query. The
+            # workflow already caches the RESULT as a FITS catalogue on scratch
+            # and skips the query when it hits, so the pickle is pure duplicate —
+            # and at campaign scale (~25k exposures) it is ~50 GB against a
+            # 50 GB home quota. Home is for source and config, not for a second
+            # copy of the survey.
             result = v.query_region(
-                coord, radius=radius_arcmin * u.arcmin, catalog=cat_id
+                coord, radius=radius_arcmin * u.arcmin, catalog=cat_id,
+                cache=False,
             )
             if len(result) > 0:
                 print(

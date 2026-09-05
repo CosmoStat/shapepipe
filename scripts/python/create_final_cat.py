@@ -394,7 +394,7 @@ def process(params):
         run_prefix = "run_sp_tile_Mc_*"
     else:
         patch_name = rf"P{params['patch']}"
-        run_prefix = "run_sp_Mc_*"
+        run_prefix = "run_sp_tile_Mc_*"
 
     patch_pattern = re.compile(patch_name)
 

@@ -104,9 +104,9 @@ run_out="run_sp_combined_$cat"
 if [ "$cat" == "final" ]; then
 
   # v1
-  #run_in="$pwd/$out_base/run_sp_Mc_*"
+  #run_in="$pwd/$out_base/run_sp_tile_Mc_*"
   # v2
-  run_in="$pwd/tile_runs/*/$out_base/run_sp_Mc_*"
+  run_in="$pwd/tile_runs/*/$out_base/run_sp_tile_Mc_*"
 
   module="make_catalog_runner"
   pattern="final_cat-*"

@@ -128,16 +128,10 @@ def get_prior(pixel_scale, rng, T_range=None, F_range=None):
 def position_seed(ra, dec, ccd):
     """Deterministic RNG seed from an object's sky position (ngmix#796).
 
-    For image-simulation m-bias with the Pujol estimator, the same scene is
-    simulated under different applied shears ("image branches") and the shear
-    response is read from the branch difference of the SAME objects. Metacal's
-    ``fixnoise`` adds a counter-noise realisation drawn from an RNG; if that RNG
-    is seeded per tile, an object gets *different* added noise in different
-    branches (detection order differs), and the noise fails to cancel in the
-    difference, inflating ``sigma_m``. Seeding the per-object RNG from sky
-    position instead makes the same object draw the same added noise (and the
-    same fit guesses) in every branch, so both cancel and the m-bias error
-    shrinks. Off in production; a knob for the sim path only.
+    Position seeding gives the same object the same RNG stream in each image
+    branch, provided its sky position falls in the same seed box. It also makes
+    the result independent of how the tile is split into
+    ``ID_OBJ_MIN``/``ID_OBJ_MAX`` chunks, which is why it is now the only mode.
 
     Box math (kept exactly as Fabian's issue #796)::
 
@@ -299,8 +293,7 @@ class Postage_stamp():
         self.ra = []
         self.dec = []
         # CCD number of the first epoch, used only to build the per-object
-        # position seed (see :func:`position_seed`, ngmix#796). ``None`` when
-        # position seeding is off, so the field costs nothing on the hot path.
+        # position seed (see :func:`position_seed`).
         self.ccd = None
         self.bkg_sub = bkg_sub
         self.megacam_flip = megacam_flip
@@ -439,13 +432,11 @@ class Ngmix(object):
     dilate_neighbour : int, optional
         Neighbour-mask dilation iterations for ``"uberseg"`` (see
         :func:`uberseg_weight`); the default is ``1``.
-    seed_from_position : bool, optional
-        If ``True``, replace the tile-level RNG with a per-object RNG seeded
-        from the object's sky position (:func:`position_seed`) inside the
-        object loop, so metacal's ``fixnoise`` counter-noise and the fit
-        guesses cancel across Pujol image-simulation branches (ngmix#796). The
-        default ``False`` leaves the production path byte-identical. See
-        :func:`position_seed` for the physics and the seed construction.
+
+    Notes
+    -----
+    The RNG is always per object and seeded from that object's sky position;
+    :func:`position_seed` says what that buys.
 
     Raises
     ------
@@ -474,7 +465,6 @@ class Ngmix(object):
         blend_handling="noisefill",
         seg_cat_path=None,
         dilate_neighbour=1,
-        seed_from_position=False,
         metacal_psf="fitgauss",
     ):
 
@@ -544,15 +534,14 @@ class Ngmix(object):
         self._blend_handling = blend_handling
         self._seg_cat_path = seg_cat_path
         self._dilate_neighbour = dilate_neighbour
-        self._seed_from_position = seed_from_position
         self._metacal_psf = metacal_psf
 
         self._w_log = w_log
 
-        # Initiatlise random generator
-        seed = int(''.join(re.findall(r'\d+', self._file_number_string)))
-        self._rng = np.random.RandomState(seed)
-        self._w_log.info(f'Random generator initialisation seed = {seed}')
+        self._w_log.info(
+            'Per-object RNG seeded from sky position (ngmix#796): results are'
+            ' invariant to how the tile is split into object chunks'
+        )
 
         # Pixel scale: an explicit positive PIXEL_SCALE overrides; otherwise
         # derive it from the image WCS so it can never drift from the pixels
@@ -571,12 +560,6 @@ class Ngmix(object):
             self._pixel_scale = pixel_scale
             self._w_log.info(
                 f'PIXEL_SCALE from config = {self._pixel_scale:.6f} arcsec'
-            )
-
-        if self._seed_from_position:
-            self._w_log.info(
-                'SEED_FROM_POSITION on: per-object RNG seeded from sky position'
-                ' for Pujol noise cancellation (image sims, ngmix#796)'
             )
 
     @classmethod
@@ -606,18 +589,6 @@ class Ngmix(object):
         else:
             # swap y axis so origin is on bottom-left
             return vign
-
-    def get_prior(self, T_range=None, F_range=None):
-        """Get Prior.
-
-        Returns
-        -------
-        ngmix.joint_prior.PriorSimpleSep
-        """
-        return get_prior(
-            self._pixel_scale, self._rng,
-            T_range=T_range, F_range=F_range,
-        )
 
     def compile_results(self, results):
         """Compile Results.
@@ -1001,7 +972,6 @@ class Ngmix(object):
         vignet_cat = self._vignet_cat
 
         final_res = []
-        prior = self.get_prior()
 
         count = 0
         n_empty_cat = 0
@@ -1023,36 +993,39 @@ class Ngmix(object):
             id_last = obj_id
             count += 1
 
-            # Skip objects with no multi-epoch PSF or vignet data
-            if (vignet_cat.psf_vign_cat[str(obj_id)] == 'empty'
-                    or vignet_cat.gal_vign_cat[str(obj_id)] == 'empty'):
+            # Skip objects with no multi-epoch PSF or vignet data.
+            # Read each store once here and pass the dicts down: every
+            # sqlitedict access unpickles the object's whole all-epoch dict.
+            psf_obj = vignet_cat.psf_vign_cat[str(obj_id)]
+            gal_obj = vignet_cat.gal_vign_cat[str(obj_id)]
+            if psf_obj == 'empty' or gal_obj == 'empty':
                 n_empty_cat += 1
                 continue
 
-            stamp = prepare_postage_stamps(vignet_cat, obj_id, i_tile, tile_cat, self._bkg_sub)
+            stamp = prepare_postage_stamps(
+                vignet_cat,
+                obj_id,
+                i_tile,
+                tile_cat,
+                self._bkg_sub,
+                psf_obj,
+                gal_obj,
+            )
 
             if len(stamp.gals) == 0:
                 n_no_epoch += 1
                 continue
 
-            # Position-seeded per-object RNG for Pujol noise cancellation in
-            # image sims (ngmix#796): the same object gets the same fixnoise
-            # counter-noise and fit guesses in every shear branch, so both
-            # cancel in the branch difference. The prior is rebuilt from the
-            # same per-object RNG because the guesser draws its initial guess
-            # via prior.sample() (ngmix guessers.py), which consumes the RNG the
-            # prior was CONSTRUCTED with — so a per-object rng alone would leave
-            # the guess drawing from the shared tile stream and break
-            # cancellation. Off in production, where the single tile-level
-            # self._rng and the tile-level prior carry the whole loop.
-            if self._seed_from_position:
-                obj_rng = np.random.RandomState(
-                    position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
-                )
-                obj_prior = get_prior(self._pixel_scale, obj_rng)
-            else:
-                obj_rng = self._rng
-                obj_prior = prior
+            # Per-object RNG, seeded from (ra, dec, ccd) — see
+            # :func:`position_seed`. The prior is rebuilt from that same RNG
+            # because the guesser draws its initial guess via prior.sample()
+            # (ngmix guessers.py), which consumes the RNG the prior was
+            # CONSTRUCTED with: a per-object rng alone would leave the guess
+            # drawing from a shared stream and break the invariance.
+            obj_rng = np.random.RandomState(
+                position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
+            )
+            obj_prior = get_prior(self._pixel_scale, obj_rng)
 
             try:
                 flux_guess = (
@@ -1165,25 +1138,49 @@ class Ngmix(object):
         # Log mean ellipticity statistics
         self.log_mean_ellipticity()
 
-def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
+def prepare_postage_stamps(
+    vignet,
+    obj_id,
+    i_tile,
+    tile_cat,
+    bkg_sub=True,
+    psf_obj=None,
+    gal_obj=None,
+):
     # define per-object lists of individual exposures to go into ngmix
     stamp = Postage_stamp(bkg_sub=bkg_sub)
+    # Read each store's per-object dict ONCE: every sqlitedict access
+    # unpickles the object's whole all-epoch dict, so keeping these out of
+    # the epoch loop below saves O(n_epoch) full unpickles per store.
+    if psf_obj is None:
+        psf_obj = vignet.psf_vign_cat[str(obj_id)]
+    if gal_obj is None:
+        gal_obj = vignet.gal_vign_cat[str(obj_id)]
+    bkg_obj = (
+        vignet.bkg_vign_cat[str(obj_id)]
+        if stamp.bkg_sub and vignet.bkg_vign_cat is not None
+        else None
+    )
+    flag_obj = vignet.flag_vign_cat[str(obj_id)]
+    weight_obj = vignet.weight_vign_cat[str(obj_id)]
+    bkg_rms_obj = (
+        vignet.bkg_rms_vign_cat[str(obj_id)]
+        if vignet.bkg_rms_vign_cat is not None
+        else None
+    )
+    wcs_cache = {}
     #identify exposure and ccd number from psf catalog
-    psf_expccd_names = list(vignet.psf_vign_cat[str(obj_id)].keys())
+    psf_expccd_names = list(psf_obj.keys())
     for expccd_name in psf_expccd_names:
         exp_name, ccd_n = re.split('-', expccd_name)
 
-        gal_vign = (
-            vignet.gal_vign_cat[str(obj_id)][expccd_name]['VIGNET']
-        )
+        gal_vign = gal_obj[expccd_name]['VIGNET']
 
         if np.all(gal_vign == 0):
             continue
         
         if stamp.bkg_sub:
-            bkg_vign = (
-                vignet.bkg_vign_cat[str(obj_id)][expccd_name]['VIGNET']
-            )
+            bkg_vign = bkg_obj[expccd_name]['VIGNET']
             gal_vign_sub_bkg = background_subtract(
                 gal_vign,
                 bkg_vign
@@ -1216,9 +1213,7 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
         if stamp.megacam_flip and tile_seg is not None:
             tile_seg = Ngmix.MegaCamFlip(tile_seg, int(ccd_n))
 
-        flag_vign = (
-            vignet.flag_vign_cat[str(obj_id)][expccd_name]['VIGNET']
-        )
+        flag_vign = flag_obj[expccd_name]['VIGNET']
         if tile_vign is not None:
             flag_vign[np.where(tile_vign == -1e30)] = 2**10
         v_flag_tmp = flag_vign.ravel()
@@ -1226,23 +1221,27 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
         if len(np.where(v_flag_tmp != 0)[0]) / v_flag_tmp.size > 1 / 3.0:
             continue
 
-        weight_vign = vignet.weight_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+        weight_vign = weight_obj[expccd_name]['VIGNET']
         bkg_rms_vign = (
-            vignet.bkg_rms_vign_cat[str(obj_id)][expccd_name]['VIGNET']
-            if vignet.bkg_rms_vign_cat is not None
+            bkg_rms_obj[expccd_name]['VIGNET']
+            if bkg_rms_obj is not None
             else None
         )
 
-        epoch_wcs = vignet.f_wcs_file[exp_name][int(ccd_n)]['WCS']
+        # One unpickle per exposure (all CCDs), reused across this object's
+        # epochs; the cache is per-call, so bounded by the object's exposures
+        if exp_name not in wcs_cache:
+            wcs_cache[exp_name] = vignet.f_wcs_file[exp_name]
+        ccd_wcs = wcs_cache[exp_name][int(ccd_n)]
+
+        epoch_wcs = ccd_wcs['WCS']
         jacob = get_galsim_jacobian(
             epoch_wcs,
             tile_cat.ra[i_tile],
             tile_cat.dec[i_tile]
         )
 
-        header = fits.Header.fromstring(
-            vignet.f_wcs_file[exp_name][int(ccd_n)]['header']
-        )
+        header = fits.Header.fromstring(ccd_wcs['header'])
 
         # rescale by relative zero-points
         (
@@ -1258,9 +1257,7 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
 
         # gather postage stamps in all of the epochs
         stamp.gals.append(gal_vign_scaled)
-        stamp.psfs.append(
-            vignet.psf_vign_cat[str(obj_id)][expccd_name]['VIGNET']
-        )
+        stamp.psfs.append(psf_obj[expccd_name]['VIGNET'])
         stamp.weights.append(weight_vign_scaled)
         stamp.flags.append(flag_vign)
         stamp.bkg_rms.append(bkg_rms_vign_scaled)
@@ -1272,8 +1269,8 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
         stamp.ra.append(tile_cat.ra[i_tile])
         stamp.dec.append(tile_cat.dec[i_tile])
         # CCD of the first surviving epoch — Fabian's coord_list[0] convention
-        # for the position seed (ngmix#796). All epochs of one object share the
-        # ra/dec above, so first-epoch CCD pins one deterministic seed stream.
+        # for the position seed. All epochs of one object share the ra/dec
+        # above, so first-epoch CCD pins one deterministic seed stream.
         if stamp.ccd is None:
             stamp.ccd = int(ccd_n)
 
@@ -1574,8 +1571,8 @@ def prepare_ngmix_weights(
     weight : numpy.ndarray
     flag : numpy.ndarray
     rng : numpy.random.RandomState
-        Random state for the noise realisations (seeded per tile for
-        reproducibility).
+        Random state for the noise realisations (seeded per object; see
+        :func:`position_seed`).
     bkg_rms : numpy.ndarray, optional
         Per-pixel background RMS map. If supplied, unmasked pixels use
         ``1 / bkg_rms**2`` as the ngmix inverse variance.
@@ -1703,8 +1700,8 @@ def make_ngmix_observation(
     wcs : galsim.BaseWCS
         Local WCS Jacobian at the object position.
     rng : numpy.random.RandomState
-        Random state for the noise realisations (seeded per tile for
-        reproducibility).
+        Random state for the noise realisations (seeded per object; see
+        :func:`position_seed`).
     bkg_rms : numpy.ndarray, optional
         Per-pixel background RMS map.
     centroid_source : {"hsm", "wcs"}, optional

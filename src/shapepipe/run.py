@@ -84,7 +84,7 @@ class ShapePipe:
         Set the name of the current pipeline run.
 
         """
-        self._run_name = self.config.get("DEFAULT", "RUN_NAME")
+        self._run_name = self.config.getexpanded("DEFAULT", "RUN_NAME")
 
         if self.config.getboolean("DEFAULT", "RUN_DATETIME"):
             self._run_name += datetime.now().strftime("_%Y-%m-%d_%H-%M-%S")

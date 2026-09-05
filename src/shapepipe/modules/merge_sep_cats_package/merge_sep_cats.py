@@ -7,13 +7,54 @@ Class to merge separate catalogues.
 """
 
 import os
-import re
 import warnings
 
 import numpy as np
 from astropy.io import fits
 
 from shapepipe.pipeline import file_io
+
+
+def chunk_path(input_file, n):
+    """Chunk Path.
+
+    Derive chunk ``n``'s input path from chunk 1's.
+
+    The separate catalogues live in ShapePipe run directories whose names differ
+    only in the chunk number (``run_sp_tile_ngmix_Ng1u`` ->
+    ``run_sp_tile_ngmix_Ng2u``).  The substitution is confined to that
+    run-directory component: replacing the first "1" found anywhere in the path
+    breaks for absolute paths whose parent directories carry digits, e.g. a
+    sharded store ``.../tiles/21/210.282/output/run_..._Ng1u/...``.
+
+    Parameters
+    ----------
+    input_file : str
+        Path to chunk 1's catalogue
+    n : int
+        Chunk number
+
+    Returns
+    -------
+    str
+        Path to chunk ``n``'s catalogue
+
+    Raises
+    ------
+    ValueError
+        If no run-directory component of the path carries a chunk number
+
+    """
+    parts = input_file.split(os.sep)
+    for idx in reversed(range(len(parts))):
+        if parts[idx].startswith("run_") and "1" in parts[idx]:
+            parts[idx] = parts[idx].replace("1", str(n), 1)
+            return os.sep.join(parts)
+
+    raise ValueError(
+        f"Cannot derive chunk {n}'s path from '{input_file}': no 'run_*' "
+        + "directory component contains a chunk number '1'"
+    )
 
 
 class MergeSep(object):
@@ -79,8 +120,7 @@ class MergeSep(object):
             input_path_n = []
             input_path_n.append(input_file)
             for n in range(2, self._n_split_max + 1):
-                res = re.sub("1", str(n), input_file, 1)
-                input_path_n.append(res)
+                input_path_n.append(chunk_path(input_file, n))
 
             # Open first catalogue, read number of extensions and columns
             cat0 = file_io.FITSCatalogue(input_file, SEx_catalogue=True)
