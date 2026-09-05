@@ -386,6 +386,7 @@ MERGE_FINAL_HASH = ":".join((
     path_hash(Path(workflow.basedir).parent / "scripts" / "python"
               / "create_final_cat.py"),
     path_hash(CONFIG_DIR / "final_cat.param")))
+FOOTPRINT_HASH = script_hash("exp_footprint.py")
 # ngmix_range.py earns a hash for a stronger reason than the others. What it
 # emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks are
 # a PARTITION of its object IDs: resume a tile across an edit to the split and
@@ -923,6 +924,38 @@ def final_cat_targets():
         return []
     return [final_cat_hdf5()]
 
+# --- per-CCD sky footprints (the coverage map's raw material) ---------------
+# `exp_footprint` reads the valid-PSF CCD set off exp_persist.json's members. It
+# needs no precondition on `persist_exp:`: exp_persist packs every CCD's
+# psf_validation catalogue whatever that list says (persist_exp.py's ALWAYS set),
+# so the manifest always carries the valid-PSF set this rule selects on. The keep
+# list is optional retention of OTHER products and cannot turn this off.
+
+
+def footprint_targets():
+    """Which exposures this invocation must record a per-CCD sky footprint for.
+
+    REQUESTED BY `rule all` DIRECTLY, AND NOT GATED ON `coverage:`. The record is
+    derived from `headers-<exp>.npy`, which lives on /scratch and which the
+    60-day purge takes whether or not this campaign ever builds a map — so
+    building it only when a map is asked for means that turning coverage on a
+    month later finds the WCS gone and no way back short of re-downloading the
+    exposures. This is persist_targets' argument above, applied to the other
+    scratch-only input coverage needs: milliseconds and a few KB now, against an
+    irrecoverable loss later.
+
+    Scope, and the tombstone exclusion, are persist_targets' exactly: a cleaned
+    exposure's footprint was written before its store went (clean_exposure takes
+    this manifest as an input), and asking again would rebuild the chain from VOS.
+
+    HEAD PROCESS ONLY, for the same reason as clean_targets() above.
+    """
+    if not workflow.is_main_process:
+        return []
+    exps = {e for t in TILES_READY for e in tile_exposures(t)}
+    return sorted(prod_exp_manifest(e, "exp_footprint") for e in exps
+                  if not Path(tombstone(e)).exists())
+
 # --- tile reclamation (D5) --------------------------------------------------
 # A separate flag from `clean:` (config.yaml carries the full
 # argument): exposure reclamation costs nothing but a rebuild if a tile is
@@ -1089,23 +1122,25 @@ include: "rules/tile.smk"
 # they would be ~20k (clean_exposure) or ~23k (clean_tile) sbatch submissions at
 # DR6 scale for work shorter than the scheduling latency.
 #
-# Both are DAG LEAVES, so neither constrains a `group:` label. (A mid-chain
-# localrule would: a local job cannot be fused into a submitted group. The old
-# star-catalogue rules were exactly that, and they are gone with the internal
-# mask generation.)
+# Both clean rules are DAG LEAVES, so neither constrains a `group:` label. (A
+# mid-chain localrule would: a local job cannot be fused into a submitted group.
+# The old star-catalogue rules were exactly that, and they are gone with the
+# internal mask generation.)
 #
 # exp_persist joins them for the same arithmetic — one tar of a few MB per
 # exposure, ~20k of them at DR6 scale, each far shorter than the scheduling
-# latency that would submit it (exposure.smk argues the placement in full). It
-# sits mid-chain between exp_psf and clean_exposure, but both of those are
-# outside every group already (exp_psf is heavy, clean_exposure is local), so it
-# adds no new grouping constraint.
-localrules: all, prepare_all_tiles, clean_exposure, clean_tile, exp_persist
+# latency that would submit it (exposure.smk argues the placement in full).
+# exp_footprint sits beside it and is smaller still: one pickle load and ~160
+# pixel_to_world calls. Both sit mid-chain between exp_psf and clean_exposure,
+# but both of those are outside every group already (exp_psf is heavy,
+# clean_exposure is local), so they add no new grouping constraint.
+localrules: all, prepare_all_tiles, clean_exposure, clean_tile, exp_persist, exp_footprint
 
 rule all:
     input:
         [final_cat(t) for t in TILES_READY],
         persist_targets(),
+        footprint_targets(),
         star_cat_targets(),
         final_cat_targets(),
         clean_targets(),
