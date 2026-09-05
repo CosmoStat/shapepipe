@@ -87,11 +87,25 @@ Full detail: `docs/source/installation.md` and `docs/source/container.md`.
   unit/property/integration tests), `unit/` (structural), `science/` (fast
   guardrails), `cluster/` (candide-only), `helpers/` (shared library code).
   See `tests/README.md`.
+- `workflow/` — **the production orchestration**: a Snakemake workflow over the
+  same `shapepipe_run` calls. `bin/sp` is the entry point (`run`, `report`,
+  `container`, `cancel`); `Snakefile` plus `rules/{prepare,exposure,tile,
+  coverage}.smk` are the rule graph; `scripts/` holds the plain Python each rule
+  shells out to; `config.yaml` declares one run (tile list, the scratch and
+  persistent roots, the container); `config/cfis/` holds the committed ini
+  chain; `profiles/nibi/config.yaml` is the SLURM executor profile. Deep
+  reference: `workflow/README.md`. User-facing: `docs/source/workflow.md`.
 - `example/` — a runnable example pipeline (`example/config.ini`) on a single
   CFIS tile; doubles as the CI smoke test.
 - `scripts/` — shell / Python / notebook helpers (`sh/`, `python/`, `jupyter/`),
   symlinked onto `$PATH` inside the image.
 - `docs/` — Sphinx sources; the API docs are generated from docstrings.
+
+**There is no concept of a catalogue version in the code.** Nothing branches on
+`v1.3`..`v1.6` or `v2.0`, and there are no sky patches (`P1`..`P9`): a campaign
+is a tile list, and the version of a catalogue is the git tag of the code that
+produced it. The pre-Snakemake bash and CANFAR layers that carried those
+constructs were retired, last carried at `2ef07e45`.
 
 ## Development workflow
 
