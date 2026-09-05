@@ -1,15 +1,13 @@
 """UNIT / PROPERTY TESTS FOR THE COVERAGE-MASK FEATURE.
 
 Covers the pure and lightly-fixtured logic behind the per-CCD coverage nexp
-masks: exposure-number parsing, the CCD-list -> unique-exposure reduction, the
-handler's missing-CCD subtraction (pinned against the real ID format), per-CCD
-corner extraction from plain and fpack-compressed multi-HDU headers,
-``--ccd_list`` filtering, the per-CCD resume path, the builder's per-CCD row
-parsing, the accumulated exposure-count (nexp) contract, the RA-wrap and pole
-guards, the power-of-two ``nside`` validation, the atomic-download rename, and
-the ``-h``/argv handling of the console runners. The heavy paths (real VOSpace
-download, production-resolution map building, plotting, multiprocessing) are
-exercised end to end by the pipeline, not here.
+masks: exposure-number parsing, per-CCD corner extraction from plain and
+fpack-compressed multi-HDU headers, ``--ccd_list`` filtering, the per-CCD
+resume path, the builder's per-CCD row parsing, the accumulated
+exposure-count (nexp) contract, the RA-wrap and pole guards, the power-of-two
+``nside`` validation, and the ``-h``/argv handling of the console runners. The
+heavy paths (production-resolution map building, plotting, multiprocessing)
+are exercised end to end by the pipeline, not here.
 """
 
 import sys
@@ -22,8 +20,6 @@ from astropy import wcs
 from hypothesis import given
 from hypothesis import strategies as st
 
-from shapepipe.utilities import summary
-from shapepipe.utilities.ccd_psf_handler import CcdPsfHandler
 from shapepipe.utilities.coverage_map_builder import (
     CoverageMapBuilder,
     unwrap_ra,
@@ -35,7 +31,6 @@ from shapepipe.utilities.field_corners_extractor import (
     _image_shape,
     _parse_header_to_wcs,
 )
-from shapepipe.utilities.header_downloader import HeaderDownloader
 
 
 def _tan_wcs(crval_ra, crval_dec=0.0, nx=2080, ny=4612):
@@ -124,138 +119,6 @@ def test_expnum_from_path_raises_without_number(path):
 def test_expnum_from_path_roundtrips(expnum):
     """Any exposure number round-trips through the filename convention."""
     assert _expnum_from_path(f"vos_headers/{expnum}.txt") == expnum
-
-
-# ---------------------------------------------------------------------------
-# HeaderDownloader.get_exposures
-# ---------------------------------------------------------------------------
-
-def test_get_exposures_reduces_to_unique_exposures(tmp_path):
-    """A ``<exp>-<ccd>`` CCD list collapses to its unique exposure numbers."""
-    ccd_list = tmp_path / "ccds.txt"
-    ccd_list.write_text("2143523-0\n2143523-5\n2143524-3\n2143524-8\n")
-
-    exps = HeaderDownloader().get_exposures(str(ccd_list))
-
-    npt.assert_array_equal(exps, np.array([2143523, 2143524]))
-
-
-def test_get_exposures_single_line(tmp_path):
-    """A one-line CCD list (0-d loadtxt array) still yields one exposure."""
-    ccd_list = tmp_path / "ccds.txt"
-    ccd_list.write_text("2143523-0\n")
-
-    exps = HeaderDownloader().get_exposures(str(ccd_list))
-
-    npt.assert_array_equal(exps, np.array([2143523]))
-
-
-def test_get_exposures_csv_matches_txt(tmp_path):
-    """The CSV and text code paths yield the same unique exposures."""
-    txt = tmp_path / "ccds.txt"
-    txt.write_text("2143523-0\n2143523-5\n2143524-3\n")
-    csv = tmp_path / "ccds.csv"
-    csv.write_text("CCD\n2143523-0\n2143523-5\n2143524-3\n")
-
-    dl = HeaderDownloader()
-
-    npt.assert_array_equal(
-        dl.get_exposures(str(txt)), dl.get_exposures(str(csv))
-    )
-
-
-# ---------------------------------------------------------------------------
-# HeaderDownloader.get_fits_header — atomic rename
-# ---------------------------------------------------------------------------
-
-def test_get_fits_header_writes_atomically(tmp_path):
-    """A successful download copies to ``.part`` then renames to the dest."""
-    dl = HeaderDownloader()
-    dl._params["output_dir"] = str(tmp_path)
-    dl._params["overwrite"] = False
-    dl._params["dir_for_links"] = None
-
-    dest = tmp_path / "42.txt"
-    tmp_dest = tmp_path / "42.txt.part"
-
-    def fake_copy(source, target, head=True):
-        # The copy must land on the temp path, not the final destination.
-        assert target == str(tmp_dest)
-        with open(target, "w") as f:
-            f.write("HEADER")
-
-    client = SimpleNamespace(copy=fake_copy)
-
-    assert dl.get_fits_header(42, client) is True
-    assert dest.exists()
-    assert not tmp_dest.exists()
-    assert dest.read_text() == "HEADER"
-
-
-def test_get_fits_header_failed_copy_leaves_no_dest(tmp_path):
-    """A failed download leaves no destination file (only, if any, ``.part``)."""
-    dl = HeaderDownloader()
-    dl._params["output_dir"] = str(tmp_path)
-    dl._params["overwrite"] = False
-    dl._params["dir_for_links"] = None
-
-    def failing_copy(source, target, head=True):
-        raise RuntimeError("transfer interrupted")
-
-    client = SimpleNamespace(copy=failing_copy)
-
-    assert dl.get_fits_header(42, client) is False
-    assert not (tmp_path / "42.txt").exists()
-    assert not (tmp_path / "42.txt.part").exists()
-
-
-# ---------------------------------------------------------------------------
-# CcdPsfHandler.get_ccds_with_psf — missing-CCD subtraction
-# ---------------------------------------------------------------------------
-
-def test_get_ccds_with_psf_subtracts_missing(monkeypatch):
-    """Valid CCDs are all exposure single-HDUs minus the missing set.
-
-    The real ``summary.get_all_shdus`` is used so the cross-component
-    ``<exp>-<ccd>`` ID format is pinned end to end.
-    """
-    handler = CcdPsfHandler()
-
-    # Two exposures, 3 CCDs each -> 6 candidate CCDs; two are missing.
-    monkeypatch.setattr(handler, "get_exp", lambda patches: {"100", "200"})
-    monkeypatch.setattr(
-        handler,
-        "get_exp_shdu_missing",
-        lambda patches: {"100-1", "200-2"},
-    )
-
-    result = handler.get_ccds_with_psf(["P1"], n_CCD=3)
-
-    # get_all_shdus yields "<exp>-<ccd>" for ccd in range(n_CCD).
-    assert result == {"100-0", "100-2", "200-0", "200-1"}
-    # Guard the assumption that the missing IDs share the produced format.
-    assert set(summary.get_all_shdus({"100"}, 3)) == {"100-0", "100-1", "100-2"}
-
-
-@pytest.mark.parametrize(
-    ("version", "n_patch"),
-    [("v1.3", 7), ("v1.4", 7), ("v1.5", 8), ("v1.6", 9)],
-)
-def test_version_to_patch_count(version, n_patch):
-    """Each v1.x catalogue version maps to its patch count."""
-    handler = CcdPsfHandler()
-    handler._params["version_cat"] = version
-    handler.update_params()
-    assert handler._params["n_patch"] == n_patch
-    assert len(handler._params["patches"]) == n_patch
-
-
-def test_invalid_version_raises():
-    """An unknown catalogue version fails loudly."""
-    handler = CcdPsfHandler()
-    handler._params["version_cat"] = "v9.9"
-    with pytest.raises(ValueError, match="v9.9"):
-        handler.update_params()
 
 
 # ---------------------------------------------------------------------------

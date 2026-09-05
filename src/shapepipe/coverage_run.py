@@ -8,30 +8,9 @@ Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
 import sys
 
-from shapepipe.utilities.header_downloader import HeaderDownloader
 from shapepipe.utilities.field_corners_extractor import FieldCornersExtractor
 from shapepipe.utilities.coverage_map_builder import CoverageMapBuilder
 from shapepipe.utilities.coverage_plotter import CoveragePlotter
-
-
-def run_download_headers(args=None):
-    """Run Download Headers.
-
-    Download FITS headers from VOSpace for exposures in a CCD list.
-
-    Parameters
-    ----------
-    args : list, optional
-        command line arguments
-
-    Returns
-    -------
-    int
-        exit code
-
-    """
-    obj = HeaderDownloader()
-    return obj.run(args=args)
 
 
 def run_extract_corners(args=None):
