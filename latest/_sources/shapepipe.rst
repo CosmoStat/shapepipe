@@ -25,6 +25,8 @@ Submodules
    :maxdepth: 4
 
    shapepipe.canfar_run
+   shapepipe.coverage_run
+   shapepipe.get_ccds_run
    shapepipe.info
    shapepipe.run
    shapepipe.shapepipe_run

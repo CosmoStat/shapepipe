@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="31 Aug, 2026"/>
+    <meta name="docbuild:last-update" content="05 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -394,15 +394,22 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html">shapepipe.utilities.ccd_psf_handler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html">shapepipe.utilities.coverage_map_builder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html">shapepipe.utilities.coverage_plotter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html">shapepipe.utilities.field_corners_extractor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.coverage_run.html">shapepipe.coverage_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.get_ccds_run.html">shapepipe.get_ccds_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.info.html">shapepipe.info</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.run.html">shapepipe.run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
@@ -1037,13 +1044,12 @@ ln<span class="w"> </span>-s<span class="w"> </span>..//unions_shapepipe_compreh
 <p>calibrate_comprehensive</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The matched-star-catalogue and coverage-mask diagnostics in the next two
-sections have largely moved out of ShapePipe into
-<a class="reference external" href="https://github.com/CosmoStat/sp_validation"><code class="docutils literal notranslate"><span class="pre">sp_validation</span></code></a> / <code class="docutils literal notranslate"><span class="pre">cosmo_val</span></code>.
-Several helpers referenced below — <code class="docutils literal notranslate"><span class="pre">merge_psf_cat.py</span></code>, <code class="docutils literal notranslate"><span class="pre">download_headers</span></code>,
-<code class="docutils literal notranslate"><span class="pre">extract_field_corners</span></code>, <code class="docutils literal notranslate"><span class="pre">build_coverage_map</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_coverage_map</span></code> — are no
-longer shipped in this repository; see <code class="docutils literal notranslate"><span class="pre">sp_validation</span></code> for their current
-equivalents. (<code class="docutils literal notranslate"><span class="pre">get_ccds_with_psf</span></code> and <code class="docutils literal notranslate"><span class="pre">summary_run</span></code> are still part of ShapePipe.)</p>
+<p>The matched-star-catalogue diagnostic (<code class="docutils literal notranslate"><span class="pre">merge_psf_cat.py</span></code>) has moved into
+<a class="reference external" href="https://github.com/CosmoStat/sp_validation"><code class="docutils literal notranslate"><span class="pre">sp_validation</span></code></a> / <code class="docutils literal notranslate"><span class="pre">cosmo_val</span></code>;
+see that repository for its current equivalent. The coverage-mask helpers
+(<code class="docutils literal notranslate"><span class="pre">get_ccds_with_psf</span></code>, <code class="docutils literal notranslate"><span class="pre">download_headers</span></code>, <code class="docutils literal notranslate"><span class="pre">extract_field_corners</span></code>,
+<code class="docutils literal notranslate"><span class="pre">build_coverage_map</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_coverage_map</span></code>, and <code class="docutils literal notranslate"><span class="pre">summary_run</span></code>) are shipped by
+ShapePipe and documented below.</p>
 </div>
 </section>
 <section id="create-matched-star-catalogue">
@@ -1068,23 +1074,39 @@ merge_psf_cat.py<span class="w"> </span><span class="o">[</span>-V<span class="w
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>summary_run<span class="w"> </span><span class="nv">$patch</span><span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
-<p>Now, create the list of CCDs that have PSF information with</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>get_ccds_with_psf<span class="w"> </span>-v<span class="w"> </span>-V<span class="w"> </span>v1.6
+<p>Now, create the list of single-CCD footprints that have a valid PSF model.
+Only these CCDs are stamped into the mask, so the accumulated map counts, per
+sky pixel, the number of exposures with a valid PSF. The list is written to
+<code class="docutils literal notranslate"><span class="pre">ccds_with_psf_v1.6.txt</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>get_ccds_with_psf<span class="w"> </span>-v<span class="w"> </span>-V<span class="w"> </span>v1.6<span class="w"> </span>-o<span class="w"> </span>ccds_with_psf_v1.6.txt
 </pre></div>
 </div>
-<p>Next, download exposures headers</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>download_headers<span class="w"> </span>-i<span class="w"> </span>ccds_with_psfs_v1.6.txt<span class="w"> </span>-o<span class="w"> </span>headers_v1.6<span class="w"> </span>-v
+<p>Next, download the exposure headers; indicate (with <code class="docutils literal notranslate"><span class="pre">-d</span></code>) a directory of
+already downloaded headers, which are linked so duplicate downloads are
+skipped:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>download_headers<span class="w"> </span>-i<span class="w"> </span>ccds_with_psf_v1.6.txt<span class="w"> </span>-o<span class="w"> </span>headers_v1.6<span class="w"> </span>-d<span class="w"> </span>headers_v1.3<span class="w"> </span>-v
 </pre></div>
 </div>
-<p>From the headers, the CCD corner coordinates are extracted with</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>extract_field_corners<span class="w"> </span>-i<span class="w"> </span>headers_v1.6<span class="w"> </span>-v
+<p>From the headers, the per-CCD corner coordinates are extracted. Pass the
+CCD list with <code class="docutils literal notranslate"><span class="pre">-l</span></code> so only CCDs with a valid PSF are written:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>extract_field_corners<span class="w"> </span>-i<span class="w"> </span>headers_v1.6<span class="w"> </span>-l<span class="w"> </span>ccds_with_psf_v1.6.txt<span class="w"> </span>-o<span class="w"> </span>exp_ra_dec_v1.6.txt<span class="w"> </span>-v
 </pre></div>
 </div>
 <p>Then, build the healsparse coverage mask file as</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>build_coverage_map
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>build_coverage_map<span class="w"> </span>-i<span class="w"> </span>exp_ra_dec_v1.6.txt<span class="w"> </span>-o<span class="w"> </span>coverage_v1.6.x.hsp<span class="w"> </span>-c<span class="w"> </span><span class="m">128</span><span class="w"> </span>-n<span class="w"> </span><span class="m">131072</span><span class="w"> </span>-v
 </pre></div>
 </div>
-<p>Use <code class="docutils literal notranslate"><span class="pre">plot_coverage_map</span></code> to create plots of the coverage mask.</p>
+<p>The healsparse resolutions (128, 131072) match the bit masks.</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">plot_coverage_map</span></code> to plot a region of the coverage mask. For example,
+the SGC region with a colorbar clipped to the 1–5 exposure range:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>plot_coverage_map<span class="w"> </span>-i<span class="w"> </span>coverage_v1.6.x.hsp<span class="w"> </span>-o<span class="w"> </span>coverage_v1.6_SGC.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-C<span class="w"> </span>-R<span class="w"> </span>-20<span class="w"> </span>-r<span class="w"> </span><span class="m">45</span><span class="w"> </span>-D<span class="w"> </span><span class="m">18</span><span class="w"> </span>-d<span class="w"> </span><span class="m">40</span><span class="w"> </span>-m<span class="w"> </span><span class="m">1</span><span class="w"> </span>-M<span class="w"> </span><span class="m">5</span><span class="w"> </span>-v
+</pre></div>
+</div>
+<p>Here <code class="docutils literal notranslate"><span class="pre">-R</span></code>/<code class="docutils literal notranslate"><span class="pre">-r</span></code> and <code class="docutils literal notranslate"><span class="pre">-D</span></code>/<code class="docutils literal notranslate"><span class="pre">-d</span></code> set the RA and Dec plot limits, <code class="docutils literal notranslate"><span class="pre">-m</span></code>/<code class="docutils literal notranslate"><span class="pre">-M</span></code> the
+colorbar range, and <code class="docutils literal notranslate"><span class="pre">-C</span></code> adds the colorbar. Building and plotting for a range
+of versions (SGC and NGC regions) is automated by
+<code class="docutils literal notranslate"><span class="pre">build_and_plot_coverage_maps.sh</span></code>.</p>
 </section>
 </section>
 </section>
@@ -1238,7 +1260,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 31 Aug, 2026.
+  Last updated on 05 Sep, 2026.
   <br/>
 </p>
   </div>

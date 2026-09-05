@@ -55,12 +55,12 @@
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="shapepipe.utilities.cfis" href="shapepipe.utilities.cfis.html" />
+    <link rel="next" title="shapepipe.utilities.ccd_psf_handler" href="shapepipe.utilities.ccd_psf_handler.html" />
     <link rel="prev" title="shapepipe.testing.simulate" href="shapepipe.testing.simulate.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="31 Aug, 2026"/>
+    <meta name="docbuild:last-update" content="05 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -394,15 +394,22 @@
 </ul>
 </details></li>
 <li class="toctree-l2 current active has-children"><a class="current reference internal" href="#">shapepipe.utilities</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html">shapepipe.utilities.ccd_psf_handler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html">shapepipe.utilities.coverage_map_builder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html">shapepipe.utilities.coverage_plotter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html">shapepipe.utilities.field_corners_extractor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.coverage_run.html">shapepipe.coverage_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.get_ccds_run.html">shapepipe.get_ccds_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.info.html">shapepipe.info</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.run.html">shapepipe.run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
@@ -597,6 +604,23 @@ scripts.</p>
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html">shapepipe.utilities.ccd_psf_handler</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.params_default"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler.params_default()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.set_params_from_command_line"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler.set_params_from_command_line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.update_params"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler.update_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.check_params"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler.check_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_lines"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler.get_lines()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_exp_shdu_missing"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler.get_exp_shdu_missing()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_exp"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler.get_exp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_ccds_with_psf"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler.get_ccds_with_psf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_ccds_with_psf_method_v1_3"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler.get_ccds_with_psf_method_v1_3()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.save"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler.save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.run"><code class="docutils literal notranslate"><span class="pre">CcdPsfHandler.run()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.param"><code class="docutils literal notranslate"><span class="pre">param</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.param.print"><code class="docutils literal notranslate"><span class="pre">param.print()</span></code></a></li>
@@ -636,6 +660,51 @@ scripts.</p>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.square_from_corners"><code class="docutils literal notranslate"><span class="pre">square_from_corners()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html">shapepipe.utilities.coverage_map_builder</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.unwrap_ra"><code class="docutils literal notranslate"><span class="pre">unwrap_ra()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder"><code class="docutils literal notranslate"><span class="pre">CoverageMapBuilder</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.params_default"><code class="docutils literal notranslate"><span class="pre">CoverageMapBuilder.params_default()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.set_params_from_command_line"><code class="docutils literal notranslate"><span class="pre">CoverageMapBuilder.set_params_from_command_line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.update_params"><code class="docutils literal notranslate"><span class="pre">CoverageMapBuilder.update_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.check_params"><code class="docutils literal notranslate"><span class="pre">CoverageMapBuilder.check_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.median_filter"><code class="docutils literal notranslate"><span class="pre">CoverageMapBuilder.median_filter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.run"><code class="docutils literal notranslate"><span class="pre">CoverageMapBuilder.run()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html">shapepipe.utilities.coverage_plotter</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter"><code class="docutils literal notranslate"><span class="pre">CoveragePlotter</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter.params_default"><code class="docutils literal notranslate"><span class="pre">CoveragePlotter.params_default()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter.set_params_from_command_line"><code class="docutils literal notranslate"><span class="pre">CoveragePlotter.set_params_from_command_line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter.update_params"><code class="docutils literal notranslate"><span class="pre">CoveragePlotter.update_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter.check_params"><code class="docutils literal notranslate"><span class="pre">CoveragePlotter.check_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter.plot_coverage_map"><code class="docutils literal notranslate"><span class="pre">CoveragePlotter.plot_coverage_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter.run"><code class="docutils literal notranslate"><span class="pre">CoveragePlotter.run()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html">shapepipe.utilities.field_corners_extractor</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor._expnum_from_path"><code class="docutils literal notranslate"><span class="pre">_expnum_from_path()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor._image_shape"><code class="docutils literal notranslate"><span class="pre">_image_shape()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor._parse_header_to_wcs"><code class="docutils literal notranslate"><span class="pre">_parse_header_to_wcs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor._ccd_corners"><code class="docutils literal notranslate"><span class="pre">_ccd_corners()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor"><code class="docutils literal notranslate"><span class="pre">FieldCornersExtractor</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.params_default"><code class="docutils literal notranslate"><span class="pre">FieldCornersExtractor.params_default()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.set_params_from_command_line"><code class="docutils literal notranslate"><span class="pre">FieldCornersExtractor.set_params_from_command_line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.update_params"><code class="docutils literal notranslate"><span class="pre">FieldCornersExtractor.update_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.check_params"><code class="docutils literal notranslate"><span class="pre">FieldCornersExtractor.check_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.load_ccd_list"><code class="docutils literal notranslate"><span class="pre">FieldCornersExtractor.load_ccd_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.process_single_header"><code class="docutils literal notranslate"><span class="pre">FieldCornersExtractor.process_single_header()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.get_done_ccds"><code class="docutils literal notranslate"><span class="pre">FieldCornersExtractor.get_done_ccds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.run"><code class="docutils literal notranslate"><span class="pre">FieldCornersExtractor.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor._process_serial"><code class="docutils literal notranslate"><span class="pre">FieldCornersExtractor._process_serial()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor._process_parallel"><code class="docutils literal notranslate"><span class="pre">FieldCornersExtractor._process_parallel()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.file_system.html#shapepipe.utilities.file_system.FileSystemError"><code class="docutils literal notranslate"><span class="pre">FileSystemError</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.file_system.html#shapepipe.utilities.file_system.check_dir"><code class="docutils literal notranslate"><span class="pre">check_dir()</span></code></a></li>
@@ -643,6 +712,19 @@ scripts.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.header_downloader.html#shapepipe.utilities.header_downloader.HeaderDownloader"><code class="docutils literal notranslate"><span class="pre">HeaderDownloader</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html#shapepipe.utilities.header_downloader.HeaderDownloader.params_default"><code class="docutils literal notranslate"><span class="pre">HeaderDownloader.params_default()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html#shapepipe.utilities.header_downloader.HeaderDownloader.set_params_from_command_line"><code class="docutils literal notranslate"><span class="pre">HeaderDownloader.set_params_from_command_line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html#shapepipe.utilities.header_downloader.HeaderDownloader.update_params"><code class="docutils literal notranslate"><span class="pre">HeaderDownloader.update_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html#shapepipe.utilities.header_downloader.HeaderDownloader.check_params"><code class="docutils literal notranslate"><span class="pre">HeaderDownloader.check_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html#shapepipe.utilities.header_downloader.HeaderDownloader.get_exposures"><code class="docutils literal notranslate"><span class="pre">HeaderDownloader.get_exposures()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html#shapepipe.utilities.header_downloader.HeaderDownloader.get_fits_header"><code class="docutils literal notranslate"><span class="pre">HeaderDownloader.get_fits_header()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html#shapepipe.utilities.header_downloader.HeaderDownloader.run"><code class="docutils literal notranslate"><span class="pre">HeaderDownloader.run()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.init_par_runtime"><code class="docutils literal notranslate"><span class="pre">init_par_runtime()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.update_par_runtime_after_find_exp"><code class="docutils literal notranslate"><span class="pre">update_par_runtime_after_find_exp()</span></code></a></li>
@@ -710,11 +792,11 @@ scripts.</p>
       </div>
     </a>
     <a class="right-next"
-       href="shapepipe.utilities.cfis.html"
+       href="shapepipe.utilities.ccd_psf_handler.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">shapepipe.utilities.cfis</p>
+        <p class="prev-next-title">shapepipe.utilities.ccd_psf_handler</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -770,7 +852,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 31 Aug, 2026.
+  Last updated on 05 Sep, 2026.
   <br/>
 </p>
   </div>

@@ -1,0 +1,1056 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>shapepipe.utilities.ccd_psf_handler &#8212; ShapePipe v1.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=4418a689" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../../../_static/documentation_options.js?v=051bfb12"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/shapepipe/utilities/ccd_psf_handler';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'latest';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.1" />
+    <meta name="docbuild:last-update" content="05 Sep, 2026"/>
+  
+    
+    <script src="../../../_static/searchtools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">ShapePipe v1.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">About ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Installing ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../container.html">Container Workflow</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../basic_execution.html">Basic Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../pipeline_tutorial.html">ShapePipe Tutorial</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../clusters.html">Running on a Cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../pipeline_canfar.html">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../random_cat.html">Create random catalogues and masks</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../understanding_api.html">Understanding the API Documentation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../shapepipe.html">shapepipe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.fake_psf_package.html">shapepipe.modules.fake_psf_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.fake_psf_package.fake_psf.html">shapepipe.modules.fake_psf_package.fake_psf</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.get_images_package.html">shapepipe.modules.get_images_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.get_images_package.get_images.html">shapepipe.modules.get_images_package.get_images</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.make_cat_package.html">shapepipe.modules.make_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.match_external_package.match_external.html">shapepipe.modules.match_external_package.match_external</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.html">shapepipe.modules.mccd_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.mccd_interpolation_script.html">shapepipe.modules.mccd_package.mccd_interpolation_script</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.mccd_plot_utilities.html">shapepipe.modules.mccd_package.mccd_plot_utilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.merge_headers_package.html">shapepipe.modules.merge_headers_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.merge_headers_package.merge_headers.html">shapepipe.modules.merge_headers_package.merge_headers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.merge_sep_cats_package.html">shapepipe.modules.merge_sep_cats_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">shapepipe.modules.merge_sep_cats_package.merge_sep_cats</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.merge_starcat_package.html">shapepipe.modules.merge_starcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.merge_starcat_package.merge_starcat.html">shapepipe.modules.merge_starcat_package.merge_starcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.ngmix_package.html">shapepipe.modules.ngmix_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.pastecat_package.html">shapepipe.modules.pastecat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.pastecat_package.pastecat.html">shapepipe.modules.pastecat_package.pastecat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.psfex_interp_package.html">shapepipe.modules.psfex_interp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.psfex_interp_package.psfex_interp.html">shapepipe.modules.psfex_interp_package.psfex_interp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.psfex_package.html">shapepipe.modules.psfex_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.psfex_package.psfex_script.html">shapepipe.modules.psfex_package.psfex_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.split_exp_package.html">shapepipe.modules.split_exp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.vignetmaker_package.html">shapepipe.modules.vignetmaker_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.vignetmaker_package.vignetmaker.html">shapepipe.modules.vignetmaker_package.vignetmaker</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.modules.module_decorator.html">shapepipe.modules.module_decorator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.modules.module_runners.html">shapepipe.modules.module_runners</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../shapepipe.pipeline.html">shapepipe.pipeline</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.args.html">shapepipe.pipeline.args</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.config.html">shapepipe.pipeline.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.dependency_handler.html">shapepipe.pipeline.dependency_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.execute.html">shapepipe.pipeline.execute</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.exp_utils.html">shapepipe.pipeline.exp_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.file_handler.html">shapepipe.pipeline.file_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.file_io.html">shapepipe.pipeline.file_io</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.job_handler.html">shapepipe.pipeline.job_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../shapepipe.testing.html">shapepipe.testing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.testing.simulate.html">shapepipe.testing.simulate</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.ccd_psf_handler.html">shapepipe.utilities.ccd_psf_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.coverage_map_builder.html">shapepipe.utilities.coverage_map_builder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.coverage_plotter.html">shapepipe.utilities.coverage_plotter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.field_corners_extractor.html">shapepipe.utilities.field_corners_extractor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.coverage_run.html">shapepipe.coverage_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.get_ccds_run.html">shapepipe.get_ccds_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.info.html">shapepipe.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.run.html">shapepipe.run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.summary_run.html">shapepipe.summary_run</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing to ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_develop.html">Module Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_example.html">Module Examples</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../z_ref.html">References</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/utilities/ccd_psf_handler.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for shapepipe.utilities.ccd_psf_handler</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""CCD_PSF_HANDLER</span>
+
+<span class="sd">Obtain list of CCDs (single-exposure single-HDU files) for which valid PSF</span>
+<span class="sd">information is available. This can serve to create a footprint coverage mask.</span>
+
+<span class="sd">Author: Mike Hudson, Martin Kilbinger &lt;martin.kilbinger@cea.fr&gt;</span>
+
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">cs_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">args</span> <span class="k">as</span> <span class="n">cs_args</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cs_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">summary</span>
+
+
+<div class="viewcode-block" id="CcdPsfHandler">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CcdPsfHandler</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""CCD PSF Handler Class.</span>
+
+<span class="sd">    Handles extraction of CCDs with valid PSF information from shapepipe</span>
+<span class="sd">    patches.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Initialize the handler."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params_default</span><span class="p">()</span>
+
+<div class="viewcode-block" id="CcdPsfHandler.params_default">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.params_default">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">params_default</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Set default parameters and command line options."""</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"version_cat"</span><span class="p">:</span> <span class="s2">"v1.6"</span><span class="p">,</span>
+            <span class="s2">"n_CCD"</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+            <span class="s2">"output"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_short_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"version_cat"</span><span class="p">:</span> <span class="s2">"-V"</span><span class="p">,</span>
+            <span class="s2">"n_CCD"</span><span class="p">:</span> <span class="s2">"-n"</span><span class="p">,</span>
+            <span class="s2">"output"</span><span class="p">:</span> <span class="s2">"-o"</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_types</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"n_CCD"</span><span class="p">:</span> <span class="s2">"int"</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_help_strings</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"version_cat"</span><span class="p">:</span> <span class="s2">"catalogue major version, allowed are v1.3, v1.4, v1.5, v1.6; default is </span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
+
+            <span class="s2">"n_CCD"</span><span class="p">:</span> <span class="s2">"number of CCDs per exposure; default is </span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="s2">"output"</span><span class="p">:</span> <span class="s2">"output file path; default is ccds_with_psf_&lt;version&gt;.txt"</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="CcdPsfHandler.set_params_from_command_line">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.set_params_from_command_line">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_params_from_command_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Set Params From Command line.</span>
+
+<span class="sd">        Only use when calling using python from command line.</span>
+<span class="sd">        Does not work from ipython or jupyter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        args : list</span>
+<span class="sd">            command line arguments</span>
+
+<span class="sd">        """</span>
+        <span class="c1"># Read command line options</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="n">cs_args</span><span class="o">.</span><span class="n">parse_options</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_short_options</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_types</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_help_strings</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="n">options</span>
+
+        <span class="c1"># Save calling command</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">log_command</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CcdPsfHandler.update_params">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.update_params">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Update parameters.</span>
+
+<span class="sd">        Set derived parameters based on input parameters.</span>
+<span class="sd">        """</span>
+        <span class="c1"># Determine number of patches based on version</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">"version_cat"</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">version</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"v1.3"</span><span class="p">,</span> <span class="s2">"v1.4"</span><span class="p">):</span>
+            <span class="n">n_patch</span> <span class="o">=</span> <span class="mi">7</span>
+        <span class="k">elif</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">"v1.5"</span><span class="p">:</span>
+            <span class="n">n_patch</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="k">elif</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">"v1.6"</span><span class="p">:</span>
+            <span class="n">n_patch</span> <span class="o">=</span> <span class="mi">9</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid version </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">"n_patch"</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_patch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">"patches"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"P</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_patch</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Set output file if not specified</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"ccds_with_psf_</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">.txt"</span></div>
+
+
+<div class="viewcode-block" id="CcdPsfHandler.check_params">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.check_params">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Check parameters for validity."""</span>
+        <span class="c1"># Add any parameter validation logic here</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="CcdPsfHandler.get_lines">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_lines">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Get Lines.</span>
+
+<span class="sd">        Return list of lines read from a text file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fname : str</span>
+<span class="sd">            input file name</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            IDs</span>
+
+<span class="sd">        """</span>
+        <span class="n">IDs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+                <span class="n">IDs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">IDs</span></div>
+
+
+<div class="viewcode-block" id="CcdPsfHandler.get_exp_shdu_missing">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_exp_shdu_missing">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_exp_shdu_missing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patches</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Get Exp Shdu Missing.</span>
+
+<span class="sd">        Returns set of missing CCDs (single-exposure single-HDU IDs) from a list of patches.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        patches : list</span>
+<span class="sd">            input patches</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set</span>
+<span class="sd">           missing CCD IDs</span>
+
+<span class="sd">        """</span>
+        <span class="n">exp_shdu_missing_all</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">patch</span> <span class="ow">in</span> <span class="n">patches</span><span class="p">:</span>
+
+            <span class="n">path_exp_shdu_missing</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">patch</span><span class="si">}</span><span class="s2">/summary/missing_job_32_all.txt"</span>
+            <span class="n">exp_shdu_missing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lines</span><span class="p">(</span><span class="n">path_exp_shdu_missing</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Patch </span><span class="si">{</span><span class="n">patch</span><span class="si">}</span><span class="s2">: Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_shdu_missing</span><span class="p">)</span><span class="si">}</span><span class="s2"> missing ccds"</span><span class="p">,</span>
+                <span class="n">end</span><span class="o">=</span><span class="s2">"; "</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">exp_shdu_missing_all</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">exp_shdu_missing</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"cumulative </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_shdu_missing_all</span><span class="p">)</span><span class="si">}</span><span class="s2"> missing ccds"</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">exp_shdu_missing_all</span></div>
+
+
+<div class="viewcode-block" id="CcdPsfHandler.get_exp">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_exp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patches</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Get Exp.</span>
+
+<span class="sd">        Return set of exposures from a list of patches.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        patches : list</span>
+<span class="sd">            input patches</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set</span>
+<span class="sd">           exposure IDs</span>
+
+<span class="sd">        """</span>
+        <span class="n">exp_all</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">patch</span> <span class="ow">in</span> <span class="n">patches</span><span class="p">:</span>
+
+            <span class="n">path_exp</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">patch</span><span class="si">}</span><span class="s2">/exp_numbers.txt"</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lines</span><span class="p">(</span><span class="n">path_exp</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Patch </span><span class="si">{</span><span class="n">patch</span><span class="si">}</span><span class="s2">: Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span><span class="si">}</span><span class="s2"> exposures"</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">"; "</span><span class="p">)</span>
+
+            <span class="n">exp_all</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"cumulative </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_all</span><span class="p">)</span><span class="si">}</span><span class="s2"> exposures"</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">exp_all</span></div>
+
+
+<div class="viewcode-block" id="CcdPsfHandler.get_ccds_with_psf">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_ccds_with_psf">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_ccds_with_psf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patches</span><span class="p">,</span> <span class="n">n_CCD</span><span class="o">=</span><span class="mi">40</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Get CCDs With PSF.</span>
+
+<span class="sd">        Return set of CCDs with valid PSF from a list of patches. A CCD has a</span>
+<span class="sd">        valid PSF if it appears among the exposures' single-HDU IDs but not in</span>
+<span class="sd">        the per-patch missing-CCD lists.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        patches : list</span>
+<span class="sd">            input patches</span>
+<span class="sd">        n_CCD : int</span>
+<span class="sd">            number of CCDs per exposure</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set</span>
+<span class="sd">           CCD IDs with valid PSF</span>
+
+<span class="sd">        """</span>
+        <span class="c1"># Get missing CCDs</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"=== get missing CCDs ==="</span><span class="p">)</span>
+        <span class="n">exp_shdu_missing_all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_exp_shdu_missing</span><span class="p">(</span><span class="n">patches</span><span class="p">)</span>
+
+        <span class="c1"># Get all exposures used in tiles</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"=== get exposures ==="</span><span class="p">)</span>
+        <span class="n">exp_all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_exp</span><span class="p">(</span><span class="n">patches</span><span class="p">)</span>
+
+        <span class="c1"># Turn exposures into exposure-single-HDU names (CCDs)</span>
+        <span class="n">exp_shdu_all</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">summary</span><span class="o">.</span><span class="n">get_all_shdus</span><span class="p">(</span><span class="n">exp_all</span><span class="p">,</span> <span class="n">n_CCD</span><span class="p">))</span>
+
+        <span class="c1"># Subtract the CCDs whose PSF model is missing</span>
+        <span class="n">exp_shdu_with_psf</span> <span class="o">=</span> <span class="n">exp_shdu_all</span> <span class="o">-</span> <span class="n">exp_shdu_missing_all</span>
+
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_shdu_all</span><span class="p">)</span><span class="si">}</span><span class="s2"> CCDs, "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_shdu_missing_all</span><span class="p">)</span><span class="si">}</span><span class="s2"> missing, "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_shdu_with_psf</span><span class="p">)</span><span class="si">}</span><span class="s2"> with valid PSF"</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">exp_shdu_with_psf</span></div>
+
+
+<div class="viewcode-block" id="CcdPsfHandler.get_ccds_with_psf_method_v1_3">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_ccds_with_psf_method_v1_3">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_ccds_with_psf_method_v1_3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patches</span><span class="p">,</span> <span class="n">n_CCD</span><span class="o">=</span><span class="mi">40</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Get CCDs With PSF Method v1.3.</span>
+
+<span class="sd">        Return set of CCDs with valid PSF by scanning run directories.</span>
+<span class="sd">        Finds star_selection files and checks corresponding stat files</span>
+<span class="sd">        for valid (non-nan) FWHM values.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        patches : list</span>
+<span class="sd">            input patches</span>
+<span class="sd">        n_CCD : int</span>
+<span class="sd">            number of CCDs per exposure (unused, kept for API consistency)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set</span>
+<span class="sd">           CCD IDs with valid PSF</span>
+
+<span class="sd">        """</span>
+        <span class="n">exp_shdu_all</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">patch</span> <span class="ow">in</span> <span class="n">patches</span><span class="p">:</span>
+            <span class="c1"># Find all star_selection files</span>
+            <span class="n">mask_pattern</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">patch</span><span class="si">}</span><span class="s2">/output/run_sp_exp_SxSePs*/"</span>
+                <span class="sa">f</span><span class="s2">"setools_runner/output/mask/star_selection-*.fits"</span>
+            <span class="p">)</span>
+            <span class="n">mask_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">mask_pattern</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Patch </span><span class="si">{</span><span class="n">patch</span><span class="si">}</span><span class="s2">: Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">mask_files</span><span class="p">)</span><span class="si">}</span><span class="s2"> star_selection FITS"</span>
+                <span class="o">+</span> <span class="s2">" files"</span>
+            <span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">mask_file</span> <span class="ow">in</span> <span class="n">mask_files</span><span class="p">:</span>
+                <span class="c1"># Extract exp_shdu from filename</span>
+                <span class="n">basename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">mask_file</span><span class="p">)</span>
+                <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">"star_selection-(.+)\.fits"</span><span class="p">,</span> <span class="n">basename</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Warning: Non-matching file name </span><span class="si">{</span><span class="n">basename</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="n">exp_shdu</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+                <span class="c1"># Get corresponding stat file path</span>
+                <span class="c1"># Replace mask dir with stat/stat dir in the path</span>
+                <span class="n">stat_file</span> <span class="o">=</span> <span class="n">mask_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                    <span class="s2">"/mask/star_selection-"</span><span class="p">,</span>
+                    <span class="s2">"/stat/star_stat-"</span><span class="p">,</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">".fits"</span><span class="p">,</span> <span class="s2">".txt"</span><span class="p">)</span>
+
+                <span class="c1">#print("MKDEBUG ", exp_shdu, stat_file)</span>
+
+                <span class="c1"># Check if stat file exists and has valid FWHM</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">stat_file</span><span class="p">):</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">"MKDEBUG stat file "</span><span class="p">,</span> <span class="n">stat_file</span><span class="p">,</span> <span class="s2">" does not exist"</span><span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Read stat file and check for nan in "Mean star fwhm selected"</span>
+                <span class="n">has_nan</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">stat_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="s2">"Mean star fwhm selected"</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="s2">"nan"</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                                <span class="n">has_nan</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">has_nan</span><span class="p">:</span>
+                    <span class="c1">#print("MKDEBUG append", exp_shdu)</span>
+                    <span class="n">exp_shdu_all</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">exp_shdu</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"After patch </span><span class="si">{</span><span class="n">patch</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_shdu_all</span><span class="p">)</span><span class="si">}</span><span class="s2"> CCDs with valid PSF"</span><span class="p">)</span> 
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_shdu_all</span><span class="p">)</span><span class="si">}</span><span class="s2"> CCDs with valid PSF"</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">exp_shdu_all</span></div>
+
+
+<div class="viewcode-block" id="CcdPsfHandler.save">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">IDs</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Save.</span>
+
+<span class="sd">        Save list of IDs to text file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        IDs : set</span>
+<span class="sd">            input IDs</span>
+<span class="sd">        path : str</span>
+<span class="sd">            output file name</span>
+
+<span class="sd">        """</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_out</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ID</span> <span class="ow">in</span> <span class="n">IDs</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">ID</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f_out</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CcdPsfHandler.run">
+<a class="viewcode-back" href="../../../shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Run.</span>
+
+<span class="sd">        Main execution method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        args : list, optional</span>
+<span class="sd">            command line arguments</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            exit code (0 for success)</span>
+
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+        <span class="c1"># Set parameters from command line</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_params_from_command_line</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_params</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_params</span><span class="p">()</span>
+
+        <span class="c1"># Get parameters</span>
+        <span class="n">patches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">"patches"</span><span class="p">]</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">"version_cat"</span><span class="p">]</span>
+        <span class="n">n_CCD</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">"n_CCD"</span><span class="p">]</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span>
+
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"=== get_ccds_with_psf for version </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">, patches </span><span class="si">{</span><span class="n">patches</span><span class="si">}</span><span class="s2"> ==="</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">"version_cat"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"v1.3"</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"=== method for 1.3: exp with PSF star sample === "</span><span class="p">)</span>
+            <span class="n">exp_shdu_all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ccds_with_psf_method_v1_3</span><span class="p">(</span><span class="n">patches</span><span class="p">,</span> <span class="n">n_CCD</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"=== method for &gt;= 1.4: exp_list - missing === "</span><span class="p">)</span>
+            <span class="n">exp_shdu_all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ccds_with_psf</span><span class="p">(</span><span class="n">patches</span><span class="p">,</span> <span class="n">n_CCD</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">exp_shdu_all</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Results saved to </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="mi">0</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CosmoStat
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2022, CosmoStat.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on 05 Sep, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
