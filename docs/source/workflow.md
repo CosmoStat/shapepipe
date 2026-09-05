@@ -1,9 +1,11 @@
 # The Snakemake workflow
 
 Production ShapePipe runs — a tile list, not a tile — are orchestrated by the
-Snakemake workflow in `workflow/`. It is the current and only production
-orchestration: the bit-coded bash job scripts and the CANFAR submission layers
-that preceded it were retired at `2ef07e45`.
+Snakemake workflow in `workflow/`. It is the current and only orchestration for
+real data: the CANFAR submission layers that preceded it were retired at
+`2ef07e45`, while the bit-coded bash job scripts they drove
+(`run_job_sp_canfar_v2.0.bash`, `job_sp_canfar_v2.0.bash`) survive only as the
+entry point of sp_validation's image-simulation chain.
 
 **Module code is untouched by it.** Every rule ultimately calls
 `shapepipe_run -c <config>` on the config chains described in
