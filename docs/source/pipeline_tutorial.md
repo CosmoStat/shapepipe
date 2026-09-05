@@ -73,21 +73,21 @@ Naming and numbering of the input files can closely follow the original image na
   sheared images. This information is used in post-processing to compute calibrated shear estimates via metacalibration.
 
 - Summary statistic files  
-  The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII   
+  The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Detect objects](#detect-objects-on-tiles-and-process-stars-on-single-exposures)) also outputs ASCII   
   files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
   Example: `star_stat-2366993-18.txt`
 
 - Tile ID list  
-  ASCII file with a tile number on each line. Used for the `get_image_runner` module to download CFIS images (see [Download tiles](#download-tiles)).
+  ASCII file with a tile number on each line. Used for the `get_image_runner` module to download CFIS images (see [Retrieve input images](#retrieve-input-images)).
 
 - Single-exposure name list  
   ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
-  a given tile. See [Find exposures](#find-exposures)).
+  a given tile. See [Retrieve input images](#retrieve-input-images)).
 
 - Plots  
   The `SETools` module can also produce plots of the objects properties that were selected for a given CCD.
   The type of plot (histogram, scatter plot, ...) and quantities to plot as well as plot decorations can be specified in the
-  selection criteria config file (see [Select stars](#select-stars)).
+  selection criteria config file (see [Detect objects](#detect-objects-on-tiles-and-process-stars-on-single-exposures)).
   Example: `hist_mag_stars-2104133-5.png`
 
 - Log files  
