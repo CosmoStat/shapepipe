@@ -33,6 +33,7 @@
   :caption: Running on a cluster
 
   clusters
+  workflow
 
 .. toctree::
   :hidden:
