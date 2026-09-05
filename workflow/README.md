@@ -154,8 +154,9 @@ workflow/
   bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
-    exposure.smk         per-exposure: get_images, star_cat, split, mask, psf, persist (no temp())
+    exposure.smk         per-exposure: get_images, star_cat, split, mask, psf, persist, footprint (no temp())
     tile.smk             per-tile: exp forest, merge_headers, mask, detect, vignets, ngmix, merge, make_cat
+    coverage.smk         campaign-level: the HealSparse nexp mask from the exposure footprints
   scripts/
     sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count floor)
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
@@ -164,6 +165,8 @@ workflow/
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
     persist_exp.py       ONE exposure's keepable PSF products -> one tar on products_dir (the exp_persist rule)
+    exp_footprint.py     ONE exposure's per-CCD sky corners, for the CCDs with a PSF (the exp_footprint rule)
+    coverage_map.py      every exposure footprint on products_dir -> coverage.hsp (the coverage_map rule)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
@@ -247,6 +250,30 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   hours of PSF fitting per exposure. A pattern that matches nothing is a
   recorded warning (setools rejects sparse CCDs); matching nothing at all is a
   failure. A `localrule`, like `exp_star_cat` and for the same arithmetic.
+- **Coverage is a workflow product, built from records the DAG already
+  writes.** `exp_footprint` writes one JSON per exposure to
+  `<products_dir>/exp/<prefix>/<base>/manifests/exp_footprint.json`, giving the
+  four sky corners of every CCD that got a PSF model. It reads the valid-PSF CCD
+  set off `exp_persist.json`'s tar members — exact, because `psfex_interp`
+  returns *without* writing `validation_psf-*.fits` on NOT_ENOUGH_STARS,
+  BAD_CHI2 or FILE_NOT_FOUND — and the WCS off `headers-<exp>.npy`, written by
+  `exp_split`. That makes `validation_psf-*` in `persist_exp:` a **precondition**
+  of the whole chain, not a preference. Like `exp_persist` it runs whatever
+  `clean:` and `coverage:` say, because its input is on /scratch and the purge
+  takes it; `clean_exposure` takes its manifest as an input. Set
+  `coverage: {enabled: true}` and one further job, `coverage_map`, stamps every
+  footprint into `<products_dir>/coverage/coverage.hsp` — a HealSparse map
+  counting, per sky pixel, the exposures with a valid PSF there. That job is
+  **campaign-cumulative**: its declared inputs are the in-scope footprints, but
+  the script reads *every* record on the products root, reclaimed exposures
+  included, so appending tiles grows the map instead of replacing it. `nside`
+  defaults to the production 128/131072 pair, ~0.1"/pixel, chosen to align
+  pixel-wise with the UNIONS bit masks — not the `CoverageMapBuilder` class
+  defaults (32/2048), which would produce a plausible-looking map that does not
+  align. Plotting stays out of the DAG: run `plot_coverage_map -i
+  <products_dir>/coverage/coverage.hsp ...` by hand, with the sky windows under
+  `coverage.plot` in `config.yaml`. sp_validation consumes the map in
+  `notebooks/demo_apply_hsp_masks.py`.
 - **A dead tile can be told to stop pinning exposures.** An exposure is
   cleanable only once every consuming tile has its vignets, so one
   permanently-failed tile holds its ~80 exposures for the life of the

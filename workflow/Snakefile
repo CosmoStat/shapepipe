@@ -677,6 +677,7 @@ def sp_shell(stage, config_name, *, check_args="", post=""):
 include: "rules/prepare.smk"
 include: "rules/exposure.smk"
 include: "rules/tile.smk"
+include: "rules/coverage.smk"
 
 # --- top-level targets ------------------------------------------------------
 # The aggregation targets, clean_exposure, clean_tile, star_catalogue,
@@ -691,6 +692,8 @@ include: "rules/tile.smk"
 # ~20k of them at DR6 scale, each far shorter than the scheduling latency that
 # would submit it (exposure.smk argues the placement in full). exp_footprint sits
 # beside it and is smaller still: one pickle load and ~160 pixel_to_world calls.
+# coverage_map is deliberately NOT one — it is a single submitted job that stamps
+# ~1M polygons at nside=131072 (coverage.smk).
 #
 # star_catalogue and exp_star_cat are MID-CHAIN localrules, so they must stay out
 # of any future `group:` label: a local job cannot be fused into a submitted group.
@@ -704,6 +707,7 @@ rule all:
         [final_cat(t) for t in TILES_READY],
         persist_targets(),
         footprint_targets(),
+        coverage_targets(),
         clean_targets(),
         clean_tile_targets(),
 
