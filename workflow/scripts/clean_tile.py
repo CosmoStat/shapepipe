@@ -98,10 +98,10 @@ the second is the one that matters:
     each shared with 7-10 other tiles. Rebuildable, but only by re-running those
     chains from VOS.
   * ``output/run_sp_tile_Git/get_images_runner/output/CFIS_{image,weight}-*``
-    — 2 links into ``/project/def-mjhudson/unions-wl/tiles``, the staged survey
-    imaging: 621 GB across 2,536 files, on the BACKED-UP, GROUP-SHARED
-    ``/project``, and not this campaign's to lose. get_images RETRIEVE=symlink
-    is what puts them there, so every tile in every campaign carries a pair.
+    — 2 links into ``$SP_INPUT_TILES``, the staged survey imaging: 621 GB across
+    2,536 files, on the backed-up, group-shared input filesystem, and not this
+    campaign's to lose. get_images RETRIEVE=symlink is what puts them there, so
+    every tile in every campaign carries a pair.
 
 Both classes are handed WHOLESALE to ``shutil.rmtree`` — ``exp_forest/`` as a
 top-level entry, ``run_sp_tile_Git/`` as one inside ``output/``, which ``prune``

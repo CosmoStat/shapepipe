@@ -40,8 +40,11 @@ source "$VENV/bin/activate"
 # snakemake depends on PyYAML, so this parses the file rather than pattern-matching
 # it -- quotes, inline comments and nesting are the parser's problem, not ours.
 cfg() { python -c 'import sys, yaml
-print(yaml.safe_load(open(sys.argv[1])).get(sys.argv[2]) or "")' "$CONFIG" "$1"; }
-RUN_DIR="$(cfg run_dir)"; INDEX_DB="$(cfg index_db)"
+value = yaml.safe_load(open(sys.argv[1]))
+for key in sys.argv[2].split("."):
+    value = value[key]
+print(value or "")' "$CONFIG" "$1"; }
+RUN_DIR="$(cfg outputs.run_dir)"; INDEX_DB="$(cfg outputs.index_db)"
 
 # Snakemake state (.snakemake: metadata, locks, incomplete markers) lives NEXT TO
 # THE RUN on /scratch, never on the persistent root — the one exception to D5's

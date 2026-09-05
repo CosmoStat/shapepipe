@@ -22,8 +22,8 @@ uv venv /project/def-mjhudson/cdaley/snakemake-env --python 3.12
 source /project/def-mjhudson/cdaley/snakemake-env/bin/activate
 uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 
-# Edit workflow/config.yaml: tile_list, run_dir, container, star_cats (the
-# star-catalogue cache root).
+# Edit workflow/config.yaml: tile_list, inputs.tiles/exposures, outputs.run_dir,
+# outputs.products_dir/star_cats/index_db, and container.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -150,7 +150,7 @@ profile-only pass.
 ```
 workflow/
   Snakefile              parse-time index load; global container:; onsuccess/onerror report hooks
-  config.yaml            the run: tile list, paths, container, chunk count
+  config.yaml            the run: tile list, input/output paths, container, chunk count
   bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures

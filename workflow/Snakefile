@@ -78,15 +78,17 @@ container: _image
 # report. Snakemake's own state is the one durable-looking thing that stays on
 # scratch (bin/sp explains why: tens of thousands of small, hot metadata writes
 # against a backed-up, file-count-limited filesystem).
-RUN_DIR    = Path(config["run_dir"])
+INPUTS = config["inputs"]
+OUTPUTS = config["outputs"]
+RUN_DIR    = Path(OUTPUTS["run_dir"])
 # Defaults to RUN_DIR so a scratch-only run (a fixture, a smoke test) needs no
 # second path: one root, exactly the pre-D5 layout.
-PRODUCTS_DIR = Path(config.get("products_dir") or RUN_DIR)
+PRODUCTS_DIR = Path(OUTPUTS.get("products_dir") or RUN_DIR)
 # Run-independent root for the mask star catalogues: the HEALPix chunk store the
 # star_catalogue rule fills, and the per-exposure cuts exp_star_cat makes from it
 # (config.yaml explains the placement).
-STAR_CATS  = Path(config["star_cats"])
-INDEX_DB   = Path(config["index_db"])
+STAR_CATS  = Path(OUTPUTS["star_cats"])
+INDEX_DB   = Path(OUTPUTS["index_db"])
 SCRIPTS    = Path(workflow.basedir) / "scripts"
 # The config chain is the repo's committed directory (D2). The configs and
 # rules that set their environment variables must be versioned together. There
@@ -526,6 +528,8 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
         f"export SP_RUN='{work}'",
         f"export SP_UNIT_NUM='{unit_num(unit)}'",
         f"export SP_CONFIG='{CONFIG_DIR}'",
+        f"export SP_INPUT_TILES='{INPUTS['tiles']}'",
+        f"export SP_INPUT_EXPOSURES='{INPUTS['exposures']}'",
         # Also set via apptainer-args in the profile; kept here so a hand-run of
         # this same line outside snakemake behaves identically.
         f"export {_THREAD_CAPS}",
