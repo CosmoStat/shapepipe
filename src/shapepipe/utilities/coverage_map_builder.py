@@ -19,9 +19,9 @@ Author: Mike Hudson, Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 
-import numpy as np
 import healsparse as hsp
 import hpgeom as hpg
+import numpy as np
 
 # Declination beyond which a polygon is considered too close to a pole for
 # HealSparse's planar polygon fill to be reliable. CCD footprints are ~10
@@ -156,14 +156,15 @@ def build_map(
 
 
 def median_filter(hsp_map, n_iterations=1):
-    """Smooth an nexp map by replacing each pixel with its neighbourhood median.
+    """Smooth an nexp map: each pixel becomes its neighbourhood median.
 
     The neighbourhood is a pixel and its eight HEALPix neighbours; out-of-map
-    neighbours read as the map's sentinel and so pull an edge pixel down, which
-    is the intended behaviour for a coverage map (a lone pixel is noise, not
-    depth). The ``coverage_map`` rule does NOT smooth — the map it writes is the
-    raw exposure count, which is what sp_validation's mask application wants —
-    so this is the offline step, for looking at a map rather than applying one.
+    neighbours read as the map's sentinel and so pull an edge pixel down,
+    which is the intended behaviour for a coverage map (a lone pixel is noise,
+    not depth). The ``coverage_map`` rule does NOT smooth — the map it writes
+    is the raw exposure count, which is what sp_validation's mask application
+    wants — so this is the offline step, for looking at a map rather than
+    applying one.
 
     Parameters
     ----------
