@@ -50,7 +50,7 @@ to start:
 - `Installation <https://cosmostat.github.io/shapepipe/installation.html>`_ — getting ShapePipe onto your machine or cluster.
 - `Basic execution <https://cosmostat.github.io/shapepipe/basic_execution.html>`_ and `configuration <https://cosmostat.github.io/shapepipe/configuration.html>`_ — running ``shapepipe_run`` and writing pipeline configs.
 - `Container workflow <https://cosmostat.github.io/shapepipe/container.html>`_ — the two image targets and the ``pyproject.toml`` / ``uv.lock`` / ``Dockerfile`` layers.
-- `Running on a cluster <https://cosmostat.github.io/shapepipe/clusters.html>`_ — pulling the image and submitting jobs, with worked candide (SLURM) and CANFAR examples.
+- `Running on a cluster <https://cosmostat.github.io/shapepipe/clusters.html>`_ — pulling the image and submitting jobs, with a worked candide (SLURM) example.
 
 If you use ShapePipe in academic work, please cite Guinot et al. (2022) and
 Farrens et al. (2022).
