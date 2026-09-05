@@ -7,7 +7,7 @@ this executes, every campaign tile that reads this exposure has already extracte
 its postage stamps. Writer, then readers, then cleaner — DAG-ordered, race-free.
 
 What it deletes: the exposure's whole ``output/`` tree (the bulk store —
-run_sp_exp_Gie/Sp/Ma/SxSePsfPi), its ``manifests/`` and its ``logs/``, and its
+run_sp_exp_Gie/Sp/Ma/SxSePsf), its ``manifests/`` and its ``logs/``, and its
 star-catalogue link farms (``star_cat_exp``, plus the legacy ``star_cat_tiles``). The farms are
 reclaimed for consistency, not for bytes: ``exp_star_cat``'s manifest is deleted
 here like every other, so the exposure's chain must read as unbuilt, and 40
