@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Reclaim ONE finished tile's scratch store and leave a tombstone (PRD #848 D5).
+"""Reclaim one finished tile's scratch store and leave a tombstone (PRD #848 D5).
 
 Run as the shell of the in-DAG ``clean_tile`` rule, never by hand: the rule's
 ``input:`` is the tile's ``final_cat`` on the PERSISTENT root, so by the time
-this executes the tile has published the only thing the campaign wanted from it.
+this executes the tile has published its final catalogue.
 A tile's scratch store has no reader outside that tile — tiles read exposures,
 nothing reads another tile's store — so unlike the exposure case there is no
 consumer set to close over and no eligibility test to make. Writer, then
 cleaner, and the DAG edge is the whole ordering argument.
 
-WHAT IT DELETES: the tile's whole ``<run_dir>/tiles/<shard>/<tile>/`` directory.
+What it deletes: the tile's whole ``<run_dir>/tiles/<shard>/<tile>/`` directory.
 Measured on 186.307 (smk-g4, a finished 34-tile-campaign tile): 1,279,231,196
 bytes across 137 inodes (71 regular files, 9 symlinks, 57 directories) —
 ``output/run_sp_tile_Sx`` 745 MB, ``run_sp_tile_Uz`` 382 MB, ``run_sp_tile_Mc``
@@ -18,11 +18,11 @@ remainder of 62 inodes totalling 15,726 bytes. Deleting only ``output/`` is NOT
 enough: 62 x 23,114 DR6 tiles is 1.43M inodes against a 1M quota, so the inode
 bound binds on its own and the directory has to go as a whole.
 
-THE FOUR SURVIVORS, AND WHY EACH ONE IS NOT RESIDUE
----------------------------------------------------
-Everything kept here is currency some OTHER mechanism owns and re-reads long
+The four retained paths
+------------------------
+The retained paths are used by other mechanisms after the tile is complete.
 after this tile is done. Nothing is kept for tidiness, and the three that
-already exist are a CONTRACT: ``require_survivors`` checks all of them BEFORE
+already exist are required: ``require_survivors`` checks all of them before
 anything is deleted, because a silent drift in one of these paths would not show
 up as a broken clean — it would show up much later as a campaign that cannot
 resume. The fourth, ``cleaned.json``, is this job's own output and is the one
@@ -72,7 +72,7 @@ outlive its directories: 10 inodes per cleaned tile in total (the tile dir,
 file), i.e. ~231k inodes at DR6 against the 1M scratch quota — versus 3.2M if
 nothing were reclaimed and 1.4M if only ``output/`` were.
 
-WHAT IS LOST, STATED PLAINLY. The per-tile audit trail, for BOTH tools that
+What is lost: the per-tile audit trail for both tools that
 read it — ``sp_tilecost.py`` and ``sp_costmodel.py``. They attribute the fused
 ``tile_shape`` group job's cost per tile by reading the tile's SExtractor
 catalogue (NAXIS2 of the sexcat = the object count, the cost model's independent
@@ -90,8 +90,8 @@ here: teach ``sp_tilecost.py`` to fall back to ``cleaned.json`` for a tile whose
 benchmark TSVs are gone. Until it does, per-chunk cost attribution stops at the
 first reclaimed tile even though the numbers are still on disk.
 
-DELETION IS SYMLINK-SAFE (``clean_exposure`` gives the general reason), and here
-that is not a nicety. A finished tile holds NINE symlinks in TWO classes, and
+Deletion is symlink-safe (``clean_exposure`` gives the general reason). A
+finished tile holds nine symlinks in two classes, and
 the second is the one that matters:
 
   * ``exp_forest/<shard>/<exp>/output`` — 7 links into the EXPOSURE stores,
@@ -113,13 +113,13 @@ the fixture: every link unlinked, no target followed. Whoever edits ``prune``
 next should know that the worst case is not a scratch store they could rebuild —
 it is a rmtree walking into half a terabyte of shared, backed-up survey data.
 
-LOGS ARE DELETED, NOT ABSORBED, as in ``clean_exposure``, and here the
+Logs are deleted, not absorbed, as in ``clean_exposure``. Here the
 duplication is exact: on a finished tile every ``logs/<stage>.json`` is
 BYTE-IDENTICAL to the ``manifests/<stage>.json`` beside it (verified across all
 16 stage records of 186.307), because a tile with a failed stage has no
 final_cat and so is never cleaned.
 
-ORDER: tombstone FIRST, then deletion — ``clean_exposure``'s docstring argues
+Order: write the tombstone first, then delete — ``clean_exposure``'s docstring
 the crash window.
 
 There is no ``consumers`` field and no consumer-set staleness to detect, because

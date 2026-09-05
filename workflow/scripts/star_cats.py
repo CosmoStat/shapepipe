@@ -34,7 +34,7 @@ is the only version of that agreement which cannot drift.
         selection the old one-query-per-exposure cone did.
 
 Geometry, and why the fetch pad is what it is. Chunk-need is computed from the
-TILE list rather than from exposure pointings, because tile IDs are the one thing
+TILE list rather than from exposure pointings, because tile IDs are the relevant identifier
 known before any download: a pointing center means reading a FITS header of an
 image get_images has not fetched yet, and the DAG needs the chunk set at parse
 time. Tiles sit on a fixed 0.5 deg grid (``cfis.get_tile_coord_from_nixy``), so

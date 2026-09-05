@@ -8,7 +8,7 @@ whitelist. A stage is a real failure iff a mandatory runner produced fewer than
 its ``floor`` files; per-CCD attrition (a sparse CCD setools rejects, ~0.2%)
 sits between ``floor`` and ``expect`` and is tolerated.
 
-This file is also the ``check`` CLI — the second half of every rule's shell line
+This file is also the ``check`` CLI, the second half of every rule's shell line
 (PRD D2/D3). The rules capture ShapePipe's return code rather than ``&&``-ing
 onto it, so the check runs — and the verdict is recorded — even when
 ``shapepipe_run`` failed::
@@ -23,7 +23,7 @@ runner is below its floor OR ``--job-rc`` is nonzero — the verdict is COMPOSED
 the counts and shapepipe_run's own exit status, because a runner can raise after
 the counted ones have written their files.
 
-WHERE it writes the verdict is the whole point, and it is two files with two
+The verdict is written to two files with different
 different jobs:
 
   * the LOG (``--log``, the rule's snakemake ``log:``) gets the full verdict on
@@ -128,7 +128,7 @@ def count_products(run_dir, runner, spec):
     try:
         with os.scandir(out) as entries:
             for e in entries:
-                # A dead symlink is the one thing that must not count (the bash
+                # A dead symlink must not count (the bash
                 # `ls | wc -l` semantics this ports counted live files only), and
                 # a symlink is the only entry that can be dead — so it is the
                 # only one worth a follow-stat.

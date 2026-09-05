@@ -63,7 +63,7 @@ EXP_STAGES = ["exp_get_images", "exp_star_cat", "exp_split", "exp_mask", "exp_ps
 
 # The manifests clean_tile leaves on disk (workflow/scripts/clean_tile.py names
 # the mechanism that owns each). Their presence is therefore NOT evidence that a
-# tile's chain was rebuilt, which is the one thing absorb_tombstones has to know
+# tile's chain was rebuilt, which absorb_tombstones needs to know
 # to read a reclaimed tile's record out of its tombstone.
 SURVIVING_TILE_STAGES = frozenset({"tile_vignets", "tile_find_exposures"})
 

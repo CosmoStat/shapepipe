@@ -6,7 +6,7 @@ bash layers and the per-site sbatch reimplementations. **Module code is
 untouched**: rules call `shapepipe_run -c <config>` on the existing config
 chains. Design and rationale:
 [CosmoStat/shapepipe#848](https://github.com/CosmoStat/shapepipe/issues/848)
-(the living PRD).
+(the design document).
 
 Use `workflow/bin/sp` for everything. Bare `snakemake all` outside `sp` is
 unsupported: `sp` sets the state directory, the SLURM profile, and
@@ -40,7 +40,7 @@ v8→v9 breaks matter here: `--use-singularity` became `--sdm`, executors became
 plugins, and full `rerun-triggers` became the default.
 
 Anything other than `run`, `report`, `container`, `cancel` passes straight through to
-snakemake with the workflow's profile and state dir — the escape hatch for
+snakemake with the workflow's profile and state dir — the direct command path for
 `sp --unlock`, `sp --dag`, `sp exp_psf ...`.
 
 ## The container image
@@ -49,7 +49,7 @@ snakemake with the workflow's profile and state dir — the escape hatch for
 only exists if you ask for one:
 
 * your **cached SIF** (`~/.cache/shapepipe/shapepipe.sif`, `SP_CACHE_DIR` or
-  `SP_CONTAINER` to move it) — a pristine pull of the published image, private
+  `SP_CONTAINER` to move it) — a read-only pull of the published image, private
   to you, so nobody else's refresh moves the ground under your running jobs;
 * an optional **sandbox** (`~/.cache/shapepipe/sandbox/`, `SP_SANDBOX`) — the
   same image unpacked writable, so a `pip install` into it sticks. The escape
@@ -114,7 +114,7 @@ Snakefile and read `workflow/scripts/*` and the ini chain hours after launch.
 takes effect on the next `sp run`.**
 
 Everything workflow-internal hangs off `workflow.basedir`, which *is* the
-snapshot, so it follows for free. The one exception is the profile's `PYTHONPATH`
+snapshot, including the profile's `PYTHONPATH`
 pin, which YAML cannot interpolate: `sp run` rewrites that single path in the
 snapshot's copy of the profile and launches `--profile` at the copy. The snapshot
 is refreshed wholesale on every `sp run` — a new `sp run` *is* the relaunch — and

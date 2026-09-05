@@ -36,18 +36,17 @@ object jointly across every exposure it lands on, so its cost scales with
 (object, epoch) pairs, not objects: the campaign measured 0.2714 CPU-s per
 pair with an intercept consistent with zero, plus ~0.05 CPU-s per-object of
 setup. The old equal-count split therefore produced chunks whose cost varied
-1.6x WITHIN a single tile, tracking their epoch counts at R^2 0.91-1.000. Those
+1.6x within a single tile, tracking their epoch counts at R^2 0.91-1.000. Those
 chunks are siblings in the fused tile_shape group job, which ends when its
-SLOWEST member does, so the spread was pure wall clock: 7.7 hours over the
-34-tile smk-g4 campaign, and on the worst tile (196.307) the slowest chunk ran
+slowest member does, so the spread was pure wall clock: 7.7 hours over the
+34-tile smk-g4 campaign, and on tile 196.307 the slowest chunk ran
 26.3 min past the median and took the group to 97.4% of its wall limit.
 
 Re-splitting all 34 of that campaign's sexcats: the old boundaries leave the
-slowest chunk at 1.131x-1.627x its tile's median predicted cost (worst
-200.302), the new ones at 1.0000x-1.0002x, and the sum over tiles of
+slowest chunk at 1.131x-1.627x its tile's median predicted cost on tile 200.302; the new ones at 1.0000x-1.0002x, and the sum over tiles of
 slowest-chunk cost falls 132,875 -> 113,710 predicted CPU-s, 14.4%.
 
-Moving the boundaries is scientifically free: ngmix's RNG is seeded per object
+Moving the boundaries does not change measurements: ngmix's RNG is seeded per object
 from its sky position, so which chunk an object falls in cannot change its
 measurement (see ``ngmix_package.ngmix.position_seed``).
 
@@ -94,7 +93,7 @@ MILLI_EPOCH = 1000
 # both terms of the measured cost law: 0.05 CPU-s of setup / 0.2714 CPU-s per
 # (object, epoch) = 0.184 epoch-equivalents. It is what keeps the zero-epoch
 # objects (13 of 35,298 on tile 186.307) from weighing nothing — they still
-# cost ~6% of a typical object, and a chunk handed thousands of them for free
+# cost ~6% of a typical object, and a chunk handed thousands of them at no extra cost
 # would be a straggler of a new kind. Only the RATIO of the two costs moves a
 # boundary, which makes this robust: refitting on 186.307's eight measured
 # chunk CPU times with the setup term held fixed gives 0.2619 per GEOMETRIC
@@ -111,7 +110,7 @@ def id_ranges(epochs, n_chunks: int) -> list[tuple[int, int]]:
     CONTIGUOUS — ``NGMIX_ID_MIN``/``NGMIX_ID_MAX`` is an interval, not a set —
     and tile ``[1, n_obj]`` exactly, so every object is measured once.
 
-    The objective is the SLOWEST chunk, not the average one, because the
+    The objective is the slowest chunk, not the average one, because the
     group job waits for it. So this minimises the maximum chunk weight
     exactly: binary-search the smallest feasible capacity, then fill left to
     right under it. Ties in that maximum break toward the earlier chunks,
@@ -206,7 +205,7 @@ def object_epochs(run_dir: Path):
     law is 0.2681 CPU-s per pair at R^2 0.997, against 0.2619 at R^2 0.973 on
     the geometric count. The better number is unavailable before ngmix runs and
     is not worth wanting anyway: splitting on it moves boundaries by up to 177
-    objects and improves the true slowest chunk by 1.07%.
+    objects and improves the slowest chunk by 1.07%.
 
     Only the EPOCH extensions are read. ``LDAC_OBJECTS`` carries a 10 kB
     VIGNET per row (376 MB on 186.307) and pulling it in would cost more than

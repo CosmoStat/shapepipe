@@ -1,6 +1,6 @@
 """ShapePipe real-data orchestration — Snakemake workflow.
 
-Design / rationale: CosmoStat/shapepipe#848 (the living PRD), D1-D5.
+Design / rationale: CosmoStat/shapepipe#848, D1-D5.
 
 `sp run` is TWO snakemake invocations over this one Snakefile:
 
@@ -72,8 +72,8 @@ if _kind == "none":
 container: _image
 
 # --- paths -----------------------------------------------------------------
-# TWO ROOTS (D5). RUN_DIR is the scratch root: bulk intermediates, sized so a
-# batch finishes inside the purge window. PRODUCTS_DIR is the persistent root
+# RUN_DIR is the scratch root: bulk intermediates, sized so a batch finishes
+# inside the purge window. PRODUCTS_DIR is the persistent root
 # for the durable, low-volume products — the final catalogues, the index, the
 # report. Snakemake's own state is the one durable-looking thing that stays on
 # scratch (bin/sp explains why: tens of thousands of small, hot metadata writes
@@ -88,9 +88,9 @@ PRODUCTS_DIR = Path(config.get("products_dir") or RUN_DIR)
 STAR_CATS  = Path(config["star_cats"])
 INDEX_DB   = Path(config["index_db"])
 SCRIPTS    = Path(workflow.basedir) / "scripts"
-# The config chain is the repo's own committed dir BY CONSTRUCTION (D2): the
-# configs and the rules that set the env vars they interpolate are one artefact
-# and must version together. Hence no `config_src` knob.
+# The config chain is the repo's committed directory (D2). The configs and
+# rules that set their environment variables must be versioned together. There
+# is no `config_src` knob.
 CONFIG_DIR = Path(workflow.basedir) / "config" / "cfis"
 
 sys.path.insert(0, str(SCRIPTS))
@@ -98,7 +98,7 @@ import build_index                                     # noqa: E402
 from completeness import STAGE_DIR                     # noqa: E402
 
 # SP_PHASE is set by bin/sp and NOWHERE else: `prepare`/`compute` on the two
-# invocations of `sp run`, `passthrough` on the escape hatch (`sp --unlock`, `sp
+# invocations of `sp run`, `passthrough` on direct commands (`sp --unlock`, `sp
 # --dag`, `sp exp_psf ...`). It gates the two parse-time side effects — the index
 # build and the report hooks — so that a passthrough parse never mutates durable
 # state or dies on a threshold it was not asked about.
@@ -139,7 +139,7 @@ NGMIX_CHUNKS = workflow._scatter["ngmix"]
 # there — no "some Fe output exists" guard. That guard used to make a
 # totally-failed prepare produce an empty index, an empty DAG and a green exit 0;
 # with it gone, zero Fe outputs means a missing fraction of 1.0, which trips the
-# SP_MISSING_THRESHOLD gate and fails loudly, as it should.
+# SP_MISSING_THRESHOLD gate.
 #
 # In every other phase (prepare, or unset for a passthrough invocation) the parse
 # builds NOTHING and only loads whatever index is already on disk.
@@ -148,8 +148,8 @@ NGMIX_CHUNKS = workflow._scatter["ngmix"]
 # snakemake inside every job, that re-invocation parses this file again, and it
 # inherits SP_PHASE=compute from the submitting environment. Without the guard,
 # every one of the run's jobs re-runs the build — hundreds of concurrent sqlite
-# writers on Lustre, which is exactly the "database is locked" storm that killed
-# the first real run (2026-07-31). Job parses only LOAD the index below.
+# writers on Lustre, which previously caused "database is locked" errors
+# (2026-07-31). Job parses only LOAD the index below.
 if PHASE == "compute" and workflow.is_main_process:
     build_index.build(
         TILES, RUN_DIR, INDEX_DB,
@@ -331,8 +331,8 @@ STAR_CAT_HASH = script_hash("star_cats.py")
 # TILE_NGMIX_RANGES, which also keeps the incident transcript). So this hash buys
 # REPRODUCIBILITY of the file across attempts and resumes, not agreement between
 # siblings. It therefore fingerprints the script that PRODUCES the file, and
-# rides on tile_vignets as well as tile_ngmix — both rules, deliberately; the
-# one-rule version of this param is the dangerous one, argued at tile.smk.
+# is used by both tile_vignets and tile_ngmix because either rule can produce
+# the file.
 #
 # Land this hash, and any later edit to the split, at a campaign boundary on a
 # fresh root: a resume across it re-measures the tile, and the failure modes a
@@ -404,13 +404,13 @@ def clean_targets():
     run's scope or has already produced its vignets on disk. Without that test,
     requesting a tombstone for an exposure shared with a LATER batch would drag
     that batch's whole tile chain into this DAG through the clean rule's input —
-    scope expansion by cleanup, which is not a trade anyone asked for. Ineligible
+    cleanup would otherwise expand the scope. Ineligible
     exposures are simply skipped; the invocation that finishes their last
     consumer picks them up. Deferral, never loss.
 
     Consumer sets are the IGNORE-FILTERED ones (clean_consumers), so a tile in
     `clean_ignore_tiles` neither gates eligibility nor appears in the job's
-    input — which is the whole point of that list.
+    input — which is the purpose of that list.
 
     HEAD PROCESS ONLY. This feeds `rule all` at module level, so it runs on every
     parse — including the ~800 per-job re-parses under the slurm executor, none of
@@ -426,8 +426,7 @@ def clean_targets():
             continue
         # An empty set AFTER filtering means every consumer is ignored: nothing
         # is left that could ever read this exposure, so it is eligible now.
-        # That is the whole point of clean_ignore_tiles — all() of an empty set
-        # is True, and it is true here in the intended sense.
+        # all() of an empty set is True, so this case is eligible.
         tiles = clean_consumers(exp)
         if all(t in READY_SET or Path(tile_manifest(t, "tile_vignets")).exists()
                for t in tiles):
@@ -435,7 +434,7 @@ def clean_targets():
     return sorted(out)
 
 # --- tile reclamation (D5) --------------------------------------------------
-# A SEPARATE FLAG from `clean:`, deliberately (config.yaml carries the full
+# A separate flag from `clean:` (config.yaml carries the full
 # argument): exposure reclamation costs nothing but a rebuild if a tile is
 # appended later, while tile reclamation destroys the per-tile AUDIT TRAIL that
 # the campaign's cost model was derived from. They are not the same decision and

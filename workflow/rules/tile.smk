@@ -646,7 +646,7 @@ rule tile_ngmix:
         # how reclamation reads everywhere else in this file.
         #
         # So: land this hash, and every later edit to ngmix_range.py, at a
-        # campaign boundary on a fresh root. Same rule and same escape hatch as
+        # campaign boundary on a fresh root. The same rule and direct command as
         # tile_local()'s -- `--rerun-triggers mtime code software-env`.
         range_hash = NGMIX_RANGE_HASH
     # ONE core, not four. `-b {threads}` is shapepipe_run's SMP BATCH SIZE

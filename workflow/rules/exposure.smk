@@ -107,15 +107,13 @@ def in_container(cmd, *, network=False):
     return f"apptainer exec {' '.join(args)} '{_image}' {cmd}"
 
 
-# The campaign's star catalogue: a first-class durable science product, keyed by
-# sky rather than by run. Chunk-need is recomputed from the tile list on every
-# run and only the missing chunks are fetched, so appending tiles costs exactly
-# the chunks they add.
+# The campaign's star catalogue is keyed by sky position rather than by run.
+# Chunk needs are recomputed from the tile list on every run, and only missing
+# chunks are fetched. Appending tiles therefore fetches only their chunks.
 #
-# A LOCALRULE (declared in the Snakefile): it is one job of network I/O, and the
-# fetch loop is a 4-wide thread pool inside it — the same modest concurrency the
-# per-exposure rule reached by accident through --local-cores, now an explicit
-# number that does not scale with the head node's CPU count.
+# A LOCALRULE (declared in the Snakefile) runs the network I/O in one job. The
+# fetch loop uses a four-wide thread pool, independent of the head node's CPU
+# count.
 #
 # `tile_list_hash` is what makes the incremental behaviour visible to the DAG.
 # The tile list is parse-time config, not a rule input (and the profile drops the
