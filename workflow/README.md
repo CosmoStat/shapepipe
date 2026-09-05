@@ -25,6 +25,8 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # Edit workflow/config.yaml: tile_list, inputs.tiles/exposures, outputs.run_dir,
 # outputs.products_dir/star_cats/index_db, and container.
 
+# `psf_model` is `psfex` or `mccd`; mccd is wired but unvalidated here, while psfex is exercised by smk-g4 through smk-g6.
+
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
 workflow/bin/sp run       # bring products on disk up to date with the tile list

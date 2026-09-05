@@ -285,9 +285,9 @@ rule exp_mask:
     shell:
         sp_shell("exp_mask", "config_exp_Ma.ini")
 
-# SExtractor -> setools star selection -> PSFEx model -> psfex_interp, per CCD.
-# setools may reject a sparse CCD (~0.2% attrition) — tolerated by the floor's
-# :warn on psfex_interp_runner.
+# SExtractor -> setools star selection -> the configured PSF model and
+# interpolation, per CCD. setools may reject a sparse CCD (~0.2% attrition) —
+# tolerated by the PSF-specific completeness table.
 rule exp_psf:
     input:
         rules.exp_mask.output.manifest
@@ -310,7 +310,7 @@ rule exp_psf:
         mem_mb = lambda wc, attempt: 16000 * attempt,
         runtime = 240
     shell:
-        sp_shell("exp_psf", "config_exp_psfex.ini")
+        sp_shell("exp_psf", f"config_exp_{PSF_MODEL}.ini")
 
 
 # --- reclamation (D5) -------------------------------------------------------

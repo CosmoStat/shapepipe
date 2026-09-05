@@ -78,7 +78,7 @@ across INPUT_DIRs, so a shared pool cannot be symlinked in wholesale).
 # dirs merge_sep_cats gathers, and final_cat on the PERSISTENT root. Only the
 # bulk intra-tile intermediate is node-local. That split is possible because
 # ShapePipe's configs set input and output paths independently -- see
-# config_tile_PiViVi.ini (OUTPUT_DIR = $SP_VIGNET_OUT) and
+# config_tile_PiViVi_<psf_model>.ini (OUTPUT_DIR = $SP_VIGNET_OUT) and
 # config_tile_Ng_template.ini and config_tile_Mc.ini ($NGMIX_VIGNET_DIR), and
 # config_tile_Ng_template.ini alone for $SP_WCS_DIR.
 #
@@ -468,8 +468,8 @@ rule tile_detect:
     shell:
         sp_shell("tile_detect", "config_tile_Sx.ini")
 
-# PSFEx interpolation to galaxies + vignet postage stamps: the last stage that
-# reads exposure products, and the bulk intra-tile intermediate. The store it
+# Configured PSF interpolation to galaxies + vignet postage stamps: the last
+# stage that reads exposure products, and the bulk intra-tile intermediate. The store it
 # writes is node-local (see TILE_LOCAL above).
 rule tile_vignets:
     group: TILE_GROUP
@@ -478,7 +478,7 @@ rule tile_vignets:
         forest = rules.tile_exp_forest.output.forest,
         split  = tile_exp_split,
         psf    = tile_exp_psf,
-        # config_tile_PiViVi.ini reads run_sp_tile_Fe output — same reason as
+        # config_tile_PiViVi_<psf_model>.ini reads run_sp_tile_Fe output — same reason as
         # tile_merge_headers above.
         fe     = f"{TILE_DIR}/manifests/tile_find_exposures.json",
     output:
@@ -521,7 +521,7 @@ rule tile_vignets:
     shell:
         # The completeness check is pointed at the NODE-LOCAL run root; see
         # sp_shell's check_args for what the two flags do.
-        sp_shell("tile_vignets", "config_tile_PiViVi.ini",
+        sp_shell("tile_vignets", f"config_tile_PiViVi_{PSF_MODEL}.ini",
                  check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}')
 
 # ngmix shape measurement — N chunks per tile (D4). Each chunk LOOKS UP its own
@@ -774,7 +774,7 @@ rule tile_merge_cats:
         sp_shell("tile_merge_cats", "config_tile_Ms.ini")
 
 # The run's science product. make_cat also reads the vignette store's
-# psfex_interp output, so it — not ngmix — is the store's last reader.
+# configured PSF-interpolation output, so it — not ngmix — is the store's last reader.
 #
 # No protected(): the full default rerun-triggers govern, and protected() only
 # ever forced people through a `--forcerun` detour.
@@ -782,8 +782,8 @@ rule tile_make_cat:
     group: TILE_GROUP
     input:
         # No store input: it is node-local, written by tile_vignets in this same
-        # group job. make_cat reads its psfex_interp output through
-        # $NGMIX_VIGNET_DIR (config_tile_Mc.ini).
+        # group job. make_cat reads its configured PSF-interpolation output
+        # through $NGMIX_VIGNET_DIR (config_tile_Mc.ini).
         ms    = rules.tile_merge_cats.output.manifest,
     output:
         manifest  = f"{TILE_DIR}/manifests/tile_make_cat.json",

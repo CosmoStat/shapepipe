@@ -71,6 +71,13 @@ if _kind == "none":
 
 container: _image
 
+PSF_MODELS = {"psfex", "mccd"}
+PSF_MODEL = config.get("psf_model", "psfex")
+if PSF_MODEL not in PSF_MODELS:
+    raise WorkflowError(
+        f"Invalid psf_model={PSF_MODEL!r}; expected one of "
+        f"{sorted(PSF_MODELS)}.")
+
 # --- paths -----------------------------------------------------------------
 # RUN_DIR is the scratch root: bulk intermediates, sized so a batch finishes
 # inside the purge window. PRODUCTS_DIR is the persistent root
@@ -513,6 +520,10 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     the committed config dir, and ``star_cat_exp`` is a real per-unit directory
     built by the ``exp_star_cat`` rule, not a symlink into a shared pool.
 
+    It also exports the configured input roots as ``SP_INPUT_TILES`` and
+    ``SP_INPUT_EXPOSURES`` and the PSF choice as ``SP_PSF`` for the committed
+    ini chain.
+
     Finally it ``rm -rf``s this stage's own fixed run dir — ShapePipe's
     FileHandler raises on an existing run dir, and it is how a rerun never sees
     stale products (D2: the job clears its run dir at start).
@@ -530,6 +541,7 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
         f"export SP_CONFIG='{CONFIG_DIR}'",
         f"export SP_INPUT_TILES='{INPUTS['tiles']}'",
         f"export SP_INPUT_EXPOSURES='{INPUTS['exposures']}'",
+        f"export SP_PSF='{PSF_MODEL}'",
         # Also set via apptainer-args in the profile; kept here so a hand-run of
         # this same line outside snakemake behaves identically.
         f"export {_THREAD_CAPS}",

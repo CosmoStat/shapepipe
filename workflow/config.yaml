@@ -28,6 +28,9 @@ inputs:
 # The container every job runs inside (apptainer software-deployment in the profile).
 container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
 
+# PSF model used by the exposure and tile interpolation stages.
+psf_model: psfex
+
 # THE TWO ROOTS (D5).
 #
 # run_dir is the SCRATCH root and the $SP_RUN every config interpolates: bulk

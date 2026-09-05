@@ -69,6 +69,7 @@ import sys
 from pathlib import Path
 
 # stage -> {runner_subdir: {expect, floor, [warn], [subpath]}}
+# exp_psf and tile_vignets are selected by $SP_PSF at check time.
 COMPLETENESS = {
     # --- tile prepare (phase A) ---
     # get_images counts are CONFIG-FLAVOR-DEPENDENT: the v2.0 bash table said 4/6
@@ -87,22 +88,49 @@ COMPLETENESS = {
     # background_rms; v2.0's 80 assumed 2/CCD), verified against the P0 tree
     # AND the bash baseline (both 120/exposure).
     "exp_psf": {
-        "sextractor_runner":   dict(expect=120, floor=2),
-        "setools_runner":      dict(expect=80, floor=2, subpath="rand_split"),
-        "psfex_runner":        dict(expect=80, floor=2),
-        "psfex_interp_runner": dict(expect=40, floor=0, warn=True),
+        "psfex": {
+            "sextractor_runner":   dict(expect=120, floor=2),
+            "setools_runner":      dict(expect=80, floor=2, subpath="rand_split"),
+            "psfex_runner":         dict(expect=80, floor=2),
+            "psfex_interp_runner":  dict(expect=40, floor=0, warn=True),
+        },
+        # MCCD counts are derived from config_exp_mccd.ini and its per-CCD
+        # runners, but this chain has not been exercised through this workflow.
+        # Keep the expected counts visible while making the unverified branch
+        # warning-only until a real campaign validates its floors.
+        "mccd": {
+            "sextractor_runner":          dict(expect=120, floor=0, warn=True),
+            "setools_runner":             dict(expect=80, floor=0, warn=True,
+                                                subpath="rand_split"),
+            "mccd_preprocessing_runner":  dict(expect=80, floor=0, warn=True),
+            # Fit/validation is exposure-wide: one model and one validation
+            # catalogue, unlike the per-CCD preprocessing outputs.
+            "mccd_fit_val_runner":        dict(expect=2, floor=0, warn=True),
+            "merge_starcat_runner":       dict(expect=1, floor=0, warn=True),
+            # config_exp_mccd enables the ten meanshape and six histogram plots.
+            "mccd_plots_runner":          dict(expect=16, floor=0, warn=True),
+        },
     },
 
     # --- tile post ---
     "tile_merge_headers": {"merge_headers_runner": dict(expect=1, floor=1)},
     "tile_detect":        {"sextractor_runner":    dict(expect=2, floor=2)},
     "tile_vignets": {
-        "psfex_interp_runner":     dict(expect=1, floor=1),
-        "vignetmaker_runner_run_1": dict(expect=1, floor=1),
-        # 5 sqlites/tile on nibi (image/weight/flag/background/background_rms);
-        # v2.0's 4 was the canfar flavor. floor follows the tile-post pattern
-        # (expect=floor: all-or-nothing, every vignette feeds ngmix).
-        "vignetmaker_runner_run_2": dict(expect=5, floor=5),
+        "psfex": {
+            "psfex_interp_runner":     dict(expect=1, floor=1),
+            "vignetmaker_runner_run_1": dict(expect=1, floor=1),
+            # 5 sqlites/tile on nibi (image/weight/flag/background/background_rms);
+            # v2.0's 4 was the canfar flavor. floor follows the tile-post pattern
+            # (expect=floor: all-or-nothing, every vignette feeds ngmix).
+            "vignetmaker_runner_run_2": dict(expect=5, floor=5),
+        },
+        # MCCD is wired but unvalidated here; retain the expected runner names
+        # and counts as warnings until a workflow campaign exercises them.
+        "mccd": {
+            "mccd_interp_runner":        dict(expect=1, floor=0, warn=True),
+            "vignetmaker_runner_run_1":   dict(expect=1, floor=0, warn=True),
+            "vignetmaker_runner_run_2":   dict(expect=5, floor=0, warn=True),
+        },
     },
     "tile_ngmix":     {"ngmix_runner":          dict(expect=1, floor=1)},
     "tile_merge_cats": {"merge_sep_cats_runner": dict(expect=1, floor=1)},
@@ -145,6 +173,14 @@ def check_floor(stage, run_dir):
     ``details`` is a list of (runner, n_found, floor, expect, warn) tuples.
     """
     table = COMPLETENESS[stage]
+    if stage in ("exp_psf", "tile_vignets"):
+        psf_model = os.environ.get("SP_PSF", "psfex")
+        try:
+            table = table[psf_model]
+        except KeyError as exc:
+            raise ValueError(
+                f"Invalid SP_PSF={psf_model!r}; expected one of psfex, mccd."
+            ) from exc
     details, ok = [], True
     for runner, spec in table.items():
         n = count_products(run_dir, runner, spec)
@@ -175,7 +211,7 @@ STAGE_DIR = {
     "exp_get_images":      ("exp",  "run_sp_exp_Gie"),
     "exp_split":           ("exp",  "run_sp_exp_Sp"),
     "exp_mask":            ("exp",  "run_sp_exp_Ma"),
-    "exp_psf":             ("exp",  "run_sp_exp_SxSePsfPi"),
+    "exp_psf":             ("exp",  "run_sp_exp_SxSePsf"),
     "tile_merge_headers":  ("tile", "run_sp_tile_Mh_exp"),
     "tile_detect":         ("tile", "run_sp_tile_Sx"),
     "tile_vignets":        ("tile", "run_sp_tile_PiViVi"),
