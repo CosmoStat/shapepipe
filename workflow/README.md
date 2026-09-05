@@ -1,13 +1,20 @@
 # ShapePipe Snakemake orchestration
 
-Snakemake workflow that orchestrates real-data ShapePipe runs. It replaces the
-`run_job_sp_canfar_v2.0.bash → job_sp_canfar_v2.0.bash` bash layers, the CANFAR
-submission front end that drove them (`curl_canfar_local.sh`,
-`canfar_submit_job`, retired at `2ef07e45`), and the per-site sbatch
-reimplementations. **Module code is untouched**: rules call
+Snakemake workflow that orchestrates real-data ShapePipe runs. It is the one
+production orchestration. It replaced the bit-coded bash layers
+(`run_job_sp_canfar_v2.0.bash → job_sp_canfar_v2.0.bash`), the CANFAR submission
+front end that drove them (`curl_canfar_local.sh`, `canfar_submit_job`) and the
+per-site sbatch reimplementations; all of those were retired, last carried at
+`2ef07e45`. **Module code is untouched**: rules call
 `shapepipe_run -c <config>` on the existing config chains. Design and rationale:
 [CosmoStat/shapepipe#848](https://github.com/CosmoStat/shapepipe/issues/848)
 (the living PRD).
+
+**There is no concept of a catalogue version in the code.** No path branches on
+`v1.3`..`v1.6` or `v2.0`, and there are no sky patches: a campaign is a tile
+list, and the version of a catalogue is the git tag of the code that produced
+it. What that retirement removed, and where each piece was last carried, is in
+the PR that made this sentence true.
 
 Use `workflow/bin/sp` for everything. Bare `snakemake all` outside `sp` is
 unsupported: `sp` sets the state directory, the SLURM profile, and
@@ -159,16 +166,18 @@ workflow/
     tile.smk             per-tile: exp forest, merge_headers, mask, detect, vignets, ngmix, merge, make_cat
     coverage.smk         campaign-level: the HealSparse nexp mask from the exposure footprints
   scripts/
-    sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count floor)
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
-    completeness.py      the ported count-floor table (shared by sp_rule + run_report)
+    completeness.py      the ported count-floor table + the `check` every rule ends with
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
+    star_cats.py         the campaign's GSC 2.3 sky store + the per-exposure cuts from it
+    ngmix_range.py       the ngmix chunk partition: written once by tile_vignets, read by each chunk
     persist_exp.py       ONE exposure's keepable PSF products -> one tar on products_dir (the exp_persist rule)
     exp_footprint.py     ONE exposure's per-CCD sky corners, for the CCDs with a PSF (the exp_footprint rule)
     coverage_map.py      every exposure footprint on products_dir -> coverage.hsp (the coverage_map rule)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
+    clean_tile.py        ONE finished tile's store -> tombstone (the clean_tile rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
 
@@ -190,10 +199,13 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   output natively and never touches its log, which is why the profile runs
   *without* `keep-incomplete`. `sp report` reads both dirs — the manifest for
   success, the log for failure — and a unit with neither ran nothing.
-- **Completeness is a count floor, not a taxonomy.** After a run,
-  `sp_rule.py` counts products per mandatory runner against
-  `completeness.py`'s floor and exits nonzero below it. Per-CCD attrition
-  between floor and `expect` is tolerated. No 3-class taxonomy, no
+- **Completeness is a count floor, not a taxonomy.** There is no per-unit
+  wrapper script: the Snakefile's `unit_pre()` builds the unit's furniture and
+  clears the stage's run dir as bash inlined into the rule's `params`, and
+  `sp_shell()` composes every rule's shell as *prologue, one `shapepipe_run`,
+  one `completeness.py check`*. That check counts products per mandatory runner
+  against `completeness.py`'s floor and exits nonzero below it. Per-CCD
+  attrition between floor and `expect` is tolerated. No 3-class taxonomy, no
   error-signature whitelist. `--keep-going` isolates a failure to its own
   DAG cone.
 - **Stores are sharded.** Every tile/exposure runs its own `shapepipe_run`
