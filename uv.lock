@@ -705,7 +705,7 @@ wheels = [
 [[package]]
 name = "cs-util"
 version = "0.2.2"
-source = { git = "https://github.com/CosmoStat/cs_util?branch=develop#bedcdbf50ac57fc4d0b72a62b251373cd1807824" }
+source = { git = "https://github.com/CosmoStat/cs_util?branch=develop#1b15a5554e378226d98ae7bfe94e7db05573edf0" }
 dependencies = [
     { name = "astropy", marker = "sys_platform == 'linux'" },
     { name = "camb", marker = "sys_platform == 'linux'" },
