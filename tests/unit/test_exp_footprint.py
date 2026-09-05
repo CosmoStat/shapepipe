@@ -14,7 +14,7 @@ inherits the numbering through the file handler, and the coverage map would be
 silently WRONG — right pixels, wrong exposure count — if they ever diverged by a
 permutation. This module is where that contract is pinned. It inherits the role
 of ``tests/module/test_coverage.py::test_get_all_shdus``, which pinned the same
-``<exp>-<ccd>`` format against the summary scrape that is being retired.
+``<exp>-<ccd>`` format against the summary scrape, both now retired.
 
 The fixtures are real astropy WCSs, one per CCD with a DISTINCT centre, so a
 permutation of the array shows up as corners on the wrong ``id`` rather than as
