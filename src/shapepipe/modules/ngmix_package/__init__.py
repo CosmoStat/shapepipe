@@ -58,9 +58,7 @@ Random number generation
 ========================
 
 Each object gets its own random number stream, seeded from its sky position
-and CCD (``ngmix.position_seed``, which argues what that buys). It is the only
-mode: the config option ``SEED_FROM_POSITION`` is obsolete, and setting it to
-``False`` raises rather than silently changing the RNG.
+and CCD (``ngmix.position_seed``).
 
 """
 
