@@ -150,7 +150,7 @@ def test_check_nside_rejects_non_power_of_two(nside_coverage, nside):
 
 
 def test_build_map_validates_nside_before_stamping():
-    """``build_map`` refuses a bad nside rather than failing deep in healsparse."""
+    """``build_map`` refuses a bad nside before it reaches healsparse."""
     with pytest.raises(ValueError, match="nside"):
         build_map(["100-0"], [0.0, 0.1, 0.1, 0.0], [0.0, 0.0, 0.1, 0.1],
                   32, 3000)
@@ -171,7 +171,7 @@ def test_build_map_single_footprint():
 
 
 def test_build_map_nexp_counts_overlapping_exposures():
-    """Two overlapping CCDs from different exposures give value 2 in overlap."""
+    """Two overlapping CCDs from two exposures give value 2 in the overlap."""
     # Two 0.4x0.4 deg CCDs offset by 0.2 deg in RA -> a central overlap strip.
     m = build_map(
         ["100-0", "200-0"],
@@ -244,7 +244,7 @@ def test_build_map_pole_guard_skips_polygon(capsys):
 # ---------------------------------------------------------------------------
 
 def test_median_filter_fills_a_lone_hole():
-    """A single low pixel inside a covered disc is pulled up to its neighbours."""
+    """A lone low pixel in a covered disc is pulled up to its neighbours."""
     nside = 1024
     m = hsp.HealSparseMap.make_empty(32, nside, np.uint16)
     m[hpg.query_circle(nside, 10.0, 20.0, 0.1)] = 2
