@@ -37,13 +37,6 @@
   pipeline_canfar
 
 .. toctree::
-  :hidden:
-  :titlesonly:
-  :caption: Miscellaneous
-
-  post_processing
-
-.. toctree::
    :hidden:
    :titlesonly:
    :caption: API Documentation
