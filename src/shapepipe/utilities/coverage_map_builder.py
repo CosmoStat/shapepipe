@@ -52,6 +52,115 @@ def unwrap_ra(ra):
     return ra
 
 
+def load_corners(input_file):
+    """Read per-CCD corners from an ``exp_ra_dec.txt``.
+
+    The nine-column text format the pre-Snakemake chain appended to: column 0 is
+    a ``<expnum>-<ccd_idx>`` string ID, the remaining eight are the 4 RA then the
+    4 Dec corners. The Snakemake workflow feeds :func:`build_map` arrays
+    directly instead (one JSON record per exposure, written by the
+    ``exp_footprint`` rule), so this loader exists only for the CLI.
+
+    Parameters
+    ----------
+    input_file : str
+        path to the per-CCD corner file
+
+    Returns
+    -------
+    tuple
+        ``(ccd_ids, ra, dec)``: a length-N string array and two ``(N, 4)``
+        float arrays, in degrees
+
+    """
+    ccd_ids = np.atleast_1d(np.loadtxt(input_file, usecols=(0), dtype=str))
+    corners = np.atleast_2d(
+        np.loadtxt(input_file, usecols=range(1, 9), dtype=float)
+    )
+    return ccd_ids, corners[:, :4], corners[:, 4:]
+
+
+def build_map(
+    ccd_ids, ra, dec, nside_coverage, nside, verbose=False
+):
+    """Stamp one polygon per CCD footprint into a HealSparse nexp map.
+
+    The array entry point, and the one both callers go through: the
+    ``build_coverage_map`` CLI (which reads its arrays out of a text file with
+    :func:`load_corners`) and the Snakemake ``coverage_map`` rule (which reads
+    them out of the per-exposure ``exp_footprint.json`` records). Keeping the
+    stamping in one place is what keeps the two ways of getting the same map
+    from drifting — the RA-seam and pole guards below are survey geometry, not
+    input-format handling.
+
+    Since the CCDs of a single exposure do not overlap, accumulating value 1 per
+    CCD polygon makes the map count, per sky pixel, the number of exposures with
+    a valid PSF model covering it.
+
+    Parameters
+    ----------
+    ccd_ids : array_like
+        length-N CCD IDs, used only in the skipped-polygon warnings
+    ra : array_like
+        ``(N, 4)`` polygon RA corners, in degrees
+    dec : array_like
+        ``(N, 4)`` polygon Dec corners, in degrees
+    nside_coverage : int
+        HealSparse coverage nside
+    nside : int
+        HealSparse map nside
+    verbose : bool, optional
+        print progress
+
+    Returns
+    -------
+    healsparse.HealSparseMap
+        the nexp map
+
+    """
+    ra = np.atleast_2d(np.asarray(ra, dtype=float))
+    dec = np.atleast_2d(np.asarray(dec, dtype=float))
+
+    if verbose:
+        print(
+            f"Creating HealSparse map (nside_coverage={nside_coverage},"
+            f" nside={nside})"
+        )
+    m = hsp.HealSparseMap.make_empty(nside_coverage, nside, np.uint16)
+
+    if verbose:
+        print("Adding polygons to map")
+
+    n_added = 0
+    n_skipped = 0
+    for i in range(len(ccd_ids)):
+        dec_i = dec[i]
+
+        # Pole guard: HealSparse's planar polygon fill degrades near the
+        # poles. CCD footprints never reach here, so warn and skip.
+        if np.any(np.abs(dec_i) >= _DEC_POLE_LIMIT):
+            print(
+                f"Warning: skipping CCD {ccd_ids[i]} with |dec| >= "
+                f"{_DEC_POLE_LIMIT} (too close to a pole)"
+            )
+            n_skipped += 1
+            continue
+
+        # RA-wrap guard: put corners on a common branch across the seam.
+        ra_i = unwrap_ra(ra[i])
+
+        m += hsp.Polygon(ra=list(ra_i), dec=list(dec_i), value=1)
+        n_added += 1
+
+        if verbose and i % 1000 == 0:
+            print(f"{i:6d} / {len(ccd_ids):6d}")
+
+    print(f"Added {n_added} polygons to map")
+    if n_skipped > 0:
+        print(f"Skipped {n_skipped} polygons near a pole")
+
+    return m
+
 
 class CoverageMapBuilder(object):
     """Coverage Map Builder Class.
@@ -262,56 +371,13 @@ class CoverageMapBuilder(object):
         if verbose:
             print(f"Reading per-CCD corners from: {input_file}")
 
-        # Load per-CCD corner data. Column 0 is a "<expnum>-<ccd_idx>" string
-        # ID; the remaining 8 columns are the 4 RA then 4 Dec corners.
-        ccd_ids = np.atleast_1d(np.loadtxt(input_file, usecols=(0), dtype=str))
-        corners = np.atleast_2d(
-            np.loadtxt(input_file, usecols=range(1, 9), dtype=float)
-        )
-        ra_all = corners[:, :4]
-        dec_all = corners[:, 4:]
+        ccd_ids, ra_all, dec_all = load_corners(input_file)
 
         print(f"Loaded {len(ccd_ids)} CCD footprints")
 
-        if verbose:
-            print(
-                f"Creating HealSparse map (nside_coverage={nside_coverage}, nside={nside})"
-            )
-
-        # Create empty map
-        m = hsp.HealSparseMap.make_empty(nside_coverage, nside, np.uint16)
-
-        # Add one polygon per CCD footprint
-        if verbose:
-            print("Adding polygons to map")
-
-        n_added = 0
-        n_skipped = 0
-        for i in range(len(ccd_ids)):
-            dec = dec_all[i]
-
-            # Pole guard: HealSparse's planar polygon fill degrades near the
-            # poles. CCD footprints never reach here, so warn and skip.
-            if np.any(np.abs(dec) >= _DEC_POLE_LIMIT):
-                print(
-                    f"Warning: skipping CCD {ccd_ids[i]} with |dec| >= "
-                    f"{_DEC_POLE_LIMIT} (too close to a pole)"
-                )
-                n_skipped += 1
-                continue
-
-            # RA-wrap guard: put corners on a common branch across the seam.
-            ra = unwrap_ra(ra_all[i])
-
-            m += hsp.Polygon(ra=list(ra), dec=list(dec), value=1)
-            n_added += 1
-
-            if verbose and i % 1000 == 0:
-                print(f"{i:6d} / {len(ccd_ids):6d}")
-
-        print(f"Added {n_added} polygons to map")
-        if n_skipped > 0:
-            print(f"Skipped {n_skipped} polygons near a pole")
+        m = build_map(
+            ccd_ids, ra_all, dec_all, nside_coverage, nside, verbose=verbose
+        )
 
         # Apply median filter if requested
         if apply_median_filter:

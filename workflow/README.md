@@ -158,8 +158,9 @@ workflow/
   bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
-    exposure.smk         per-exposure: get_images, split, psf, persist (no temp()); campaign star_cat_merge
+    exposure.smk         per-exposure: get_images, split, psf, persist, footprint (no temp()); campaign star_cat_merge
     tile.smk             per-tile: exp forest, merge_headers, detect, vignets, ngmix, merge, make_cat; campaign final_cat_merge
+    coverage.smk         campaign-level: the HealSparse nexp mask from the exposure footprints
   scripts/
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
@@ -167,6 +168,8 @@ workflow/
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
     persist_exp.py       ONE exposure's keepable PSF products -> one tar on products_dir (the exp_persist rule)
+    exp_footprint.py     ONE exposure's per-CCD sky corners, for the CCDs with a PSF (the exp_footprint rule)
+    coverage_map.py      every exposure footprint on products_dir -> coverage.hsp (the coverage_map rule)
     hdf5_reconcile.py    bring an hdf5 catalogue into agreement with a campaign (shared by both merges)
     merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<campaign>.hdf5
     merge_final_cat.py   ALL tiles' final_cat -> final_cat_<campaign>.hdf5 (the final_cat_merge rule)
@@ -338,6 +341,31 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   an order of magnitude over Linux's 128 KiB `MAX_ARG_STRLEN` for a single argv
   entry, so each job is handed the tile list and the run index and derives the
   same set from them.
+- **Coverage is a workflow product, built from records the DAG already
+  writes.** `exp_footprint` writes one JSON per exposure to
+  `<products_dir>/exp/<prefix>/<base>/manifests/exp_footprint.json`, giving the
+  four sky corners of every CCD that got a PSF model. It reads the valid-PSF CCD
+  set off `exp_persist.json`'s tar members — exact, because `psfex_interp`
+  returns *without* writing `validation_psf-*.fits` on NOT_ENOUGH_STARS,
+  BAD_CHI2 or FILE_NOT_FOUND — and the WCS off `headers-<exp>.npy`, written by
+  `exp_split`. It needs nothing of `persist_exp:`: those catalogues are the
+  `psf_validation` product `exp_persist` packs for every exposure whatever the
+  keep list says. Like `exp_persist` it runs whatever `clean:` and `coverage:`
+  say, because its input is on /scratch and the purge takes it; `clean_exposure`
+  takes its manifest as an input. Set
+  `coverage: {enabled: true}` and one further job, `coverage_map`, stamps every
+  footprint into `<products_dir>/coverage/coverage.hsp` — a HealSparse map
+  counting, per sky pixel, the exposures with a valid PSF there. That job is
+  **campaign-cumulative**: its declared inputs are the in-scope footprints, but
+  the script reads *every* record on the products root, reclaimed exposures
+  included, so appending tiles grows the map instead of replacing it. `nside`
+  defaults to the production 128/131072 pair, ~0.1"/pixel, chosen to align
+  pixel-wise with the UNIONS bit masks — not the `CoverageMapBuilder` class
+  defaults (32/2048), which would produce a plausible-looking map that does not
+  align. Plotting stays out of the DAG: run `plot_coverage_map -i
+  <products_dir>/coverage/coverage.hsp ...` by hand, with the sky windows under
+  `coverage.plot` in `config.yaml`. sp_validation consumes the map in
+  `notebooks/demo_apply_hsp_masks.py`.
 - **A dead tile can be told to stop pinning exposures.** An exposure is
   cleanable only once every consuming tile has its vignets, so one
   permanently-failed tile holds its ~80 exposures for the life of the

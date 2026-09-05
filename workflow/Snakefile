@@ -1115,6 +1115,7 @@ def sp_shell(stage, config_name, *, check_args="", post=""):
 include: "rules/prepare.smk"
 include: "rules/exposure.smk"
 include: "rules/tile.smk"
+include: "rules/coverage.smk"
 
 # --- top-level targets ------------------------------------------------------
 # The aggregation targets, clean_exposure and clean_tile run in the head
@@ -1134,6 +1135,9 @@ include: "rules/tile.smk"
 # pixel_to_world calls. Both sit mid-chain between exp_psf and clean_exposure,
 # but both of those are outside every group already (exp_psf is heavy,
 # clean_exposure is local), so they add no new grouping constraint.
+#
+# coverage_map is deliberately NOT one — it is a single submitted job that stamps
+# ~1M polygons at nside=131072 (coverage.smk).
 localrules: all, prepare_all_tiles, clean_exposure, clean_tile, exp_persist, exp_footprint
 
 rule all:
@@ -1141,6 +1145,7 @@ rule all:
         [final_cat(t) for t in TILES_READY],
         persist_targets(),
         footprint_targets(),
+        coverage_targets(),
         star_cat_targets(),
         final_cat_targets(),
         clean_targets(),
