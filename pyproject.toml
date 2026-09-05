@@ -40,7 +40,6 @@ dependencies = [
     "pyqtgraph",
     "reproject>=0.19",
     "sf_tools>=2.0.4",
-    "skaha>=1.7",
     "skyproj",
     "sqlitedict>=2.0",
     "termcolor",

@@ -3516,7 +3516,6 @@ dependencies = [
     { name = "python-pysap", marker = "sys_platform == 'linux'" },
     { name = "reproject", marker = "sys_platform == 'linux'" },
     { name = "sf-tools", marker = "sys_platform == 'linux'" },
-    { name = "skaha", marker = "sys_platform == 'linux'" },
     { name = "skyproj", marker = "sys_platform == 'linux'" },
     { name = "sqlitedict", marker = "sys_platform == 'linux'" },
     { name = "termcolor", marker = "sys_platform == 'linux'" },
@@ -3613,7 +3612,6 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'lint'" },
     { name = "sf-tools", specifier = ">=2.0.4" },
     { name = "shapepipe", extras = ["doc", "jupyter", "lint", "plot", "release", "test", "fitsio"], marker = "extra == 'dev'" },
-    { name = "skaha", specifier = ">=1.7" },
     { name = "skyproj" },
     { name = "skyproj", marker = "extra == 'plot'" },
     { name = "snakemake", marker = "extra == 'jupyter'", specifier = ">=9.22.0" },
@@ -3644,24 +3642,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
-]
-
-[[package]]
-name = "skaha"
-version = "1.7.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "defusedxml", marker = "sys_platform == 'linux'" },
-    { name = "httpx", marker = "sys_platform == 'linux'" },
-    { name = "pydantic", marker = "sys_platform == 'linux'" },
-    { name = "rich", marker = "sys_platform == 'linux'" },
-    { name = "toml", marker = "sys_platform == 'linux'" },
-    { name = "typer", marker = "sys_platform == 'linux'" },
-    { name = "vos", marker = "sys_platform == 'linux'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/76/62/a733508ff88200c41459f5cdb72a797eb8795c833b4e9d51d31b5efe4073/skaha-1.7.0.tar.gz", hash = "sha256:ef9d69e7a4da8653cdbde3e62f18caef137130064ccb6fabed57c7c6f8bf8ef9", size = 54414, upload-time = "2025-05-28T21:17:03.631Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/d3/a3c1d569ae714ed9985adccefdfe2d6dd9f8ad7a297bd8fa4c7ed30c587b/skaha-1.7.0-py3-none-any.whl", hash = "sha256:68b0d3c925b98bf145c5f695237474fe1cea07cf9b69b4a9bae9910375dfa01a", size = 40795, upload-time = "2025-05-28T21:17:02.296Z" },
 ]
 
 [[package]]
