@@ -33,7 +33,6 @@
   :caption: Running on a cluster
 
   clusters
-  pipeline_canfar
 
 .. toctree::
   :hidden:
