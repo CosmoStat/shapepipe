@@ -3,13 +3,13 @@
 
 Two layers, and the second only exists when you ask for one:
 
-* the **SIF** (``~/.cache/shapepipe/shapepipe.sif``) -- a pristine, read-only
+* the **SIF** (``~/.cache/shapepipe/shapepipe.sif``) -- a read-only
   copy of the published image, pulled into your own cache. Per-user by
   construction: one file, one owner, nobody else's refresh moves the ground
   under a running job.
 * an optional **sandbox** (``~/.cache/shapepipe/sandbox/``) -- the same image
   unpacked into a writable directory, so a ``pip install`` inside it sticks.
-  The escape hatch for work that needs a package the image does not carry yet.
+  The direct path for work that needs a package the image does not carry yet.
 
 Resolution order, shared by this CLI and by the workflow: **sandbox if it
 exists, else the cached SIF if it exists, else the ``container:`` path in
@@ -75,7 +75,7 @@ CACHE_DIR = Path(
     or Path(os.environ.get("XDG_CACHE_HOME", "~/.cache")) / "shapepipe"
 ).expanduser()
 
-# This user's pristine image. Override with ``SP_CONTAINER`` (absolute path).
+# This user's read-only image. Override with ``SP_CONTAINER`` (absolute path).
 DEFAULT_SIF = CACHE_DIR / "shapepipe.sif"
 
 # The optional writable unpacking of it. Override with ``SP_SANDBOX``.
@@ -257,7 +257,7 @@ def cmd_pull(args):
 
 
 def cmd_sandbox(args):
-    """Unpack the image into a writable directory -- the opt-in escape hatch."""
+    """Unpack the image into a writable directory -- the opt-in direct path."""
     _require_apptainer()
     sandbox = local_sandbox()
     if sandbox.exists() and not args.force:

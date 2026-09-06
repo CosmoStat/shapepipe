@@ -6,7 +6,7 @@ bash layers and the per-site sbatch reimplementations. **Module code is
 untouched**: rules call `shapepipe_run -c <config>` on the existing config
 chains. Design and rationale:
 [CosmoStat/shapepipe#848](https://github.com/CosmoStat/shapepipe/issues/848)
-(the living PRD).
+(the design document).
 
 Use `workflow/bin/sp` for everything. Bare `snakemake all` outside `sp` is
 unsupported: `sp` sets the state directory, the SLURM profile, and
@@ -22,7 +22,10 @@ uv venv /project/def-mjhudson/cdaley/snakemake-env --python 3.12
 source /project/def-mjhudson/cdaley/snakemake-env/bin/activate
 uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 
-# Edit workflow/config.yaml: tile_list, run_dir, container.
+# Edit workflow/config.yaml: tile_list, inputs.tiles/exposures, outputs.run_dir,
+# outputs.products_dir/index_db, and container.
+
+# `psf_model` is `psfex` or `mccd`; mccd is wired but unvalidated here, while psfex is exercised by smk-g4 through smk-g6.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -39,7 +42,7 @@ v8→v9 breaks matter here: `--use-singularity` became `--sdm`, executors became
 plugins, and full `rerun-triggers` became the default.
 
 Anything other than `run`, `report`, `container`, `cancel` passes straight through to
-snakemake with the workflow's profile and state dir — the escape hatch for
+snakemake with the workflow's profile and state dir — the direct command path for
 `sp --unlock`, `sp --dag`, `sp exp_psf ...`.
 
 ## The container image
@@ -48,7 +51,7 @@ snakemake with the workflow's profile and state dir — the escape hatch for
 only exists if you ask for one:
 
 * your **cached SIF** (`~/.cache/shapepipe/shapepipe.sif`, `SP_CACHE_DIR` or
-  `SP_CONTAINER` to move it) — a pristine pull of the published image, private
+  `SP_CONTAINER` to move it) — a read-only pull of the published image, private
   to you, so nobody else's refresh moves the ground under your running jobs;
 * an optional **sandbox** (`~/.cache/shapepipe/sandbox/`, `SP_SANDBOX`) — the
   same image unpacked writable, so a `pip install` into it sticks. The escape
@@ -113,7 +116,7 @@ Snakefile and read `workflow/scripts/*` and the ini chain hours after launch.
 takes effect on the next `sp run`.**
 
 Everything workflow-internal hangs off `workflow.basedir`, which *is* the
-snapshot, so it follows for free. The one exception is the profile's `PYTHONPATH`
+snapshot, including the profile's `PYTHONPATH`
 pin, which YAML cannot interpolate: `sp run` rewrites that single path in the
 snapshot's copy of the profile and launches `--profile` at the copy. The snapshot
 is refreshed wholesale on every `sp run` — a new `sp run` *is* the relaunch — and
@@ -149,17 +152,17 @@ profile-only pass.
 ```
 workflow/
   Snakefile              parse-time index load; global container:; onsuccess/onerror report hooks
-  config.yaml            the run: tile list, paths, container, chunk count
+  config.yaml            the run: tile list, input/output paths, container, chunk count
   bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
     exposure.smk         per-exposure: get_images, split, psf (no temp())
     tile.smk             per-tile: exp forest, merge_headers, detect, vignets, ngmix, merge, make_cat
   scripts/
-    sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count floor)
+    sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count check)
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
-    completeness.py      the ported count-floor table (shared by sp_rule + run_report)
+    completeness.py      the ported count table (shared by sp_rule + run_report)
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
@@ -175,7 +178,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   millions of paths.
 - **Manifests are the DAG's currency, and they are success-only.**
   `completeness.py check` writes its full verdict — per-runner counts against
-  floors, scraped failure reasons, the `shapepipe_run` exit status when nonzero
+  expected counts, scraped failure reasons, the `shapepipe_run` exit status when nonzero
   — to the rule's `log:` (`<unit dir>/logs/<stage>.json`) on *every* run, and
   additionally to the declared `<stage>.json` manifest only when that verdict is
   a success. So `<stage>.json` on disk means "this stage succeeded", and a
@@ -184,10 +187,10 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   output natively and never touches its log, which is why the profile runs
   *without* `keep-incomplete`. `sp report` reads both dirs — the manifest for
   success, the log for failure — and a unit with neither ran nothing.
-- **Completeness is a count floor, not a taxonomy.** After a run,
+- **Completeness is an exact-count check, not a taxonomy.** After a run,
   `sp_rule.py` counts products per mandatory runner against
-  `completeness.py`'s floor and exits nonzero below it. Per-CCD attrition
-  between floor and `expect` is tolerated. No 3-class taxonomy, no
+  `completeness.py`'s expected count and exits nonzero below it. A shortfall
+  below `expect` fails unless `warn` is set. No 3-class taxonomy, no
   error-signature whitelist. `--keep-going` isolates a failure to its own
   DAG cone.
 - **Stores are sharded.** Every tile/exposure runs its own `shapepipe_run`

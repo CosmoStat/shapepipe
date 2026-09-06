@@ -564,11 +564,11 @@ if [[ $do_job != 0 ]]; then
   cat $SP_CONFIG/config_merge_sep_cats_template.ini | \
     perl -ane \
       's/(N_SPLIT_MAX =) X/$1 '$nsh_jobs'/; print' \
-      > $SP_CONFIG_MOD/config_merge_sep_cats.ini
+      > $SP_CONFIG_MOD/config_tile_Ms.ini
  
   ### Merge separated shapes catalogues
   command_sp \
-    "shapepipe_run -c $SP_CONFIG_MOD/config_merge_sep_cats.ini" \
+    "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ms.ini" \
     "Run shapepipe (tile: merge sep cats)" \
     "$VERBOSE" \
     "$ID"

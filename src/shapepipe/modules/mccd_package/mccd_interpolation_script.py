@@ -407,7 +407,9 @@ class MCCDinterpolator(object):
             Path to the log file containing the WCS for each CCD
 
         """
-        self._dot_psf_dir = dot_psf_dir
+        self._dot_psf_dir = (
+            [dot_psf_dir] if isinstance(dot_psf_dir, str) else dot_psf_dir
+        )
         self._dot_psf_pattern = dot_psf_pattern
         self._f_wcs_file = SqliteDict(f_wcs_path)
 
@@ -467,14 +469,19 @@ class MCCDinterpolator(object):
                 # dot_psf_path = self._dot_psf_dir + '/' +\
                 # self._dot_psf_pattern + '-' + exp_name + '-' + str(ccd) +\
                 # '.psf'
-                mccd_model_path = (
-                    self._dot_psf_dir
-                    + "/"
-                    + self._dot_psf_pattern
-                    + "-"
-                    + exp_name
-                    + ".npy"
-                )
+                found = False
+                for dot_psf_dir in self._dot_psf_dir:
+                    mccd_model_path = (
+                        f"{dot_psf_dir}/{self._dot_psf_pattern}-{exp_name}.npy"
+                    )
+                    if os.path.exists(mccd_model_path):
+                        found = True
+                        break
+                if not found:
+                    self._w_log.info(
+                        f"No .npy file found for exposure {exp_name}"
+                    )
+                    continue
 
                 ind_obj = np.where(cat.get_data(hdu_index)["CCD_N"] == ccd)[0]
                 obj_id = all_id[ind_obj]

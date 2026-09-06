@@ -13,7 +13,7 @@ It reads two things and nothing else (PRD D3):
     tile->exposure edges that let an exposure failure be blamed on the tiles it
     blocks;
   * the **verdicts** written by ``completeness.py check`` — per-runner
-    found/expect/floor and log-scraped failure reasons — in the unit's
+    found/expect and log-scraped failure reasons — in the unit's
     ``logs/`` (every run) and ``manifests/`` (successes only; completeness.py
     argues the split).
 
@@ -63,7 +63,7 @@ EXP_STAGES = ["exp_get_images", "exp_split", "exp_psf"]
 
 # The manifests clean_tile leaves on disk (workflow/scripts/clean_tile.py names
 # the mechanism that owns each). Their presence is therefore NOT evidence that a
-# tile's chain was rebuilt, which is the one thing absorb_tombstones has to know
+# tile's chain was rebuilt, which absorb_tombstones needs to know
 # to read a reclaimed tile's record out of its tombstone.
 SURVIVING_TILE_STAGES = frozenset({"tile_vignets", "tile_find_exposures"})
 
@@ -206,8 +206,8 @@ def absorb_tombstones(run_dir: Path, sub: str, manifests: dict,
 
 
 def shortfalls(m: dict) -> dict:
-    """``{runner: (found, expect, floor)}`` for every runner under expect."""
-    return {r: (d["found"], d["expect"], d["floor"])
+    """``{runner: (found, expect)}`` for every runner under expect."""
+    return {r: (d["found"], d["expect"])
             for r, d in m.get("runners", {}).items() if d["found"] < d["expect"]}
 
 
@@ -215,7 +215,7 @@ def reasons(m: dict) -> list:
     """Flattened failure reasons, runner-tagged, for the report's why column."""
     out = []
     for f in m.get("failures", []):
-        head = f"{f['runner']} {f['found']}/{f.get('expect', '?')} (floor {f['floor']})"
+        head = f"{f['runner']} {f['found']}/{f.get('expect', '?')}"
         out += [f"{head}: {r}" for r in f["reasons"]] or [head]
     return out
 

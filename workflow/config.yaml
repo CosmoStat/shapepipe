@@ -18,8 +18,18 @@
 # broken.)
 tile_list: /project/def-mjhudson/cdaley/sp-products/smk-g6/tiles.txt
 
+# Inputs are the only site-specific data paths; all committed configs consume these
+# through SP_INPUT_TILES and SP_INPUT_EXPOSURES.
+inputs:
+  # Pre-staged P3 data (get_images RETRIEVE=symlink).
+  tiles: /project/def-mjhudson/unions-wl/tiles
+  exposures: /project/def-mjhudson/unions-wl/exposures
+
 # The container every job runs inside (apptainer software-deployment in the profile).
 container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
+
+# PSF model used by the exposure and tile interpolation stages.
+psf_model: psfex
 
 # THE TWO ROOTS (D5).
 #
@@ -27,7 +37,8 @@ container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
 # intermediates, sized so a batch finishes inside the 60-day purge window. The
 # sharded per-unit stores live under it:
 #   <run_dir>/tiles/<2-char prefix>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
-run_dir: /scratch/cdaley/shapepipe-output/smk-g6
+outputs:
+  run_dir: /scratch/cdaley/shapepipe-output/smk-g6
 
 # products_dir is the PERSISTENT root: the durable, low-volume products — the
 # final catalogues (<products_dir>/tiles/<prefix>/<ID>/final_cat-<ID>.fits,
@@ -44,20 +55,18 @@ run_dir: /scratch/cdaley/shapepipe-output/smk-g6
 #
 # Snakemake's own state is the one durable-looking thing that stays on scratch
 # (<run_dir>-state; bin/sp explains why).
-products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g6
+  products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g6
 
 # There is no config_src knob: the config chain is workflow/config/cfis, resolved
 # relative to the Snakefile. The configs interpolate $SP_RUN / $SP_UNIT_NUM /
 # $SP_CONFIG / $SP_EXP / $NGMIX_* and the rules export them -- configs and rules
 # are one artefact and must version together, so the dir is fixed by construction.
 
-# Pre-staged inputs (P3 data already on /project; get_images RETRIEVE=symlink).
-
 # The run index, and — sharing its directory — missing.json and run_report.json.
 # On the persistent root with the catalogues (D5): the index is the record of
 # which tile reads which exposure, so it is what a post-purge reconstruction
 # would otherwise have to rebuild from tile headers.
-index_db: /project/def-mjhudson/cdaley/sp-products/smk-g6/index/run_index.sqlite
+  index_db: /project/def-mjhudson/cdaley/sp-products/smk-g6/index/run_index.sqlite
 
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
@@ -129,5 +138,5 @@ ngmix_chunks: 8
 
 # The container's installed shapepipe is overridden by the prod worktree via
 # --env PYTHONPATH in profiles/nibi (settled call 3); no config knob here.
-# build_index.py's missing-tile fraction floor is passed by workflow/bin/sp
+# build_index.py's missing-tile fraction threshold is passed by workflow/bin/sp
 # (SP_MISSING_THRESHOLD, default 0.0 = any missing tile is fatal).

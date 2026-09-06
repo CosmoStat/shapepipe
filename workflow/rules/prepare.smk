@@ -10,7 +10,7 @@ tier).
 
 All three rules carry ``group: "tile_prep"``, so one tile's whole chain is ONE
 sbatch instead of three (medians 0:41 / ~0:40 / 0:15 — all far under the
-15-minute floor Alliance policy asks us to bundle away, and at DR6 scale three
+15-minute runtime limit Alliance policy asks us to bundle away, and at DR6 scale three
 submissions per tile is a scheduler load out of all proportion to the work).
 Group membership is per connected DAG component and distinct tiles share no
 edge, so this is exactly one group job per tile, never a cross-tile bundle.

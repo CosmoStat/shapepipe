@@ -74,7 +74,7 @@ is what downstream selections cut on.
 # dirs merge_sep_cats gathers, and final_cat on the PERSISTENT root. Only the
 # bulk intra-tile intermediate is node-local. That split is possible because
 # ShapePipe's configs set input and output paths independently -- see
-# config_tile_PiViVi.ini (OUTPUT_DIR = $SP_VIGNET_OUT) and
+# config_tile_PiViVi_<psf_model>.ini (OUTPUT_DIR = $SP_VIGNET_OUT) and
 # config_tile_Ng_template.ini and config_tile_Mc.ini ($NGMIX_VIGNET_DIR), and
 # config_tile_Ng_template.ini alone for $SP_WCS_DIR.
 #
@@ -463,8 +463,8 @@ rule tile_detect:
     shell:
         sp_shell("tile_detect", "config_tile_Sx.ini")
 
-# PSFEx interpolation to galaxies + vignet postage stamps: the last stage that
-# reads exposure products, and the bulk intra-tile intermediate. The store it
+# Configured PSF interpolation to galaxies + vignet postage stamps: the last
+# stage that reads exposure products, and the bulk intra-tile intermediate. The store it
 # writes is node-local (see TILE_LOCAL above).
 rule tile_vignets:
     group: TILE_GROUP
@@ -473,7 +473,7 @@ rule tile_vignets:
         forest = rules.tile_exp_forest.output.forest,
         split  = tile_exp_split,
         psf    = tile_exp_psf,
-        # config_tile_PiViVi.ini reads run_sp_tile_Fe output — same reason as
+        # config_tile_PiViVi_<psf_model>.ini reads run_sp_tile_Fe output — same reason as
         # tile_merge_headers above.
         fe     = f"{TILE_DIR}/manifests/tile_find_exposures.json",
     output:
@@ -516,7 +516,7 @@ rule tile_vignets:
     shell:
         # The completeness check is pointed at the NODE-LOCAL run root; see
         # sp_shell's check_args for what the two flags do.
-        sp_shell("tile_vignets", "config_tile_PiViVi.ini",
+        sp_shell("tile_vignets", f"config_tile_PiViVi_{PSF_MODEL}.ini",
                  check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}')
 
 # ngmix shape measurement — N chunks per tile (D4). Each chunk LOOKS UP its own
@@ -641,7 +641,7 @@ rule tile_ngmix:
         # how reclamation reads everywhere else in this file.
         #
         # So: land this hash, and every later edit to ngmix_range.py, at a
-        # campaign boundary on a fresh root. Same rule and same escape hatch as
+        # campaign boundary on a fresh root. The same rule and direct command as
         # tile_local()'s -- `--rerun-triggers mtime code software-env`.
         range_hash = NGMIX_RANGE_HASH
     # ONE core, not four. `-b {threads}` is shapepipe_run's SMP BATCH SIZE
@@ -672,7 +672,7 @@ rule tile_ngmix:
         # memory.current, which under cgroup v2 CHARGES PAGE CACHE to the job.
         # Cache is reclaimable — the kernel evicts it before it kills anything —
         # so the cgroup high-water is an upper bound on what the job NEEDS, not
-        # a floor. What a tight reservation can still do is squeeze the cache
+        # a hard requirement. What a tight reservation can still do is squeeze the cache
         # that keeps the node-local store resident, which is part of why the
         # fused tile is fast.
         #
@@ -702,7 +702,7 @@ rule tile_ngmix:
         # fairshare target is ~250 CE, which buys 9 tiles in flight at 28 and 25
         # at 10, and DR6's wall clock is (tiles / tiles-in-flight) x elapsed.
         #
-        # 4000 is the floor and is NOT recommended yet: it would take the group
+        # 4000 is the current lower bound and is NOT recommended yet: it would take the group
         # to 32000 MiB, where tile_vignets' own 32000 becomes the binding term
         # and the group finally bills its 8 real cores — but that is a 1.14x
         # margin over the worst tile measured, and the first thing to give would
@@ -766,10 +766,10 @@ rule tile_merge_cats:
         runtime = 10,
         slurm_extra = TILE_SLURM_EXTRA
     shell:
-        sp_shell("tile_merge_cats", "config_merge_sep_cats.ini")
+        sp_shell("tile_merge_cats", "config_tile_Ms.ini")
 
 # The run's science product. make_cat also reads the vignette store's
-# psfex_interp output, so it — not ngmix — is the store's last reader.
+# configured PSF-interpolation output, so it — not ngmix — is the store's last reader.
 #
 # No protected(): the full default rerun-triggers govern, and protected() only
 # ever forced people through a `--forcerun` detour.
@@ -777,8 +777,8 @@ rule tile_make_cat:
     group: TILE_GROUP
     input:
         # No store input: it is node-local, written by tile_vignets in this same
-        # group job. make_cat reads its psfex_interp output through
-        # $NGMIX_VIGNET_DIR (config_tile_Mc.ini).
+        # group job. make_cat reads its configured PSF-interpolation output
+        # through $NGMIX_VIGNET_DIR (config_tile_Mc.ini).
         ms    = rules.tile_merge_cats.output.manifest,
     output:
         manifest  = f"{TILE_DIR}/manifests/tile_make_cat.json",
@@ -803,7 +803,7 @@ rule tile_make_cat:
         # publishes a catalogue for a manifest snakemake is about to delete.
         sp_shell("tile_make_cat", "config_tile_Mc.ini",
                  post="if [ $rc -eq 0 ]; then\n"
-                      '  cp -f "$(ls -1 "$SP_RUN"/output/run_sp_Mc/make_cat_runner'
+                      '  cp -f "$(ls -1 "$SP_RUN"/output/run_sp_tile_Mc/make_cat_runner'
                       '/output/final_cat*.fits | head -1)" {output.final_cat}\n'
                       "fi\n")
 

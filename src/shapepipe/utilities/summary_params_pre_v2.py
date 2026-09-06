@@ -228,7 +228,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
 
     jobs["256"] = summary.job_data(
         "256",
-        "run_sp_Ms",
+        "run_sp_tile_Ms",
         ["merge_sep_cats_runner"] * 2,
         "tile_IDs",
         path_main=path_main,
@@ -241,7 +241,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
 
     jobs["512"] = summary.job_data(
         "512",
-        ["run_sp_Mc"],
+        ["run_sp_tile_Mc"],
         ["make_cat_runner"],
         "tile_IDs",
         path_main=path_main,

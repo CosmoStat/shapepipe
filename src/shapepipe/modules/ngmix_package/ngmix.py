@@ -128,16 +128,9 @@ def get_prior(pixel_scale, rng, T_range=None, F_range=None):
 def position_seed(ra, dec, ccd):
     """Deterministic RNG seed from an object's sky position (ngmix#796).
 
-    For image-simulation m-bias with the Pujol estimator, the same scene is
-    simulated under different applied shears ("image branches") and the shear
-    response is read from the branch difference of the SAME objects. Metacal's
-    ``fixnoise`` adds a counter-noise realisation drawn from an RNG; if that RNG
-    is seeded per tile, an object gets *different* added noise in different
-    branches (detection order differs), and the noise fails to cancel in the
-    difference, inflating ``sigma_m``. Seeding the per-object RNG from sky
-    position instead makes the same object draw the same added noise (and the
-    same fit guesses) in every branch, so both cancel and the m-bias error
-    shrinks. It also makes the result independent of how the tile is split into
+    Position seeding gives the same object the same RNG stream in each image
+    branch, provided its sky position falls in the same seed box. It also makes
+    the result independent of how the tile is split into
     ``ID_OBJ_MIN``/``ID_OBJ_MAX`` chunks, which is why it is now the only mode.
 
     Box math (kept exactly as Fabian's issue #796)::

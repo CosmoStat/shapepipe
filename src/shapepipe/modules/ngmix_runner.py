@@ -142,18 +142,6 @@ def ngmix_runner(
     else:
         dilate_neighbour = 1
 
-    # Position-seeded RNG is the only mode (see ngmix.position_seed). Old
-    # configs that disable it must fail loudly, not silently change the RNG.
-    if config.has_option(module_config_sec, "SEED_FROM_POSITION"):
-        if not config.getboolean(module_config_sec, "SEED_FROM_POSITION"):
-            raise ValueError(
-                "SEED_FROM_POSITION = False is no longer supported: the"
-                " tile-seeded RNG mode has been retired because it makes"
-                " results depend on the object chunking. Remove the"
-                " SEED_FROM_POSITION entry from the ngmix config section"
-                " (position-seeded RNG is now the only mode)."
-            )
-
     # Check PSF vignets first: if all are empty dicts {}, the exposures for this
     # tile are absent from the PSF dictionary and no shape measurement is possible.
     # This check must come before reading image vignets to avoid a C-level malloc

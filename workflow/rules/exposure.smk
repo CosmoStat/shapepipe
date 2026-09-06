@@ -103,7 +103,7 @@ rule exp_psf:
         mem_mb = lambda wc, attempt: 16000 * attempt,
         runtime = 240
     shell:
-        sp_shell("exp_psf", "config_exp_psfex.ini")
+        sp_shell("exp_psf", f"config_exp_{PSF_MODEL}.ini")
 
 
 # --- reclamation (D5) -------------------------------------------------------
