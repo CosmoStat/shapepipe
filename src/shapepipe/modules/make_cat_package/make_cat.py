@@ -16,6 +16,7 @@ from astropy.wcs import WCS
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
+from shapepipe.utilities import mask_query
 
 
 def get_output_name(output_dir, file_number_string):
@@ -207,6 +208,68 @@ def save_sm_data(
     final_cat_file.close()
 
     return n_obj
+
+
+def parse_mask_ext_paths(paths_str):
+    """Parse Mask Ext Paths.
+
+    Parse the ``MASK_EXT_PATHS`` config value into a ``band -> path`` mapping.
+
+    Parameters
+    ----------
+    paths_str : str
+        Comma-separated ``band:path`` pairs, e.g.
+        ``u:/path/mask_u.hsp, g:/path/mask_g.hsp``
+
+    Returns
+    -------
+    dict
+        Mapping from band name to healsparse map path
+
+    """
+    band_paths = {}
+    for pair in paths_str.split(","):
+        band, path = pair.split(":", 1)
+        band_paths[band.strip()] = path.strip()
+
+    return band_paths
+
+
+def save_mask_ext_data(final_cat_file, band_paths, w_log):
+    """Save External Mask Data.
+
+    Query per-band external healsparse masks at each object's world position
+    and write one ``MASK_<BAND>`` column per band into the final catalogue.
+    Object positions are read from the SExtractor windowed world coordinates
+    (``XWIN_WORLD`` = RA, ``YWIN_WORLD`` = Dec, both in degrees) carried in the
+    ``RESULTS`` extension. Objects falling outside a map's coverage receive
+    that map's sentinel value (``healsparse.HealSparseMap.get_values_pos``
+    returns the map's sentinel — ``-1`` for integer maps — verbatim), which is
+    the documented off-map flag.
+
+    The lookup itself is ``shapepipe.utilities.mask_query.query_map``,
+    shared with the ``mask_query`` module: one primitive, two consumers.
+
+    Parameters
+    ----------
+    final_cat_file : file_io.FITSCatalogue
+        Final catalogue
+    band_paths : dict
+        Mapping from band name to healsparse map path
+    w_log : logging.Logger
+        Logging instance
+
+    """
+    final_cat_file.open()
+    ra = np.copy(final_cat_file.get_data()["XWIN_WORLD"])
+    dec = np.copy(final_cat_file.get_data()["YWIN_WORLD"])
+
+    for band, path in band_paths.items():
+        w_log.info(f"Query external mask for band {band}: {path}")
+        values = mask_query.query_map(path, ra, dec)
+        final_cat_file.add_col(f"MASK_{band}", values)
+
+    final_cat_file.close()
 
 
 class SaveCatalogue:

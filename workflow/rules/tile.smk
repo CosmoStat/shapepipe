@@ -41,18 +41,14 @@ The heavy middle (tile_detect) stays out: it is a 16 GB / 8 thread SExtractor
 run that the shape chain does not need co-scheduled, and folding it in would add
 its runtime to a sum that has no room.
 
-Note there is no `tile_mask` rule: the committed config chain is the
-"sx_nomask" tile_detect variant (config_tile_Sx.ini reads Git + Uz + Mh, no mask
-run), and no tile-mask config was committed in the S2 sweep. Adding the masked
-variant is a config + one rule, at the config selector the PRD describes.
-
-That rule also needs a tile-side analogue of ``exp_star_cat``: tile star cats key
-on TILE id, so they are a separate cache namespace and a separate node, and the
-earliest point it can run is after ``tile_uncompress`` (create_star_cat.py's
-``-k tile`` mode reads the uncompressed tile image's primary header). The mask
-config would then read a real per-unit ``$SP_RUN/star_cat_tiles`` directory,
-built the same way and for the same reason (the file handler intersects numbers
-across INPUT_DIRs, so a shared pool cannot be symlinked in wholesale).
+There is no `tile_mask` rule, and there will not be one (PR #847). ShapePipe
+generates no masks: tiles have no instrument flag image of their own, so
+tile_detect runs SExtractor with FLAG_IMAGE = False against
+default_noimaflags.param (config_tile_Sx.ini — what used to be the "sx_nomask"
+variant, now the only one). Sky-fixed masks reach the tile as CATALOGUE columns
+instead: ``tile_make_cat``'s make_cat queries the configured healsparse maps at
+every object's (RA, Dec) and writes one ``MASK_<band>`` column per band, which
+is what downstream selections cut on.
 """
 
 # --- the node-local tile root (the I/O + scratch fix) ----------------------
@@ -176,8 +172,8 @@ def tile_local(tile):
     runs in `tile_vignets` and in each of the eight `tile_ngmix` chunks (not in
     `tile_merge_cats`, which has no pre_run), so the staging is attempted nine
     times per tile, eight of them concurrent siblings in one toposort level. It
-    is copy-to-a-temp-name plus `mv -f` -- the same all-or-nothing publish
-    shapepipe.utilities.file_io.write_atomic argues -- and it is UNCONDITIONAL,
+    is copy-to-a-temp-name plus `mv -f` -- an all-or-nothing publish, so a
+    reader never sees a partial file -- and it is UNCONDITIONAL,
     no `cp -u` and no already-there test. An interrupted `cp` leaves a truncated
     destination whose mtime is NEWER than the source, so `-u` would skip it
     forever, and nothing downstream would catch it: TILE_VIGNET_FRESH and
@@ -390,9 +386,8 @@ def exp_manifests(wc, stage):
     return [ancient(p) for p in paths]
 
 def tile_exp_split(wc):  return exp_manifests(wc, "exp_split")
-def tile_exp_mask(wc):   return exp_manifests(wc, "exp_mask")
 def tile_exp_psf(wc):    return exp_manifests(wc, "exp_psf")
-def tile_exp_all(wc):    return tile_exp_split(wc) + tile_exp_mask(wc) + tile_exp_psf(wc)
+def tile_exp_all(wc):    return tile_exp_split(wc) + tile_exp_psf(wc)
 
 
 # Build the per-tile symlink forest. Declaring the exposure manifests as input
@@ -873,10 +868,9 @@ rule tile_make_cat:
 # safe because nothing upstream of it survives, and tile_detect.json in
 # particular must never join the list.
 #
-# A LOCALRULE (declared in the Snakefile), same as clean_exposure. Unlike
-# exp_star_cat it is a DAG LEAF, so being local can never make it both a
-# dependency and a dependent of a group — no `group:` label here, and none
-# possible.
+# A LOCALRULE (declared in the Snakefile), same as clean_exposure. It is a DAG
+# LEAF, so being local can never make it both a dependency and a dependent of a
+# group — no `group:` label here, and none possible.
 #
 # WHAT THIS SHARPENS ELSEWHERE: the TILE_LOCAL warning above says an edit to
 # tile_local() mid-campaign reruns finished tiles unsatisfiably because their

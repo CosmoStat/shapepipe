@@ -114,13 +114,6 @@ def parse_options(p_def):
         help="only check final catalogues",
     )
     parser.add_option(
-        "-m",
-        "--mask_only",
-        dest="mask_only",
-        action="store_true",
-        help="only check mask files (pipeline_flag)",
-    )
-    parser.add_option(
         "-x",
         "--extension",
         dest="extension",
@@ -157,10 +150,6 @@ def check_options(options):
 
     if options.psf not in ["psfex", "mccd"]:
         print("Invalid PSF model '{}'".format(options.psf))
-        return False
-
-    if options.final_only and options.mask_only:
-        print("One one of the options '-f' or '-m' can be given")
         return False
 
     return True
@@ -379,13 +368,10 @@ def main(argv=None):
 
     if param.final_only:
         result_base_names = ["final_cat"]
-    elif param.mask_only:
-        result_base_names = ["pipeline_flag"]
     else:
         result_base_names = []
         types = [
             "final_cat",
-            "pipeline_flag",
             "logs",
             "setools_mask",
             "setools_stat",

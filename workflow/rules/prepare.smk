@@ -29,11 +29,12 @@ cached group resources and re-sets ``attempt`` on every member (jobs.py), and
 ``retries: 2`` still governs. A retry re-runs the whole group, which is safe
 because every rule ``rm -rf``s its own run dir at start.
 
-Star catalogues for masking are NOT a prepare-phase concern and not pre-run
-input: the compute DAG fetches the campaign footprint's stars once
-(``star_catalogue``) and cuts them per exposure (``exp_star_cat``), both in
-exposure.smk, into a run-independent store. The tile side has no star-cat node
-because it has no mask rule yet — see tile.smk.
+There is no masking node in this phase, or in any other: ShapePipe generates no
+masks (PR #847). The instrument flag image ships with the exposure and is split
+per CCD by ``exp_split``; the sky-fixed healsparse masks are queried per object
+inside the ShapePipe configs (``mask_query`` on exposures, ``make_cat`` on
+tiles). Nothing is fetched, staged or rasterized, so there is nothing to
+prepare.
 """
 
 # No NUMBER_LIST for get_images — a download stage has nothing on disk to
