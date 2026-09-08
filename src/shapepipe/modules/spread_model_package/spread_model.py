@@ -77,12 +77,18 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
     return sm, sm_err
 
 
-def get_model(sigma, flux, img_shape, pixel_scale=0.186):
+def get_model(sigma, flux, img_shape):
     """Get Model.
 
     This method computes
      - an exponential galaxy model with scale radius = 1/16 FWHM
      - a Gaussian model for the PSF
+
+    The spread-model statistic compares the object, PSF, and galaxy-model
+    vignets entirely in pixel space, so the models are rendered in pixel
+    units. A physical pixel scale would cancel out exactly (every length is
+    ``pixels x pixel_scale``, drawn at ``scale=pixel_scale``), so none is
+    needed here.
 
     Parameters
     ----------
@@ -92,8 +98,6 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
         Flux of the galaxy for the model
     img_shape : list
         Size of the output vignet ``[xsize, ysize]``
-    pixel_scale : float, optional
-        Pixel scale to use for the model (in arcsec); default is ``0.186``
 
     Returns
     -------
@@ -101,25 +105,25 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
         Vignet of the galaxy model and of the PSF model
 
     """
-    # Get scale radius
-    scale_radius = 1 / 16 * cs_size.sigma_to_fwhm(sigma) * pixel_scale
+    # Get scale radius (pixels)
+    scale_radius = 1 / 16 * cs_size.sigma_to_fwhm(sigma)
 
     # Get galaxy model
     gal_obj = galsim.Exponential(scale_radius=scale_radius, flux=flux)
 
-    # Get PSF
-    psf_obj = galsim.Gaussian(sigma=sigma * pixel_scale)
+    # Get PSF (sigma in pixels)
+    psf_obj = galsim.Gaussian(sigma=sigma)
 
     # Convolve both
     gal_obj = galsim.Convolve(gal_obj, psf_obj)
 
-    # Draw galaxy and PSF on vignets
+    # Draw galaxy and PSF on vignets, in pixel units (scale = 1 pixel)
     gal_vign = gal_obj.drawImage(
-        nx=img_shape[0], ny=img_shape[1], scale=pixel_scale
+        nx=img_shape[0], ny=img_shape[1], scale=1.0
     ).array
 
     psf_vign = psf_obj.drawImage(
-        nx=img_shape[0], ny=img_shape[1], scale=pixel_scale
+        nx=img_shape[0], ny=img_shape[1], scale=1.0
     ).array
 
     return gal_vign, psf_vign
@@ -138,8 +142,6 @@ class SpreadModel(object):
         Path to weight catalogue
     output_path : str
         Output file path of pasted catalog
-    pixel_scale : float
-        Pixel scale in arcsec
     output_mode : str
         Options are ``new`` or ``add``
 
@@ -160,7 +162,6 @@ class SpreadModel(object):
         psf_cat_path,
         weight_cat_path,
         output_path,
-        pixel_scale,
         output_mode,
     ):
 
@@ -168,7 +169,6 @@ class SpreadModel(object):
         self._psf_cat_path = psf_cat_path
         self._weight_cat_path = weight_cat_path
         self._output_path = output_path
-        self._pixel_scale = pixel_scale
         self._output_mode = output_mode
 
     def process(self):
@@ -228,7 +228,6 @@ class SpreadModel(object):
                     obj_sigma_tmp,
                     obj_flux_tmp,
                     obj_vign_tmp.shape,
-                    self._pixel_scale,
                 )
 
                 obj_sm, obj_sm_err = get_sm(

@@ -24,6 +24,8 @@ def make_data(
     psf_shear=(0.0, 0.0),
     wcs=None,
     return_centers=False,
+    psf_model_fwhm_ratio=1.0,
+    psf_model_shear=None,
 ):
     """Simulate an exponential galaxy with Moffat PSF.
 
@@ -55,8 +57,7 @@ def make_data(
         Ellipticity (g1, g2) applied to the Moffat PSF. Default (0, 0), a
         round PSF. A non-round PSF is what the PSF-leakage / additive-bias
         guardrail needs: the PSF carries a shape that an unbiased deconvolution
-        must remove from a round galaxy. The same sheared PSF is used both to
-        convolve the object and as the PSF model stamp.
+        must remove from a round galaxy.
     wcs : galsim.BaseWCS, optional
         Uniform drawing WCS. Default None means ``galsim.PixelScale
         (pixel_scale)`` with the legacy world-space sub-pixel shift draw —
@@ -74,6 +75,24 @@ def make_data(
         ``galsim.PositionD`` in galsim image coordinates (1-based; stamp
         centre is ``(img_size + 1) / 2``). Default False keeps the legacy
         6-tuple return.
+    psf_model_fwhm_ratio : float, optional
+        Multiplicative size error injected into the PSF *model* stamp handed to
+        ngmix, relative to the *true* PSF that convolves the galaxy. Default 1.0
+        (no error: the same PSF object renders the galaxy and the model stamp,
+        byte-for-byte identical to the legacy behaviour). A value != 1.0 makes
+        the model PSF the wrong size — over-sized (>1) over-deconvolves, under-
+        sized (<1) leaves residual smoothing — so metacal deconvolves by a PSF
+        that does not match the one in the data. This is the controlled-PSF-
+        model-error knob: it tests whether metacal's response correction (which
+        is computed with the same wrong model) absorbs a deconvolution error,
+        the one shape-measurement systematic the zero-error sim could not probe.
+    psf_model_shear : tuple of float or None, optional
+        Extra ellipticity (Δg1, Δg2) added to the PSF *model* stamp on top of
+        ``psf_shear``, relative to the true PSF. Default None (no error). A
+        non-zero value mismodels the PSF shape, injecting a controlled additive
+        (PSF-leakage) error into the recovered shear. When both this is None and
+        ``psf_model_fwhm_ratio`` is 1.0 the model PSF *is* the true PSF object,
+        so the output is byte-for-byte the legacy result.
 
     Returns
     -------
@@ -132,7 +151,22 @@ def make_data(
             ),
         ).shift(dx, dy)
 
-        psf_im_ = psf.drawImage(nx=img_size, ny=img_size, wcs=wcs)
+        # The PSF *model* stamp handed to ngmix. By default it is the very same
+        # object that convolved the galaxy (zero model error, byte-for-byte). A
+        # size and/or shape error makes it differ from the true PSF, so metacal
+        # deconvolves by the wrong PSF — the systematic the zero-error sim could
+        # not exercise.
+        if psf_model_fwhm_ratio == 1.0 and psf_model_shear is None:
+            psf_model = psf
+        else:
+            psf_model = galsim.Moffat(
+                beta=2.5, fwhm=psf_fwhm * psf_model_fwhm_ratio
+            ).shear(
+                g1=psf_shear[0] + (psf_model_shear[0] if psf_model_shear else 0.0),
+                g2=psf_shear[1] + (psf_model_shear[1] if psf_model_shear else 0.0),
+            )
+
+        psf_im_ = psf_model.drawImage(nx=img_size, ny=img_size, wcs=wcs)
         psfs_sigmas.append(galsim.hsm.FindAdaptiveMom(psf_im_).moments_sigma)
         psf_im = psf_im_.array.astype(np.float64)
         im = obj.drawImage(nx=img_size, ny=img_size, wcs=wcs).array.astype(np.float64)

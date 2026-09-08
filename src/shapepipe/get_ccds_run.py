@@ -31,6 +31,7 @@ def run_ccd_psf_handler(args=None):
 
     """
     # Create instance
+
     obj = CcdPsfHandler()
 
     return obj.run(args=args)
@@ -38,22 +39,6 @@ def run_ccd_psf_handler(args=None):
 
 def main(argv=None):
     """Main.
-
-    Main program.
-
-    Parameters
-    ----------
-    argv : list, optional
-        command line arguments
-
-    Returns
-    -------
-    int
-        exit code
-
     """
-    return run_ccd_psf_handler(args=argv)
-
-
-if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    # A scripts to call the ccd psf class is created by pyproject.toml
+    return 0

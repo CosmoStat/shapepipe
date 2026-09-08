@@ -51,7 +51,6 @@ SPIKE_REG_FILE = spike.reg
 MESSIER_MAKE = False
 
 MESSIER_CAT_PATH = $SP_CONFIG/mask_default/Messier_catalog_updated.fits
-MESSIER_PIXEL_SCALE = 0.187
 MESSIER_SIZE_PLUS = 0.
 MESSIER_FLAG_VALUE = 16
 
