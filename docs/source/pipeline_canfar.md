@@ -408,7 +408,7 @@ this requies a job with a large memory, e.g. with `mem=380000`
  
 
 ```bash
-[squeue] python ~/astro/repositories/github/sp_validation/notebooks/extract_info.py
+[squeue] python ~/astro/repositories/github/sp_validation/scripts/calibration/extract_info.py
 ```
 
 This creates a patch-wise comprehensive catalogue.
@@ -417,7 +417,7 @@ This creates a patch-wise comprehensive catalogue.
 
 ```bash
 cd /patch/to/version
-[squeue] python ~/astro/repositories/github/sp_validation/scripts/create_joint_comprehensive_cat.py \
+[squeue] python ~/astro/repositories/github/sp_validation/scripts/calibration/create_joint_comprehensive_cat.py \
     -v v1.6.c -v -p P1+P2+P3+P4+P5+P6+P7+P8+P9
 ```
 
