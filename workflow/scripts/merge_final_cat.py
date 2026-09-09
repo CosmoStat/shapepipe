@@ -38,20 +38,41 @@ so it follows the launch code snapshot (``bin/sp``) exactly as
 loaded by path rather than imported: it is a script, not an installed module,
 and the container's ``shapepipe`` install does not carry it.
 
-IT REBUILDS THE WHOLE FILE, IT DOES NOT APPEND. ``create_final_cat.py``'s own
-``process()`` skips tiles already in the file, which is right for a hand-driven
-incremental update (``-s add`` / ``-s remove`` are that tool's job). A DAG rule
-wants the opposite: the output must be a pure function of the input set, so that
-a no-op rerun is byte-stable and a changed set is visibly a different file.
-Appending would make the result depend on the order campaigns were run in, and
-would silently keep a tile whose catalogue was later rebuilt. The cost is
-reading every tile's catalogue on every run of the rule — real work at DR6 scale
-(~20k tiles), which is why this is not a localrule.
+IT RECONCILES, IT NEITHER REBUILDS NOR BLINDLY APPENDS. The output must be a
+function of the input set — that is what makes the rule's fingerprint mean
+something — but reading every tile's catalogue to add one tile is ~800 GB of IO
+at DR6 scale for ~35 MB of new data. So the file is brought INTO AGREEMENT with
+the campaign instead:
 
-BYTE-STABLE ON A NO-OP RERUN: written to a tmp path, compared, moved only if it
-differs (the pattern ``persist_exp.py`` and ``clean_exposure.py`` use). Tiles
-are visited in sorted ID order so the file is a function of the input set alone.
-An unconditional rewrite would move the output's mtime every invocation.
+  * a campaign tile with no dataset is read and added;
+  * a dataset whose tile is no longer in the campaign is deleted;
+  * a dataset whose source catalogue has CHANGED is re-read. Each one records
+    its source's size and mtime as attributes, and a mismatch is what "changed"
+    means. This is the only reason a finished tile is ever read twice, and it is
+    the reason the file cannot drift from its inputs the way an append-only
+    tool does;
+  * a dataset that agrees with its source is left alone, unread.
+
+An append therefore reads exactly the appended tiles. ``create_final_cat.py``'s
+own ``process()`` implements the append-only half of this — it skips a tile
+already in the file, whatever the file on disk now says — which is right for a
+hand-driven update and wrong for a DAG output; ``-s add`` / ``-s remove``
+remain that tool's way to do this by hand.
+
+WHAT IS AND IS NOT A FUNCTION OF THE INPUT SET. The file's CONTENT is: the same
+tiles with the same catalogues give the same datasets, the same columns and the
+same n_tiles, whether they arrived at once or one campaign at a time. Its BYTE
+LAYOUT is not, because hdf5 lays out a group in the order things were added.
+That is the trade for not re-reading the campaign, and it is why the no-op case
+below compares actions rather than bytes.
+UNTOUCHED ON A NO-OP RERUN, which is stronger than byte-stable and cheaper to
+establish. Reconciling is planned before anything is written: if the plan is
+empty the file is not opened for writing at all, so its mtime cannot move — and
+mtime is a rerun trigger, so an unconditional rewrite would make every
+invocation look like a change. When the plan is NOT empty the existing file is
+copied to a tmp path, changed there and moved into place, so a crash mid-merge
+leaves the old catalogue intact rather than a half-written one. The copy is a
+fraction of the reading it replaces.
 
 WHICH TILES — AND WHY THE JOB DERIVES THE SET RATHER THAN BEING TOLD IT. The set
 is the CAMPAIGN's: every tile both declared in ``tile_list`` and present in the
@@ -73,8 +94,8 @@ them is a declared input of this job.
 """
 
 import argparse
-import filecmp
 import importlib.util
+import shutil
 import sys
 from pathlib import Path
 
@@ -132,6 +153,97 @@ def catalogues(products_dir: Path, tile_list: Path, index_db: Path) -> list:
     return out
 
 
+class Plan:
+    """What reconciling this campaign into this file requires: three tile lists.
+
+    ``add`` and ``refresh`` are both "read the catalogue and write the dataset";
+    they are separate only so the log can say which happened, because a refresh
+    means a finished tile's catalogue moved under us and that is worth seeing.
+    """
+
+    def __init__(self, add, refresh, remove):
+        self.add, self.refresh, self.remove = add, refresh, remove
+
+    def empty(self):
+        return not (self.add or self.refresh or self.remove)
+
+    def describe(self):
+        return (f"{len(self.add)} added, {len(self.refresh)} refreshed, "
+                f"{len(self.remove)} removed")
+
+
+def stamp(path: Path) -> tuple:
+    """The source catalogue's identity, as recorded on its dataset.
+
+    Size and mtime, not a checksum: the file is ~35 MB and the question is
+    "did this change since we read it", which mtime answers for a pipeline
+    that writes a catalogue once. A campaign that rewrites a final_cat in
+    place with identical size and mtime would defeat it, and nothing does.
+    """
+    st = path.stat()
+    return st.st_size, st.st_mtime_ns
+
+
+def reconcile_plan(output: Path, group_path: str, tiles: list) -> Plan:
+    """Compare the file on disk with the campaign, WITHOUT writing anything.
+
+    Opened read-only, so a no-op invocation cannot move the output's mtime.
+    """
+    if not output.exists():
+        return Plan([t for t, _ in tiles], [], [])
+
+    want = {tile: path for tile, path in tiles}
+    add, refresh = [], []
+    with h5py.File(output, "r") as f:
+        have = dict(f[group_path].items()) if group_path in f else {}
+        present = set(have)
+        for tile, path in tiles:
+            if tile not in present:
+                add.append(tile)
+                continue
+            attrs = have[tile].attrs
+            if (int(attrs.get("src_bytes", -1)),
+                    int(attrs.get("src_mtime_ns", -1))) != stamp(path):
+                refresh.append(tile)
+    return Plan(add, refresh, sorted(present - set(want)))
+
+
+def apply_plan(output: Path, group_path: str, plan: Plan, tiles: list,
+               cfc, params: dict) -> None:
+    """Carry the plan out on a COPY, then move it into place.
+
+    The copy is what makes a crash mid-merge leave the old catalogue intact,
+    and it costs a fraction of the reading it replaces — an append that copies
+    a 1 GB file to add one 35 MB tile still beats re-reading the campaign.
+    """
+    paths = dict(tiles)
+    tmp = output.with_name(output.name + ".tmp")
+    try:
+        tmp.unlink(missing_ok=True)
+        if output.exists():
+            shutil.copy2(output, tmp)
+        with h5py.File(tmp, "a") as f:
+            group = f[group_path] if group_path in f else f.create_group(group_path)
+            for tile in plan.remove:
+                del group[tile]
+            for tile in plan.refresh:
+                del group[tile]
+            for tile in plan.add + plan.refresh:
+                path = paths[tile]
+                extracted, dtype = cfc.read_data(str(path), params)
+                data = cfc.copy_data(params["param_list"], extracted, dtype)
+                dset = group.create_dataset(tile, data=data, dtype=data.dtype)
+                # The dataset's own record of what it was read from; this is
+                # what makes a later invocation able to leave it alone.
+                dset.attrs["src_bytes"], dset.attrs["src_mtime_ns"] = stamp(path)
+            # The same attribute create_final_cat.py's print_list() writes, and
+            # what sp_validation reads to know how many tiles it is holding.
+            f.attrs["n_tiles"] = len(group)
+        tmp.replace(output)              # atomic: same filesystem
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--products-dir", required=True, type=Path,
@@ -164,30 +276,17 @@ def main() -> None:
         sys.exit(f"merge_final_cat: no tile in {args.tile_list} is indexed in "
                  f"{args.index_db}, so there is nothing to merge")
 
-    # tmp-then-cmp-then-mv; the tmp never outlives this process.
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    tmp = args.output.with_name(args.output.name + ".tmp")
-    try:
-        tmp.unlink(missing_ok=True)          # h5py "a" would reopen a stale one
-        with h5py.File(tmp, "w") as hdf5_file:
-            group = hdf5_file.create_group(spval_group(args.campaign))
-            for tile, path in tiles:
-                extracted, dtype = cfc.read_data(str(path), params)
-                data = cfc.copy_data(params["param_list"], extracted, dtype)
-                group.create_dataset(tile, data=data, dtype=data.dtype)
-            # The same attribute create_final_cat.py's print_list() writes, and
-            # what sp_validation reads to know how many tiles it is holding.
-            hdf5_file.attrs["n_tiles"] = len(tiles)
-
-        if args.output.exists() and filecmp.cmp(tmp, args.output, shallow=False):
-            print(f"[merge_final_cat] unchanged: {args.output}")
-        else:
-            tmp.replace(args.output)         # atomic: same filesystem
-            print(f"[merge_final_cat] {len(tiles)} tile(s), "
-                  f"{len(param_list)} column(s) -> {args.output} "
-                  f"(group {spval_group(args.campaign)})")
-    finally:
-        tmp.unlink(missing_ok=True)
+    group_path = spval_group(args.campaign)
+    plan = reconcile_plan(args.output, group_path, tiles)
+    if not plan.empty():
+        apply_plan(args.output, group_path, plan, tiles, cfc, params)
+        print(f"[merge_final_cat] {plan.describe()} -> {args.output} "
+              f"({len(tiles)} tile(s), {len(param_list)} column(s), "
+              f"group {group_path})")
+    else:
+        print(f"[merge_final_cat] unchanged: {args.output} "
+              f"({len(tiles)} tile(s))")
 
 
 if __name__ == "__main__":

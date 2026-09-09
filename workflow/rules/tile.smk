@@ -925,14 +925,18 @@ rule clean_tile:
 # tile-finished marker (see final_cat() in the Snakefile), and it is the file
 # this rule actually reads.
 #
-# NOT A LOCALRULE, and here the reason is IO rather than memory: the job reads
-# every tile's catalogue end to end on every run — ~32-46 MB per tile, so ~2 GB
-# for a 64-tile campaign and ~800 GB at DR6's 23k tiles. It rebuilds rather than
-# appends because a DAG output must be a function of its input set
-# (merge_final_cat.py); incremental update by hand is what
-# `create_final_cat.py -s add` remains for. Memory is one tile's catalogue at a
-# time plus the hdf5 write buffer, which is why mem_mb is modest where
-# star_cat_merge's is not.
+# NOT A LOCALRULE, and here the reason is IO rather than memory: a first build
+# reads every tile's catalogue end to end — ~32-46 MB per tile, so ~2 GB for a
+# 64-tile campaign and ~800 GB at DR6's 23k tiles. It RECONCILES rather than
+# rebuilds or appends: a tile with no dataset is added, a dataset whose tile
+# left the campaign is deleted, a dataset whose source catalogue changed is
+# re-read, and one that agrees with its source is left alone. So an append
+# reads the appended tiles and nothing else, while the file still cannot drift
+# from its inputs the way an append-only tool does (merge_final_cat.py argues
+# what is and is not a function of the input set here). Memory is one tile's
+# catalogue at a time plus the hdf5 write buffer, which is why mem_mb is modest
+# where star_cat_merge's is not — and why runtime, which is sized on the whole
+# campaign, is the pessimistic first-build case.
 rule final_cat_merge:
     input:
         lambda wc: [final_cat(t) for t in TILES_READY]

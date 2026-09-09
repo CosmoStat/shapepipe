@@ -289,6 +289,39 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   escape hatch — anything with a glob metacharacter or a dot is read as one —
   and an unknown *name* is a parse-time error listing the valid ones. The list
   is exposure-side only; tile-side retention is #844 follow-up.
+- **The campaign ends in two merged catalogues, and the workflow makes both.**
+  Everything above is per unit; the two products downstream analysis actually
+  opens are per *campaign*, and until these rules existed each was a manual pass
+  after the run.
+  `star_cat_merge` stacks every exposure's every CCD's `psf_validation` into one
+  `<products_dir>/full_starcat-0000000.fits` — the rho/tau statistics input, at
+  the path sp_validation hardcodes. It reads the members straight out of the
+  per-exposure tars (`tarfile`; unpacking ~800k files to merge them would defeat
+  the tar's whole purpose) and stacks them with `MergeStarCatPSFEX`, the same
+  class the old `merge_starcat_runner` called, so the column list has exactly
+  one definition. It exists whenever the campaign has a persisted exposure.
+  `final_cat_merge` collects every ready tile's `final_cat-<ID>.fits` into
+  `<products_dir>/final_cat_<campaign>.hdf5`: one dataset per tile under a group
+  named for the campaign, the `final_cat.param` columns, an `n_tiles` attribute.
+  That schema is what sp_validation's reader opens, so it is fixed; the column
+  extraction reuses `scripts/python/create_final_cat.py` while the file is
+  written here, because that script's own discovery walks a directory layout
+  this workflow does not have. `campaign:` in `config.yaml` names the group and
+  defaults to the persistent root's basename.
+  `star_cat_merge` restacks the whole campaign, so its output is a function of
+  its input set and byte-stable on a no-op rerun (tmp-then-`cmp`-then-`mv`).
+  `final_cat_merge` RECONCILES instead — adds the tiles that have no dataset,
+  drops datasets whose tile left the campaign, re-reads one whose catalogue
+  changed (each dataset records its source's size and mtime), and leaves the
+  rest unread — because re-reading a campaign to add one tile is ~800 GB of IO
+  at DR6 scale. Its *content* is still a function of the input set; its byte
+  layout is not, and a no-op leaves the file untouched rather than rewritten.
+  Both rerun when the set changes: the unit ids' fingerprint rides on `params`.
+  Neither is a `localrule` — one job over ~20k units is real work — and neither
+  puts its input paths in its shell, which is not fastidiousness: ~20k paths is
+  an order of magnitude over Linux's 128 KiB `MAX_ARG_STRLEN` for a single argv
+  entry, so each job is handed the tile list and the run index and derives the
+  same set from them.
 - **A dead tile can be told to stop pinning exposures.** An exposure is
   cleanable only once every consuming tile has its vignets, so one
   permanently-failed tile holds its ~80 exposures for the life of the
