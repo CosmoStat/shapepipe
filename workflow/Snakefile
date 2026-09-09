@@ -88,6 +88,15 @@ if _unresolved:
         f"Unset or {run_config.PLACEHOLDER!r} for machine={MACHINE!r}, "
         f"input_type={INPUT_TYPE!r}: {', '.join(_unresolved)}. Set them in "
         f"your run config (SP_RUN_CONFIG).")
+# The external masks are a data-only input: config_tile_Mc.ini's
+# MASK_EXT_PATHS reads $SP_INPUT_MASKS, and the sims Mc.ini carries no mask
+# block. Checked here rather than in run_config.REQUIRED because it depends on
+# input_type.
+if INPUT_TYPE == "data" and not config.get("inputs", {}).get("masks"):
+    raise WorkflowError(
+        f"inputs.masks is unset for machine={MACHINE!r}, input_type='data': "
+        "the tile chain queries the UNIONS sky-fixed masks (MASK_EXT_PATHS in "
+        "config/cfis/config_tile_Mc.ini). Set it in the run config.")
 
 # The image every job runs in: this user's sandbox, else their cached SIF,
 # else the run config's `container:`. Checked at parse time, since an empty
@@ -1072,10 +1081,10 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     There is no per-unit ``cfis`` symlink any more: $SP_CONFIG points straight at
     the committed config dir.
 
-    It also exports the configured input roots as ``SP_INPUT_TILES`` and
-    ``SP_INPUT_EXPOSURES``, the retrieve mode as ``SP_RETRIEVE`` and the PSF
-    choice as ``SP_PSF`` for the committed ini chain (plus ``PSF_DICT`` for the
-    image-simulation true PSF).
+    It also exports the configured input roots as ``SP_INPUT_TILES``,
+    ``SP_INPUT_EXPOSURES`` and (data only) ``SP_INPUT_MASKS``, the retrieve
+    mode as ``SP_RETRIEVE`` and the PSF choice as ``SP_PSF`` for the committed
+    ini chain (plus ``PSF_DICT`` for the image-simulation true PSF).
 
     Every line here is part of each rule's ``params.pre`` and so of the
     ``params`` rerun trigger: a line added for every rule reruns every finished
@@ -1114,6 +1123,8 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     ]
     if PSF_DICT:
         lines.append(f"export PSF_DICT='{PSF_DICT}'")
+    if INPUT_TYPE == "data":
+        lines.append(f"export SP_INPUT_MASKS='{INPUTS['masks']}'")
     if forest:
         lines.append(f"export SP_EXP='{forest}'")
     for k, v in (env or {}).items():
