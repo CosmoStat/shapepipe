@@ -31,7 +31,12 @@ input_type: data
 # - base_dir
 # - tile_list: text file with tile IDs
 # - retrieve: method to get input data, allowed are symlink, vos
-# - inputs.tiles,, .exposures: path for input tile and exposure
+# - inputs.tiles, .exposures: path for input tile and exposure
+# - inputs.masks (data only): the UNIONS sky-fixed masks, one boolean
+#   healsparse map per bit of the band-combined ugriz mask (nside 131072,
+#   True = masked), queried per object by make_cat -- never rasterized.
+#   Consumed by MASK_EXT_PATHS in config/cfis/config_tile_Mc.ini, which
+#   carries the bit table. Required for input_type: data.
 # - outputs.run_dir: (scratch) run directory, where tmp files will be stored
 # - outputs.products_dir: path to final products
 # - outputs.index_db: path to bookkeeping index sqlite file
@@ -47,6 +52,7 @@ machines:
       inputs:
         tiles: $base_dir/unions-wl/tiles
         exposures: $base_dir/unions-wl/exposures
+        masks: $base_dir/unions-wl/masks/dr6-2026-08
       outputs:
         run_dir: /scratch/cdaley/shapepipe-output/$run
         products_dir: $base_dir/cdaley/sp-products/$run
@@ -58,6 +64,8 @@ machines:
     data:
       psf_model: psfex
       retrieve: vos
+      inputs:
+        masks: $base_dir/masks/dr6-2026-08
       container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
     image_sims:
       retrieve: symlink
