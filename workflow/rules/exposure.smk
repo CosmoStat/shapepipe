@@ -278,8 +278,16 @@ rule star_cat_merge:
         script_hash  = MERGE_STAR_HASH
     threads: 1
     resources:
-        mem_mb = lambda wc, attempt: 16000 * attempt,
-        runtime = 120
+        # Sized on the campaign's own member bytes, slope and intercept
+        # measured (the Snakefile's sizing block carries both points, and the
+        # ceiling this rule runs into at DR6 scale). Still * attempt, because a
+        # measured slope on synthetic tars is not a guarantee about real ones.
+        mem_mb = lambda wc, attempt: attempt * (
+            STAR_MEM_BASE_MB + STAR_MEM_FACTOR * star_cat_bytes() // 1_000_000),
+        # ~2 min per GB of members on the measurement above, doubled, over a
+        # floor that covers the fixed cost of opening ~40 members per exposure.
+        runtime = lambda wc, attempt: attempt * (
+            30 + 4 * star_cat_bytes() // 1_000_000_000)
     shell:
         "set -euo pipefail\n"
         f"python {SCRIPTS}/merge_star_cat.py"

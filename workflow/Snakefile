@@ -704,6 +704,78 @@ def star_cat_exposures():
                   or not exp_store_reclaimed(e))
 
 
+# --- sizing the two merges (D4) ---------------------------------------------
+# MEASURED, not guessed, and measured as a SLOPE rather than a single number:
+# these are the only two rules whose one job's footprint grows with the whole
+# campaign, so a constant is wrong by however much the campaign is not the one
+# it was tuned on.
+#
+# Both slopes were measured on this login node, inside the campaign container,
+# against synthetic tars for the star side and against smk-g6's real
+# catalogues for the tile side. Peak RSS is getrusage(RUSAGE_CHILDREN).
+#
+# STAR SIDE, and it is the alarming one. Two points, 20 and 80 exposures of 40
+# CCDs x 400 stars (1.6 MB of members per exposure, against the 2.0 MB measured
+# on smk-m2):
+#
+#     input members      peak RSS
+#     32.3 MB            383 MB
+#     129.0 MB          1313 MB
+#
+# a slope of 10.1x the input bytes and an intercept of ~73 MB (interpreter,
+# astropy, shapepipe). Tenfold, because MergeStarCatPSFEX accumulates every
+# column into PYTHON LISTS of python floats before building the output arrays —
+# 8 bytes of payload becomes a 32-byte object plus an 8-byte pointer. THE
+# CONSEQUENCE IS A CEILING, and it should be said plainly: at ~2 MB per
+# exposure, a 16 GB job merges roughly 800 exposures, and DR6's ~20k exposures
+# would want ~400 GB. A full-survey full_starcat needs the accumulation changed
+# to preallocated arrays or a two-pass count — a change to MergeStarCatPSFEX,
+# not to this rule, and not in this PR. The formula below is honest about the
+# slope so the job asks for what it will use and fails at submission rather
+# than at 90% of the way through a campaign-length merge.
+#
+# TILE SIDE, and it is the reassuring one. Two points against real smk-g6
+# catalogues, 2 tiles (73.9 MB in, largest 39.6 MB) and 6 tiles (235.5 MB in,
+# largest 47.7 MB): peak RSS 129 MB and 139 MB. FLAT IN THE NUMBER OF TILES —
+# the merge holds one catalogue at a time — so it is sized on the LARGEST tile,
+# not the total, at ~3x it plus the interpreter.
+STAR_MEM_BASE_MB   = 500      # interpreter + astropy + shapepipe, rounded up
+STAR_MEM_FACTOR    = 12       # x input bytes; 10.1 measured, rounded up
+FINAL_MEM_BASE_MB  = 800
+FINAL_MEM_FACTOR   = 4        # x the LARGEST tile; ~3 measured
+# What one unit costs when its product is not on disk yet to be stat()ed — a
+# fresh campaign sizes its merge before anything has been packed or made.
+# Both are the measured medians in config.yaml's persist_exp block and D5 notes.
+EXP_BYTES_DEFAULT  = 2_000_000
+TILE_BYTES_DEFAULT = 46_000_000
+
+
+def _size(path, default):
+    """Bytes on disk, or the documented per-unit default if it is not there."""
+    try:
+        return Path(path).stat().st_size
+    except OSError:
+        return default
+
+
+def star_cat_bytes():
+    """Total member bytes the star merge will read.
+
+    The TAR is what gets stat()ed, not the manifest: it is one stat per
+    exposure rather than a json parse, and it is present for exactly the
+    exposures whose products already exist — live-and-already-packed as well as
+    reclaimed. An exposure not yet packed contributes the measured default.
+    """
+    return sum(_size(prod_exp_tar(e), EXP_BYTES_DEFAULT)
+               for e in star_cat_exposures())
+
+
+def final_cat_max_bytes():
+    """The LARGEST tile catalogue the hdf5 merge will read — what sizes it."""
+    return max([_size(final_cat(t), TILE_BYTES_DEFAULT) for t in TILES_READY]
+               or [TILE_BYTES_DEFAULT])
+
+
 def star_cat_targets():
     """`full_starcat` when there is anything to stack into it, else nothing.
 

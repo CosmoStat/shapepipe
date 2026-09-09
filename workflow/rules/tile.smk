@@ -948,8 +948,15 @@ rule final_cat_merge:
         script_hash  = MERGE_FINAL_HASH
     threads: 1
     resources:
-        mem_mb = lambda wc, attempt: 8000 * attempt,
-        runtime = 120
+        # Sized on the LARGEST tile, not the total: the merge holds one
+        # catalogue at a time, and the measurement is flat in the tile count
+        # (the Snakefile's sizing block carries both points).
+        mem_mb = lambda wc, attempt: attempt * (
+            FINAL_MEM_BASE_MB
+            + FINAL_MEM_FACTOR * final_cat_max_bytes() // 1_000_000),
+        # Runtime, unlike memory, is the TOTAL: every tile is read end to end.
+        # ~1 min per 10 tiles on the measurement, triply generous, over a floor.
+        runtime = lambda wc, attempt: attempt * (30 + len(TILES_READY) // 3)
     shell:
         "set -euo pipefail\n"
         f"python {SCRIPTS}/merge_final_cat.py"
