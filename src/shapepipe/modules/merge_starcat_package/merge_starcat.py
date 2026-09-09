@@ -571,81 +571,119 @@ class MergeStarCatPSFEX(object):
         self._hdu_table = hdu_table
         self._input_cat_type = input_cat_type
 
+    # The columns this class writes, and where each comes from. Kept as data
+    # rather than as sixteen repeated lines, because a two-pass merge would
+    # otherwise state every column three times: to size it, to allocate it and
+    # to fill it.
+    _COLUMNS = (
+        ("X", "X"), ("Y", "Y"), ("RA", "RA"), ("DEC", "DEC"),
+        ("HSM_G1_PSF", "HSM_G1_PSF"), ("HSM_G2_PSF", "HSM_G2_PSF"),
+        ("HSM_T_PSF", "HSM_T_PSF"), ("HSM_G1_STAR", "HSM_G1_STAR"),
+        ("HSM_G2_STAR", "HSM_G2_STAR"), ("HSM_T_STAR", "HSM_T_STAR"),
+        ("HSM_FLAG_PSF", "HSM_FLAG_PSF"), ("HSM_FLAG_STAR", "HSM_FLAG_STAR"),
+    )
+    # Present in psfex_interp output, absent from pix2wcs-converted files
+    # (MKDEBUG); zero-filled when missing rather than failing the merge.
+    _OPTIONAL = (("MAG", "MAG"), ("SNR", "SNR"), ("ACCEPTED", "ACCEPTED"))
+
+    def _ccd_nb(self, label):
+        """The CCD number this catalogue's rows carry, parsed from its name."""
+        return re.split(r"\-([0-9]*)\-([0-9]+)\.", label)[-2]
+
     def process(self):
         """Process.
 
         Process merging.
 
-        """
-        x, y, ra, dec = [], [], [], []
-        g1_psf, g2_psf, size_psf = [], [], []
-        g1, g2, size = [], [], []
-        flag_psf, flag_star = [], []
-        mag, snr, psfex_acc = [], [], []
-        ccd_nb = []
+        TWO PASSES, AND NEITHER HOLDS THE CAMPAIGN TWICE. The first reads only
+        the FITS HEADER of every input — NAXIS2, the row count — and never
+        touches a data block; the second allocates the output columns once, at
+        their exact final length, and fills them slice by slice. Peak memory is
+        therefore ONE output plus ONE input catalogue.
 
+        What this replaces, in two steps, is instructive about the cost of the
+        obvious code. Accumulating each column into a python LIST OF VALUES —
+        ``x += list(data["X"])`` — turned 4 bytes of float32 payload into a
+        32-byte object plus an 8-byte pointer, measured at ~10x the input bytes
+        end to end and putting a full-survey merge (~20k exposures x 40 CCDs) at
+        ~400 GB. Accumulating one ARRAY PER CATALOGUE and concatenating once
+        brought that to ~5.5x. This pass structure removes what was left of the
+        accumulation: there are no chunks, and no concatenate that must hold its
+        inputs and its result at the same time.
+
+        ``self._input_file_list`` MUST BE ITERABLE TWICE. A list is; so is the
+        workflow's tar reader, whose ``__iter__`` opens the archives afresh.
+        A one-shot generator is not, and would silently merge nothing on the
+        second pass — hence the explicit length check below.
+        """
         self._w_log.info(
             f"Merging {len(self._input_file_list)} star catalogues"
         )
 
+        # --- pass 1: row counts and dtypes, from headers alone --------------
+        counts, labels, dtypes, n_total = [], [], None, 0
         for name in self._input_file_list:
-            # The source to read and the NAME to parse the CCD number out of.
-            # Identical for a plain [path] entry; different only when the caller
-            # hands over an open file-like object plus the member name it came
-            # under (see the class docstring).
             source, label = name[0], name[-1]
             try:
-                starcat_j = fits.open(source, memmap=False, ignore_missing_simple=True)
-            except OSError as e:
+                with fits.open(source, memmap=False,
+                               ignore_missing_simple=True) as starcat_j:
+                    hdu = starcat_j[self._hdu_table]
+                    n_rows = hdu.header["NAXIS2"]
+                    if dtypes is None:
+                        # ColDefs.dtype describes the table without reading it.
+                        dtypes = hdu.columns.dtype
+            except OSError:
                 print(f"Error while opening file '{label}'")
                 #raise
                 continue
+            counts.append(n_rows)
+            labels.append(label)
+            n_total += n_rows
 
+        if dtypes is None:
+            raise ValueError("merge_starcat: no readable input catalogue")
+
+        # --- allocate once, at the exact final length -----------------------
+        present = set(dtypes.names)
+        data = {out: np.empty(n_total, dtype=dtypes[col])
+                for out, col in self._COLUMNS}
+        for out, col in self._OPTIONAL:
+            data[out] = np.empty(
+                n_total, dtype=dtypes[col] if col in present else dtypes["X"])
+        # CCD_NB is one string per catalogue, repeated over its rows; its width
+        # is the widest CCD number in the campaign, which pass 1 already knows.
+        width = max((len(self._ccd_nb(lb)) for lb in labels), default=1)
+        data["CCD_NB"] = np.empty(n_total, dtype=f"U{width}")
+
+        # --- pass 2: fill ---------------------------------------------------
+        at = 0
+        for name in self._input_file_list:
+            source, label = name[0], name[-1]
+            try:
+                starcat_j = fits.open(source, memmap=False,
+                                      ignore_missing_simple=True)
+            except OSError:
+                continue
             data_j = starcat_j[self._hdu_table].data
+            n_rows = len(data_j)
+            sl = slice(at, at + n_rows)
 
-            # ONE ARRAY PER CATALOGUE PER COLUMN, concatenated once at the end
-            # (see _stack): the per-value python lists this replaces cost ~10x
-            # the input bytes and put a full-survey merge out of reach.
-            # positions
-            x.append(np.asarray(data_j["X"]))
-            y.append(np.asarray(data_j["Y"]))
-            ra.append(np.asarray(data_j["RA"]))
-            dec.append(np.asarray(data_j["DEC"]))
+            for out, col in self._COLUMNS:
+                data[out][sl] = data_j[col]
+            for out, col in self._OPTIONAL:
+                data[out][sl] = data_j[col] if col in present else 0
+            data["CCD_NB"][sl] = self._ccd_nb(label)
 
-            # shapes (size column already holds T = 2 sigma^2)
-            g1_psf.append(np.asarray(data_j["HSM_G1_PSF"]))
-            g2_psf.append(np.asarray(data_j["HSM_G2_PSF"]))
-            size_psf.append(np.asarray(data_j["HSM_T_PSF"]))
-            g1.append(np.asarray(data_j["HSM_G1_STAR"]))
-            g2.append(np.asarray(data_j["HSM_G2_STAR"]))
-            size.append(np.asarray(data_j["HSM_T_STAR"]))
+            at += n_rows
+            starcat_j.close()
 
-            # flags
-            flag_psf.append(np.asarray(data_j["HSM_FLAG_PSF"]))
-            flag_star.append(np.asarray(data_j["HSM_FLAG_STAR"]))
-
-            # misc
-
-            # MKDEBUG: The following columns do not exist (yet)
-            # for psf converted (pix2wcs) files.
-            try:
-                mag.append(np.asarray(data_j["MAG"]))
-            except:
-                mag.append(np.zeros_like(data_j["X"]))
-            try:
-                snr.append(np.asarray(data_j["SNR"]))
-            except:
-                snr.append(np.zeros_like(data_j["X"]))
-            try:
-                psfex_acc.append(np.asarray(data_j["ACCEPTED"]))
-            except:
-                psfex_acc.append(np.zeros_like(data_j["X"]))
-
-            # CCD number: this catalogue's one value over its own rows, as an
-            # array rather than a python list holding the same string N times.
-            ccd_nb.append(np.full(
-                len(data_j["RA"]),
-                re.split(r"\-([0-9]*)\-([0-9]+)\.", label)[-2]))
+        if at != n_total:
+            # The two passes disagreed: an input changed under us, or the list
+            # was a one-shot iterable. Either way the output would be padded
+            # with uninitialised memory, so say so rather than write it.
+            raise ValueError(
+                f"merge_starcat: pass 1 counted {n_total} rows, pass 2 filled "
+                f"{at} — is the input list iterable more than once?")
 
         # Prepare output FITS catalogue
         # MKDEBUG: SEx_cat=True -> False
@@ -656,25 +694,8 @@ class MergeStarCatPSFEX(object):
             SEx_catalogue=False,
         )
 
-        # Collect columns (size stored as T = 2 sigma^2)
-        data = {
-            "X": _stack(x),
-            "Y": _stack(y),
-            "RA": _stack(ra),
-            "DEC": _stack(dec),
-            "HSM_G1_PSF": _stack(g1_psf),
-            "HSM_G2_PSF": _stack(g2_psf),
-            "HSM_T_PSF": _stack(size_psf),
-            "HSM_G1_STAR": _stack(g1),
-            "HSM_G2_STAR": _stack(g2),
-            "HSM_T_STAR": _stack(size),
-            "HSM_FLAG_PSF": _stack(flag_psf),
-            "HSM_FLAG_STAR": _stack(flag_star),
-            "MAG": _stack(mag),
-            "SNR": _stack(snr),
-            "ACCEPTED": _stack(psfex_acc),
-            "CCD_NB": _stack(ccd_nb, dtype="U1"),
-        }
+        # `data` was built by the two passes above (size stored as T = 2
+        # sigma^2); every column is already an array of its final length.
 
         # Write file
         # MKDEBUG for psf conv (pix2WCS) files do not write as SExtractorCat;

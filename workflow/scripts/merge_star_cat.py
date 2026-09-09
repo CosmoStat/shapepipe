@@ -183,6 +183,10 @@ class TarMembers:
 
     ``__len__`` comes from the manifests, so the class can log the count before
     a single tar is opened.
+
+    IT IS ITERABLE MORE THAN ONCE, and must be: the merge makes two passes, one
+    for row counts from the headers and one to fill. Each ``__iter__`` opens the
+    archives afresh, so the second pass sees the same members in the same order.
     """
 
     def __init__(self, chosen):
@@ -199,7 +203,13 @@ class TarMembers:
                     if member is None:
                         sys.exit(f"merge_star_cat: {tar_path} has no member "
                                  f"{name}, which its manifest lists")
-                    yield [io.BytesIO(member.read()), name]
+                    # The tar's own file object, not a BytesIO of the whole
+                    # member: it is seekable (the archive is uncompressed by
+                    # design) and astropy reads through it, so the merge's
+                    # first pass costs a header rather than a member. The
+                    # object is valid only until the next member is reached,
+                    # which is exactly how the merge consumes it.
+                    yield [member, name]
 
 
 def main() -> None:
