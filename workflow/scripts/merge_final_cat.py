@@ -18,6 +18,13 @@ WHAT IT REUSES, AND WHAT IT DOES NOT. The column extraction is
 ``create_final_cat.py``'s — ``read_param_file`` for the parameter list,
 ``read_data`` and ``copy_data`` for pulling those columns out of one catalogue
 with their FITS dtypes — so the column grammar keeps exactly one definition.
+Those three are REPRODUCIBLE FUNCTIONS, and this PR is what made them so: the
+parameter list comes back ordered rather than through a set, ``copy_data``
+allocates the requested columns alone rather than leaving every other column of
+the source as uninitialised memory, and a missing column raises with its own
+name instead of falling out of a bare ``except:`` as an UnboundLocalError. The
+fixes are upstream, in that script, because a hand-run of it deserves them as
+much as this rule does.
 Its ``process()`` is NOT used and neither is any of its discovery: that function
 walks a directory tree the workflow does not have and never will, and it groups
 by a unit ShapePipe v2 no longer has. This script walks the workflow's own
@@ -46,23 +53,6 @@ differs (the pattern ``persist_exp.py`` and ``clean_exposure.py`` use). Tiles
 are visited in sorted ID order so the file is a function of the input set alone.
 An unconditional rewrite would move the output's mtime every invocation.
 
-TWO PLACES WHERE THE REFERENCE IMPLEMENTATION IS NOT DETERMINISTIC, and where
-this script therefore pins the behaviour down rather than copying it. Both are
-in the DTYPE, and both are invisible when a human runs the tool once by hand:
-
-  * ``copy_data`` allocates ``np.empty`` with the SOURCE catalogue's full
-    dtype and then fills only the requested columns, so every column NOT in
-    ``final_cat.param`` reaches the hdf5 file as uninitialised memory —
-    different bytes on every run, and meaningless data in the file besides. We
-    hand ``copy_data`` a dtype restricted to the requested columns, so every
-    field it writes is a field it fills. The file then carries exactly the
-    ``final_cat.param`` columns, which is what sp_validation reads and what the
-    parameter file is for.
-  * ``read_param_file`` returns ``list(set(...))``, whose order varies with the
-    process's string hash seed. Column ORDER in a structured dtype is part of
-    the file, so that alone would defeat the byte comparison. We order the
-    fields by the source catalogue's own column order instead.
-
 WHICH TILES — AND WHY THE JOB DERIVES THE SET RATHER THAN BEING TOLD IT. The set
 is the CAMPAIGN's: every tile both declared in ``tile_list`` and present in the
 index, which is exactly the Snakefile's TILES_READY, rebuilt here from the same
@@ -89,8 +79,6 @@ import sys
 from pathlib import Path
 
 import h5py
-import numpy as np
-from astropy.io import fits
 
 # Same directory; the rule invokes this file by path, so it is sys.path[0].
 import build_index
@@ -144,16 +132,6 @@ def catalogues(products_dir: Path, tile_list: Path, index_db: Path) -> list:
     return out
 
 
-def check_columns(path: Path, hdu: int, wanted: list) -> None:
-    """Fail loudly, and by name, when a catalogue lacks a requested column."""
-    with fits.open(path, memmap=False) as hdu_list:
-        present = set(hdu_list[hdu].columns.names)
-    missing = sorted(c for c in wanted if c not in present)
-    if missing:
-        sys.exit(f"merge_final_cat: {path} is missing {len(missing)} of the "
-                 f"{len(wanted)} requested column(s): {' '.join(missing)}")
-
-
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--products-dir", required=True, type=Path,
@@ -193,31 +171,10 @@ def main() -> None:
         tmp.unlink(missing_ok=True)          # h5py "a" would reopen a stale one
         with h5py.File(tmp, "w") as hdf5_file:
             group = hdf5_file.create_group(spval_group(args.campaign))
-            columns = None
             for tile, path in tiles:
-                # BEFORE read_data, and not inside it. read_data wraps its
-                # column selection in a bare `except:` that prints and falls
-                # through, so a missing column leaves its return values unbound
-                # and the caller sees UnboundLocalError from the return
-                # statement — the real name, and every other missing name, never
-                # reaches the caller at all. Reading the header costs nothing
-                # next to reading the table.
-                check_columns(path, args.hdu, params["param_list"])
                 extracted, dtype = cfc.read_data(str(path), params)
-                # Requested columns, in the SOURCE catalogue's order (see the
-                # module docstring on determinism). Computed from the first
-                # tile and reused, so a tile whose catalogue is missing a
-                # column fails loudly on the assignment rather than quietly
-                # producing a differently-shaped dataset.
-                if columns is None:
-                    columns = [c for c in dtype.names
-                               if c in set(params["param_list"])]
-                subset = np.dtype([(c, dtype[c]) for c in columns])
-                group.create_dataset(
-                    tile,
-                    data=cfc.copy_data(columns, extracted, subset),
-                    dtype=subset,
-                )
+                data = cfc.copy_data(params["param_list"], extracted, dtype)
+                group.create_dataset(tile, data=data, dtype=data.dtype)
             # The same attribute create_final_cat.py's print_list() writes, and
             # what sp_validation reads to know how many tiles it is holding.
             hdf5_file.attrs["n_tiles"] = len(tiles)

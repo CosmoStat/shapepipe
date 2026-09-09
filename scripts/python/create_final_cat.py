@@ -144,13 +144,17 @@ def read_param_file(path, verbose=False):
             print("No parameters read", end="")
         print(" into merged catalogue")
 
-    param_list_unique = list(set(param_list))
-    
+    # Ordered dedup. list(set(...)) reordered the columns by the process's
+    # string hash seed, so two runs of this tool over the same inputs produced
+    # files whose datasets differed in column ORDER — which is part of a
+    # structured dtype, and therefore part of the file.
+    param_list_unique = list(dict.fromkeys(param_list))
+
     if verbose:
         n = len(param_list) - len(param_list_unique)
-        if n > 1:
-            print("Removed {n} duplicate entries")
-    
+        if n > 0:
+            print(f"Removed {n} duplicate entries")
+
     return param_list_unique
 
 
@@ -312,16 +316,20 @@ def read_data(fits_file, params):
     if params["param_list"] is None:
         params["param_list"] = [col for col in data.keys()]
 
-    try:
-        extracted_data = {col: data[col] for col in params["param_list"]}
-        dtype = data.dtype
-    except:
-        print(f"Error for ID {id}, path {fits_file}")
-        for col in params["param_list"]:
-            if col not in data:
-                print(col, end=" ")
-            print()
-            continue
+    # RAISE, do not print and fall through. The bare `except:` this replaces
+    # left extracted_data and dtype unbound, so the caller's own error was an
+    # UnboundLocalError from the return statement below, naming neither the
+    # file nor the column that was actually missing.
+    present = set(data.dtype.names or ())
+    missing = [col for col in params["param_list"] if col not in present]
+    if missing:
+        raise KeyError(
+            f"{fits_file}: missing {len(missing)} of the "
+            f"{len(params['param_list'])} requested column(s): "
+            f"{' '.join(missing)}"
+        )
+    extracted_data = {col: data[col] for col in params["param_list"]}
+    dtype = data.dtype
 
     return extracted_data, dtype
 
@@ -330,16 +338,23 @@ def copy_data(param_list, extracted_data, dtype):
     """Copy Data.
 
     """
+    # THE REQUESTED COLUMNS ONLY, in the SOURCE catalogue's order. Allocating
+    # with the source's full dtype and filling only the requested columns left
+    # every other column as uninitialised memory: meaningless values in the
+    # output file, and different bytes on every run of this tool over the same
+    # inputs. The parameter file says which columns the merged catalogue is
+    # for; those are the columns it gets.
+    columns = [col for col in (dtype.names or ()) if col in set(param_list)]
+    subset = np.dtype([(col, dtype[col]) for col in columns])
+
     # Initialize new data structure
     structured_data = np.empty(
         len(extracted_data[param_list[0]]),
-        dtype=dtype,
+        dtype=subset,
     )
 
     # Loop over parameters
-    for col in param_list:
-        if not col in extracted_data:
-            print(f"Column {col} not in file with ID {id}")
+    for col in columns:
         structured_data[col] = extracted_data[col]
     
     #if isinstance(extracted_data[col][0], (np.ndarray, tuple, list)):
@@ -467,12 +482,14 @@ def process(params):
 
                 structured_data = copy_data(params["param_list"], extracted_data, dtype)
 
-                # Create a new dataset
+                # Create a new dataset. dtype comes from the array copy_data
+                # built, not from the source catalogue: they differ now that
+                # copy_data allocates the requested columns alone.
                 try:
                     patch_group.create_dataset(
                         str(id),
                         data=structured_data,
-                        dtype=dtype,
+                        dtype=structured_data.dtype,
                     )
                 except:
                     print(f"Error for {id}: Could not create dataset in group {patch}")
