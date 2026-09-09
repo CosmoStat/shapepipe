@@ -731,25 +731,31 @@ def star_cat_exposures():
 # against synthetic tars for the star side and against smk-g6's real
 # catalogues for the tile side. Peak RSS is getrusage(RUSAGE_CHILDREN).
 #
-# STAR SIDE, and it is the alarming one. Two points, 20 and 80 exposures of 40
-# CCDs x 400 stars (1.6 MB of members per exposure, against the 2.0 MB measured
-# on smk-m2):
+# STAR SIDE. Two points, 20 and 80 exposures of 40 CCDs x 400 stars (1.6 MB of
+# members per exposure, against the 2.0 MB measured on smk-m2):
 #
-#     input members      peak RSS
-#     32.3 MB            383 MB
-#     129.0 MB          1313 MB
+#     input members    peak RSS, python lists    peak RSS, arrays
+#     32.3 MB          383 MB                    238 MB
+#     129.0 MB        1313 MB                    740 MB
 #
-# a slope of 10.1x the input bytes and an intercept of ~73 MB (interpreter,
-# astropy, shapepipe). Tenfold, because MergeStarCatPSFEX accumulates every
-# column into PYTHON LISTS of python floats before building the output arrays —
-# 8 bytes of payload becomes a 32-byte object plus an 8-byte pointer. THE
-# CONSEQUENCE IS A CEILING, and it should be said plainly: at ~2 MB per
-# exposure, a 16 GB job merges roughly 800 exposures, and DR6's ~20k exposures
-# would want ~400 GB. A full-survey full_starcat needs the accumulation changed
-# to preallocated arrays or a two-pass count — a change to MergeStarCatPSFEX,
-# not to this rule, and not in this PR. The formula below is honest about the
-# slope so the job asks for what it will use and fails at submission rather
-# than at 90% of the way through a campaign-length merge.
+# a slope of 10.1x the input bytes before, 5.5x now, over a ~62 MB interpreter
+# floor. The tenfold was MergeStarCat*'s accumulation of every column into
+# PYTHON LISTS of python floats — 4 bytes of float32 payload becoming a 32-byte
+# object plus an 8-byte pointer — and this PR replaced it with one array per
+# catalogue and one concatenate at the end, output byte-identical.
+#
+# THE REMAINING 5.5x IS THE OUTPUT SIDE, and it is not a leak: file_io writes
+# every float column as FITS 1D, so a float32 input becomes a float64 table
+# that astropy then buffers to write. Halving it means changing the OUTPUT
+# format, which is what sp_validation reads — a different decision from this
+# one, and not ours to take here.
+#
+# THE CEILING MOVED BUT DID NOT GO. At ~2 MB of members per exposure a 16 GB
+# job now merges ~2200 exposures rather than ~800, and DR6's ~20k would want
+# ~280 GB rather than ~400 GB. A full-survey full_starcat still needs the
+# output side addressed; the formula below is honest about the slope so the job
+# asks for what it will use and fails at submission rather than most of the way
+# through.
 #
 # TILE SIDE, and it is the reassuring one. Two points against real smk-g6
 # catalogues, 2 tiles (73.9 MB in, largest 39.6 MB) and 6 tiles (235.5 MB in,
@@ -757,7 +763,7 @@ def star_cat_exposures():
 # the merge holds one catalogue at a time — so it is sized on the LARGEST tile,
 # not the total, at ~3x it plus the interpreter.
 STAR_MEM_BASE_MB   = 500      # interpreter + astropy + shapepipe, rounded up
-STAR_MEM_FACTOR    = 12       # x input bytes; 10.1 measured, rounded up
+STAR_MEM_FACTOR    = 7        # x input bytes; 5.5 measured, rounded up
 FINAL_MEM_BASE_MB  = 800
 FINAL_MEM_FACTOR   = 4        # x the LARGEST tile; ~3 measured
 # What one unit costs when its product is not on disk yet to be stat()ed — a
