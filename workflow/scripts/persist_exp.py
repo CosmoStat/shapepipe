@@ -127,10 +127,20 @@ def main() -> None:
 
     args.dest.mkdir(parents=True, exist_ok=True)
     tar_path = args.dest / f"{args.exp}.tar"
+    # A file matched by TWO patterns is one file, not a collision. Keep lists
+    # overlap on purpose — `validation_psf-*.fits` alongside `*.fits` is a
+    # perfectly ordinary way to say "the validation catalogues, and everything
+    # else FITS while we are here" — and treating the second match as a name
+    # clash failed every exposure in the campaign. What must still be fatal is
+    # two DIFFERENT paths landing on one flat member name, which would silently
+    # overwrite; that is a same-name/different-source test, and the first
+    # pattern to match a file is the one recorded for it.
     seen, files = {}, []
     for pat, hits in found.items():
         for src in hits:
             if src.name in seen:
+                if seen[src.name][0] == src:
+                    continue          # same file, a second matching pattern
                 sys.exit(f"persist_exp: {args.exp}: two source files are both "
                          f"named {src.name} ({seen[src.name][0]} and {src}); tar "
                          f"members are flat, so this would silently overwrite")

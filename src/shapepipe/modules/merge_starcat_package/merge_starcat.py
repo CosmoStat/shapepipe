@@ -239,10 +239,15 @@ class MergeStarCatMCCD(object):
         my_mask[inside_circle] = True
 
         for name in self._input_file_list:
+            # The source to read and the NAME to report it by; identical for a
+            # plain [path] entry (see MergeStarCatPSFEX's docstring on the
+            # [fileobj, name] form). This class takes its CCD numbers from the
+            # data's own CCD_ID_LIST, so the name is only ever used in messages.
+            source, label = name[0], name[-1]
             try:
-                starcat_j = fits.open(name[0], memmap=False, ignore_missing_simple=True)
+                starcat_j = fits.open(source, memmap=False, ignore_missing_simple=True)
             except ValueError:
-                print(f"Error for file {name[0]}, check FITS file integrity")
+                print(f"Error for file {label}, check FITS file integrity")
                 #raise
                 continue
 
@@ -799,7 +804,11 @@ class MergeStarCatSetools(object):
         )
 
         for name in self._input_file_list:
-            starcat_j = fits.open(name[0], memmap=False)
+            # The source to read and the NAME to parse the CCD number out of;
+            # identical for a plain [path] entry (see MergeStarCatPSFEX's
+            # docstring on the [fileobj, name] form).
+            source, label = name[0], name[-1]
+            starcat_j = fits.open(source, memmap=False)
 
             data_j = starcat_j[self._hdu_table].data
 
@@ -824,7 +833,7 @@ class MergeStarCatSetools(object):
             snr += list(data_j["SNR_WIN"])
 
             # CCD number
-            ccd_nb += [re.split(r"\-([0-9]*)\-([0-9]+)\.", name[0])[-2]] * len(
+            ccd_nb += [re.split(r"\-([0-9]*)\-([0-9]+)\.", label)[-2]] * len(
                 data_j["XWIN_IMAGE"]
             )
 

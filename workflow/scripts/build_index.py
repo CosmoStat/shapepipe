@@ -170,8 +170,17 @@ def campaign_tiles(tile_list: Path, db_path: Path) -> list[str]:
     files — a declared tile with no indexed exposure list cannot have been
     computed, so it has no catalogue to merge.
     """
+    # DEDUPED, order preserved. The tile list is appended to by hand across a
+    # campaign, so a tile can appear twice; a merge would then try to write that
+    # tile's dataset twice and die on the second. Deduping here rather than at
+    # the call sites keeps the answer the same for every reader of the index.
+    seen, declared = set(), []
     with open(tile_list) as f:
-        declared = [ln.strip() for ln in f if ln.strip()]
+        for line in f:
+            tile = line.strip()
+            if tile and tile not in seen:
+                seen.add(tile)
+                declared.append(tile)
     con = sqlite3.connect(db_path, timeout=60)
     indexed = {r[0] for r in con.execute("SELECT DISTINCT tile_id FROM tile_exposures")}
     con.close()

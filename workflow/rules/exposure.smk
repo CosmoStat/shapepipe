@@ -274,7 +274,7 @@ rule star_cat_merge:
         products_dir = str(PRODUCTS_DIR),
         tile_list    = str(config["tile_list"]),
         index_db     = str(INDEX_DB),
-        inputs       = lambda wc, input: input_fingerprint(input),
+        inputs       = unit_fingerprint(star_cat_exposures()),
         script_hash  = MERGE_STAR_HASH
     threads: 1
     resources:

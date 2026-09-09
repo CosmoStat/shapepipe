@@ -136,8 +136,14 @@ if PHASE not in ("prepare", "compute", "passthrough"):
     raise WorkflowError(
         f"SP_PHASE={PHASE!r} is not one of prepare, compute, passthrough.")
 
+# DEDUPED, order preserved. The tile list is appended to by hand across a
+# campaign, so a tile can appear twice — harmless for a per-tile target, which
+# is the same path requested twice, but not for the campaign-level merges: their
+# fingerprint counts what is in this list and the job derives a deduped set from
+# the same file (build_index.campaign_tiles), so a duplicate line would make the
+# two disagree about a set they must name identically.
 with open(config["tile_list"]) as f:
-    TILES = [ln.strip() for ln in f if ln.strip()]
+    TILES = list(dict.fromkeys(ln.strip() for ln in f if ln.strip()))
 
 # --- ngmix scatter (D4) ----------------------------------------------------
 # Native directive: `--set-scatter ngmix=N` overrides it, N=1 degenerates to one
@@ -479,12 +485,11 @@ def persist_targets():
     Scope is the ready tiles' exposures, which `all` already builds through the
     tile chain, so nothing new is pulled into the DAG by asking.
 
-    EXCEPT A CLEANED EXPOSURE. Its exp_psf manifest was deleted by
-    clean_exposure, so requesting its persist manifest would make the DAG
-    rebuild the whole exposure chain from VOS — the avalanche tile.smk's
-    reclaimed-edge cut exists to prevent, arriving through a new target instead.
-    A tombstone means the copy already happened (clean_exposure cannot run
-    before exp_persist), so there is nothing to ask for.
+    EXCEPT AN EXPOSURE WHOSE STORE IS GONE. Its exp_psf manifest is not there,
+    so requesting its persist manifest would make the DAG rebuild the whole
+    exposure chain from VOS — the avalanche tile.smk's reclaimed-edge cut exists
+    to prevent, arriving through a new target instead. exp_store_reclaimed()
+    below is that test, and what it does NOT test is the tombstone.
 
     HEAD PROCESS ONLY, for the same reason as clean_targets() above.
     """
@@ -509,7 +514,46 @@ def persist_manifests():
         return []
     exps = {e for t in TILES_READY for e in tile_exposures(t)}
     return sorted(prod_exp_manifest(e, "exp_persist") for e in exps
-                  if not Path(tombstone(e)).exists())
+                  if not exp_store_reclaimed(e))
+
+
+def exp_store_reclaimed(exp):
+    """True when this exposure's PSF products exist ONLY on the persistent root.
+
+    The one condition both the persist target list and star_cat_merge's edge
+    choice turn on, and it deliberately does NOT read the tombstone.
+
+    THE TOMBSTONE ALONE IS NOT THE EVIDENCE. It says clean_exposure ran, and
+    clean_exposure is only one of the two ways a scratch store disappears.
+
+    WHAT THE TEST HAS TO SEPARATE is a store that is GONE from one that has not
+    been BUILT yet, and no single file says that. This runs at parse time, before
+    any exp_psf job of a fresh campaign has run, so "the exp_psf manifest is
+    missing" alone would skip every exposure of a new campaign and persist
+    nothing at all. The question is therefore: is there evidence this exposure
+    once had a store? Two files carry it, and either will do:
+
+      * the TOMBSTONE — clean_exposure ran, so the store was built and reclaimed,
+        and whatever was going to be packed was packed before it went;
+      * a PERSISTED MANIFEST with no exp_psf manifest beside it — exp_persist
+        ran, so the store existed, and it is not there now. This is the purge
+        case, and it is the one the tombstone cannot see: /scratch is purged on
+        a 60-day window whether or not this workflow reclaimed anything, and it
+        leaves nothing behind. Keying on the tombstone alone meant that after a
+        purge, or on any campaign run with `clean: false`, every exposure looked
+        live, its persist manifest was requested, its exp_psf manifest was not
+        there, and snakemake rebuilt the entire exposure chain from VOS.
+
+    An exposure with a LIVE store and a manifest is not reclaimed and is still
+    asked for, which is what lets an edit to `persist_exp:` re-pack in seconds
+    rather than be silently ignored — the whole reason exp_persist is a rule of
+    its own. An exposure with neither file is asked for too: either it has not
+    run yet, or it was purged having saved nothing, and only the DAG can tell
+    those apart by trying.
+    """
+    return (Path(tombstone(exp)).exists()
+            or (Path(prod_exp_manifest(exp, "exp_persist")).exists()
+                and not Path(exp_manifest(exp, "exp_psf")).exists()))
 
 # --- the campaign-level merges ---------------------------------------------
 # Two rules, one job each per campaign, both writing to the persistent root, and
@@ -530,23 +574,31 @@ def persist_manifests():
 # NEITHER PUTS ITS INPUT PATHS IN ITS SHELL. `{input}` at DR6 scale is ~20k paths
 # in a single argv entry, an order of magnitude over Linux's 128 KiB
 # MAX_ARG_STRLEN, and the job would die on exec. So each rule's `input` is the
-# DAG EDGE (what must exist first) and each script rediscovers the same set under
-# products_dir; what travels is a FINGERPRINT of the input list, on `params`,
-# which is what makes the merge rerun when the set changes and not otherwise.
+# DAG EDGE (what must exist first) and each script rediscovers the same set from
+# the tile list and the index; what travels is a FINGERPRINT of that set's unit
+# ids, on `params`, which is what makes the merge rerun when the set changes and
+# not otherwise.
 # The scripts' docstrings argue the rediscovery — it is also what lets the merges
 # cover exposures whose scratch stores reclamation has since taken.
 
 
-def input_fingerprint(paths):
-    """A short digest of an input list, for `params`.
+def unit_fingerprint(units):
+    """A short digest of a set of UNIT IDS, for a merge rule's `params`.
 
-    `params` is a rerun trigger and a path list is not: two campaigns' worth of
-    manifests hashes to two different values, so appending a tile reruns the
-    merge, while a rerun over the same set leaves it alone. Sorted before
-    hashing because the list's ORDER is not part of what changed.
+    `params` is a rerun trigger and a set of ids is not: appending a tile grows
+    the set, moves the digest and reruns the merge, while a rerun over the same
+    set leaves it alone. Sorted before hashing because the ORDER is not part of
+    what changed.
+
+    IDS RATHER THAN THE RULE'S `input` PATHS. A path can change while the set
+    does not — star_cat_merge's edge for one exposure flips from its manifest to
+    its tar when the store is reclaimed — and a merge that reruns over identical
+    content on every reclamation pass is a rerun trigger firing on bookkeeping.
+    The ids are also exactly what the job derives on its own side, so both
+    halves agree on the set and on how it is named.
     """
-    joined = "\n".join(sorted(str(p) for p in paths))
-    return f"{len(paths)}:{hashlib.md5(joined.encode()).hexdigest()[:12]}"
+    joined = "\n".join(sorted(str(u) for u in units))
+    return f"{len(units)}:{hashlib.md5(joined.encode()).hexdigest()[:12]}"
 
 
 # The tar member the star merge consumes. The keep list is globs, so the test is
@@ -624,13 +676,32 @@ def star_cat_inputs():
     """
     if not PERSIST_EXP:
         return []
-    live = set(persist_manifests())
-    exps = {e for t in TILES_READY for e in tile_exposures(t)}
-    reclaimed = sorted(prod_exp_tar(e) for e in exps
-                       if prod_exp_manifest(e, "exp_persist") not in live
-                       and Path(prod_exp_manifest(e, "exp_persist")).exists()
-                       and Path(prod_exp_tar(e)).exists())
-    return sorted(live) + reclaimed
+    live, reclaimed = [], []
+    for exp in sorted({e for t in TILES_READY for e in tile_exposures(t)}):
+        if not exp_store_reclaimed(exp):
+            live.append(prod_exp_manifest(exp, "exp_persist"))
+        elif Path(prod_exp_tar(exp)).exists():
+            reclaimed.append(prod_exp_tar(exp))
+    return live + reclaimed
+
+
+@functools.lru_cache(maxsize=1)
+def star_cat_exposures():
+    """The exposure IDs star_cat_merge stacks — what its fingerprint is taken
+    over.
+
+    THE IDS, NOT THE PATHS, and the difference is a rerun. An exposure's edge
+    FLIPS from its manifest to its tar the moment its store is reclaimed, so a
+    fingerprint over paths moves on every reclamation pass and reruns the merge
+    over content that did not change. The ids move only when the set does, which
+    is what the trigger is for. It is also what merge_star_cat.py derives on the
+    job side, so the two agree on the set AND on how it is named.
+    """
+    if not PERSIST_EXP:
+        return []
+    return sorted(e for e in {e for t in TILES_READY for e in tile_exposures(t)}
+                  if Path(prod_exp_manifest(e, "exp_persist")).exists()
+                  or not exp_store_reclaimed(e))
 
 
 def star_cat_targets():

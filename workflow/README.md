@@ -161,7 +161,6 @@ workflow/
     exposure.smk         per-exposure: get_images, split, psf, persist (no temp()); campaign star_cat_merge
     tile.smk             per-tile: exp forest, merge_headers, detect, vignets, ngmix, merge, make_cat; campaign final_cat_merge
   scripts/
-    sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count check)
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
     completeness.py      the ported count table (shared by sp_rule + run_report)

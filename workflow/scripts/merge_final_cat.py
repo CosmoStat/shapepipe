@@ -90,6 +90,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+from astropy.io import fits
 
 # Same directory; the rule invokes this file by path, so it is sys.path[0].
 import build_index
@@ -143,6 +144,16 @@ def catalogues(products_dir: Path, tile_list: Path, index_db: Path) -> list:
     return out
 
 
+def check_columns(path: Path, hdu: int, wanted: list) -> None:
+    """Fail loudly, and by name, when a catalogue lacks a requested column."""
+    with fits.open(path, memmap=False) as hdu_list:
+        present = set(hdu_list[hdu].columns.names)
+    missing = sorted(c for c in wanted if c not in present)
+    if missing:
+        sys.exit(f"merge_final_cat: {path} is missing {len(missing)} of the "
+                 f"{len(wanted)} requested column(s): {' '.join(missing)}")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--products-dir", required=True, type=Path,
@@ -184,6 +195,14 @@ def main() -> None:
             group = hdf5_file.create_group(spval_group(args.campaign))
             columns = None
             for tile, path in tiles:
+                # BEFORE read_data, and not inside it. read_data wraps its
+                # column selection in a bare `except:` that prints and falls
+                # through, so a missing column leaves its return values unbound
+                # and the caller sees UnboundLocalError from the return
+                # statement — the real name, and every other missing name, never
+                # reaches the caller at all. Reading the header costs nothing
+                # next to reading the table.
+                check_columns(path, args.hdu, params["param_list"])
                 extracted, dtype = cfc.read_data(str(path), params)
                 # Requested columns, in the SOURCE catalogue's order (see the
                 # module docstring on determinism). Computed from the first
@@ -193,10 +212,6 @@ def main() -> None:
                 if columns is None:
                     columns = [c for c in dtype.names
                                if c in set(params["param_list"])]
-                    missing = sorted(set(params["param_list"]) - set(columns))
-                    if missing:
-                        sys.exit(f"merge_final_cat: {path} has none of the "
-                                 f"requested column(s): {' '.join(missing)}")
                 subset = np.dtype([(c, dtype[c]) for c in columns])
                 group.create_dataset(
                     tile,

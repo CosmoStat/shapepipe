@@ -20,17 +20,18 @@ old runner called. This script only decides WHICH catalogues that class is
 handed, and where the result lands. A column added to the module is a column
 added here for free — which is the entire reason for the indirection.
 
-IT READS THE TARS, IT DOES NOT UNPACK THEM. ``exp_persist`` packs each
-exposure's keepers into one uncompressed tar on the persistent root
+IT READS THE TARS, IT DOES NOT UNPACK THEM, AND IT STREAMS. ``exp_persist``
+packs each exposure's keepers into one uncompressed tar on the persistent root
 (``<products_dir>/exp/<shard>/<exp>/psf/<exp>.tar``) precisely because inodes,
 not bytes, bind on /project. Unpacking ~20k tars × ~40 members to merge them
 would materialise ~800k files on the filesystem that design exists to protect,
-and then delete them. So members are read into memory
-(``tarfile.extractfile(m).read()`` -> ``io.BytesIO``) one at a time and handed
-to the merge class as ``[fileobj, member_name]`` pairs. The member NAME is what
-the CCD_NB regex parses, which is why the pair carries it; the class takes the
-name from the last element of the entry, so a plain ``[path]`` entry behaves
-exactly as it always did.
+and then delete them. So members are read out of the tars in memory
+(``tarfile.extractfile(m).read()`` -> ``io.BytesIO``) and handed to the merge
+class as ``[fileobj, member_name]`` pairs — ONE AT A TIME, lazily, through
+``TarMembers`` below, because materialising them all first is ~40 GB at DR6
+scale. The member NAME is what the CCD_NB regex parses, which is why the pair
+carries it; the class takes the name from the last element of the entry, so a
+plain ``[path]`` entry behaves exactly as it always did.
 
 WHICH EXPOSURES — AND WHY THE JOB DERIVES THE SET RATHER THAN BEING TOLD IT.
 The set is the CAMPAIGN's: every exposure read by a tile that is both declared
@@ -111,7 +112,15 @@ MEMBER_PATTERN = "validation_psf-*.fits"
 
 
 def merge_class(psf_model: str):
-    """The merge class for this PSF model — the one-line MCCD/setools hook."""
+    """The merge class for this PSF model — the one-line MCCD/setools hook.
+
+    Only psfex is exercised: it is what every campaign has run. MCCD reaches the
+    tars unchanged (it takes its CCD numbers from the data, and it now reports
+    by the entry's name like the others). SETOOLS would need one more thing —
+    it passes ``input_file_list[0][0]`` to file_io as a template path, which a
+    streamed entry is not — so wiring setools to this path is a change to that
+    class, not a change here.
+    """
     try:
         return {"psfex": merge_starcat.MergeStarCatPSFEX,
                 "mccd": merge_starcat.MergeStarCatMCCD,
@@ -135,18 +144,14 @@ def manifests(products_dir: Path, tile_list: Path, index_db: Path) -> list:
     return out
 
 
-def entries(manifest_paths: list, pattern: str) -> tuple:
-    """``[fileobj, member_name]`` for every matching member, and the tar count.
+def selection(manifest_paths: list, pattern: str) -> tuple:
+    """``[(tar path, [member names])]`` for the merge, and the empty exposures.
 
-    One tar is opened at a time and its members are read into memory; the tars
-    are never unpacked to disk (see the module docstring). The returned file
-    objects are BytesIO, so nothing stays open on the filesystem — at ~50 KB per
-    member and ~40 members per exposure this is ~2 MB per exposure held only for
-    as long as the merge takes to consume it, but note that the merge class
-    holds the whole stack in python lists regardless, which is the real memory
-    term the rule's mem_mb is sized against.
+    Reads the manifests only. Every tar is checked for existence HERE, so a
+    products root missing a file fails before a single row is stacked rather
+    than an hour in.
     """
-    out, n_tars, empty = [], 0, []
+    chosen, empty = [], []
     for man_path in manifest_paths:
         man = json.loads(man_path.read_text())
         wanted = sorted(f["name"] for f in man["files"]
@@ -158,15 +163,40 @@ def entries(manifest_paths: list, pattern: str) -> tuple:
         if not tar_path.exists():
             sys.exit(f"merge_star_cat: {man_path} names a tar that is not "
                      f"there: {tar_path}")
-        with tarfile.open(tar_path) as tf:
-            for name in wanted:
-                member = tf.extractfile(name)
-                if member is None:
-                    sys.exit(f"merge_star_cat: {tar_path} has no member "
-                             f"{name}, which its manifest lists")
-                out.append([io.BytesIO(member.read()), name])
-        n_tars += 1
-    return out, n_tars, empty
+        chosen.append((tar_path, wanted))
+    return chosen, empty
+
+
+class TarMembers:
+    """The merge class's input list, materialised ONE TAR AT A TIME.
+
+    ``MergeStarCatPSFEX`` wants something it can take the length of and iterate
+    once, handing it ``[fileobj, name]`` entries; it never indexes and never
+    rewinds. So it does not need a list, and a list is the one thing we cannot
+    afford: reading every member up front is the whole campaign in memory at
+    once — ~2 MB per exposure, so ~40 GB at DR6's ~20k exposures, against a
+    rule asking for 16 GB. Read lazily, peak memory is ONE member's bytes plus
+    the merge class's own accumulators, which are the real and unavoidable term.
+
+    ``__len__`` comes from the manifests, so the class can log the count before
+    a single tar is opened.
+    """
+
+    def __init__(self, chosen):
+        self._chosen = chosen
+
+    def __len__(self):
+        return sum(len(names) for _, names in self._chosen)
+
+    def __iter__(self):
+        for tar_path, names in self._chosen:
+            with tarfile.open(tar_path) as tf:
+                for name in names:
+                    member = tf.extractfile(name)
+                    if member is None:
+                        sys.exit(f"merge_star_cat: {tar_path} has no member "
+                                 f"{name}, which its manifest lists")
+                    yield [io.BytesIO(member.read()), name]
 
 
 def main() -> None:
@@ -196,8 +226,9 @@ def main() -> None:
                         level=logging.INFO, stream=sys.stdout)
 
     manifest_paths = manifests(args.products_dir, args.tile_list, args.index_db)
-    file_list, n_tars, empty = entries(manifest_paths, args.pattern)
-    if not file_list:
+    chosen, empty = selection(manifest_paths, args.pattern)
+    file_list = TarMembers(chosen)
+    if not len(file_list):
         # Not a no-op: an empty star catalogue would pass every downstream
         # existence check and produce meaningless rho statistics.
         sys.exit(f"merge_star_cat: no member matched {args.pattern!r} in any "
@@ -224,8 +255,8 @@ def main() -> None:
             log.info(f"unchanged: {args.output}")
         else:
             tmp.replace(args.output)          # atomic: same filesystem
-            log.info(f"{len(file_list)} catalogue(s) from {n_tars} exposure(s) "
-                     f"-> {args.output}")
+            log.info(f"{len(file_list)} catalogue(s) from {len(chosen)} "
+                     f"exposure(s) -> {args.output}")
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
