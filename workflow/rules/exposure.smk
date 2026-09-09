@@ -123,7 +123,7 @@ rule exp_psf:
 # `persist_exp:` block carries the keep list and its candidates).
 #
 # A LOCALRULE (declared in the Snakefile), by exactly the arithmetic that made
-# exp_star_cat one: the body is a `tar` of a few MB from one shared filesystem
+# clean_exposure one: the body is a `tar` of a few MB from one shared filesystem
 # to another, seconds of work, and one sbatch per exposure would be ~20k
 # submissions at DR6 scale for jobs shorter than the scheduling latency. The
 # grouping constraint that binds mid-chain localrules (this file's docstring)

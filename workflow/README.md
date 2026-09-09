@@ -256,7 +256,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   list rides on `params`: adding a pattern reruns seconds of packing, not four
   hours of PSF fitting per exposure. A pattern that matches nothing is a
   recorded warning (setools rejects sparse CCDs); matching nothing at all is a
-  failure. A `localrule`, like `exp_star_cat` and for the same arithmetic.
+  failure. A `localrule`, by the same arithmetic as `clean_exposure`.
 - **A dead tile can be told to stop pinning exposures.** An exposure is
   cleanable only once every consuming tile has its vignets, so one
   permanently-failed tile holds its ~80 exposures for the life of the

@@ -68,7 +68,7 @@ how big each file was, is provenance we want written down, and a directory
 output attests only that some directory exists.
 
 It carries no timestamp and is written tmp-then-``cmp``-then-``mv`` (the pattern
-``exp_star_cat`` uses), so a rerun that packs the same files leaves the mtime
+``clean_exposure`` uses), so a rerun that packs the same files leaves the mtime
 alone — mtime is a rerun trigger, and an unconditional rewrite would make every
 downstream ``clean_exposure`` look out of date once per invocation.
 """
