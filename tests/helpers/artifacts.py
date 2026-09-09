@@ -297,7 +297,7 @@ def emit_resolution_ladder_artifacts(artifacts_dir, summary,
         f"{rows}\n"
         f"As the galaxy shrinks toward the PSF, |m| grows negative (shear washes "
         f"out) and R11 dips through a ~0.92 minimum then rises toward the "
-        f"point-source floor. Only resolved rungs (ratio >= "
+        f"point-source limit. Only resolved rungs (ratio >= "
         f"{summary['resolved_ratio_threshold']}) are asserted.\n"
     )
 

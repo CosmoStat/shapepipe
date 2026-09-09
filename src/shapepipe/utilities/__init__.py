@@ -7,4 +7,4 @@ scripts.
 
 """
 
-__all__ = ["file_system", "cfis", "galaxy", "summary"]
+__all__ = ["file_system", "cfis", "galaxy", "mask_query", "summary"]

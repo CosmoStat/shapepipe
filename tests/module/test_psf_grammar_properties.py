@@ -19,7 +19,7 @@ metacal RECONVOLUTION kernel (``PSF_RECONV``) are independent fits of
     group is optional, so a regressed ``GAL`` token is rejected, not
     absorbed);
 (c) every ``NGMIX_*`` token the shipped param file
-    (``example/cfis/final_cat.param``) names is a column the writer can
+    (``workflow/config/cfis/final_cat.param``) names is a column the writer can
     produce — writer/param-file consistency;
 (d) the FULL frozen grammar (shapepipe#761) — ``ESTIMATOR_COMPONENT[_ERR]_
     OBJECT[_metacaltype]`` — holds across both estimator families: both
@@ -183,10 +183,10 @@ GRAMMAR_RE = re.compile(
 
 # The shipped final-catalogue param files, two levels up from tests/module/.
 # Both are consumer contracts updated to the new grammar, so both are checked.
-_EXAMPLE = Path(__file__).resolve().parents[2] / "example"
+_ROOT = Path(__file__).resolve().parents[2]
 PARAM_PATHS = [
-    _EXAMPLE / "cfis" / "final_cat.param",
-    _EXAMPLE / "unions_800" / "cat_matched.param",
+    _ROOT / "workflow" / "config" / "cfis" / "final_cat.param",
+    _ROOT / "example" / "unions_800" / "cat_matched.param",
 ]
 
 # The one param-file NGMIX token outside the _save_ngmix_data grammar: the
@@ -357,7 +357,7 @@ def test_emitted_column_names_match_grammar(obj_ids, tmp_path_factory):
 def test_param_file_ngmix_tokens_are_producible(param_path, obj_ids):
     """Every NGMIX_* token the param file names is a column the writer produces.
 
-    Each shipped final-catalogue param file (``example/cfis/final_cat.param``
+    Each shipped final-catalogue param file (``workflow/config/cfis/final_cat.param``
     and ``example/unions_800/cat_matched.param``) is a consumer contract for the
     final catalogue; ``create_final_cat`` keeps only the listed columns, so a
     token it names that the writer cannot emit is a silent, empty column

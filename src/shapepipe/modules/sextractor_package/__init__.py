@@ -4,10 +4,10 @@ This package contains the module for ``sextractor``.
 
 :Author: Axel Guinot
 
-:Parent modules: ``mask_runner``, ``merge_headers_runner`` (the latter only
+:Parent modules: ``split_exp_runner``, ``merge_headers_runner`` (the latter only
     when ``MAKE_POST_PROCESS`` is ``True``)
 
-:Input: Single-exposure single-CCD image, weight and flag files
+:Input: Single-exposure single-CCD image, weight and instrument flag files
 
 :Output: SExtractor output catalogue
 

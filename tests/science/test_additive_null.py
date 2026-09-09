@@ -14,7 +14,7 @@ response ``R11 = (g1_1p - g1_1m)/(2*step)``. Only two things change from the
 m-bias path — the galaxy is round (``shear=(0, 0)``) and the PSF is sheared
 (``psf_shear=(0.05, 0)``). With the deconvolution wired correctly the true PSF is
 fed as the model, so the deconvolution is unbiased and the recovered ``c`` sits
-at the ~few x 1e-5 noise floor per seed. A regression that breaks the
+at the ~few x 1e-5 noise level per seed. A regression that breaks the
 deconvolution (deconvolves by a fitted model instead of the PSF image, drops it,
 or shears the galaxy rather than the PSF) leaks the 0.05 PSF ellipticity straight
 into ``c``, blowing past the tolerance in seconds.
@@ -49,7 +49,7 @@ def test_additive_bias_consistent_with_zero():
 
     A round galaxy through an ``e1 = 0.05`` PSF should yield ``c ~ 0`` once the
     deconvolution removes the PSF shape (the true PSF is fed as the model, so
-    the deconvolution is unbiased and only the noise floor remains). Asserts the
+    the deconvolution is unbiased and only the noise level remains). Asserts the
     ensemble-mean ``|c|`` below the twin's published ``C_TOL``; a deconvolution
     regression that leaks PSF ellipticity pushes ``c`` toward 0.05 and trips it.
     """

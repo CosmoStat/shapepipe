@@ -19,7 +19,7 @@ from shapepipe.pipeline.execute import execute
 # first three entries only.
 @module_runner(
     version="1.0.1",
-    input_module=["mask_runner", "merge_headers_runner"],
+    input_module=["split_exp_runner", "merge_headers_runner"],
     file_pattern=["image", "weight", "flag", "log_exp_headers"],
     file_ext=[".fits", ".fits", ".fits", ".sqlite"],
     executes=["source-extractor"],

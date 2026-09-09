@@ -25,6 +25,7 @@
   basic_execution
   configuration
   testing
+  workflow
   pipeline_tutorial
 
 .. toctree::
@@ -41,7 +42,6 @@
   :caption: Miscellaneous
 
   post_processing
-  random_cat
 
 .. toctree::
    :hidden:

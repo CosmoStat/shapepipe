@@ -43,14 +43,22 @@ SAVE_BATCH : int, optional
     (no batch saving)
 ID_OBJ_MIN : int
     ID of first galaxy object to be processed; not used if set to ``-1``
-    (default)
+    (default). Environment variables are expanded, so an orchestrator can
+    set the object range per chunk, for example
+    ``ID_OBJ_MIN = $SP_NGMIX_ID_OBJ_MIN``.
 ID_OBJ_MAX : int
     ID of last galaxy object to be processed; not used if set to ``-1``
-    (default)
+    (default). Environment variables are expanded, as for ``ID_OBJ_MIN``.
 BKG_RMS_VIGNET_PATH : str, optional
     Path to a ``background_rms_vignet*.sqlite`` file produced by
     ``vignetmaker_runner``. The string may contain
     ``{file_number_string}``, which is replaced by the current tile ID.
+
+Random number generation
+========================
+
+Each object gets its own random number stream, seeded from its sky position
+and CCD (``ngmix.position_seed``).
 
 """
 

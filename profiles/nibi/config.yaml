@@ -1,0 +1,157 @@
+# Snakemake profile for the Nibi cluster (Digital Research Alliance).
+#
+# SLURM-EXECUTOR mode (PRD #848 D-profile): one SLURM job per rule instance,
+# each carrying its rule's own attempt-scaled resources (cpus_per_task,
+# mem_mb, runtime). Snakemake feeds the queue as jobs finish, so DR6's ~170k
+# total jobs never queue at once, and multi-node scaling is inherent — this
+# supersedes the earlier one-allocation/local-scheduler mode.
+#
+# Launch via `workflow/bin/sp` (loads apptainer/1.4.5, uses the /project venv).
+# software-deployment-method wraps every job's shell in `apptainer exec` — the
+# user never types apptainer. WHICH image is resolved in the Snakefile through
+# workflow/scripts/container.py, whose docstring documents the layers and the
+# resolution order; `sp container status` prints which layer is live.
+
+executor: slurm
+
+# Per-user submit cap, queried 2026-07-30 on nibi:
+#   sacctmgr show assoc user=cdaley format=Account,MaxSubmitPU -P
+#   -> def-mjhudson_cpu 1000, def-mjhudson_gpu 1000 (MaxSubmitPU; no site-wide
+#      MaxSubmitJobs in `scontrol show config`, so the association limit governs)
+# Set to ~80% of that (1000) so this workflow never starves other submissions
+# under the same account. Re-query if the association limits change.
+jobs: 800
+
+default-resources:
+  mem_mb: 2000
+  runtime: 120                   # minutes
+  slurm_account: def-mjhudson_cpu
+
+software-deployment-method: [apptainer]
+# Explicit container environment (finding 2/3): the apptainer SDM otherwise drops
+# the proven-recipe env and hardcodes --home <workdir>, hiding ~/.ssl/cadcproxy.pem.
+#  --cleanenv          strict host-env isolation (APPTAINERENV_*/SINGULARITYENV_* survive)
+#  OMP_NUM_THREADS=1   caps OpenBLAS fork-explosion (verified: pool 32->1)
+#  MALLOC_ARENA_MAX=2  bounded allocator (im_sims/nibi lesson)
+#  --home /home/cdaley wins over the SDM's --home <cwd>; restores cadcproxy.pem for vos/vcp
+#                      >>> EDIT THIS: THE ONE NON-PORTABLE LINE IN THIS FILE. <<<
+#                      The apptainer-args string below hardcodes one user's home
+#                      (--home /home/cdaley). A different user must edit it by hand.
+#                      IT CANNOT BE FIXED HERE: YAML cannot splice an env var, and
+#                      snakemake escapes a literal `$` before the string reaches
+#                      any shell (see the $SLURM_TMPDIR post-mortem below, which
+#                      cost a whole campaign). Nor can bin/sp inject it through
+#                      --apptainer-args: that REPLACES the profile value rather
+#                      than appending to it, so the launcher would have to restate
+#                      this whole string -- and workflow/scripts/container.py reads
+#                      THIS LINE to give `sp container exec` the same environment
+#                      jobs get, so a second definition is exactly the divergence
+#                      that mechanism exists to prevent.
+#                      THE PYTHONPATH PIN IS THE ONE EXCEPTION, and it is not
+#                      edited by hand: `sp run` copies this whole file into the
+#                      campaign's code snapshot and rewrites that ONE path to the
+#                      snapshot's src/ (bin/sp, "the launch code snapshot"). Still
+#                      one source of truth for the flags -- the copy is generated,
+#                      never edited -- and jobs stop reading a live checkout.
+#  --bind /local       NODE-LOCAL NVME. $SLURM_TMPDIR on nibi is
+#                      /local/scratch/<user>.<jobid>.0, and the mount is /local
+#                      (/dev/nvme0n1, ext4, 3.5 TB) -- binding /localscratch is
+#                      NOT enough, the real path is under /local (verified,
+#                      probe job 20794182). The fused `tile_shape` group job
+#                      WRITES its 5.6 GB vignette store there and never puts it
+#                      on scratch at all (workflow/rules/tile.smk); every other
+#                      rule simply ignores the bind. Adding it does NOT
+#                      invalidate anything: the `software-env` rerun trigger
+#                      hashes only job.container_img_url (+ conda env, env
+#                      modules) --
+#                      snakemake/persistence/__init__.py::_software_stack_hash,
+#                      v9.23.1 -- and apptainer-args is not in that hash.
+# 
+#                      HOW the in-container shell LEARNS its node-local dir:
+#                      IT DOES NOT. It DERIVES the path from the tile wildcard
+#                      (tile.smk::tile_local -> /local/scratch/sp-<tile>), and
+#                      that is the only mechanism that survives contact with
+#                      snakemake. Three alternatives were tried; all fail, and
+#                      the third failed IN PRODUCTION, so read this before
+#                      reaching for any of them again:
+#                        * {resources.tmpdir} is NOT $SLURM_TMPDIR. Snakemake
+#                          defers that resource to the job and evaluates it as
+#                          tempfile.gettempdir(); nibi's Slurm does not export
+#                          TMPDIR, so it lands on /tmp -- which on a compute
+#                          node is a 378 GB RAM-backed tmpfs whose pages are
+#                          charged to the job's memory cgroup. Staging 6 GB
+#                          there would eat the job's RAM, not use the NVMe.
+#                          (Measured, job 20794656.)
+#                        * APPTAINERENV_SLURM_TMPDIR would have to be exported
+#                          by something that already knows the JOB's value;
+#                          bin/sp runs on the login node, where it is unset.
+#                        * SPLICING "$SLURM_TMPDIR" INTO apptainer-args AND
+#                          LETTING THE JOB'S SHELL EXPAND IT DOES NOT WORK.
+#                          This was the shipped design for exactly one campaign
+#                          and it killed every tile of run 20798193 in eight
+#                          minutes: snakemake ESCAPES the `$` before the string
+#                          reaches any shell, so the container receives the
+#                          literal characters and never a path. NOTHING can be
+#                          carried into the container this way -- not a tmpdir,
+#                          not anything else. The bind below is static, and the
+#                          VALUE is derived job-side from a wildcard instead.
+#                      Every tile_shape member still REFUSES TO RUN if the
+#                      derived directory is not real (tile.smk), which is the
+#                      only reason that campaign cost minutes and not a night:
+#                      a broken node-local path is a loud failure, never a
+#                      silent slide back onto NFS, and never a 5.6 GB write
+#                      into the RAM-backed /tmp tmpfs.
+#  PYTHONPATH          SETTLED CALL 3 — pins THIS branch's src/, which is
+#                      develop@97e16d50 plus the four commits that genuinely need
+#                      module code: ngmix chunk fields + position-seeded RNG,
+#                      merge_sep_cats chunk paths, the vizier star-cat helpers,
+#                      and the cherry-picked #873 (seeded setools split).
+#                      NOT shapepipe-prod (drifted to a PR branch mid-run, and the
+#                      live p3-batch1 job reads it) and not the sif default
+#                      (frozen pre-#843, and pre-#873). Production later rebuilds
+#                      the sif at the validated commit and DROPS this --env line.
+#                      The path written HERE is the checkout's, and is what
+#                      `sp container exec` uses; the value JOBS see is the
+#                      snapshot's src/, substituted per the paragraph above. So a
+#                      running campaign holds its launch code even after this
+#                      line (or the tree it names) changes.
+apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/project/def-mjhudson/cdaley/shapepipe-snakemake/src --home /home/cdaley --bind /project --bind /scratch --bind /local"
+
+latency-wait: 60                 # NFS: wait for outputs to appear after a job
+keep-going: true                 # a failed job poisons only its cone; siblings run on
+rerun-incomplete: true           # re-do jobs left incomplete by an unclean death
+show-failed-logs: true
+printshellcmds: true
+
+# No `keep-incomplete` here. The declared output IS the manifest, so letting
+# snakemake delete a failed job's output is exactly the manifest-vs-log
+# semantics this workflow wants (completeness.py's docstring argues it), and
+# `show-failed-logs` above surfaces the surviving log on the console.
+
+# rerun-triggers: the v9 default MINUS `input`. params/code/mtime fixes still
+# propagate — completeness.py writes the manifest only on change, so mtimes move
+# only when reality moves.
+#
+# `input` is dropped because reclamation needs the tile->exposure edge to be
+# CONDITIONAL; with the trigger on, that conditional itself reruns every
+# finished tile against a reclaimed exposure store. tile.smk's tile_finished
+# commentary carries the mechanism and the fixture-t4 job counts.
+#
+# Nothing this workflow relied on is lost. The two genuinely data-derived input
+# sets are covered another way: a changed exposure list arrives through the
+# (non-ancient) find_exposures manifest's mtime, and the ngmix chunk count rides
+# in params. And clean scheduling is structurally gated to bin/sp (SP_PHASE=compute
+# + this profile), so a bare snakemake invocation cannot quietly recombine
+# reclamation with the `input` trigger.
+rerun-triggers: [mtime, params, code, software-env]
+
+# NO set-threads / set-resources here, deliberately. Profile overrides REPLACE a
+# rule's own values (verified snakemake 9.23), which would kill the
+# attempt-scaled `mem_mb = lambda wc, attempt: ...` OOM retries and the tuned
+# ngmix thread count, and would flatten the group resource composition. The
+# RULES own threads and resources; this profile only sets defaults for rules
+# that state nothing (default-resources above).
+#
+# `group:` fusion of the short rules (PRD D-profile) lives in the rule files,
+# each label documented in its file's docstring: `tile_prep` (prepare.smk),
+# `exp_short` (exposure.smk) and `tile_shape` (tile.smk).
