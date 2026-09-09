@@ -6,7 +6,7 @@ Create and update hdf5 file of all final ShapePipe output FITS files, runs of
 ShapePipe module ``make_catalogue_runner``. Supercedes `merge_final_cat.py`.
 
 Usage: in parent dir of patches:
-create_final_cat.py -p ~/shapepipe/example/cfis/final_cat.param -i . -P 7 -v -m final_cat_P7.hdf5
+create_final_cat.py -p ~/shapepipe/workflow/config/cfis/final_cat.param -i . -P 7 -v -m final_cat_P7.hdf5
 
 :Author: Martin Kilbinger
 
@@ -394,7 +394,7 @@ def process(params):
         run_prefix = "run_sp_tile_Mc_*"
     else:
         patch_name = rf"P{params['patch']}"
-        run_prefix = "run_sp_Mc_*"
+        run_prefix = "run_sp_tile_Mc_*"
 
     patch_pattern = re.compile(patch_name)
 

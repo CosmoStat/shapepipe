@@ -83,12 +83,11 @@ jobs:
 
       # Smoke-test the binaries baked into the runtime image. Catches the
       # class of regression where the image builds but a runtime tool
-      # (sextractor, weightwatcher) is missing or unrunnable.
+      # (sextractor, psfex) is missing or unrunnable.
       - name: Test runtime — binaries
         run: |
           IMAGE=$(echo "${{ steps.meta-runtime.outputs.tags }}" | head -n1)
           docker run --rm "$IMAGE" source-extractor --version
-          docker run --rm "$IMAGE" weightwatcher --version
           docker run --rm "$IMAGE" psfex --version
 
       - name: Test runtime — shapepipe entry point (read-only fs)

@@ -11,11 +11,6 @@ catalogue via _metacalibration_), a joint star catalogue, and PSF diagnostic plo
 
 ---
 
-If main ShapePipe processing happened at the old canfar VM system (e.g. CFIS v0 and v1), go
-[here](vos_retrieve.md) for details how to retrieve the ShapePipe output files.
-
----
-
 ```{note}
 This page documents the **legacy** post-processing used for pre-v1.4 runs on the
 canfar VM system. PSF validation and the scale-dependent diagnostics
@@ -76,6 +71,6 @@ The following steps were used for pre-v1.4 runs performed on the canfar VM syste
       ```
       Choose as input directory `input_dir` the `make_cat` output of the runs
       being combined. A default parameter file `<param_file>` is
-      `/path/to/shapepipe/example/cfis/final_cat.param`. 
+      `/path/to/shapepipe/workflow/config/cfis/final_cat.param`. 
       On success, the file `./final_cat.npy` is created. Depending on the number of
       input tiles, this file can be several tens of Gb large. 

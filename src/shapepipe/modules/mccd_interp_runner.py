@@ -8,6 +8,7 @@ This file is the pipeline runner for the MCCD_interpolation package.
 
 import os
 
+from shapepipe.pipeline.exp_utils import get_exp_output_dirs
 from shapepipe.pipeline.run_log import get_last_dir
 
 from shapepipe.modules.mccd_package import (
@@ -87,9 +88,34 @@ def mccd_interp_runner(
             )
 
     elif mode == "MULTI-EPOCH":
-        module = config.getexpanded(module_config_sec, "PSF_MODEL_DIR")
-        psf_model_dir = get_last_dir(run_dirs["run_log"], module)
-        psf_model_pattern = config.get(module_config_sec, "PSF_MODEL_PATTERN")
+        if config.has_option(module_config_sec, "ME_DOT_PSF_EXP_DIR"):
+            exp_base_dir = config.getexpanded(
+                module_config_sec, "ME_DOT_PSF_EXP_DIR"
+            )
+            if len(input_file_list) < 3:
+                raise ValueError(
+                    "ME_DOT_PSF_EXP_DIR requires the exposure-numbers file"
+                    " as a third input; add 'exp_numbers' to FILE_PATTERN"
+                    f" and FILE_EXT in the [{module_config_sec}] config section."
+                )
+            exp_numbers_file = input_file_list[2]
+            model_runner = config.get(
+                module_config_sec,
+                "ME_DOT_PSF_RUNNER",
+                fallback="mccd_fit_val_runner",
+            )
+            psf_model_dir = get_exp_output_dirs(
+                exp_base_dir, exp_numbers_file, model_runner, w_log
+            )
+            psf_model_pattern = config.get(
+                module_config_sec, "ME_DOT_PSF_PATTERN"
+            )
+        else:
+            module = config.getexpanded(module_config_sec, "PSF_MODEL_DIR")
+            psf_model_dir = get_last_dir(run_dirs["run_log"], module)
+            psf_model_pattern = config.get(
+                module_config_sec, "PSF_MODEL_PATTERN"
+            )
         galcat_path = input_file_list[0]
         # The WCS log is supplied as a positional input (via FILE_PATTERN)
         # in MULTI-EPOCH mode, not by the decorator default.

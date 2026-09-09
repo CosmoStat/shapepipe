@@ -34,7 +34,7 @@ ENV SHELL=/bin/bash \
     COVERAGE_FILE=/tmp/.coverage
 
 # System dependencies — three categories:
-#  - astromatic binaries (psfex, source-extractor, weightwatcher) ship as
+#  - astromatic binaries (psfex, source-extractor) ship as
 #    Debian packages on bookworm; preferred over building from source.
 #  - compilers and dev libs needed to build the heavier wheels (galsim,
 #    mpi4py, python-pysap, fitsio).
@@ -55,7 +55,7 @@ RUN apt-get update -y --quiet && \
         libcfitsio-dev \
         libproj-dev proj-bin \
         libgl1-mesa-glx \
-        psfex source-extractor weightwatcher && \
+        psfex source-extractor && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # OpenMPI from source — required for hybrid Apptainer MPI on HPC clusters.

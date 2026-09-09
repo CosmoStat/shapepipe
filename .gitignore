@@ -139,3 +139,4 @@ code
 # .felt here is a machine-local symlink into it. Never track it in this repo.
 /.felt/
 /.felt
+.snakemake/
