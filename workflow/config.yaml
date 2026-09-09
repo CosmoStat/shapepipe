@@ -19,11 +19,16 @@
 tile_list: /project/def-mjhudson/cdaley/sp-products/smk-g6/tiles.txt
 
 # Inputs are the only site-specific data paths; all committed configs consume these
-# through SP_INPUT_TILES and SP_INPUT_EXPOSURES.
+# through SP_INPUT_TILES, SP_INPUT_EXPOSURES and SP_INPUT_MASKS.
 inputs:
   # Pre-staged P3 data (get_images RETRIEVE=symlink).
   tiles: /project/def-mjhudson/unions-wl/tiles
   exposures: /project/def-mjhudson/unions-wl/exposures
+  # UNIONS sky-fixed masks: one boolean healsparse map per bit of the
+  # band-combined ugriz mask (nside 131072, True = masked), queried per object
+  # by make_cat -- never rasterized. Consumed by MASK_EXT_PATHS in
+  # config_tile_Mc.ini, which carries the bit table.
+  masks: /project/def-mjhudson/unions-wl/masks/dr6-2026-08
 
 # The container every job runs inside (apptainer software-deployment in the profile).
 container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif

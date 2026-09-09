@@ -1000,9 +1000,9 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     There is no per-unit ``cfis`` symlink any more: $SP_CONFIG points straight at
     the committed config dir.
 
-    It also exports the configured input roots as ``SP_INPUT_TILES`` and
-    ``SP_INPUT_EXPOSURES`` and the PSF choice as ``SP_PSF`` for the committed
-    ini chain.
+    It also exports the configured input roots as ``SP_INPUT_TILES``,
+    ``SP_INPUT_EXPOSURES`` and ``SP_INPUT_MASKS`` and the PSF choice as
+    ``SP_PSF`` for the committed ini chain.
 
     Finally it ``rm -rf``s this stage's own fixed run dir — ShapePipe's
     FileHandler raises on an existing run dir, and it is how a rerun never sees
@@ -1021,6 +1021,7 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
         f"export SP_CONFIG='{CONFIG_DIR}'",
         f"export SP_INPUT_TILES='{INPUTS['tiles']}'",
         f"export SP_INPUT_EXPOSURES='{INPUTS['exposures']}'",
+        f"export SP_INPUT_MASKS='{INPUTS['masks']}'",
         f"export SP_PSF='{PSF_MODEL}'",
         # Also set via apptainer-args in the profile; kept here so a hand-run of
         # this same line outside snakemake behaves identically.
