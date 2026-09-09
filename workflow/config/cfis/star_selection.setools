@@ -1,1 +1,131 @@
-../../../example/cfis/star_selection.setools
+## SETools configuration file for star/galaxy separation based on size/mag properties
+##
+## ONE mask cut, and it is the instrument flags:
+##   IMAFLAGS_ISO == 0  the instrument flag image (bad columns, saturation)
+##                      delivered with the exposure and read by SExtractor.
+##
+## That is deliberate, and it follows from what the two kinds of mask MEAN.
+## An instrument flag marks a CORRUPTED MEASUREMENT — the pixels carry no
+## usable signal — so a flagged star is not a star we could model badly, it is
+## one we cannot model at all. The healsparse masks are sky-fixed LOCATION
+## flags (a star halo, a manual region, a band with no data): they say where an
+## object sits, not that its pixels are broken, so whether one disqualifies a
+## PSF star is a judgement, not a fact about the data.
+##
+## So the star selection deliberately starts from OUTLIER REJECTION ALONE for
+## that judgement. mask_query still queries the external masks per detection
+## and writes MASK_EXT into this catalogue — carried for transparency and
+## measurement, so their effect on the star sample can be measured before it is
+## imposed. Flag transparently, cut downstream.
+##
+## MASK_EXT is the configurable pickup if outlier rejection proves
+## insufficient. To impose it, add
+##
+##     MASK_EXT == 0
+##
+## beside each IMAFLAGS_ISO line below — one line per mask block, and that is
+## the whole change. Which maps reach MASK_EXT is mask_query's MASK_PATHS
+## config, which ships commented out; SETools has no bitwise operators, so the
+## bit selection happens there and this file only ever tests for zero.
+
+[MASK:preselect]
+MAG_AUTO > 0
+MAG_AUTO < 21
+FWHM_IMAGE > 0.3 / 0.187
+FWHM_IMAGE < 1.5 / 0.187
+FLAGS == 0
+IMAFLAGS_ISO == 0
+NO_SAVE
+
+[MASK:flag]
+FLAGS == 0
+IMAFLAGS_ISO == 0
+NO_SAVE
+
+
+[MASK:star_selection]
+# Star selection using the FWHM mode
+MAG_AUTO > 18.
+MAG_AUTO < 22.
+FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
+FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
+FLAGS == 0
+IMAFLAGS_ISO == 0
+
+[MASK:fwhm_mag_cut]
+FWHM_IMAGE > 0
+FWHM_IMAGE < 40
+MAG_AUTO < 35
+FLAGS == 0
+IMAFLAGS_ISO == 0
+NO_SAVE
+
+# Split the 'star_selection' sample into
+# two random sub-samples with ratio 80/20
+[RAND_SPLIT:star_split]
+RATIO = 20
+MASK = star_selection
+
+# The following selection is only used for plotting
+
+[PLOT:size_mag]
+TYPE = plot
+FORMAT = png
+X_1 = FWHM_IMAGE{fwhm_mag_cut}
+Y_1 = MAG_AUTO{fwhm_mag_cut}
+X_2 = FWHM_IMAGE{star_selection}
+Y_2 = MAG_AUTO{star_selection}
+MARKER_1 = +
+MARKER_2 = .
+MARKERSIZE_1 = 3
+MARKERSIZE_2 = 3
+LABEL_1 = All
+LABEL_2 = "Stars, mean FWHM: @mean(FWHM_IMAGE{star_selection})*0.187@ arcsec"
+TITLE = "Stellar locus"
+XLABEL = "FWHM (pix)"
+YLABEL = Mag
+
+[PLOT:hist_mag_stars]
+TYPE = hist
+FORMAT = png
+Y = MAG_AUTO{star_selection}
+BIN = 20
+LABEL = "stars"
+XLABEL = "Magnitude"
+YLABEL = "Number"
+TITLE = "Magnitude of stars"
+
+[PLOT:fwhm_field]
+TYPE = scatter
+FORMAT = png
+X = X_IMAGE{star_selection}
+Y = Y_IMAGE{star_selection}
+SCATTER = FWHM_IMAGE{star_selection}*0.186
+MARKER = .
+LABEL = "FWHM (arcsec)"
+TITLE = "FWHM of stars"
+XLABEL = "X (pix)"
+YLABEL = "Y (pix)"
+
+[PLOT:mag_star_field]
+TYPE = scatter
+FORMAT = png
+X = X_IMAGE{star_selection}
+Y = Y_IMAGE{star_selection}
+SCATTER = MAG_AUTO{star_selection}
+MARKER = .
+LABEL = "Magnitude"
+TITLE = "Magnitude of stars"
+XLABEL = "X (pix)"
+YLABEL = "Y (pix)"
+
+[STAT:star_stat]
+"Nb objects full cat" = len(FWHM_IMAGE)
+"Nb objects not masked" = len(FWHM_IMAGE{flag})
+"Nb stars" = len(FWHM_IMAGE{star_selection})
+"stars/deg^2" = len(FWHM_IMAGE{star_selection})/4612./0.187*3600.*1./2048./0.187*3600.
+"Mean star fwhm selected (arcsec)" = mean(FWHM_IMAGE{star_selection})*0.187
+"Standard deviation fwhm star selected (arcsec)" = std(FWHM_IMAGE{star_selection})*0.187
+"Mode fwhm used (arcsec)" = mode(FWHM_IMAGE{preselect})*0.187
+"Min fwhm cut (arcesec)" = mode(FWHM_IMAGE{preselect})*0.187-0.1*0.187
+"Max fwhm cut (arcsec)" = mode(FWHM_IMAGE{preselect})*0.187+0.1*0.187
