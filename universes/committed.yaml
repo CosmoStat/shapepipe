@@ -1,0 +1,70 @@
+id: committed
+description: The committed configuration on feat/snakemake-orchestration.
+decisions:
+  per_unit_count_floor: count_floor
+  postage_stamp_size: px_51
+  photometric_zeropoint: fixed_30_tiles_header_exposures
+  baseline_validation_criterion: statistical_parity
+analyses:
+  masking:
+    decisions:
+      star_catalogue_query: gsc_23_vizier
+      star_magnitude_definition: mean_finite_bands
+      bright_star_mask_geometry: megaprime_polygon_linear_scaling
+      deep_sky_object_masking: circles_no_padding
+      border_mask_width: px50_exposures_only
+      pixel_threshold_flags: stock_ww_thresholds
+      external_flag_usage: exposures_only
+  detection:
+    decisions:
+      detection_threshold_policy: thresh_1p5_minarea5_fwhm2px_filter
+      deblending_policy: mincont_5em4_tiles
+      background_model: manual_zero_tiles_auto_exposures
+      weighting_and_interpolation: map_weight_interp_all
+      detection_source_mode: sx_nomask_single_image
+      epoch_membership_ccd_bounds: trimmed_bounds_33_2080
+      photometry_parameters: kron_25_35
+      cleaning_and_neighbour_masking: clean_1_correct
+  preparation:
+    decisions:
+      astrometric_solution_source: delivered_headers
+      ccd_split_extent: all_40_hdus
+      epoch_provenance_from_tile_history: history_parse
+      object_position_columns: xwin_windowed
+      stamp_positioning_and_padding: round_and_zero_pad
+      epoch_flag_source: raw_flags
+  star_selection_psf:
+    decisions:
+      star_selection_box: mode_centred_box
+      psfex_candidate_vetting: builtin_defaults
+      psf_modelling_software: psfex
+      psf_train_validation_split: split_80_20_seeded
+      psf_model_complexity: pixel_basis_deg2_per_ccd
+      psf_acceptance_thresholds: stars22_chi2_2
+  shape_measurement:
+    decisions:
+      ngmix_seed_mode: position_seed
+      galaxy_model: gauss
+      fit_priors: gpriorba04_flat
+      metacal_scheme: five_types_step001_fitgauss
+      centroid_source: wcs
+      epoch_quality_and_weighting: third_masked_cut
+      noise_model: rms_vignet_weights
+      psf_epoch_loss_policy: record_and_delegate
+      megacam_ccd_flip: megapipe_flip
+  psf_diagnostics:
+    decisions:
+      starcat_merge_source: psfex
+      meanshape_binning: grid_5x10
+  survey_geometry:
+    decisions:
+      random_sampling: per_sqdeg_50k
+      healpix_mask_export: nside_1024
+  catalogue_assembly:
+    decisions:
+      star_galaxy_classification: deferred_downstream
+      tile_overlap_handling: no_dedup_in_pipeline
+      column_selection: committed_param_list
+      failure_sentinels: sentinel_values
+      postproc_run_provenance: newest_mtime_incremental
+      shape_catalogue_shortfall_guard: log_only

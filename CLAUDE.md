@@ -114,4 +114,44 @@ keep in their own stores outside it. A `.felt/` directory (a markdown "fiber" no
 store used with the `felt` CLI) is **not tracked here**: it's gitignored, and where
 it exists it's a machine-local symlink into a private, separately git-synced store,
 so a fresh clone won't have one. Record durable decisions in the PR, issue, or docs
-where the change lives.
+where the change lives — and *scientific* decisions in `astra.yaml`, below.
+
+## Scientific decisions live in `astra.yaml`
+
+`astra.yaml` at the repo root is the pipeline's decision record: every
+consequential scientific choice embedded in the code and the committed configs,
+each with its rationale, the alternatives that were considered and why they were
+rejected, and an anchor back to the code or config that implements it.
+`universes/committed.yaml` pins the option this branch's configuration
+selects for every decision. The format
+is ASTRA; `uvx astra-tools@0.2.17 guide` is the briefing and
+`uvx astra-tools@0.2.17 spec` the field reference.
+
+**A scientific change is not finished until the record is.** When a change moves
+what the pipeline measures, amend `astra.yaml` in the same PR — add the decision
+if it is new, or edit its rationale, options and anchors if it moved — pin the
+selected option in `universes/committed.yaml`, and say so in the PR description.
+Purely technical changes (refactors, performance, packaging, I/O) leave it alone,
+except where they move a value the record carries: the completeness floors in
+`workflow/scripts/completeness.py` are orchestration code holding a scientific
+decision.
+
+The membership test is whether *a different defensible choice would change which
+objects enter the shear catalogue, or the numbers attached to them.* Detection
+threshold and deblending contrast, masking geometry, star-selection cuts, PSF
+model degree, ngmix priors and seeding, flag semantics, completeness floors — in.
+Manifest sentinels, chunk sizes, allocation strategy, directory layout — out;
+those live in the PR and the PRD.
+
+The file's own header states the conventions it follows. In short: every
+rationale ends with a greppable `Anchor: path::symbol; path#SECTION.KEY`
+sentence whose refs never cite line numbers; `[HARDCODED]` marks a scientific value
+with no config exposure; `[LINT]` marks a place where the record and the code, or
+the code and itself, disagree. Validate before committing:
+
+```bash
+uvx astra-tools@0.2.17 validate
+```
+
+The record was authored against this branch's workflow configs; entries marked
+`[PENDING #NNN]` describe state that has not yet reached `develop`.
