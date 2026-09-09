@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="08 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="09 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -257,6 +257,7 @@
 <li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
@@ -267,7 +268,6 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="random_cat.html">Create random catalogues and masks</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="current nav bd-sidenav">
@@ -290,8 +290,8 @@
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_query_package.html">shapepipe.modules.mask_query_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_query_package.mask_query.html">shapepipe.modules.mask_query_package.mask_query</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -334,10 +334,6 @@
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
-</ul>
-</details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -402,9 +398,9 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
@@ -607,7 +603,6 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs"><code class="docutils literal notranslate"><span class="pre">pixel_scale_from_wcs()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix"><code class="docutils literal notranslate"><span class="pre">Ngmix</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip"><code class="docutils literal notranslate"><span class="pre">Ngmix.MegaCamFlip()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_prior()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results"><code class="docutils literal notranslate"><span class="pre">Ngmix.compile_results()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_output_path"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_output_path()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.save_results"><code class="docutils literal notranslate"><span class="pre">Ngmix.save_results()</span></code></a></li>
@@ -786,16 +781,10 @@ type’s galaxy fit failed.</p>
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.position_seed">
 <span class="sig-name descname"><span class="pre">position_seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ra</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ccd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#position_seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="Link to this definition">#</a></dt>
 <dd><p>Deterministic RNG seed from an object’s sky position (ngmix#796).</p>
-<p>For image-simulation m-bias with the Pujol estimator, the same scene is
-simulated under different applied shears (“image branches”) and the shear
-response is read from the branch difference of the SAME objects. Metacal’s
-<code class="docutils literal notranslate"><span class="pre">fixnoise</span></code> adds a counter-noise realisation drawn from an RNG; if that RNG
-is seeded per tile, an object gets <em>different</em> added noise in different
-branches (detection order differs), and the noise fails to cancel in the
-difference, inflating <code class="docutils literal notranslate"><span class="pre">sigma_m</span></code>. Seeding the per-object RNG from sky
-position instead makes the same object draw the same added noise (and the
-same fit guesses) in every branch, so both cancel and the m-bias error
-shrinks. Off in production; a knob for the sim path only.</p>
+<p>Position seeding gives the same object the same RNG stream in each image
+branch, provided its sky position falls in the same seed box. It also makes
+the result independent of how the tile is split into
+<code class="docutils literal notranslate"><span class="pre">ID_OBJ_MIN</span></code>/<code class="docutils literal notranslate"><span class="pre">ID_OBJ_MAX</span></code> chunks, which is why it is now the only mode.</p>
 <p>Box math (kept exactly as Fabian’s issue #796):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">box_x</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">ra</span>  <span class="o">*</span> <span class="mi">3600</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ccd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">box_y</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">dec</span> <span class="o">*</span> <span class="mi">3600</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ccd</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
@@ -930,7 +919,7 @@ merged single-exposure headers opened by <a class="reference internal" href="#sh
 
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Ngmix">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Ngmix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_sub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hsm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed_from_position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metacal_psf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fitgauss'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Ngmix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_sub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hsm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metacal_psf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fitgauss'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Ngmix.</p>
 <p>Class to handle NGMIX shapepe measurement.</p>
@@ -964,16 +953,15 @@ coadd segmentation map and requires <code class="docutils literal notranslate"><
 <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat" title="shapepipe.modules.ngmix_package.ngmix.Tile_cat"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tile_cat</span></code></a>). Required when <code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code>.</p></li>
 <li><p><strong>dilate_neighbour</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Neighbour-mask dilation iterations for <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> (see
 <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_weight" title="shapepipe.modules.ngmix_package.ngmix.uberseg_weight"><code class="xref py py-func docutils literal notranslate"><span class="pre">uberseg_weight()</span></code></a>); the default is <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
-<li><p><strong>seed_from_position</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, replace the tile-level RNG with a per-object RNG seeded
-from the object’s sky position (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="xref py py-func docutils literal notranslate"><span class="pre">position_seed()</span></code></a>) inside the
-object loop, so metacal’s <code class="docutils literal notranslate"><span class="pre">fixnoise</span></code> counter-noise and the fit
-guesses cancel across Pujol image-simulation branches (ngmix#796). The
-default <code class="docutils literal notranslate"><span class="pre">False</span></code> leaves the production path byte-identical. See
-<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="xref py py-func docutils literal notranslate"><span class="pre">position_seed()</span></code></a> for the physics and the seed construction.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
+</dl>
+<p class="rubric">Notes</p>
+<p>The RNG is always per object and seeded from that object’s sky position;
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="xref py py-func docutils literal notranslate"><span class="pre">position_seed()</span></code></a> says what that buys.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
 <li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IndexError" title="(in Python v3.14)"><strong>IndexError</strong></a> – If the length of the input file list is incorrect</p></li>
 <li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">blend_handling</span></code> is unknown, or <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> is selected without
 <code class="docutils literal notranslate"><span class="pre">seg_cat_path</span></code>.</p></li>
@@ -999,17 +987,6 @@ when used with THELI ccds.  Fix this.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior">
-<span class="sig-name descname"><span class="pre">get_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix.get_prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior" title="Link to this definition">#</a></dt>
-<dd><p>Get Prior.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>ngmix.joint_prior.PriorSimpleSep</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1144,7 +1121,7 @@ runs metacal convolutions and ngmix fitting</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps">
-<span class="sig-name descname"><span class="pre">prepare_postage_stamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vignet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_tile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_cat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_sub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#prepare_postage_stamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">prepare_postage_stamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vignet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_tile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_cat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_sub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gal_obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#prepare_postage_stamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -1369,8 +1346,8 @@ TO DO: decide if we want galaxy guess stuff</p>
 <li><p><strong>gal</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
 <li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
 <li><p><strong>flag</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
-<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random state for the noise realisations (seeded per tile for
-reproducibility).</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random state for the noise realisations (seeded per object; see
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="xref py py-func docutils literal notranslate"><span class="pre">position_seed()</span></code></a>).</p></li>
 <li><p><strong>bkg_rms</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Per-pixel background RMS map. If supplied, unmasked pixels use
 <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">bkg_rms**2</span></code> as the ngmix inverse variance.</p></li>
 <li><p><strong>blend_handling</strong> (<em>{&quot;noisefill&quot;</em><em>, </em><em>&quot;uberseg&quot;}</em><em>, </em><em>optional</em>) – How to treat pixels shared with a neighbour. <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> (default)
@@ -1425,8 +1402,8 @@ re-measuring the centroid.</p></li>
 <li><p><strong>flag</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
 <li><p><strong>psf</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
 <li><p><strong>wcs</strong> (<em>galsim.BaseWCS</em>) – Local WCS Jacobian at the object position.</p></li>
-<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random state for the noise realisations (seeded per tile for
-reproducibility).</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random state for the noise realisations (seeded per object; see
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="xref py py-func docutils literal notranslate"><span class="pre">position_seed()</span></code></a>).</p></li>
 <li><p><strong>bkg_rms</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Per-pixel background RMS map.</p></li>
 <li><p><strong>centroid_source</strong> (<em>{&quot;hsm&quot;</em><em>, </em><em>&quot;wcs&quot;}</em><em>, </em><em>optional</em>) – How to place the galaxy Jacobian origin; the default is <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code>.</p></li>
 <li><p><strong>wcs_full</strong> (<a class="reference external" href="https://docs.astropy.org/en/latest/api/astropy.wcs.WCS.html#astropy.wcs.WCS" title="(in Astropy v8.1)"><em>astropy.wcs.WCS</em></a><em>, </em><em>optional</em>) – Full exposure WCS for the object’s CCD. Required for
@@ -1706,7 +1683,6 @@ them. Unpacks positionally as <code class="docutils literal notranslate"><span c
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs"><code class="docutils literal notranslate"><span class="pre">pixel_scale_from_wcs()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix"><code class="docutils literal notranslate"><span class="pre">Ngmix</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip"><code class="docutils literal notranslate"><span class="pre">Ngmix.MegaCamFlip()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_prior()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results"><code class="docutils literal notranslate"><span class="pre">Ngmix.compile_results()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_output_path"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_output_path()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.save_results"><code class="docutils literal notranslate"><span class="pre">Ngmix.save_results()</span></code></a></li>
@@ -1764,7 +1740,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 08 Sep, 2026.
+  Last updated on 09 Sep, 2026.
   <br/>
 </p>
   </div>

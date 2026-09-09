@@ -57,7 +57,6 @@ packages (no source builds), plus the MPI stack:
 |---------|------------|
 | [Source Extractor](https://www.astromatic.net/software/sextractor/) | {cite:p}`bertin:96` |
 | [PSFEx](https://www.astromatic.net/software/psfex/) | {cite:p}`bertin:11` |
-| [WeightWatcher](https://www.astromatic.net/software/weightwatcher/) | {cite:p}`marmo:08` |
 | OpenMPI (5.0.x) | |
 
 Python dependencies themselves are managed with [uv](https://docs.astral.sh/uv/);

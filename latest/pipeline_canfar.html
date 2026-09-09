@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="08 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="09 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -257,6 +257,7 @@
 <li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
@@ -267,7 +268,6 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="random_cat.html">Create random catalogues and masks</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="nav bd-sidenav">
@@ -290,8 +290,8 @@
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_query_package.html">shapepipe.modules.mask_query_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_query_package.mask_query.html">shapepipe.modules.mask_query_package.mask_query</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -334,10 +334,6 @@
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
-</ul>
-</details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -402,9 +398,9 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
@@ -593,18 +589,16 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#download-and-move-exposures">Download and Move Exposures</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-tile-links-again-necessary">Create tile links again (necessary?)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#uncompress-tile-weights">Uncompress tile weights</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mask-tiles">Mask tiles</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#masks">Masks</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tile-detection">Tile detection</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#exposure-processing">Exposure Processing</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#option-0-global-split-and-exp-masks-deprecated-used-for-earlier-v1-x-patch-runs">Option 0: Global split and exp masks (deprecated; used for earlier v1.x patch runs)</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#option-0-mask-exposures-deprecated">Option 0: Mask exposures (deprecated)</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#option-0-global-split-deprecated-used-for-earlier-v1-x-patch-runs">Option 0: Global split (deprecated; used for earlier v1.x patch runs)</a></li>
 </ul>
 </li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#option-1-local-split-and-mask-exposures-recommended">Option 1: Local split and mask exposures (recommended)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#option-1-local-split-exposures-recommended">Option 1: Local split exposures (recommended)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#split-exposures">Split exposures</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mask-exposures">Mask exposures</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#exposure-detection">Exposure detection</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tile-preparation">Tile preparation</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tile-shape-measurement">Tile shape measurement</a></li>
@@ -788,19 +782,16 @@ This would mess up later modules since <code class="docutils literal notranslate
 </pre></div>
 </div>
 </section>
-<section id="mask-tiles">
-<h3>Mask tiles<a class="headerlink" href="#mask-tiles" title="Link to this heading">#</a></h3>
-<p>This step is done globally for all tiles. There might be job failures or interruptions. The following
-command to the <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> job script can be run repeatedly; already created masks will be skipped.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp_canfar.bash<span class="w"> </span>-p<span class="w"> </span><span class="nv">$psf</span><span class="w"> </span>-n<span class="w"> </span><span class="nv">$OMP_NUM_THREADS</span><span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
-</pre></div>
-</div>
-<p>If masks were created in more than one run, i.e. situated in more than one output directory, these have to be
-combined for subsequent pipeline module runs. This is done by creating a new output directory with symbolic
-links, using the script</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>combine_runs.bash<span class="w"> </span>-c<span class="w"> </span>flag_tile
-</pre></div>
-</div>
+<section id="masks">
+<h3>Masks<a class="headerlink" href="#masks" title="Link to this heading">#</a></h3>
+<p>There is no masking step. <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> generates no masks: the sky-fixed
+healsparse maps are queried once per object, by <code class="docutils literal notranslate"><span class="pre">mask_query</span></code> on the exposure
+catalogues (<code class="docutils literal notranslate"><span class="pre">MASK_EXT</span></code>, recorded but not cut on) and by <code class="docutils literal notranslate"><span class="pre">make_cat</span></code> on the tile
+catalogue (<code class="docutils literal notranslate"><span class="pre">MASK_&lt;band&gt;</span></code> columns). Point the <code class="docutils literal notranslate"><span class="pre">MASK_PATHS</span></code> / <code class="docutils literal notranslate"><span class="pre">MASK_EXT_PATHS</span></code>
+config entries at the maps and nothing else is needed — no star-catalogue
+download, no rasterization, no <code class="docutils literal notranslate"><span class="pre">combine_runs.bash</span> <span class="pre">-c</span> <span class="pre">flag_*</span></code>. The only mask that
+touches pixels is the instrument flag image shipped with each exposure, which
+<code class="docutils literal notranslate"><span class="pre">split_exp</span></code> splits per CCD.</p>
 </section>
 </section>
 <section id="tile-detection">
@@ -817,8 +808,8 @@ Set as <code class="docutils literal notranslate"><span class="pre">N_PAR</span>
 </div>
 <section id="exposure-processing">
 <h3>Exposure Processing<a class="headerlink" href="#exposure-processing" title="Link to this heading">#</a></h3>
-<section id="option-0-global-split-and-exp-masks-deprecated-used-for-earlier-v1-x-patch-runs">
-<h4>Option 0: Global split and exp masks (deprecated; used for earlier v1.x patch runs)<a class="headerlink" href="#option-0-global-split-and-exp-masks-deprecated-used-for-earlier-v1-x-patch-runs" title="Link to this heading">#</a></h4>
+<section id="option-0-global-split-deprecated-used-for-earlier-v1-x-patch-runs">
+<h4>Option 0: Global split (deprecated; used for earlier v1.x patch runs)<a class="headerlink" href="#option-0-global-split-deprecated-used-for-earlier-v1-x-patch-runs" title="Link to this heading">#</a></h4>
 <p>For this option, set <code class="docutils literal notranslate"><span class="pre">sp_local=0</span></code>.</p>
 <p>**TODO: ** Split Uz and SpMh</p>
 <p>For <code class="docutils literal notranslate"><span class="pre">sp_local=-</span></code> both <code class="docutils literal notranslate"><span class="pre">mh_local</span></code> (0, 1) are ok:</p>
@@ -826,20 +817,9 @@ Set as <code class="docutils literal notranslate"><span class="pre">N_PAR</span>
 </pre></div>
 </div>
 </section>
-<section id="option-0-mask-exposures-deprecated">
-<h4>Option 0: Mask exposures (deprecated)<a class="headerlink" href="#option-0-mask-exposures-deprecated" title="Link to this heading">#</a></h4>
-<p>Run repeatedly if necessary:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp_canfar.bash<span class="w"> </span>-p<span class="w"> </span><span class="nv">$psf</span><span class="w"> </span>-n<span class="w"> </span><span class="nv">$OMP_NUM_THREADS</span><span class="w"> </span>-j<span class="w"> </span><span class="m">8</span>
-</pre></div>
-</div>
-<p>Combine all runs:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>combine_runs.bash<span class="w"> </span>-c<span class="w"> </span>flag_exp
-</pre></div>
-</div>
 </section>
-</section>
-<section id="option-1-local-split-and-mask-exposures-recommended">
-<h3>Option 1: Local split and mask exposures (recommended)<a class="headerlink" href="#option-1-local-split-and-mask-exposures-recommended" title="Link to this heading">#</a></h3>
+<section id="option-1-local-split-exposures-recommended">
+<h3>Option 1: Local split exposures (recommended)<a class="headerlink" href="#option-1-local-split-exposures-recommended" title="Link to this heading">#</a></h3>
 <p>Optional: Enable flags for local split processing and merge header runs as</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">sp_local</span><span class="o">=</span><span class="m">1</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">mh_local</span><span class="o">=</span><span class="m">1</span>
@@ -856,12 +836,6 @@ cp<span class="w"> </span>summary/missing_job_32_all.txt<span class="w"> </span>
 <h3>Split exposures<a class="headerlink" href="#split-exposures" title="Link to this heading">#</a></h3>
 <p>First, determine the number of maximum jobs with the option <code class="docutils literal notranslate"><span class="pre">-s</span></code> (see above). Then, submit with</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>canfar_submit_job<span class="w"> </span>-j<span class="w"> </span><span class="m">2</span><span class="w"> </span>-v<span class="w"> </span>-f<span class="w"> </span>exp_shdu.txt<span class="w"> </span>-v<span class="w"> </span>-P<span class="w"> </span>N_PAR<span class="w"> </span>-J<span class="w"> </span>JMAX
-</pre></div>
-</div>
-</section>
-<section id="mask-exposures">
-<h3>Mask exposures<a class="headerlink" href="#mask-exposures" title="Link to this heading">#</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>canfar_submit_job<span class="w"> </span>-j<span class="w"> </span><span class="m">8</span><span class="w"> </span>-f<span class="w"> </span>exp_shdu.txt<span class="w"> </span>-v<span class="w"> </span>-P<span class="w"> </span>N_PAR<span class="w"> </span>-J<span class="w"> </span>JMAX
 </pre></div>
 </div>
 </section>
@@ -978,7 +952,7 @@ shapepipe_run<span class="w"> </span>-c<span class="w"> </span>~/shapepipe/examp
 </pre></div>
 </div>
 <p>Rename to general PSF and star catalogue used for all (“a”) sub-versions:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>output/run_sp_Ms/merge_starcat_runner/output/full_starcat-0000000.fits<span class="w"> </span><span class="se">\</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>output/run_sp_tile_Ms/merge_starcat_runner/output/full_starcat-0000000.fits<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>unions_shapepipe_psf_2024_v1.6.a.fits<span class="w"> </span>
 </pre></div>
 </div>
@@ -1183,18 +1157,16 @@ of versions (SGC and NGC regions) is automated by
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#download-and-move-exposures">Download and Move Exposures</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-tile-links-again-necessary">Create tile links again (necessary?)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#uncompress-tile-weights">Uncompress tile weights</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mask-tiles">Mask tiles</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#masks">Masks</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tile-detection">Tile detection</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#exposure-processing">Exposure Processing</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#option-0-global-split-and-exp-masks-deprecated-used-for-earlier-v1-x-patch-runs">Option 0: Global split and exp masks (deprecated; used for earlier v1.x patch runs)</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#option-0-mask-exposures-deprecated">Option 0: Mask exposures (deprecated)</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#option-0-global-split-deprecated-used-for-earlier-v1-x-patch-runs">Option 0: Global split (deprecated; used for earlier v1.x patch runs)</a></li>
 </ul>
 </li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#option-1-local-split-and-mask-exposures-recommended">Option 1: Local split and mask exposures (recommended)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#option-1-local-split-exposures-recommended">Option 1: Local split exposures (recommended)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#split-exposures">Split exposures</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mask-exposures">Mask exposures</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#exposure-detection">Exposure detection</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tile-preparation">Tile preparation</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tile-shape-measurement">Tile shape measurement</a></li>
@@ -1260,7 +1232,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 08 Sep, 2026.
+  Last updated on 09 Sep, 2026.
   <br/>
 </p>
   </div>

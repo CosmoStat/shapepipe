@@ -21,6 +21,6 @@ Submodules
    shapepipe.utilities.file_system
    shapepipe.utilities.galaxy
    shapepipe.utilities.header_downloader
+   shapepipe.utilities.mask_query
    shapepipe.utilities.summary
    shapepipe.utilities.summary_params_pre_v2
-   shapepipe.utilities.vizier

@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="08 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="09 Sep, 2026"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -252,6 +252,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../workflow.html">Snakemake Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
@@ -262,7 +263,6 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../../post_processing.html">Post-processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../random_cat.html">Create random catalogues and masks</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="nav bd-sidenav">
@@ -285,8 +285,8 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.mask_query_package.html">shapepipe.modules.mask_query_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.mask_query_package.mask_query.html">shapepipe.modules.mask_query_package.mask_query</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -329,10 +329,6 @@
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
-</ul>
-</details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -397,9 +393,9 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../../shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
@@ -700,16 +696,10 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">position_seed</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">ccd</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Deterministic RNG seed from an object's sky position (ngmix#796).</span>
 
-<span class="sd">    For image-simulation m-bias with the Pujol estimator, the same scene is</span>
-<span class="sd">    simulated under different applied shears ("image branches") and the shear</span>
-<span class="sd">    response is read from the branch difference of the SAME objects. Metacal's</span>
-<span class="sd">    ``fixnoise`` adds a counter-noise realisation drawn from an RNG; if that RNG</span>
-<span class="sd">    is seeded per tile, an object gets *different* added noise in different</span>
-<span class="sd">    branches (detection order differs), and the noise fails to cancel in the</span>
-<span class="sd">    difference, inflating ``sigma_m``. Seeding the per-object RNG from sky</span>
-<span class="sd">    position instead makes the same object draw the same added noise (and the</span>
-<span class="sd">    same fit guesses) in every branch, so both cancel and the m-bias error</span>
-<span class="sd">    shrinks. Off in production; a knob for the sim path only.</span>
+<span class="sd">    Position seeding gives the same object the same RNG stream in each image</span>
+<span class="sd">    branch, provided its sky position falls in the same seed box. It also makes</span>
+<span class="sd">    the result independent of how the tile is split into</span>
+<span class="sd">    ``ID_OBJ_MIN``/``ID_OBJ_MAX`` chunks, which is why it is now the only mode.</span>
 
 <span class="sd">    Box math (kept exactly as Fabian's issue #796)::</span>
 
@@ -880,8 +870,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ra</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dec</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># CCD number of the first epoch, used only to build the per-object</span>
-        <span class="c1"># position seed (see :func:`position_seed`, ngmix#796). ``None`` when</span>
-        <span class="c1"># position seeding is off, so the field costs nothing on the hot path.</span>
+        <span class="c1"># position seed (see :func:`position_seed`).</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ccd</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bkg_sub</span> <span class="o">=</span> <span class="n">bkg_sub</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">megacam_flip</span> <span class="o">=</span> <span class="n">megacam_flip</span></div>
@@ -1032,13 +1021,11 @@
 <span class="sd">    dilate_neighbour : int, optional</span>
 <span class="sd">        Neighbour-mask dilation iterations for ``"uberseg"`` (see</span>
 <span class="sd">        :func:`uberseg_weight`); the default is ``1``.</span>
-<span class="sd">    seed_from_position : bool, optional</span>
-<span class="sd">        If ``True``, replace the tile-level RNG with a per-object RNG seeded</span>
-<span class="sd">        from the object's sky position (:func:`position_seed`) inside the</span>
-<span class="sd">        object loop, so metacal's ``fixnoise`` counter-noise and the fit</span>
-<span class="sd">        guesses cancel across Pujol image-simulation branches (ngmix#796). The</span>
-<span class="sd">        default ``False`` leaves the production path byte-identical. See</span>
-<span class="sd">        :func:`position_seed` for the physics and the seed construction.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The RNG is always per object and seeded from that object's sky position;</span>
+<span class="sd">    :func:`position_seed` says what that buys.</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
@@ -1067,7 +1054,6 @@
         <span class="n">blend_handling</span><span class="o">=</span><span class="s2">"noisefill"</span><span class="p">,</span>
         <span class="n">seg_cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">seed_from_position</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">"fitgauss"</span><span class="p">,</span>
     <span class="p">):</span>
 
@@ -1137,15 +1123,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_blend_handling</span> <span class="o">=</span> <span class="n">blend_handling</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_seg_cat_path</span> <span class="o">=</span> <span class="n">seg_cat_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dilate_neighbour</span> <span class="o">=</span> <span class="n">dilate_neighbour</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_seed_from_position</span> <span class="o">=</span> <span class="n">seed_from_position</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_metacal_psf</span> <span class="o">=</span> <span class="n">metacal_psf</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span> <span class="o">=</span> <span class="n">w_log</span>
 
-        <span class="c1"># Initiatlise random generator</span>
-        <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+'</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="p">)))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Random generator initialisation seed = </span><span class="si">{</span><span class="n">seed</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s1">'Per-object RNG seeded from sky position (ngmix#796): results are'</span>
+            <span class="s1">' invariant to how the tile is split into object chunks'</span>
+        <span class="p">)</span>
 
         <span class="c1"># Pixel scale: an explicit positive PIXEL_SCALE overrides; otherwise</span>
         <span class="c1"># derive it from the image WCS so it can never drift from the pixels</span>
@@ -1164,12 +1149,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span> <span class="o">=</span> <span class="n">pixel_scale</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s1">'PIXEL_SCALE from config = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span><span class="si">:</span><span class="s1">.6f</span><span class="si">}</span><span class="s1"> arcsec'</span>
-            <span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seed_from_position</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="s1">'SEED_FROM_POSITION on: per-object RNG seeded from sky position'</span>
-                <span class="s1">' for Pujol noise cancellation (image sims, ngmix#796)'</span>
             <span class="p">)</span>
 
 <div class="viewcode-block" id="Ngmix.MegaCamFlip">
@@ -1201,21 +1180,6 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># swap y axis so origin is on bottom-left</span>
             <span class="k">return</span> <span class="n">vign</span></div>
-
-
-<div class="viewcode-block" id="Ngmix.get_prior">
-<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_prior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T_range</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">F_range</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Get Prior.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        ngmix.joint_prior.PriorSimpleSep</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">get_prior</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rng</span><span class="p">,</span>
-            <span class="n">T_range</span><span class="o">=</span><span class="n">T_range</span><span class="p">,</span> <span class="n">F_range</span><span class="o">=</span><span class="n">F_range</span><span class="p">,</span>
-        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Ngmix.compile_results">
@@ -1620,7 +1584,6 @@
         <span class="n">vignet_cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vignet_cat</span>
 
         <span class="n">final_res</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">prior</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_prior</span><span class="p">()</span>
 
         <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">n_empty_cat</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1642,36 +1605,39 @@
             <span class="n">id_last</span> <span class="o">=</span> <span class="n">obj_id</span>
             <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
 
-            <span class="c1"># Skip objects with no multi-epoch PSF or vignet data</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">vignet_cat</span><span class="o">.</span><span class="n">psf_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span> <span class="o">==</span> <span class="s1">'empty'</span>
-                    <span class="ow">or</span> <span class="n">vignet_cat</span><span class="o">.</span><span class="n">gal_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span> <span class="o">==</span> <span class="s1">'empty'</span><span class="p">):</span>
+            <span class="c1"># Skip objects with no multi-epoch PSF or vignet data.</span>
+            <span class="c1"># Read each store once here and pass the dicts down: every</span>
+            <span class="c1"># sqlitedict access unpickles the object's whole all-epoch dict.</span>
+            <span class="n">psf_obj</span> <span class="o">=</span> <span class="n">vignet_cat</span><span class="o">.</span><span class="n">psf_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span>
+            <span class="n">gal_obj</span> <span class="o">=</span> <span class="n">vignet_cat</span><span class="o">.</span><span class="n">gal_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">psf_obj</span> <span class="o">==</span> <span class="s1">'empty'</span> <span class="ow">or</span> <span class="n">gal_obj</span> <span class="o">==</span> <span class="s1">'empty'</span><span class="p">:</span>
                 <span class="n">n_empty_cat</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">continue</span>
 
-            <span class="n">stamp</span> <span class="o">=</span> <span class="n">prepare_postage_stamps</span><span class="p">(</span><span class="n">vignet_cat</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">,</span> <span class="n">i_tile</span><span class="p">,</span> <span class="n">tile_cat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_sub</span><span class="p">)</span>
+            <span class="n">stamp</span> <span class="o">=</span> <span class="n">prepare_postage_stamps</span><span class="p">(</span>
+                <span class="n">vignet_cat</span><span class="p">,</span>
+                <span class="n">obj_id</span><span class="p">,</span>
+                <span class="n">i_tile</span><span class="p">,</span>
+                <span class="n">tile_cat</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_sub</span><span class="p">,</span>
+                <span class="n">psf_obj</span><span class="p">,</span>
+                <span class="n">gal_obj</span><span class="p">,</span>
+            <span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">gals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">n_no_epoch</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># Position-seeded per-object RNG for Pujol noise cancellation in</span>
-            <span class="c1"># image sims (ngmix#796): the same object gets the same fixnoise</span>
-            <span class="c1"># counter-noise and fit guesses in every shear branch, so both</span>
-            <span class="c1"># cancel in the branch difference. The prior is rebuilt from the</span>
-            <span class="c1"># same per-object RNG because the guesser draws its initial guess</span>
-            <span class="c1"># via prior.sample() (ngmix guessers.py), which consumes the RNG the</span>
-            <span class="c1"># prior was CONSTRUCTED with — so a per-object rng alone would leave</span>
-            <span class="c1"># the guess drawing from the shared tile stream and break</span>
-            <span class="c1"># cancellation. Off in production, where the single tile-level</span>
-            <span class="c1"># self._rng and the tile-level prior carry the whole loop.</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seed_from_position</span><span class="p">:</span>
-                <span class="n">obj_rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span>
-                    <span class="n">position_seed</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stamp</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stamp</span><span class="o">.</span><span class="n">ccd</span><span class="p">)</span>
-                <span class="p">)</span>
-                <span class="n">obj_prior</span> <span class="o">=</span> <span class="n">get_prior</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span><span class="p">,</span> <span class="n">obj_rng</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">obj_rng</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rng</span>
-                <span class="n">obj_prior</span> <span class="o">=</span> <span class="n">prior</span>
+            <span class="c1"># Per-object RNG, seeded from (ra, dec, ccd) — see</span>
+            <span class="c1"># :func:`position_seed`. The prior is rebuilt from that same RNG</span>
+            <span class="c1"># because the guesser draws its initial guess via prior.sample()</span>
+            <span class="c1"># (ngmix guessers.py), which consumes the RNG the prior was</span>
+            <span class="c1"># CONSTRUCTED with: a per-object rng alone would leave the guess</span>
+            <span class="c1"># drawing from a shared stream and break the invariance.</span>
+            <span class="n">obj_rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span>
+                <span class="n">position_seed</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stamp</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stamp</span><span class="o">.</span><span class="n">ccd</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">obj_prior</span> <span class="o">=</span> <span class="n">get_prior</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span><span class="p">,</span> <span class="n">obj_rng</span><span class="p">)</span>
 
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">flux_guess</span> <span class="o">=</span> <span class="p">(</span>
@@ -1788,25 +1754,49 @@
 
 <div class="viewcode-block" id="prepare_postage_stamps">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">prepare_postage_stamps</span><span class="p">(</span><span class="n">vignet</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">,</span> <span class="n">i_tile</span><span class="p">,</span> <span class="n">tile_cat</span><span class="p">,</span> <span class="n">bkg_sub</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_postage_stamps</span><span class="p">(</span>
+    <span class="n">vignet</span><span class="p">,</span>
+    <span class="n">obj_id</span><span class="p">,</span>
+    <span class="n">i_tile</span><span class="p">,</span>
+    <span class="n">tile_cat</span><span class="p">,</span>
+    <span class="n">bkg_sub</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">psf_obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">gal_obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
     <span class="c1"># define per-object lists of individual exposures to go into ngmix</span>
     <span class="n">stamp</span> <span class="o">=</span> <span class="n">Postage_stamp</span><span class="p">(</span><span class="n">bkg_sub</span><span class="o">=</span><span class="n">bkg_sub</span><span class="p">)</span>
+    <span class="c1"># Read each store's per-object dict ONCE: every sqlitedict access</span>
+    <span class="c1"># unpickles the object's whole all-epoch dict, so keeping these out of</span>
+    <span class="c1"># the epoch loop below saves O(n_epoch) full unpickles per store.</span>
+    <span class="k">if</span> <span class="n">psf_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">psf_obj</span> <span class="o">=</span> <span class="n">vignet</span><span class="o">.</span><span class="n">psf_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">gal_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">gal_obj</span> <span class="o">=</span> <span class="n">vignet</span><span class="o">.</span><span class="n">gal_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span>
+    <span class="n">bkg_obj</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">vignet</span><span class="o">.</span><span class="n">bkg_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">stamp</span><span class="o">.</span><span class="n">bkg_sub</span> <span class="ow">and</span> <span class="n">vignet</span><span class="o">.</span><span class="n">bkg_vign_cat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
+    <span class="n">flag_obj</span> <span class="o">=</span> <span class="n">vignet</span><span class="o">.</span><span class="n">flag_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span>
+    <span class="n">weight_obj</span> <span class="o">=</span> <span class="n">vignet</span><span class="o">.</span><span class="n">weight_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span>
+    <span class="n">bkg_rms_obj</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">vignet</span><span class="o">.</span><span class="n">bkg_rms_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">vignet</span><span class="o">.</span><span class="n">bkg_rms_vign_cat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
+    <span class="n">wcs_cache</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="c1">#identify exposure and ccd number from psf catalog</span>
-    <span class="n">psf_expccd_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">vignet</span><span class="o">.</span><span class="n">psf_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">psf_expccd_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">psf_obj</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="k">for</span> <span class="n">expccd_name</span> <span class="ow">in</span> <span class="n">psf_expccd_names</span><span class="p">:</span>
         <span class="n">exp_name</span><span class="p">,</span> <span class="n">ccd_n</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'-'</span><span class="p">,</span> <span class="n">expccd_name</span><span class="p">)</span>
 
-        <span class="n">gal_vign</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">vignet</span><span class="o">.</span><span class="n">gal_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)][</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">gal_vign</span> <span class="o">=</span> <span class="n">gal_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gal_vign</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
             <span class="k">continue</span>
         
         <span class="k">if</span> <span class="n">stamp</span><span class="o">.</span><span class="n">bkg_sub</span><span class="p">:</span>
-            <span class="n">bkg_vign</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">vignet</span><span class="o">.</span><span class="n">bkg_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)][</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
-            <span class="p">)</span>
+            <span class="n">bkg_vign</span> <span class="o">=</span> <span class="n">bkg_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
             <span class="n">gal_vign_sub_bkg</span> <span class="o">=</span> <span class="n">background_subtract</span><span class="p">(</span>
                 <span class="n">gal_vign</span><span class="p">,</span>
                 <span class="n">bkg_vign</span>
@@ -1839,9 +1829,7 @@
         <span class="k">if</span> <span class="n">stamp</span><span class="o">.</span><span class="n">megacam_flip</span> <span class="ow">and</span> <span class="n">tile_seg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tile_seg</span> <span class="o">=</span> <span class="n">Ngmix</span><span class="o">.</span><span class="n">MegaCamFlip</span><span class="p">(</span><span class="n">tile_seg</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">))</span>
 
-        <span class="n">flag_vign</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">vignet</span><span class="o">.</span><span class="n">flag_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)][</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">flag_vign</span> <span class="o">=</span> <span class="n">flag_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">tile_vign</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">flag_vign</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tile_vign</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1e30</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">10</span>
         <span class="n">v_flag_tmp</span> <span class="o">=</span> <span class="n">flag_vign</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
@@ -1849,23 +1837,27 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">v_flag_tmp</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">v_flag_tmp</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">:</span>
             <span class="k">continue</span>
 
-        <span class="n">weight_vign</span> <span class="o">=</span> <span class="n">vignet</span><span class="o">.</span><span class="n">weight_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)][</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
+        <span class="n">weight_vign</span> <span class="o">=</span> <span class="n">weight_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
         <span class="n">bkg_rms_vign</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">vignet</span><span class="o">.</span><span class="n">bkg_rms_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)][</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">vignet</span><span class="o">.</span><span class="n">bkg_rms_vign_cat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">bkg_rms_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">bkg_rms_obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="k">else</span> <span class="kc">None</span>
         <span class="p">)</span>
 
-        <span class="n">epoch_wcs</span> <span class="o">=</span> <span class="n">vignet</span><span class="o">.</span><span class="n">f_wcs_file</span><span class="p">[</span><span class="n">exp_name</span><span class="p">][</span><span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">)][</span><span class="s1">'WCS'</span><span class="p">]</span>
+        <span class="c1"># One unpickle per exposure (all CCDs), reused across this object's</span>
+        <span class="c1"># epochs; the cache is per-call, so bounded by the object's exposures</span>
+        <span class="k">if</span> <span class="n">exp_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">wcs_cache</span><span class="p">:</span>
+            <span class="n">wcs_cache</span><span class="p">[</span><span class="n">exp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">vignet</span><span class="o">.</span><span class="n">f_wcs_file</span><span class="p">[</span><span class="n">exp_name</span><span class="p">]</span>
+        <span class="n">ccd_wcs</span> <span class="o">=</span> <span class="n">wcs_cache</span><span class="p">[</span><span class="n">exp_name</span><span class="p">][</span><span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">)]</span>
+
+        <span class="n">epoch_wcs</span> <span class="o">=</span> <span class="n">ccd_wcs</span><span class="p">[</span><span class="s1">'WCS'</span><span class="p">]</span>
         <span class="n">jacob</span> <span class="o">=</span> <span class="n">get_galsim_jacobian</span><span class="p">(</span>
             <span class="n">epoch_wcs</span><span class="p">,</span>
             <span class="n">tile_cat</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">i_tile</span><span class="p">],</span>
             <span class="n">tile_cat</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">i_tile</span><span class="p">]</span>
         <span class="p">)</span>
 
-        <span class="n">header</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Header</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span>
-            <span class="n">vignet</span><span class="o">.</span><span class="n">f_wcs_file</span><span class="p">[</span><span class="n">exp_name</span><span class="p">][</span><span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">)][</span><span class="s1">'header'</span><span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Header</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">ccd_wcs</span><span class="p">[</span><span class="s1">'header'</span><span class="p">])</span>
 
         <span class="c1"># rescale by relative zero-points</span>
         <span class="p">(</span>
@@ -1881,9 +1873,7 @@
 
         <span class="c1"># gather postage stamps in all of the epochs</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">gals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gal_vign_scaled</span><span class="p">)</span>
-        <span class="n">stamp</span><span class="o">.</span><span class="n">psfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="n">vignet</span><span class="o">.</span><span class="n">psf_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)][</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">stamp</span><span class="o">.</span><span class="n">psfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">psf_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">])</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weight_vign_scaled</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flag_vign</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">bkg_rms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bkg_rms_vign_scaled</span><span class="p">)</span>
@@ -1895,8 +1885,8 @@
         <span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">i_tile</span><span class="p">])</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">i_tile</span><span class="p">])</span>
         <span class="c1"># CCD of the first surviving epoch — Fabian's coord_list[0] convention</span>
-        <span class="c1"># for the position seed (ngmix#796). All epochs of one object share the</span>
-        <span class="c1"># ra/dec above, so first-epoch CCD pins one deterministic seed stream.</span>
+        <span class="c1"># for the position seed. All epochs of one object share the ra/dec</span>
+        <span class="c1"># above, so first-epoch CCD pins one deterministic seed stream.</span>
         <span class="k">if</span> <span class="n">stamp</span><span class="o">.</span><span class="n">ccd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">stamp</span><span class="o">.</span><span class="n">ccd</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">)</span>
 
@@ -2221,8 +2211,8 @@
 <span class="sd">    weight : numpy.ndarray</span>
 <span class="sd">    flag : numpy.ndarray</span>
 <span class="sd">    rng : numpy.random.RandomState</span>
-<span class="sd">        Random state for the noise realisations (seeded per tile for</span>
-<span class="sd">        reproducibility).</span>
+<span class="sd">        Random state for the noise realisations (seeded per object; see</span>
+<span class="sd">        :func:`position_seed`).</span>
 <span class="sd">    bkg_rms : numpy.ndarray, optional</span>
 <span class="sd">        Per-pixel background RMS map. If supplied, unmasked pixels use</span>
 <span class="sd">        ``1 / bkg_rms**2`` as the ngmix inverse variance.</span>
@@ -2353,8 +2343,8 @@
 <span class="sd">    wcs : galsim.BaseWCS</span>
 <span class="sd">        Local WCS Jacobian at the object position.</span>
 <span class="sd">    rng : numpy.random.RandomState</span>
-<span class="sd">        Random state for the noise realisations (seeded per tile for</span>
-<span class="sd">        reproducibility).</span>
+<span class="sd">        Random state for the noise realisations (seeded per object; see</span>
+<span class="sd">        :func:`position_seed`).</span>
 <span class="sd">    bkg_rms : numpy.ndarray, optional</span>
 <span class="sd">        Per-pixel background RMS map.</span>
 <span class="sd">    centroid_source : {"hsm", "wcs"}, optional</span>
@@ -2816,7 +2806,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 08 Sep, 2026.
+  Last updated on 09 Sep, 2026.
   <br/>
 </p>
   </div>

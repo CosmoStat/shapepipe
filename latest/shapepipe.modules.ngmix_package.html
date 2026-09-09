@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="08 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="09 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -257,6 +257,7 @@
 <li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
@@ -267,7 +268,6 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="random_cat.html">Create random catalogues and masks</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="current nav bd-sidenav">
@@ -290,8 +290,8 @@
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_query_package.html">shapepipe.modules.mask_query_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_query_package.mask_query.html">shapepipe.modules.mask_query_package.mask_query</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -334,10 +334,6 @@
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
-</ul>
-</details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -402,9 +398,9 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
@@ -580,6 +576,7 @@
                 <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#description">Description</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-specific-config-file-entries">Module-specific config file entries</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#random-number-generation">Random number generation</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
 </ul>
             </nav>
@@ -642,16 +639,23 @@ built per object from the full WCS.</p>
 (no batch saving)</p>
 </dd>
 <dt>ID_OBJ_MIN<span class="classifier">int</span></dt><dd><p>ID of first galaxy object to be processed; not used if set to <code class="docutils literal notranslate"><span class="pre">-1</span></code>
-(default)</p>
+(default). Environment variables are expanded, so an orchestrator can
+set the object range per chunk, for example
+<code class="docutils literal notranslate"><span class="pre">ID_OBJ_MIN</span> <span class="pre">=</span> <span class="pre">$SP_NGMIX_ID_OBJ_MIN</span></code>.</p>
 </dd>
 <dt>ID_OBJ_MAX<span class="classifier">int</span></dt><dd><p>ID of last galaxy object to be processed; not used if set to <code class="docutils literal notranslate"><span class="pre">-1</span></code>
-(default)</p>
+(default). Environment variables are expanded, as for <code class="docutils literal notranslate"><span class="pre">ID_OBJ_MIN</span></code>.</p>
 </dd>
 <dt>BKG_RMS_VIGNET_PATH<span class="classifier">str, optional</span></dt><dd><p>Path to a <code class="docutils literal notranslate"><span class="pre">background_rms_vignet*.sqlite</span></code> file produced by
 <code class="docutils literal notranslate"><span class="pre">vignetmaker_runner</span></code>. The string may contain
 <code class="docutils literal notranslate"><span class="pre">{file_number_string}</span></code>, which is replaced by the current tile ID.</p>
 </dd>
 </dl>
+</section>
+<section id="random-number-generation">
+<h2>Random number generation<a class="headerlink" href="#random-number-generation" title="Link to this heading">#</a></h2>
+<p>Each object gets its own random number stream, seeded from its sky position
+and CCD (<code class="docutils literal notranslate"><span class="pre">ngmix.position_seed</span></code>).</p>
 </section>
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
@@ -687,7 +691,6 @@ built per object from the full WCS.</p>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs"><code class="docutils literal notranslate"><span class="pre">pixel_scale_from_wcs()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix"><code class="docutils literal notranslate"><span class="pre">Ngmix</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip"><code class="docutils literal notranslate"><span class="pre">Ngmix.MegaCamFlip()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_prior()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results"><code class="docutils literal notranslate"><span class="pre">Ngmix.compile_results()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_output_path"><code class="docutils literal notranslate"><span class="pre">Ngmix.get_output_path()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.save_results"><code class="docutils literal notranslate"><span class="pre">Ngmix.save_results()</span></code></a></li>
@@ -768,6 +771,7 @@ built per object from the full WCS.</p>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#description">Description</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-specific-config-file-entries">Module-specific config file entries</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#random-number-generation">Random number generation</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
 </ul>
   </nav></div>
@@ -802,7 +806,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 08 Sep, 2026.
+  Last updated on 09 Sep, 2026.
   <br/>
 </p>
   </div>

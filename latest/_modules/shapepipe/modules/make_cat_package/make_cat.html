@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="08 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="09 Sep, 2026"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -252,6 +252,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../workflow.html">Snakemake Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
@@ -262,7 +263,6 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../../post_processing.html">Post-processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../random_cat.html">Create random catalogues and masks</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="nav bd-sidenav">
@@ -285,8 +285,8 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.mask_query_package.html">shapepipe.modules.mask_query_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.mask_query_package.mask_query.html">shapepipe.modules.mask_query_package.mask_query</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -329,10 +329,6 @@
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
-</ul>
-</details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -397,9 +393,9 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../../shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
@@ -577,6 +573,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlitedict</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteDict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">mask_query</span>
 
 
 <div class="viewcode-block" id="get_output_name">
@@ -782,6 +779,74 @@
     <span class="n">final_cat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">n_obj</span></div>
+
+
+
+<div class="viewcode-block" id="parse_mask_ext_paths">
+<a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.parse_mask_ext_paths">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_mask_ext_paths</span><span class="p">(</span><span class="n">paths_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Parse Mask Ext Paths.</span>
+
+<span class="sd">    Parse the ``MASK_EXT_PATHS`` config value into a ``band -&gt; path`` mapping.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    paths_str : str</span>
+<span class="sd">        Comma-separated ``band:path`` pairs, e.g.</span>
+<span class="sd">        ``u:/path/mask_u.hsp, g:/path/mask_g.hsp``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Mapping from band name to healsparse map path</span>
+
+<span class="sd">    """</span>
+    <span class="n">band_paths</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">paths_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">):</span>
+        <span class="n">band</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">pair</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">band_paths</span><span class="p">[</span><span class="n">band</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">band_paths</span></div>
+
+
+
+<div class="viewcode-block" id="save_mask_ext_data">
+<a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_mask_ext_data</span><span class="p">(</span><span class="n">final_cat_file</span><span class="p">,</span> <span class="n">band_paths</span><span class="p">,</span> <span class="n">w_log</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Save External Mask Data.</span>
+
+<span class="sd">    Query per-band external healsparse masks at each object's world position</span>
+<span class="sd">    and write one ``MASK_&lt;BAND&gt;`` column per band into the final catalogue.</span>
+<span class="sd">    Object positions are read from the SExtractor windowed world coordinates</span>
+<span class="sd">    (``XWIN_WORLD`` = RA, ``YWIN_WORLD`` = Dec, both in degrees) carried in the</span>
+<span class="sd">    ``RESULTS`` extension. Objects falling outside a map's coverage receive</span>
+<span class="sd">    that map's sentinel value (``healsparse.HealSparseMap.get_values_pos``</span>
+<span class="sd">    returns the map's sentinel — ``-1`` for integer maps — verbatim), which is</span>
+<span class="sd">    the documented off-map flag.</span>
+
+<span class="sd">    The lookup itself is ``shapepipe.utilities.mask_query.query_map``,</span>
+<span class="sd">    shared with the ``mask_query`` module: one primitive, two consumers.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    final_cat_file : file_io.FITSCatalogue</span>
+<span class="sd">        Final catalogue</span>
+<span class="sd">    band_paths : dict</span>
+<span class="sd">        Mapping from band name to healsparse map path</span>
+<span class="sd">    w_log : logging.Logger</span>
+<span class="sd">        Logging instance</span>
+
+<span class="sd">    """</span>
+    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+    <span class="n">ra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">final_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"XWIN_WORLD"</span><span class="p">])</span>
+    <span class="n">dec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">final_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"YWIN_WORLD"</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">band</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">band_paths</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Query external mask for band </span><span class="si">{</span><span class="n">band</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">mask_query</span><span class="o">.</span><span class="n">query_map</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">)</span>
+        <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MASK_</span><span class="si">{</span><span class="n">band</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+
+    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
 
@@ -1269,7 +1334,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 08 Sep, 2026.
+  Last updated on 09 Sep, 2026.
   <br/>
 </p>
   </div>

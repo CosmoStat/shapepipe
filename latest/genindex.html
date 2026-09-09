@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="08 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="09 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -252,6 +252,7 @@
 <li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
@@ -262,7 +263,6 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="random_cat.html">Create random catalogues and masks</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="nav bd-sidenav">
@@ -285,8 +285,8 @@
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_query_package.html">shapepipe.modules.mask_query_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_query_package.mask_query.html">shapepipe.modules.mask_query_package.mask_query</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -329,10 +329,6 @@
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
-</ul>
-</details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -397,9 +393,9 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
@@ -602,8 +598,6 @@
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix._average_psf_fits">_average_psf_fits() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._build_final_mask">_build_final_mask() (Mask method)</a>
-</li>
       <li><a href="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._build_ldac_imhead">_build_ldac_imhead() (in module shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat)</a>
 </li>
       <li><a href="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._build_ldac_objects">_build_ldac_objects() (in module shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat)</a>
@@ -640,7 +634,7 @@
 </li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._copy_config_to_log">_copy_config_to_log() (FileHandler method)</a>
 </li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._create_mask">_create_mask() (Mask method)</a>
+      <li><a href="shapepipe.utilities.mask_query.html#shapepipe.utilities.mask_query._covering_pixels">_covering_pixels() (in module shapepipe.utilities.mask_query)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._create_module_run_dirs">_create_module_run_dirs() (FileHandler method)</a>
 </li>
@@ -649,8 +643,6 @@
       <li><a href="shapepipe.pipeline.worker_handler.html#shapepipe.pipeline.worker_handler.WorkerHandler._create_worker_log">_create_worker_log() (WorkerHandler method)</a>
 </li>
       <li><a href="shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler._distribute_smp_jobs">_distribute_smp_jobs() (JobHandler method)</a>
-</li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._exec_WW">_exec_WW() (Mask method)</a>
 </li>
       <li><a href="shapepipe.pipeline.config.html#shapepipe.pipeline.config._expandvars_strict">_expandvars_strict() (in module shapepipe.pipeline.config)</a>
 </li>
@@ -670,8 +662,6 @@
 </li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._generate_re_pattern">_generate_re_pattern() (FileHandler static method)</a>
 </li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._get_config">_get_config() (Mask method)</a>
-</li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_file_name">_get_file_name() (FileHandler static method)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type">_get_fits_col_type() (FITSCatalogue method)</a>
@@ -682,8 +672,6 @@
         <li><a href="shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_galaxy_positions">(PSFExInterpolator method)</a>
 </li>
       </ul></li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._get_image_radius">_get_image_radius() (Mask method)</a>
-</li>
       <li><a href="shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._get_indices">_get_indices() (DependencyHandler static method)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_input_dir">_get_input_dir() (FileHandler method)</a>
@@ -728,8 +716,6 @@
         <li><a href="shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_starshapes">(PSFExInterpolator method)</a>
 </li>
       </ul></li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._get_temp_dir_path">_get_temp_dir_path() (Mask method)</a>
-</li>
       <li><a href="shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._get_value">_get_value() (StrInterpreter method)</a>
 </li>
       <li><a href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor._image_shape">_image_shape() (in module shapepipe.utilities.field_corners_extractor)</a>
@@ -740,14 +726,14 @@
 </li>
       <li><a href="shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._interpolate">_interpolate() (PSFExInterpolator method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._interpolate_me">_interpolate_me() (MCCDinterpolator method)</a>
 
       <ul>
         <li><a href="shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._interpolate_me">(PSFExInterpolator method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler._log_job_parameters">_log_job_parameters() (JobHandler method)</a>
 </li>
       <li><a href="shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler._log_num_processes">_log_num_processes() (JobHandler method)</a>
@@ -772,11 +758,7 @@
 </li>
       <li><a href="shapepipe.modules.setools_package.setools.html#shapepipe.modules.setools_package.setools.SEPlot._make_scatter">_make_scatter() (SEPlot method)</a>
 </li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._make_star_cat">_make_star_cat() (Mask method)</a>
-</li>
       <li><a href="shapepipe.modules.setools_package.setools.html#shapepipe.modules.setools_package.setools.SETools._make_stat">_make_stat() (SETools method)</a>
-</li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._mask_to_file">_mask_to_file() (Mask method)</a>
 </li>
       <li><a href="shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._mean">_mean() (StrInterpreter method)</a>
 </li>
@@ -829,8 +811,6 @@
       <li><a href="shapepipe.pipeline.config.html#shapepipe.pipeline.config.SetUpParser._set_execution_options">_set_execution_options() (SetUpParser method)</a>
 </li>
       <li><a href="shapepipe.pipeline.config.html#shapepipe.pipeline.config.SetUpParser._set_file_options">_set_file_options() (SetUpParser method)</a>
-</li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._set_image_coordinates">_set_image_coordinates() (Mask method)</a>
 </li>
       <li><a href="shapepipe.pipeline.worker_handler.html#shapepipe.pipeline.worker_handler.WorkerHandler._set_job_name">_set_job_name() (WorkerHandler static method)</a>
 </li>
@@ -1010,6 +990,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html#shapepipe.modules.merge_sep_cats_package.merge_sep_cats.chunk_path">chunk_path() (in module shapepipe.modules.merge_sep_cats_package.merge_sep_cats)</a>
+</li>
       <li><a href="shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler.clean_up">clean_up() (JobHandler method)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.close">close() (FITSCatalogue method)</a>
@@ -1116,12 +1098,10 @@
 </li>
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.find_images_in_area">find_images_in_area() (in module shapepipe.utilities.cfis)</a>
 </li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask.find_stars">find_stars() (Mask method)</a>
+      <li><a href="shapepipe.modules.find_exposures_package.find_exposures.html#shapepipe.modules.find_exposures_package.find_exposures.FindExposures">FindExposures (class in shapepipe.modules.find_exposures_package.find_exposures)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shapepipe.modules.find_exposures_package.find_exposures.html#shapepipe.modules.find_exposures_package.find_exposures.FindExposures">FindExposures (class in shapepipe.modules.find_exposures_package.find_exposures)</a>
-</li>
       <li><a href="shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler.finish_up">finish_up() (JobHandler method)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.FITS">FITS (BaseCatalogue.InputFormat attribute)</a>
@@ -1131,6 +1111,8 @@
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue">FITSCatalogue (class in shapepipe.pipeline.file_io)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.Column">FITSCatalogue.Column (class in shapepipe.pipeline.file_io)</a>
+</li>
+      <li><a href="shapepipe.utilities.mask_query.html#shapepipe.utilities.mask_query.flag_positions">flag_positions() (in module shapepipe.utilities.mask_query)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.flatten_list">flatten_list() (FileHandler static method)</a>
 </li>
@@ -1252,10 +1234,10 @@
         <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_info">(FITSCatalogue method)</a>
 </li>
       </ul></li>
-      <li><a href="shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.get_last">get_last() (in module shapepipe.pipeline.run_log)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.get_last">get_last() (in module shapepipe.pipeline.run_log)</a>
+</li>
       <li><a href="shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.get_last_dir">get_last_dir() (in module shapepipe.pipeline.run_log)</a>
 </li>
       <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.get_last_full_path">get_last_full_path() (job_data class method)</a>
@@ -1321,11 +1303,7 @@
       <li><a href="shapepipe.modules.vignetmaker_package.vignetmaker.html#shapepipe.modules.vignetmaker_package.vignetmaker.VignetMaker.get_pos">get_pos() (VignetMaker method)</a>
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_prior">get_prior() (in module shapepipe.modules.ngmix_package.ngmix)</a>
-
-      <ul>
-        <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior">(Ngmix method)</a>
 </li>
-      </ul></li>
       <li><a href="shapepipe.modules.match_external_package.match_external.html#shapepipe.modules.match_external_package.match_external.get_ra_dec">get_ra_dec() (in module shapepipe.modules.match_external_package.match_external)</a>
 </li>
       <li><a href="shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.RunLog.get_run">get_run() (RunLog method)</a>
@@ -1453,22 +1431,14 @@
       <li><a href="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.make_ldac_from_ascii">make_ldac_from_ascii() (in module shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat)</a>
 </li>
       <li><a href="shapepipe.modules.vignetmaker_package.vignetmaker.html#shapepipe.modules.vignetmaker_package.vignetmaker.make_mask">make_mask() (in module shapepipe.modules.vignetmaker_package.vignetmaker)</a>
-
-      <ul>
-        <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask.make_mask">(Mask method)</a>
 </li>
-      </ul></li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation">make_ngmix_observation() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
       <li><a href="shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.make_post_process">make_post_process() (in module shapepipe.modules.sextractor_package.sextractor_script)</a>
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.make_runners">make_runners() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask">Mask (class in shapepipe.modules.mask_package.mask)</a>
-</li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask.mask_border">mask_border() (Mask method)</a>
-</li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask.mask_dso">mask_dso() (Mask method)</a>
+      <li><a href="shapepipe.modules.mask_query_package.mask_query.html#shapepipe.modules.mask_query_package.mask_query.MaskQuery">MaskQuery (class in shapepipe.modules.mask_query_package.mask_query)</a>
 </li>
       <li><a href="shapepipe.modules.match_external_package.match_external.html#shapepipe.modules.match_external_package.match_external.MatchCats">MatchCats (class in shapepipe.modules.match_external_package.match_external)</a>
 </li>
@@ -1508,8 +1478,6 @@
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.MetacalResult">MetacalResult (class in shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask.missing_data">missing_data() (Mask method)</a>
-</li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.mkdir">mkdir() (FileHandler class method)</a>
 
       <ul>
@@ -1548,9 +1516,9 @@
 </li>
         <li><a href="shapepipe.modules.make_cat_package.make_cat.html#module-shapepipe.modules.make_cat_package.make_cat">shapepipe.modules.make_cat_package.make_cat</a>
 </li>
-        <li><a href="shapepipe.modules.mask_package.html#module-shapepipe.modules.mask_package">shapepipe.modules.mask_package</a>
+        <li><a href="shapepipe.modules.mask_query_package.html#module-shapepipe.modules.mask_query_package">shapepipe.modules.mask_query_package</a>
 </li>
-        <li><a href="shapepipe.modules.mask_package.mask.html#module-shapepipe.modules.mask_package.mask">shapepipe.modules.mask_package.mask</a>
+        <li><a href="shapepipe.modules.mask_query_package.mask_query.html#module-shapepipe.modules.mask_query_package.mask_query">shapepipe.modules.mask_query_package.mask_query</a>
 </li>
         <li><a href="shapepipe.modules.match_external_package.html#module-shapepipe.modules.match_external_package">shapepipe.modules.match_external_package</a>
 </li>
@@ -1599,10 +1567,6 @@
         <li><a href="shapepipe.modules.python_example_package.html#module-shapepipe.modules.python_example_package">shapepipe.modules.python_example_package</a>
 </li>
         <li><a href="shapepipe.modules.python_example_package.python_example.html#module-shapepipe.modules.python_example_package.python_example">shapepipe.modules.python_example_package.python_example</a>
-</li>
-        <li><a href="shapepipe.modules.random_cat_package.html#module-shapepipe.modules.random_cat_package">shapepipe.modules.random_cat_package</a>
-</li>
-        <li><a href="shapepipe.modules.random_cat_package.random_cat.html#module-shapepipe.modules.random_cat_package.random_cat">shapepipe.modules.random_cat_package.random_cat</a>
 </li>
         <li><a href="shapepipe.modules.read_ext_sexcat_package.html#module-shapepipe.modules.read_ext_sexcat_package">shapepipe.modules.read_ext_sexcat_package</a>
 </li>
@@ -1690,11 +1654,11 @@
 </li>
         <li><a href="shapepipe.utilities.header_downloader.html#module-shapepipe.utilities.header_downloader">shapepipe.utilities.header_downloader</a>
 </li>
+        <li><a href="shapepipe.utilities.mask_query.html#module-shapepipe.utilities.mask_query">shapepipe.utilities.mask_query</a>
+</li>
         <li><a href="shapepipe.utilities.summary.html#module-shapepipe.utilities.summary">shapepipe.utilities.summary</a>
 </li>
         <li><a href="shapepipe.utilities.summary_params_pre_v2.html#module-shapepipe.utilities.summary_params_pre_v2">shapepipe.utilities.summary_params_pre_v2</a>
-</li>
-        <li><a href="shapepipe.utilities.vizier.html#module-shapepipe.utilities.vizier">shapepipe.utilities.vizier</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1769,6 +1733,10 @@
         <li><a href="shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.parse_errors">(SExtractorCaller static method)</a>
 </li>
       </ul></li>
+      <li><a href="shapepipe.utilities.mask_query.html#shapepipe.utilities.mask_query.parse_map_paths">parse_map_paths() (in module shapepipe.utilities.mask_query)</a>
+</li>
+      <li><a href="shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.parse_mask_ext_paths">parse_mask_ext_paths() (in module shapepipe.modules.make_cat_package.make_cat)</a>
+</li>
       <li><a href="shapepipe.modules.pastecat_package.pastecat.html#shapepipe.modules.pastecat_package.pastecat.PasteCat">PasteCat (class in shapepipe.modules.pastecat_package.pastecat)</a>
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.pixel_scale_from_wcs">pixel_scale_from_wcs() (in module shapepipe.modules.ngmix_package.ngmix)</a>
@@ -1803,10 +1771,10 @@
 </li>
       <li><a href="shapepipe.pipeline.args.html#shapepipe.pipeline.args.print_message">print_message() (in module shapepipe.pipeline.args)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.print_par_runtime">print_par_runtime() (in module shapepipe.utilities.summary)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.print_par_runtime">print_par_runtime() (in module shapepipe.utilities.summary)</a>
+</li>
       <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.print_stats">print_stats() (job_data method)</a>
 </li>
       <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.print_stats_header">print_stats_header() (job_data class method)</a>
@@ -1817,6 +1785,8 @@
         <li><a href="shapepipe.modules.find_exposures_package.find_exposures.html#shapepipe.modules.find_exposures_package.find_exposures.FindExposures.process">(FindExposures method)</a>
 </li>
         <li><a href="shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.GetImages.process">(GetImages method)</a>
+</li>
+        <li><a href="shapepipe.modules.mask_query_package.mask_query.html#shapepipe.modules.mask_query_package.mask_query.MaskQuery.process">(MaskQuery method)</a>
 </li>
         <li><a href="shapepipe.modules.match_external_package.match_external.html#shapepipe.modules.match_external_package.match_external.MatchCats.process">(MatchCats method)</a>
 </li>
@@ -1833,8 +1803,6 @@
         <li><a href="shapepipe.modules.pastecat_package.pastecat.html#shapepipe.modules.pastecat_package.pastecat.PasteCat.process">(PasteCat method)</a>
 </li>
         <li><a href="shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process">(PSFExInterpolator method)</a>
-</li>
-        <li><a href="shapepipe.modules.random_cat_package.random_cat.html#shapepipe.modules.random_cat_package.random_cat.RandomCat.process">(RandomCat method)</a>
 </li>
         <li><a href="shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue.process">(SaveCatalogue method)</a>
 </li>
@@ -1873,7 +1841,11 @@
 <h2 id="Q">Q</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shapepipe.utilities.vizier.html#shapepipe.utilities.vizier.query_vizier">query_vizier() (in module shapepipe.utilities.vizier)</a>
+      <li><a href="shapepipe.utilities.mask_query.html#shapepipe.utilities.mask_query.query_map">query_map() (in module shapepipe.utilities.mask_query)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shapepipe.utilities.mask_query.html#shapepipe.utilities.mask_query.query_map_coverage">query_map_coverage() (in module shapepipe.utilities.mask_query)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1881,8 +1853,6 @@
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shapepipe.modules.random_cat_package.random_cat.html#shapepipe.modules.random_cat_package.random_cat.RandomCat">RandomCat (class in shapepipe.modules.random_cat_package.random_cat)</a>
-</li>
       <li><a href="shapepipe.modules.setools_package.setools.html#shapepipe.modules.setools_package.setools.SETools.read">read() (SETools method)</a>
 </li>
       <li><a href="shapepipe.modules.python_example_package.python_example.html#shapepipe.modules.python_example_package.python_example.PythonExample.read_files">read_files() (PythonExample method)</a>
@@ -1921,10 +1891,10 @@
 </li>
       <li><a href="shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.GetImages.retrieve_one">retrieve_one() (GetImages method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD.rmse_calc">rmse_calc() (MergeStarCatMCCD static method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD.rmse_calc_2">rmse_calc_2() (MergeStarCatMCCD static method)</a>
 </li>
       <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.run">run() (CcdPsfHandler method)</a>
@@ -1981,9 +1951,9 @@
       </ul></li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.save_as_fits">save_as_fits() (FITSCatalogue method)</a>
 </li>
-      <li><a href="shapepipe.modules.random_cat_package.random_cat.html#shapepipe.modules.random_cat_package.random_cat.RandomCat.save_as_healpix">save_as_healpix() (RandomCat method)</a>
-</li>
       <li><a href="shapepipe.modules.setools_package.setools.html#shapepipe.modules.setools_package.setools.SETools.save_mask">save_mask() (SETools method)</a>
+</li>
+      <li><a href="shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data">save_mask_ext_data() (in module shapepipe.modules.make_cat_package.make_cat)</a>
 </li>
       <li><a href="shapepipe.modules.setools_package.setools.html#shapepipe.modules.setools_package.setools.SETools.save_new_cat">save_new_cat() (SETools method)</a>
 </li>
@@ -2142,17 +2112,17 @@
 </li>
       </ul></li>
       <li>
-    shapepipe.modules.mask_package
+    shapepipe.modules.mask_query_package
 
       <ul>
-        <li><a href="shapepipe.modules.mask_package.html#module-shapepipe.modules.mask_package">module</a>
+        <li><a href="shapepipe.modules.mask_query_package.html#module-shapepipe.modules.mask_query_package">module</a>
 </li>
       </ul></li>
       <li>
-    shapepipe.modules.mask_package.mask
+    shapepipe.modules.mask_query_package.mask_query
 
       <ul>
-        <li><a href="shapepipe.modules.mask_package.mask.html#module-shapepipe.modules.mask_package.mask">module</a>
+        <li><a href="shapepipe.modules.mask_query_package.mask_query.html#module-shapepipe.modules.mask_query_package.mask_query">module</a>
 </li>
       </ul></li>
       <li>
@@ -2316,27 +2286,13 @@
         <li><a href="shapepipe.modules.python_example_package.html#module-shapepipe.modules.python_example_package">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     shapepipe.modules.python_example_package.python_example
 
       <ul>
         <li><a href="shapepipe.modules.python_example_package.python_example.html#module-shapepipe.modules.python_example_package.python_example">module</a>
-</li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li>
-    shapepipe.modules.random_cat_package
-
-      <ul>
-        <li><a href="shapepipe.modules.random_cat_package.html#module-shapepipe.modules.random_cat_package">module</a>
-</li>
-      </ul></li>
-      <li>
-    shapepipe.modules.random_cat_package.random_cat
-
-      <ul>
-        <li><a href="shapepipe.modules.random_cat_package.random_cat.html#module-shapepipe.modules.random_cat_package.random_cat">module</a>
 </li>
       </ul></li>
       <li>
@@ -2641,6 +2597,13 @@
 </li>
       </ul></li>
       <li>
+    shapepipe.utilities.mask_query
+
+      <ul>
+        <li><a href="shapepipe.utilities.mask_query.html#module-shapepipe.utilities.mask_query">module</a>
+</li>
+      </ul></li>
+      <li>
     shapepipe.utilities.summary
 
       <ul>
@@ -2654,16 +2617,7 @@
         <li><a href="shapepipe.utilities.summary_params_pre_v2.html#module-shapepipe.utilities.summary_params_pre_v2">module</a>
 </li>
       </ul></li>
-      <li>
-    shapepipe.utilities.vizier
-
-      <ul>
-        <li><a href="shapepipe.utilities.vizier.html#module-shapepipe.utilities.vizier">module</a>
-</li>
-      </ul></li>
       <li><a href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.shapepipe_write_output">shapepipe_write_output() (in module shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd)</a>
-</li>
-      <li><a href="shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask.sphere_dist">sphere_dist() (Mask method)</a>
 </li>
       <li><a href="shapepipe.pipeline.shared.html#shapepipe.pipeline.shared.split_module_run">split_module_run() (in module shapepipe.pipeline.shared)</a>
 </li>
@@ -2823,7 +2777,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 08 Sep, 2026.
+  Last updated on 09 Sep, 2026.
   <br/>
 </p>
   </div>

@@ -56,11 +56,11 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Running on a Cluster" href="clusters.html" />
-    <link rel="prev" title="Testing" href="testing.html" />
+    <link rel="prev" title="Snakemake Workflow" href="workflow.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="08 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="09 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -257,6 +257,7 @@
 <li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
@@ -267,7 +268,6 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="random_cat.html">Create random catalogues and masks</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="nav bd-sidenav">
@@ -290,8 +290,8 @@
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_query_package.html">shapepipe.modules.mask_query_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_query_package.mask_query.html">shapepipe.modules.mask_query_package.mask_query</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -334,10 +334,6 @@
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
-</ul>
-</details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -402,9 +398,9 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
@@ -592,7 +588,7 @@
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prepare-input-images">Prepare input images</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mask-images">Mask images</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#masks">Masks</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#detect-objects-on-tiles-and-process-stars-on-single-exposures">Detect objects on tiles and process stars on single exposures</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#global-star-sample-statistics">Global star sample statistics</a></li>
 </ul>
@@ -656,11 +652,11 @@ FITS file containing a stack by co-adding different single exposures, created by
 A stacked image is also called <em>tile</em>. These files are used on input by <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code>.
 The pixel data can contain the observed image, a weight map, or a flag map. Tile images and weights are created in the
 case of CFIS by Stephen Gwyn using a combination of <code class="docutils literal notranslate"><span class="pre">swarp</span></code> and his own software. Examples of file names are
-<code class="docutils literal notranslate"><span class="pre">CFIS.316.246.r.fits</span></code>, <code class="docutils literal notranslate"><span class="pre">CFIS.205.267.r.weight.fits.fz</span></code>, the latter is a compressed FITS file, see below. Tile flag files
-are created the mask module of <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> (see <a class="reference internal" href="#mask-images"><span class="xref myst">Mask images</span></a>). The tile ID needs to be modified such that the <code class="docutils literal notranslate"><span class="pre">.</span></code> between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. For the same reason, the extension <code class="docutils literal notranslate"><span class="pre">.fits.fz</span></code> is changed to <code class="docutils literal notranslate"><span class="pre">.fitzfz</span></code>. In addition, for
+<code class="docutils literal notranslate"><span class="pre">CFIS.316.246.r.fits</span></code>, <code class="docutils literal notranslate"><span class="pre">CFIS.205.267.r.weight.fits.fz</span></code>, the latter is a compressed FITS file, see below. Tiles have no flag file
+(see <a class="reference internal" href="#masks"><span class="xref myst">Masks</span></a>). The tile ID needs to be modified such that the <code class="docutils literal notranslate"><span class="pre">.</span></code> between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. For the same reason, the extension <code class="docutils literal notranslate"><span class="pre">.fits.fz</span></code> is changed to <code class="docutils literal notranslate"><span class="pre">.fitzfz</span></code>. In addition, for
 clarity, we include the string <code class="docutils literal notranslate"><span class="pre">image</span></code> for a tile image type.<br />
 Default convention: <strong>&lt;image_type&gt;-&lt;tile_number&gt;.fits</strong><br />
-Examples: <code class="docutils literal notranslate"><span class="pre">CFIS_image-277-282.fits</span></code>, <code class="docutils literal notranslate"><span class="pre">CFIS_weight-274-282.fitsfz</span></code>, <code class="docutils literal notranslate"><span class="pre">pipeline_flag-239-293.fits</span></code></p></li>
+Examples: <code class="docutils literal notranslate"><span class="pre">CFIS_image-277-282.fits</span></code>, <code class="docutils literal notranslate"><span class="pre">CFIS_weight-274-282.fitsfz</span></code></p></li>
 <li><p>Database catalogue files<br />
 For very large files that combine information from multiple tiles or single exposures, <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> creates <code class="docutils literal notranslate"><span class="pre">sqlite</span></code>
 data base catalogues.<br />
@@ -728,7 +724,6 @@ the following path variables might need to be defined.</p>
 <p>for all options.</p>
 <p>This script creates the subdirectory <code class="docutils literal notranslate"><span class="pre">$SP_RUN/output</span></code> to store all pipeline outputs
 (log files, diagnostics, statistics, output images, catalogues, single-exposure headers with WCS information).</p>
-<p>Optionally, the subdir <code class="docutils literal notranslate"><span class="pre">output_star_cat</span></code> is created by the used to store the external star catalogues for masking. This is only necessary if the pipeline is run on a cluster without internet connection to access star catalogues. In that case, the star catalogues need to be retrieved outside the pipeline, for example on a login node, and copied to <code class="docutils literal notranslate"><span class="pre">output_star_cat</span></code>.</p>
 <p>The job script automaticall performs a number of subsequent calls to the <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> executable <code class="docutils literal notranslate"><span class="pre">shapepipe_run</span></code>, as</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>shapepipe_run<span class="w"> </span>-c<span class="w"> </span><span class="nv">$SP_CONFIG</span>/&lt;config&gt;.ini
 </pre></div>
@@ -784,28 +779,45 @@ Finally, the headers of all single-exposure single-CCD files are merged into a s
 <p>Two output directories are created, <code class="docutils literal notranslate"><span class="pre">run_sp_Uz</span></code> for <code class="docutils literal notranslate"><span class="pre">uncompress_fits</span></code>, and <code class="docutils literal notranslate"><span class="pre">run_sp_exp_SpMh</span></code> for the output of the modules
 <code class="docutils literal notranslate"><span class="pre">split_exp</span></code> (<code class="docutils literal notranslate"><span class="pre">Sp</span></code>) and <code class="docutils literal notranslate"><span class="pre">merge_headers</span></code> (<code class="docutils literal notranslate"><span class="pre">Mh</span></code>).</p>
 </section>
-<section id="mask-images">
-<h2>Mask images<a class="headerlink" href="#mask-images" title="Link to this heading">#</a></h2>
-<p>Run</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp<span class="w"> </span>TILE_ID<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
-</pre></div>
-</div>
-<p>to mask tile and single-exposure single-CCD images. Both tasks are performed by two calls to the <code class="docutils literal notranslate"><span class="pre">mask</span></code> runner.</p>
-<p>Note that internet access is required for this step, since a reference star catalogue is downloaded.</p>
-<p>The output of both masking runs are stored in the output directory <code class="docutils literal notranslate"><span class="pre">run_sp_MaMa</span></code>, with run 1 (2) of
-<code class="docutils literal notranslate"><span class="pre">mask</span></code> corresponding to tiles (exposures).</p>
-<p><strong>Diagnostics:</strong> Open a single-exposure single-CCD image and the corresponding pipeline flag
-in <code class="docutils literal notranslate"><span class="pre">ds9</span></code>, and display both frames next to each other. Example</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ds9<span class="w"> </span>image-2113737-10.fits<span class="w"> </span>pipeline_flag-2113737-10.fits
-</pre></div>
-</div>
-<p>Choose <code class="docutils literal notranslate"><span class="pre">zoom</span> <span class="pre">fit</span></code> for both frames, click <code class="docutils literal notranslate"><span class="pre">scale</span> <span class="pre">zscale</span></code> for the image, and <code class="docutils literal notranslate"><span class="pre">color</span> <span class="pre">aips0</span></code> for the flag, to display something like this:</p>
-<a class="reference internal image-reference" href="_images/diag_mask.png"><img alt="_images/diag_mask.png" src="_images/diag_mask.png" width="250" />
-</a>
-<p>By eye the correspondence between the different flag types and the image can be
-seen. Note that the two frames might not match perfectly, since (a) WCS
-information is not available in the flag file FITS headers; (b) the image can
-have a zero-padded pixel border, which is not accounted for by <code class="docutils literal notranslate"><span class="pre">ds9</span></code>.</p>
+<section id="masks">
+<h2>Masks<a class="headerlink" href="#masks" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> does not generate masks. Sky-fixed masks — star halos, stars,
+manual masks for large galaxies, per-band coverage, MaxiMask defects — are
+supplied as <a class="reference external" href="https://healsparse.readthedocs.io">healsparse</a> maps and are
+consumed by <em>querying them at object positions</em>, never by rasterizing them onto
+pixels. Two modules do the querying, from the same shared lookup
+(<code class="docutils literal notranslate"><span class="pre">shapepipe.utilities.mask_query</span></code>): <code class="docutils literal notranslate"><span class="pre">mask_query</span></code> runs between <code class="docutils literal notranslate"><span class="pre">sextractor</span></code> and
+<code class="docutils literal notranslate"><span class="pre">setools</span></code> on the single-exposure single-CCD catalogues and writes one integer
+<code class="docutils literal notranslate"><span class="pre">MASK_EXT</span></code> column (0 = clean), recording the star-body map (bit 2) against every
+detection; <code class="docutils literal notranslate"><span class="pre">make_cat</span></code> writes one
+<code class="docutils literal notranslate"><span class="pre">MASK_&lt;band&gt;</span></code> column per band onto the final tile catalogue, carrying the map
+value verbatim so downstream selections choose their own cuts. Map paths and
+bit selections live in the config files (<code class="docutils literal notranslate"><span class="pre">MASK_PATHS</span></code> / <code class="docutils literal notranslate"><span class="pre">MASK_BITS</span></code> and
+<code class="docutils literal notranslate"><span class="pre">MASK_EXT_PATHS</span></code>), so regenerated mask products cost a config edit and no code.</p>
+<p>The distinction that drives all of this is what a mask <em>means</em>. An <strong>instrument
+flag</strong> marks a corrupted measurement — the pixels carry no usable signal — so
+these are the only masks that reject anything inside the pipeline. The
+<strong>healsparse masks</strong> are sky-fixed location flags: they say where an object
+sits, not that its pixels are broken, so what to do about one is an analysis
+decision and is made downstream.</p>
+<p><strong>Nothing in the pipeline cuts on the queried columns</strong>, and on exposures the
+query ships off entirely: <code class="docutils literal notranslate"><span class="pre">MASK_PATHS</span></code> is commented out, which makes
+<code class="docutils literal notranslate"><span class="pre">mask_query</span></code> a strict no-op that passes the catalogue through with no
+<code class="docutils literal notranslate"><span class="pre">MASK_EXT</span></code> column (the module stays in the chain, so enabling it is
+uncommenting one line). <code class="docutils literal notranslate"><span class="pre">star_selection.setools</span></code> rejects on <code class="docutils literal notranslate"><span class="pre">IMAFLAGS_ISO</span> <span class="pre">==</span> <span class="pre">0</span></code>
+and nothing else, deliberately starting from outlier rejection alone, and the
+final catalogue’s <code class="docutils literal notranslate"><span class="pre">MASK_&lt;band&gt;</span></code> columns are written unfiltered. <code class="docutils literal notranslate"><span class="pre">MASK_EXT</span></code> is
+the configurable pickup if outlier rejection proves insufficient: add
+<code class="docutils literal notranslate"><span class="pre">MASK_EXT</span> <span class="pre">==</span> <span class="pre">0</span></code> beside each <code class="docutils literal notranslate"><span class="pre">IMAFLAGS_ISO</span> <span class="pre">==</span> <span class="pre">0</span></code>, one line per mask block, as
+that file’s header documents.</p>
+<p>No internet access is needed at any point, and there is no reference star
+catalogue to download.</p>
+<p>The one mask that still reaches pixels is the <strong>instrument flag image</strong>
+(<code class="docutils literal notranslate"><span class="pre">&lt;exp&gt;p.flag.fits.fz</span></code>) delivered with each exposure, which records bad columns
+and saturation. <code class="docutils literal notranslate"><span class="pre">split_exp</span></code> splits it per CCD beside the image and weight,
+<code class="docutils literal notranslate"><span class="pre">sextractor</span></code> reads it as <code class="docutils literal notranslate"><span class="pre">IMAFLAGS_ISO</span></code>, and <code class="docutils literal notranslate"><span class="pre">ngmix</span></code> zero-weights flagged
+pixels in its postage stamps. Tiles have no such image, so tile detection runs
+with <code class="docutils literal notranslate"><span class="pre">FLAG_IMAGE</span> <span class="pre">=</span> <span class="pre">False</span></code>.</p>
 </section>
 <section id="detect-objects-on-tiles-and-process-stars-on-single-exposures">
 <h2>Detect objects on tiles and process stars on single exposures<a class="headerlink" href="#detect-objects-on-tiles-and-process-stars-on-single-exposures" title="Link to this heading">#</a></h2>
@@ -942,8 +954,8 @@ one output file. Then, previously obtained information are pasted into a <em>fin
 Included are galaxy detection and basic measurement parameters, the PSF model at
 galaxy positions, the spread-model classification, and the shape measurement.</p>
 <p>Two output directories are created.
-The first one is <code class="docutils literal notranslate"><span class="pre">run_sp_Ms</span></code> for the <code class="docutils literal notranslate"><span class="pre">merge_sep</span></code> run.
-The second is <code class="docutils literal notranslate"><span class="pre">run_sp_Mc</span></code> for the <code class="docutils literal notranslate"><span class="pre">make_cat</span></code> task; the name is the same for both the <code class="docutils literal notranslate"><span class="pre">MCCD</span></code> and <code class="docutils literal notranslate"><span class="pre">PSFEx</span></code> PSF model.</p>
+The first one is <code class="docutils literal notranslate"><span class="pre">run_sp_tile_Ms</span></code> for the <code class="docutils literal notranslate"><span class="pre">merge_sep</span></code> run.
+The second is <code class="docutils literal notranslate"><span class="pre">run_sp_tile_Mc</span></code> for the <code class="docutils literal notranslate"><span class="pre">make_cat</span></code> task; the name is the same for both the <code class="docutils literal notranslate"><span class="pre">MCCD</span></code> and <code class="docutils literal notranslate"><span class="pre">PSFEx</span></code> PSF model.</p>
 </section>
 <section id="upload-results">
 <h2>Upload results<a class="headerlink" href="#upload-results" title="Link to this heading">#</a></h2>
@@ -966,12 +978,12 @@ The second is <code class="docutils literal notranslate"><span class="pre">run_s
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="testing.html"
+       href="workflow.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Testing</p>
+        <p class="prev-next-title">Snakemake Workflow</p>
       </div>
     </a>
     <a class="right-next"
@@ -1015,7 +1027,7 @@ The second is <code class="docutils literal notranslate"><span class="pre">run_s
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prepare-input-images">Prepare input images</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mask-images">Mask images</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#masks">Masks</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#detect-objects-on-tiles-and-process-stars-on-single-exposures">Detect objects on tiles and process stars on single exposures</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#global-star-sample-statistics">Global star sample statistics</a></li>
 </ul>
@@ -1057,7 +1069,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 08 Sep, 2026.
+  Last updated on 09 Sep, 2026.
   <br/>
 </p>
   </div>

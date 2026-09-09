@@ -56,12 +56,12 @@
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="shapepipe.modules.mask_package" href="shapepipe.modules.mask_package.html" />
+    <link rel="next" title="shapepipe.modules.mask_query_package" href="shapepipe.modules.mask_query_package.html" />
     <link rel="prev" title="shapepipe.modules.make_cat_package" href="shapepipe.modules.make_cat_package.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="08 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="09 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -258,6 +258,7 @@
 <li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
@@ -268,7 +269,6 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="random_cat.html">Create random catalogues and masks</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="current nav bd-sidenav">
@@ -291,8 +291,8 @@
 <li class="toctree-l4 current active"><a class="current reference internal" href="#">shapepipe.modules.make_cat_package.make_cat</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_query_package.html">shapepipe.modules.mask_query_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_query_package.mask_query.html">shapepipe.modules.mask_query_package.mask_query</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -335,10 +335,6 @@
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
-</ul>
-</details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -403,9 +399,9 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
@@ -584,6 +580,8 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.remove_field_name"><code class="docutils literal notranslate"><span class="pre">remove_field_name()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_sextractor_data"><code class="docutils literal notranslate"><span class="pre">save_sextractor_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_sm_data"><code class="docutils literal notranslate"><span class="pre">save_sm_data()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.parse_mask_ext_paths"><code class="docutils literal notranslate"><span class="pre">parse_mask_ext_paths()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data"><code class="docutils literal notranslate"><span class="pre">save_mask_ext_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue.process"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue.process()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._update_dict"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._update_dict()</span></code></a></li>
@@ -727,6 +725,50 @@ using the classifier
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.parse_mask_ext_paths">
+<span class="sig-name descname"><span class="pre">parse_mask_ext_paths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paths_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#parse_mask_ext_paths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.parse_mask_ext_paths" title="Link to this definition">#</a></dt>
+<dd><p>Parse Mask Ext Paths.</p>
+<p>Parse the <code class="docutils literal notranslate"><span class="pre">MASK_EXT_PATHS</span></code> config value into a <code class="docutils literal notranslate"><span class="pre">band</span> <span class="pre">-&gt;</span> <span class="pre">path</span></code> mapping.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>paths_str</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Comma-separated <code class="docutils literal notranslate"><span class="pre">band:path</span></code> pairs, e.g.
+<code class="docutils literal notranslate"><span class="pre">u:/path/mask_u.hsp,</span> <span class="pre">g:/path/mask_g.hsp</span></code></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mapping from band name to healsparse map path</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data">
+<span class="sig-name descname"><span class="pre">save_mask_ext_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">final_cat_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">band_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#save_mask_ext_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data" title="Link to this definition">#</a></dt>
+<dd><p>Save External Mask Data.</p>
+<p>Query per-band external healsparse masks at each object’s world position
+and write one <code class="docutils literal notranslate"><span class="pre">MASK_&lt;BAND&gt;</span></code> column per band into the final catalogue.
+Object positions are read from the SExtractor windowed world coordinates
+(<code class="docutils literal notranslate"><span class="pre">XWIN_WORLD</span></code> = RA, <code class="docutils literal notranslate"><span class="pre">YWIN_WORLD</span></code> = Dec, both in degrees) carried in the
+<code class="docutils literal notranslate"><span class="pre">RESULTS</span></code> extension. Objects falling outside a map’s coverage receive
+that map’s sentinel value (<code class="docutils literal notranslate"><span class="pre">healsparse.HealSparseMap.get_values_pos</span></code>
+returns the map’s sentinel — <code class="docutils literal notranslate"><span class="pre">-1</span></code> for integer maps — verbatim), which is
+the documented off-map flag.</p>
+<p>The lookup itself is <code class="docutils literal notranslate"><span class="pre">shapepipe.utilities.mask_query.query_map</span></code>,
+shared with the <code class="docutils literal notranslate"><span class="pre">mask_query</span></code> module: one primitive, two consumers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>final_cat_file</strong> (<a class="reference internal" href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue" title="shapepipe.pipeline.file_io.FITSCatalogue"><em>file_io.FITSCatalogue</em></a>) – Final catalogue</p></li>
+<li><p><strong>band_paths</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Mapping from band name to healsparse map path</p></li>
+<li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a>) – Logging instance</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.SaveCatalogue">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">SaveCatalogue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">final_cat_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cat_size_target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#SaveCatalogue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue" title="Link to this definition">#</a></dt>
@@ -861,11 +903,11 @@ single aliased value of the pre-fix code (shapepipe#749).</p>
       </div>
     </a>
     <a class="right-next"
-       href="shapepipe.modules.mask_package.html"
+       href="shapepipe.modules.mask_query_package.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">shapepipe.modules.mask_package</p>
+        <p class="prev-next-title">shapepipe.modules.mask_query_package</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -892,6 +934,8 @@ single aliased value of the pre-fix code (shapepipe#749).</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.remove_field_name"><code class="docutils literal notranslate"><span class="pre">remove_field_name()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_sextractor_data"><code class="docutils literal notranslate"><span class="pre">save_sextractor_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_sm_data"><code class="docutils literal notranslate"><span class="pre">save_sm_data()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.parse_mask_ext_paths"><code class="docutils literal notranslate"><span class="pre">parse_mask_ext_paths()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data"><code class="docutils literal notranslate"><span class="pre">save_mask_ext_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue.process"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue.process()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._update_dict"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue._update_dict()</span></code></a></li>
@@ -933,7 +977,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 08 Sep, 2026.
+  Last updated on 09 Sep, 2026.
   <br/>
 </p>
   </div>
