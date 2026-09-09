@@ -259,17 +259,24 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   hours of PSF fitting per exposure. A pattern that matches nothing is a
   recorded warning (setools rejects sparse CCDs); matching nothing at all is a
   failure. A `localrule`, by the same arithmetic as `clean_exposure`.
-- **The keep list names products, not globs.** `persist_exp:` entries are names
-  from a catalogue in `workflow/scripts/persist_exp.py`, which is the single
-  source of truth for what each one means and what keeping it buys
+- **The star catalogue's inputs are always kept; `persist_exp:` is what you
+  keep on top.** `exp_persist` packs `psf_validation` — the psfex_interp
+  validation catalogue, one per CCD — for every exposure whatever the config
+  says, because `star_cat_merge` stacks exactly those into the campaign's
+  `full_starcat`. They are that catalogue's provenance, and they are what keeps
+  appending a tile next month cheap rather than a rebuild from VOS. About 2 MB
+  per exposure: ~40 GB and ~40k inodes at DR6 scale, against a ~1 M-inode group
+  quota. `persist_exp:` is purely additive, and an empty list is legal — the tar
+  then holds the merge's inputs and nothing else.
+- **The keep list names products, not globs.** Entries are names from a
+  catalogue in `workflow/scripts/persist_exp.py`, which is the single source of
+  truth for what each one means and what keeping it buys
   ([#844](https://github.com/CosmoStat/shapepipe/issues/844)); `config.yaml`'s
-  block is that catalogue rendered, and
-  `persist_exp.py --list-products` prints it. Sizes are per exposure, 40 CCDs,
-  measured on smk-m2.
+  block is that catalogue rendered, and `persist_exp.py --list-products` prints
+  it. Sizes are per exposure, 40 CCDs, measured on smk-m2.
 
   | product | glob | per exposure | what it buys |
   |---|---|---|---|
-  | `psf_validation` | `validation_psf-*.fits` | 2.0 MB | the rho/tau statistics input, and `star_cat_merge`'s |
   | `psf_model` | `*.psf` | 2.8 MB | re-interpolate the PSF anywhere later, no rebuild |
   | `psfex_cat` | `psfex_cat-*.cat` | unmeasured | which stars PSFEx's outlier rejection clipped |
   | `star_selection` | `star_selection-*.fits` | 24.5 MB | which stars the selection cuts rejected, and why |
@@ -277,42 +284,11 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   | `star_test` | `star_split_ratio_20-*.fits` | 7.1 MB | the 20% sample `psf_validation` corresponds to |
   | `star_stats` | `star_stat-*.txt` | unmeasured | setools' per-CCD counts, density and FWHM cuts |
 
-  The default is `psf_validation` + `psf_model`. A raw glob is still accepted as
-  an escape hatch — anything with a glob metacharacter or a dot is read as one —
+  The default is `psf_model`. `psf_validation` is in the catalogue too but needs
+  no naming; naming it anyway is harmless. A raw glob is still accepted as an
+  escape hatch — anything with a glob metacharacter or a dot is read as one —
   and an unknown *name* is a parse-time error listing the valid ones. The list
   is exposure-side only; tile-side retention is #844 follow-up.
-- **The campaign ends in two merged catalogues, and the workflow now makes
-  both.** Everything above is per unit; the two products downstream analysis
-  actually opens are per *campaign*, and until these rules existed each was a
-  manual pass after the run.
-  `star_cat_merge` stacks every exposure's every CCD's `validation_psf-*.fits`
-  into one `<products_dir>/full_starcat-0000000.fits` — the rho/tau statistics
-  input, at the path sp_validation hardcodes. It reads the members straight out
-  of the per-exposure tars (`tarfile` + `BytesIO`; unpacking ~800k files to
-  merge them would defeat the tar's whole purpose) and stacks them with
-  `MergeStarCatPSFEX`, the same class the old `merge_starcat_runner` called, so
-  the column list has exactly one definition. Its input is the same
-  `exp_persist` manifest set `rule all` already requests, so it pulls nothing
-  new into the DAG, and it exists only when `persist_exp:` keeps a
-  `validation_psf-*.fits`-shaped file — otherwise no job, and a warning at parse
-  time rather than a failure on a node.
-  `final_cat_merge` collects every ready tile's `final_cat-<ID>.fits` into
-  `<products_dir>/final_cat_<campaign>.hdf5`: one dataset per tile under a group
-  named for the campaign, the `final_cat.param` columns, an `n_tiles` attribute.
-  That schema is what sp_validation's reader opens, so it is fixed; the column
-  extraction reuses `scripts/python/create_final_cat.py` while the file is
-  written here, because that script's own discovery walks a directory layout
-  this workflow does not have. `campaign:` in `config.yaml` names the group and
-  defaults to the persistent root's basename.
-  Both rebuild from the whole persistent root rather than appending, so the
-  output is a function of its input set: byte-stable on a no-op rerun
-  (tmp-then-`cmp`-then-`mv`), and rebuilt when a tile or exposure is appended
-  (the input list's fingerprint rides on `params`). Neither is a `localrule` —
-  one job over ~20k units is real work — and neither puts its input paths in its
-  shell, which is not fastidiousness: ~20k paths is an order of magnitude over
-  Linux's 128 KiB `MAX_ARG_STRLEN` for a single argv entry, so each script
-  rediscovers the set under `products_dir` while the fingerprint travels on
-  `params`.
 - **A dead tile can be told to stop pinning exposures.** An exposure is
   cleanable only once every consuming tile has its vignets, so one
   permanently-failed tile holds its ~80 exposures for the life of the

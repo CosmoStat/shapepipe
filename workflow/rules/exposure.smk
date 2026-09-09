@@ -149,6 +149,9 @@ rule exp_persist:
     # name collision, both of which it reports on stderr and neither of which
     # has a per-CCD verdict worth a completeness record.
     params:
+        # Only the OPTIONAL retention list travels: psf_validation is packed
+        # by persist_exp.py whatever this says. It still rides on params, so
+        # adding a product re-packs (seconds) rather than re-fitting the PSF.
         patterns    = " ".join(f"--pattern '{p}'" for p in PERSIST_EXP),
         exp_dir     = lambda wc: exp_dir(wc.exp),
         dest        = lambda wc: f"{prod_exp_dir(wc.exp)}/psf",
@@ -201,12 +204,10 @@ rule clean_exposure:
         # The keepers must be off /scratch before the store goes. Unlike the
         # consumer edges above, this edge does not depend on scope: it is the
         # same exposure's own rule, so it drags nothing into the DAG that this
-        # exposure's chain did not already put there. It is conditional only on
-        # there being a keep list at all — with `persist_exp:` empty, "keep
-        # nothing" is a coherent instruction and must not become a dependency on
-        # a rule that would fail for having nothing to copy.
-        lambda wc: ([prod_exp_manifest(wc.exp, "exp_persist")]
-                    if PERSIST_EXP else [])
+        # exposure's chain did not already put there. It is UNCONDITIONAL now:
+        # exp_persist always packs the star catalogue's inputs, so there is no
+        # keep list under which this rule has nothing to wait for.
+        lambda wc: [prod_exp_manifest(wc.exp, "exp_persist")]
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
     params:

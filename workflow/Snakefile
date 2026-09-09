@@ -31,7 +31,6 @@ the manifest says "this stage succeeded", the log says "here is what happened"
 (the contract is argued in completeness.py's docstring).
 """
 
-import fnmatch
 import functools
 import hashlib
 import json
@@ -470,6 +469,12 @@ def clean_targets():
 # The keep list is config, not a rule input, and it is READ HERE so that exactly
 # one place converts it into the form the rule carries. An empty list is a
 # deliberate "keep nothing" and produces no jobs at all.
+# OPTIONAL RETENTION, and only that. What star_cat_merge needs — every CCD's
+# psf_validation — is packed by exp_persist whatever this list says
+# (persist_exp.py's ALWAYS argues why: provenance for the merged catalogue, and
+# a cheap tile append later). So an EMPTY list is a coherent instruction and not
+# a switch that turns persistence off: the tar then holds the star catalogue's
+# inputs and nothing else, and exp_persist still runs for every exposure.
 PERSIST_EXP = list(config.get("persist_exp") or [])
 
 # The keep list names PRODUCTS (`psf_model`), not globs (`*.psf`); the
@@ -485,7 +490,6 @@ for _entry in PERSIST_EXP:
         _persist.resolve(_entry)
     except KeyError as _exc:
         raise WorkflowError(f"config persist_exp: {_exc.args[0]}")
-PERSIST_GLOBS = [_persist.resolve(e) for e in PERSIST_EXP]
 
 
 def persist_targets():
@@ -525,8 +529,6 @@ def persist_manifests():
     merge job's own re-parse under the slurm executor, which genuinely needs it.
     So this half carries no guard and the memo keeps either parse to one walk.
     """
-    if not PERSIST_EXP:
-        return []
     exps = {e for t in TILES_READY for e in tile_exposures(t)}
     return sorted(prod_exp_manifest(e, "exp_persist") for e in exps
                   if not exp_store_reclaimed(e))
@@ -616,28 +618,12 @@ def unit_fingerprint(units):
     return f"{len(units)}:{hashlib.md5(joined.encode()).hexdigest()[:12]}"
 
 
-# The tar member the star merge consumes, and the test is "would this member be
-# kept" rather than "is `psf_validation` in the list". Both spellings must count:
-# the product name, and a raw glob that happens to cover it (`validation_psf*`,
-# `*.fits`, a bare `*`) — all things a user might reasonably write. So the keep
-# list is RESOLVED to globs first and the member matched against those.
-_STAR_CAT_PRODUCT = "psf_validation"
-_STAR_CAT_MEMBER = "validation_psf-2605805-12.fits"
-STAR_CAT_MERGE = any(fnmatch.fnmatch(_STAR_CAT_MEMBER, g) for g in PERSIST_GLOBS)
-
-# LOUD AT PARSE TIME, once, and only where it can be acted on. A keep list
-# without the validation catalogues is a legitimate configuration (persist the
-# PSF models alone, say) — it is not an error, so it must not become a job that
-# fails on a node an hour later. It is worth SAYING, because the omission is
-# silent otherwise and the missing product only surfaces when a rho-statistics
-# run cannot find its input.
-if PERSIST_EXP and not STAR_CAT_MERGE and workflow.is_main_process \
-        and PHASE == "compute":
-    logger.warning(
-        f"star_cat_merge: no job — persist_exp {PERSIST_EXP} keeps no "
-        f"'{_STAR_CAT_MEMBER}'-shaped file, so there is nothing to stack into "
-        f"{PRODUCTS_DIR}/full_starcat-0000000.fits (the rho/tau statistics "
-        f"input). Add '{_STAR_CAT_PRODUCT}' to persist_exp: to get it.")
+# NO GATE ON THE KEEP LIST. star_cat_merge used to exist only when
+# `persist_exp:` named something validation_psf-shaped, which made the
+# campaign's star catalogue an opt-in and a typo away from silently absent.
+# exp_persist now packs psf_validation unconditionally, so the merge is
+# requested whenever the campaign has a persisted exposure at all, and
+# star_cat_targets() below is the only condition left.
 
 
 def full_starcat():
@@ -691,8 +677,6 @@ def star_cat_inputs():
     manifest and is in no set at all. Nothing short of rebuilding its chain from
     VOS recovers it; the merge reports how many exposures it found.
     """
-    if not PERSIST_EXP:
-        return []
     live, reclaimed = [], []
     for exp in sorted({e for t in TILES_READY for e in tile_exposures(t)}):
         if not exp_store_reclaimed(exp):
@@ -714,8 +698,6 @@ def star_cat_exposures():
     is what the trigger is for. It is also what merge_star_cat.py derives on the
     job side, so the two agree on the set AND on how it is named.
     """
-    if not PERSIST_EXP:
-        return []
     return sorted(e for e in {e for t in TILES_READY for e in tile_exposures(t)}
                   if Path(prod_exp_manifest(e, "exp_persist")).exists()
                   or not exp_store_reclaimed(e))
@@ -802,15 +784,14 @@ def final_cat_max_bytes():
 def star_cat_targets():
     """`full_starcat` when there is anything to stack into it, else nothing.
 
-    Three ways to get nothing, and all three are states rather than errors: the
-    keep list holds no validation catalogue (warned about above), `persist_exp:`
-    is empty at all, or every exposure in scope is already tombstoned — a
+    One way to get nothing, and it is a state rather than an error: every
+    exposure in scope is already tombstoned — a
     campaign resumed after reclamation, whose exposures were cleaned by a
     workflow that predates exp_persist and therefore left neither tar nor
     manifest to read. A rule with an empty input list would still be a JOB, and
     it would write an empty star catalogue over a good one.
     """
-    if not STAR_CAT_MERGE or not workflow.is_main_process:
+    if not workflow.is_main_process:
         return []
     return [full_starcat()] if star_cat_inputs() else []
 

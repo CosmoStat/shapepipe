@@ -81,11 +81,27 @@ outputs:
 # would otherwise have to rebuild from tile headers.
   index_db: /project/def-mjhudson/cdaley/sp-products/smk-g6/index/run_index.sqlite
 
-# Per-exposure PSF products to carry onto the persistent root before the scratch
-# store goes (`exp_persist`, exposure.smk). A list of PRODUCT NAMES — not globs.
-# The catalogue below is the rendering of workflow/scripts/persist_exp.py's
-# PRODUCTS table, which is the single source of truth for what each name means
-# and what keeping it buys (CosmoStat/shapepipe#844); print it any time with
+# OPTIONAL per-exposure retention: what to carry onto the persistent root ON TOP
+# OF the star catalogue's own inputs, before the scratch store goes
+# (`exp_persist`, exposure.smk).
+#
+# WHAT IS ALWAYS KEPT, AND IS NOT A CHOICE HERE: psf_validation, the psfex_interp
+# validation catalogue, one per CCD. `star_cat_merge` stacks every one of them
+# into the campaign's <products_dir>/full_starcat-0000000.fits, so they are that
+# catalogue's PROVENANCE — a merged star catalogue with no per-exposure inputs
+# beside it cannot be audited, re-cut, or recomputed after a purge — and they are
+# what keeps APPENDING TILES CHEAP, since a tile added next month brings
+# exposures whose catalogues must join the existing stack. ~2 MB per exposure:
+# ~40 GB and ~40k inodes at DR6 scale, against a ~1 M-inode group quota. That is
+# the price of being able to say where the number came from, and it is paid.
+#
+# SO THIS LIST IS PURELY ADDITIVE, and an empty one is a coherent instruction:
+# the tar then holds the star catalogue's inputs and nothing else.
+#
+# Entries are PRODUCT NAMES — not globs. The catalogue below is the rendering of
+# workflow/scripts/persist_exp.py's PRODUCTS table, which is the single source of
+# truth for what each name means and what keeping it buys
+# (CosmoStat/shapepipe#844); print it any time with
 #
 #     workflow/bin/sp container exec python workflow/scripts/persist_exp.py --list-products
 #
@@ -121,16 +137,13 @@ outputs:
 # A RAW GLOB IS STILL ACCEPTED, as an escape hatch for a file the catalogue does
 # not name yet: anything carrying a glob metacharacter or a dot is taken as a
 # glob rather than a name (`*.psf` is a glob, `psf_model` is the name for it).
-# An unknown NAME is a parse-time error listing the valid ones, never a silently
-# empty keep.
+# An unknown NAME is a parse-time error listing the valid ones.
 #
 # Matches are packed, flat, into ONE uncompressed tar per exposure:
 # <products_dir>/exp/<shard>/<exp>/psf/<exp>.tar, with a manifest listing the
 # members (and the product each came from) beside it. One tar rather than loose
-# copies because inodes, not bytes, bind on /project (~1 M-file group quota;
-# loose copies would be ~200 files per exposure, ~2 M at DR6 scale). FITS
-# members read straight from the tar:
-# fits.open(io.BytesIO(tarfile.open(t).extractfile(m).read())).
+# copies because inodes, not bytes, bind on /project. FITS members read straight
+# from the tar: fits.open(io.BytesIO(tarfile.open(t).extractfile(m).read())).
 #
 # WHY COPY RATHER THAN EXEMPT THESE FROM CLEANUP. Reclamation is not the threat.
 # run_dir is /scratch and is PURGED on a 60-day window whether or not
@@ -143,24 +156,16 @@ outputs:
 # reruns the packing (seconds) and NOT exp_psf (four hours per exposure). That
 # separation is the whole reason exp_persist is a rule of its own.
 #
-# THE DEFAULT is psf_validation + psf_model (~4.8 MB per exposure): the rho/tau
-# statistics input, and the model that lets the PSF be re-interpolated at any
-# position later without rebuilding the exposure chain from VOS. Add psfex_cat
-# for a production run if you want to know which stars PSFEx clipped; the
-# star_* products are for selection studies and cost an order of magnitude more.
+# THE DEFAULT is psf_model (2.8 MB per exposure on top of psf_validation's 2.0):
+# the model that lets the PSF be re-interpolated at any position later without
+# rebuilding the exposure chain from VOS, which is the single most
+# capability-adding thing an exposure can keep. Add psfex_cat for a production
+# run if you want to know which stars PSFEx clipped; the star_* products are for
+# selection studies and cost an order of magnitude more.
 #
 # THIS LIST IS EXPOSURE-SIDE ONLY. Tile-side retention is not configurable: the
 # only tile product that persists today is final_cat, written by tile_make_cat
 # straight to products_dir. A tile keep list is #844 follow-up.
-#
-# THIS LIST GATES `star_cat_merge`. That campaign-level rule stacks every
-# exposure's every CCD's psf_validation into ONE
-# <products_dir>/full_starcat-0000000.fits, reading the members straight out of
-# the tars. A keep list without psf_validation is a legitimate configuration and
-# produces NO merge job and a warning at parse time — not a failure on a node an
-# hour later. Note the corollary: an exposure already reclaimed by a workflow
-# that predates exp_persist left no tar, so it contributes nothing and cannot be
-# recovered short of rebuilding its chain from VOS.
 #
 # NOTE ON products_dir DEFAULTING TO run_dir (a fixture or smoke test): the tar
 # then lands beside the store on the same filesystem and buys nothing, and the
@@ -168,7 +173,6 @@ outputs:
 # deletes wholesale — so a one-root run re-persists after every reclamation.
 # Harmless, and exactly the pre-D5 behaviour a one-root run asks for.
 persist_exp:
-  - psf_validation
   - psf_model
 
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one

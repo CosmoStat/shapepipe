@@ -29,6 +29,11 @@ meaning "the training star sample" would match nothing under a non-recursive
 glob. Patterns are therefore plain FILE names and the layout is ours to know,
 not the config author's.
 
+THE KEEP LIST IS WHAT THE CAMPAIGN KEEPS ON TOP OF THE MERGE'S INPUTS.
+``psf_validation`` is packed unconditionally (see ALWAYS below); ``persist_exp:``
+is purely optional retention, and an EMPTY one is a coherent instruction — the
+tar then holds the star catalogue's inputs and nothing else.
+
 ZERO MATCHES FOR ONE PATTERN IS A WARNING, NOT A FAILURE. setools rejects sparse
 CCDs (~0.2% attrition, tolerated by exp_psf's own count floor), so per-CCD
 counts are not fixed, and a pattern naming an optional diagnostic may legitimately
@@ -101,6 +106,19 @@ RUN_NAME = "run_sp_exp_SxSePsfPi"
 #
 # ORDER IS THE ORDER OF THE CHAIN — sextractor, setools, psfex, psfex_interp —
 # so the table reads as the pipeline runs.
+# THE STAR CATALOGUE'S INPUTS ARE NOT A USER CHOICE. star_cat_merge stacks
+# every CCD's psf_validation into the campaign's full_starcat, so exp_persist
+# ALWAYS packs it, whatever `persist_exp:` says. Two reasons, and neither is
+# about taste. It is the merged catalogue's PROVENANCE: a full_starcat with no
+# per-exposure inputs beside it cannot be audited, re-cut or recomputed after a
+# purge. And it is what keeps APPENDING TILES CHEAP: a tile added next month
+# brings exposures whose validation catalogues must join the existing stack, and
+# if the earlier ones are gone the merge either shrinks or rebuilds their chains
+# from VOS. ~2 MB per exposure, so ~40 GB and ~40k inodes at DR6 scale, against
+# a group quota of ~1 M inodes — the cost of being able to say where the number
+# came from.
+ALWAYS = "psf_validation"
+
 PRODUCTS = {
     "star_selection": (
         "star_selection-*.fits", 24_500_000,
@@ -228,8 +246,9 @@ def main() -> None:
                         "<dest>/<exp>.tar")
     p.add_argument("--manifest", type=Path)
     p.add_argument("--pattern", action="append", default=[],
-                   help="repeatable; a product name (see --list-products) or a "
-                        "raw file-name glob")
+                   help=f"repeatable; a product name (see --list-products) or "
+                        f"a raw file-name glob. {ALWAYS} is packed whether or "
+                        f"not it is named — star_cat_merge needs it")
     p.add_argument("--list-products", action="store_true",
                    help="print the product catalogue and exit")
     args = p.parse_args()
@@ -246,19 +265,21 @@ def main() -> None:
     if missing:
         p.error(f"the following arguments are required: {', '.join(missing)}")
 
-    if not args.pattern:
-        sys.exit("persist_exp: no --pattern given (config persist_exp is empty)")
+    # The merge's input first and always, then whatever the campaign chose to
+    # keep on top of it (see ALWAYS). Deduped, so naming it explicitly in
+    # persist_exp: is harmless rather than a repeated pattern.
+    entries = [ALWAYS] + [e for e in args.pattern if e != ALWAYS]
 
-    for entry in args.pattern:               # loud, and before any work
+    for entry in entries:                    # loud, and before any work
         try:
             resolve(entry)
         except KeyError as exc:
             sys.exit(f"persist_exp: {exc.args[0]}")
 
-    found, empty = collect(args.exp_dir, args.pattern)
+    found, empty = collect(args.exp_dir, entries)
     if not found:
         sys.exit(f"persist_exp: {args.exp}: no file matched any of "
-                 f"{args.pattern} under {args.exp_dir}/output/{RUN_NAME}")
+                 f"{entries} under {args.exp_dir}/output/{RUN_NAME}")
 
     args.dest.mkdir(parents=True, exist_ok=True)
     tar_path = args.dest / f"{args.exp}.tar"
@@ -312,8 +333,8 @@ def main() -> None:
         "stage": "exp_persist", "level": "exp", "unit": args.exp,
         "status": "complete",
         "tar": str(tar_path),
-        "products": list(args.pattern),
-        "patterns": [resolve(e) for e in args.pattern],
+        "products": entries,
+        "patterns": [resolve(e) for e in entries],
         # The warning the docstring argues for: named patterns that matched
         # nothing. Present as a key even when empty, so a reader never has to
         # wonder whether an old manifest predates the field.
