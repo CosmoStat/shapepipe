@@ -524,7 +524,15 @@ class MergeStarCatPSFEX(object):
     Parameters
     ----------
     input_file_list : list
-        Input files
+        Input entries. Each entry is a list, as the module runner builds them:
+        ``[path]`` from the file handler. An entry may also carry a name
+        alongside an already-open source, ``[fileobj, name]`` — ``fits.open``
+        takes the first element and the CCD number is parsed from the LAST,
+        which is the same string in the one-element case. That is what lets a
+        caller merge catalogues it never wrote to disk (the Snakemake
+        workflow's ``star_cat_merge`` reads them out of the per-exposure tars
+        with ``tarfile`` + ``BytesIO``), without this class learning anything
+        about where they came from.
     output_dir : str
         Output directory
     w_log : logging.Logger
@@ -569,10 +577,15 @@ class MergeStarCatPSFEX(object):
         )
 
         for name in self._input_file_list:
+            # The source to read and the NAME to parse the CCD number out of.
+            # Identical for a plain [path] entry; different only when the caller
+            # hands over an open file-like object plus the member name it came
+            # under (see the class docstring).
+            source, label = name[0], name[-1]
             try:
-                starcat_j = fits.open(name[0], memmap=False, ignore_missing_simple=True)
+                starcat_j = fits.open(source, memmap=False, ignore_missing_simple=True)
             except OSError as e:
-                print(f"Error while opening file '{name[0]}'")
+                print(f"Error while opening file '{label}'")
                 #raise
                 continue
 
@@ -614,7 +627,7 @@ class MergeStarCatPSFEX(object):
                 psfex_acc += list(np.zeros_like(data_j["X"]))
 
             # CCD number
-            ccd_nb += [re.split(r"\-([0-9]*)\-([0-9]+)\.", name[0])[-2]] * len(
+            ccd_nb += [re.split(r"\-([0-9]*)\-([0-9]+)\.", label)[-2]] * len(
                 data_j["RA"]
             )
 

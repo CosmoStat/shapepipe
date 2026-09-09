@@ -57,6 +57,19 @@ outputs:
 # (<run_dir>-state; bin/sp explains why).
   products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g6
 
+# The campaign's NAME. It labels the two campaign-level merges' output —
+# <products_dir>/final_cat_<campaign>.hdf5 and the group inside it holding that
+# campaign's per-tile datasets —
+# and nothing else; the per-unit stores are named by their own IDs. UNSET means
+# the persistent root's basename, which is already how every campaign here is
+# named (run_dir, products_dir and index_db all end in smk-g6), so this key only
+# earns its place when the two must differ.
+#
+# It is not a rule input, so renaming a campaign mid-flight changes the merged
+# catalogue's PATH and therefore builds a new one; the per-tile catalogues it
+# reads are untouched.
+# campaign: smk-g6
+
 # There is no config_src knob: the config chain is workflow/config/cfis, resolved
 # relative to the Snakefile. The configs interpolate $SP_RUN / $SP_UNIT_NUM /
 # $SP_CONFIG / $SP_EXP / $NGMIX_* and the rules export them -- configs and rules
@@ -95,6 +108,16 @@ outputs:
 # CCD, which is the input to the rho/tau statistics. Without it the PSF
 # diagnostics cannot be recomputed after a purge without rebuilding the exposure
 # chain from VOS.
+#
+# THIS LIST GATES `star_cat_merge`. That campaign-level rule stacks every
+# exposure's every CCD's validation_psf into ONE
+# <products_dir>/full_starcat-0000000.fits, reading the members straight out of
+# the tars. A keep list that matches no `validation_psf-*.fits` is a legitimate
+# configuration (keep the PSF models alone, say) and produces NO merge job and a
+# warning at parse time — not a failure on a node an hour later. Note the
+# corollary: an exposure already reclaimed by a workflow that predates
+# exp_persist left no tar, so it contributes nothing and cannot be recovered
+# short of rebuilding its chain from VOS.
 #
 # OPT-IN CANDIDATES, and what each buys. Sizes are per exposure (40 CCDs),
 # measured on smk-m2 (127 exposures, 64 tiles); a 64-tile campaign with all of

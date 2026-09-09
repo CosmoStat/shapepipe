@@ -898,3 +898,63 @@ rule clean_tile:
         f"python {SCRIPTS}/clean_tile.py"
         " --tile-dir $(dirname {output.tombstone}) --tile {wildcards.tile}"
         " --tombstone {output.tombstone}"
+
+
+# --- the campaign's shear catalogue -----------------------------------------
+# ONE job per campaign, the tile-side twin of exposure.smk's star_cat_merge, and
+# the same three design calls hold: the input is the list `rule all` already
+# requests (every ready tile's final_cat), the paths never reach the shell
+# (MAX_ARG_STRLEN), and a fingerprint on `params` is what makes it rerun when a
+# tile is appended. The job derives the same set the fingerprint was taken over
+# from the tile list and the index rather than globbing products_dir — on a
+# products root shared with an earlier, larger tile list a glob would merge tiles
+# no rerun trigger ever saw.
+#
+# THE OUTPUT SCHEMA IS AN INTERFACE, NOT A CHOICE. sp_validation opens this file
+# as its `galaxy_cat_path`: one dataset per tile under a named group, the
+# columns of workflow/config/cfis/final_cat.param, an `n_tiles` attribute on the
+# root. The group is named for the CAMPAIGN, which is the only unit this
+# workflow has above the tile. So the rule reuses
+# scripts/python/create_final_cat.py's column extraction rather than restating
+# it, and writes the file itself — merge_final_cat.py argues that split, the one
+# legacy literal in the schema, and the two places where the reference
+# implementation had to be pinned down to be reproducible.
+#
+# THE INPUT IS final_cat, NOT the tile_make_cat manifest, for the same reason
+# clean_tile's is: final_cat on the persistent root IS the campaign's
+# tile-finished marker (see final_cat() in the Snakefile), and it is the file
+# this rule actually reads.
+#
+# NOT A LOCALRULE, and here the reason is IO rather than memory: the job reads
+# every tile's catalogue end to end on every run — ~32-46 MB per tile, so ~2 GB
+# for a 64-tile campaign and ~800 GB at DR6's 23k tiles. It rebuilds rather than
+# appends because a DAG output must be a function of its input set
+# (merge_final_cat.py); incremental update by hand is what
+# `create_final_cat.py -s add` remains for. Memory is one tile's catalogue at a
+# time plus the hdf5 write buffer, which is why mem_mb is modest where
+# star_cat_merge's is not.
+rule final_cat_merge:
+    input:
+        lambda wc: [final_cat(t) for t in TILES_READY]
+    output:
+        merged = final_cat_hdf5()
+    params:
+        products_dir = str(PRODUCTS_DIR),
+        tile_list    = str(config["tile_list"]),
+        index_db     = str(INDEX_DB),
+        param_file   = str(CONFIG_DIR / "final_cat.param"),
+        campaign     = CAMPAIGN,
+        inputs       = lambda wc, input: input_fingerprint(input),
+        script_hash  = MERGE_FINAL_HASH
+    threads: 1
+    resources:
+        mem_mb = lambda wc, attempt: 8000 * attempt,
+        runtime = 120
+    shell:
+        "set -euo pipefail\n"
+        f"python {SCRIPTS}/merge_final_cat.py"
+        " --products-dir '{params.products_dir}'"
+        " --tile-list '{params.tile_list}' --index-db '{params.index_db}'"
+        " --output {output.merged}"
+        " --campaign '{params.campaign}'"
+        " --param-file '{params.param_file}'"

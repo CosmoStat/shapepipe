@@ -220,3 +220,70 @@ rule clean_exposure:
         f"python {SCRIPTS}/clean_exposure.py"
         " --exp-dir $(dirname {output.tombstone}) --exp {wildcards.exp}"
         " --tombstone {output.tombstone} --consumers '{params.consumers}'"
+
+
+# --- the campaign's star catalogue ------------------------------------------
+# ONE job per campaign: every exposure's every CCD's `validation_psf-<exp>-<ccd>.fits`,
+# stacked into `<products_dir>/full_starcat-0000000.fits`. That file is the
+# rho/tau statistics input and sp_validation reads it at exactly that path,
+# doing no merging of its own; the old bash chain built it with
+# `combine_runs.bash psf` + a `merge_starcat_runner` pass, and the workflow
+# emitted neither. The stacking itself is `MergeStarCatPSFEX` — the same class
+# the old runner called, reused rather than restated, so a column added to the
+# module is a column added here (merge_star_cat.py argues the reuse and the
+# tar-member reading).
+#
+# THE INPUT IS star_cat_inputs() (Snakefile): every exposure of TILES_READY whose
+# PSF products are on the persistent root — the live ones through the exp_persist
+# manifest edge `rule all` already requests, the RECLAIMED ones through their TAR,
+# which no rule declares and which therefore requires nothing to be built. That
+# asymmetry is not a flourish; requesting a reclaimed exposure's manifest
+# rebuilds its whole chain from VOS, and ancient() does not prevent it (measured
+# — the Snakefile carries the numbers). Nothing new enters the DAG either way. It
+# is read through an INPUT FUNCTION rather than at module level so that only a
+# parse which actually builds this job pays for the walk.
+#
+# THE PATHS DO NOT REACH THE SHELL, and that is not a style choice: ~20k manifest
+# paths is an order of magnitude over Linux's 128 KiB MAX_ARG_STRLEN for a single
+# argv entry, so `{input}` here would be a job that dies on exec at DR6 scale.
+# The job is handed the two small files the Snakefile itself started from — the
+# tile list and the index — and derives THE SAME SET from them; `params.inputs`
+# carries that set's FINGERPRINT, which is the rerun trigger. The equality is
+# the point: a job that stacked anything the fingerprint did not see would be
+# rows no rerun trigger could notice, which is what a glob over products_dir
+# would have given on a root shared with an earlier, larger tile list.
+# Byte-stable output otherwise (tmp-then-cmp-then-mv), so a no-op rerun does not
+# move its mtime.
+#
+# NOT A LOCALRULE. exp_persist is local because it is 20k jobs of seconds; this
+# is one job that holds a campaign's stars in memory (~800k catalogues at DR6
+# scale). mem_mb is a guess scaled by attempt, not a measurement — the campaigns
+# run so far are 127 exposures, three orders of magnitude short of the case this
+# sizing is for, and the first DR6-scale run should replace this number with a
+# benchmark.
+#
+# NO JOB AT ALL when `persist_exp:` keeps no validation catalogue, or when every
+# exposure in scope is tombstoned: star_cat_targets() (Snakefile) simply does not
+# request the output, and the parse says so rather than a node failing later.
+rule star_cat_merge:
+    input:
+        lambda wc: star_cat_inputs()
+    output:
+        star_cat = full_starcat()
+    params:
+        products_dir = str(PRODUCTS_DIR),
+        tile_list    = str(config["tile_list"]),
+        index_db     = str(INDEX_DB),
+        inputs       = lambda wc, input: input_fingerprint(input),
+        script_hash  = MERGE_STAR_HASH
+    threads: 1
+    resources:
+        mem_mb = lambda wc, attempt: 16000 * attempt,
+        runtime = 120
+    shell:
+        "set -euo pipefail\n"
+        f"python {SCRIPTS}/merge_star_cat.py"
+        " --products-dir '{params.products_dir}'"
+        " --tile-list '{params.tile_list}' --index-db '{params.index_db}'"
+        " --output {output.star_cat}"
+        f" --psf-model {PSF_MODEL}"
