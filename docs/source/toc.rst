@@ -25,6 +25,7 @@
   basic_execution
   configuration
   testing
+  workflow
   pipeline_tutorial
 
 .. toctree::
