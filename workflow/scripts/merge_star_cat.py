@@ -97,6 +97,7 @@ from shapepipe.modules.merge_starcat_package import merge_starcat
 
 # Same directory; the rule invokes this file by path, so it is sys.path[0].
 import build_index
+import persist_exp
 
 # The output name is not ours to choose: sp_validation hardcodes it
 # (`star_cat_path = f"{data_dir}/full_starcat-0000000.fits"`), and
@@ -104,11 +105,13 @@ import build_index
 # given. Kept here as the name this script promises to produce.
 OUT_NAME = "full_starcat-0000000.fits"
 
-# The keep-list pattern whose members this merge consumes. The rule refuses to
-# exist unless `persist_exp:` contains a pattern matching this shape (the
-# Snakefile does that check at parse time), so by the time we get here the
-# members are expected to be present.
-MEMBER_PATTERN = "validation_psf-*.fits"
+# The members this merge consumes, named as the keep list names them and
+# resolved through the same catalogue persist_exp packs by — so the glob has one
+# definition and adding a product cannot leave the two disagreeing. The rule
+# refuses to exist unless `persist_exp:` keeps something of this shape (the
+# Snakefile checks at parse time), so the members are expected here.
+MEMBER_PRODUCT = "psf_validation"
+MEMBER_PATTERN = persist_exp.resolve(MEMBER_PRODUCT)
 
 
 def merge_class(psf_model: str):
@@ -233,7 +236,8 @@ def main() -> None:
         # existence check and produce meaningless rho statistics.
         sys.exit(f"merge_star_cat: no member matched {args.pattern!r} in any "
                  f"of {len(manifest_paths)} exp_persist manifest(s) for this "
-                 f"campaign — is '{args.pattern}' in the persist_exp keep list?")
+                 f"campaign — is '{MEMBER_PRODUCT}' in the persist_exp keep "
+                 f"list?")
     if empty:
         log.info(f"{len(empty)} exposure(s) persisted no {args.pattern}: "
                  f"{', '.join(sorted(empty)[:5])}"

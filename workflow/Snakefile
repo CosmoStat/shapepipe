@@ -472,6 +472,21 @@ def clean_targets():
 # deliberate "keep nothing" and produces no jobs at all.
 PERSIST_EXP = list(config.get("persist_exp") or [])
 
+# The keep list names PRODUCTS (`psf_model`), not globs (`*.psf`); the
+# catalogue that maps one to the other lives in persist_exp.py, which is also
+# what the rule runs, so there is one definition and not a copy here.
+# UNKNOWN NAMES DIE AT PARSE TIME, listing the valid ones — a typo in a keep
+# list would otherwise be a silently-empty keep or a per-exposure failure an
+# hour into a campaign.
+import persist_exp as _persist                          # noqa: E402
+
+for _entry in PERSIST_EXP:
+    try:
+        _persist.resolve(_entry)
+    except KeyError as _exc:
+        raise WorkflowError(f"config persist_exp: {_exc.args[0]}")
+PERSIST_GLOBS = [_persist.resolve(e) for e in PERSIST_EXP]
+
 
 def persist_targets():
     """Which exposures this invocation must pack PSF products off scratch for.
@@ -601,12 +616,14 @@ def unit_fingerprint(units):
     return f"{len(units)}:{hashlib.md5(joined.encode()).hexdigest()[:12]}"
 
 
-# The tar member the star merge consumes. The keep list is globs, so the test is
-# "would this member be kept", not a string comparison — `validation_psf-*.fits`,
-# `validation_psf*`, `*.fits` and a bare `*` all say yes, and all are things a
-# user might reasonably write.
+# The tar member the star merge consumes, and the test is "would this member be
+# kept" rather than "is `psf_validation` in the list". Both spellings must count:
+# the product name, and a raw glob that happens to cover it (`validation_psf*`,
+# `*.fits`, a bare `*`) — all things a user might reasonably write. So the keep
+# list is RESOLVED to globs first and the member matched against those.
+_STAR_CAT_PRODUCT = "psf_validation"
 _STAR_CAT_MEMBER = "validation_psf-2605805-12.fits"
-STAR_CAT_MERGE = any(fnmatch.fnmatch(_STAR_CAT_MEMBER, p) for p in PERSIST_EXP)
+STAR_CAT_MERGE = any(fnmatch.fnmatch(_STAR_CAT_MEMBER, g) for g in PERSIST_GLOBS)
 
 # LOUD AT PARSE TIME, once, and only where it can be acted on. A keep list
 # without the validation catalogues is a legitimate configuration (persist the
@@ -620,7 +637,7 @@ if PERSIST_EXP and not STAR_CAT_MERGE and workflow.is_main_process \
         f"star_cat_merge: no job — persist_exp {PERSIST_EXP} keeps no "
         f"'{_STAR_CAT_MEMBER}'-shaped file, so there is nothing to stack into "
         f"{PRODUCTS_DIR}/full_starcat-0000000.fits (the rho/tau statistics "
-        f"input). Add 'validation_psf-*.fits' to persist_exp: to get it.")
+        f"input). Add '{_STAR_CAT_PRODUCT}' to persist_exp: to get it.")
 
 
 def full_starcat():

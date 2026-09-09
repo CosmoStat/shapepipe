@@ -245,8 +245,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   Know the consequence — `--forcerun` on a tile whose `final_cat` exists will
   not rebuild its reclaimed exposures. Delete the `final_cat` first.
 - **PSF products leave scratch before the purge does.** `exp_persist` packs
-  the files named by `persist_exp:` in `config.yaml` (default: the psfex_interp
-  `validation_psf-*.fits`, the rho/tau statistics input) from the exposure's
+  the products named by `persist_exp:` in `config.yaml` from the exposure's
   scratch store into ONE uncompressed tar,
   `<products_dir>/exp/<prefix>/<base>/psf/<base>.tar` (inodes, not bytes, bind
   on /project), and writes ONE manifest beside it recording the patterns, the
@@ -260,6 +259,28 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   hours of PSF fitting per exposure. A pattern that matches nothing is a
   recorded warning (setools rejects sparse CCDs); matching nothing at all is a
   failure. A `localrule`, by the same arithmetic as `clean_exposure`.
+- **The keep list names products, not globs.** `persist_exp:` entries are names
+  from a catalogue in `workflow/scripts/persist_exp.py`, which is the single
+  source of truth for what each one means and what keeping it buys
+  ([#844](https://github.com/CosmoStat/shapepipe/issues/844)); `config.yaml`'s
+  block is that catalogue rendered, and
+  `persist_exp.py --list-products` prints it. Sizes are per exposure, 40 CCDs,
+  measured on smk-m2.
+
+  | product | glob | per exposure | what it buys |
+  |---|---|---|---|
+  | `psf_validation` | `validation_psf-*.fits` | 2.0 MB | the rho/tau statistics input, and `star_cat_merge`'s |
+  | `psf_model` | `*.psf` | 2.8 MB | re-interpolate the PSF anywhere later, no rebuild |
+  | `psfex_cat` | `psfex_cat-*.cat` | unmeasured | which stars PSFEx's outlier rejection clipped |
+  | `star_selection` | `star_selection-*.fits` | 24.5 MB | which stars the selection cuts rejected, and why |
+  | `star_train` | `star_split_ratio_80-*.fits` | 19.9 MB | the 80% sample PSFEx fitted |
+  | `star_test` | `star_split_ratio_20-*.fits` | 7.1 MB | the 20% sample `psf_validation` corresponds to |
+  | `star_stats` | `star_stat-*.txt` | unmeasured | setools' per-CCD counts, density and FWHM cuts |
+
+  The default is `psf_validation` + `psf_model`. A raw glob is still accepted as
+  an escape hatch — anything with a glob metacharacter or a dot is read as one —
+  and an unknown *name* is a parse-time error listing the valid ones. The list
+  is exposure-side only; tile-side retention is #844 follow-up.
 - **The campaign ends in two merged catalogues, and the workflow now makes
   both.** Everything above is per unit; the two products downstream analysis
   actually opens are per *campaign*, and until these rules existed each was a

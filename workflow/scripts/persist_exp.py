@@ -86,39 +86,174 @@ from pathlib import Path
 # different rule.
 RUN_NAME = "run_sp_exp_SxSePsfPi"
 
+# --- the product catalogue (CosmoStat/shapepipe#844) ------------------------
+# THE SINGLE SOURCE OF TRUTH for what an exposure can keep. `persist_exp:` in
+# config.yaml names PRODUCTS, not globs: `psf_model`, not `*.psf`. The glob is
+# an implementation detail of the module that writes the file, and a keep list
+# written in globs is a keep list nobody can read — the argument that produced
+# #844 and the 2026-09-08 call's request to keep the PSF model, which had to be
+# spelled `*.psf` to be said at all.
+#
+# Each entry is (glob, per-exposure size, what keeping it buys). Sizes are for
+# 40 CCDs, measured on smk-m2 (127 exposures, 64 tiles); "?" means not yet
+# measured. `persist_exp.py --list-products` renders this table, and
+# config.yaml's block is that rendering rather than a second copy of it.
+#
+# ORDER IS THE ORDER OF THE CHAIN — sextractor, setools, psfex, psfex_interp —
+# so the table reads as the pipeline runs.
+PRODUCTS = {
+    "star_selection": (
+        "star_selection-*.fits", 24_500_000,
+        "setools' PRE-SPLIT selection. The only file that answers which stars "
+        "the selection cuts rejected and why; the split samples have already "
+        "lost the rejects."),
+    "star_train": (
+        "star_split_ratio_80-*.fits", 19_900_000,
+        "the 80% TRAINING sample, the stars PSFEx actually fitted. Rows "
+        "duplicate star_selection."),
+    "star_test": (
+        "star_split_ratio_20-*.fits", 7_100_000,
+        "the 20% VALIDATION sample — the positions psf_validation's rows "
+        "correspond to. Rows duplicate star_selection."),
+    "star_stats": (
+        "star_stat-*.txt", None,
+        "setools' per-CCD STAT block: star counts, stars/deg^2, FWHM mode and "
+        "cuts. The selection's summary without its catalogue."),
+    "psf_model": (
+        "*.psf", 2_800_000,
+        "the PSFEx model itself. Keeping it means the PSF can be "
+        "re-interpolated at ANY position later without rebuilding the exposure "
+        "chain — the single most capability-adding entry here."),
+    "psfex_cat": (
+        "psfex_cat-*.cat", None,
+        "PSFEx's own output catalogue (FITS_LDAC): the per-star FLAGS_PSF and "
+        "CHI2_PSF, i.e. WHICH stars outlier rejection clipped. Not recoverable "
+        "from anything else — the .psf header keeps only the LOADED/ACCEPTED "
+        "counts."),
+    "psf_validation": (
+        "validation_psf-*.fits", 2_000_000,
+        "the psfex_interp validation catalogue, one per CCD: the input to the "
+        "rho/tau statistics, and to the star_cat_merge rule that stacks them "
+        "into the campaign's full_starcat."),
+}
+
+# PSFEx residual/check images and its XML diagnostics are deliberately absent:
+# the committed default.psfex sets CHECKIMAGE_TYPE NONE and WRITE_XML N, so
+# nothing is emitted to match. They are a config change first, a catalogue
+# entry second.
+
+# A raw glob is still accepted, as an escape hatch for a file the catalogue does
+# not name yet. The test is syntactic and deliberately cheap: a product name is
+# a bare identifier, so anything carrying a glob metacharacter or a dot is a
+# glob. That makes `*.psf`, `star_stat-*.txt` and `default.psfex` globs, and
+# `psf_model` a name, with no ambiguity a user could stumble into.
+_GLOBBY = set("*?[]. ")
+
+
+def is_glob(entry: str) -> bool:
+    """True when this keep-list entry is a raw glob rather than a product name."""
+    return any(ch in _GLOBBY for ch in entry)
+
+
+def resolve(entry: str) -> str:
+    """The file-name glob for one keep-list entry, name or raw glob."""
+    if is_glob(entry):
+        return entry
+    try:
+        return PRODUCTS[entry][0]
+    except KeyError:
+        raise KeyError(
+            f"unknown persist_exp product {entry!r}; the products are "
+            f"{', '.join(PRODUCTS)} (or write a raw glob such as '*.psf')"
+        ) from None
+
+
+def product_of(entry: str) -> str:
+    """The NAME to record for an entry — the entry itself for a raw glob."""
+    return entry
+
+
+def render_products() -> str:
+    """The catalogue as a table, for --list-products and for config.yaml."""
+    width = max(len(n) for n in PRODUCTS)
+    lines = [f"{'product'.ljust(width)}  {'glob'.ljust(26)}  size/exposure",
+             f"{'-' * width}  {'-' * 26}  -------------"]
+    for name, (glob, size, why) in PRODUCTS.items():
+        size_s = "unmeasured" if size is None else f"{size / 1e6:.1f} MB"
+        lines.append(f"{name.ljust(width)}  {glob.ljust(26)}  {size_s}")
+        for i, chunk in enumerate(_wrap(why, 66)):
+            lines.append(f"{' ' * width}      {chunk}")
+    return "\n".join(lines)
+
+
+def _wrap(text: str, width: int) -> list:
+    out, line = [], ""
+    for word in text.split():
+        if line and len(line) + 1 + len(word) > width:
+            out.append(line)
+            line = word
+        else:
+            line = f"{line} {word}".strip()
+    if line:
+        out.append(line)
+    return out
+
 
 def collect(exp_dir: Path, patterns: list) -> tuple:
-    """Matched files per pattern, in a stable order, plus the empty patterns."""
+    """Matched files per ENTRY, in a stable order, plus the entries that matched
+    nothing. Entries are product names or raw globs; resolve() takes either."""
     root = exp_dir / "output" / RUN_NAME
     found, empty = {}, []
-    for pat in patterns:
+    for entry in patterns:
+        pat = resolve(entry)
         # One glob per module output dir, recursive beneath it (see the module
         # docstring on setools' subdirectories). sorted() over the union keeps
         # the manifest byte-stable across filesystem readdir order.
         hits = sorted({p for mod in sorted(root.glob("*/output"))
                        for p in mod.rglob(pat) if p.is_file()})
         if hits:
-            found[pat] = hits
+            found[entry] = hits
         else:
-            empty.append(pat)
+            empty.append(entry)
     return found, empty
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--exp-dir", required=True, type=Path,
+    p.add_argument("--exp-dir", type=Path,
                    help="the exposure's scratch store")
-    p.add_argument("--exp", required=True)
-    p.add_argument("--dest", required=True, type=Path,
+    p.add_argument("--exp")
+    p.add_argument("--dest", type=Path,
                    help="<products_dir>/exp/<shard>/<exp>/psf; the tar is "
                         "<dest>/<exp>.tar")
-    p.add_argument("--manifest", required=True, type=Path)
+    p.add_argument("--manifest", type=Path)
     p.add_argument("--pattern", action="append", default=[],
-                   help="repeatable; a plain file-name glob")
+                   help="repeatable; a product name (see --list-products) or a "
+                        "raw file-name glob")
+    p.add_argument("--list-products", action="store_true",
+                   help="print the product catalogue and exit")
     args = p.parse_args()
+
+    # --list-products is a QUERY, not a run: it answers "what can I keep?" and
+    # needs no exposure, so the run arguments are optional at the parser and
+    # required here instead.
+    if args.list_products:
+        print(render_products())
+        return
+    missing = [f"--{n.replace('_', '-')}" for n in
+               ("exp_dir", "exp", "dest", "manifest")
+               if getattr(args, n) is None]
+    if missing:
+        p.error(f"the following arguments are required: {', '.join(missing)}")
 
     if not args.pattern:
         sys.exit("persist_exp: no --pattern given (config persist_exp is empty)")
+
+    for entry in args.pattern:               # loud, and before any work
+        try:
+            resolve(entry)
+        except KeyError as exc:
+            sys.exit(f"persist_exp: {exc.args[0]}")
 
     found, empty = collect(args.exp_dir, args.pattern)
     if not found:
@@ -145,7 +280,8 @@ def main() -> None:
                          f"named {src.name} ({seen[src.name][0]} and {src}); tar "
                          f"members are flat, so this would silently overwrite")
             seen[src.name] = (src, pat)
-            files.append({"name": src.name, "pattern": pat,
+            files.append({"name": src.name, "product": pat,
+                          "pattern": resolve(pat),
                           "src": str(src), "bytes": src.stat().st_size})
     files.sort(key=lambda f: f["name"])
 
@@ -176,7 +312,8 @@ def main() -> None:
         "stage": "exp_persist", "level": "exp", "unit": args.exp,
         "status": "complete",
         "tar": str(tar_path),
-        "patterns": list(args.pattern),
+        "products": list(args.pattern),
+        "patterns": [resolve(e) for e in args.pattern],
         # The warning the docstring argues for: named patterns that matched
         # nothing. Present as a key even when empty, so a reader never has to
         # wonder whether an old manifest predates the field.
