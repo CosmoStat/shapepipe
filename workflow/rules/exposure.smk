@@ -1,24 +1,31 @@
 """Exposure chain — per exposure, keyed by exp base id (dedup is structural).
 
     exp_get_images -> exp_split -> exp_psf -> exp_persist
+                                 `-> exp_defect_map
 
 Each in the exposure's own sharded work dir, chained by manifests; every config
 reads fixed ``$SP_RUN/output/run_sp_exp_*`` INPUT_DIRs, so nothing resolves a
 run log. There is no `prepare_exposures` aggregation target: these chains hang
 off the compute DAG (`all` <- final_cat <- tile chain <- exposure manifests).
 
-NO MASK RULE, and that is the design (PR #847). ShapePipe generates no masks.
-The only mask that reaches pixels is the instrument flag image delivered with
-the exposure, which ``exp_split`` splits per CCD alongside image and weight and
-SExtractor reads directly. Sky-fixed masks are healsparse maps, queried once per
+NO MASK-GENERATION RULE, and that is the design (PR #847). ShapePipe generates
+no masks. The only mask that reaches pixels is the instrument flag image
+delivered with the exposure, which ``exp_split`` splits per CCD alongside image
+and weight and SExtractor reads directly. ``exp_defect_map`` does not generate
+that mask, it EXPORTS it: the flag image is the one masking input the campaign
+has that never becomes sky-fixed, so the survey footprint cannot subtract it
+(#878), and the rule rasterizes it into the same healsparse form as every other
+mask here. Nothing in this workflow reads the result back.
+
+Sky-fixed masks are healsparse maps, queried once per
 object: ``mask_query`` (inside exp_psf's config chain) writes ``FLAG_EXT`` onto
 each CCD's SExtractor catalogue for setools' star cut, and ``make_cat`` writes
 the per-band ``MASK_<band>`` columns on the tile side. Neither needs a rule, a
 star catalogue, or a network fetch — hence no ``star_catalogue`` / ``exp_star_cat``
 here, and no ``exp_mask``.
 
-``exp_persist`` is the one rule here that writes to the PERSISTENT root: it
-packs the PSF products named by `persist_exp:` into one tar per exposure off
+``exp_persist`` is one of the two rules here that write to the PERSISTENT root
+(``exp_defect_map`` is the other): it packs the PSF products named by `persist_exp:` into one tar per exposure off
 /scratch before the purge (or clean_exposure) can take them. It is a separate
 rule from exp_psf precisely so that editing that list costs a re-pack and not a
 four-hour refit; the full
@@ -169,6 +176,75 @@ rule exp_persist:
         " {params.patterns}"
 
 
+# --- the pixel-domain mask leaves the pixel domain (#878) -------------------
+# The second rule here that writes to the PERSISTENT root, and the second one
+# clean_exposure must wait for. It rasterizes this exposure's per-CCD instrument
+# flag splits — the ONE masking input the campaign has that never becomes a
+# sky-fixed map — into a boolean healsparse fragment at the mask ladder's own
+# resolution, so the footprint can finally subtract bad columns, saturated
+# pixels and bleed trails. The full argument, the WCS source and the measured
+# oversampling table are in workflow/scripts/defect_map_exp.py.
+#
+# AFTER exp_split, NOT AFTER exp_psf, and it is deliberately not chained behind
+# the PSF work: the flag splits exist the moment the split finishes, and hanging
+# a two-minute rasterization off a four-hour rule would make re-rasterizing the
+# campaign at a different oversampling cost the PSF chain. It runs in parallel
+# with exp_psf, and both are ordered before clean_exposure.
+#
+# ONE DECLARED OUTPUT, AND IT IS A MANIFEST, exactly as exp_persist: the
+# fragment is written beside it on the persistent root and the manifest records
+# the per-CCD healpix counts. Byte-stable, so a no-op rerun does not move the
+# mtime clean_exposure reads.
+#
+# NOT A LOCALRULE, and this is where it parts company with exp_persist. That
+# rule is a tar of a few MB — seconds, far shorter than the scheduling latency.
+# This one is 40 CCDs of WCS transforms and ang2pix over ~17 M flagged pixels:
+# 37 s measured end to end on a real exposure at oversample 3 (2079612p, on this
+# login node, inside the campaign container; 21 s at oversample 2). That is real
+# work, it is CPU-bound, and running ~20k of them under local-cores in the head
+# process would serialise the campaign behind them.
+#
+# THE RESOLUTION AND THE OVERSAMPLING RIDE ON params. Both are what the fragment
+# IS, and both are decisions that may be revisited; on params they re-rasterize
+# (a minute) and leave the split and the PSF chain alone.
+rule exp_defect_map:
+    input:
+        rules.exp_split.output.manifest
+    output:
+        manifest = f"{PROD_EXP_DIR}/manifests/exp_defect_map.json"
+    # No `log:`, for exp_persist's reason: the failure modes are "no flag split
+    # under the store" and "a flag split with no image beside it", both reported
+    # on stderr, neither with a per-CCD verdict worth a completeness record.
+    params:
+        exp_dir     = lambda wc: exp_dir(wc.exp),
+        dest        = lambda wc: f"{prod_exp_dir(wc.exp)}/defect",
+        nside       = DEFECT_NSIDE,
+        nside_cov   = DEFECT_NSIDE_COVERAGE,
+        oversample  = DEFECT_OVERSAMPLE,
+        script_hash = DEFECT_HASH
+    threads: 1
+    retries: 2
+    resources:
+        # Measured on 2079612p inside the container: peak RSS 0.62 GB at
+        # oversample 3 (0.41 GB at 2), dominated by one CCD's sample arrays
+        # (430k flagged pixels x 9 samples x two float64 coordinate arrays)
+        # plus the bit-packed fragment's 13 coverage pixels. Flat in the number
+        # of CCDs — they are rasterized one at a time — so this is sized on the
+        # worst CCD, not on the exposure, at ~3x it. It scales with
+        # `oversample`, which is why that knob is not free.
+        mem_mb = lambda wc, attempt: 2000 * attempt,
+        # 37 s measured; a factor of ~30 for a dirtier exposure, a higher
+        # oversampling and a busy filesystem.
+        runtime = 20
+    shell:
+        "set -euo pipefail\n"
+        f"python {SCRIPTS}/defect_map_exp.py"
+        " --exp-dir '{params.exp_dir}' --exp {wildcards.exp}"
+        " --dest '{params.dest}' --manifest {output.manifest}"
+        " --nside {params.nside} --nside-coverage {params.nside_cov}"
+        " --oversample {params.oversample}"
+
+
 # --- reclamation (D5) -------------------------------------------------------
 # The one exception to "no reclamation in this file": clean_exposure OWNS
 # exposure-level deletion, and it is a real job, not temp() bookkeeping, because
@@ -207,7 +283,8 @@ rule clean_exposure:
         # exposure's chain did not already put there. It is UNCONDITIONAL now:
         # exp_persist always packs the star catalogue's inputs, so there is no
         # keep list under which this rule has nothing to wait for.
-        lambda wc: [prod_exp_manifest(wc.exp, "exp_persist")]
+        lambda wc: [prod_exp_manifest(wc.exp, "exp_persist"),
+                    prod_exp_manifest(wc.exp, "exp_defect_map")]
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
     params:
@@ -302,3 +379,71 @@ rule star_cat_merge:
         " --tile-list '{params.tile_list}' --index-db '{params.index_db}'"
         " --output {output.star_cat}"
         " --campaign '{params.campaign}'"
+
+
+# --- the campaign's defect map (#878) ---------------------------------------
+# ONE job per campaign: every exposure's fragment, OR-ed into
+# `<products_dir>/defect_map_<campaign>.hsp`. It is the exposure side's third
+# campaign product, and the only one nothing downstream in this workflow opens:
+# it exists so the survey footprint can subtract the pixel-domain masking the
+# CCD corner WCS cannot see. merge_defect_map.py argues the reconcile, the
+# memory-flat accumulation and why the map is a campaign PRODUCT rather than an
+# entry in config_tile_Mc.ini's MASK_EXT_PATHS.
+#
+# TWO DECLARED OUTPUTS, the map and the SIDECAR that records which exposures are
+# already in it. They are written together and they are only meaningful
+# together: a union cannot be un-OR-ed, so the record of what went in is what
+# makes an append cheap and a removal correct. Declaring both means a failed job
+# takes both, and the next invocation rebuilds rather than reconciling against a
+# record that does not describe the map beside it.
+#
+# THE INPUT IS THE FRAGMENT MANIFESTS, not the fragments: the manifest is what
+# exp_defect_map declares, so it is the edge that orders this after the
+# rasterizations. Reclaimed exposures need no special case here — unlike the
+# star catalogue's tars, the fragment manifest lives on the persistent root and
+# survives reclamation, and the rule that writes it hangs off exp_split, not off
+# a store that reclamation took. An exposure cleaned by a workflow that predates
+# this rule simply has no fragment; the job skips it and says so.
+#
+# THE PATHS DO NOT REACH THE SHELL (~20k of them at DR6 scale, an order of
+# magnitude over MAX_ARG_STRLEN): the job is handed the tile list and the index
+# and derives the same set, with the set's FINGERPRINT on `params` as the rerun
+# trigger. Same discipline as the two merges above.
+#
+# NOT A LOCALRULE: the accumulator is the campaign's footprint at nside 131072,
+# ~3 GB resident at DR6 scale.
+rule defect_map_merge:
+    input:
+        lambda wc: defect_map_inputs()
+    output:
+        defect_map = defect_map(),
+        sidecar    = defect_map_sidecar()
+    params:
+        products_dir = str(PRODUCTS_DIR),
+        tile_list    = str(config["tile_list"]),
+        index_db     = str(INDEX_DB),
+        nside        = DEFECT_NSIDE,
+        nside_cov    = DEFECT_NSIDE_COVERAGE,
+        inputs       = unit_fingerprint(defect_map_exposures()),
+        script_hash  = MERGE_DEFECT_HASH
+    threads: 1
+    resources:
+        # Sized on the FOOTPRINT, not on the exposure count: the accumulator is
+        # one bit per sparse pixel of every touched coverage pixel, and the loop
+        # holds one fragment at a time (merge_defect_map.py's memory argument).
+        # DEFECT_COV_BYTES is that arithmetic, from the sidecar's own recorded
+        # coverage count once there is one and from a measured per-exposure
+        # figure before that; the Snakefile's sizing block carries both.
+        mem_mb = lambda wc, attempt: attempt * (
+            DEFECT_MEM_BASE_MB + 2 * defect_map_cov_bytes() // 1_000_000),
+        # Dominated by reading fragments (~2 MB each) and setting their pixels;
+        # ~1 s per exposure measured, over a floor that covers writing the map.
+        runtime = lambda wc, attempt: attempt * (
+            20 + len(defect_map_exposures()) // 30)
+    shell:
+        "set -euo pipefail\n"
+        f"python {SCRIPTS}/merge_defect_map.py"
+        " --products-dir '{params.products_dir}'"
+        " --tile-list '{params.tile_list}' --index-db '{params.index_db}'"
+        " --output {output.defect_map} --sidecar {output.sidecar}"
+        " --nside {params.nside} --nside-coverage {params.nside_cov}"

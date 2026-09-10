@@ -180,6 +180,57 @@ outputs:
 persist_exp:
   - psf_model
 
+# The instrument-flag DEFECT MAP (CosmoStat/shapepipe#878). The exposures' flag
+# images -- bad columns, saturated pixels, bleed trails -- are the one masking
+# input this campaign has that never leaves the pixel domain: exp_split splits
+# them per CCD and SExtractor reads them as IMAFLAGS_ISO, and that is the end of
+# it. The survey footprint is built from the CCD corner WCS in the headers, so
+# it cannot subtract them and would silently include defective pixels. So
+# `exp_defect_map` rasterizes each exposure's flags into a boolean healsparse
+# fragment beside its PSF tar on products_dir, and `defect_map_merge` unions the
+# campaign's fragments into <products_dir>/defect_map_<campaign>.hsp.
+#
+# IT IS A PRODUCT, NOT AN INPUT. Nothing in the workflow reads it back; it is
+# for the footprint, downstream. In particular config_tile_Mc.ini's
+# MASK_EXT_PATHS does NOT name it -- that ladder names maps that exist before
+# the run starts, and this one exists only after it. That file's header carries
+# the recipe for adding it once a campaign has produced one.
+#
+# Measured on one real exposure (2079612p, 40 CCDs, 4.4% of pixels flagged) on
+# this login node inside the campaign container: 37 s at oversample 3, peak RSS
+# 0.62 GB, 359858 healpix pixels, a 2.0 MB fragment over 13 coverage pixels
+# (21 s / 0.41 GB / 357896 pixels at oversample 2; 95 s / 1.29 GB / 360840 at
+# oversample 5 -- so 3 is within 0.3% of 5 over the whole exposure, at a third
+# of the cost). ~40 GB and ~20k inodes at DR6 scale, against a ~1 M-inode group
+# quota.
+#
+# EVERY KEY BELOW DEFAULTS TO THE MASK LADDER'S OWN CONVENTION and the block can
+# be omitted entirely. nside/nside_coverage match every map under `inputs.masks`
+# (boolean, True = masked) so the fragments drop into that ladder without a
+# resolution change; they are config so a campaign against a different ladder
+# can say so, not so this one can drift.
+#
+# `oversample` is samples per CCD pixel per axis, endpoints included, so 2 means
+# the four corners -- the geometric floor, since a healpix pixel at nside 131072
+# (1.61") is ~74 times a MegaCam pixel (0.187") and cannot hide inside one.
+# Raising it only fills boundary and rounding gaps, at linear cost. Measured on
+# 2079612p CCD 0 (430886 flagged pixels) against a 12x12 interior reference of
+# 14229 healpix pixels:
+#
+#   oversample  samples/pixel  healpix pixels  missed vs reference
+#   2 (corners)       4            14081          169   (1.2%)
+#   3                 9            14198           54   (0.4%)
+#   5                25            14254            5   (0.04%)
+#
+# The rasterization is CONSERVATIVE by design -- a healpix pixel is masked if
+# any part of the flagged region touches it -- because the centre-based
+# alternative erases a one-pixel bad column, which is the geometry #878 exists
+# to keep.
+defect_map:
+  nside: 131072
+  nside_coverage: 128
+  oversample: 3
+
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
 # that exposure has its vignets, deletes the exposure's store AND its manifests,

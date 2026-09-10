@@ -386,6 +386,8 @@ MERGE_FINAL_HASH = ":".join((
     path_hash(Path(workflow.basedir).parent / "scripts" / "python"
               / "create_final_cat.py"),
     path_hash(CONFIG_DIR / "final_cat.param")))
+DEFECT_HASH      = script_hash("defect_map_exp.py")
+MERGE_DEFECT_HASH = script_hash("merge_defect_map.py")
 # ngmix_range.py earns a hash for a stronger reason than the others. What it
 # emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks are
 # a PARTITION of its object IDs: resume a tile across an edit to the split and
@@ -528,6 +530,109 @@ for _entry in PERSIST_EXP:
         _persist.resolve(_entry)
     except KeyError as _exc:
         raise WorkflowError(f"config persist_exp: {_exc.args[0]}")
+
+# --- the instrument-flag defect map (#878) ----------------------------------
+# The exposures' flag images are the campaign's one masking input that never
+# leaves the pixel domain, so the survey footprint — built from CCD corner WCS —
+# cannot subtract them. exp_defect_map rasterizes them per exposure and
+# defect_map_merge unions the fragments; both are argued in
+# workflow/scripts/defect_map_exp.py and merge_defect_map.py.
+#
+# THE RESOLUTION IS THE LADDER'S, not a choice made here: nside_sparse 131072
+# over nside_coverage 128, boolean, True = masked, matching every map under
+# `inputs.masks` and every entry in config_tile_Mc.ini's MASK_EXT_PATHS. It is
+# config so that a campaign against a different ladder can say so, not so that
+# this one can drift.
+_DEFECT = dict(config.get("defect_map") or {})
+DEFECT_NSIDE          = int(_DEFECT.get("nside", 131072))
+DEFECT_NSIDE_COVERAGE = int(_DEFECT.get("nside_coverage", 128))
+DEFECT_OVERSAMPLE     = int(_DEFECT.get("oversample", 3))
+if DEFECT_OVERSAMPLE < 2:
+    raise WorkflowError(
+        f"config defect_map.oversample={DEFECT_OVERSAMPLE}: 2 is the geometric "
+        f"floor (the four corners of a CCD pixel bound its footprint); 1 would "
+        f"sample pixel centres alone and lose thin defects entirely.")
+if DEFECT_NSIDE_COVERAGE >= DEFECT_NSIDE:
+    raise WorkflowError(
+        f"config defect_map: nside_coverage={DEFECT_NSIDE_COVERAGE} must be "
+        f"below nside={DEFECT_NSIDE}.")
+
+
+def defect_map():
+    """The campaign's merged defect map. A PRODUCT, not an input: nothing in
+    this workflow opens it, and config_tile_Mc.ini deliberately does not name
+    it (that file's header carries the recipe for adding it after a campaign
+    has produced one)."""
+    return f"{PRODUCTS_DIR}/defect_map_{CAMPAIGN}.hsp"
+
+
+def defect_map_sidecar():
+    """The record of which exposures are already in the map — what makes an
+    append cheap and a removal correct (merge_defect_map.py argues it)."""
+    return f"{PRODUCTS_DIR}/defect_map_{CAMPAIGN}.json"
+
+
+def prod_exp_fragment(exp):
+    """The healsparse fragment exp_defect_map writes. Not a declared output of
+    anything — the rule declares its manifest, exactly as exp_persist does."""
+    return f"{prod_exp_dir(exp)}/defect/defect-{exp}.hsp"
+
+
+@functools.lru_cache(maxsize=1)
+def defect_map_exposures():
+    """The exposures the union covers: every exposure of TILES_READY.
+
+    SIMPLER THAN THE STAR CATALOGUE'S SET, and the difference is where the two
+    rules hang. exp_persist waits on exp_psf, so a reclaimed exposure's manifest
+    cannot be requested without rebuilding a four-hour chain from VOS — hence
+    star_cat_inputs()'s manifest-or-tar split. exp_defect_map waits on
+    exp_split, and its manifest lives on the persistent root, so an exposure
+    that already has one is a DAG leaf and an exposure that does not is one
+    split away. No special case is needed and none is invented.
+
+    THE IDS, NOT THE PATHS: the fingerprint on `params` must move when the SET
+    moves and not when a path does.
+    """
+    return sorted({e for t in TILES_READY for e in tile_exposures(t)})
+
+
+@functools.lru_cache(maxsize=1)
+def defect_map_inputs():
+    """What defect_map_merge waits for: the fragment manifests of the exposures
+    whose stores this invocation can still reach.
+
+    An exposure whose scratch store is gone (reclaimed, or purged) and which has
+    no fragment manifest yet cannot get one without rebuilding its chain from
+    VOS — the avalanche persist_targets() drops such exposures to avoid. It is
+    left out of the edge; the job skips it and records it as missing. Every
+    other exposure's manifest is either already there or one exp_split away.
+    """
+    return [prod_exp_manifest(e, "exp_defect_map")
+            for e in defect_map_exposures()
+            if not exp_store_reclaimed(e)
+            or Path(prod_exp_manifest(e, "exp_defect_map")).exists()]
+
+
+def defect_map_targets():
+    """The merged map, whenever this campaign has an exposure to rasterize."""
+    if not workflow.is_main_process:
+        return []
+    return [defect_map(), defect_map_sidecar()] if defect_map_inputs() else []
+
+
+def defect_map_fragment_targets():
+    """The per-exposure fragments `rule all` requests DIRECTLY.
+
+    Same argument as persist_targets(): the fragment must leave /scratch whether
+    or not the campaign ever merges or reclaims, because the flag splits go with
+    the store at the purge. Reaching them only through defect_map_merge would
+    make a campaign that never merged lose them.
+
+    HEAD PROCESS ONLY, for the same cost reason as persist_targets().
+    """
+    if not workflow.is_main_process:
+        return []
+    return defect_map_inputs()
 
 
 def persist_targets():
@@ -833,6 +938,18 @@ STAR_CAT_PRODUCT   = _persist.ALWAYS
 STAR_CAT_PATTERN   = _persist.resolve(_persist.ALWAYS)
 TILE_BYTES_DEFAULT = 46_000_000
 
+# DEFECT SIDE. The union's footprint is what sizes it, not the exposure count:
+# the accumulator is one BIT per sparse pixel of every coverage pixel the
+# campaign touches, so a coverage pixel costs (nside/nside_coverage)^2 / 8 bytes
+# — 128 KiB at the ladder's 131072/128 — and the loop holds one fragment
+# (~2 MB) at a time. Two ways to know the count, in order: the sidecar the last
+# merge wrote, which is the campaign's own measured footprint; and before there
+# is one, the exposures times the 13 coverage pixels ONE exposure touched
+# (measured, 2079612p), which ignores overlap and is therefore an overestimate
+# in the safe direction, capped at the whole sky.
+DEFECT_MEM_BASE_MB = 800      # interpreter + astropy + healpy + healsparse
+DEFECT_COV_PER_EXP = 13
+
 
 def _size(path, default):
     """Bytes on disk, or the documented per-unit default if it is not there."""
@@ -840,6 +957,19 @@ def _size(path, default):
         return Path(path).stat().st_size
     except OSError:
         return default
+
+
+def defect_map_cov_bytes():
+    """Bytes the union's accumulator occupies: coverage pixels x the bit-packed
+    block size. See the sizing block above for where the count comes from."""
+    block = (DEFECT_NSIDE // DEFECT_NSIDE_COVERAGE) ** 2 // 8
+    try:
+        record = json.loads(Path(defect_map_sidecar()).read_text())
+        n_cov = int(record["n_coverage_pixels"])
+    except (OSError, ValueError, KeyError):
+        n_cov = min(DEFECT_COV_PER_EXP * len(defect_map_exposures()),
+                    12 * DEFECT_NSIDE_COVERAGE ** 2)
+    return n_cov * block
 
 
 def star_cat_max_bytes():
@@ -1107,8 +1237,10 @@ rule all:
     input:
         [final_cat(t) for t in TILES_READY],
         persist_targets(),
+        defect_map_fragment_targets(),
         star_cat_targets(),
         final_cat_targets(),
+        defect_map_targets(),
         clean_targets(),
         clean_tile_targets(),
 
