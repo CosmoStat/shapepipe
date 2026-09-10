@@ -29,6 +29,15 @@ meaning "the training star sample" would match nothing under a non-recursive
 glob. Patterns are therefore plain FILE names and the layout is ours to know,
 not the config author's.
 
+RETENTION IS ADDITIVE, AND THAT IS A SAFETY PROPERTY. The keep list rides on
+the rule's ``params``, so SHRINKING it reruns this script — and a naive rerun
+would rewrite the tar without the products that were dropped, deleting them
+from the backed-up filesystem because someone edited a config, with the scratch
+store they came from usually long gone. An existing tar is therefore a FLOOR:
+its members are carried into the new one whatever the current list says, and a
+config change can only ever add. Removing a product is a deliberate act on
+products_dir, not a config edit.
+
 THE KEEP LIST IS WHAT THE CAMPAIGN KEEPS ON TOP OF THE MERGE'S INPUTS.
 ``psf_validation`` is packed unconditionally (see ALWAYS below); ``persist_exp:``
 is purely optional retention, and an EMPTY one is a coherent instruction — the
@@ -277,6 +286,21 @@ def main() -> None:
             sys.exit(f"persist_exp: {exc.args[0]}")
 
     found, empty = collect(args.exp_dir, entries)
+    # THE MERGE'S INPUTS ARE NOT ALLOWED TO BE MISSING, and this is a harder
+    # rule than "something matched". An exposure whose psfex_interp failed but
+    # whose PSFEx model landed has a non-empty match set under the default
+    # retention list, so it used to get a green manifest — and clean_exposure
+    # takes that manifest as its go-ahead and deletes the store, taking the
+    # stars with it. There is no recovering them afterwards short of rebuilding
+    # the chain from VOS, so a missing psf_validation fails the job here, while
+    # the store is still on disk. Retention products that match nothing stay
+    # warnings: they are optional by construction.
+    if ALWAYS not in found:
+        sys.exit(f"persist_exp: {args.exp}: nothing matched {ALWAYS} "
+                 f"({resolve(ALWAYS)}) under {args.exp_dir}/output/{RUN_NAME}. "
+                 f"That is the star catalogue's input and it is not optional — "
+                 f"refusing to write a manifest that would let clean_exposure "
+                 f"reclaim this store.")
     if not found:
         sys.exit(f"persist_exp: {args.exp}: no file matched any of "
                  f"{entries} under {args.exp_dir}/output/{RUN_NAME}")
@@ -304,6 +328,35 @@ def main() -> None:
             files.append({"name": src.name, "product": pat,
                           "pattern": resolve(pat),
                           "src": str(src), "bytes": src.stat().st_size})
+
+    # --- RETENTION IS ADDITIVE: an existing tar is a FLOOR, never a draft ----
+    # Shrinking `persist_exp:` used to rerun this rule (the list rides on
+    # params, which is the whole point of the rule) and overwrite the tar with
+    # a smaller one — deleting products from the BACKED-UP filesystem because
+    # someone edited a config. The scratch store they came from is usually gone
+    # by then, so nothing could put them back. Whatever is already in the tar
+    # therefore stays in it: a config change can only ever ADD.
+    #
+    # Removing a product is consequently not a config edit. It is a deliberate
+    # act on products_dir, and it should look like one.
+    carried, prior_products = [], {}
+    if tar_path.exists():
+        prior = args.manifest
+        if prior.exists():
+            try:
+                prior_products = {f["name"]: f.get("product", "?")
+                                  for f in json.loads(prior.read_text())["files"]}
+            except (OSError, ValueError, KeyError):
+                pass                      # a damaged manifest loses only labels
+        with tarfile.open(tar_path) as tf:
+            for ti in tf.getmembers():
+                if ti.name in seen or not ti.isfile():
+                    continue              # a live source supersedes it
+                carried.append(ti.name)
+                files.append({"name": ti.name,
+                              "product": prior_products.get(ti.name, "?"),
+                              "pattern": None, "src": None, "bytes": ti.size})
+
     files.sort(key=lambda f: f["name"])
 
     def anonymous(ti: tarfile.TarInfo) -> tarfile.TarInfo:
@@ -319,9 +372,24 @@ def main() -> None:
     # design exists to avoid, one per failed attempt at DR6 scale.
     tmp = tar_path.with_name(tar_path.name + ".tmp")
     try:
+        # One pass in sorted member order, taking each member from whichever
+        # side has it: a live source on disk, or the existing tar. Members are
+        # copied across with their own TarInfo, so a carried member is
+        # byte-for-byte what it was and a rerun that changes nothing still
+        # produces an identical archive.
         with tarfile.open(tmp, "w", format=tarfile.PAX_FORMAT) as tf:
-            for f in files:
-                tf.add(seen[f["name"]][0], arcname=f["name"], filter=anonymous)
+            old_tar = (tarfile.open(tar_path) if carried else None)
+            try:
+                for f in files:
+                    if f["name"] in seen:
+                        tf.add(seen[f["name"]][0], arcname=f["name"],
+                               filter=anonymous)
+                    else:
+                        ti = anonymous(old_tar.getmember(f["name"]))
+                        tf.addfile(ti, old_tar.extractfile(f["name"]))
+            finally:
+                if old_tar is not None:
+                    old_tar.close()
         if tar_path.exists() and filecmp.cmp(tmp, tar_path, shallow=False):
             tmp.unlink()                  # unchanged: leave the mtime alone
         else:
@@ -354,7 +422,10 @@ def main() -> None:
     finally:
         tmp.unlink(missing_ok=True)
 
-    warn = f" ({len(empty)} pattern(s) matched nothing: {empty})" if empty else ""
+    warn = (f" ({len(empty)} retention product(s) matched nothing: {empty})"
+            if empty else "")
+    if carried:
+        warn += f" ({len(carried)} member(s) carried from the existing tar)"
     print(f"[persist_exp] {args.exp}: {len(files)} file(s), "
           f"{body['bytes'] / 1e6:.1f} MB -> {tar_path}{warn}")
 

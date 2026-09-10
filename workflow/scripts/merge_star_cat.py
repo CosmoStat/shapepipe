@@ -107,9 +107,10 @@ OUT_NAME = "full_starcat-0000000.fits"
 
 # The members this merge consumes, named as the keep list names them and
 # resolved through the same catalogue persist_exp packs by — so the glob has one
-# definition and adding a product cannot leave the two disagreeing. The rule
-# refuses to exist unless `persist_exp:` keeps something of this shape (the
-# Snakefile checks at parse time), so the members are expected here.
+# definition and adding a product cannot leave the two disagreeing. They are
+# always there to find: persist_exp packs this product for every exposure
+# whatever `persist_exp:` says, and fails the pack rather than writing a
+# manifest without it.
 MEMBER_PRODUCT = "psf_validation"
 MEMBER_PATTERN = persist_exp.resolve(MEMBER_PRODUCT)
 
@@ -246,8 +247,9 @@ def main() -> None:
         # existence check and produce meaningless rho statistics.
         sys.exit(f"merge_star_cat: no member matched {args.pattern!r} in any "
                  f"of {len(manifest_paths)} exp_persist manifest(s) for this "
-                 f"campaign — is '{MEMBER_PRODUCT}' in the persist_exp keep "
-                 f"list?")
+                 f"campaign. persist_exp packs {MEMBER_PRODUCT} for every "
+                 f"exposure, so this means the manifests are not what we think "
+                 f"they are.")
     if empty:
         log.info(f"{len(empty)} exposure(s) persisted no {args.pattern}: "
                  f"{', '.join(sorted(empty)[:5])}"

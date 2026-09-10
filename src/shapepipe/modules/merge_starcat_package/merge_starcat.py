@@ -621,7 +621,15 @@ class MergeStarCatPSFEX(object):
         )
 
         # --- pass 1: row counts and dtypes, from headers alone --------------
-        counts, labels, dtypes, n_total = [], [], None, 0
+        # THE OPTIONAL COLUMNS ARE A PER-FILE QUESTION, NOT A PER-MERGE ONE.
+        # A pix2wcs-converted catalogue has no MAG/SNR/ACCEPTED while an
+        # ordinary one does, and a merge can be handed both. Deciding from the
+        # first file alone got it wrong in both directions: converted-first
+        # zero-filled the real values of every ordinary file behind it, and
+        # ordinary-first raised KeyError on the first converted one. So the
+        # dtype comes from ANY file that carries the column, and pass 2 asks
+        # each file for itself.
+        labels, dtypes, opt_dtypes, n_total = [], None, {}, 0
         for name in self._input_file_list:
             source, label = name[0], name[-1]
             try:
@@ -629,14 +637,21 @@ class MergeStarCatPSFEX(object):
                                ignore_missing_simple=True) as starcat_j:
                     hdu = starcat_j[self._hdu_table]
                     n_rows = hdu.header["NAXIS2"]
+                    # ColDefs.dtype describes the table without reading it.
+                    # NOTE: it is the RAW storage dtype and ignores TSCAL/TZERO,
+                    # so a scaled column would be allocated narrower than the
+                    # values .data returns. Latent, not live: no validation_psf
+                    # column is scaled. Read the dtype off .data if one ever is.
+                    cols = hdu.columns.dtype
                     if dtypes is None:
-                        # ColDefs.dtype describes the table without reading it.
-                        dtypes = hdu.columns.dtype
+                        dtypes = cols
+                    for _, col in self._OPTIONAL:
+                        if col not in opt_dtypes and col in (cols.names or ()):
+                            opt_dtypes[col] = cols[col]
             except OSError:
                 print(f"Error while opening file '{label}'")
                 #raise
                 continue
-            counts.append(n_rows)
             labels.append(label)
             n_total += n_rows
 
@@ -644,12 +659,12 @@ class MergeStarCatPSFEX(object):
             raise ValueError("merge_starcat: no readable input catalogue")
 
         # --- allocate once, at the exact final length -----------------------
-        present = set(dtypes.names)
         data = {out: np.empty(n_total, dtype=dtypes[col])
                 for out, col in self._COLUMNS}
         for out, col in self._OPTIONAL:
-            data[out] = np.empty(
-                n_total, dtype=dtypes[col] if col in present else dtypes["X"])
+            # A column no file carries still gets a column, zero-filled, in the
+            # positional dtype the old code used for it.
+            data[out] = np.empty(n_total, dtype=opt_dtypes.get(col, dtypes["X"]))
         # CCD_NB is one string per catalogue, repeated over its rows; its width
         # is the widest CCD number in the campaign, which pass 1 already knows.
         width = max((len(self._ccd_nb(lb)) for lb in labels), default=1)
@@ -668,10 +683,13 @@ class MergeStarCatPSFEX(object):
             n_rows = len(data_j)
             sl = slice(at, at + n_rows)
 
+            have = set(data_j.dtype.names or ())
             for out, col in self._COLUMNS:
                 data[out][sl] = data_j[col]
             for out, col in self._OPTIONAL:
-                data[out][sl] = data_j[col] if col in present else 0
+                # THIS file's schema, not the merge's: zero-fill only the files
+                # that actually lack the column.
+                data[out][sl] = data_j[col] if col in have else 0
             data["CCD_NB"][sl] = self._ccd_nb(label)
 
             at += n_rows
@@ -850,6 +868,13 @@ class MergeStarCatSetools(object):
             ra.append(np.asarray(data_j["XWIN_WORLD"]))
             dec.append(np.asarray(data_j["YWIN_WORLD"]))
 
+            # PRE-EXISTING BUG, LEFT ALONE DELIBERATELY: these four REBIND the
+            # accumulators initialised above rather than appending to them, so
+            # only the LAST input file's ellipticities reach the output while
+            # every other column carries the whole merge. Setools is not wired
+            # to any workflow path today; fixing it is its own change with its
+            # own verification, and doing it silently inside a memory rewrite
+            # would bury it.
             m11, m20, m02 = self.get_moments(data_j)
             eps1, eps2 = self.get_ellipticity(m11, m20, m02, "epsilon")
             chi1, chi2 = self.get_ellipticity(m11, m20, m02, "chi")

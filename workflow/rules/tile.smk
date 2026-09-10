@@ -955,9 +955,10 @@ rule final_cat_merge:
         # Sized on the LARGEST tile, not the total: the merge holds one
         # catalogue at a time, and the measurement is flat in the tile count
         # (the Snakefile's sizing block carries both points).
-        mem_mb = lambda wc, attempt: attempt * (
+        mem_mb = lambda wc, attempt: capped_mem(attempt * (
             FINAL_MEM_BASE_MB
             + FINAL_MEM_FACTOR * final_cat_max_bytes() // 1_000_000),
+            "final_cat_merge"),
         # Runtime, unlike memory, is the TOTAL: every tile is read end to end.
         # ~1 min per 10 tiles on the measurement, triply generous, over a floor.
         runtime = lambda wc, attempt: attempt * (30 + len(TILES_READY) // 3)

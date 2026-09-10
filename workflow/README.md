@@ -285,7 +285,11 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   | `star_stats` | `star_stat-*.txt` | unmeasured | setools' per-CCD counts, density and FWHM cuts |
 
   The default is `psf_model`. `psf_validation` is in the catalogue too but needs
-  no naming; naming it anyway is harmless. A raw glob is still accepted as an
+  no naming; naming it anyway is harmless. **Retention is additive**: an
+  existing tar is a floor, so shrinking the list adds nothing and removes
+  nothing. Dropping a product is a deliberate act on `products_dir`, not a
+  config edit — otherwise editing a config would delete products from the
+  backed-up filesystem whose scratch originals are long gone. A raw glob is still accepted as an
   escape hatch — anything with a glob metacharacter or a dot is read as one —
   and an unknown *name* is a parse-time error listing the valid ones. The list
   is exposure-side only; tile-side retention is #844 follow-up.

@@ -339,7 +339,21 @@ def unit_num(unit):
 # gets its own hash, on the forest rule only.
 def script_hash(name):
     """The 12-hex fingerprint of one script under workflow/scripts/."""
-    return hashlib.md5((SCRIPTS / name).read_bytes()).hexdigest()[:12]
+    return path_hash(SCRIPTS / name)
+
+
+def path_hash(path):
+    """The 12-hex fingerprint of any file the rules depend on but do not own.
+
+    A rule whose behaviour comes from more than its own script needs all of it
+    in one trigger. final_cat_merge is the case: what it writes is decided by
+    scripts/python/create_final_cat.py (the column extraction) and by
+    config/cfis/final_cat.param (which columns), and NEITHER is under
+    workflow/scripts/ nor a declared input. Without them in the hash, this PR's
+    own edits to both would have left every finished campaign's hdf5 untouched
+    and nothing would have said so.
+    """
+    return hashlib.md5(Path(path).read_bytes()).hexdigest()[:12]
 
 SCRIPT_HASH = script_hash("completeness.py")
 FOREST_HASH = script_hash("build_forest.py")
@@ -347,7 +361,13 @@ CLEAN_HASH  = script_hash("clean_exposure.py")
 CLEAN_TILE_HASH = script_hash("clean_tile.py")
 PERSIST_HASH = script_hash("persist_exp.py")
 MERGE_STAR_HASH  = script_hash("merge_star_cat.py")
-MERGE_FINAL_HASH = script_hash("merge_final_cat.py")
+# Three files, one trigger: the rule's script, the column extraction it calls,
+# and the parameter file that says which columns (path_hash argues why).
+MERGE_FINAL_HASH = ":".join((
+    script_hash("merge_final_cat.py"),
+    path_hash(Path(workflow.basedir).parent / "scripts" / "python"
+              / "create_final_cat.py"),
+    path_hash(CONFIG_DIR / "final_cat.param")))
 # ngmix_range.py earns a hash for a stronger reason than the others. What it
 # emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks are
 # a PARTITION of its object IDs: resume a tile across an edit to the split and
@@ -467,8 +487,8 @@ def clean_targets():
 
 # --- persisted exposure products (D5) --------------------------------------
 # The keep list is config, not a rule input, and it is READ HERE so that exactly
-# one place converts it into the form the rule carries. An empty list is a
-# deliberate "keep nothing" and produces no jobs at all.
+# one place converts it into the form the rule carries.
+#
 # OPTIONAL RETENTION, and only that. What star_cat_merge needs — every CCD's
 # psf_validation — is packed by exp_persist whatever this list says
 # (persist_exp.py's ALWAYS argues why: provenance for the merged catalogue, and
@@ -745,14 +765,49 @@ def star_cat_exposures():
 # largest 47.7 MB): peak RSS 129 MB and 139 MB. FLAT IN THE NUMBER OF TILES —
 # the merge holds one catalogue at a time — so it is sized on the LARGEST tile,
 # not the total, at ~3x it plus the interpreter.
+# THE CEILING ON ANY REQUEST, and it is not a formatting nicety: a mem_mb above
+# the partition maximum is a job SLURM will never schedule and snakemake will
+# never diagnose — it sits PENDING with a reason nobody reads while the campaign
+# looks alive. The two merge formulas grow with the campaign, so at some size
+# they WILL cross it; capping turns "silently never runs" into "runs on the
+# biggest node there is, and possibly dies with a diagnosable OOM".
+#
+# Nibi's standard compute node is 766 GB (192 cores, 4 GB/core); 750000 leaves
+# room for the OS and the slurm accounting overhead. Override with `max_mem_mb:`
+# for a cluster with smaller nodes, or to reserve headroom.
+MAX_MEM_MB = int(config.get("max_mem_mb", 750_000))
+_capped_warned = set()
+
+
+def capped_mem(mb, rule):
+    """min(mb, MAX_MEM_MB), and say so ONCE at parse time when it bites."""
+    mb = int(mb)
+    if mb > MAX_MEM_MB:
+        if rule not in _capped_warned and workflow.is_main_process:
+            _capped_warned.add(rule)
+            logger.warning(
+                f"{rule}: sized at {mb} MB, capped to max_mem_mb={MAX_MEM_MB} "
+                f"(Nibi's standard node is 766 GB). The job will run with less "
+                f"memory than the measurement says it wants — expect an OOM, "
+                f"and split the campaign or fix the merge rather than raising "
+                f"this number past what a node has.")
+        return MAX_MEM_MB
+    return mb
+
+
 STAR_MEM_BASE_MB   = 500      # interpreter + astropy + shapepipe, rounded up
 STAR_MEM_FACTOR    = 6        # x input bytes; 4.8 measured, rounded up
 FINAL_MEM_BASE_MB  = 800
 FINAL_MEM_FACTOR   = 4        # x the LARGEST tile; ~3 measured
-# What one unit costs when its product is not on disk yet to be stat()ed — a
-# fresh campaign sizes its merge before anything has been packed or made.
-# Both are the measured medians in config.yaml's persist_exp block and D5 notes.
+# What one unit costs when its product is not on disk yet to be measured — a
+# fresh campaign sizes its merge before anything has been packed or made. The
+# exposure figure is psf_validation's alone (the only members the star merge
+# reads), not a whole tar's; both are the measured medians in config.yaml's
+# persist_exp block and the D5 notes.
 EXP_BYTES_DEFAULT  = 2_000_000
+# The product whose members star_cat_merge stacks — named once, here and in
+# merge_star_cat.py, and resolved through persist_exp.py's catalogue.
+STAR_CAT_PRODUCT   = _persist.ALWAYS
 TILE_BYTES_DEFAULT = 46_000_000
 
 
@@ -765,15 +820,35 @@ def _size(path, default):
 
 
 def star_cat_bytes():
-    """Total member bytes the star merge will read.
+    """Total bytes of the members the star merge will actually read.
 
-    The TAR is what gets stat()ed, not the manifest: it is one stat per
-    exposure rather than a json parse, and it is present for exactly the
-    exposures whose products already exist — live-and-already-packed as well as
-    reclaimed. An exposure not yet packed contributes the measured default.
+    THE TAR'S SIZE IS THE WRONG NUMBER, and increasingly wrong as the keep list
+    grows: the merge reads the psf_validation members and nothing else, while
+    the tar also holds whatever `persist_exp:` retains. With the default
+    retention that is 2.4x too much, and with the star_* products on it is ~36x
+    — a memory request that misses by more than an order of magnitude, and one
+    that would jump the moment an exposure got packed, since an unpacked one
+    contributed the per-exposure default instead. So the MANIFEST is read and
+    only the psf_validation members are counted; persist_exp records the product
+    each member came from, exactly so this is answerable without opening a tar.
+
+    One json parse per exposure at DAG build, and only for the parse that builds
+    this job. An exposure not yet packed has no manifest and contributes the
+    measured default, which is the psf_validation figure and not the tar's.
     """
-    return sum(_size(prod_exp_tar(e), EXP_BYTES_DEFAULT)
-               for e in star_cat_exposures())
+    total = 0
+    for exp in star_cat_exposures():
+        manifest = Path(prod_exp_manifest(exp, "exp_persist"))
+        if not manifest.exists():
+            total += EXP_BYTES_DEFAULT
+            continue
+        try:
+            body = json.loads(manifest.read_text())
+            total += sum(f["bytes"] for f in body["files"]
+                         if f.get("product") == STAR_CAT_PRODUCT)
+        except (OSError, ValueError, KeyError):
+            total += EXP_BYTES_DEFAULT
+    return total
 
 
 def final_cat_max_bytes():

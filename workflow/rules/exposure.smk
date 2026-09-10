@@ -283,8 +283,9 @@ rule star_cat_merge:
         # measured (the Snakefile's sizing block carries both points, and the
         # ceiling this rule runs into at DR6 scale). Still * attempt, because a
         # measured slope on synthetic tars is not a guarantee about real ones.
-        mem_mb = lambda wc, attempt: attempt * (
+        mem_mb = lambda wc, attempt: capped_mem(attempt * (
             STAR_MEM_BASE_MB + STAR_MEM_FACTOR * star_cat_bytes() // 1_000_000),
+            "star_cat_merge"),
         # ~2 min per GB of members on the measurement above, doubled, over a
         # floor that covers the fixed cost of opening ~40 members per exposure.
         runtime = lambda wc, attempt: attempt * (

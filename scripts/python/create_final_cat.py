@@ -338,13 +338,19 @@ def copy_data(param_list, extracted_data, dtype):
     """Copy Data.
 
     """
-    # THE REQUESTED COLUMNS ONLY, in the SOURCE catalogue's order. Allocating
-    # with the source's full dtype and filling only the requested columns left
-    # every other column as uninitialised memory: meaningless values in the
-    # output file, and different bytes on every run of this tool over the same
-    # inputs. The parameter file says which columns the merged catalogue is
-    # for; those are the columns it gets.
-    columns = [col for col in (dtype.names or ()) if col in set(param_list)]
+    # THE REQUESTED COLUMNS ONLY, IN THE PARAMETER FILE'S ORDER. Two things
+    # are being fixed here and they are easy to conflate. Allocating with the
+    # source's full dtype and filling only the requested columns left every
+    # other column as uninitialised memory — meaningless values, and different
+    # bytes on every run over the same inputs. And ordering the result by the
+    # SOURCE catalogue's columns made the output dtype a property of the
+    # catalogue rather than of the parameter file: two tiles written by
+    # different ShapePipe versions, whose catalogues order or extend their
+    # columns differently, then landed in one merged file with two different
+    # structured dtypes, which np.concatenate refuses. The parameter file is
+    # the schema; it says which columns AND in what order.
+    wanted = set(dtype.names or ())
+    columns = [col for col in param_list if col in wanted]
     subset = np.dtype([(col, dtype[col]) for col in columns])
 
     # Initialize new data structure
