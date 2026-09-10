@@ -1568,7 +1568,7 @@ class FITSCatalogue(BaseCatalogue):
             col_type = "K"
         elif type(col_data[0]) in [float, np.float16, np.float32, np.float64]:
             col_type = "D"
-        elif type(col_data[0]) is bool:
+        elif type(col_data[0]) in [bool, np.bool_]:
             col_type = "L"
         elif type(col_data[0]) in [str, np.str_]:
             col_type = "A"
