@@ -245,14 +245,22 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   input, so reclamation cannot overtake the copy. Its resolution and its
   oversampling ride on `params`; `config.yaml`'s `defect_map:` block carries
   both, the measured convergence table behind the default, and the measurement
-  on one real exposure (37 s, 0.62 GB, a 2.0 MB fragment). The union
+  on one real exposure (34 s, 0.62 GB, a 2.0 MB fragment; the rasterization is
+  batched, so a fully flagged chip — the worst case, and one a real exposure
+  carries whenever a chip is dead — is 0.74 GB rather than several). The union
   RECONCILES like `final_cat_merge` — a new exposure is OR-ed in on the spot, an
   exposure that left the campaign or a fragment that changed forces a rebuild
   (a union cannot be un-OR-ed), and a no-op leaves the file untouched — against
   a sidecar `defect_map_<campaign>.json` that records which exposures are
   already in it. Memory is flat in the exposure count: fragments are read one at
   a time and reduced to their pixel ids, so the job holds one accumulator (the
-  campaign's footprint, ~3 GB at DR6 scale) and one 2 MB fragment.
+  campaign's footprint, ~3 GB at DR6 scale) and one 2 MB fragment. What the map
+  and the sidecar say is a function of the input set; the map's BYTES are not,
+  because reaching a state by append rather than by rebuild round-trips it
+  through healsparse's writer (`merge_defect_map.py` measures the difference and
+  says what would have to change if anything ever consumed the map).
+  `tests/unit/test_defect_map_reconcile.py` pins the four reconcile branches and
+  the sidecar refresh.
 - **External masks are wired, on the tile side only.** `inputs.masks` is a third
   input root beside tiles and exposures, exported as `$SP_INPUT_MASKS` and
   pointing at the UNIONS DR6 ugriz bit ladder: one boolean healsparse map per

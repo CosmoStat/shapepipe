@@ -187,8 +187,11 @@ persist_exp:
 # it. The survey footprint is built from the CCD corner WCS in the headers, so
 # it cannot subtract them and would silently include defective pixels. So
 # `exp_defect_map` rasterizes each exposure's flags into a boolean healsparse
-# fragment beside its PSF tar on products_dir, and `defect_map_merge` unions the
-# campaign's fragments into <products_dir>/defect_map_<campaign>.hsp.
+# fragment on products_dir, at
+# <products_dir>/exp/<shard>/<exp>/defect/defect-<exp>.hsp -- its own subdir
+# beside the exposure's manifests/ and its PSF tar, not beside the tar itself --
+# and `defect_map_merge` unions the campaign's fragments into
+# <products_dir>/defect_map_<campaign>.hsp.
 #
 # IT IS A PRODUCT, NOT AN INPUT. Nothing in the workflow reads it back; it is
 # for the footprint, downstream. In particular config_tile_Mc.ini's
@@ -196,13 +199,18 @@ persist_exp:
 # the run starts, and this one exists only after it. That file's header carries
 # the recipe for adding it once a campaign has produced one.
 #
-# Measured on one real exposure (2079612p, 40 CCDs, 4.4% of pixels flagged) on
-# this login node inside the campaign container: 37 s at oversample 3, peak RSS
+# Measured on one real exposure (2079612p, 40 CCDs, 4.1% of pixels flagged) on
+# this login node inside the campaign container: 34 s at oversample 3, peak RSS
 # 0.62 GB, 359858 healpix pixels, a 2.0 MB fragment over 13 coverage pixels
 # (21 s / 0.41 GB / 357896 pixels at oversample 2; 95 s / 1.29 GB / 360840 at
 # oversample 5 -- so 3 is within 0.3% of 5 over the whole exposure, at a third
-# of the cost). ~40 GB and ~20k inodes at DR6 scale, against a ~1 M-inode group
-# quota.
+# of the cost). The rasterization is BATCHED, so peak memory is the batch and
+# not the exposure: a fully flagged MegaCam chip -- 9.4M pixels, the worst case
+# there is, and one a real exposure carries whenever a chip is dead -- measures
+# 0.74 GB and 18 s on its own. At DR6 scale (~20k exposures) the products are
+# ~40 GB and ~60k inodes,
+# against a ~1 M-inode group quota: THREE per exposure, not one -- the defect/
+# directory, the fragment in it, and the manifest under manifests/.
 #
 # EVERY KEY BELOW DEFAULTS TO THE MASK LADDER'S OWN CONVENTION and the block can
 # be omitted entirely. nside/nside_coverage match every map under `inputs.masks`
