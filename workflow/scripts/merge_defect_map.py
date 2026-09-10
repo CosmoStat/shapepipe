@@ -35,6 +35,20 @@ anything — but a union is not invertible:
   * a plan with neither leaves the file UNTOUCHED — not rewritten identically,
     untouched, so its mtime cannot move. mtime is a rerun trigger.
 
+WHAT IS AND IS NOT A FUNCTION OF THE INPUT SET, in the same terms
+``hdf5_reconcile.py`` sets them. The map's CONTENT is: the same fragments give
+the same valid pixels, the same counts and the same sidecar, whether they
+arrived at once or one append at a time. Its BYTES are not — reaching a state by
+append rather than by rebuild round-trips the map through healsparse's reader
+and writer, which can lay the same pixels out in a different number of 2880-byte
+FITS blocks (measured: 1,586,880 B rebuilt vs 1,589,760 B appended, identical
+``valid_pixels``). That is the trade for not re-reading the campaign. It means
+``write_stable`` below can move the map's mtime on a rebuild that changed
+nothing — cheap while nothing consumes the map, and the thing to fix (by
+rebuilding whenever the append path would rewrite anyway) if something ever
+does. The no-op case is unaffected: it compares the PLAN, not the bytes, and
+never opens the map at all.
+
 Which exposures are already in the map is recorded in a SIDECAR beside it
 (``defect_map_<campaign>.json``), each with its fragment's size and mtime — the
 same "did this change since we read it" stamp ``merge_final_cat.py`` records on
@@ -85,6 +99,14 @@ import healsparse as hsp
 
 # Same directory; the rule invokes this file by path, so it is sys.path[0].
 import build_index
+# The two hdf5 merges' reconciler. This file cannot use its `plan`/`apply` — a
+# union is not a group of independent datasets, so removing an exposure is a
+# rebuild here and a `del` there — but "did this source change since we read
+# it" is the SAME question, and answering it twice in two ways is how the two
+# halves of a campaign's reconciliation drift apart. So the stamp is imported,
+# not re-derived, and the vocabulary below (`stamp`, `Plan`, `empty`,
+# `describe`, plan-then-apply, untouched-on-a-no-op) is deliberately theirs.
+from hdf5_reconcile import stamp
 
 
 def fragment_path(products_dir: Path, exp: str) -> Path:
@@ -93,15 +115,9 @@ def fragment_path(products_dir: Path, exp: str) -> Path:
             / f"defect-{exp}.hsp")
 
 
-def stamp(path: Path) -> list:
-    """The fragment's identity, as recorded in the sidecar.
-
-    Size and mtime, not a checksum: the fragment is ~2 MB, it is written
-    byte-stably (so a no-op re-rasterization does not move its mtime), and the
-    question is only "did this change since we read it".
-    """
-    st = path.stat()
-    return [st.st_size, st.st_mtime_ns]
+def sidecar_stamp(path: Path) -> list:
+    """``stamp`` as JSON round-trips it: a list, so a read record compares."""
+    return list(stamp(path))
 
 
 def fragments(products_dir: Path, tile_list: Path, index_db: Path) -> tuple:
@@ -159,7 +175,7 @@ def reconcile_plan(output: Path, sidecar: Path, have: dict) -> Plan:
         return Plan([], sorted(have),
                     f"{len(gone)} exposure(s) left the campaign")
     changed = sorted(exp for exp, path in have.items()
-                     if exp in known and list(known[exp]) != stamp(path))
+                     if exp in known and list(known[exp]) != sidecar_stamp(path))
     if changed:
         return Plan([], sorted(have),
                     f"{len(changed)} fragment(s) changed on disk")
@@ -194,6 +210,44 @@ def write_stable(tmp: Path, dest: Path) -> None:
         tmp.replace(dest)
 
 
+def build_record(have: dict, missing: list, nside_coverage: int, nside: int,
+                 n_pixels: int, n_coverage: int) -> dict:
+    """The sidecar: what is in the map, and what the campaign wanted but lacked.
+
+    Built apart from writing the map because it is not only the map's record.
+    Two of its fields describe the CAMPAIGN — how many exposures it has and
+    which of them have no fragment — and those can move while the map itself
+    cannot: add tiles whose exposures were all reclaimed by a workflow
+    predating this rule and there is nothing to append, nothing to rebuild, and
+    a sidecar still reporting the previous campaign's counts. The docstring says
+    a short map should say so ON DISK; that means the record has to be rewritten
+    even when the map is untouched.
+    """
+    return {
+        "campaign_exposures": len(have) + len(missing),
+        "nside": nside,
+        "nside_coverage": nside_coverage,
+        "n_pixels": n_pixels,
+        "n_coverage_pixels": n_coverage,
+        # What the NEXT invocation reconciles against; sorted so the sidecar is
+        # byte-stable for a given campaign state.
+        "exposures": {exp: sidecar_stamp(path)
+                      for exp, path in sorted(have.items())},
+        # Recorded rather than merely printed: a map short of exposures should
+        # say so on disk, not only in a job log nobody keeps.
+        "exposures_without_fragment": sorted(missing),
+    }
+
+
+def write_sidecar(sidecar: Path, record: dict) -> None:
+    tmp = sidecar.with_name(sidecar.name + ".tmp")
+    try:
+        tmp.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
+        write_stable(tmp, sidecar)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
 def apply_plan(output: Path, sidecar: Path, plan: Plan, have: dict,
                missing: list, nside_coverage: int, nside: int) -> dict:
     """Carry the plan out on tmp copies, then move both files into place.
@@ -211,30 +265,17 @@ def apply_plan(output: Path, sidecar: Path, plan: Plan, have: dict,
     accumulate(target, [(exp, have[exp]) for exp in todo],
                nside_coverage, nside)
 
-    record = {
-        "campaign_exposures": len(have) + len(missing),
-        "nside": nside,
-        "nside_coverage": nside_coverage,
-        "n_pixels": int(target.n_valid),
-        "n_coverage_pixels": int(target.coverage_mask.sum()),
-        # What the NEXT invocation reconciles against; sorted so the sidecar is
-        # byte-stable for a given campaign state.
-        "exposures": {exp: stamp(path) for exp, path in sorted(have.items())},
-        # Recorded rather than merely printed: a map short of exposures should
-        # say so on disk, not only in a job log nobody keeps.
-        "exposures_without_fragment": missing,
-    }
+    record = build_record(have, missing, nside_coverage, nside,
+                          int(target.n_valid),
+                          int(target.coverage_mask.sum()))
 
     map_tmp = output.with_name(output.name + ".tmp")
-    side_tmp = sidecar.with_name(sidecar.name + ".tmp")
     try:
         target.write(str(map_tmp), clobber=True)
-        side_tmp.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
         write_stable(map_tmp, output)
-        write_stable(side_tmp, sidecar)
     finally:
         map_tmp.unlink(missing_ok=True)
-        side_tmp.unlink(missing_ok=True)
+    write_sidecar(sidecar, record)
     return record
 
 
@@ -263,8 +304,22 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     plan = reconcile_plan(args.output, args.sidecar, have)
     if plan.empty():
+        # The MAP is untouched — that is what an empty plan means, and its mtime
+        # must not move. The RECORD still can be stale: campaign_exposures and
+        # exposures_without_fragment describe the campaign, not the map, so
+        # tiles whose exposures all lack fragments change them without changing
+        # a single bit of the union. Rewrite it alone when it differs;
+        # write_stable drops the tmp when it does not.
+        old_record = read_sidecar(args.sidecar)
+        record = build_record(have, missing, args.nside_coverage, args.nside,
+                              int(old_record.get("n_pixels", 0)),
+                              int(old_record.get("n_coverage_pixels", 0)))
+        stale = record != old_record
+        if stale:
+            write_sidecar(args.sidecar, record)
         print(f"[merge_defect_map] unchanged: {args.output} "
-              f"({len(have)} exposure(s))")
+              f"({len(have)} exposure(s)"
+              f"{'; sidecar refreshed' if stale else ''})")
         return
     record = apply_plan(args.output, args.sidecar, plan, have, missing,
                         args.nside_coverage, args.nside)

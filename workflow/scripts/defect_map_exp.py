@@ -77,6 +77,13 @@ of a CCD pixel bound its footprint, and a healpix pixel 74 times its area cannot
 sit inside it — the residual 1.2% is boundary and rounding, not a class of
 missed defect.
 
+MEMORY IS BOUNDED BY THE BATCH, NOT BY THE EXPOSURE. Peak RSS is one CCD's
+flag image plus one batch of ``CHUNK`` source pixels' worth of coordinates —
+measured 0.62 GB on a real 4.1%-flagged exposure at oversample 3, and 0.74 GB on
+a FULLY flagged CCD, which is the case the batching exists for (a dead or
+saturated MegaCam chip is 9.4M flagged pixels and, unbatched, several GB;
+``rasterize_ccd`` argues it). The bound is the batch, not the exposure.
+
 BYTE-STABLE, tmp-then-``cmp``-then-``mv``, the pattern ``persist_exp`` uses:
 healsparse's FITS output carries no timestamp (checked), so re-rasterizing an
 unchanged store produces an identical file and leaves its mtime alone. mtime is
@@ -127,16 +134,25 @@ def split_dir(exp_dir: Path) -> Path:
     return exp_dir / "output" / RUN_NAME / MODULE / "output"
 
 
-def ccd_files(exp_dir: Path) -> list:
+def ccd_files(exp_dir: Path, n_ccds: int) -> list:
     """``(ccd, flag path, image path)`` for every CCD this exposure split, in
-    CCD order.
+    CCD order — all ``n_ccds`` of them or none at all.
 
-    Driven by the FLAG files, which are what we rasterize; the image split is
-    looked up beside each one for its header alone. A flag split with no image
-    beside it is a hard error rather than a skip — ``exp_split`` writes the
-    three suffixes in one pass, so a missing image means the store is not what
-    we think it is, and a fragment quietly short of a CCD would be a hole in the
-    footprint nothing downstream could notice.
+    COUNTED AGAINST THE EXPECTED CCD COUNT, not against whatever is on disk, and
+    that is the whole guard. ``split_exp`` writes image, weight and flag for
+    each of ``N_HDU`` CCDs in one pass, so the reachable failure is not "a flag
+    without its image" — it is an incompletely MATERIALISED split dir: an
+    age-based scratch purge deleting files one at a time, a store copied or
+    restored half way, a truncated rsync. Globbing for ``flag-*.fits`` and
+    rasterizing whatever comes back turns that into a fragment covering half the
+    exposure, written with ``"status": "complete"`` and with nothing downstream
+    able to notice — a hole in the footprint, which is precisely what this rule
+    exists to prevent. So the expected count comes in on ``params`` (the
+    Snakefile reads ``N_HDU`` from ``config_exp_Sp.ini``) and a short split is a
+    hard error.
+
+    The image split is looked up beside each flag for its header alone, and a
+    missing one is the same hard error for the same reason.
     """
     root = split_dir(exp_dir)
     out = []
@@ -150,6 +166,12 @@ def ccd_files(exp_dir: Path) -> list:
                      f"it in {root}; the WCS lives on the image split (see the "
                      f"module docstring)")
         out.append((int(match.group(1)), flag, image))
+    if len(out) != n_ccds:
+        sys.exit(f"defect_map_exp: {root} holds {len(out)} flag split(s), not "
+                 f"the {n_ccds} this exposure was split into; the split dir is "
+                 f"incomplete and a fragment built from it would be a hole in "
+                 f"the footprint marked complete (see ccd_files' docstring). "
+                 f"Re-run exp_split for this exposure.")
     return sorted(out)
 
 
@@ -169,13 +191,36 @@ def offsets(oversample: int) -> tuple:
     return grid_x.ravel(), grid_y.ravel()
 
 
+# Flagged CCD pixels converted per batch. Peak RSS is set by THIS, not by how
+# bad the CCD is: one batch at oversample 3 is 500k x 9 samples x two float64
+# coordinate arrays in and two out, plus astropy's PV/SIP temporaries, and the
+# accumulated result is a deduplicated int64 pixel list bounded by the CCD's
+# healpix footprint (124601 ids for a WHOLE CCD at nside 131072), not by the
+# sample count. Measured on a fully flagged MegaCam chip (2048 x 4612 = 9.4M
+# pixels, the worst case there is) against 2079612p CCD 1's real WCS: 0.74 GB
+# peak and 18.3 s at 500k, 1.13 GB and 18.9 s at 1M. Time is flat in the batch
+# size and memory is linear in it, so the smaller batch is free.
+CHUNK = 500_000
+
+
 def rasterize_ccd(flag_path: Path, image_path: Path, nside: int,
                   off_x, off_y) -> np.ndarray:
     """The healpix pixel ids (NEST, ``nside``) this CCD's flags touch.
 
-    One CCD at a time and one array at a time: the whole point of the loop in
-    ``main`` is that the job's footprint is one CCD's samples, not the
-    exposure's.
+    ONE CCD AT A TIME AND, WITHIN IT, ONE BATCH AT A TIME. The first is why the
+    loop in ``main`` is a loop; the second is why this one is. A MegaCam
+    exposure routinely carries a dead or saturated chip, and a FULLY flagged CCD
+    is 2048 x 4612 = 9.4M nonzero pixels — 85M samples at oversample 3. Held in
+    one shot that is ~680 MB per coordinate array in and the same again out of
+    ``all_pix2world``, plus astropy's own PV/SIP temporaries: several GB, well
+    over the rule's request, on all three attempts. Batched it is 0.74 GB
+    (measured), inside the request with room to spare. The exposure would then
+    never get a fragment AND, because ``clean_exposure`` waits on this rule's
+    manifest, never be reclaimed either. The 0.62 GB measured on a 4.4%-flagged
+    exposure says nothing about that case; ``CHUNK`` does.
+
+    The batches are ``np.unique``-reduced as they go, so what survives across
+    them is the CCD's healpix footprint and not its samples.
     """
     with warnings.catch_warnings():
         # SCAMP headers carry a deprecated RADECSYS and a redundant SIP block
@@ -185,15 +230,25 @@ def rasterize_ccd(flag_path: Path, image_path: Path, nside: int,
         wcs = WCS(fits.getheader(image_path))
     data = fits.getdata(flag_path)
     rows, cols = np.nonzero(data)
+    del data
     if rows.size == 0:
         return np.empty(0, dtype=np.int64)
-    # 1-based FITS pixel coordinates, sampled across each flagged pixel's extent.
-    x = (cols[:, None] + 1.0 + off_x[None, :]).ravel()
-    y = (rows[:, None] + 1.0 + off_y[None, :]).ravel()
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        ra, dec = wcs.all_pix2world(x, y, 1)
-    return np.unique(hp.ang2pix(nside, ra, dec, lonlat=True, nest=True))
+    found = np.empty(0, dtype=np.int64)
+    for start in range(0, rows.size, CHUNK):
+        stop = start + CHUNK
+        # 1-based FITS pixel coordinates, sampled across each flagged pixel's
+        # extent.
+        x = (cols[start:stop, None] + 1.0 + off_x[None, :]).ravel()
+        y = (rows[start:stop, None] + 1.0 + off_y[None, :]).ravel()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ra, dec = wcs.all_pix2world(x, y, 1)
+        del x, y
+        pixels = hp.ang2pix(nside, ra, dec, lonlat=True, nest=True)
+        del ra, dec
+        found = np.union1d(found, pixels)
+        del pixels
+    return found
 
 
 def write_stable(tmp: Path, dest: Path) -> None:
@@ -213,6 +268,10 @@ def main() -> None:
                         help="<products_dir>/exp/<shard>/<exp>/defect; the "
                              "fragment is <dest>/defect-<exp>.hsp")
     parser.add_argument("--manifest", required=True, type=Path)
+    parser.add_argument("--n-ccds", required=True, type=int,
+                        help="how many CCDs exp_split wrote (N_HDU in "
+                             "config_exp_Sp.ini); a split dir short of this is "
+                             "an error, not a smaller fragment")
     parser.add_argument("--nside", type=int, default=131072,
                         help="nside_sparse; the mask ladder's resolution")
     parser.add_argument("--nside-coverage", type=int, default=128)
@@ -221,7 +280,7 @@ def main() -> None:
                              "docstring's measured table)")
     args = parser.parse_args()
 
-    ccds = ccd_files(args.exp_dir)
+    ccds = ccd_files(args.exp_dir, args.n_ccds)
     if not ccds:
         sys.exit(f"defect_map_exp: {args.exp}: no flag split under "
                  f"{split_dir(args.exp_dir)}")
