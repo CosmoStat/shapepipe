@@ -242,7 +242,12 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   adding it once a campaign has produced one. The rule hangs off `exp_split`,
   not off `exp_psf`, so re-rasterizing the campaign at a different fidelity
   never touches the PSF chain, and `clean_exposure` takes its manifest as an
-  input, so reclamation cannot overtake the copy. Its resolution and its
+  input for a LIVE exposure, so reclamation cannot overtake the copy — and only
+  for a live one: an exposure whose store went to the /scratch purge (no
+  tombstone, nothing left to rasterize) is asked for its existing fragment if it
+  has one and for nothing if it does not, the same split `defect_map_merge`'s
+  input makes, because requiring a manifest behind a vanished split dir would
+  rebuild the whole exposure chain from VOS to reclaim it. Its resolution and its
   oversampling ride on `params`; `config.yaml`'s `defect_map:` block carries
   both, the measured convergence table behind the default, and the measurement
   on one real exposure (34 s, 0.62 GB, a 2.0 MB fragment; the rasterization is

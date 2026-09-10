@@ -299,8 +299,32 @@ rule clean_exposure:
         # exposure's chain did not already put there. It is UNCONDITIONAL now:
         # exp_persist always packs the star catalogue's inputs, so there is no
         # keep list under which this rule has nothing to wait for.
-        lambda wc: [prod_exp_manifest(wc.exp, "exp_persist"),
-                    prod_exp_manifest(wc.exp, "exp_defect_map")]
+        lambda wc: [prod_exp_manifest(wc.exp, "exp_persist")],
+        # The fragment must be off /scratch before the store goes too — the flag
+        # splits go with it — but this edge is CONDITIONAL, and it is exactly
+        # defect_map_inputs()' split (Snakefile), for exactly its reason.
+        #
+        # Naming the exp_defect_map manifest unconditionally reopens the
+        # avalanche that function is written to avoid. An exposure whose store
+        # went to the 60-day /scratch purge, or to a `clean: false` run, has NO
+        # TOMBSTONE — exp_store_reclaimed()'s docstring names that case — so
+        # clean_targets() still asks for one, and the manifest it would then
+        # require sits behind exp_split's manifest, which went with the store:
+        # snakemake schedules exp_get_images and exp_split from VOS, four hours
+        # per exposure, campaign-wide, on the first run of this branch.
+        #
+        # So: a LIVE exposure is asked for its manifest (the thing to build, and
+        # the thing that orders this rule after the rasterization); a RECLAIMED
+        # one is asked for its FRAGMENT if it has one — already on the
+        # persistent root, no rule's declared output, hence a leaf that requires
+        # nothing — and for nothing at all if it has neither, which is an
+        # exposure reclaimed by a workflow predating this rule and whose flags
+        # are gone either way. Blocking its tombstone would pin its scratch
+        # store forever without recovering a single flag.
+        lambda wc: ([prod_exp_manifest(wc.exp, "exp_defect_map")]
+                    if not exp_store_reclaimed(wc.exp)
+                    else [prod_exp_fragment(wc.exp)]
+                    if Path(prod_exp_fragment(wc.exp)).exists() else [])
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
     params:
@@ -456,8 +480,15 @@ rule defect_map_merge:
         # recorded coverage count once there is one and, before that, from a
         # per-exposure figure capped at the MEASURED DR6 footprint; the
         # Snakefile's sizing block carries both and argues the cap.
-        mem_mb = lambda wc, attempt: attempt * (
-            DEFECT_MEM_BASE_MB + 2 * defect_map_cov_bytes() // 1_000_000),
+        # capped_mem() for the same reason star_cat_merge and final_cat_merge
+        # take it: defect_map_cov_bytes() scales as nside^2 and defect_map.nside
+        # is an advertised knob, so one ladder change turns this into a request
+        # no partition can schedule — a job that sits PENDING while the campaign
+        # looks alive, instead of a diagnosable OOM and a parse-time warning.
+        mem_mb = lambda wc, attempt: capped_mem(
+            attempt * (DEFECT_MEM_BASE_MB
+                       + 2 * defect_map_cov_bytes() // 1_000_000),
+            "defect_map_merge"),
         # Dominated by reading fragments (~2 MB each) and setting their pixels;
         # ~1 s per exposure measured, over a floor that covers writing the map.
         #

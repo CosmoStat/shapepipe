@@ -171,7 +171,11 @@ def ccd_files(exp_dir: Path, n_ccds: int) -> list:
                  f"the {n_ccds} this exposure was split into; the split dir is "
                  f"incomplete and a fragment built from it would be a hole in "
                  f"the footprint marked complete (see ccd_files' docstring). "
-                 f"Re-run exp_split for this exposure.")
+                 f"Re-run exp_split for this exposure: delete its scratch "
+                 f"manifests/exp_split.json and the workflow rebuilds the "
+                 f"split. Until it does, clean_exposure waits on this rule "
+                 f"and the store stays — a damaged store is not reclaimed "
+                 f"silently.")
     return sorted(out)
 
 
