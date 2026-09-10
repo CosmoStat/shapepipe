@@ -198,8 +198,8 @@ rule exp_persist:
 #
 # NOT A LOCALRULE, and this is where it parts company with exp_persist. That
 # rule is a tar of a few MB — seconds, far shorter than the scheduling latency.
-# This one is 40 CCDs of WCS transforms and ang2pix over ~17 M flagged pixels:
-# 37 s measured end to end on a real exposure at oversample 3 (2079612p, on this
+# This one is 40 CCDs of WCS transforms and ang2pix over ~16 M flagged pixels:
+# 34 s measured end to end on a real exposure at oversample 3 (2079612p, on this
 # login node, inside the campaign container; 21 s at oversample 2). That is real
 # work, it is CPU-bound, and running ~20k of them under local-cores in the head
 # process would serialise the campaign behind them.
@@ -213,11 +213,17 @@ rule exp_defect_map:
     output:
         manifest = f"{PROD_EXP_DIR}/manifests/exp_defect_map.json"
     # No `log:`, for exp_persist's reason: the failure modes are "no flag split
-    # under the store" and "a flag split with no image beside it", both reported
-    # on stderr, neither with a per-CCD verdict worth a completeness record.
+    # under the store", "fewer flag splits than N_HDU" and "a flag split with no
+    # image beside it", all reported on stderr, none with a per-CCD verdict
+    # worth a completeness record.
     params:
         exp_dir     = lambda wc: exp_dir(wc.exp),
         dest        = lambda wc: f"{prod_exp_dir(wc.exp)}/defect",
+        # config_exp_Sp.ini's own N_HDU, read at parse time. A split dir short
+        # of it is a hard error, not a smaller fragment: half an exposure's
+        # defects, written "complete", is a hole in the footprint nothing
+        # downstream can see (defect_map_exp.py's ccd_files argues it).
+        n_ccds      = DEFECT_N_CCDS,
         nside       = DEFECT_NSIDE,
         nside_cov   = DEFECT_NSIDE_COVERAGE,
         oversample  = DEFECT_OVERSAMPLE,
@@ -226,21 +232,31 @@ rule exp_defect_map:
     retries: 2
     resources:
         # Measured on 2079612p inside the container: peak RSS 0.62 GB at
-        # oversample 3 (0.41 GB at 2), dominated by one CCD's sample arrays
-        # (430k flagged pixels x 9 samples x two float64 coordinate arrays)
-        # plus the bit-packed fragment's 13 coverage pixels. Flat in the number
-        # of CCDs — they are rasterized one at a time — so this is sized on the
-        # worst CCD, not on the exposure, at ~3x it. It scales with
-        # `oversample`, which is why that knob is not free.
+        # oversample 3 (0.41 GB at 2), dominated by one BATCH of a CCD's sample
+        # arrays plus the bit-packed fragment's 13 coverage pixels.
+        #
+        # FLAT IN BOTH DIRECTIONS THAT COULD BLOW IT: in the number of CCDs,
+        # which are rasterized one at a time, and in how badly any one of them
+        # is flagged, which is batched at defect_map_exp.CHUNK source pixels.
+        # The second is the one worth requesting for — a MegaCam exposure
+        # routinely carries a dead or saturated chip, 9.4M flagged pixels, and
+        # unbatched that is several GB and three OOMs, after which the exposure
+        # has no fragment AND cannot be reclaimed (clean_exposure waits on this
+        # manifest). Measured on exactly that case, a fully flagged chip against
+        # a real WCS: 0.74 GB. So 2000 covers the worst CCD at ~2.7x, not the
+        # measured average at ~3x. It scales with `oversample`, which is why
+        # that knob is not free.
         mem_mb = lambda wc, attempt: 2000 * attempt,
-        # 37 s measured; a factor of ~30 for a dirtier exposure, a higher
-        # oversampling and a busy filesystem.
+        # 34 s measured end to end on 2079612p at oversample 3; a factor of
+        # ~35 for a dirtier exposure (a fully flagged chip is 18 s on its own),
+        # a higher oversampling and a busy filesystem.
         runtime = 20
     shell:
         "set -euo pipefail\n"
         f"python {SCRIPTS}/defect_map_exp.py"
         " --exp-dir '{params.exp_dir}' --exp {wildcards.exp}"
         " --dest '{params.dest}' --manifest {output.manifest}"
+        " --n-ccds {params.n_ccds}"
         " --nside {params.nside} --nside-coverage {params.nside_cov}"
         " --oversample {params.oversample}"
 
@@ -427,19 +443,36 @@ rule defect_map_merge:
         inputs       = unit_fingerprint(defect_map_exposures()),
         script_hash  = MERGE_DEFECT_HASH
     threads: 1
+    # Declared so the attempt scaling above is not dead code. One retry, not the
+    # two the exposure rules take: a failed attempt here has already cost hours,
+    # both declared outputs go with it, and the retry starts from an empty
+    # accumulator — there is nothing to salvage and little to gain from a third.
+    retries: 1
     resources:
         # Sized on the FOOTPRINT, not on the exposure count: the accumulator is
         # one bit per sparse pixel of every touched coverage pixel, and the loop
         # holds one fragment at a time (merge_defect_map.py's memory argument).
-        # DEFECT_COV_BYTES is that arithmetic, from the sidecar's own recorded
-        # coverage count once there is one and from a measured per-exposure
-        # figure before that; the Snakefile's sizing block carries both.
+        # defect_map_cov_bytes() is that arithmetic, from the sidecar's own
+        # recorded coverage count once there is one and, before that, from a
+        # per-exposure figure capped at the MEASURED DR6 footprint; the
+        # Snakefile's sizing block carries both and argues the cap.
         mem_mb = lambda wc, attempt: attempt * (
             DEFECT_MEM_BASE_MB + 2 * defect_map_cov_bytes() // 1_000_000),
         # Dominated by reading fragments (~2 MB each) and setting their pixels;
         # ~1 s per exposure measured, over a floor that covers writing the map.
-        runtime = lambda wc, attempt: attempt * (
-            20 + len(defect_map_exposures()) // 30)
+        #
+        # AND IT IS THE EXPENSIVE CASE THAT SETS IT. An append reads exactly the
+        # appended exposures and finishes in minutes; a REBUILD — any exposure
+        # leaving the campaign, any fragment restamped — reads all of them, ~40
+        # GB at DR6 scale, and that is the ~6 h this formula sizes for at 20k
+        # exposures. Capped below 12 h because the job holds no partial state
+        # and Alliance policy asks anything longer to checkpoint: it cannot, so
+        # it must not ask. If a campaign ever needs longer than DEFECT_RUNTIME_
+        # CAP_MIN, the accumulator has to become resumable (write map and
+        # sidecar every N fragments) rather than the cap being raised.
+        runtime = lambda wc, attempt: min(
+            attempt * (20 + len(defect_map_exposures()) // 60),
+            DEFECT_RUNTIME_CAP_MIN)
     shell:
         "set -euo pipefail\n"
         f"python {SCRIPTS}/merge_defect_map.py"
