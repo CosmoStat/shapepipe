@@ -1,25 +1,27 @@
 """COVERAGE_MAP_BUILDER
 
-Build HealSparse coverage maps from per-CCD corner coordinates.
+Stamp per-CCD sky footprints into a HealSparse coverage (nexp) map.
 
-Each input row is one CCD footprint. Since the CCDs of a single exposure do
-not overlap, stamping value 1 per CCD polygon and accumulating makes the map
-count, per sky pixel, the number of exposures with a valid PSF model covering
-that pixel.
+Each polygon is one CCD footprint. Since the CCDs of a single exposure do not
+overlap, stamping value 1 per CCD polygon and accumulating makes the map count,
+per sky pixel, the number of exposures with a valid PSF model covering that
+pixel.
+
+Arrays in, map out. The only caller is the ``coverage_map`` rule
+(``workflow/scripts/coverage_map.py``), which reads the corners out of the
+per-exposure ``exp_footprint.json`` records; the nine-column ``exp_ra_dec.txt``
+the pre-Snakemake chain appended to is gone, and so is the CLI that parsed it.
+What is left here is survey geometry — the RA-seam guard, the pole guard, the
+nside validation and the median smoothing — none of which depends on how the
+corners arrived.
 
 Author: Mike Hudson, Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 
-import sys
-from os.path import exists
-
-import numpy as np
 import healsparse as hsp
 import hpgeom as hpg
-
-from cs_util import args as cs_args
-from cs_util import logging
+import numpy as np
 
 # Declination beyond which a polygon is considered too close to a pole for
 # HealSparse's planar polygon fill to be reliable. CCD footprints are ~10
@@ -52,162 +54,134 @@ def unwrap_ra(ra):
     return ra
 
 
+def check_nside(nside_coverage, nside):
+    """Raise unless both HealSparse resolutions are positive powers of two.
 
-class CoverageMapBuilder(object):
-    """Coverage Map Builder Class.
+    Checked before any polygon is stamped: healsparse itself complains only
+    once a map is being made, by which time the caller has already paid for
+    reading every footprint record on the products root.
 
-    Builds HealSparse coverage maps from field corner coordinates.
+    Parameters
+    ----------
+    nside_coverage : int
+        HealSparse coverage nside
+    nside : int
+        HealSparse map nside
+
+    Raises
+    ------
+    ValueError
+        if either value is not a positive power of two
+
     """
+    for name, n in (("nside_coverage", nside_coverage), ("nside", nside)):
+        if n <= 0 or n & (n - 1):
+            raise ValueError(f"{name} must be a power of 2, got {n}")
 
-    def __init__(self):
-        """Initialize the builder."""
-        self.params_default()
 
-    def params_default(self):
-        """Set default parameters and command line options."""
+def build_map(
+    ccd_ids, ra, dec, nside_coverage, nside, verbose=False
+):
+    """Stamp one polygon per CCD footprint into a HealSparse nexp map.
 
-        self._params = {
-            "input_file": "exp_ra_dec.txt",
-            "output_file": "coverage.hsp",
-            "nside_coverage": 32,
-            "nside": 2048,
-            "apply_median_filter": False,
-            "n_median_iterations": 2,
-            "create_boolean": False,
-            "boolean_threshold": 3,
-            "boolean_output": None,
-            "create_plot": False,
-            "plot_output": None,
-            "plot_region": None,
-            "verbose": False,
-        }
+    Since the CCDs of a single exposure do not overlap, accumulating value 1
+    per CCD polygon makes the map count, per sky pixel, the number of
+    exposures with a valid PSF model covering it.
 
-        self._short_options = {
-            "input_file": "-i",
-            "output_file": "-o",
-            "nside_coverage": "-c",
-            "nside": "-n",
-            "apply_median_filter": "-m",
-            "n_median_iterations": "-N",
-            "create_boolean": "-b",
-            "boolean_threshold": "-t",
-            "boolean_output": "-B",
-            "create_plot": "-p",
-            "plot_output": "-P",
-            "plot_region": "-g",
-        }
+    Parameters
+    ----------
+    ccd_ids : array_like
+        length-N CCD IDs, used only in the skipped-polygon warnings
+    ra : array_like
+        ``(N, 4)`` polygon RA corners, in degrees
+    dec : array_like
+        ``(N, 4)`` polygon Dec corners, in degrees
+    nside_coverage : int
+        HealSparse coverage nside
+    nside : int
+        HealSparse map nside
+    verbose : bool, optional
+        print progress
 
-        self._types = {
-            "nside_coverage": "int",
-            "nside": "int",
-            "apply_median_filter": "bool",
-            "n_median_iterations": "int",
-            "create_boolean": "bool",
-            "boolean_threshold": "int",
-            "create_plot": "bool",
-            "verbose": "bool",
-        }
+    Returns
+    -------
+    healsparse.HealSparseMap
+        the nexp map
 
-        self._help_strings = {
-            "input_file": "input file with field corners; default is {}",
-            "output_file": "output HealSparse map file; default is {}",
-            "nside_coverage": "HealSparse coverage nside; default is {}",
-            "nside": "HealSparse map nside; default is {}",
-            "apply_median_filter": "apply median filter to smooth map; default is {}",
-            "n_median_iterations": "number of median filter iterations; default is {}",
-            "create_boolean": "create boolean coverage map; default is {}",
-            "boolean_threshold": "threshold value for boolean map; default is {}",
-            "boolean_output": "output file for boolean map; default is <output_file>_bool.hsp",
-            "create_plot": "create plot of coverage map; default is {}",
-            "plot_output": "output file for plot; default is <output_file>.png",
-            "plot_region": "predefined region for plot (NGC, SGC, fullsky); default is {}",
-        }
+    """
+    check_nside(nside_coverage, nside)
 
-    def set_params_from_command_line(self, args):
-        """Set Params From Command line.
+    ra = np.atleast_2d(np.asarray(ra, dtype=float))
+    dec = np.atleast_2d(np.asarray(dec, dtype=float))
 
-        Only use when calling using python from command line.
-        Does not work from ipython or jupyter.
-
-        Parameters
-        ----------
-        args : list
-            command line arguments
-
-        """
-        # Read command line options
-        options = cs_args.parse_options(
-            self._params,
-            self._short_options,
-            self._types,
-            self._help_strings,
-            args=args,
+    if verbose:
+        print(
+            f"Creating HealSparse map (nside_coverage={nside_coverage},"
+            f" nside={nside})"
         )
-        self._params = options
+    m = hsp.HealSparseMap.make_empty(nside_coverage, nside, np.uint16)
 
-        # Save calling command
-        logging.log_command(args)
+    if verbose:
+        print("Adding polygons to map")
 
-    def update_params(self):
-        """Update parameters.
+    n_added = 0
+    n_skipped = 0
+    for i in range(len(ccd_ids)):
+        dec_i = dec[i]
 
-        Set derived parameters based on input parameters.
-        """
-        # Set boolean output filename if not specified
-        if self._params["boolean_output"] is None:
-            output_file = self._params["output_file"]
-            if output_file.endswith(".hsp"):
-                base = output_file[:-4]
-            else:
-                base = output_file
-            self._params["boolean_output"] = f"{base}_bool.hsp"
-
-        # Set plot output filename if not specified
-        if self._params["plot_output"] is None:
-            output_file = self._params["output_file"]
-            if output_file.endswith(".hsp"):
-                base = output_file[:-4]
-            else:
-                base = output_file
-            self._params["plot_output"] = f"{base}.png"
-
-    def check_params(self):
-        """Check parameters for validity."""
-        if not exists(self._params["input_file"]):
-            raise FileNotFoundError(
-                f"Input file not found: {self._params['input_file']}"
+        # Pole guard: HealSparse's planar polygon fill degrades near the
+        # poles. CCD footprints never reach here, so warn and skip.
+        if np.any(np.abs(dec_i) >= _DEC_POLE_LIMIT):
+            print(
+                f"Warning: skipping CCD {ccd_ids[i]} with |dec| >= "
+                f"{_DEC_POLE_LIMIT} (too close to a pole)"
             )
+            n_skipped += 1
+            continue
 
-        # Check nside values are powers of 2
-        nside_coverage = self._params["nside_coverage"]
-        nside = self._params["nside"]
+        # RA-wrap guard: put corners on a common branch across the seam.
+        ra_i = unwrap_ra(ra[i])
 
-        if not (nside_coverage & (nside_coverage - 1) == 0):
-            raise ValueError(
-                f"nside_coverage must be a power of 2, got {nside_coverage}"
-            )
+        m += hsp.Polygon(ra=list(ra_i), dec=list(dec_i), value=1)
+        n_added += 1
 
-        if not (nside & (nside - 1) == 0):
-            raise ValueError(f"nside must be a power of 2, got {nside}")
+        if verbose and i % 1000 == 0:
+            print(f"{i:6d} / {len(ccd_ids):6d}")
 
-    def median_filter(self, hsp_map):
-        """Median Filter.
+    print(f"Added {n_added} polygons to map")
+    if n_skipped > 0:
+        print(f"Skipped {n_skipped} polygons near a pole")
 
-        Apply median filter to HealSparse map using neighbors.
+    return m
 
-        Parameters
-        ----------
-        hsp_map : healsparse.HealSparseMap
-            input map
 
-        Returns
-        -------
-        healsparse.HealSparseMap
-            filtered map
+def median_filter(hsp_map, n_iterations=1):
+    """Smooth an nexp map: each pixel becomes its neighbourhood median.
 
-        """
-        nside = hsp_map.nside_sparse
+    The neighbourhood is a pixel and its eight HEALPix neighbours; out-of-map
+    neighbours read as the map's sentinel and so pull an edge pixel down,
+    which is the intended behaviour for a coverage map (a lone pixel is noise,
+    not depth). The ``coverage_map`` rule does NOT smooth — the map it writes
+    is the raw exposure count, which is what sp_validation's mask application
+    wants — so this is the offline step, for looking at a map rather than
+    applying one.
 
+    Parameters
+    ----------
+    hsp_map : healsparse.HealSparseMap
+        input nexp map
+    n_iterations : int, optional
+        number of smoothing passes
+
+    Returns
+    -------
+    healsparse.HealSparseMap
+        filtered map
+
+    """
+    nside = hsp_map.nside_sparse
+
+    for _ in range(n_iterations):
         new_hsp = hsp_map.copy()
         pixs = hsp_map.valid_pixels
         n = hpg.neighbors(nside, pixs)
@@ -217,156 +191,6 @@ class CoverageMapBuilder(object):
         mn = hsp_map[n]
         new = np.median(mn, axis=1).astype(np.uint16)
         new_hsp[pixs] = new
+        hsp_map = new_hsp
 
-        return new_hsp
-
-    def run(self, args=None):
-        """Run.
-
-        Main execution method.
-
-        Parameters
-        ----------
-        args : list, optional
-            command line arguments
-
-        Returns
-        -------
-        int
-            exit code (0 for success)
-
-        """
-        if args is None:
-            args = sys.argv[1:]
-
-        # Set parameters from command line
-        self.set_params_from_command_line(args)
-        self.update_params()
-        self.check_params()
-
-        # Get parameters
-        input_file = self._params["input_file"]
-        output_file = self._params["output_file"]
-        nside_coverage = self._params["nside_coverage"]
-        nside = self._params["nside"]
-        apply_median_filter = self._params["apply_median_filter"]
-        n_median_iterations = self._params["n_median_iterations"]
-        create_boolean = self._params["create_boolean"]
-        boolean_threshold = self._params["boolean_threshold"]
-        boolean_output = self._params["boolean_output"]
-        create_plot = self._params["create_plot"]
-        plot_output = self._params["plot_output"]
-        plot_region = self._params["plot_region"]
-        verbose = self._params["verbose"]
-
-        if verbose:
-            print(f"Reading per-CCD corners from: {input_file}")
-
-        # Load per-CCD corner data. Column 0 is a "<expnum>-<ccd_idx>" string
-        # ID; the remaining 8 columns are the 4 RA then 4 Dec corners.
-        ccd_ids = np.atleast_1d(np.loadtxt(input_file, usecols=(0), dtype=str))
-        corners = np.atleast_2d(
-            np.loadtxt(input_file, usecols=range(1, 9), dtype=float)
-        )
-        ra_all = corners[:, :4]
-        dec_all = corners[:, 4:]
-
-        print(f"Loaded {len(ccd_ids)} CCD footprints")
-
-        if verbose:
-            print(
-                f"Creating HealSparse map (nside_coverage={nside_coverage}, nside={nside})"
-            )
-
-        # Create empty map
-        m = hsp.HealSparseMap.make_empty(nside_coverage, nside, np.uint16)
-
-        # Add one polygon per CCD footprint
-        if verbose:
-            print("Adding polygons to map")
-
-        n_added = 0
-        n_skipped = 0
-        for i in range(len(ccd_ids)):
-            dec = dec_all[i]
-
-            # Pole guard: HealSparse's planar polygon fill degrades near the
-            # poles. CCD footprints never reach here, so warn and skip.
-            if np.any(np.abs(dec) >= _DEC_POLE_LIMIT):
-                print(
-                    f"Warning: skipping CCD {ccd_ids[i]} with |dec| >= "
-                    f"{_DEC_POLE_LIMIT} (too close to a pole)"
-                )
-                n_skipped += 1
-                continue
-
-            # RA-wrap guard: put corners on a common branch across the seam.
-            ra = unwrap_ra(ra_all[i])
-
-            m += hsp.Polygon(ra=list(ra), dec=list(dec), value=1)
-            n_added += 1
-
-            if verbose and i % 1000 == 0:
-                print(f"{i:6d} / {len(ccd_ids):6d}")
-
-        print(f"Added {n_added} polygons to map")
-        if n_skipped > 0:
-            print(f"Skipped {n_skipped} polygons near a pole")
-
-        # Apply median filter if requested
-        if apply_median_filter:
-            if verbose:
-                print(
-                    f"Applying median filter ({n_median_iterations} iterations)"
-                )
-
-            for i in range(n_median_iterations):
-                m = self.median_filter(m)
-                if verbose:
-                    print(f"  Iteration {i+1}/{n_median_iterations} complete")
-
-        # Write main coverage map
-        if verbose:
-            print(f"Writing coverage map to: {output_file}")
-
-        m.write(output_file, clobber=True)
-        print(f"Coverage map saved to {output_file}")
-
-        # Create and write boolean map if requested
-        if create_boolean:
-            if verbose:
-                print(
-                    f"Creating boolean map (threshold={boolean_threshold})"
-                )
-
-            c = hsp.HealSparseMap.make_empty(nside_coverage, nside, bool)
-            c[m.valid_pixels] = m[m.valid_pixels] >= boolean_threshold
-
-            if verbose:
-                print(f"Writing boolean map to: {boolean_output}")
-
-            c.write(boolean_output, clobber=True)
-            print(f"Boolean map saved to {boolean_output}")
-
-        # Create plot if requested
-        if create_plot:
-            if verbose:
-                print(f"Creating plot of coverage map")
-
-            try:
-                from shapepipe.utilities.coverage_plotter import CoveragePlotter
-                plotter = CoveragePlotter()
-                plotter.plot_coverage_map(
-                    m,
-                    plot_output,
-                    region=plot_region,
-                    vmax=boolean_threshold if create_boolean else 3,
-                    colorbar=True,
-                    colorbar_label="Coverage depth",
-                )
-                print(f"Plot saved to {plot_output}")
-            except ImportError as e:
-                print(f"Warning: Could not create plot: {e}")
-                print("Install the cs_util package for plotting support.")
-
-        return 0
+    return hsp_map

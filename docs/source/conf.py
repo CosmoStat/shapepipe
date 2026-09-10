@@ -104,6 +104,10 @@ todo_include_todos = True
 
 myst_enable_extensions = ["html_image"]
 
+# Generate slug anchors for h1-h3 so in-page links like
+# `[Mask images](#mask-images)` resolve instead of warning.
+myst_heading_anchors = 3
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for

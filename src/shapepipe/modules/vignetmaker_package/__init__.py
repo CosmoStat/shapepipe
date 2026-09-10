@@ -35,15 +35,22 @@ MODE : str
     Run mode for module, options are ``CLASSIC`` or ``MULTI-EPOCH``
 PREFIX : str or list
     Output file name prefix(es)
-ME_IMAGE_DIR : list
-    Module names of last run producing single-exposure flags, images, weights,
-    and SExtractor background images, for multi-epoch processing. The specifier
-    "last:" is not required
+ME_IMAGE_EXP_DIR : str
+    Root of the per-exposure work directories, for multi-epoch processing;
+    each runner output directory is resolved beneath it for every exposure
+    listed in the input ``exp_numbers`` file
+ME_IMAGE_EXP_RUNNERS : list
+    Names of the runners producing the single-exposure flags, images, weights
+    and SExtractor background images, in the same order as
+    ``ME_IMAGE_PATTERN``
 ME_IMAGE_PATTERN : list
     Input file name patterns for flag, image, weight, and SExtractor background
     files, for multi-epoch processing
-ME_LOG_WCS : str
-    Path to world coordinate system log file (``*sqlite``)
+
+In ``MULTI-EPOCH`` mode the input file list is positional and carries three
+entries -- the galaxy catalogue, the world-coordinate-system log
+(``*sqlite``) and the ``exp_numbers`` file -- set through ``FILE_PATTERN``
+and ``FILE_EXT``, not through module-specific keys.
 
 """
 

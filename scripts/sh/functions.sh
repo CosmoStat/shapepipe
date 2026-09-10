@@ -1,95 +1,10 @@
-# Global variables
-SSL=~/.ssl/cadcproxy.pem
-SESSION=https://ws-uv.canfar.net/skaha/v0/session
-IMAGE=images.canfar.net/unions/shapepipe
-NAME=shapepipe
+# Shell helper sourced by run_job_sp_canfar_v2.0.bash.
+#
+# command() reads $VERBOSE, $debug_out, $pat and $STOP as free variables set
+# by its caller; the two defaults below cover callers that set neither.
 
-version="2.0"
-cmd_remote="$HOME/shapepipe/scripts/sh/run_job_sp_canfar_v2.0.bash"
 pat="---- "
 STOP=0
-
-
-get_line_from_file() {
-    local file=""
-    local OPTIND opt
-
-    # Parse options: look for -f <filename>
-    while getopts ":f:" opt; do
-        case $opt in
-            f)
-                file="$OPTARG"
-                ;;
-            \?)
-                echo "Unknown option: -$OPTARG", ", continuing"
-                #return 1
-                ;;
-            :)
-                echo "Option -$OPTARG requires an argument."
-                return 1
-                ;;
-        esac
-    done
-
-    # Check that file and REPLICA_ID are set
-    if [[ -z "$file" ]]; then
-        echo "Error: -f option not provided."
-        return 1
-    fi
-    if [[ -z "$REPLICA_ID" ]]; then
-        echo "Error: REPLICA_ID not set."
-        return 1
-    fi
-
-    # Check file exists
-    if [[ ! -f "$file" ]]; then
-        echo "Error: file '$file' not found."
-        return 1
-    fi
-
-    # Extract the line corresponding to REPLICA_ID (1-based index)
-    sed -n "${REPLICA_ID}p" "$file"
-}
-
-
-
-# Add session and image IDs to log files
-function update_session_logs() {
-  echo $my_session >> session_IDs.txt
-  echo "$my_session $ID" >> session_image_IDs.txt
-}
-
-function call_curl() {
-  my_name=$1
-  my_job=$2
-  my_psf=$3
-  my_ID=$4
-  my_N_SMP=$5
-  my_dry_run=$6
-  my_dir=$7
-  my_debug_out=$8
-  my_scratch=$9
-  my_test_arg=${10}
-
-  my_arg="-j $my_job -p $my_psf -e $my_ID -N $my_N_SMP -n $my_dry_run -d $my_dir --debug_out $my_debug_out -S $my_scratch $my_test_arg"
-
-  if [ "$my_dry_run" == "0" ]; then
-    my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${my_name}" -d "cmd=$cmd_remote" --data-urlencode "args=${my_arg[@]}"`
-  fi
-
-  cmd=("curl" "-E" "$SSL" "$SESSION?$RESOURCES" "-d" "image=$IMAGE:$version" "-d" "name=${my_name}" "-d" "cmd=$cmd_remote" "--data-urlencode" "args=\"${my_arg}\"")
-
-  if [ -n "$my_debug_out" ]; then
-    echo "${pat}call_curl $my_name $my_arg" >> $my_debug_out
-    echo "${pat}Running ${cmd[@]} (dry_run=$my_dry_run)" >> $my_debug_out
-  fi
-  echo "${cmd[@]} (dry_run=$my_dry_run)"
-
-
-  # Running $cmd does not work due to unknown problems with passing of args
-
-  update_session_logs
-}
 
 
 ## Print string, executes command, and prints return value.
@@ -141,58 +56,4 @@ function command () {
             fi
         fi
    fi
-}
-
-
-function get_kind_from_job() {
-    my_job=$1
-
-    job_to_test=2
-    kind="none"
-
-    # loop over possible job numbers
-    while  [ $job_to_test -le 1024 ]; do
-
-      (( do_job = $job & $job_to_test ))
-      if [[ $do_job != 0 ]]; then
-
-        if [ $job_to_test == 32 ]; then
-          if [ "$kind" == "tile" ]; then
-            echo "Error: Invalid job $job. mixing tile and exp kinds"
-            exit 6
-          fi
-
-          # job=32 -> set kind to exp
-          kind="exp"
-        elif [ $job_to_test == 2 ]; then
-          if [ "$kind" == "tile" ]; then
-            echo "Error: Invalid job $job. mixing tile and exp kinds"
-            exit 6
-          fi
-
-          kind="exp"
-        elif [ $job_to_test == 8 ]; then
-          if [ "$kind" == "tile" ]; then
-            echo "Error: Invalid job $job. mixing tile and exp kinds"
-            exit 6
-          fi
-
-          kind="exp"
-        else
-          if [ "$kind" == "exp" ]; then
-            echo "Error: Invalid job $job. mixing tile and exp kinds"
-            exit 6
-          fi
-
-          # job != 32 -> set kind to tile
-          kind="tile"
-        fi
-
-    fi
-
-    # Multiply job number by two to get next bitwise number
-    job_to_test=$((job_to_test * 2))
-  done
-
-  echo $kind
 }

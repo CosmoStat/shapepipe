@@ -1,6 +1,6 @@
 """Exposure chain — per exposure, keyed by exp base id (dedup is structural).
 
-    exp_get_images -> exp_split -> exp_psf -> exp_persist
+    exp_get_images -> exp_split -> exp_psf -> exp_persist -> exp_footprint
 
 Each in the exposure's own sharded work dir, chained by manifests; every config
 reads fixed ``$SP_RUN/output/run_sp_exp_*`` INPUT_DIRs, so nothing resolves a
@@ -21,8 +21,12 @@ here, and no ``exp_mask``.
 packs the PSF products named by `persist_exp:` into one tar per exposure off
 /scratch before the purge (or clean_exposure) can take them. It is a separate
 rule from exp_psf precisely so that editing that list costs a re-pack and not a
-four-hour refit; the full
-argument is in workflow/scripts/persist_exp.py.
+four-hour refit; the full argument is in workflow/scripts/persist_exp.py.
+``exp_footprint`` follows it, and writes to the same root for the same reason:
+it records where on the sky the CCDs that got a PSF model are, which is the
+coverage mask's raw material (workflow/scripts/exp_footprint.py,
+rules/coverage.smk).
+
 
 NO temp() anywhere in this file, ever (D5). Exposures overlap tiles by
 construction (~7-10 tiles each), so their consumer set closes over the CAMPAIGN,
@@ -169,6 +173,58 @@ rule exp_persist:
         " {params.patterns}"
 
 
+# --- per-CCD sky footprints -------------------------------------------------
+# One JSON per exposure recording, for each CCD that HAS a PSF model, the four
+# sky corners of that CCD. It is the raw material of the campaign's coverage mask
+# (rules/coverage.smk), and it replaces the v1.x chain's VOSpace header download
+# + summary-scrape subtraction with a local read of two things this workflow
+# already wrote. workflow/scripts/exp_footprint.py argues both inputs and the
+# CCD-index invariant tests/unit/test_exp_footprint.py pins.
+#
+# A LOCALRULE (declared in the Snakefile), by exp_persist's arithmetic and then
+# some: one pickle load and ~160 pixel_to_world calls, milliseconds, against a
+# scheduling latency of seconds and ~20k exposures at DR6 scale.
+#
+# ONE DECLARED INPUT, AND IT IS THE PERSIST MANIFEST — deliberately NOT
+# exp_psf's as well, even though the WCS array this rule reads is written by
+# exp_split and lives in the same scratch store. exp_persist already orders this
+# rule after the whole PSF chain, so the second edge would buy no ordering; what
+# it WOULD buy is a scratch manifest (the one clean_exposure deletes) in the
+# input list of a rule whose output is durable. A persistent-root manifest
+# outliving a purged scratch store is a real state, and in it that edge would
+# schedule a four-hour VOS rebuild of the exposure to satisfy a few KB of
+# provenance. Declaring only the durable input makes the same state a loud
+# one-line failure from the script instead.
+#
+# WRITES TO THE PERSISTENT ROOT, beside exp_persist's manifest and for the same
+# reason: the record must outlive both reclamation and the purge — a coverage
+# map is campaign-cumulative, so a record written today is read by every map
+# built after it.
+rule exp_footprint:
+    input:
+        lambda wc: prod_exp_manifest(wc.exp, "exp_persist")
+    output:
+        manifest = f"{PROD_EXP_DIR}/manifests/exp_footprint.json"
+    # No `log:`, for exp_persist's reason: the failure modes are "no WCS array"
+    # and "the two stages disagree about the focal plane", both of which the
+    # script reports on stderr and neither of which has a per-CCD verdict.
+    params:
+        exp_dir     = lambda wc: exp_dir(wc.exp),
+        persist     = lambda wc: prod_exp_manifest(wc.exp, "exp_persist"),
+        script_hash = FOOTPRINT_HASH
+    threads: 1
+    retries: 2
+    resources:
+        mem_mb = 2000,
+        runtime = 10
+    shell:
+        "set -euo pipefail\n"
+        f"python {SCRIPTS}/exp_footprint.py"
+        " --exp-dir '{params.exp_dir}' --exp {wildcards.exp}"
+        " --persist-manifest '{params.persist}'"
+        " --manifest {output.manifest}"
+
+
 # --- reclamation (D5) -------------------------------------------------------
 # The one exception to "no reclamation in this file": clean_exposure OWNS
 # exposure-level deletion, and it is a real job, not temp() bookkeeping, because
@@ -207,7 +263,13 @@ rule clean_exposure:
         # exposure's chain did not already put there. It is UNCONDITIONAL now:
         # exp_persist always packs the star catalogue's inputs, so there is no
         # keep list under which this rule has nothing to wait for.
-        lambda wc: [prod_exp_manifest(wc.exp, "exp_persist")]
+        lambda wc: [prod_exp_manifest(wc.exp, "exp_persist")],
+        # And the footprint, for the same ordering reason one layer further out:
+        # it is derived from headers-<exp>.npy, which lives in the store this job
+        # deletes. Reclamation must not overtake the read, and unlike the purge
+        # this deletion is ours to order. Unconditional for exp_persist's reason:
+        # the psf_validation catalogues it reads are always packed.
+        lambda wc: [prod_exp_manifest(wc.exp, "exp_footprint")]
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
     params:
