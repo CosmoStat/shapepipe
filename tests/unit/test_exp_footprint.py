@@ -36,7 +36,8 @@ from astropy.io.fits import Header
 from astropy.wcs import WCS
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = REPO_ROOT / "workflow" / "scripts" / "exp_footprint.py"
+SCRIPTS = REPO_ROOT / "workflow" / "scripts"
+SCRIPT = SCRIPTS / "exp_footprint.py"
 
 EXP = "2605805"
 # MegaCam-ish: 2048 x 4612 pixels at 0.187"/pixel, i.e. ~0.106 x 0.240 deg.
@@ -45,11 +46,19 @@ PIXSCALE = 0.187 / 3600.0
 
 
 def _load():
-    """Import the script by path — ``workflow/scripts`` is not a package."""
+    """Import the script by path — ``workflow/scripts`` is not a package.
+
+    Its ``persist_exp`` import is a sibling it reaches through ``sys.path[0]``,
+    which is how the rule invokes it, so the directory goes on the path here too.
+    """
     assert SCRIPT.exists(), f"{SCRIPT} not found; the rule calls it by path"
-    spec = importlib.util.spec_from_file_location("_exp_footprint", SCRIPT)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    sys.path.insert(0, str(SCRIPTS))
+    try:
+        spec = importlib.util.spec_from_file_location("_exp_footprint", SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.remove(str(SCRIPTS))
     return module
 
 
@@ -98,16 +107,26 @@ def store(tmp_path):
     return tmp_path
 
 
-def persist_manifest(path, ccds, patterns=("validation_psf-*.fits",)):
+def persist_manifest(path, ccds, patterns=("validation_psf-*.fits",),
+                     label=True):
     """An ``exp_persist`` manifest naming exactly ``ccds`` as PSF-bearing.
 
     Shaped as persist_exp.py writes it, including the decoy member: a keep list
     of several patterns packs files this script must ignore, and reading a CCD
     index out of one of them would be a real bug.
+
+    ``label=False`` drops the ``product`` field, which is how a tar packed
+    before that field existed reads back — the case the name glob catches.
     """
-    files = [{"name": f"validation_psf-{EXP}-{c}.fits",
-              "pattern": "validation_psf-*.fits", "bytes": 1} for c in ccds]
-    files.append({"name": f"{EXP}-0.psf", "pattern": "*.psf", "bytes": 1})
+    files = []
+    for c in ccds:
+        entry = {"name": f"validation_psf-{EXP}-{c}.fits",
+                 "pattern": "validation_psf-*.fits", "bytes": 1}
+        if label:
+            entry["product"] = "psf_validation"
+        files.append(entry)
+    files.append({"name": f"{EXP}-0.psf", "product": "psf_model",
+                  "pattern": "*.psf", "bytes": 1})
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(
         {"stage": "exp_persist", "unit": EXP, "status": "complete",
@@ -203,18 +222,35 @@ def test_byte_stable_rerun_keeps_the_mtime(store, monkeypatch):
     assert not list(out.parent.glob("*.tmp"))
 
 
-def test_keep_list_without_the_psf_pattern_is_fatal(store, monkeypatch):
-    """A manifest that packs no validation_psf files names no valid-PSF set.
+def test_unlabelled_members_are_found_by_name(store, monkeypatch):
+    """A tar packed before persist_exp labelled its members still reads.
 
-    Writing an empty footprint there would be indistinguishable from an
-    exposure that genuinely lost every CCD, and the map would silently lose a
-    whole exposure's worth of sky.
+    Membership is the product label OR the file name, merge_star_cat's test
+    exactly. The label is what persist_exp writes today; the name glob is what
+    an older manifest, or a keep list written as a raw glob, leaves behind.
+    Neither may make an exposure silently contribute no sky.
     """
-    persist = persist_manifest(store / "prod" / "exp_persist.json", [],
+    persist = persist_manifest(store / "prod" / "exp_persist.json", [0, 2, 5],
+                               label=False)
+    record = run(store, persist, store / "prod" / "exp_footprint.json",
+                 monkeypatch)
+    assert [c["id"] for c in record["ccds"]] == [f"{EXP}-{i}"
+                                                 for i in (0, 2, 5)]
+
+
+def test_the_keep_list_cannot_turn_the_psf_set_off(store, monkeypatch):
+    """`persist_exp:` is optional retention and no precondition of this rule.
+
+    exp_persist packs every CCD's psf_validation whatever the keep list says
+    (its ALWAYS), so a manifest whose `patterns` name only other products still
+    carries the valid-PSF set, and this rule must read it rather than refuse.
+    """
+    persist = persist_manifest(store / "prod" / "exp_persist.json", [0, 2, 5],
                                patterns=("*.psf",))
-    with pytest.raises(SystemExit) as exc:
-        run(store, persist, store / "prod" / "exp_footprint.json", monkeypatch)
-    assert "persist_exp" in str(exc.value)
+    record = run(store, persist, store / "prod" / "exp_footprint.json",
+                 monkeypatch)
+    assert [c["id"] for c in record["ccds"]] == [f"{EXP}-{i}"
+                                                 for i in (0, 2, 5)]
 
 
 def test_psf_for_a_ccd_the_split_never_wrote_is_fatal(store, monkeypatch):
