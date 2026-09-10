@@ -87,7 +87,7 @@ outputs:
 #
 # WHAT IS ALWAYS KEPT, AND IS NOT A CHOICE HERE: psf_validation, the psfex_interp
 # validation catalogue, one per CCD. `star_cat_merge` stacks every one of them
-# into the campaign's <products_dir>/full_starcat-0000000.fits, so they are that
+# into <products_dir>/full_starcat_<campaign>.hdf5, so they are that
 # catalogue's PROVENANCE — a merged star catalogue with no per-exposure inputs
 # beside it cannot be audited, re-cut, or recomputed after a purge — and they are
 # what keeps APPENDING TILES CHEAP, since a tile added next month brings

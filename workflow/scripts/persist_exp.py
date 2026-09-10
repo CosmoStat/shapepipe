@@ -348,7 +348,15 @@ def main() -> None:
                                   for f in json.loads(prior.read_text())["files"]}
             except (OSError, ValueError, KeyError):
                 pass                      # a damaged manifest loses only labels
-        with tarfile.open(tar_path) as tf:
+        try:
+            old_read = tarfile.open(tar_path)
+        except tarfile.TarError as exc:
+            sys.exit(f"persist_exp: {args.exp}: cannot read the existing "
+                     f"{tar_path}: {exc}. Refusing to write a new one — the "
+                     f"old tar is left exactly as it is, and it may still hold "
+                     f"products nothing else has. Move it aside deliberately "
+                     f"if you have decided it is lost.")
+        with old_read as tf:
             for ti in tf.getmembers():
                 if ti.name in seen or not ti.isfile():
                     continue              # a live source supersedes it
@@ -378,6 +386,7 @@ def main() -> None:
         # byte-for-byte what it was and a rerun that changes nothing still
         # produces an identical archive.
         with tarfile.open(tmp, "w", format=tarfile.PAX_FORMAT) as tf:
+            # Already proven readable above, where the members were listed.
             old_tar = (tarfile.open(tar_path) if carried else None)
             try:
                 for f in files:

@@ -353,8 +353,25 @@ def path_hash(path):
     workflow/scripts/ nor a declared input. Without them in the hash, this PR's
     own edits to both would have left every finished campaign's hdf5 untouched
     and nothing would have said so.
+
+    A MISSING FILE IS NOT A PARSE ERROR. This runs at module level, so raising
+    here kills EVERY invocation of the workflow — `sp --unlock`, `sp report`,
+    a dry run — over a file only one rule needs. Worse, it kills them with a
+    bare FileNotFoundError, which is exactly the diagnosis merge_final_cat.py
+    already carries and would print if the job were allowed to reach it. So the
+    hash degrades to a sentinel and says so once; the parse survives, the rule
+    still exists, and the job fails with the message written for it.
     """
-    return hashlib.md5(Path(path).read_bytes()).hexdigest()[:12]
+    path = Path(path)
+    try:
+        return hashlib.md5(path.read_bytes()).hexdigest()[:12]
+    except OSError:
+        if workflow.is_main_process:
+            logger.warning(
+                f"missing: {path} — it is part of a rule's rerun trigger, so "
+                f"that rule cannot tell whether it is out of date. The job "
+                f"that needs the file will say so when it runs.")
+        return "missing"
 
 SCRIPT_HASH = script_hash("completeness.py")
 FOREST_HASH = script_hash("build_forest.py")
@@ -596,9 +613,9 @@ def exp_store_reclaimed(exp):
 # --- the campaign-level merges ---------------------------------------------
 # Two rules, one job each per campaign, both writing to the persistent root, and
 # both the LAST link of a chain whose per-unit half the workflow already had:
-# the exposure side ends in one `full_starcat-0000000.fits` (every CCD's PSF
-# validation catalogue, stacked — the rho/tau statistics input) and the tile side
-# in one `final_cat_<campaign>.hdf5` (every tile's final catalogue — the shear
+# the exposure side ends in one `full_starcat_<campaign>.hdf5` (every CCD's PSF
+# validation catalogue — the rho/tau statistics input) and the tile side in one
+# `final_cat_<campaign>.hdf5` (every tile's final catalogue — the shear
 # catalogue sp_validation reads). Until they existed the workflow's product set
 # was two files short of what the old `combine_runs.bash` + `create_final_cat.py`
 # chain delivered, and every campaign ended with a manual merge.

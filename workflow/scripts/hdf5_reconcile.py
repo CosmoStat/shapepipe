@@ -23,7 +23,12 @@ data. So the file is brought INTO AGREEMENT with the campaign instead:
     file's root.
   * a dataset that agrees with its source and its schema is left alone, unread.
 
-An append therefore reads exactly the appended units.
+An append therefore READS exactly the appended units. It still WRITES the whole
+file: the existing one is copied so the result can be moved into place
+atomically, which costs one pass over it and, briefly, twice its size on disk.
+That is the cheap half by orders of magnitude — copying a 1 GB hdf5 against
+re-reading 800 GB of catalogues — but it is not free, and `apply` refuses rather
+than filling the filesystem when the free space is not there.
 
 WHAT IS AND IS NOT A FUNCTION OF THE INPUT SET. The file's CONTENT is: the same
 units with the same sources give the same datasets, the same columns and the
@@ -41,6 +46,7 @@ change.
 
 import hashlib
 import shutil
+import sys
 from pathlib import Path
 
 import h5py
@@ -106,6 +112,56 @@ def plan(output: Path, group_path: str, units: list, digest: str) -> Plan:
     return Plan(add, refresh, sorted(present - want))
 
 
+# Twice the file, plus a tenth of it again: the copy and the original coexist,
+# and hdf5 is not a format to run to the last byte of a filesystem on.
+FREE_SPACE_MARGIN = 2.1
+
+
+def check_free_space(output: Path) -> None:
+    """Refuse to start a rewrite the filesystem cannot hold.
+
+    A merge that fills /project does not just fail: it fails everything else
+    writing there at the same time, and it can leave a truncated tmp beside a
+    catalogue people trust. Cheaper to say so first.
+    """
+    if not output.exists():
+        return
+    size = output.stat().st_size
+    free = shutil.disk_usage(output.parent).free
+    if free < size * FREE_SPACE_MARGIN:
+        sys.exit(
+            f"hdf5_reconcile: {output.parent} has {free / 1e9:.1f} GB free and "
+            f"this merge needs about {size * FREE_SPACE_MARGIN / 1e9:.1f} GB — "
+            f"it rewrites {output.name} ({size / 1e9:.1f} GB) through a tmp "
+            f"copy beside it. Free space or move products_dir; the existing "
+            f"catalogue is untouched.")
+
+
+def check_sole_group(output: Path, group_path: str) -> None:
+    """One file, one campaign — refuse to half-update a file holding two.
+
+    Renaming `campaign:` mid-flight points the rule at a NEW group inside the
+    SAME file (the path carries the campaign only on the tile side, where the
+    group does). Reconciling would then add a second group beside the first,
+    leave the first frozen and stale, and set a count attribute describing only
+    one of them. Nothing downstream reads such a file correctly, and no rule
+    here means to produce one. Say what is there and stop.
+    """
+    if not output.exists() or "/" not in group_path:
+        return
+    parent, leaf = group_path.rsplit("/", 1)
+    with h5py.File(output, "r") as f:
+        if parent not in f:
+            return
+        others = sorted(k for k in f[parent] if k != leaf)
+    if others:
+        sys.exit(
+            f"hdf5_reconcile: {output} already holds {parent}/"
+            f"{', '.join(others)} beside {group_path}. One file is one "
+            f"campaign: reconciling would freeze the other group and count "
+            f"only this one. Point `campaign:` back, or write to a new path.")
+
+
 def apply(output: Path, group_path: str, todo: Plan, units: list, read,
           digest: str, count_attr: str) -> None:
     """Carry the plan out on a tmp file, then move it into place.
@@ -120,7 +176,8 @@ def apply(output: Path, group_path: str, todo: Plan, units: list, read,
     refresh of a unit leaks that unit. So:
 
       * a plan that only ADDS copies the existing file and appends to it. There
-        is nothing to reclaim, and copying beats rewriting.
+        is nothing to reclaim, and copying beats rewriting. It is still a pass
+        over the whole file — an append is cheap in READS, not in writes.
       * a plan that removes or refreshes anything builds the tmp FRESH, moving
         the datasets it keeps across with h5py's own group copy — a
         dataset-level copy inside the library that never reads a row into numpy
@@ -135,6 +192,8 @@ def apply(output: Path, group_path: str, todo: Plan, units: list, read,
     """
     sources = dict(units)
     rewrite = bool(todo.remove or todo.refresh)
+    check_free_space(output)
+    check_sole_group(output, group_path)
     written = set(todo.add) | set(todo.refresh)
     keep = [u for u, _ in units if u not in written]
     tmp = output.with_name(output.name + ".tmp")

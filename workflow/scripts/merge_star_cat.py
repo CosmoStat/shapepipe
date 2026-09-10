@@ -110,9 +110,16 @@ COLUMNS = ("X", "Y", "RA", "DEC",
            "HSM_G1_PSF", "HSM_G2_PSF", "HSM_T_PSF",
            "HSM_G1_STAR", "HSM_G2_STAR", "HSM_T_STAR",
            "HSM_FLAG_PSF", "HSM_FLAG_STAR")
-OPTIONAL = ("MAG", "SNR", "ACCEPTED")
+# CANONICAL DTYPES, not whatever the first file that carries the column happens
+# to use. These three are absent from pix2wcs-converted catalogues, so an
+# exposure whose files all lack them would otherwise be allocated a fallback
+# dtype while its neighbours got the real one — and datasets under exposures/*
+# would then differ in dtype, which np.concatenate refuses and no digest can
+# repair, since nothing about the schema CHANGED. Pinning the dtype here is what
+# makes every exposure's dataset the same shape whatever its files carry.
+OPTIONAL = {"MAG": np.float32, "SNR": np.float32, "ACCEPTED": np.int32}
 CCD_COLUMN = "CCD_NB"
-ALL_COLUMNS = COLUMNS + OPTIONAL + (CCD_COLUMN,)
+ALL_COLUMNS = COLUMNS + tuple(OPTIONAL) + (CCD_COLUMN,)
 
 
 def ccd_number(member_name: str) -> int:
@@ -171,7 +178,21 @@ def tars(manifest_paths: list) -> tuple:
     chosen, empty = [], []
     for exp, man_path in manifest_paths:
         man = json.loads(man_path.read_text())
-        if not any(is_member(f) for f in man["files"]):
+        # MEMBERSHIP IS THE MEMBER NAME, and only the member name. is_member()
+        # will also accept a manifest's own product LABEL, which is the right
+        # test for "did this exposure keep the product" — but a label is not
+        # what read_exposure() selects on, and a mislabeled entry whose name
+        # does not match would put this exposure in the merge and then abort
+        # the whole campaign when the tar turned out to hold nothing selectable.
+        # So the two agree by construction: both ask the name.
+        if not any(fnmatch(f["name"], MEMBER_PATTERN) for f in man["files"]):
+            if any(is_member(f) for f in man["files"]):
+                # Labelled as the product, named as something else. Worth one
+                # line — it means a manifest we did not write, or a keep list
+                # whose glob does not match the member it matched.
+                print(f"[merge_star_cat] {exp}: manifest labels a "
+                      f"{MEMBER_PRODUCT} member whose name does not match "
+                      f"{MEMBER_PATTERN}; not merging it")
             empty.append(exp)
             continue
         tar_path = Path(man["tar"])
@@ -190,15 +211,29 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
     and the second allocates the columns once at their exact final length and
     fills them slice by slice. Members are visited in sorted name order, so the
     row order is a function of the tar's contents alone.
+
+    NOTE ON WHEN THIS IS CALLED AGAIN. The unit's source is the TAR, so adding a
+    retention product re-packs it, moves its mtime, and refreshes this exposure
+    even though its validation members are byte-for-byte what they were. Reading
+    one exposure is seconds and the alternative — stamping the members rather
+    than the archive — buys a rarely-taken shortcut for a per-member bookkeeping
+    cost on every exposure. Not worth it.
     """
-    with tarfile.open(tar_path) as tf:
+    try:
+        tf = tarfile.open(tar_path)
+    except tarfile.TarError as exc:
+        sys.exit(f"merge_star_cat: cannot read {tar_path}: {exc}. That tar is "
+                 f"this exposure's only copy of its PSF products — do not "
+                 f"delete it; re-pack the exposure if its scratch store is "
+                 f"still there, and treat the exposure as lost if it is not.")
+    with tf:
         names = sorted(n for n in tf.getnames()
-                       if Path(n).match(MEMBER_PATTERN))
+                       if fnmatch(n, MEMBER_PATTERN))
         if not names:
             sys.exit(f"merge_star_cat: {tar_path} holds no {MEMBER_PATTERN}")
 
         # --- pass 1: row counts and dtypes, from headers alone --------------
-        counts, dtypes, opt_dtypes, n_total = [], None, {}, 0
+        counts, dtypes, n_total = [], None, 0
         for name in names:
             with fits.open(tf.extractfile(name), memmap=False,
                            ignore_missing_simple=True) as hdul:
@@ -209,18 +244,15 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
                 # scaled column would be allocated narrower than the values
                 # .data returns. Latent, not live: no validation_psf column is
                 # scaled. Read the dtype off .data if one ever is.
-                cols = hdu.columns.dtype
                 if dtypes is None:
-                    dtypes = cols
-                for col in OPTIONAL:
-                    if col not in opt_dtypes and col in (cols.names or ()):
-                        opt_dtypes[col] = cols[col]
+                    dtypes = hdu.columns.dtype
             n_total += counts[-1]
 
         fields = [(c, dtypes[c]) for c in COLUMNS]
-        # A column no file of this exposure carries still gets a column,
-        # zero-filled, in the dtype the positional column X uses.
-        fields += [(c, opt_dtypes.get(c, dtypes["X"])) for c in OPTIONAL]
+        # The optional three take their CANONICAL dtype, not one file's (see
+        # OPTIONAL): every exposure's dataset must have the same dtype whether
+        # or not its files carry the column.
+        fields += list(OPTIONAL.items())
         fields += [(CCD_COLUMN, np.int32)]
         data = np.empty(n_total, dtype=np.dtype(fields))
 

@@ -167,7 +167,8 @@ workflow/
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
     persist_exp.py       ONE exposure's keepable PSF products -> one tar on products_dir (the exp_persist rule)
-    merge_star_cat.py    ALL exposures' validation_psf, read out of the tars -> full_starcat (the star_cat_merge rule)
+    hdf5_reconcile.py    bring an hdf5 catalogue into agreement with a campaign (shared by both merges)
+    merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<campaign>.hdf5
     merge_final_cat.py   ALL tiles' final_cat -> final_cat_<campaign>.hdf5 (the final_cat_merge rule)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
@@ -297,13 +298,23 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   Everything above is per unit; the two products downstream analysis actually
   opens are per *campaign*, and until these rules existed each was a manual pass
   after the run.
-  `star_cat_merge` stacks every exposure's every CCD's `psf_validation` into one
-  `<products_dir>/full_starcat-0000000.fits` — the rho/tau statistics input, at
-  the path sp_validation hardcodes. It reads the members straight out of the
-  per-exposure tars (`tarfile`; unpacking ~800k files to merge them would defeat
-  the tar's whole purpose) and stacks them with `MergeStarCatPSFEX`, the same
-  class the old `merge_starcat_runner` called, so the column list has exactly
-  one definition. It exists whenever the campaign has a persisted exposure.
+  `star_cat_merge` collects every exposure's every CCD's `psf_validation` into
+  `<products_dir>/full_starcat_<campaign>.hdf5`, one dataset per exposure at
+  `exposures/<exp>` — the rho/tau statistics input. It reads the members
+  straight out of the per-exposure tars (`tarfile`; unpacking ~800k files to
+  merge them would defeat the tar's whole purpose), keeps their native dtypes,
+  and stores `CCD_NB` as an int. sp_validation still opens the old flat FITS
+  name, `full_starcat-0000000.fits`; its readers move to this file under
+  [sp_validation#340](https://github.com/CosmoStat/sp_validation/issues/340),
+  the same migration that retires the `patches/` key on the tile side. The rule
+  exists whenever the campaign has a persisted exposure.
+  **Two writers, one schema.** The module runner still emits the flat FITS
+  table through `MergeStarCatPSFEX`, and this rule emits the hdf5; they are
+  separate implementations on purpose, because only one of them reads tars,
+  keeps native dtypes and reconciles. Their 16 COLUMN NAMES must not drift
+  apart, and nothing else would notice if they did — a column added to one
+  writer would just be missing from the other's product. `tests/unit/`
+  `test_star_cat_columns.py` is what holds them together.
   `final_cat_merge` collects every ready tile's `final_cat-<ID>.fits` into
   `<products_dir>/final_cat_<campaign>.hdf5`: one dataset per tile under a group
   named for the campaign, the `final_cat.param` columns, an `n_tiles` attribute.
