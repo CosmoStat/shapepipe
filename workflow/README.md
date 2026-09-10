@@ -312,14 +312,15 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   written here, because that script's own discovery walks a directory layout
   this workflow does not have. `campaign:` in `config.yaml` names the group and
   defaults to the persistent root's basename.
-  `star_cat_merge` restacks the whole campaign, so its output is a function of
-  its input set and byte-stable on a no-op rerun (tmp-then-`cmp`-then-`mv`).
-  `final_cat_merge` RECONCILES instead — adds the tiles that have no dataset,
-  drops datasets whose tile left the campaign, re-reads one whose catalogue
-  changed (each dataset records its source's size and mtime), and leaves the
-  rest unread — because re-reading a campaign to add one tile is ~800 GB of IO
-  at DR6 scale. Its *content* is still a function of the input set; its byte
-  layout is not, and a no-op leaves the file untouched rather than rewritten.
+  BOTH RECONCILE, through one shared module (`hdf5_reconcile.py`) so the
+  campaign's two products cannot disagree about what an output owes its inputs.
+  Each adds the units that have no dataset, drops datasets whose unit left the
+  campaign, re-reads one whose source changed (every dataset records its
+  source's size and mtime) or whose column set moved (a digest on the file's
+  root), and leaves the rest unread — because re-reading a campaign to add one
+  unit is ~800 GB of IO at DR6 scale. The *content* is still a function of the
+  input set; the byte layout is not, and a no-op leaves the file untouched
+  rather than rewritten.
   Both rerun when the set changes: the unit ids' fingerprint rides on `params`.
   Neither is a `localrule` — one job over ~20k units is real work — and neither
   puts its input paths in its shell, which is not fastidiousness: ~20k paths is

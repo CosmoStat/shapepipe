@@ -1,37 +1,52 @@
 #!/usr/bin/env python3
-"""Concatenate the campaign's per-CCD PSF validation catalogues into ONE full_starcat.
+"""Collect the campaign's per-CCD PSF validation catalogues into ONE hdf5 file.
 
 Run as the shell of the campaign-level ``star_cat_merge`` rule, never by hand.
 
-WHAT IT PRODUCES, AND FOR WHOM. ``<products_dir>/full_starcat-0000000.fits``:
-every exposure's every CCD's ``validation_psf-<exp>-<ccd>.fits`` row, stacked,
-with a ``CCD_NB`` column recording which CCD each row came from. It is the input
-to the rho/tau statistics — sp_validation reads exactly this path
-(``star_cat_path`` in its ``scripts/calibration/params.py``) and does no merging
-of its own. Historically it was ``combine_runs.bash psf`` + a
-``merge_starcat_runner`` pass; the workflow emitted neither, so the product set
-was short one file. This script is that pass, driven by the DAG instead of by
-bash.
+WHAT IT PRODUCES, AND FOR WHOM. ``<products_dir>/full_starcat_<campaign>.hdf5``:
+one dataset per exposure at ``exposures/<exp>``, holding that exposure's every
+CCD's ``validation_psf-<exp>-<ccd>.fits`` rows stacked, with a ``CCD_NB`` column
+recording which CCD each row came from. It is the input to the rho/tau
+statistics. Historically this was ``combine_runs.bash psf`` plus a
+``merge_starcat_runner`` pass producing one flat FITS table,
+``full_starcat-0000000.fits``, and sp_validation still opens that name today;
+its readers move to this hdf5 under CosmoStat/sp_validation#340, the same
+migration that retires the ``patches/`` key on the galaxy side.
 
-IT DOES NOT REIMPLEMENT THE COLUMN LIST. The stacking, the column names and the
-CCD_NB parse all live in ``MergeStarCatPSFEX``
-(``shapepipe.modules.merge_starcat_package.merge_starcat``), which is what the
-old runner called. This script only decides WHICH catalogues that class is
-handed, and where the result lands. A column added to the module is a column
-added here for free — which is the entire reason for the indirection.
+WHY HDF5, AND WHY ONE DATASET PER EXPOSURE. The campaign's two products should
+behave the same way, and one flat table cannot: appending a tile meant
+restacking every exposure the campaign had ever seen — ~40 GB of members at DR6
+scale to add ~2 MB. Per-exposure datasets make the file RECONCILABLE
+(hdf5_reconcile.py carries that argument, and merge_final_cat.py is the same
+machinery on the tile side), so an append reads the appended exposures and
+nothing else while the file still cannot drift from its inputs. Memory follows:
+one exposure at a time, not one campaign.
 
-IT READS THE TARS, IT DOES NOT UNPACK THEM, AND IT STREAMS. ``exp_persist``
-packs each exposure's keepers into one uncompressed tar on the persistent root
+NATIVE DTYPES. Columns are written as the validation_psf files store them —
+float32 stays float32. The FITS writer this replaces widened every float column
+to ``1D``, doubling both the file and the peak memory of the job that wrote it,
+for no information.
+
+CCD_NB IS AN INTEGER. It is parsed out of the member name
+(``validation_psf-<exp>-<ccd>.fits``), where it is always digits, so a string
+buys nothing — and an int column costs 4 bytes a row against the 8 a
+two-character fixed-width string does.
+
+IT READS THE TARS, IT DOES NOT UNPACK THEM. ``exp_persist`` packs each
+exposure's keepers into one uncompressed tar on the persistent root
 (``<products_dir>/exp/<shard>/<exp>/psf/<exp>.tar``) precisely because inodes,
-not bytes, bind on /project. Unpacking ~20k tars × ~40 members to merge them
-would materialise ~800k files on the filesystem that design exists to protect,
-and then delete them. So members are read out of the tars in memory
-(``tarfile.extractfile(m).read()`` -> ``io.BytesIO``) and handed to the merge
-class as ``[fileobj, member_name]`` pairs — ONE AT A TIME, lazily, through
-``TarMembers`` below, because materialising them all first is ~40 GB at DR6
-scale. The member NAME is what the CCD_NB regex parses, which is why the pair
-carries it; the class takes the name from the last element of the entry, so a
-plain ``[path]`` entry behaves exactly as it always did.
+not bytes, bind on /project. Unpacking ~20k tars x ~40 members to merge them
+would materialise ~800k files on the filesystem that design exists to protect.
+Members are read through the archive's own file object — seekable, the tar
+being uncompressed by design — so the counting pass costs a header rather than
+a member.
+
+THE OPTIONAL COLUMNS ARE A PER-FILE QUESTION. A pix2wcs-converted catalogue has
+no MAG/SNR/ACCEPTED where an ordinary one does, and a campaign can hold both.
+Deciding once for the merge is wrong in both directions: it either fails on the
+first converted file or silently zeroes the real values of every ordinary one.
+Each file is asked for its own schema, and only the files that lack a column are
+zero-filled.
 
 WHICH EXPOSURES — AND WHY THE JOB DERIVES THE SET RATHER THAN BEING TOLD IT.
 The set is the CAMPAIGN's: every exposure read by a tile that is both declared
@@ -42,68 +57,34 @@ the persistent root, both read through ``build_index.campaign_exposures`` so
 there is one query and not two that can drift), and then takes the exposures
 whose ``exp_persist`` manifest is on the persistent root.
 
-It is derived rather than passed because at DR6 scale the set is ~20k paths, and
+It is derived rather than passed because at DR6 scale the set is ~20k paths and
 a shell command reaches ``execve`` as a SINGLE argv entry capped at 128 KiB by
-``MAX_ARG_STRLEN``. Passing them would be a job that dies before it starts. So
-the rule's ``input`` is the DAG EDGE — what must exist before this runs — and
-the rule's ``params`` carries a FINGERPRINT of that same list, which is what
-makes the merge rerun when the set changes.
-
-THE TWO SETS ARE THE SAME SET, and that equality is the point of deriving it
-this way rather than globbing the tree. The rule's input is ``star_cat_inputs()``
-(Snakefile): for each exposure of TILES_READY whose PSF products are on the
-persistent root, an edge — the ``exp_persist`` manifest for a live exposure, the
-TAR for one whose scratch store reclamation already took (that function argues
-the asymmetry, which is about not rebuilding a reclaimed chain from VOS).
-Nothing at all for an exposure reclaimed before ``exp_persist`` existed, which
-left neither and is unrecoverable short of that rebuild. What this script
-selects is the same rule stated from the job's side: same tiles, same index,
-manifest present — and by the time the job runs, every exposure with an edge has
-one. A glob over ``<products_dir>/exp`` would NOT be the same set: it would
-sweep in exposures of an earlier, larger tile list sharing the products root,
-stacking rows the fingerprint never saw and no rerun trigger would notice.
+``MAX_ARG_STRLEN``. So the rule's ``input`` is the DAG EDGE — what must exist
+before this runs — and its ``params`` carries a FINGERPRINT of the same set,
+which is what makes the merge rerun when the set changes. A glob over
+``<products_dir>/exp`` would NOT be the same set: it would sweep in exposures of
+an earlier, larger tile list sharing the products root, stacking rows the
+fingerprint never saw and no rerun trigger would notice.
 
 THE MANIFEST, NOT THE TAR, IS WHAT IT READS FIRST: the manifest records what was
-actually packed, pattern by pattern, member by member, with sizes. Selecting
-members from it means this script never guesses at tar contents, and an exposure
-whose keep list did not include the validation catalogues contributes nothing
-visibly rather than silently.
-
-BYTE-STABLE ON A NO-OP RERUN: written to a tmp path, compared, and moved only
-if it differs (the pattern ``persist_exp.py`` and ``clean_exposure.py`` use).
-An unconditional rewrite would move the output's mtime on every invocation.
-Members are visited in sorted (exposure, member) order so the row order is a
-function of the input set alone.
-
-PSFEX ONLY, DELIBERATELY. ``PSF_MODEL`` is ``psfex`` in every campaign the
-workflow has run; ``MergeStarCatMCCD`` and ``MergeStarCatSetools`` exist beside
-it and take the same constructor, so the hook is the one-line class choice in
-``merge_class()`` below — an implementation, not a design, away.
+actually packed, member by member, with sizes and the product each came from, so
+this script never guesses at tar contents.
 """
 
 import argparse
-import filecmp
-import io
 import json
-import logging
-import shutil
 import sys
 import tarfile
-import tempfile
 from fnmatch import fnmatch
 from pathlib import Path
 
-from shapepipe.modules.merge_starcat_package import merge_starcat
+import numpy as np
+from astropy.io import fits
 
 # Same directory; the rule invokes this file by path, so it is sys.path[0].
 import build_index
+import hdf5_reconcile
 import persist_exp
-
-# The output name is not ours to choose: sp_validation hardcodes it
-# (`star_cat_path = f"{data_dir}/full_starcat-0000000.fits"`), and
-# MergeStarCatPSFEX writes exactly this basename into the output dir it is
-# given. Kept here as the name this script promises to produce.
-OUT_NAME = "full_starcat-0000000.fits"
 
 # The members this merge consumes, named as the keep list names them and
 # resolved through the same catalogue persist_exp packs by — so the glob has one
@@ -111,30 +92,61 @@ OUT_NAME = "full_starcat-0000000.fits"
 # always there to find: persist_exp packs this product for every exposure
 # whatever `persist_exp:` says, and fails the pack rather than writing a
 # manifest without it.
-MEMBER_PRODUCT = "psf_validation"
+MEMBER_PRODUCT = persist_exp.ALWAYS
 MEMBER_PATTERN = persist_exp.resolve(MEMBER_PRODUCT)
 
+# The group holding the per-exposure datasets. Unlike the galaxy side's
+# `patches/`, this name is ours and says what it holds.
+GROUP = "exposures"
 
-def merge_class(psf_model: str):
-    """The merge class for this PSF model — the one-line MCCD/setools hook.
+# The validation_psf table's HDU: what MergeStarCatPSFEX defaulted to and what
+# psfex_interp writes — a SExtractor-style file, empty primary, header-carrying
+# image extension, then the table.
+HDU = 2
 
-    Only psfex is exercised: it is what every campaign has run. MCCD reaches the
-    tars unchanged (it takes its CCD numbers from the data, and it now reports
-    by the entry's name like the others). SETOOLS would need one more thing —
-    it passes ``input_file_list[0][0]`` to file_io as a template path, which a
-    streamed entry is not — so wiring setools to this path is a change to that
-    class, not a change here.
+# The columns, in the order the FITS full_starcat carried them, which is the
+# order every consumer has seen. The optional three are zero-filled per file.
+COLUMNS = ("X", "Y", "RA", "DEC",
+           "HSM_G1_PSF", "HSM_G2_PSF", "HSM_T_PSF",
+           "HSM_G1_STAR", "HSM_G2_STAR", "HSM_T_STAR",
+           "HSM_FLAG_PSF", "HSM_FLAG_STAR")
+OPTIONAL = ("MAG", "SNR", "ACCEPTED")
+CCD_COLUMN = "CCD_NB"
+ALL_COLUMNS = COLUMNS + OPTIONAL + (CCD_COLUMN,)
+
+
+def ccd_number(member_name: str) -> int:
+    """The CCD this member's rows belong to: ``validation_psf-<exp>-<ccd>.fits``.
+
+    Always digits, which is why the column is an int; a member name that does
+    not carry one is a tar we do not understand, and saying so beats writing a
+    sentinel into the catalogue.
     """
-    try:
-        return {"psfex": merge_starcat.MergeStarCatPSFEX,
-                "mccd": merge_starcat.MergeStarCatMCCD,
-                "setools": merge_starcat.MergeStarCatSetools}[psf_model]
-    except KeyError:
-        sys.exit(f"merge_star_cat: unknown psf_model {psf_model!r}")
+    ccd = member_name.rsplit(".", 1)[0].rsplit("-", 1)[-1]
+    if not ccd.isdigit():
+        sys.exit(f"merge_star_cat: cannot read a CCD number out of member "
+                 f"name {member_name!r}")
+    return int(ccd)
+
+
+def is_member(entry: dict) -> bool:
+    """Is this manifest entry one of the members this merge reads?
+
+    BY PRODUCT NAME, OR FAILING THAT BY FILE NAME. persist_exp records the
+    product every member came from and always packs psf_validation, so the name
+    is the answer for anything it writes today. The glob is the fallback, and it
+    earns its place twice over: a tar packed before the product field existed
+    has no label at all, and a keep list written as a raw glob
+    (`validation_psf-*.fits` rather than `psf_validation`) labels its members
+    with the glob. Neither should make the campaign's star catalogue silently
+    empty.
+    """
+    return (entry.get("product") == MEMBER_PRODUCT
+            or fnmatch(entry["name"], MEMBER_PATTERN))
 
 
 def manifests(products_dir: Path, tile_list: Path, index_db: Path) -> list:
-    """The campaign's exp_persist manifests that are on disk, in exposure order.
+    """``(exposure, manifest path)`` for the campaign's packed exposures.
 
     Not a glob over the products root: see the module docstring on why the set
     is the campaign's and not the filesystem's.
@@ -144,73 +156,94 @@ def manifests(products_dir: Path, tile_list: Path, index_db: Path) -> list:
         path = (products_dir / "exp" / exp[:2] / exp / "manifests"
                 / "exp_persist.json")
         if path.exists():
-            out.append(path)
+            out.append((exp, path))
     return out
 
 
-def selection(manifest_paths: list, pattern: str) -> tuple:
-    """``[(tar path, [member names])]`` for the merge, and the empty exposures.
+def tars(manifest_paths: list) -> tuple:
+    """``[(exposure, tar path)]`` for the merge, and the exposures with nothing.
 
-    Reads the manifests only. Every tar is checked for existence HERE, so a
-    products root missing a file fails before a single row is stacked rather
-    than an hour in.
+    Every tar is checked for existence HERE, so a products root missing a file
+    fails before a single row is read rather than an hour in. The tar is also
+    the unit's SOURCE for reconciling: its size and mtime are what a later
+    invocation compares against to decide whether this exposure changed.
     """
     chosen, empty = [], []
-    for man_path in manifest_paths:
+    for exp, man_path in manifest_paths:
         man = json.loads(man_path.read_text())
-        wanted = sorted(f["name"] for f in man["files"]
-                        if fnmatch(f["name"], pattern))
-        if not wanted:
-            empty.append(man["unit"])
+        if not any(is_member(f) for f in man["files"]):
+            empty.append(exp)
             continue
         tar_path = Path(man["tar"])
         if not tar_path.exists():
             sys.exit(f"merge_star_cat: {man_path} names a tar that is not "
                      f"there: {tar_path}")
-        chosen.append((tar_path, wanted))
+        chosen.append((exp, tar_path))
     return chosen, empty
 
 
-class TarMembers:
-    """The merge class's input list, materialised ONE TAR AT A TIME.
+def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
+    """One exposure's every CCD, stacked, as a structured array.
 
-    ``MergeStarCatPSFEX`` wants something it can take the length of and iterate
-    once, handing it ``[fileobj, name]`` entries; it never indexes and never
-    rewinds. So it does not need a list, and a list is the one thing we cannot
-    afford: reading every member up front is the whole campaign in memory at
-    once — ~2 MB per exposure, so ~40 GB at DR6's ~20k exposures, against a
-    rule asking for 16 GB. Read lazily, peak memory is ONE member's bytes plus
-    the merge class's own accumulators, which are the real and unavoidable term.
-
-    ``__len__`` comes from the manifests, so the class can log the count before
-    a single tar is opened.
-
-    IT IS ITERABLE MORE THAN ONCE, and must be: the merge makes two passes, one
-    for row counts from the headers and one to fill. Each ``__iter__`` opens the
-    archives afresh, so the second pass sees the same members in the same order.
+    TWO PASSES over the tar's members, and neither holds the exposure twice:
+    the first reads only each member's FITS HEADER — NAXIS2, the row count —
+    and the second allocates the columns once at their exact final length and
+    fills them slice by slice. Members are visited in sorted name order, so the
+    row order is a function of the tar's contents alone.
     """
+    with tarfile.open(tar_path) as tf:
+        names = sorted(n for n in tf.getnames()
+                       if Path(n).match(MEMBER_PATTERN))
+        if not names:
+            sys.exit(f"merge_star_cat: {tar_path} holds no {MEMBER_PATTERN}")
 
-    def __init__(self, chosen):
-        self._chosen = chosen
+        # --- pass 1: row counts and dtypes, from headers alone --------------
+        counts, dtypes, opt_dtypes, n_total = [], None, {}, 0
+        for name in names:
+            with fits.open(tf.extractfile(name), memmap=False,
+                           ignore_missing_simple=True) as hdul:
+                hdu = hdul[HDU]
+                counts.append(hdu.header["NAXIS2"])
+                # ColDefs.dtype describes the table without reading it. NOTE:
+                # it is the RAW storage dtype and ignores TSCAL/TZERO, so a
+                # scaled column would be allocated narrower than the values
+                # .data returns. Latent, not live: no validation_psf column is
+                # scaled. Read the dtype off .data if one ever is.
+                cols = hdu.columns.dtype
+                if dtypes is None:
+                    dtypes = cols
+                for col in OPTIONAL:
+                    if col not in opt_dtypes and col in (cols.names or ()):
+                        opt_dtypes[col] = cols[col]
+            n_total += counts[-1]
 
-    def __len__(self):
-        return sum(len(names) for _, names in self._chosen)
+        fields = [(c, dtypes[c]) for c in COLUMNS]
+        # A column no file of this exposure carries still gets a column,
+        # zero-filled, in the dtype the positional column X uses.
+        fields += [(c, opt_dtypes.get(c, dtypes["X"])) for c in OPTIONAL]
+        fields += [(CCD_COLUMN, np.int32)]
+        data = np.empty(n_total, dtype=np.dtype(fields))
 
-    def __iter__(self):
-        for tar_path, names in self._chosen:
-            with tarfile.open(tar_path) as tf:
-                for name in names:
-                    member = tf.extractfile(name)
-                    if member is None:
-                        sys.exit(f"merge_star_cat: {tar_path} has no member "
-                                 f"{name}, which its manifest lists")
-                    # The tar's own file object, not a BytesIO of the whole
-                    # member: it is seekable (the archive is uncompressed by
-                    # design) and astropy reads through it, so the merge's
-                    # first pass costs a header rather than a member. The
-                    # object is valid only until the next member is reached,
-                    # which is exactly how the merge consumes it.
-                    yield [member, name]
+        # --- pass 2: fill ---------------------------------------------------
+        at = 0
+        for name, n_rows in zip(names, counts):
+            with fits.open(tf.extractfile(name), memmap=False,
+                           ignore_missing_simple=True) as hdul:
+                rows = hdul[HDU].data
+                have = set(rows.dtype.names or ())
+                sl = slice(at, at + n_rows)
+                for col in COLUMNS:
+                    data[col][sl] = rows[col]
+                for col in OPTIONAL:
+                    # THIS file's schema, not the exposure's.
+                    data[col][sl] = rows[col] if col in have else 0
+                data[CCD_COLUMN][sl] = ccd_number(name)
+            at += n_rows
+
+    if at != n_total:
+        raise ValueError(f"merge_star_cat: {tar_path}: pass 1 counted "
+                         f"{n_total} rows, pass 2 filled {at}")
+    return data
 
 
 def main() -> None:
@@ -222,59 +255,38 @@ def main() -> None:
                    help="the campaign's tile list (config tile_list)")
     p.add_argument("--index-db", required=True, type=Path,
                    help="the campaign's run index (config outputs.index_db)")
-    p.add_argument("--output", required=True, type=Path,
-                   help=f"the merged catalogue; its basename is {OUT_NAME}")
-    p.add_argument("--psf-model", default="psfex")
-    p.add_argument("--pattern", default=MEMBER_PATTERN,
-                   help="tar-member glob to merge; default %(default)s")
+    p.add_argument("--output", required=True, type=Path)
+    p.add_argument("--campaign", required=True,
+                   help="named in the log; the group name is fixed")
     args = p.parse_args()
 
-    if args.output.name != OUT_NAME:
-        # The merge class writes OUT_NAME into a directory it is handed; a
-        # differently-named declared output would silently never be produced.
-        sys.exit(f"merge_star_cat: --output must be named {OUT_NAME} "
-                 f"(got {args.output.name})")
-
-    log = logging.getLogger("merge_star_cat")
-    logging.basicConfig(format="[merge_star_cat] %(message)s",
-                        level=logging.INFO, stream=sys.stdout)
-
     manifest_paths = manifests(args.products_dir, args.tile_list, args.index_db)
-    chosen, empty = selection(manifest_paths, args.pattern)
-    file_list = TarMembers(chosen)
-    if not len(file_list):
+    chosen, empty = tars(manifest_paths)
+    if not chosen:
         # Not a no-op: an empty star catalogue would pass every downstream
         # existence check and produce meaningless rho statistics.
-        sys.exit(f"merge_star_cat: no member matched {args.pattern!r} in any "
-                 f"of {len(manifest_paths)} exp_persist manifest(s) for this "
+        sys.exit(f"merge_star_cat: no {MEMBER_PRODUCT} member in any of "
+                 f"{len(manifest_paths)} exp_persist manifest(s) for this "
                  f"campaign. persist_exp packs {MEMBER_PRODUCT} for every "
                  f"exposure, so this means the manifests are not what we think "
                  f"they are.")
     if empty:
-        log.info(f"{len(empty)} exposure(s) persisted no {args.pattern}: "
-                 f"{', '.join(sorted(empty)[:5])}"
-                 f"{' ...' if len(empty) > 5 else ''}")
+        print(f"[merge_star_cat] {len(empty)} exposure(s) persisted no "
+              f"{MEMBER_PRODUCT}: {', '.join(sorted(empty)[:5])}"
+              f"{' ...' if len(empty) > 5 else ''}")
 
-    # tmp-then-cmp-then-mv. The merge class chooses its own basename inside the
-    # directory it is given, so the tmp is a DIRECTORY, not a file path, and it
-    # never outlives this process — an orphan on /project is an inode nothing
-    # revisits.
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    tmp_dir = Path(tempfile.mkdtemp(dir=args.output.parent,
-                                    prefix=".star_cat_merge."))
-    try:
-        merge_class(args.psf_model)(file_list, str(tmp_dir), log).process()
-        tmp = tmp_dir / OUT_NAME
-        if not tmp.exists():
-            sys.exit(f"merge_star_cat: the merge wrote no {OUT_NAME}")
-        if args.output.exists() and filecmp.cmp(tmp, args.output, shallow=False):
-            log.info(f"unchanged: {args.output}")
-        else:
-            tmp.replace(args.output)          # atomic: same filesystem
-            log.info(f"{len(file_list)} catalogue(s) from {len(chosen)} "
-                     f"exposure(s) -> {args.output}")
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+    digest = hdf5_reconcile.schema_digest(ALL_COLUMNS)
+    todo = hdf5_reconcile.plan(args.output, GROUP, chosen, digest)
+    if todo.empty():
+        print(f"[merge_star_cat] unchanged: {args.output} "
+              f"({len(chosen)} exposure(s))")
+        return
+    hdf5_reconcile.apply(args.output, GROUP, todo, chosen, read_exposure,
+                         digest, "n_exposures")
+    print(f"[merge_star_cat] {todo.describe()} -> {args.output} "
+          f"({len(chosen)} exposure(s), {len(ALL_COLUMNS)} column(s), "
+          f"campaign {args.campaign})")
 
 
 if __name__ == "__main__":

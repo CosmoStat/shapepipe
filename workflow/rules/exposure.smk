@@ -225,14 +225,20 @@ rule clean_exposure:
 
 # --- the campaign's star catalogue ------------------------------------------
 # ONE job per campaign: every exposure's every CCD's `validation_psf-<exp>-<ccd>.fits`,
-# stacked into `<products_dir>/full_starcat-0000000.fits`. That file is the
-# rho/tau statistics input and sp_validation reads it at exactly that path,
-# doing no merging of its own; the old bash chain built it with
-# `combine_runs.bash psf` + a `merge_starcat_runner` pass, and the workflow
-# emitted neither. The stacking itself is `MergeStarCatPSFEX` — the same class
-# the old runner called, reused rather than restated, so a column added to the
-# module is a column added here (merge_star_cat.py argues the reuse and the
-# tar-member reading).
+# collected into `<products_dir>/full_starcat_<campaign>.hdf5`, one dataset per
+# exposure. That file is the rho/tau statistics input; the old bash chain built
+# a flat FITS table with `combine_runs.bash psf` + a `merge_starcat_runner`
+# pass, and the workflow emitted neither. sp_validation still opens the FITS
+# name today — CosmoStat/sp_validation#340 moves its readers to this file, the
+# same migration that retires the `patches/` key on the tile side.
+#
+# ONE DATASET PER EXPOSURE, NOT ONE TABLE, and it is the same decision as the
+# tile side's: it makes the file RECONCILABLE. A flat table had to be restacked
+# from every exposure the campaign had ever seen to add one — ~40 GB of members
+# at DR6 scale to add ~2 MB — and held the whole campaign in memory while it did
+# so. Reconciled, an append reads the appended exposures and nothing else, and
+# the job holds one exposure at a time. hdf5_reconcile.py is the shared
+# machinery; merge_star_cat.py argues the format and the tar reading.
 #
 # THE INPUT IS star_cat_inputs() (Snakefile): every exposure of TILES_READY whose
 # PSF products are on the persistent root — the live ones through the exp_persist
@@ -253,19 +259,14 @@ rule clean_exposure:
 # the point: a job that stacked anything the fingerprint did not see would be
 # rows no rerun trigger could notice, which is what a glob over products_dir
 # would have given on a root shared with an earlier, larger tile list.
-# Byte-stable output otherwise (tmp-then-cmp-then-mv), so a no-op rerun does not
-# move its mtime.
 #
 # NOT A LOCALRULE. exp_persist is local because it is 20k jobs of seconds; this
-# is one job that holds a campaign's stars in memory (~800k catalogues at DR6
-# scale). mem_mb is a guess scaled by attempt, not a measurement — the campaigns
-# run so far are 127 exposures, three orders of magnitude short of the case this
-# sizing is for, and the first DR6-scale run should replace this number with a
-# benchmark.
+# is one job that reads the campaign's tars end to end. Its MEMORY is flat in
+# the campaign (one exposure at a time) and sized on the largest exposure; its
+# RUNTIME is the total.
 #
-# NO JOB AT ALL when `persist_exp:` keeps no validation catalogue, or when every
-# exposure in scope is tombstoned: star_cat_targets() (Snakefile) simply does not
-# request the output, and the parse says so rather than a node failing later.
+# NO JOB AT ALL when every exposure in scope is tombstoned with no tar left
+# behind: star_cat_targets() (Snakefile) simply does not request the output.
 rule star_cat_merge:
     input:
         lambda wc: star_cat_inputs()
@@ -275,6 +276,7 @@ rule star_cat_merge:
         products_dir = str(PRODUCTS_DIR),
         tile_list    = str(config["tile_list"]),
         index_db     = str(INDEX_DB),
+        campaign     = CAMPAIGN,
         inputs       = unit_fingerprint(star_cat_exposures()),
         script_hash  = MERGE_STAR_HASH
     threads: 1
@@ -283,8 +285,11 @@ rule star_cat_merge:
         # measured (the Snakefile's sizing block carries both points, and the
         # ceiling this rule runs into at DR6 scale). Still * attempt, because a
         # measured slope on synthetic tars is not a guarantee about real ones.
+        # Sized on the LARGEST exposure, not the total: the merge holds one
+        # exposure at a time (the Snakefile's sizing block carries the history).
         mem_mb = lambda wc, attempt: capped_mem(attempt * (
-            STAR_MEM_BASE_MB + STAR_MEM_FACTOR * star_cat_bytes() // 1_000_000),
+            STAR_MEM_BASE_MB
+            + STAR_MEM_FACTOR * star_cat_max_bytes() // 1_000_000),
             "star_cat_merge"),
         # ~2 min per GB of members on the measurement above, doubled, over a
         # floor that covers the fixed cost of opening ~40 members per exposure.
@@ -296,4 +301,4 @@ rule star_cat_merge:
         " --products-dir '{params.products_dir}'"
         " --tile-list '{params.tile_list}' --index-db '{params.index_db}'"
         " --output {output.star_cat}"
-        f" --psf-model {PSF_MODEL}"
+        " --campaign '{params.campaign}'"

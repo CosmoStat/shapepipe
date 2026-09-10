@@ -31,6 +31,7 @@ the manifest says "this stage succeeded", the log says "here is what happened"
 (the contract is argued in completeness.py's docstring).
 """
 
+import fnmatch
 import functools
 import hashlib
 import json
@@ -647,9 +648,14 @@ def unit_fingerprint(units):
 
 
 def full_starcat():
-    """The campaign's merged star catalogue. The NAME is not ours to choose:
-    sp_validation hardcodes `full_starcat-0000000.fits` beside its data dir."""
-    return f"{PRODUCTS_DIR}/full_starcat-0000000.fits"
+    """The campaign's merged star catalogue — the rho/tau statistics input.
+
+    hdf5, one dataset per exposure, named for the campaign exactly as the shear
+    catalogue beside it is. The old flat FITS table it replaces was called
+    `full_starcat-0000000.fits` and sp_validation still opens that name;
+    CosmoStat/sp_validation#340 moves its readers to this file, the same
+    migration that retires the `patches/` key on the galaxy side."""
+    return f"{PRODUCTS_DIR}/full_starcat_{CAMPAIGN}.hdf5"
 
 
 def final_cat_hdf5():
@@ -733,32 +739,31 @@ def star_cat_exposures():
 # against synthetic tars for the star side and against smk-g6's real
 # catalogues for the tile side. Peak RSS is getrusage(RUSAGE_CHILDREN).
 #
-# STAR SIDE. Two points, 20 and 80 exposures of 40 CCDs x 400 stars (1.6 MB of
-# members per exposure, against the 2.0 MB measured on smk-m2), across the two
-# rewrites this PR made to the accumulation in MergeStarCatPSFEX:
+# STAR SIDE, AND IT IS FLAT IN THE CAMPAIGN. The merge writes one hdf5 dataset
+# per exposure and reads one exposure at a time, so it is sized on the LARGEST
+# exposure's members — ~2 MB — not on the campaign's. What follows is the
+# history of how that came to be true, because the numbers are the argument.
+#
+# The FITS full_starcat this replaced was one flat table, so the job held the
+# whole campaign. Two fixture points, 20 and 80 exposures of 40 CCDs x 400 stars
+# (1.6 MB of members per exposure, against the 2.0 MB measured on smk-m2),
+# across the rewrites this PR made to MergeStarCatPSFEX:
 #
 #     input members   python lists   arrays+concat   two passes
 #     32.3 MB          383 MB          238 MB          221 MB
 #     129.0 MB        1313 MB          740 MB          661 MB
-#
 #     slope             10.1x           5.5x            4.8x
 #
-# The tenfold was one python float object (32 bytes) plus a list pointer (8)
-# per 4 bytes of float32 payload. Arrays per catalogue removed that; the
-# two-pass structure — count rows from the FITS headers, allocate once at the
-# exact length, then fill — removed what remained, so nothing is held twice.
+# The tenfold was one python float object (32 bytes) plus a list pointer (8) per
+# 4 bytes of float32 payload. Arrays per catalogue removed that; counting rows
+# from the headers and filling a preallocated array removed the rest. What
+# remained at 4.8x was the OUTPUT: file_io writes every float column as FITS 1D,
+# so float32 became a float64 table astropy then buffered.
 #
-# THE REMAINING 4.8x IS THE OUTPUT SIDE, and it is not a leak: file_io writes
-# every float column as FITS 1D, so a float32 input becomes a float64 table
-# that astropy then buffers to write — 141 MB of table for 78 MB of payload at
-# the 80-exposure point, plus its write copy. Halving it means changing the
-# OUTPUT format, which is what sp_validation reads: a different decision from
-# this one, and not ours to take here.
-#
-# THE CEILING MOVED AND IS NOW ELSEWHERE. At ~2 MB of members per exposure a
-# 16 GB job merges ~1300 exposures rather than ~800, and DR6's ~20k would want
-# ~240 GB rather than ~400 GB. What stands between here and a full-survey
-# full_starcat is the float64 output, not the merge.
+# Per-exposure hdf5 removes the term entirely rather than shrinking it — and
+# with it the ~240 GB a DR6-scale flat table would have wanted. Those
+# improvements stay upstream regardless: the module runner still merges to one
+# FITS table, and they are its fix.
 #
 # TILE SIDE, and it is the reassuring one. Two points against real smk-g6
 # catalogues, 2 tiles (73.9 MB in, largest 39.6 MB) and 6 tiles (235.5 MB in,
@@ -795,8 +800,8 @@ def capped_mem(mb, rule):
     return mb
 
 
-STAR_MEM_BASE_MB   = 500      # interpreter + astropy + shapepipe, rounded up
-STAR_MEM_FACTOR    = 6        # x input bytes; 4.8 measured, rounded up
+STAR_MEM_BASE_MB   = 500      # interpreter + astropy + h5py, rounded up
+STAR_MEM_FACTOR    = 6        # x the LARGEST exposure's members
 FINAL_MEM_BASE_MB  = 800
 FINAL_MEM_FACTOR   = 4        # x the LARGEST tile; ~3 measured
 # What one unit costs when its product is not on disk yet to be measured — a
@@ -808,6 +813,7 @@ EXP_BYTES_DEFAULT  = 2_000_000
 # The product whose members star_cat_merge stacks — named once, here and in
 # merge_star_cat.py, and resolved through persist_exp.py's catalogue.
 STAR_CAT_PRODUCT   = _persist.ALWAYS
+STAR_CAT_PATTERN   = _persist.resolve(_persist.ALWAYS)
 TILE_BYTES_DEFAULT = 46_000_000
 
 
@@ -817,6 +823,17 @@ def _size(path, default):
         return Path(path).stat().st_size
     except OSError:
         return default
+
+
+def star_cat_max_bytes():
+    """The LARGEST exposure's psf_validation members — what sizes the merge.
+
+    The star merge holds ONE exposure at a time now that its output is hdf5
+    with a dataset per exposure, so its memory is flat in the campaign exactly
+    as the tile side's is. Sizing on the total would ask a node for a campaign's
+    worth of memory to hold ~2 MB.
+    """
+    return max(_star_cat_exposure_bytes() or [EXP_BYTES_DEFAULT])
 
 
 def star_cat_bytes():
@@ -836,19 +853,30 @@ def star_cat_bytes():
     this job. An exposure not yet packed has no manifest and contributes the
     measured default, which is the psf_validation figure and not the tar's.
     """
-    total = 0
+    return sum(_star_cat_exposure_bytes())
+
+
+@functools.lru_cache(maxsize=1)
+def _star_cat_exposure_bytes():
+    """Per exposure, the bytes of the members the star merge will read."""
+    out = []
     for exp in star_cat_exposures():
         manifest = Path(prod_exp_manifest(exp, "exp_persist"))
         if not manifest.exists():
-            total += EXP_BYTES_DEFAULT
+            out.append(EXP_BYTES_DEFAULT)
             continue
         try:
             body = json.loads(manifest.read_text())
-            total += sum(f["bytes"] for f in body["files"]
-                         if f.get("product") == STAR_CAT_PRODUCT)
+            # By product name or, for a manifest written before that field
+            # existed or by a raw-glob keep list, by file name — the same test
+            # merge_star_cat.is_member() applies, so the sizing counts exactly
+            # the members the job will read.
+            out.append(sum(f["bytes"] for f in body["files"]
+                           if f.get("product") == STAR_CAT_PRODUCT
+                           or fnmatch.fnmatch(f["name"], STAR_CAT_PATTERN)))
         except (OSError, ValueError, KeyError):
-            total += EXP_BYTES_DEFAULT
-    return total
+            out.append(EXP_BYTES_DEFAULT)
+    return out
 
 
 def final_cat_max_bytes():

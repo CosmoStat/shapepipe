@@ -269,15 +269,10 @@ class MergeStarCatMCCD(object):
         my_mask[inside_circle] = True
 
         for name in self._input_file_list:
-            # The source to read and the NAME to report it by; identical for a
-            # plain [path] entry (see MergeStarCatPSFEX's docstring on the
-            # [fileobj, name] form). This class takes its CCD numbers from the
-            # data's own CCD_ID_LIST, so the name is only ever used in messages.
-            source, label = name[0], name[-1]
             try:
-                starcat_j = fits.open(source, memmap=False, ignore_missing_simple=True)
+                starcat_j = fits.open(name[0], memmap=False, ignore_missing_simple=True)
             except ValueError:
-                print(f"Error for file {label}, check FITS file integrity")
+                print(f"Error for file {name[0]}, check FITS file integrity")
                 #raise
                 continue
 
@@ -536,15 +531,7 @@ class MergeStarCatPSFEX(object):
     Parameters
     ----------
     input_file_list : list
-        Input entries. Each entry is a list, as the module runner builds them:
-        ``[path]`` from the file handler. An entry may also carry a name
-        alongside an already-open source, ``[fileobj, name]`` — ``fits.open``
-        takes the first element and the CCD number is parsed from the LAST,
-        which is the same string in the one-element case. That is what lets a
-        caller merge catalogues it never wrote to disk (the Snakemake
-        workflow's ``star_cat_merge`` reads them out of the per-exposure tars
-        with ``tarfile`` + ``BytesIO``), without this class learning anything
-        about where they came from.
+        Input files
     output_dir : str
         Output directory
     w_log : logging.Logger
@@ -586,9 +573,9 @@ class MergeStarCatPSFEX(object):
     # (MKDEBUG); zero-filled when missing rather than failing the merge.
     _OPTIONAL = (("MAG", "MAG"), ("SNR", "SNR"), ("ACCEPTED", "ACCEPTED"))
 
-    def _ccd_nb(self, label):
+    def _ccd_nb(self, path):
         """The CCD number this catalogue's rows carry, parsed from its name."""
-        return re.split(r"\-([0-9]*)\-([0-9]+)\.", label)[-2]
+        return re.split(r"\-([0-9]*)\-([0-9]+)\.", path)[-2]
 
     def process(self):
         """Process.
@@ -611,10 +598,9 @@ class MergeStarCatPSFEX(object):
         accumulation: there are no chunks, and no concatenate that must hold its
         inputs and its result at the same time.
 
-        ``self._input_file_list`` MUST BE ITERABLE TWICE. A list is; so is the
-        workflow's tar reader, whose ``__iter__`` opens the archives afresh.
-        A one-shot generator is not, and would silently merge nothing on the
-        second pass — hence the explicit length check below.
+        ``self._input_file_list`` MUST BE ITERABLE TWICE, which the module
+        runner's list is. A one-shot generator is not, and would silently merge
+        nothing on the second pass — hence the explicit row-count check below.
         """
         self._w_log.info(
             f"Merging {len(self._input_file_list)} star catalogues"
@@ -629,11 +615,10 @@ class MergeStarCatPSFEX(object):
         # ordinary-first raised KeyError on the first converted one. So the
         # dtype comes from ANY file that carries the column, and pass 2 asks
         # each file for itself.
-        labels, dtypes, opt_dtypes, n_total = [], None, {}, 0
+        names, dtypes, opt_dtypes, n_total = [], None, {}, 0
         for name in self._input_file_list:
-            source, label = name[0], name[-1]
             try:
-                with fits.open(source, memmap=False,
+                with fits.open(name[0], memmap=False,
                                ignore_missing_simple=True) as starcat_j:
                     hdu = starcat_j[self._hdu_table]
                     n_rows = hdu.header["NAXIS2"]
@@ -649,10 +634,10 @@ class MergeStarCatPSFEX(object):
                         if col not in opt_dtypes and col in (cols.names or ()):
                             opt_dtypes[col] = cols[col]
             except OSError:
-                print(f"Error while opening file '{label}'")
+                print(f"Error while opening file '{name[0]}'")
                 #raise
                 continue
-            labels.append(label)
+            names.append(name[0])
             n_total += n_rows
 
         if dtypes is None:
@@ -667,15 +652,14 @@ class MergeStarCatPSFEX(object):
             data[out] = np.empty(n_total, dtype=opt_dtypes.get(col, dtypes["X"]))
         # CCD_NB is one string per catalogue, repeated over its rows; its width
         # is the widest CCD number in the campaign, which pass 1 already knows.
-        width = max((len(self._ccd_nb(lb)) for lb in labels), default=1)
+        width = max((len(self._ccd_nb(n)) for n in names), default=1)
         data["CCD_NB"] = np.empty(n_total, dtype=f"U{width}")
 
         # --- pass 2: fill ---------------------------------------------------
         at = 0
         for name in self._input_file_list:
-            source, label = name[0], name[-1]
             try:
-                starcat_j = fits.open(source, memmap=False,
+                starcat_j = fits.open(name[0], memmap=False,
                                       ignore_missing_simple=True)
             except OSError:
                 continue
@@ -690,7 +674,7 @@ class MergeStarCatPSFEX(object):
                 # THIS file's schema, not the merge's: zero-fill only the files
                 # that actually lack the column.
                 data[out][sl] = data_j[col] if col in have else 0
-            data["CCD_NB"][sl] = self._ccd_nb(label)
+            data["CCD_NB"][sl] = self._ccd_nb(name[0])
 
             at += n_rows
             starcat_j.close()
@@ -854,11 +838,7 @@ class MergeStarCatSetools(object):
         )
 
         for name in self._input_file_list:
-            # The source to read and the NAME to parse the CCD number out of;
-            # identical for a plain [path] entry (see MergeStarCatPSFEX's
-            # docstring on the [fileobj, name] form).
-            source, label = name[0], name[-1]
-            starcat_j = fits.open(source, memmap=False)
+            starcat_j = fits.open(name[0], memmap=False)
 
             data_j = starcat_j[self._hdu_table].data
 
@@ -892,7 +872,7 @@ class MergeStarCatSetools(object):
             # CCD number
             ccd_nb.append(np.full(
                 len(data_j["XWIN_IMAGE"]),
-                re.split(r"\-([0-9]*)\-([0-9]+)\.", label)[-2]))
+                re.split(r"\-([0-9]*)\-([0-9]+)\.", name[0])[-2]))
 
         # Prepare output FITS catalogue
         output = file_io.FITSCatalogue(
