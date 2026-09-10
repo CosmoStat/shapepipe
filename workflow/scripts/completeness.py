@@ -219,7 +219,7 @@ STAGE_DIR = {
     "tile_find_exposures": ("tile", "run_sp_tile_Fe"),
     "exp_get_images":      ("exp",  "run_sp_exp_Gie"),
     "exp_split":           ("exp",  "run_sp_exp_Sp"),
-    "exp_psf":             ("exp",  "run_sp_exp_SxSePsfPi"),
+    "exp_psf":             ("exp",  "run_sp_exp_SxSePsf"),
     "tile_merge_headers":  ("tile", "run_sp_tile_Mh_exp"),
     "tile_detect":         ("tile", "run_sp_tile_Sx"),
     "tile_vignets":        ("tile", "run_sp_tile_PiViVi"),
