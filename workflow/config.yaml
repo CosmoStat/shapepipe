@@ -57,6 +57,19 @@ outputs:
 # (<run_dir>-state; bin/sp explains why).
   products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g6
 
+# The campaign's NAME. It labels the two campaign-level merges' output —
+# <products_dir>/final_cat_<campaign>.hdf5 and the group inside it holding that
+# campaign's per-tile datasets —
+# and nothing else; the per-unit stores are named by their own IDs. UNSET means
+# the persistent root's basename, which is already how every campaign here is
+# named (run_dir, products_dir and index_db all end in smk-g6), so this key only
+# earns its place when the two must differ.
+#
+# It is not a rule input, so renaming a campaign mid-flight changes the merged
+# catalogue's PATH and therefore builds a new one; the per-tile catalogues it
+# reads are untouched.
+# campaign: smk-g6
+
 # There is no config_src knob: the config chain is workflow/config/cfis, resolved
 # relative to the Snakefile. The configs interpolate $SP_RUN / $SP_UNIT_NUM /
 # $SP_CONFIG / $SP_EXP / $NGMIX_* and the rules export them -- configs and rules
@@ -67,6 +80,100 @@ outputs:
 # which tile reads which exposure, so it is what a post-purge reconstruction
 # would otherwise have to rebuild from tile headers.
   index_db: /project/def-mjhudson/cdaley/sp-products/smk-g6/index/run_index.sqlite
+
+# OPTIONAL per-exposure retention: what to carry onto the persistent root ON TOP
+# OF the star catalogue's own inputs, before the scratch store goes
+# (`exp_persist`, exposure.smk).
+#
+# WHAT IS ALWAYS KEPT, AND IS NOT A CHOICE HERE: psf_validation, the psfex_interp
+# validation catalogue, one per CCD. `star_cat_merge` stacks every one of them
+# into <products_dir>/full_starcat_<campaign>.hdf5, so they are that
+# catalogue's PROVENANCE — a merged star catalogue with no per-exposure inputs
+# beside it cannot be audited, re-cut, or recomputed after a purge — and they are
+# what keeps APPENDING TILES CHEAP, since a tile added next month brings
+# exposures whose catalogues must join the existing stack. ~2 MB per exposure:
+# ~40 GB and ~40k inodes at DR6 scale, against a ~1 M-inode group quota. That is
+# the price of being able to say where the number came from, and it is paid.
+#
+# SO THIS LIST IS PURELY ADDITIVE, and an empty one is a coherent instruction:
+# the tar then holds the star catalogue's inputs and nothing else.
+#
+# Entries are PRODUCT NAMES — not globs. The catalogue below is the rendering of
+# workflow/scripts/persist_exp.py's PRODUCTS table, which is the single source of
+# truth for what each name means and what keeping it buys
+# (CosmoStat/shapepipe#844); print it any time with
+#
+#     workflow/bin/sp container exec python workflow/scripts/persist_exp.py --list-products
+#
+#   product         glob                        size/exposure
+#   --------------  --------------------------  -------------
+#   star_selection  star_selection-*.fits       24.5 MB
+#                       setools' PRE-SPLIT selection. The only file that answers which
+#                       stars the selection cuts rejected and why; the split samples have
+#                       already lost the rejects.
+#   star_train      star_split_ratio_80-*.fits  19.9 MB
+#                       the 80% TRAINING sample, the stars PSFEx actually fitted. Rows
+#                       duplicate star_selection.
+#   star_test       star_split_ratio_20-*.fits  7.1 MB
+#                       the 20% VALIDATION sample — the positions psf_validation's rows
+#                       correspond to. Rows duplicate star_selection.
+#   star_stats      star_stat-*.txt             unmeasured
+#                       setools' per-CCD STAT block: star counts, stars/deg^2, FWHM mode
+#                       and cuts. The selection's summary without its catalogue.
+#   psf_model       *.psf                       2.8 MB
+#                       the PSFEx model itself. Keeping it means the PSF can be
+#                       re-interpolated at ANY position later without rebuilding the
+#                       exposure chain — the single most capability-adding entry here.
+#   psfex_cat       psfex_cat-*.cat             unmeasured
+#                       PSFEx's own output catalogue (FITS_LDAC): the per-star FLAGS_PSF
+#                       and CHI2_PSF, i.e. WHICH stars outlier rejection clipped. Not
+#                       recoverable from anything else — the .psf header keeps only the
+#                       LOADED/ACCEPTED counts.
+#   psf_validation  validation_psf-*.fits       2.0 MB
+#                       the psfex_interp validation catalogue, one per CCD: the input to
+#                       the rho/tau statistics, and to the star_cat_merge rule that stacks
+#                       them into the campaign's full_starcat.
+#
+# A RAW GLOB IS STILL ACCEPTED, as an escape hatch for a file the catalogue does
+# not name yet: anything carrying a glob metacharacter or a dot is taken as a
+# glob rather than a name (`*.psf` is a glob, `psf_model` is the name for it).
+# An unknown NAME is a parse-time error listing the valid ones.
+#
+# Matches are packed, flat, into ONE uncompressed tar per exposure:
+# <products_dir>/exp/<shard>/<exp>/psf/<exp>.tar, with a manifest listing the
+# members (and the product each came from) beside it. One tar rather than loose
+# copies because inodes, not bytes, bind on /project. FITS members read straight
+# from the tar: fits.open(io.BytesIO(tarfile.open(t).extractfile(m).read())).
+#
+# WHY COPY RATHER THAN EXEMPT THESE FROM CLEANUP. Reclamation is not the threat.
+# run_dir is /scratch and is PURGED on a 60-day window whether or not
+# clean_exposure ever ran; products_dir is /project, backed up and not purged.
+# The only way a per-exposure product outlives its campaign is to leave the
+# filesystem. (Ordering is free: clean_exposure takes the exp_persist manifest
+# as an input, so a store is never reclaimed before its keepers are written.)
+#
+# EDITING THIS LIST IS CHEAP. It rides on exp_persist's `params`, so a change
+# reruns the packing (seconds) and NOT exp_psf (four hours per exposure). That
+# separation is the whole reason exp_persist is a rule of its own.
+#
+# THE DEFAULT is psf_model (2.8 MB per exposure on top of psf_validation's 2.0):
+# the model that lets the PSF be re-interpolated at any position later without
+# rebuilding the exposure chain from VOS, which is the single most
+# capability-adding thing an exposure can keep. Add psfex_cat for a production
+# run if you want to know which stars PSFEx clipped; the star_* products are for
+# selection studies and cost an order of magnitude more.
+#
+# THIS LIST IS EXPOSURE-SIDE ONLY. Tile-side retention is not configurable: the
+# only tile product that persists today is final_cat, written by tile_make_cat
+# straight to products_dir. A tile keep list is #844 follow-up.
+#
+# NOTE ON products_dir DEFAULTING TO run_dir (a fixture or smoke test): the tar
+# then lands beside the store on the same filesystem and buys nothing, and the
+# manifest sits in the exposure's own manifests/ dir, which clean_exposure
+# deletes wholesale — so a one-root run re-persists after every reclamation.
+# Harmless, and exactly the pre-D5 behaviour a one-root run asks for.
+persist_exp:
+  - psf_model
 
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
@@ -131,6 +238,15 @@ clean_tiles: true
 # exposure. That is correct, and expensive. Ignore a tile when you have decided
 # it is dead, not while you are still debugging it.
 clean_ignore_tiles: []
+
+# The ceiling on any rule's mem_mb. A request above the partition maximum is a
+# job SLURM never schedules and snakemake never diagnoses: it sits PENDING while
+# the campaign looks alive. Nibi's standard compute node is 766 GB (192 cores at
+# 4 GB/core), so 750000 leaves room for the OS and slurm's own overhead. The two
+# campaign-level merges size themselves from the campaign's bytes and will cross
+# this at survey scale — the cap turns "never runs" into "runs on the biggest
+# node there is", with a parse-time warning saying which rule was capped.
+max_mem_mb: 750000
 
 # ngmix within-tile chunking: static N chunks (closed ID ranges computed
 # per-tile, in-job, from the tile's own sexcat).

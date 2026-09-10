@@ -1,6 +1,6 @@
 """Exposure chain — per exposure, keyed by exp base id (dedup is structural).
 
-    exp_get_images -> exp_split -> exp_psf
+    exp_get_images -> exp_split -> exp_psf -> exp_persist
 
 Each in the exposure's own sharded work dir, chained by manifests; every config
 reads fixed ``$SP_RUN/output/run_sp_exp_*`` INPUT_DIRs, so nothing resolves a
@@ -16,6 +16,13 @@ each CCD's SExtractor catalogue for setools' star cut, and ``make_cat`` writes
 the per-band ``MASK_<band>`` columns on the tile side. Neither needs a rule, a
 star catalogue, or a network fetch — hence no ``star_catalogue`` / ``exp_star_cat``
 here, and no ``exp_mask``.
+
+``exp_persist`` is the one rule here that writes to the PERSISTENT root: it
+packs the PSF products named by `persist_exp:` into one tar per exposure off
+/scratch before the purge (or clean_exposure) can take them. It is a separate
+rule from exp_psf precisely so that editing that list costs a re-pack and not a
+four-hour refit; the full
+argument is in workflow/scripts/persist_exp.py.
 
 NO temp() anywhere in this file, ever (D5). Exposures overlap tiles by
 construction (~7-10 tiles each), so their consumer set closes over the CAMPAIGN,
@@ -106,6 +113,62 @@ rule exp_psf:
         sp_shell("exp_psf", f"config_exp_{PSF_MODEL}.ini")
 
 
+# --- persistence (D5) -------------------------------------------------------
+# The counterpart of reclamation, and it must come first in the DAG: this packs
+# the exposure's keepable PSF products into one tar on the persistent root, and
+# clean_exposure below takes its manifest as an input so the store is never
+# reclaimed before the keepers have left /scratch. The purge would take them
+# anyway — that, not clean_exposure, is what this rule exists for
+# (persist_exp.py's docstring argues both halves, and config.yaml's
+# `persist_exp:` block carries the keep list and its candidates).
+#
+# A LOCALRULE (declared in the Snakefile), by exactly the arithmetic that made
+# clean_exposure one: the body is a `tar` of a few MB from one shared filesystem
+# to another, seconds of work, and one sbatch per exposure would be ~20k
+# submissions at DR6 scale for jobs shorter than the scheduling latency. The
+# grouping constraint that binds mid-chain localrules (this file's docstring)
+# does not bite here: exp_persist's only neighbours are exp_psf, which is too
+# heavy to ever fuse, and clean_exposure, which is local itself.
+#
+# ONE DECLARED OUTPUT, AND IT IS A MANIFEST, NOT THE TAR OR A directory(). The
+# tar is not declared: a directory output would attest that a directory exists,
+# where what we want written down is WHICH files were packed and how big each was —
+# the provenance a rho-statistics run months from now needs in order to know
+# what it is reading. The manifest is byte-stable, so a no-op rerun does not
+# move its mtime and does not make clean_exposure look out of date.
+#
+# THE KEEP LIST RIDES ON params. That is the entire reason this is not three
+# lines of tar appended to exp_psf's shell: `params` is a rerun trigger, so
+# adding a pattern reruns the packing and leaves the PSF chain alone.
+rule exp_persist:
+    input:
+        rules.exp_psf.output.manifest
+    output:
+        manifest = f"{PROD_EXP_DIR}/manifests/exp_persist.json"
+    # No `log:`: the script's only failure modes are "nothing matched" and a
+    # name collision, both of which it reports on stderr and neither of which
+    # has a per-CCD verdict worth a completeness record.
+    params:
+        # Only the OPTIONAL retention list travels: psf_validation is packed
+        # by persist_exp.py whatever this says. It still rides on params, so
+        # adding a product re-packs (seconds) rather than re-fitting the PSF.
+        patterns    = " ".join(f"--pattern '{p}'" for p in PERSIST_EXP),
+        exp_dir     = lambda wc: exp_dir(wc.exp),
+        dest        = lambda wc: f"{prod_exp_dir(wc.exp)}/psf",
+        script_hash = PERSIST_HASH
+    threads: 1
+    retries: 2
+    resources:
+        mem_mb = 2000,
+        runtime = 10
+    shell:
+        "set -euo pipefail\n"
+        f"python {SCRIPTS}/persist_exp.py"
+        " --exp-dir '{params.exp_dir}' --exp {wildcards.exp}"
+        " --dest '{params.dest}' --manifest {output.manifest}"
+        " {params.patterns}"
+
+
 # --- reclamation (D5) -------------------------------------------------------
 # The one exception to "no reclamation in this file": clean_exposure OWNS
 # exposure-level deletion, and it is a real job, not temp() bookkeeping, because
@@ -137,7 +200,14 @@ rule clean_exposure:
         # spatial neighbours. In-scope consumers keep their edge: they may run in
         # this DAG, so the clean must be ordered after them.
         lambda wc: [tile_manifest(t, "tile_vignets")
-                    for t in clean_consumers(wc.exp) if t in READY_SET]
+                    for t in clean_consumers(wc.exp) if t in READY_SET],
+        # The keepers must be off /scratch before the store goes. Unlike the
+        # consumer edges above, this edge does not depend on scope: it is the
+        # same exposure's own rule, so it drags nothing into the DAG that this
+        # exposure's chain did not already put there. It is UNCONDITIONAL now:
+        # exp_persist always packs the star catalogue's inputs, so there is no
+        # keep list under which this rule has nothing to wait for.
+        lambda wc: [prod_exp_manifest(wc.exp, "exp_persist")]
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
     params:
@@ -151,3 +221,84 @@ rule clean_exposure:
         f"python {SCRIPTS}/clean_exposure.py"
         " --exp-dir $(dirname {output.tombstone}) --exp {wildcards.exp}"
         " --tombstone {output.tombstone} --consumers '{params.consumers}'"
+
+
+# --- the campaign's star catalogue ------------------------------------------
+# ONE job per campaign: every exposure's every CCD's `validation_psf-<exp>-<ccd>.fits`,
+# collected into `<products_dir>/full_starcat_<campaign>.hdf5`, one dataset per
+# exposure. That file is the rho/tau statistics input; the old bash chain built
+# a flat FITS table with `combine_runs.bash psf` + a `merge_starcat_runner`
+# pass, and the workflow emitted neither. sp_validation still opens the FITS
+# name today — CosmoStat/sp_validation#340 moves its readers to this file, the
+# same migration that retires the `patches/` key on the tile side.
+#
+# ONE DATASET PER EXPOSURE, NOT ONE TABLE, and it is the same decision as the
+# tile side's: it makes the file RECONCILABLE. A flat table had to be restacked
+# from every exposure the campaign had ever seen to add one — ~40 GB of members
+# at DR6 scale to add ~2 MB — and held the whole campaign in memory while it did
+# so. Reconciled, an append reads the appended exposures and nothing else, and
+# the job holds one exposure at a time. hdf5_reconcile.py is the shared
+# machinery; merge_star_cat.py argues the format and the tar reading.
+#
+# THE INPUT IS star_cat_inputs() (Snakefile): every exposure of TILES_READY whose
+# PSF products are on the persistent root — the live ones through the exp_persist
+# manifest edge `rule all` already requests, the RECLAIMED ones through their TAR,
+# which no rule declares and which therefore requires nothing to be built. That
+# asymmetry is not a flourish; requesting a reclaimed exposure's manifest
+# rebuilds its whole chain from VOS, and ancient() does not prevent it (measured
+# — the Snakefile carries the numbers). Nothing new enters the DAG either way. It
+# is read through an INPUT FUNCTION rather than at module level so that only a
+# parse which actually builds this job pays for the walk.
+#
+# THE PATHS DO NOT REACH THE SHELL, and that is not a style choice: ~20k manifest
+# paths is an order of magnitude over Linux's 128 KiB MAX_ARG_STRLEN for a single
+# argv entry, so `{input}` here would be a job that dies on exec at DR6 scale.
+# The job is handed the two small files the Snakefile itself started from — the
+# tile list and the index — and derives THE SAME SET from them; `params.inputs`
+# carries that set's FINGERPRINT, which is the rerun trigger. The equality is
+# the point: a job that stacked anything the fingerprint did not see would be
+# rows no rerun trigger could notice, which is what a glob over products_dir
+# would have given on a root shared with an earlier, larger tile list.
+#
+# NOT A LOCALRULE. exp_persist is local because it is 20k jobs of seconds; this
+# is one job that reads the campaign's tars end to end. Its MEMORY is flat in
+# the campaign (one exposure at a time) and sized on the largest exposure; its
+# RUNTIME is the total.
+#
+# NO JOB AT ALL when every exposure in scope is tombstoned with no tar left
+# behind: star_cat_targets() (Snakefile) simply does not request the output.
+rule star_cat_merge:
+    input:
+        lambda wc: star_cat_inputs()
+    output:
+        star_cat = full_starcat()
+    params:
+        products_dir = str(PRODUCTS_DIR),
+        tile_list    = str(config["tile_list"]),
+        index_db     = str(INDEX_DB),
+        campaign     = CAMPAIGN,
+        inputs       = unit_fingerprint(star_cat_exposures()),
+        script_hash  = MERGE_STAR_HASH
+    threads: 1
+    resources:
+        # Sized on the campaign's own member bytes, slope and intercept
+        # measured (the Snakefile's sizing block carries both points, and the
+        # ceiling this rule runs into at DR6 scale). Still * attempt, because a
+        # measured slope on synthetic tars is not a guarantee about real ones.
+        # Sized on the LARGEST exposure, not the total: the merge holds one
+        # exposure at a time (the Snakefile's sizing block carries the history).
+        mem_mb = lambda wc, attempt: capped_mem(attempt * (
+            STAR_MEM_BASE_MB
+            + STAR_MEM_FACTOR * star_cat_max_bytes() // 1_000_000),
+            "star_cat_merge"),
+        # ~2 min per GB of members on the measurement above, doubled, over a
+        # floor that covers the fixed cost of opening ~40 members per exposure.
+        runtime = lambda wc, attempt: attempt * (
+            30 + 4 * star_cat_bytes() // 1_000_000_000)
+    shell:
+        "set -euo pipefail\n"
+        f"python {SCRIPTS}/merge_star_cat.py"
+        " --products-dir '{params.products_dir}'"
+        " --tile-list '{params.tile_list}' --index-db '{params.index_db}'"
+        " --output {output.star_cat}"
+        " --campaign '{params.campaign}'"

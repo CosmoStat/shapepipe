@@ -152,6 +152,54 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
             "n_missing": len(missing)}
 
 
+# --- reading it back, for the campaign-level merges -------------------------
+# The Snakefile loads this index into dicts at parse time and derives the
+# campaign's unit sets from them (TILES_READY, and the exposures those tiles
+# read). A merge JOB has to derive the same two sets, and cannot be handed them
+# on its command line — ~20k paths is an order of magnitude over Linux's 128 KiB
+# MAX_ARG_STRLEN for a single argv entry. So it is given the two things the
+# Snakefile itself started from, the tile list and this database, and rebuilds
+# the sets here. Both halves therefore read the schema through one module rather
+# than two hand-written queries that could drift apart.
+
+
+def campaign_tiles(tile_list: Path, db_path: Path) -> list[str]:
+    """The campaign's ready tiles: declared in the list AND indexed.
+
+    Exactly the Snakefile's TILES_READY, computed the same way from the same two
+    files — a declared tile with no indexed exposure list cannot have been
+    computed, so it has no catalogue to merge.
+    """
+    # DEDUPED, order preserved. The tile list is appended to by hand across a
+    # campaign, so a tile can appear twice; a merge would then try to write that
+    # tile's dataset twice and die on the second. Deduping here rather than at
+    # the call sites keeps the answer the same for every reader of the index.
+    seen, declared = set(), []
+    with open(tile_list) as f:
+        for line in f:
+            tile = line.strip()
+            if tile and tile not in seen:
+                seen.add(tile)
+                declared.append(tile)
+    con = sqlite3.connect(db_path, timeout=60)
+    indexed = {r[0] for r in con.execute("SELECT DISTINCT tile_id FROM tile_exposures")}
+    con.close()
+    return [t for t in declared if t in indexed]
+
+
+def campaign_exposures(tile_list: Path, db_path: Path) -> list[str]:
+    """Every exposure the campaign's ready tiles read, sorted.
+
+    Exactly the set the Snakefile's persist_manifests() builds its manifest
+    paths from.
+    """
+    tiles = set(campaign_tiles(tile_list, db_path))
+    con = sqlite3.connect(db_path, timeout=60)
+    rows = con.execute("SELECT tile_id, exp_id FROM tile_exposures").fetchall()
+    con.close()
+    return sorted({e for t, e in rows if t in tiles})
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--tile-list", required=True, type=Path,

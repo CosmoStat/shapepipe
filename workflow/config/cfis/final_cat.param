@@ -8,7 +8,26 @@ TILE_ID
 
 # flags
 FLAGS
-IMAFLAGS_ISO
+# NO IMAFLAGS_ISO, AND NO MASK COLUMN AT ALL — READ THIS BEFORE ADDING ONE.
+# The tile-side SExtractor runs with FLAG_IMAGE = False and DOT_PARAM_FILE =
+# default_noimaflags.param (config_tile_Sx.ini), so IMAFLAGS_ISO is never
+# written into a tile catalogue and asking for it here only made the merge
+# fail. Instrument flags reach the pipeline on the EXPOSURE side, where
+# exp_split delivers the flag image and SExtractor reads it.
+#
+# Its intended replacement is make_cat's per-band MASK_<band> columns, queried
+# from the sky-fixed healsparse maps named by MASK_EXT_PATHS. THE WORKFLOW SETS
+# NO SUCH PATHS: config_tile_Mc.ini has no MASK_EXT_PATHS entry, so
+# save_mask_ext_data is never called, no MASK_<band> column exists in any tile
+# catalogue this workflow has produced, and smk-g6's carry none (checked).
+# Naming one here would fail every merge on every campaign.
+#
+# So the merged catalogue carries NO mask information today, and that is a
+# CONFIG gap and not a gap in this file: turning it on is setting
+# MASK_EXT_PATHS in config_tile_Mc.ini (`band:path` pairs, the same grammar as
+# the commented MASK_PATHS in config_exp_psfex.ini) and adding the matching
+# MASK_<band> names here, in that order. No healsparse map is staged under
+# /project/def-mjhudson yet.
 NGMIX_MCAL_FLAGS
 
 # PSF ellipticity (original image PSF)
@@ -113,5 +132,6 @@ NGMIX_T_PSF_ORIG_NOSHEAR
 # PSF size measured on reconvolved image
 # NGMIX_T_PSF_RECONV_NOSHEAR
 
-# ngmix moment failure flag
-NGMIX_MOM_FAIL
+# ngmix metacalibration type failure flag (renamed from NGMIX_MOM_FAIL in
+# f0fca23e; catalogues written before that commit carry the old name)
+NGMIX_MCAL_TYPES_FAIL

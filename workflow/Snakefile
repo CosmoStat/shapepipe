@@ -31,6 +31,7 @@ the manifest says "this stage succeeded", the log says "here is what happened"
 (the contract is argued in completeness.py's docstring).
 """
 
+import fnmatch
 import functools
 import hashlib
 import json
@@ -40,6 +41,10 @@ import sys
 from pathlib import Path
 
 from snakemake.exceptions import WorkflowError
+# Explicit rather than relying on the name snakemake injects into this
+# namespace: the one place we log at parse time is a branch that only a
+# non-default keep list reaches, and a NameError there would be found by a user.
+from snakemake.logging import logger
 
 # Resolved relative to THIS file, not the working directory: snakemake runs with
 # --directory on /scratch (bin/sp) so .snakemake/ state never lands on /project
@@ -92,6 +97,14 @@ RUN_DIR    = Path(OUTPUTS["run_dir"])
 # second path: one root, exactly the pre-D5 layout.
 PRODUCTS_DIR = Path(OUTPUTS.get("products_dir") or RUN_DIR)
 INDEX_DB   = Path(OUTPUTS["index_db"])
+# The campaign's NAME — what the two campaign-level merges label their output
+# with (`final_cat_<campaign>.hdf5`, and the group inside it that holds the
+# campaign's per-tile datasets). It
+# defaults to the persistent root's basename, which is already how every
+# campaign here is named (smk-g4, smk-g5, smk-g6: run_dir, products_dir and
+# index all end in it), so the common case needs no key at all. Set `campaign:`
+# in config.yaml when the two must differ.
+CAMPAIGN = config.get("campaign") or PRODUCTS_DIR.name
 SCRIPTS    = Path(workflow.basedir) / "scripts"
 # The config chain is the repo's committed directory (D2). The configs and
 # rules that set their environment variables must be versioned together. There
@@ -123,8 +136,14 @@ if PHASE not in ("prepare", "compute", "passthrough"):
     raise WorkflowError(
         f"SP_PHASE={PHASE!r} is not one of prepare, compute, passthrough.")
 
+# DEDUPED, order preserved. The tile list is appended to by hand across a
+# campaign, so a tile can appear twice — harmless for a per-tile target, which
+# is the same path requested twice, but not for the campaign-level merges: their
+# fingerprint counts what is in this list and the job derives a deduped set from
+# the same file (build_index.campaign_tiles), so a duplicate line would make the
+# two disagree about a set they must name identically.
 with open(config["tile_list"]) as f:
-    TILES = [ln.strip() for ln in f if ln.strip()]
+    TILES = list(dict.fromkeys(ln.strip() for ln in f if ln.strip()))
 
 # --- ngmix scatter (D4) ----------------------------------------------------
 # Native directive: `--set-scatter ngmix=N` overrides it, N=1 degenerates to one
@@ -263,6 +282,7 @@ EXP_DIR  = str(RUN_DIR / "exp" / "{shard}" / "{exp}")
 # The persistent root mirrors the scratch one, shard for shard, so the two trees
 # read as the same campaign seen from two filesystems.
 PROD_TILE_DIR = str(PRODUCTS_DIR / "tiles" / "{shard}" / "{tile}")
+PROD_EXP_DIR  = str(PRODUCTS_DIR / "exp" / "{shard}" / "{exp}")
 
 def tile_dir(tile):
     return f"{RUN_DIR}/tiles/{tile[:2]}/{tile}"
@@ -275,6 +295,18 @@ def tile_manifest(tile, stage):
 
 def exp_manifest(exp, stage):
     return f"{exp_dir(exp)}/manifests/{stage}.json"
+
+def prod_exp_dir(exp):
+    """The exposure's dir on the PERSISTENT root — where exp_persist writes.
+
+    Sharded identically to the scratch one, so the two trees read as the same
+    campaign seen from two filesystems, exposure side as well as tile side."""
+    return f"{PRODUCTS_DIR}/exp/{exp[:2]}/{exp}"
+
+def prod_exp_manifest(exp, stage):
+    """A manifest that must SURVIVE reclamation, so it is not in the exposure's
+    scratch manifests/ dir (clean_exposure deletes that wholesale)."""
+    return f"{prod_exp_dir(exp)}/manifests/{stage}.json"
 
 def forest_dir(tile):
     return f"{tile_dir(tile)}/exp_forest"
@@ -308,12 +340,52 @@ def unit_num(unit):
 # gets its own hash, on the forest rule only.
 def script_hash(name):
     """The 12-hex fingerprint of one script under workflow/scripts/."""
-    return hashlib.md5((SCRIPTS / name).read_bytes()).hexdigest()[:12]
+    return path_hash(SCRIPTS / name)
+
+
+def path_hash(path):
+    """The 12-hex fingerprint of any file the rules depend on but do not own.
+
+    A rule whose behaviour comes from more than its own script needs all of it
+    in one trigger. final_cat_merge is the case: what it writes is decided by
+    scripts/python/create_final_cat.py (the column extraction) and by
+    config/cfis/final_cat.param (which columns), and NEITHER is under
+    workflow/scripts/ nor a declared input. Without them in the hash, this PR's
+    own edits to both would have left every finished campaign's hdf5 untouched
+    and nothing would have said so.
+
+    A MISSING FILE IS NOT A PARSE ERROR. This runs at module level, so raising
+    here kills EVERY invocation of the workflow — `sp --unlock`, `sp report`,
+    a dry run — over a file only one rule needs. Worse, it kills them with a
+    bare FileNotFoundError, which is exactly the diagnosis merge_final_cat.py
+    already carries and would print if the job were allowed to reach it. So the
+    hash degrades to a sentinel and says so once; the parse survives, the rule
+    still exists, and the job fails with the message written for it.
+    """
+    path = Path(path)
+    try:
+        return hashlib.md5(path.read_bytes()).hexdigest()[:12]
+    except OSError:
+        if workflow.is_main_process:
+            logger.warning(
+                f"missing: {path} — it is part of a rule's rerun trigger, so "
+                f"that rule cannot tell whether it is out of date. The job "
+                f"that needs the file will say so when it runs.")
+        return "missing"
 
 SCRIPT_HASH = script_hash("completeness.py")
 FOREST_HASH = script_hash("build_forest.py")
 CLEAN_HASH  = script_hash("clean_exposure.py")
 CLEAN_TILE_HASH = script_hash("clean_tile.py")
+PERSIST_HASH = script_hash("persist_exp.py")
+MERGE_STAR_HASH  = script_hash("merge_star_cat.py")
+# Three files, one trigger: the rule's script, the column extraction it calls,
+# and the parameter file that says which columns (path_hash argues why).
+MERGE_FINAL_HASH = ":".join((
+    script_hash("merge_final_cat.py"),
+    path_hash(Path(workflow.basedir).parent / "scripts" / "python"
+              / "create_final_cat.py"),
+    path_hash(CONFIG_DIR / "final_cat.param")))
 # ngmix_range.py earns a hash for a stronger reason than the others. What it
 # emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks are
 # a PARTITION of its object IDs: resume a tile across an edit to the split and
@@ -430,6 +502,426 @@ def clean_targets():
                for t in tiles):
             out.append(tombstone(exp))
     return sorted(out)
+
+# --- persisted exposure products (D5) --------------------------------------
+# The keep list is config, not a rule input, and it is READ HERE so that exactly
+# one place converts it into the form the rule carries.
+#
+# OPTIONAL RETENTION, and only that. What star_cat_merge needs — every CCD's
+# psf_validation — is packed by exp_persist whatever this list says
+# (persist_exp.py's ALWAYS argues why: provenance for the merged catalogue, and
+# a cheap tile append later). So an EMPTY list is a coherent instruction and not
+# a switch that turns persistence off: the tar then holds the star catalogue's
+# inputs and nothing else, and exp_persist still runs for every exposure.
+PERSIST_EXP = list(config.get("persist_exp") or [])
+
+# The keep list names PRODUCTS (`psf_model`), not globs (`*.psf`); the
+# catalogue that maps one to the other lives in persist_exp.py, which is also
+# what the rule runs, so there is one definition and not a copy here.
+# UNKNOWN NAMES DIE AT PARSE TIME, listing the valid ones — a typo in a keep
+# list would otherwise be a silently-empty keep or a per-exposure failure an
+# hour into a campaign.
+import persist_exp as _persist                          # noqa: E402
+
+for _entry in PERSIST_EXP:
+    try:
+        _persist.resolve(_entry)
+    except KeyError as _exc:
+        raise WorkflowError(f"config persist_exp: {_exc.args[0]}")
+
+
+def persist_targets():
+    """Which exposures this invocation must pack PSF products off scratch for.
+
+    `rule all` requests these DIRECTLY rather than reaching them only through
+    clean_exposure. Persistence and reclamation are different concerns — the
+    /scratch purge takes the store whether or not `clean:` is on — and hanging
+    the copy off the clean rule alone would mean a campaign run with clean:false
+    persists nothing and loses everything at the purge.
+
+    Scope is the ready tiles' exposures, which `all` already builds through the
+    tile chain, so nothing new is pulled into the DAG by asking.
+
+    EXCEPT AN EXPOSURE WHOSE STORE IS GONE. Its exp_psf manifest is not there,
+    so requesting its persist manifest would make the DAG rebuild the whole
+    exposure chain from VOS — the avalanche tile.smk's reclaimed-edge cut exists
+    to prevent, arriving through a new target instead. exp_store_reclaimed()
+    below is that test, and what it does NOT test is the tombstone.
+
+    HEAD PROCESS ONLY, for the same reason as clean_targets() above.
+    """
+    if not workflow.is_main_process:
+        return []
+    return persist_manifests()
+
+
+@functools.lru_cache(maxsize=1)
+def persist_manifests():
+    """persist_targets() without the head-process guard, memoised.
+
+    The guard on persist_targets() is a cost decision, not a correctness one:
+    `rule all` reads it at MODULE level, so a job parse would pay a whole
+    campaign's index walk for a target it can never schedule. star_cat_merge
+    reads the same list through an INPUT FUNCTION, which snakemake evaluates
+    only for parses that actually build that job — the head process, and the one
+    merge job's own re-parse under the slurm executor, which genuinely needs it.
+    So this half carries no guard and the memo keeps either parse to one walk.
+    """
+    exps = {e for t in TILES_READY for e in tile_exposures(t)}
+    return sorted(prod_exp_manifest(e, "exp_persist") for e in exps
+                  if not exp_store_reclaimed(e))
+
+
+def exp_store_reclaimed(exp):
+    """True when this exposure's PSF products exist ONLY on the persistent root.
+
+    The one condition both the persist target list and star_cat_merge's edge
+    choice turn on, and it deliberately does NOT read the tombstone.
+
+    THE TOMBSTONE ALONE IS NOT THE EVIDENCE. It says clean_exposure ran, and
+    clean_exposure is only one of the two ways a scratch store disappears.
+
+    WHAT THE TEST HAS TO SEPARATE is a store that is GONE from one that has not
+    been BUILT yet, and no single file says that. This runs at parse time, before
+    any exp_psf job of a fresh campaign has run, so "the exp_psf manifest is
+    missing" alone would skip every exposure of a new campaign and persist
+    nothing at all. The question is therefore: is there evidence this exposure
+    once had a store? Two files carry it, and either will do:
+
+      * the TOMBSTONE — clean_exposure ran, so the store was built and reclaimed,
+        and whatever was going to be packed was packed before it went;
+      * a PERSISTED MANIFEST with no exp_psf manifest beside it — exp_persist
+        ran, so the store existed, and it is not there now. This is the purge
+        case, and it is the one the tombstone cannot see: /scratch is purged on
+        a 60-day window whether or not this workflow reclaimed anything, and it
+        leaves nothing behind. Keying on the tombstone alone meant that after a
+        purge, or on any campaign run with `clean: false`, every exposure looked
+        live, its persist manifest was requested, its exp_psf manifest was not
+        there, and snakemake rebuilt the entire exposure chain from VOS.
+
+    An exposure with a LIVE store and a manifest is not reclaimed and is still
+    asked for, which is what lets an edit to `persist_exp:` re-pack in seconds
+    rather than be silently ignored — the whole reason exp_persist is a rule of
+    its own. An exposure with neither file is asked for too: either it has not
+    run yet, or it was purged having saved nothing, and only the DAG can tell
+    those apart by trying.
+    """
+    return (Path(tombstone(exp)).exists()
+            or (Path(prod_exp_manifest(exp, "exp_persist")).exists()
+                and not Path(exp_manifest(exp, "exp_psf")).exists()))
+
+# --- the campaign-level merges ---------------------------------------------
+# Two rules, one job each per campaign, both writing to the persistent root, and
+# both the LAST link of a chain whose per-unit half the workflow already had:
+# the exposure side ends in one `full_starcat_<campaign>.hdf5` (every CCD's PSF
+# validation catalogue — the rho/tau statistics input) and the tile side in one
+# `final_cat_<campaign>.hdf5` (every tile's final catalogue — the shear
+# catalogue sp_validation reads). Until they existed the workflow's product set
+# was two files short of what the old `combine_runs.bash` + `create_final_cat.py`
+# chain delivered, and every campaign ended with a manual merge.
+#
+# NEITHER IS A LOCALRULE, and the arithmetic runs the opposite way from
+# exp_persist's. Those rules are ~20k jobs of seconds each, so submitting them
+# costs more in scheduling latency than the work; these are ONE job each over the
+# whole campaign — ~800k catalogues stacked in memory, or ~20k catalogues read
+# end to end at DR6 scale. That is a compute job, and it belongs on a node.
+#
+# NEITHER PUTS ITS INPUT PATHS IN ITS SHELL. `{input}` at DR6 scale is ~20k paths
+# in a single argv entry, an order of magnitude over Linux's 128 KiB
+# MAX_ARG_STRLEN, and the job would die on exec. So each rule's `input` is the
+# DAG EDGE (what must exist first) and each script rediscovers the same set from
+# the tile list and the index; what travels is a FINGERPRINT of that set's unit
+# ids, on `params`, which is what makes the merge rerun when the set changes and
+# not otherwise.
+# The scripts' docstrings argue the rediscovery — it is also what lets the merges
+# cover exposures whose scratch stores reclamation has since taken.
+
+
+def unit_fingerprint(units):
+    """A short digest of a set of UNIT IDS, for a merge rule's `params`.
+
+    `params` is a rerun trigger and a set of ids is not: appending a tile grows
+    the set, moves the digest and reruns the merge, while a rerun over the same
+    set leaves it alone. Sorted before hashing because the ORDER is not part of
+    what changed.
+
+    IDS RATHER THAN THE RULE'S `input` PATHS. A path can change while the set
+    does not — star_cat_merge's edge for one exposure flips from its manifest to
+    its tar when the store is reclaimed — and a merge that reruns over identical
+    content on every reclamation pass is a rerun trigger firing on bookkeeping.
+    The ids are also exactly what the job derives on its own side, so both
+    halves agree on the set and on how it is named.
+    """
+    joined = "\n".join(sorted(str(u) for u in units))
+    return f"{len(units)}:{hashlib.md5(joined.encode()).hexdigest()[:12]}"
+
+
+# NO GATE ON THE KEEP LIST. star_cat_merge used to exist only when
+# `persist_exp:` named something validation_psf-shaped, which made the
+# campaign's star catalogue an opt-in and a typo away from silently absent.
+# exp_persist now packs psf_validation unconditionally, so the merge is
+# requested whenever the campaign has a persisted exposure at all, and
+# star_cat_targets() below is the only condition left.
+
+
+def full_starcat():
+    """The campaign's merged star catalogue — the rho/tau statistics input.
+
+    hdf5, one dataset per exposure, named for the campaign exactly as the shear
+    catalogue beside it is. The old flat FITS table it replaces was called
+    `full_starcat-0000000.fits` and sp_validation still opens that name;
+    CosmoStat/sp_validation#340 moves its readers to this file, the same
+    migration that retires the `patches/` key on the galaxy side."""
+    return f"{PRODUCTS_DIR}/full_starcat_{CAMPAIGN}.hdf5"
+
+
+def final_cat_hdf5():
+    """The campaign's merged shear catalogue — sp_validation's galaxy_cat_path."""
+    return f"{PRODUCTS_DIR}/final_cat_{CAMPAIGN}.hdf5"
+
+
+def prod_exp_tar(exp):
+    """The tar exp_persist writes. Not a declared output of anything — see
+    star_cat_inputs()."""
+    return f"{prod_exp_dir(exp)}/psf/{exp}.tar"
+
+
+@functools.lru_cache(maxsize=1)
+def star_cat_inputs():
+    """What star_cat_merge waits for: every exposure of TILES_READY whose PSF
+    products are on the persistent root, live and reclaimed alike.
+
+    THE SAME SET merge_star_cat.py derives at job time, and that equality is
+    load-bearing — the fingerprint on `params` is taken over THIS list, so
+    anything the job stacked that was not in it would be rows no rerun trigger
+    could see. The job states the rule from its own side: same tile list, same
+    index, exp_persist manifest present on the persistent root. By the time it
+    runs, every exposure below has one.
+
+    RECLAIMED EXPOSURES BELONG IN THE STAR CATALOGUE. Carrying their PSF
+    products off scratch is exactly what exp_persist is for, and a merge that
+    dropped them would shrink the campaign's star catalogue every time
+    reclamation ran. But their exp_psf manifest is gone, so REQUESTING their
+    exp_persist manifest rebuilds the whole exposure chain from VOS — the
+    avalanche persist_targets() drops them to avoid.
+    ancient() DOES NOT HELP: it suppresses the timestamp comparison, not the
+    missing input, and snakemake schedules the chain anyway. Measured on smk-g6
+    with one reclaimed exposure given a manifest by hand: the dry run grew
+    exp_get_images, exp_split, exp_psf and exp_persist jobs.
+
+    So a reclaimed exposure is depended on through its TAR instead. The tar is
+    not a declared output of any rule (exp_persist declares only its manifest,
+    deliberately — persist_exp.py says why), so a tar that exists is a DAG leaf:
+    snakemake requires it and builds nothing. A live exposure keeps its manifest
+    edge, which is what orders the merge after the packing; its tar does not
+    exist yet, so it could not serve as the edge.
+
+    An exposure reclaimed by a workflow PREDATING exp_persist has neither tar nor
+    manifest and is in no set at all. Nothing short of rebuilding its chain from
+    VOS recovers it; the merge reports how many exposures it found.
+    """
+    live, reclaimed = [], []
+    for exp in sorted({e for t in TILES_READY for e in tile_exposures(t)}):
+        if not exp_store_reclaimed(exp):
+            live.append(prod_exp_manifest(exp, "exp_persist"))
+        elif Path(prod_exp_tar(exp)).exists():
+            reclaimed.append(prod_exp_tar(exp))
+    return live + reclaimed
+
+
+@functools.lru_cache(maxsize=1)
+def star_cat_exposures():
+    """The exposure IDs star_cat_merge stacks — what its fingerprint is taken
+    over.
+
+    THE IDS, NOT THE PATHS, and the difference is a rerun. An exposure's edge
+    FLIPS from its manifest to its tar the moment its store is reclaimed, so a
+    fingerprint over paths moves on every reclamation pass and reruns the merge
+    over content that did not change. The ids move only when the set does, which
+    is what the trigger is for. It is also what merge_star_cat.py derives on the
+    job side, so the two agree on the set AND on how it is named.
+    """
+    return sorted(e for e in {e for t in TILES_READY for e in tile_exposures(t)}
+                  if Path(prod_exp_manifest(e, "exp_persist")).exists()
+                  or not exp_store_reclaimed(e))
+
+
+# --- sizing the two merges (D4) ---------------------------------------------
+# MEASURED, not guessed, and measured as a SLOPE rather than a single number:
+# these are the only two rules whose one job's footprint grows with the whole
+# campaign, so a constant is wrong by however much the campaign is not the one
+# it was tuned on.
+#
+# Both slopes were measured on this login node, inside the campaign container,
+# against synthetic tars for the star side and against smk-g6's real
+# catalogues for the tile side. Peak RSS is getrusage(RUSAGE_CHILDREN).
+#
+# STAR SIDE, AND IT IS FLAT IN THE CAMPAIGN. The merge writes one hdf5 dataset
+# per exposure and reads one exposure at a time, so it is sized on the LARGEST
+# exposure's members — ~2 MB — not on the campaign's. What follows is the
+# history of how that came to be true, because the numbers are the argument.
+#
+# The FITS full_starcat this replaced was one flat table, so the job held the
+# whole campaign. Two fixture points, 20 and 80 exposures of 40 CCDs x 400 stars
+# (1.6 MB of members per exposure, against the 2.0 MB measured on smk-m2),
+# across the rewrites this PR made to MergeStarCatPSFEX:
+#
+#     input members   python lists   arrays+concat   two passes
+#     32.3 MB          383 MB          238 MB          221 MB
+#     129.0 MB        1313 MB          740 MB          661 MB
+#     slope             10.1x           5.5x            4.8x
+#
+# The tenfold was one python float object (32 bytes) plus a list pointer (8) per
+# 4 bytes of float32 payload. Arrays per catalogue removed that; counting rows
+# from the headers and filling a preallocated array removed the rest. What
+# remained at 4.8x was the OUTPUT: file_io writes every float column as FITS 1D,
+# so float32 became a float64 table astropy then buffered.
+#
+# Per-exposure hdf5 removes the term entirely rather than shrinking it — and
+# with it the ~240 GB a DR6-scale flat table would have wanted. Those
+# improvements stay upstream regardless: the module runner still merges to one
+# FITS table, and they are its fix.
+#
+# TILE SIDE, and it is the reassuring one. Two points against real smk-g6
+# catalogues, 2 tiles (73.9 MB in, largest 39.6 MB) and 6 tiles (235.5 MB in,
+# largest 47.7 MB): peak RSS 129 MB and 139 MB. FLAT IN THE NUMBER OF TILES —
+# the merge holds one catalogue at a time — so it is sized on the LARGEST tile,
+# not the total, at ~3x it plus the interpreter.
+# THE CEILING ON ANY REQUEST, and it is not a formatting nicety: a mem_mb above
+# the partition maximum is a job SLURM will never schedule and snakemake will
+# never diagnose — it sits PENDING with a reason nobody reads while the campaign
+# looks alive. The two merge formulas grow with the campaign, so at some size
+# they WILL cross it; capping turns "silently never runs" into "runs on the
+# biggest node there is, and possibly dies with a diagnosable OOM".
+#
+# Nibi's standard compute node is 766 GB (192 cores, 4 GB/core); 750000 leaves
+# room for the OS and the slurm accounting overhead. Override with `max_mem_mb:`
+# for a cluster with smaller nodes, or to reserve headroom.
+MAX_MEM_MB = int(config.get("max_mem_mb", 750_000))
+_capped_warned = set()
+
+
+def capped_mem(mb, rule):
+    """min(mb, MAX_MEM_MB), and say so ONCE at parse time when it bites."""
+    mb = int(mb)
+    if mb > MAX_MEM_MB:
+        if rule not in _capped_warned and workflow.is_main_process:
+            _capped_warned.add(rule)
+            logger.warning(
+                f"{rule}: sized at {mb} MB, capped to max_mem_mb={MAX_MEM_MB} "
+                f"(Nibi's standard node is 766 GB). The job will run with less "
+                f"memory than the measurement says it wants — expect an OOM, "
+                f"and split the campaign or fix the merge rather than raising "
+                f"this number past what a node has.")
+        return MAX_MEM_MB
+    return mb
+
+
+STAR_MEM_BASE_MB   = 500      # interpreter + astropy + h5py, rounded up
+STAR_MEM_FACTOR    = 6        # x the LARGEST exposure's members
+FINAL_MEM_BASE_MB  = 800
+FINAL_MEM_FACTOR   = 4        # x the LARGEST tile; ~3 measured
+# What one unit costs when its product is not on disk yet to be measured — a
+# fresh campaign sizes its merge before anything has been packed or made. The
+# exposure figure is psf_validation's alone (the only members the star merge
+# reads), not a whole tar's; both are the measured medians in config.yaml's
+# persist_exp block and the D5 notes.
+EXP_BYTES_DEFAULT  = 2_000_000
+# The product whose members star_cat_merge stacks — named once, here and in
+# merge_star_cat.py, and resolved through persist_exp.py's catalogue.
+STAR_CAT_PRODUCT   = _persist.ALWAYS
+STAR_CAT_PATTERN   = _persist.resolve(_persist.ALWAYS)
+TILE_BYTES_DEFAULT = 46_000_000
+
+
+def _size(path, default):
+    """Bytes on disk, or the documented per-unit default if it is not there."""
+    try:
+        return Path(path).stat().st_size
+    except OSError:
+        return default
+
+
+def star_cat_max_bytes():
+    """The LARGEST exposure's psf_validation members — what sizes the merge.
+
+    The star merge holds ONE exposure at a time now that its output is hdf5
+    with a dataset per exposure, so its memory is flat in the campaign exactly
+    as the tile side's is. Sizing on the total would ask a node for a campaign's
+    worth of memory to hold ~2 MB.
+    """
+    return max(_star_cat_exposure_bytes() or [EXP_BYTES_DEFAULT])
+
+
+def star_cat_bytes():
+    """Total bytes of the members the star merge will actually read.
+
+    THE TAR'S SIZE IS THE WRONG NUMBER, and increasingly wrong as the keep list
+    grows: the merge reads the psf_validation members and nothing else, while
+    the tar also holds whatever `persist_exp:` retains. With the default
+    retention that is 2.4x too much, and with the star_* products on it is ~36x
+    — a memory request that misses by more than an order of magnitude, and one
+    that would jump the moment an exposure got packed, since an unpacked one
+    contributed the per-exposure default instead. So the MANIFEST is read and
+    only the psf_validation members are counted; persist_exp records the product
+    each member came from, exactly so this is answerable without opening a tar.
+
+    One json parse per exposure at DAG build, and only for the parse that builds
+    this job. An exposure not yet packed has no manifest and contributes the
+    measured default, which is the psf_validation figure and not the tar's.
+    """
+    return sum(_star_cat_exposure_bytes())
+
+
+@functools.lru_cache(maxsize=1)
+def _star_cat_exposure_bytes():
+    """Per exposure, the bytes of the members the star merge will read."""
+    out = []
+    for exp in star_cat_exposures():
+        manifest = Path(prod_exp_manifest(exp, "exp_persist"))
+        if not manifest.exists():
+            out.append(EXP_BYTES_DEFAULT)
+            continue
+        try:
+            body = json.loads(manifest.read_text())
+            # By product name or, for a manifest written before that field
+            # existed or by a raw-glob keep list, by file name — the same test
+            # merge_star_cat.is_member() applies, so the sizing counts exactly
+            # the members the job will read.
+            out.append(sum(f["bytes"] for f in body["files"]
+                           if f.get("product") == STAR_CAT_PRODUCT
+                           or fnmatch.fnmatch(f["name"], STAR_CAT_PATTERN)))
+        except (OSError, ValueError, KeyError):
+            out.append(EXP_BYTES_DEFAULT)
+    return out
+
+
+def final_cat_max_bytes():
+    """The LARGEST tile catalogue the hdf5 merge will read — what sizes it."""
+    return max([_size(final_cat(t), TILE_BYTES_DEFAULT) for t in TILES_READY]
+               or [TILE_BYTES_DEFAULT])
+
+
+def star_cat_targets():
+    """`full_starcat` when there is anything to stack into it, else nothing.
+
+    One way to get nothing, and it is a state rather than an error: every
+    exposure in scope is already tombstoned — a
+    campaign resumed after reclamation, whose exposures were cleaned by a
+    workflow that predates exp_persist and therefore left neither tar nor
+    manifest to read. A rule with an empty input list would still be a JOB, and
+    it would write an empty star catalogue over a good one.
+    """
+    if not workflow.is_main_process:
+        return []
+    return [full_starcat()] if star_cat_inputs() else []
+
+
+def final_cat_targets():
+    """The merged hdf5, whenever this campaign has a tile to put in it."""
+    if not workflow.is_main_process or not TILES_READY:
+        return []
+    return [final_cat_hdf5()]
 
 # --- tile reclamation (D5) --------------------------------------------------
 # A separate flag from `clean:` (config.yaml carries the full
@@ -601,11 +1093,21 @@ include: "rules/tile.smk"
 # localrule would: a local job cannot be fused into a submitted group. The old
 # star-catalogue rules were exactly that, and they are gone with the internal
 # mask generation.)
-localrules: all, prepare_all_tiles, clean_exposure, clean_tile
+#
+# exp_persist joins them for the same arithmetic — one tar of a few MB per
+# exposure, ~20k of them at DR6 scale, each far shorter than the scheduling
+# latency that would submit it (exposure.smk argues the placement in full). It
+# sits mid-chain between exp_psf and clean_exposure, but both of those are
+# outside every group already (exp_psf is heavy, clean_exposure is local), so it
+# adds no new grouping constraint.
+localrules: all, prepare_all_tiles, clean_exposure, clean_tile, exp_persist
 
 rule all:
     input:
         [final_cat(t) for t in TILES_READY],
+        persist_targets(),
+        star_cat_targets(),
+        final_cat_targets(),
         clean_targets(),
         clean_tile_targets(),
 

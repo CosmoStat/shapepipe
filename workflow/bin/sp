@@ -72,7 +72,10 @@ STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"; mkdir -p "$STATE_DIR"
 # WHAT. `sp run` copies the code it is about to launch into $STATE_DIR/code and
 # runs the campaign entirely out of that copy: the Snakefile, the rules, the
 # scripts, the ini chain (symlinks DEREFERENCED -- workflow/config/cfis points
-# into example/, and the copy must be self-contained), src/, and the profile.
+# into example/, and the copy must be self-contained), src/, the repo's own
+# scripts/ (final_cat_merge loads scripts/python/create_final_cat.py by path --
+# it is a script, not an installed module, and the hdf5 layout it defines must
+# be pinned to the campaign like everything else here), and the profile.
 # Every workflow-internal path hangs off `workflow.basedir`, which IS the
 # snapshot, so they all follow it for free; the profile's PYTHONPATH pin is the
 # one that cannot (YAML splices nothing) and is rewritten below.
@@ -91,10 +94,10 @@ snapshot_code() {
   mkdir -p "$SNAPSHOT"
   if command -v rsync >/dev/null 2>&1; then
     rsync -a --delete --copy-links --exclude '__pycache__' --exclude '*.egg-info' \
-      "$HERE" "$REPO/src" "$REPO/profiles" "$SNAPSHOT/"
+      "$HERE" "$REPO/src" "$REPO/scripts" "$REPO/profiles" "$SNAPSHOT/"
   else
     rm -rf "$SNAPSHOT"; mkdir -p "$SNAPSHOT"
-    cp -rL "$HERE" "$REPO/src" "$REPO/profiles" "$SNAPSHOT/"
+    cp -rL "$HERE" "$REPO/src" "$REPO/scripts" "$REPO/profiles" "$SNAPSHOT/"
     find "$SNAPSHOT" -name __pycache__ -type d -prune -exec rm -rf {} +
   fi
 
