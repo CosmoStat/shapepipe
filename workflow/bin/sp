@@ -24,17 +24,37 @@
 # executor re-invokes it inside jobs, so it cannot live on a node-local path).
 # One entry point, so a fresh tmux or a restart after a crash always launches
 # with the right state.
+#
+# Three environment variables make it drivable off nibi and from outside:
+#
+#   SP_PROFILE        profiles/<name>/ to launch with (default: nibi).
+#   SP_SNAKEMAKE_ENV  venv to activate; skipped when it does not exist and a
+#                     snakemake is already on PATH (e.g. candide).
+#   SP_RUN_CONFIG     a run config that REPLACES workflow/config.yaml (it is not
+#                     layered on it, so no key falls back to the committed run's
+#                     paths). Snapshotted with the code by `sp run`. This is how
+#                     sp_validation drives one campaign per image-simulation
+#                     shear branch.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # workflow/
 REPO="$(dirname "$HERE")"
 VENV="${SP_SNAKEMAKE_ENV:-/project/def-mjhudson/cdaley/snakemake-env}"
 SCRIPTS="$HERE/scripts"
-CONFIG="$HERE/config.yaml"
+CONFIG="${SP_RUN_CONFIG:-$HERE/config.yaml}"
+PROFILE="${SP_PROFILE:-nibi}"
+[ -f "$CONFIG" ] || { echo "sp: run config $CONFIG does not exist" >&2; exit 2; }
+[ -d "$REPO/profiles/$PROFILE" ] || {
+  echo "sp: no profile $REPO/profiles/$PROFILE (SP_PROFILE=$PROFILE)" >&2; exit 2; }
 
 module load apptainer/1.4.5 2>/dev/null || true
-# shellcheck disable=SC1091
-source "$VENV/bin/activate"
+if [ -f "$VENV/bin/activate" ]; then
+  # shellcheck disable=SC1091
+  source "$VENV/bin/activate"
+elif ! command -v snakemake >/dev/null 2>&1; then
+  echo "sp: no venv at $VENV and no snakemake on PATH (set SP_SNAKEMAKE_ENV)" >&2
+  exit 2
+fi
 
 # Scalar reader for workflow/config.yaml. The venv is active by this point and
 # snakemake depends on PyYAML, so this parses the file rather than pattern-matching
@@ -104,7 +124,7 @@ snapshot_code() {
   # rewritten HERE, in the snapshot's copy, and `sm` points --profile at that copy.
   # The checked-in profile keeps its literal checkout path and stays the source of
   # truth for the FLAGS; exactly one path is substituted, by one line of sed-work.
-  python - "$SNAPSHOT/profiles/nibi/config.yaml" "$SNAPSHOT/src" <<'PY'
+  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$SNAPSHOT/src" <<'PY'
 import pathlib, re, sys
 f, src = pathlib.Path(sys.argv[1]), sys.argv[2]
 text, n = re.subn(r'(--env PYTHONPATH=)\S+', lambda m: m.group(1) + src,
@@ -137,6 +157,11 @@ out.write_text(json.dumps({
     "dirty_files": status.splitlines() if status else [],
 }, indent=2) + "\n")
 PY
+  # An external run config is part of what is launched: snapshot it with the
+  # code, so a job re-parsing hours later reads the config the run started with.
+  if [ -n "${SP_RUN_CONFIG:-}" ]; then
+    cp "$SP_RUN_CONFIG" "$SNAPSHOT/run_config.yaml"
+  fi
   echo "sp: code snapshot refreshed at $SNAPSHOT" >&2
 }
 
@@ -164,9 +189,14 @@ code_root() { [ -f "$SNAPSHOT/workflow/Snakefile" ] && echo "$SNAPSHOT" || echo 
 # index without building it and schedules no side effects.
 sm() {
   local root; root="$(code_root)"
+  # The run config the Snakefile reads: the snapshot's copy when this run has
+  # one, so every parse of the campaign -- head and jobs -- sees the same file.
+  if [ -n "${SP_RUN_CONFIG:-}" ] && [ -f "$root/run_config.yaml" ]; then
+    export SP_RUN_CONFIG="$root/run_config.yaml"
+  fi
   SP_PHASE="${SP_PHASE:-passthrough}" \
     snakemake --snakefile "$root/workflow/Snakefile" \
-              --profile "$root/profiles/nibi" \
+              --profile "$root/profiles/$PROFILE" \
               --directory "$STATE_DIR" "$@"
 }
 

@@ -28,8 +28,16 @@ inputs:
 # The container every job runs inside (apptainer software-deployment in the profile).
 container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
 
-# PSF model used by the exposure and tile interpolation stages.
+# PSF model used by the exposure and tile interpolation stages: psfex, mccd, or
+# fake (image simulations only: the true PSF from `psf_dict`, no exposure fit).
 psf_model: psfex
+
+# Where the pixels come from: `data` (survey tiles/exposures, config/cfis) or
+# `image_sims` (SKiLLS simulations, config/cfis_image_sims -- an overlay that
+# differs from config/cfis only in the ingestion stages). An image_sims run
+# normally sets `psf_model: fake` and `psf_dict:`, and is driven with its own run
+# config through SP_RUN_CONFIG (see README, "Image simulations").
+input_type: data
 
 # THE TWO ROOTS (D5).
 #

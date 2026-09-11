@@ -118,6 +118,13 @@ COMPLETENESS = {
             # config_exp_mccd enables the ten meanshape and six histogram plots.
             "mccd_plots_runner":          dict(expect=16, warn=True),
         },
+        # Image simulations with the true PSF (psf_model: fake): no PSF fit on
+        # the exposures, only the SExtractor pass whose background/background_rms
+        # checkimages the tile vignets read (config_exp_fake.ini in
+        # config/cfis_image_sims). Same 40 CCDs x (sexcat, background, rms).
+        "fake": {
+            "sextractor_runner":   dict(expect=120),
+        },
     },
 
     # --- tile post ---
@@ -137,6 +144,13 @@ COMPLETENESS = {
             "mccd_interp_runner":        dict(expect=1, warn=True),
             "vignetmaker_runner_run_1":   dict(expect=1, warn=True),
             "vignetmaker_runner_run_2":   dict(expect=5, warn=True),
+        },
+        # Image simulations: fake_interp_runner writes the same galaxy_psf
+        # sqlite psfex_interp_runner writes, from the simulation's PSF dictionary.
+        "fake": {
+            "fake_interp_runner":       dict(expect=1),
+            "vignetmaker_runner_run_1": dict(expect=1),
+            "vignetmaker_runner_run_2": dict(expect=5),
         },
     },
     # One check runs inside run_sp_tile_ngmix_Ng${SP_NGMIX_CHUNK}u per chunk,
@@ -188,7 +202,7 @@ def check_counts(stage, run_dir):
             table = table[psf_model]
         except KeyError as exc:
             raise ValueError(
-                f"Invalid SP_PSF={psf_model!r}; expected one of psfex, mccd."
+                f"Invalid SP_PSF={psf_model!r}; expected one of {sorted(table)}."
             ) from exc
     details, ok = [], True
     for runner, spec in table.items():

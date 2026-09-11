@@ -44,7 +44,13 @@ from snakemake.exceptions import WorkflowError
 # Resolved relative to THIS file, not the working directory: snakemake runs with
 # --directory on /scratch (bin/sp) so .snakemake/ state never lands on /project
 # (group quota is a hard 27/27 TiB — a metadata write mid-run died on it live).
-configfile: str(Path(workflow.snakefile).parent / "config.yaml")
+#
+# SP_RUN_CONFIG (set by bin/sp) REPLACES the committed config.yaml rather than
+# layering on it: a run driven from outside -- one image-simulation shear branch,
+# say -- must not inherit the committed run's paths for any key it omits.
+_RUN_CONFIG = os.environ.get("SP_RUN_CONFIG") or str(
+    Path(workflow.snakefile).parent / "config.yaml")
+configfile: _RUN_CONFIG
 
 # Every job's shell runs inside this container (apptainer software-deployment in
 # the profile); the user never types apptainer. WHICH image is the one resolution
@@ -71,12 +77,40 @@ if _kind == "none":
 
 container: _image
 
-PSF_MODELS = {"psfex", "mccd"}
+# --- input type and PSF model ----------------------------------------------
+# input_type selects WHERE the pixels come from; everything downstream of the
+# ingestion stages is the same chain. `image_sims` runs the SKiLLS image
+# simulations through the real-data configs: the overlay config dir
+# (config/cfis_image_sims) holds real files only for the ingestion INIs whose
+# input naming differs, and symlinks the rest into config/cfis, so an m-bias
+# measured on the sims calibrates the pipeline that makes the real catalogue.
+INPUT_TYPES = {"data", "image_sims"}
+INPUT_TYPE = config.get("input_type", "data")
+if INPUT_TYPE not in INPUT_TYPES:
+    raise WorkflowError(
+        f"Invalid input_type={INPUT_TYPE!r}; expected one of "
+        f"{sorted(INPUT_TYPES)}.")
+
+# `fake` is the image-simulation true PSF: no exposure PSF fit, and
+# fake_interp_runner writes the tile's galaxy_psf from the simulation's PSF
+# dictionary (config `psf_dict`) -- named so that the configs' shared
+# `${SP_PSF}_interp_runner` reads it exactly as it reads psfex_interp_runner. Simulations that contain stars can instead run
+# psfex or mccd exactly as the real data does.
+PSF_MODELS = {"psfex", "mccd", "fake"}
 PSF_MODEL = config.get("psf_model", "psfex")
 if PSF_MODEL not in PSF_MODELS:
     raise WorkflowError(
         f"Invalid psf_model={PSF_MODEL!r}; expected one of "
         f"{sorted(PSF_MODELS)}.")
+if PSF_MODEL == "fake" and INPUT_TYPE != "image_sims":
+    raise WorkflowError(
+        "psf_model=fake is the image-simulation true PSF; it needs "
+        "input_type=image_sims.")
+PSF_DICT = config.get("psf_dict") or ""
+if PSF_MODEL == "fake" and not PSF_DICT:
+    raise WorkflowError("psf_model=fake needs `psf_dict:` (the simulation's "
+                        "pickled PSF dictionary) in the run config.")
+
 
 # --- paths -----------------------------------------------------------------
 # RUN_DIR is the scratch root: bulk intermediates, sized so a batch finishes
@@ -95,8 +129,9 @@ INDEX_DB   = Path(OUTPUTS["index_db"])
 SCRIPTS    = Path(workflow.basedir) / "scripts"
 # The config chain is the repo's committed directory (D2). The configs and
 # rules that set their environment variables must be versioned together. There
-# is no `config_src` knob.
-CONFIG_DIR = Path(workflow.basedir) / "config" / "cfis"
+# is no `config_src` knob; input_type picks between the two committed dirs.
+CONFIG_DIR = Path(workflow.basedir) / "config" / {
+    "data": "cfis", "image_sims": "cfis_image_sims"}[INPUT_TYPE]
 
 sys.path.insert(0, str(SCRIPTS))
 import build_index                                     # noqa: E402
@@ -510,7 +545,19 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
 
     It also exports the configured input roots as ``SP_INPUT_TILES`` and
     ``SP_INPUT_EXPOSURES`` and the PSF choice as ``SP_PSF`` for the committed
-    ini chain.
+    ini chain (plus ``PSF_DICT`` for the image-simulation true PSF, which the
+    configs read as ``${SP_PSF}_interp_runner`` = ``fake_interp_runner``).
+
+    Every line here is part of each rule's ``params.pre`` and so of the
+    ``params`` rerun trigger: a line added for every rule reruns every finished
+    unit of a campaign on its next ``sp run``. The image-simulation lines are
+    therefore conditional, and a data run's prologue is byte-identical to what
+    it was before input_type existed.
+
+    ``tile_numbers.txt`` carries the number in the form the INPUT files are
+    named with, because get_images substitutes it verbatim into
+    INPUT_FILE_PATTERN: dot format for the survey tiles (``CFIS.210.282.r``),
+    dash format for the simulations (``CFIS_simu_image-210-282``).
 
     Finally it ``rm -rf``s this stage's own fixed run dir — ShapePipe's
     FileHandler raises on an existing run dir, and it is how a rerun never sees
@@ -535,13 +582,16 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
         f"export {_THREAD_CAPS}",
         'mkdir -p "$SP_RUN/output" "$SP_RUN/manifests" "$SP_RUN/logs"',
     ]
+    if PSF_DICT:
+        lines.append(f"export PSF_DICT='{PSF_DICT}'")
     if forest:
         lines.append(f"export SP_EXP='{forest}'")
     for k, v in (env or {}).items():
         lines.append(f"export {k}='{v}'")
 
     if level == "tile":
-        lines.append(f"printf '%s\\n' '{unit}' > \"$SP_RUN/tile_numbers.txt\"")
+        number = unit.replace(".", "-") if INPUT_TYPE == "image_sims" else unit
+        lines.append(f"printf '%s\\n' '{number}' > \"$SP_RUN/tile_numbers.txt\"")
     else:
         fe = "$SP_RUN/output/run_sp_tile_Fe/find_exposures_runner/output"
         lines += [f'mkdir -p "{fe}"',

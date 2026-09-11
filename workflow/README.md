@@ -45,6 +45,34 @@ Anything other than `run`, `report`, `container`, `cancel` passes straight throu
 snakemake with the workflow's profile and state dir — the direct command path for
 `sp --unlock`, `sp --dag`, `sp exp_psf ...`.
 
+## Image simulations
+
+The same workflow runs the SKiLLS image simulations used to measure the shear
+multiplicative bias, so that m calibrates the pipeline that makes the real
+catalogue rather than a frozen copy of it. A simulation run sets
+`input_type: image_sims`, which points `$SP_CONFIG` at
+`config/cfis_image_sims/`. That directory holds real files only for the stages
+whose input naming differs (tile Git/Uz/Fe, exposure Gie/Sp) and for the true-PSF
+model; everything else is a symlink into `config/cfis/`, so a change to the
+real-data chain reaches the simulations with no second edit. Keep the diff of
+each overlay file to its `cfis/` original confined to input naming.
+
+`psf_model: fake` is the simulations' true PSF: the exposure stage runs only
+SExtractor (for the background maps the vignets read), and `tile_vignets` runs
+`fake_interp_runner`, which writes the `galaxy_psf` product from `psf_dict`.
+Simulations that contain stars can run `psfex` or `mccd` exactly as the data do.
+
+One campaign per shear branch, each with its own run config:
+
+```bash
+SP_PROFILE=candide SP_RUN_CONFIG=/path/run_1p2z_grid_1.yaml workflow/bin/sp run
+```
+
+`SP_RUN_CONFIG` replaces `workflow/config.yaml` (it is not layered on it, so no
+key falls back to the committed run's paths) and is snapshotted with the code;
+`SP_PROFILE` picks `profiles/<name>/`. sp_validation's image-simulation workflow
+drives these campaigns and measures m from their final catalogues.
+
 ## The container image
 
 `sp container` owns which image the jobs run inside. Two layers, and the second

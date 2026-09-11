@@ -59,14 +59,18 @@ CONTAINER_URI = "docker://ghcr.io/cosmostat/shapepipe:develop-runtime"
 # The single source of truth for the fallback image: the workflow's own
 # `container:` key, which is also what the Snakefile reads. Written down once,
 # here, so the CLI and the workflow cannot disagree about the default.
-CONFIG_FILE = Path(__file__).resolve().parents[1] / "config.yaml"
+# SP_RUN_CONFIG replaces it for a run driven with its own config (bin/sp).
+CONFIG_FILE = Path(os.environ.get("SP_RUN_CONFIG")
+                   or Path(__file__).resolve().parents[1] / "config.yaml")
 CONFIG_KEY = "container"
 
 # The profile whose `apptainer-args:` every workflow job runs under. `exec` reads
 # it at runtime rather than restating it, so a one-off `sp container exec` and a
 # job see the same environment (the PYTHONPATH pin above all: a divergence there
 # means the one-off imports a different src/ than the workflow does).
-PROFILE_FILE = Path(__file__).resolve().parents[2] / "profiles" / "nibi" / "config.yaml"
+# SP_PROFILE names it (profiles/<name>/, default nibi), as it does for bin/sp.
+PROFILE_FILE = (Path(__file__).resolve().parents[2] / "profiles"
+                / os.environ.get("SP_PROFILE", "nibi") / "config.yaml")
 
 # ~/.cache/shapepipe by default; SP_CACHE_DIR moves the whole cache (e.g. onto
 # a filesystem with room), XDG_CACHE_HOME moves it with everything else.
