@@ -9,17 +9,109 @@ by the MCCD runners.
 
 import os
 import pprint
+import shutil
 
 import galsim
 import mccd
 import numpy as np
 from astropy.io import fits
 from cs_util import size as cs_size
+from scipy.ndimage import convolve1d
 
 from shapepipe.modules.psfex_interp_package.psfex_interp import local_wcs_list
 from shapepipe.pipeline import file_io
 
 NOT_ENOUGH_STARS = "Not enough stars to train the model."
+
+# B3-spline scaling function of the starlet (isotropic undecimated wavelet).
+_B3_SPLINE = np.array([1, 4, 6, 4, 1]) / 16
+
+
+def starlet_filters(data_shape, opt=None, n_scales=3, coarse=False, trim=False):
+    """Starlet Filters.
+
+    Drop-in replacement for ``mccd.mccd_utils.get_mr_filters``, which obtains
+    the filters by running Sparse2D's ``mr_transform`` (through pysap) on a
+    centred Dirac. The ShapePipe image ships pysap without the Sparse2D
+    binaries, so that call fails and MCCD cannot fit. MCCD only ever asks for
+    the B3-spline "a trous" transform (``BsplineWaveletTransformATrousAlgorithm``,
+    Sparse2D's ``-t 2``), whose filters are the transform of the Dirac, and
+    that transform is written here directly: at scale ``j`` the image is
+    smoothed separably with the B3 kernel dilated by ``2**j`` (``2**j - 1``
+    zeros between taps), and the wavelet band is the difference of successive
+    smoothings. The bands plus the coarse scale sum back to the Dirac.
+
+    Parameters
+    ----------
+    data_shape : tuple
+        2D data shape; made odd as in ``get_mr_filters``
+    opt : str, optional
+        Transform name, accepted for signature compatibility and ignored
+    n_scales : int, optional
+        Number of scales including the coarse one; default is ``3``
+    coarse : bool, optional
+        Keep the coarse scale; default is ``False``
+    trim : bool, optional
+        Trim each filter to its non-zero support; default is ``False``. The
+        scales then differ in size, so a list is returned (MCCD never trims)
+
+    Returns
+    -------
+    numpy.ndarray or list
+        3D array of filters, one per scale; a list of 2D arrays if ``trim``
+
+    """
+    shape = np.array(data_shape)
+    shape += shape % 2 - 1
+
+    smooth = np.zeros(shape)
+    smooth[tuple(shape // 2)] = 1
+
+    bands = []
+    for scale in range(n_scales - 1):
+        kernel = np.zeros(4 * 2**scale + 1)
+        kernel[:: 2**scale] = _B3_SPLINE
+        smoother = convolve1d(smooth, kernel, axis=0, mode="mirror")
+        smoother = convolve1d(smoother, kernel, axis=1, mode="mirror")
+        bands.append(smooth - smoother)
+        smooth = smoother
+    bands.append(smooth)
+
+    if trim:
+        filters = [mccd.mccd_utils.trim_filter(band) for band in bands]
+    else:
+        filters = np.array(bands)
+
+    return filters if coarse else filters[:-1]
+
+
+# MCCD calls get_mr_filters through the mccd_utils module attribute, so
+# replacing it here reaches every fit started from ShapePipe. Only when
+# Sparse2D is absent: an image that ships mr_transform keeps its own filters.
+if shutil.which("mr_transform") is None:
+    mccd.mccd_utils.get_mr_filters = starlet_filters
+
+
+class _NumpyStackCompat:
+    """Numpy as ``mccd.utils`` sees it, with a ``vstack`` that takes generators.
+
+    mccd 1.2.4 (the current release) builds its graph constraint with
+    ``np.vstack(<generator>)``, which numpy 2 rejects, so every hybrid-model
+    fit fails in ``GraphBuilder._build_graphs``. Fixed upstream in
+    CosmoStat/mccd b87d280 (a list instead of the generator), not yet released.
+    Everything else is plain numpy.
+    """
+
+    def __getattr__(self, name):
+        return getattr(np, name)
+
+    @staticmethod
+    def vstack(tup, *args, **kwargs):
+        return np.vstack(list(tup), *args, **kwargs)
+
+
+if int(np.__version__.split(".")[0]) >= 2:
+    mccd.utils.np = _NumpyStackCompat()
 
 
 def mccd_preprocessing_pipeline(
