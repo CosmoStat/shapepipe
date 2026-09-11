@@ -102,21 +102,19 @@ COMPLETENESS = {
             "psfex_runner":         dict(expect=80),
             "psfex_interp_runner":  dict(expect=40, warn=True),
         },
-        # MCCD counts are derived from config_exp_mccd.ini and its per-CCD
-        # runners, but this chain has not been exercised through this workflow.
-        # Keep the expected counts visible while making the unverified branch
-        # warning-only until a real campaign validates its counts.
+        # MCCD shares the chain up to setools with PSFEx, then fits one
+        # focal-plane model per exposure. Preprocessing is a serial runner that
+        # merges the 40 CCDs' split catalogues into one training and one test
+        # catalogue; fit_val writes the model (fitted_model-<exp>.npy, what the
+        # tiles interpolate) and its validation catalogue. Both are
+        # exposure-wide and all-or-nothing: an exposure without a model has no
+        # PSF on any tile it overlaps.
         "mccd": {
-            "sextractor_runner":          dict(expect=120, warn=True),
-            "setools_runner":             dict(expect=80, warn=True,
-                                                subpath="rand_split"),
-            "mccd_preprocessing_runner":  dict(expect=80, warn=True),
-            # Fit/validation is exposure-wide: one model and one validation
-            # catalogue, unlike the per-CCD preprocessing outputs.
-            "mccd_fit_val_runner":        dict(expect=2, warn=True),
-            "merge_starcat_runner":       dict(expect=1, warn=True),
-            # config_exp_mccd enables the ten meanshape and six histogram plots.
-            "mccd_plots_runner":          dict(expect=16, warn=True),
+            "sextractor_runner":          dict(expect=120),
+            "mask_query_runner":          dict(expect=40),
+            "setools_runner":             dict(expect=80, subpath="rand_split"),
+            "mccd_preprocessing_runner":  dict(expect=2),
+            "mccd_fit_val_runner":        dict(expect=2),
         },
         # Image simulations with the true PSF (psf_model: fake): no PSF fit on
         # the exposures, only the SExtractor pass whose background/background_rms
