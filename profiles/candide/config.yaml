@@ -32,3 +32,17 @@ rerun-incomplete: true           # re-do jobs left incomplete by an unclean deat
 show-failed-logs: true
 printshellcmds: true
 rerun-triggers: [mtime, params, code, software-env]
+# The tile_shape group (tile.smk) sets its own slurm_extra (TILE_SLURM_EXTRA,
+# the --tmp floor), which REPLACES the default above and so drops the node
+# excludes: its jobs landed on n09 and n17. Restate both, identically on all
+# four members (a group's string resources must agree). Only slurm_extra is
+# overridden; the rules keep their own threads and attempt-scaled mem_mb.
+set-resources:
+  tile_vignets:
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"
+  tile_ngmix:
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"
+  tile_merge_cats:
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"
+  tile_make_cat:
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"
