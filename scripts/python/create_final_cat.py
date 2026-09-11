@@ -391,7 +391,9 @@ def process(params):
 
     if params["image_sims"]:
         patch_name = params["patch"]
-        run_prefix = "run_sp_tile_Mc_*"
+        # The Snakemake workflow writes an undated run_sp_tile_Mc; the legacy
+        # bash runner wrote run_sp_tile_Mc_<datetime>.
+        run_prefix = "run_sp_tile_Mc*"
     else:
         patch_name = rf"P{params['patch']}"
         run_prefix = "run_sp_tile_Mc_*"

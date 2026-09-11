@@ -82,7 +82,8 @@ container: _image
 # ingestion stages is the same chain. `image_sims` runs the SKiLLS image
 # simulations through the real-data configs: the overlay config dir
 # (config/cfis_image_sims) holds real files only for the ingestion INIs whose
-# input naming differs, and symlinks the rest into config/cfis, so an m-bias
+# input naming differs, the fake-PSF INIs, and the merge column list
+# (final_cat.param), and symlinks the rest into config/cfis, so an m-bias
 # measured on the sims calibrates the pipeline that makes the real catalogue.
 INPUT_TYPES = {"data", "image_sims"}
 INPUT_TYPE = config.get("input_type", "data")
