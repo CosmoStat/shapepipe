@@ -135,6 +135,42 @@ if not n:
 f.write_text(text)
 PY
 
+  # `tile_store_root:` in the run config moves the node-local tile store
+  # (tile.smk's tile_local(): the vignette + WCS stores of each tile_shape group)
+  # off the profile's `/local/scratch` bind, for this campaign only. It is the
+  # same substitution as the pin above -- the BIND SOURCE of `/local/scratch` in
+  # the snapshot's profile -- and deliberately not a path in tile_local(): that
+  # function's output is a params rerun trigger, so a path there would reschedule
+  # every finished tile of a resumed campaign (its warning block says how badly),
+  # while a bind is not a trigger at all (a dry run after changing it schedules
+  # only the missing tiles). Why a campaign wants it: candide binds the node's
+  # 31 GB /tmp, which a few dense image-sim tile stores or failed groups' orphans
+  # fill, after which every later group on that node fails in seconds. A shared
+  # directory (NFS) trades ngmix read latency for room; the campaign-unique store
+  # names (LOCAL_TAG) keep concurrent campaigns apart in one root. Profiles with
+  # no `X:/local/scratch` bind (nibi's `--bind /local`) get one appended.
+  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$CONFIG" <<'PY'
+import os, pathlib, re, sys, yaml
+f, run_config = pathlib.Path(sys.argv[1]), sys.argv[2]
+root = (yaml.safe_load(open(run_config)) or {}).get("tile_store_root")
+if root:
+    root = str(root)
+    if not os.path.isabs(root):
+        sys.exit(f"sp: tile_store_root must be an absolute path, got {root!r}")
+    os.makedirs(root, exist_ok=True)
+    bind = f"--bind {root}:/local/scratch"
+    text, n = re.subn(r'--bind \S+:/local/scratch(?=[\s"])', lambda m: bind,
+                      f.read_text(), count=1)
+    if not n:
+        text, n = re.subn(r'(apptainer-args:\s*"[^"]*)"',
+                          lambda m: m.group(1) + " " + bind + '"', text, count=1)
+    if not n:
+        sys.exit("sp: tile_store_root is set but the profile has no quoted "
+                 "apptainer-args to bind it with")
+    f.write_text(text)
+    print(f"sp: tile store root {root} (bound to /local/scratch)", file=sys.stderr)
+PY
+
   python - "$SNAPSHOT/snapshot.json" "$REPO" <<'PY'
 import json, pathlib, subprocess, sys, time
 out, repo = pathlib.Path(sys.argv[1]), sys.argv[2]

@@ -22,8 +22,9 @@ software-deployment-method: [apptainer]
 # which this line cannot name: snakemake passes it through literally, and
 # --cleanenv drops SLURM_JOB_ID inside the container. So the node's /tmp (local
 # disk, ~29 GB free, sticky) is bound there instead. That holds ~5 concurrent
-# tile stores per node; if a campaign packs more tile_shape groups onto one node,
-# this is the line to revisit. The PYTHONPATH pin is rewritten by bin/sp to the
+# tile stores per node, too few for dense image-sim tiles: such a campaign sets
+# `tile_store_root:` in its run config, and bin/sp replaces this bind's source in
+# the launch snapshot (see workflow/config.yaml). The PYTHONPATH pin is rewritten by bin/sp to the
 # launch snapshot's src/; the value here only has to be a checkout's src/.
 apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/n17data/mkilbing/astro/repositories/github/shapepipe/src --bind /home,/automnt,/n17data,/n23data1,/n09data --bind /tmp:/local/scratch"
 latency-wait: 60                 # NFS: wait for outputs to appear after a job
