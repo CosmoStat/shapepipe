@@ -74,6 +74,12 @@ key falls back to the committed run's paths) and is snapshotted with the code;
 `SP_PROFILE` picks `profiles/<name>/`. sp_validation's image-simulation workflow
 drives these campaigns and measures m from their final catalogues.
 
+On candide, the node-local tile store (bound from the node's 31 GB `/tmp`) does not
+hold several dense image-sim tiles at once. Set `tile_store_root:` in the run
+config to a shared directory; `sp run` binds it to `/local/scratch` for that
+campaign. The store names carry a per-campaign hash, so all branches can share one
+root.
+
 ## The container image
 
 `sp container` owns which image the jobs run inside. Two layers, and the second

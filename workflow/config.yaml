@@ -144,6 +144,15 @@ clean_ignore_tiles: []
 # per-tile, in-job, from the tile's own sexcat).
 ngmix_chunks: 8
 
+# Where the node-local tile store lives (tile.smk's tile_local(): each tile_shape
+# group's vignette and WCS stores). Unset means the profile's `/local/scratch`
+# bind: nibi's /local NVMe, candide's 31 GB node /tmp. Set it to an absolute
+# directory to bind that instead, for this campaign only; bin/sp rewrites the
+# snapshot's profile and creates the directory. Not a rerun trigger, so it may be
+# set on a resume. Image-sim campaigns on candide want a shared directory (dense
+# tiles and failed groups' orphans fill /tmp); the cost is ngmix read latency.
+# tile_store_root: /n23data1/<user>/shapepipe/tilestore
+
 # The container's installed shapepipe is overridden by the prod worktree via
 # --env PYTHONPATH in profiles/nibi (settled call 3); no config knob here.
 # build_index.py's missing-tile fraction threshold is passed by workflow/bin/sp

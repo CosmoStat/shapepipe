@@ -91,7 +91,9 @@ is what downstream selections cut on.
 #
 # HOW THE PATH GETS IN HERE. Not through the environment: profiles/nibi passes
 # --bind /local and tile_local() below DERIVES the path from the tile wildcard.
-# Why nothing can be communicated instead is on that profile line.
+# Why nothing can be communicated instead is on that profile line. A campaign
+# that needs the store elsewhere (candide's 31 GB /tmp) moves the BIND, via the
+# run config's `tile_store_root` (bin/sp), never the path here -- see below.
 #
 # THE COST WE ACCEPT: a failure anywhere in the tile re-runs the WHOLE tile,
 # not one chunk, because the store dies with the job. At ~1 h per fused tile
