@@ -136,12 +136,12 @@ COMPLETENESS = {
             # v2.0's 4 was the canfar flavor. every vignette feeds ngmix, so the expected count is all-or-nothing.
             "vignetmaker_runner_run_2": dict(expect=5),
         },
-        # MCCD is wired but unvalidated here; retain the expected runner names
-        # and counts as warnings until a workflow campaign exercises them.
+        # As psfex: mccd_interp writes the tile's galaxy_psf store from the
+        # exposures' focal-plane models (SKiLLS star sim 1z2z_1, 233.293).
         "mccd": {
-            "mccd_interp_runner":        dict(expect=1, warn=True),
-            "vignetmaker_runner_run_1":   dict(expect=1, warn=True),
-            "vignetmaker_runner_run_2":   dict(expect=5, warn=True),
+            "mccd_interp_runner":        dict(expect=1),
+            "vignetmaker_runner_run_1":   dict(expect=1),
+            "vignetmaker_runner_run_2":   dict(expect=5),
         },
         # Image simulations: fake_interp_runner writes the same galaxy_psf
         # sqlite psfex_interp_runner writes, from the simulation's PSF dictionary.

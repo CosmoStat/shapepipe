@@ -25,7 +25,8 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # Edit workflow/config.yaml: tile_list, inputs.tiles/exposures, outputs.run_dir,
 # outputs.products_dir/index_db, and container.
 
-# `psf_model` is `psfex` or `mccd`; mccd is wired but unvalidated here, while psfex is exercised by smk-g4 through smk-g6.
+# `psf_model` is `psfex` or `mccd`. psfex is exercised by smk-g4 through smk-g6; mccd has run the full chain on
+# an image-sim star tile (one focal-plane model per exposure, ~1.5 CPU-hours each).
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
