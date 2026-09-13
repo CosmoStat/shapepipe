@@ -158,7 +158,7 @@ workflow/
   bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
-    exposure.smk         per-exposure: get_images, split, psf, persist (no temp()); campaign star_cat_merge
+    exposure.smk         per-exposure: get_images, split, psf, persist, defect_map (no temp()); campaign star_cat_merge, defect_map_merge
     tile.smk             per-tile: exp forest, merge_headers, detect, vignets, ngmix, merge, make_cat; campaign final_cat_merge
   scripts/
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
@@ -171,6 +171,8 @@ workflow/
     merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<campaign>.hdf5
     merge_final_cat.py   ALL tiles' final_cat -> final_cat_<campaign>.hdf5 (the final_cat_merge rule)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
+    defect_map_exp.py    ONE exposure's per-CCD instrument flags -> a boolean healsparse fragment (the exp_defect_map rule)
+    merge_defect_map.py  ALL exposures' fragments -> defect_map_<campaign>.hsp (the defect_map_merge rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
 
@@ -221,6 +223,49 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   catalogue server, staged, or rasterized, which is why the old
   `star_catalogue` / `exp_star_cat` / `exp_mask` rules and their cache root are
   gone.
+- **The one pixel-domain mask now leaves the pixel domain.** The instrument
+  flag image is the exception to everything above: bad columns, saturated
+  pixels and bleed trails, split per CCD by `exp_split` and read by SExtractor
+  as `IMAFLAGS_ISO`, and never sky-fixed. The survey footprint is built from the
+  CCD corner WCS in the headers, so it cannot subtract them — the footprint
+  would silently include defective pixels, and the lost area, though only
+  percent-level, carries exactly the thin small-scale geometry an accurate
+  window function needs ([#878](https://github.com/CosmoStat/shapepipe/issues/878)).
+  So `exp_defect_map` rasterizes each exposure's flags into a boolean healsparse
+  fragment on the persistent root, and `defect_map_merge` unions the campaign's
+  fragments into `<products_dir>/defect_map_<campaign>.hsp`. Same form as every
+  other map here — nside 131072 over coverage 128, `True` = masked — so it drops
+  into the ladder unchanged. **It is a product, not an input:** nothing in the
+  workflow reads it back, and `config_tile_Mc.ini` deliberately does not name it
+  in `MASK_EXT_PATHS`, because that ladder names maps that exist before the run
+  and this one exists only after it; that file's header carries the recipe for
+  adding it once a campaign has produced one. The rule hangs off `exp_split`,
+  not off `exp_psf`, so re-rasterizing the campaign at a different fidelity
+  never touches the PSF chain, and `clean_exposure` takes its manifest as an
+  input for a LIVE exposure, so reclamation cannot overtake the copy — and only
+  for a live one: an exposure whose store went to the /scratch purge (no
+  tombstone, nothing left to rasterize) is asked for its existing fragment if it
+  has one and for nothing if it does not, the same split `defect_map_merge`'s
+  input makes, because requiring a manifest behind a vanished split dir would
+  rebuild the whole exposure chain from VOS to reclaim it. Its resolution and its
+  oversampling ride on `params`; `config.yaml`'s `defect_map:` block carries
+  both, the measured convergence table behind the default, and the measurement
+  on one real exposure (34 s, 0.62 GB, a 2.0 MB fragment; the rasterization is
+  batched, so a fully flagged chip — the worst case, and one a real exposure
+  carries whenever a chip is dead — is 0.74 GB rather than several). The union
+  RECONCILES like `final_cat_merge` — a new exposure is OR-ed in on the spot, an
+  exposure that left the campaign or a fragment that changed forces a rebuild
+  (a union cannot be un-OR-ed), and a no-op leaves the file untouched — against
+  a sidecar `defect_map_<campaign>.json` that records which exposures are
+  already in it. Memory is flat in the exposure count: fragments are read one at
+  a time and reduced to their pixel ids, so the job holds one accumulator (the
+  campaign's footprint, ~3 GB at DR6 scale) and one 2 MB fragment. What the map
+  and the sidecar say is a function of the input set; the map's BYTES are not,
+  because reaching a state by append rather than by rebuild round-trips it
+  through healsparse's writer (`merge_defect_map.py` measures the difference and
+  says what would have to change if anything ever consumed the map).
+  `tests/unit/test_defect_map_reconcile.py` pins the four reconcile branches and
+  the sidecar refresh.
 - **External masks are wired, on the tile side only.** `inputs.masks` is a third
   input root beside tiles and exposures, exported as `$SP_INPUT_MASKS` and
   pointing at the UNIONS DR6 ugriz bit ladder: one boolean healsparse map per
@@ -305,6 +350,9 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   and an unknown *name* is a parse-time error listing the valid ones. The list
   is exposure-side only; tile-side retention is #844 follow-up.
 - **The campaign ends in two merged catalogues, and the workflow makes both.**
+  (Three campaign products, counting the defect map above — but that one is a
+  map for the footprint, not a catalogue, and nothing downstream of it lives
+  here.)
   Everything above is per unit; the two products downstream analysis actually
   opens are per *campaign*, and until these rules existed each was a manual pass
   after the run.
