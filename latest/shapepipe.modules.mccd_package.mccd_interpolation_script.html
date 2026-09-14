@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="12 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="14 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -616,10 +616,10 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mccd_model_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the correct MCCD model</p></li>
+<li><p><strong>mccd_model_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the correct MCCD model</p></li>
 <li><p><strong>positions</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Positions for the PSF recovery in local coordinates with respect to
 the <code class="docutils literal notranslate"><span class="pre">ccd</span></code>; array shape: <code class="docutils literal notranslate"><span class="pre">(n_pos,</span> <span class="pre">2)</span></code></p></li>
-<li><p><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – CCD from where the positions were taken</p></li>
+<li><p><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – CCD from where the positions were taken</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -628,7 +628,7 @@ shape: <code class="docutils literal notranslate"><span class="pre">(n_pos,</spa
 occurs</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a> or <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -636,23 +636,23 @@ occurs</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">MCCDinterpolator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dotpsf_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">galcat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">get_shapes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mccd_package/mccd_interpolation_script.html#MCCDinterpolator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>The MCCD Interpolator Class.</p>
 <p>This class uses a PSFEx output file to compute the PSF at desired
 positions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dotpsf_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to PSFEx output file</p></li>
-<li><p><strong>galcat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to SExtractor-like galaxy catalogue</p></li>
-<li><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to folder where output PSFs should be written</p></li>
-<li><p><strong>img_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Corresponds to shapepipe’s module input <code class="docutils literal notranslate"><span class="pre">file_number_string</span></code> which
+<li><p><strong>dotpsf_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to PSFEx output file</p></li>
+<li><p><strong>galcat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to SExtractor-like galaxy catalogue</p></li>
+<li><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to folder where output PSFs should be written</p></li>
+<li><p><strong>img_number</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Corresponds to shapepipe’s module input <code class="docutils literal notranslate"><span class="pre">file_number_string</span></code> which
 is the input file ID</p></li>
 <li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a>) – Logging instance</p></li>
-<li><p><strong>pos_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>, </em><em>optional</em>) – Desired position parameters, if provided, there should be exactly two,
+<li><p><strong>pos_params</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>, </em><em>optional</em>) – Desired position parameters, if provided, there should be exactly two,
 and they must also be present in the galaxy catalogue; otherwise,
 they are read directly from the <code class="docutils literal notranslate"><span class="pre">.psf</span></code> file.</p></li>
-<li><p><strong>get_shapes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code> will compute shapes for the PSF model</p></li>
+<li><p><strong>get_shapes</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code> will compute shapes for the PSF model</p></li>
 </ul>
 </dd>
 </dl>
@@ -677,7 +677,7 @@ they are read directly from the <code class="docutils literal notranslate"><span
 <p>Compute shapes of PSF at galaxy positions using HSM.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>wcs_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>galsim.BaseWCS</em><em>, </em><em>optional</em>) – Local WCS at each object position. When provided, HSM adaptive
+<dd class="field-odd"><p><strong>wcs_list</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>galsim.BaseWCS</em><em>, </em><em>optional</em>) – Local WCS at each object position. When provided, HSM adaptive
 moments are measured in world coordinates (<code class="docutils literal notranslate"><span class="pre">use_sky_coords=True</span></code>),
 so the returned shapes and sizes are already in sky coordinates.</p>
 </dd>
@@ -700,7 +700,7 @@ so the returned shapes and sizes are already in sky coordinates.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>star_vign</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Array containing the star’s vignets</p></li>
-<li><p><strong>wcs_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>galsim.BaseWCS</em><em>, </em><em>optional</em>) – Local WCS at each star position; see <a class="reference internal" href="#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfshapes" title="shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfshapes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_get_psfshapes()</span></code></a>. When
+<li><p><strong>wcs_list</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>galsim.BaseWCS</em><em>, </em><em>optional</em>) – Local WCS at each star position; see <a class="reference internal" href="#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfshapes" title="shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfshapes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_get_psfshapes()</span></code></a>. When
 provided, moments are measured in world coordinates
 (<code class="docutils literal notranslate"><span class="pre">use_sky_coords=True</span></code>).</p></li>
 </ul>
@@ -715,13 +715,13 @@ provided, moments are measured in world coordinates
 <p>Get data from a PSFEx <code class="docutils literal notranslate"><span class="pre">.cat</span></code> file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>psfex_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the <code class="docutils literal notranslate"><span class="pre">.cat</span></code> file from PSFEx</p>
+<dd class="field-odd"><p><strong>psfex_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the <code class="docutils literal notranslate"><span class="pre">.cat</span></code> file from PSFEx</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>psfex_cat_dict</strong> – Dictionary containing information from PFSEx <code class="docutils literal notranslate"><span class="pre">.cat</span></code> file</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -734,8 +734,8 @@ provided, moments are measured in world coordinates
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>star_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary containing star informations</p></li>
-<li><p><strong>psfex_cat_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary containing information from PFSEx <code class="docutils literal notranslate"><span class="pre">.cat</span></code> file</p></li>
+<li><p><strong>star_dict</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary containing star informations</p></li>
+<li><p><strong>psfex_cat_dict</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary containing information from PFSEx <code class="docutils literal notranslate"><span class="pre">.cat</span></code> file</p></li>
 </ul>
 </dd>
 </dl>
@@ -748,9 +748,9 @@ provided, moments are measured in world coordinates
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dot_psf_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the directory containing the PSF model files.</p></li>
-<li><p><strong>dot_psf_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Common pattern of the PSF model files; e.g. <code class="docutils literal notranslate"><span class="pre">fitted_model</span></code></p></li>
-<li><p><strong>f_wcs_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the log file containing the WCS for each CCD</p></li>
+<li><p><strong>dot_psf_dir</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the directory containing the PSF model files.</p></li>
+<li><p><strong>dot_psf_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Common pattern of the PSF model files; e.g. <code class="docutils literal notranslate"><span class="pre">fitted_model</span></code></p></li>
+<li><p><strong>f_wcs_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the log file containing the WCS for each CCD</p></li>
 </ul>
 </dd>
 </dl>
@@ -763,14 +763,14 @@ provided, moments are measured in world coordinates
 <p>Interpolate PSFs for multi-epoch run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.14)"><strong>KeyError</strong></a> – If ‘N_EPOCH’ key not in input catalogue</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#KeyError" title="(in Python v3.14)"><strong>KeyError</strong></a> – If ‘N_EPOCH’ key not in input catalogue</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>output_dict</strong> – Dictionnary containing object IDs, the interpolated PSFs and
 shapes (optionally)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -782,7 +782,7 @@ shapes (optionally)</p>
 <p>Save computed PSFs to numpy object file for multi-epoch run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>output_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionnary of outputs to save</p>
+<dd class="field-odd"><p><strong>output_dict</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionnary of outputs to save</p>
 </dd>
 </dl>
 </dd></dl>
@@ -885,7 +885,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 12 Sep, 2026.
+  Last updated on 14 Sep, 2026.
   <br/>
 </p>
   </div>

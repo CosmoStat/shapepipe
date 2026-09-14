@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="12 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="14 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -634,7 +634,7 @@ padded with zeros, matching SExtractor behaviour.</p>
 <li><p><strong>image_data</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – 2-D tile image array, shape <code class="docutils literal notranslate"><span class="pre">(ny,</span> <span class="pre">nx)</span></code></p></li>
 <li><p><strong>x_pos</strong> (<em>array_like</em>) – X pixel positions, 1-based (SExtractor convention)</p></li>
 <li><p><strong>y_pos</strong> (<em>array_like</em>) – Y pixel positions, 1-based (SExtractor convention)</p></li>
-<li><p><strong>stamp_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Side length of the square postage stamp (should be odd)</p></li>
+<li><p><strong>stamp_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Side length of the square postage stamp (should be odd)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -678,16 +678,16 @@ assumption is an invariant of the CFIS grid, not a data assumption,
 so we assert it rather than silently overflowing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>file_number_string</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Pipeline file-number string, e.g. <code class="docutils literal notranslate"><span class="pre">'-301-279'</span></code></p>
+<dd class="field-odd"><p><strong>file_number_string</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Pipeline file-number string, e.g. <code class="docutils literal notranslate"><span class="pre">'-301-279'</span></code></p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Collision-free tile_id (e.g. <code class="docutils literal notranslate"><span class="pre">301279</span></code>)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)">int</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If either grid component exceeds three digits.</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If either grid component exceeds three digits.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -710,11 +710,11 @@ extracted from the tile image) are added to <code class="docutils literal notran
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to input ASCII catalogue in SExtractor format</p></li>
-<li><p><strong>image_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to tile image FITS file</p></li>
-<li><p><strong>output_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the output FITS-LDAC catalogue</p></li>
-<li><p><strong>file_number_string</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Pipeline file-number string, e.g. <code class="docutils literal notranslate"><span class="pre">'-301-279'</span></code></p></li>
-<li><p><strong>stamp_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Side length of the square postage stamp in pixels, default 51</p></li>
+<li><p><strong>input_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to input ASCII catalogue in SExtractor format</p></li>
+<li><p><strong>image_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to tile image FITS file</p></li>
+<li><p><strong>output_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the output FITS-LDAC catalogue</p></li>
+<li><p><strong>file_number_string</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Pipeline file-number string, e.g. <code class="docutils literal notranslate"><span class="pre">'-301-279'</span></code></p></li>
+<li><p><strong>stamp_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Side length of the square postage stamp in pixels, default 51</p></li>
 <li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a><em>, </em><em>optional</em>) – Pipeline logger</p></li>
 </ul>
 </dd>
@@ -808,7 +808,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 12 Sep, 2026.
+  Last updated on 14 Sep, 2026.
   <br/>
 </p>
   </div>

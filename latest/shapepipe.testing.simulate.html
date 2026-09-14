@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="12 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="14 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -601,18 +601,18 @@ and numpy, no shapepipe processing or ngmix fitting code.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random number generator.</p></li>
-<li><p><strong>shear</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – True shear (g1, g2).</p></li>
-<li><p><strong>noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Noise sigma — a scalar, or a per-pixel map of shape
+<li><p><strong>shear</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – True shear (g1, g2).</p></li>
+<li><p><strong>noise</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Noise sigma — a scalar, or a per-pixel map of shape
 <code class="docutils literal notranslate"><span class="pre">(img_size,</span> <span class="pre">img_size)</span></code> for spatially-varying noise. Default 1e-5.</p></li>
-<li><p><strong>n_epochs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Number of epochs. Default 1.</p></li>
-<li><p><strong>share_shift</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, all epochs share the same sub-pixel shift.
+<li><p><strong>n_epochs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Number of epochs. Default 1.</p></li>
+<li><p><strong>share_shift</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, all epochs share the same sub-pixel shift.
 If False, each epoch draws an independent shift.</p></li>
-<li><p><strong>gal_hlr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Galaxy half-light radius in arcsec. Default 0.3.</p></li>
-<li><p><strong>gal_flux</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Galaxy flux. Default 1000.</p></li>
-<li><p><strong>psf_fwhm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – PSF FWHM in arcsec. Default 0.55.</p></li>
-<li><p><strong>pixel_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Pixel scale in arcsec/pixel. Default 0.1857.</p></li>
-<li><p><strong>img_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Stamp size in pixels (square). Default 201.</p></li>
-<li><p><strong>psf_shear</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Ellipticity (g1, g2) applied to the Moffat PSF. Default (0, 0), a
+<li><p><strong>gal_hlr</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Galaxy half-light radius in arcsec. Default 0.3.</p></li>
+<li><p><strong>gal_flux</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Galaxy flux. Default 1000.</p></li>
+<li><p><strong>psf_fwhm</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – PSF FWHM in arcsec. Default 0.55.</p></li>
+<li><p><strong>pixel_scale</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Pixel scale in arcsec/pixel. Default 0.1857.</p></li>
+<li><p><strong>img_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Stamp size in pixels (square). Default 201.</p></li>
+<li><p><strong>psf_shear</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Ellipticity (g1, g2) applied to the Moffat PSF. Default (0, 0), a
 round PSF. A non-round PSF is what the PSF-leakage / additive-bias
 guardrail needs: the PSF carries a shape that an unbiased deconvolution
 must remove from a round galaxy.</p></li>
@@ -627,11 +627,11 @@ centroid logic (e.g. ngmix <code class="docutils literal notranslate"><span clas
 Note <code class="docutils literal notranslate"><span class="pre">psfs_sigmas</span></code> are HSM pixel-unit sigmas of the <em>WCS-drawn</em>
 PSF stamp; under a sheared WCS they are not circularly symmetric
 measures.</p></li>
-<li><p><strong>return_centers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, also return per-epoch true object centres as
+<li><p><strong>return_centers</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, also return per-epoch true object centres as
 <code class="docutils literal notranslate"><span class="pre">galsim.PositionD</span></code> in galsim image coordinates (1-based; stamp
 centre is <code class="docutils literal notranslate"><span class="pre">(img_size</span> <span class="pre">+</span> <span class="pre">1)</span> <span class="pre">/</span> <span class="pre">2</span></code>). Default False keeps the legacy
 6-tuple return.</p></li>
-<li><p><strong>psf_model_fwhm_ratio</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Multiplicative size error injected into the PSF <em>model</em> stamp handed to
+<li><p><strong>psf_model_fwhm_ratio</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Multiplicative size error injected into the PSF <em>model</em> stamp handed to
 ngmix, relative to the <em>true</em> PSF that convolves the galaxy. Default 1.0
 (no error: the same PSF object renders the galaxy and the model stamp,
 byte-for-byte identical to the legacy behaviour). A value != 1.0 makes
@@ -641,7 +641,7 @@ that does not match the one in the data. This is the controlled-PSF-
 model-error knob: it tests whether metacal’s response correction (which
 is computed with the same wrong model) absorbs a deconvolution error,
 the one shape-measurement systematic the zero-error sim could not probe.</p></li>
-<li><p><strong>psf_model_shear</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Extra ellipticity (Δg1, Δg2) added to the PSF <em>model</em> stamp on top of
+<li><p><strong>psf_model_shear</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Extra ellipticity (Δg1, Δg2) added to the PSF <em>model</em> stamp on top of
 <code class="docutils literal notranslate"><span class="pre">psf_shear</span></code>, relative to the true PSF. Default None (no error). A
 non-zero value mismodels the PSF shape, injecting a controlled additive
 (PSF-leakage) error into the recovered shear. When both this is None and
@@ -675,10 +675,10 @@ to the shear response R and to the m/c estimator cancel exactly.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>)</p></li>
-<li><p><strong>shear_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – List of (g1, g2) values to simulate simultaneously.</p></li>
-<li><p><strong>noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Per-pixel noise sigma.</p></li>
-<li><p><strong>n_epochs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>)</p></li>
-<li><p><strong>share_shift</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True all epochs share the same sub-pixel shift; the shift is
+<li><p><strong>shear_list</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – List of (g1, g2) values to simulate simultaneously.</p></li>
+<li><p><strong>noise</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Per-pixel noise sigma.</p></li>
+<li><p><strong>n_epochs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>)</p></li>
+<li><p><strong>share_shift</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True all epochs share the same sub-pixel shift; the shift is
 always shared across shear variants regardless of this flag.</p></li>
 <li><p><strong>gal_hlr</strong> (<em>float / int</em><em>, </em><em>optional</em>) – Same meaning as in make_data.</p></li>
 <li><p><strong>gal_flux</strong> (<em>float / int</em><em>, </em><em>optional</em>) – Same meaning as in make_data.</p></li>
@@ -692,7 +692,7 @@ always shared across shear variants regardless of this flag.</p></li>
 entry in <code class="docutils literal notranslate"><span class="pre">shear_list</span></code>, all sharing identical per-epoch noise.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)">list</a> of <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -781,7 +781,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 12 Sep, 2026.
+  Last updated on 14 Sep, 2026.
   <br/>
 </p>
   </div>
