@@ -7,6 +7,7 @@ CLI (used by bin/sp): run_config.py CONFIG_YAML RUN_CONFIG KEY[.SUBKEY]
 prints the resolved value, or an empty line if unset. RUN_CONFIG may be "".
 """
 
+import re
 import sys
 
 import yaml
@@ -28,11 +29,14 @@ def merge(base, over):
     return out
 
 
-def _expand(value, base_dir):
+def _expand(value, variables):
+    """Replace $name for each set name in `variables` (base_dir, run)."""
     if isinstance(value, str):
-        return value.replace("$base_dir", base_dir)
+        return re.sub(r"\$(\w+)",
+                      lambda m: str(variables.get(m.group(1)) or m.group(0)),
+                      value)
     if isinstance(value, dict):
-        return {k: _expand(v, base_dir) for k, v in value.items()}
+        return {k: _expand(v, variables) for k, v in value.items()}
     return value
 
 
@@ -40,19 +44,20 @@ def apply_machine_defaults(config):
     """Fill unset MACHINE_KEYS from machines[machine][input_type], in place.
 
     A key already in `config` wins; for `inputs`/`outputs` the merge is per
-    sub-key. `$base_dir` expands to machines[machine].base_dir.
+    sub-key. In all of these, `$base_dir` expands to machines[machine].base_dir
+    and `$run` to the top-level `run:`.
     """
     entry = (config.get("machines") or {}).get(config.get("machine")) or {}
     defaults = entry.get(config.get("input_type", "data")) or {}
-    base_dir = str(entry.get("base_dir", ""))
+    variables = {"base_dir": entry.get("base_dir"), "run": config.get("run")}
     for key in MACHINE_KEYS:
-        if key not in defaults:
-            continue
-        value = _expand(defaults[key], base_dir)
-        if isinstance(value, dict):
-            config[key] = merge(value, config.get(key) or {})
-        else:
-            config.setdefault(key, value)
+        default = defaults.get(key)
+        if isinstance(default, dict):
+            config[key] = merge(default, config.get(key) or {})
+        elif default is not None:
+            config.setdefault(key, default)
+        if key in config:
+            config[key] = _expand(config[key], variables)
     return config
 
 
@@ -64,8 +69,10 @@ def get(config, dotted):
 
 
 def unresolved(config):
-    """REQUIRED keys that are unset or still the placeholder."""
-    return [k for k in REQUIRED if get(config, k) in (None, "", PLACEHOLDER)]
+    """REQUIRED keys that are unset, the placeholder, or hold an unexpanded
+    $variable (e.g. `$run` with no `run:` set)."""
+    return [k for k in REQUIRED
+            if get(config, k) in (None, "", PLACEHOLDER) or "$" in str(get(config, k))]
 
 
 def load(config_yaml, run_config=None):
