@@ -18,10 +18,13 @@ input_type: data
 # psfex, mccd, or fake (image_sims only: true PSF from `psf_dict`).
 psf_model: psfex
 
+# Run name, available as `$run` in the paths below.
+run: smk-g6
+
 # Per machine and input_type: tile_list, retrieve (symlink|vos), inputs,
 # outputs, container. A key set at top level (or in SP_RUN_CONFIG) overrides
-# it. `$base_dir` expands to the machine's base_dir. TBD = not known yet; the
-# run refuses to start until it is set.
+# it. `$base_dir` expands to the machine's base_dir, `$run` to `run:`.
+# TBD = not known yet; the run refuses to start until it is set.
 #
 # outputs: run_dir = scratch root for intermediates; products_dir = persistent
 # root for final catalogues, index and report (omit to use run_dir);
@@ -30,15 +33,15 @@ machines:
   nibi:
     base_dir: /project/def-mjhudson
     data:
-      tile_list: $base_dir/cdaley/sp-products/smk-g6/tiles.txt
+      tile_list: $base_dir/cdaley/sp-products/$run/tiles.txt
       retrieve: symlink
       inputs:
         tiles: $base_dir/unions-wl/tiles
         exposures: $base_dir/unions-wl/exposures
       outputs:
-        run_dir: /scratch/cdaley/shapepipe-output/smk-g6
-        products_dir: $base_dir/cdaley/sp-products/smk-g6
-        index_db: $base_dir/cdaley/sp-products/smk-g6/index/run_index.sqlite
+        run_dir: /scratch/cdaley/shapepipe-output/$run
+        products_dir: $base_dir/cdaley/sp-products/$run
+        index_db: $base_dir/cdaley/sp-products/$run/index/run_index.sqlite
       container: $base_dir/cdaley/containers/shapepipe-develop-runtime.sif
 
   candide:

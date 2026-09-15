@@ -76,7 +76,7 @@ the code. `machine:` (which must match `SP_PROFILE`, default `nibi`) and
 `input_type:` then select an entry of the `machines:` table, which supplies
 `tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
 `container` for any of these the run config leaves unset (`$base_dir` expands
-to that machine's `base_dir`). A value of `TBD` stops the run at parse time
+to that machine's `base_dir`, `$run` to the run config's `run:`). A value of `TBD` stops the run at parse time
 until it is set. A run config therefore only needs what differs, e.g. for one
 SKiLLS shear branch on candide:
 
