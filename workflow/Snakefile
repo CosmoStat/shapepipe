@@ -45,37 +45,42 @@ from snakemake.exceptions import WorkflowError
 # --directory on /scratch (bin/sp) so .snakemake/ state never lands on /project
 # (group quota is a hard 27/27 TiB — a metadata write mid-run died on it live).
 #
-# SP_RUN_CONFIG (set by bin/sp) REPLACES the committed config.yaml rather than
-# layering on it: a run driven from outside -- one image-simulation shear branch,
-# say -- must not inherit the committed run's paths for any key it omits.
-_RUN_CONFIG = os.environ.get("SP_RUN_CONFIG") or str(
-    Path(workflow.snakefile).parent / "config.yaml")
-configfile: _RUN_CONFIG
+# config.yaml's defaults -- including the per-machine `machines:` table --
+# are ALWAYS loaded first; SP_RUN_CONFIG (set by bin/sp), when given, is
+# layered on top via a second, conditional load (workflow.configfile() is a
+# plain method -- what the `configfile:` directive itself compiles to --
+# so it can be called from inside an `if`; it merges recursively via
+# snakemake.utils.update_config, not by replacement). This matters
+# specifically for `machines:`: an external run config (every image-sims
+# run, any one-off nibi/candide override) must still see the per-machine
+# defaults it exists to provide, or they would only ever apply to the one
+# case nobody actually runs -- the bare committed config with no override at
+# all. A key given in SP_RUN_CONFIG still wins over the same key from
+# config.yaml (later configfile: wins in the merge), so an override remains
+# exactly that -- this is the "layer, don't inherit blind" version of what
+# used to be a wholesale replace: `machines:` supplies well-scoped defaults
+# (gated on `machine:`/`input_type:`, checked against SP_PROFILE below), not
+# one campaign's actual paths reused as another's fallback.
+_CONFIG_YAML = str(Path(workflow.snakefile).parent / "config.yaml")
+_RUN_CONFIG = os.environ.get("SP_RUN_CONFIG") or _CONFIG_YAML
+configfile: _CONFIG_YAML
+if os.environ.get("SP_RUN_CONFIG"):
+    workflow.configfile(os.environ["SP_RUN_CONFIG"])
 
-# config.yaml ships nibi's own real, working paths (the checkout's current
-# mainline campaign) so `sp run` does something correct there with no other
-# setup; a different cluster or campaign supplies its own via SP_RUN_CONFIG
-# (see config.yaml's own top comment and the README) rather than editing this
-# file. This check guards against a FUTURE edit that strips these defaults
-# without supplying real ones -- one clear, identical-everywhere error instead
-# of a confusing failure downstream, or (worse) a job dying hours in on a node
-# that can't see "/REPLACE_ME". `container:` is checked separately
-# (container.py resolves a local sandbox or cached SIF first, so a placeholder
-# there is often harmless) and so is left out here.
-_PLACEHOLDER = "REPLACE_ME"
-for _key, _value in {
-        "tile_list": config.get("tile_list"),
-        "inputs.tiles": (config.get("inputs") or {}).get("tiles"),
-        "inputs.exposures": (config.get("inputs") or {}).get("exposures"),
-        "outputs.run_dir": (config.get("outputs") or {}).get("run_dir"),
-        "outputs.index_db": (config.get("outputs") or {}).get("index_db"),
-}.items():
-    if _value == _PLACEHOLDER:
-        raise WorkflowError(
-            f"{_key!r} in {_RUN_CONFIG} is still the template placeholder "
-            f"{_PLACEHOLDER!r}. Point SP_RUN_CONFIG at your own run config "
-            f"instead of editing the committed one (see the README, "
-            f"'Run configuration').")
+# --- input type (needed below, before PSF model) ----------------------------
+# input_type selects WHERE the pixels come from; everything downstream of the
+# ingestion stages is the same chain. `image_sims` runs the SKiLLS image
+# simulations through the real-data configs: the overlay config dir
+# (config/cfis_image_sims) holds real files only for the ingestion INIs whose
+# input naming differs, the fake-PSF INIs, and the merge column list
+# (final_cat.param), and symlinks the rest into config/cfis, so an m-bias
+# measured on the sims calibrates the pipeline that makes the real catalogue.
+INPUT_TYPES = {"data", "image_sims"}
+INPUT_TYPE = config.get("input_type", "data")
+if INPUT_TYPE not in INPUT_TYPES:
+    raise WorkflowError(
+        f"Invalid input_type={INPUT_TYPE!r}; expected one of "
+        f"{sorted(INPUT_TYPES)}.")
 
 # `machine:` (the run config) and SP_PROFILE (the environment variable
 # bin/sp reads to pick profiles/<name>/, default "nibi") are two independent
@@ -87,14 +92,77 @@ for _key, _value in {
 # of mistake this check exists to catch, so guessing one on its behalf would
 # defeat the point); the check is skipped only if `machine:` truly is unset
 # (a config predating this key), never silently.
-_SP_PROFILE = os.environ.get("SP_PROFILE", "nibi")
-_MACHINE = config.get("machine")
-if _MACHINE is not None and _MACHINE != _SP_PROFILE:
+SP_PROFILE = os.environ.get("SP_PROFILE", "nibi")
+MACHINE = config.get("machine")
+if MACHINE is not None and MACHINE != SP_PROFILE:
     raise WorkflowError(
-        f"machine={_MACHINE!r} in {_RUN_CONFIG} does not match "
-        f"SP_PROFILE={_SP_PROFILE!r} (env, defaults to 'nibi' when unset). "
-        f"Set SP_PROFILE={_MACHINE} to launch on the machine this config "
+        f"machine={MACHINE!r} in {_RUN_CONFIG} does not match "
+        f"SP_PROFILE={SP_PROFILE!r} (env, defaults to 'nibi' when unset). "
+        f"Set SP_PROFILE={MACHINE} to launch on the machine this config "
         f"declares, or fix `machine:` if the config is the stale one.")
+
+# --- per-machine defaults (config.yaml's `machines:` table) -----------------
+# tile_list / retrieve / inputs / outputs / container differ by machine, and
+# on candide also by input_type (the real survey and the SKiLLS simulations
+# live in entirely different places, fetched differently) -- `machines:` in
+# the run config carries one entry per machine, itself carrying either those
+# keys directly (uniform across input_type, e.g. nibi) or nested one level
+# under `data:`/`image_sims:` (e.g. candide). Any of these keys given at the
+# TOP LEVEL of the run config (outside `machines:`) overrides its machine
+# default -- same precedence SP_RUN_CONFIG already has over config.yaml, one
+# level down. `$base_dir` inside a string is replaced with that machine
+# entry's own `base_dir:`, so nibi's block states the one path that actually
+# is common to its tiles/exposures/products/container once, instead of four
+# times. A machine default may itself be the sentinel `TBD` (see the check
+# below) -- known to be needed, not yet known what it is.
+def _expand_base_dir(value, base_dir):
+    if isinstance(value, str):
+        return value.replace("$base_dir", base_dir) if base_dir else value
+    if isinstance(value, dict):
+        return {k: _expand_base_dir(v, base_dir) for k, v in value.items()}
+    return value
+
+_mconf = (config.get("machines") or {}).get(MACHINE) or {}
+_sub = _mconf.get(INPUT_TYPE) or {}
+_base_dir = _mconf.get("base_dir", "")
+_MACHINE_CONTAINER = None
+for _key in ("tile_list", "retrieve"):
+    if _key not in config:
+        _val = _sub.get(_key, _mconf.get(_key))
+        if _val is not None:
+            config[_key] = _expand_base_dir(_val, _base_dir)
+_MACHINE_CONTAINER = _sub.get("container", _mconf.get("container"))
+if _MACHINE_CONTAINER is not None:
+    _MACHINE_CONTAINER = _expand_base_dir(_MACHINE_CONTAINER, _base_dir)
+for _section in ("inputs", "outputs"):
+    _val = _sub.get(_section, _mconf.get(_section))
+    if _val:
+        _merged = _expand_base_dir(dict(_val), _base_dir)
+        _merged.update(config.get(_section) or {})
+        config[_section] = _merged
+
+# Every path a run genuinely cannot do without (tile_list, inputs.tiles,
+# inputs.exposures, outputs.run_dir, outputs.index_db) is checked, after the
+# machine defaults above are folded in, against the sentinel value `TBD` --
+# known to be needed, not yet known what it is (typically: this machine
+# entry's real value hasn't been confirmed yet, see config.yaml). One clear,
+# identical-everywhere error instead of a confusing failure downstream, or
+# (worse) a job dying hours in on a node that can't see a path literally
+# named "TBD". `container:` is checked separately, below its own resolution.
+_PLACEHOLDER = "TBD"
+for _key, _value in {
+        "tile_list": config.get("tile_list"),
+        "inputs.tiles": (config.get("inputs") or {}).get("tiles"),
+        "inputs.exposures": (config.get("inputs") or {}).get("exposures"),
+        "outputs.run_dir": (config.get("outputs") or {}).get("run_dir"),
+        "outputs.index_db": (config.get("outputs") or {}).get("index_db"),
+}.items():
+    if _value == _PLACEHOLDER:
+        raise WorkflowError(
+            f"{_key!r} resolves to the placeholder {_PLACEHOLDER!r} for "
+            f"machine={MACHINE!r}, input_type={INPUT_TYPE!r} -- this value "
+            f"is not known yet (see config.yaml's `machines:` table). Supply "
+            f"it explicitly in your run config until it is.")
 
 # Every job's shell runs inside this container (apptainer software-deployment in
 # the profile); the user never types apptainer. WHICH image is the one resolution
@@ -104,6 +172,21 @@ if _MACHINE is not None and _MACHINE != _SP_PROFILE:
 # always run, and a package installed into a sandbox reaches the jobs too.
 sys.path.insert(0, str(Path(workflow.snakefile).parent / "scripts"))
 import container as _container                          # noqa: E402
+
+# container.py's `configured_default()` reads `container:` by REGEX off the
+# run config FILE, independent of the `config` dict above (it is deliberately
+# stdlib-only, no yaml import) -- so a machine-derived container, which only
+# exists after the Python-side merge above, is invisible to it. SP_CONTAINER
+# is already the documented way to point resolve_image() at a specific image
+# instead of the cache (`local_sif()` reads it), so reuse that rather than
+# teach container.py about `machines:` too. Set only when nothing more
+# specific already exists: an explicit top-level `container:` in the run
+# config (which STILL reaches container.py, by file, the normal way) or an
+# SP_CONTAINER the user set themselves both take precedence, matching every
+# other machine default above.
+if _MACHINE_CONTAINER and not os.environ.get("SP_CONTAINER") \
+        and not config.get("container"):
+    os.environ["SP_CONTAINER"] = _MACHINE_CONTAINER
 
 # Loud at PARSE time, both ways: a broken SP_CONTAINER override, or nothing to
 # resolve at all (empty cache AND no `container:` key). The empty string the
@@ -121,21 +204,7 @@ if _kind == "none":
 
 container: _image
 
-# --- input type and PSF model ----------------------------------------------
-# input_type selects WHERE the pixels come from; everything downstream of the
-# ingestion stages is the same chain. `image_sims` runs the SKiLLS image
-# simulations through the real-data configs: the overlay config dir
-# (config/cfis_image_sims) holds real files only for the ingestion INIs whose
-# input naming differs, the fake-PSF INIs, and the merge column list
-# (final_cat.param), and symlinks the rest into config/cfis, so an m-bias
-# measured on the sims calibrates the pipeline that makes the real catalogue.
-INPUT_TYPES = {"data", "image_sims"}
-INPUT_TYPE = config.get("input_type", "data")
-if INPUT_TYPE not in INPUT_TYPES:
-    raise WorkflowError(
-        f"Invalid input_type={INPUT_TYPE!r}; expected one of "
-        f"{sorted(INPUT_TYPES)}.")
-
+# --- PSF model ---------------------------------------------------------------
 # `fake` is the image-simulation true PSF: no exposure PSF fit, and
 # fake_interp_runner writes the tile's galaxy_psf from the simulation's PSF
 # dictionary (config `psf_dict`) -- named so that the configs' shared
@@ -193,7 +262,8 @@ INDEX_DB   = Path(OUTPUTS["index_db"])
 SCRIPTS    = Path(workflow.basedir) / "scripts"
 # The config chain is the repo's committed directory (D2). The configs and
 # rules that set their environment variables must be versioned together. There
-# is no `config_src` knob; input_type picks between the two committed dirs.
+# is no separate `config_src` setting; input_type picks between the two
+# committed dirs.
 CONFIG_DIR = Path(workflow.basedir) / "config" / {
     "data": "cfis", "image_sims": "cfis_image_sims"}[INPUT_TYPE]
 

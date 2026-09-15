@@ -12,16 +12,6 @@
 #   SP_PROFILE=<nibi|candide> SP_RUN_CONFIG=/path/to/your_run.yaml \
 #     workflow/bin/sp run
 #
-# Every path a run genuinely cannot do without (tile_list, inputs.tiles,
-# inputs.exposures, outputs.run_dir, outputs.index_db) is checked at parse
-# time against the sentinel value REPLACE_ME (see the check near the top of
-# Snakefile) -- so a config that strips these defaults without supplying real
-# ones fails with one clear message instead of a confusing one downstream, or
-# silently running against nibi's paths from a machine that can't see them.
-# `container:` is exempt from that check: a local sandbox or cached SIF
-# (`sp container status`) is resolved first and makes this key irrelevant for
-# anyone who has one.
-#
 # A "run" is declared by a tile list plus the paths below. Everything here is
 # read at parse time; none of it is a rule input, so editing it (e.g. appending
 # tiles) never invalidates completed work — it only changes which jobs exist.
@@ -34,80 +24,111 @@
 machine: nibi
 #machine: candide
 
-# The tile list that scopes this run (one "IDra.IDdec" per line). The
-# campaign grows by appending to this file — parse-time config, so completed
-# work is never invalidated. This is the real, currently-growing list for
-# nibi's smk-gN campaign; a different run always supplies its own.
-tile_list: /project/def-mjhudson/cdaley/sp-products/smk-g6/tiles.txt
-
-# Inputs are the only site-specific data paths; all committed configs consume these
-# through SP_INPUT_TILES and SP_INPUT_EXPOSURES. Pre-staged P3 data on nibi
-# (get_images RETRIEVE=symlink, below).
-inputs:
-  tiles: /project/def-mjhudson/unions-wl/tiles
-  exposures: /project/def-mjhudson/unions-wl/exposures
-
-# How the tile/exposure images in `inputs:` above reach the run: `symlink`
-# (a pre-staged local mirror) or `vos` (fetched from VOSpace per unit, no
-# local mirror). This is cluster infrastructure, not a campaign choice --
-# nibi mirrors locally, candide fetches from VOSpace -- so pick the one that
-# matches wherever `inputs.tiles`/`inputs.exposures` actually point. Ignored
-# for `input_type: image_sims`, which is always `symlink` (simulation output
-# is generated locally and never lives in VOSpace).
-retrieve: symlink
-
-# The container every job runs inside (apptainer software-deployment in the profile).
-container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
+# Where the pixels come from: `data` (survey tiles/exposures, config/cfis) or
+# `image_sims` (SKiLLS simulations, config/cfis_image_sims -- an overlay that
+# differs from config/cfis only in the ingestion stages). An image_sims run
+# normally sets `psf_model: fake` and `psf_dict:`, and is driven with its own
+# run config through SP_RUN_CONFIG. There is no separate `config_src`
+# setting: input_type alone picks between the two committed ini directories,
+# which must version together with the rules that set their environment
+# variables.
+input_type: data
 
 # PSF model used by the exposure and tile interpolation stages: psfex, mccd, or
 # fake (image simulations only: the true PSF from `psf_dict`, no exposure fit).
 psf_model: psfex
 
-# Where the pixels come from: `data` (survey tiles/exposures, config/cfis) or
-# `image_sims` (SKiLLS simulations, config/cfis_image_sims -- an overlay that
-# differs from config/cfis only in the ingestion stages). An image_sims run
-# normally sets `psf_model: fake` and `psf_dict:`, and is driven with its own run
-# config through SP_RUN_CONFIG (see README, "Image simulations").
-input_type: data
-
-# THE TWO ROOTS (D5).
+# Per-(machine, and on candide also input_type) settings: tile_list, retrieve,
+# inputs, outputs, container -- see the Snakefile for the exact merge and the
+# `$base_dir` substitution rule. Any of these keys given at the TOP LEVEL of
+# this file (outside `machines:`) overrides its machine default; `#retrieve:`
+# and `#container:` below are exactly that override point, commented out. A
+# value of `TBD` means: known to be needed, not yet known what it is --
+# parsing refuses to proceed past one.
+#
+# THE TWO OUTPUT ROOTS EVERY MACHINE ENTRY DECLARES (D5).
 #
 # run_dir is the SCRATCH root and the $SP_RUN every config interpolates: bulk
 # intermediates, sized so a batch finishes inside the 60-day purge window. The
 # sharded per-unit stores live under it:
 #   <run_dir>/tiles/<2-char prefix>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
-outputs:
-  run_dir: /scratch/cdaley/shapepipe-output/smk-g6
-
+#
 # products_dir is the PERSISTENT root: the durable, low-volume products — the
 # final catalogues (<products_dir>/tiles/<prefix>/<ID>/final_cat-<ID>.fits,
 # mirroring the scratch tree shard for shard), the index, the report. ~32-46 MB
-# per tile, so a full DR6 campaign is a few hundred GB.
+# per tile, so a full DR6 campaign is a few hundred GB. The final catalogue is
+# also the tile-finished MARKER that cuts a finished tile's exposure edges
+# (D5), which is the second reason it cannot sit on scratch: a purge would not
+# merely lose a product, it would make every finished tile re-declare inputs
+# against exposure stores reclamation already deleted. Unset means "one
+# root": products land under run_dir, exactly the pre-D5 layout, which is
+# what a fixture or smoke test wants -- omit the key, rather than pointing it
+# at run_dir, if that's what you want.
 #
-# The final catalogue is also the tile-finished MARKER that cuts a finished
-# tile's exposure edges (D5), which is the second reason it cannot sit on
-# scratch: a purge would not merely lose a product, it would make every finished
-# tile re-declare inputs against exposure stores reclamation already deleted.
-#
-# Unset means "one root": products land under run_dir, exactly the pre-D5
-# layout, which is what a fixture or smoke test wants -- delete this whole
-# key, rather than pointing it at run_dir, if that's what you want.
-#
-# Snakemake's own state is the one durable-looking thing that stays on scratch
-# (<run_dir>-state; bin/sp explains why).
-  products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g6
+# index_db is the run index, and — sharing its directory — missing.json and
+# run_report.json. On the persistent root with the catalogues (D5): the index
+# is the record of which tile reads which exposure, so it is what a
+# post-purge reconstruction would otherwise have to rebuild from tile
+# headers. Snakemake's own state is the one durable-looking thing that stays
+# on scratch instead (<run_dir>-state; bin/sp explains why).
+machines:
+  nibi:
+    base_dir: /project/def-mjhudson
 
-# There is no separate config_src setting: the config chain is
-# workflow/config/cfis, resolved relative to the Snakefile. The configs
-# interpolate $SP_RUN / $SP_UNIT_NUM / $SP_CONFIG / $SP_EXP / $NGMIX_* and the
-# rules export them -- configs and rules are one artefact and must version
-# together, so the dir is fixed by construction.
+    # The real, currently-growing tile list for nibi's smk-gN campaign; a
+    # different run always supplies its own.
+    tile_list: $base_dir/cdaley/sp-products/smk-g6/tiles.txt
 
-# The run index, and — sharing its directory — missing.json and run_report.json.
-# On the persistent root with the catalogues (D5): the index is the record of
-# which tile reads which exposure, so it is what a post-purge reconstruction
-# would otherwise have to rebuild from tile headers.
-  index_db: /project/def-mjhudson/cdaley/sp-products/smk-g6/index/run_index.sqlite
+    # Pre-staged P3 data (get_images RETRIEVE=symlink).
+    retrieve: symlink
+    inputs:
+      tiles: $base_dir/unions-wl/tiles
+      exposures: $base_dir/unions-wl/exposures
+
+    outputs:
+      run_dir: /scratch/cdaley/shapepipe-output/smk-g6
+      products_dir: $base_dir/cdaley/sp-products/smk-g6
+      index_db: $base_dir/cdaley/sp-products/smk-g6/index/run_index.sqlite
+
+    container: $base_dir/cdaley/containers/shapepipe-develop-runtime.sif
+
+  candide:
+    base_dir: /n17data/UNIONS/WL
+
+    data:
+      # candide has no pre-staged local mirror of the survey (unlike nibi):
+      # images are fetched from VOSpace per unit instead.
+      retrieve: vos
+      tile_list: TBD
+      inputs:
+        tiles: TBD          # a vos: URL, once known
+        exposures: TBD
+      outputs:
+        run_dir: TBD
+      container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
+
+    image_sims:
+      # SKiLLS simulation output already lives on local disk.
+      retrieve: symlink
+      container: /n17data/cdaley/containers/shapepipe_im_sims-runtime.sif
+      # tile_list, inputs and outputs are intentionally absent here: each
+      # SKiLLS grid/shear-branch campaign supplies its own via SP_RUN_CONFIG
+      # (e.g. inputs.tiles: /n09data/hervas/skills_out/<grid>/images/SP_tiles)
+      # -- this entry only saves such a run from restating retrieve/container
+      # too.
+
+# How the tile/exposure images in `inputs:` above reach the run: `symlink`
+# (a pre-staged local mirror) or `vos` (fetched from VOSpace per unit, no
+# local mirror). Set per machine (and, on candide, per input_type) above;
+# ignored either way for `input_type: image_sims`, which is always `symlink`
+# (simulation output is generated locally and never lives in VOSpace). Give
+# it here directly only to override the machine default for one run.
+#retrieve: symlink
+
+# The container every job runs inside (apptainer software-deployment in the
+# profile). Set per machine (and, on candide, per input_type) above; give it
+# here directly only to override that default for one run.
+#container: ...
 
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
