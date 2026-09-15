@@ -26,6 +26,14 @@
 # read at parse time; none of it is a rule input, so editing it (e.g. appending
 # tiles) never invalidates completed work — it only changes which jobs exist.
 
+# Which cluster this run config is for. Must match SP_PROFILE (the
+# environment variable that picks profiles/<name>/, default "nibi") -- the
+# Snakefile raises a clear error at parse time if they disagree, since that
+# combination means a job would run under one cluster's SLURM settings
+# against another cluster's data paths.
+machine: nibi
+#machine: candide
+
 # The tile list that scopes this run (one "IDra.IDdec" per line). The
 # campaign grows by appending to this file — parse-time config, so completed
 # work is never invalidated. This is the real, currently-growing list for
