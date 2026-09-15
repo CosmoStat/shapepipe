@@ -1,23 +1,26 @@
 # Run configuration for the ShapePipe Snakemake workflow.
 #
-# THIS FILE IS A UNIVERSAL TEMPLATE, NOT A LIVE CAMPAIGN'S CONFIG. It carries
-# no machine- or campaign-specific path, on purpose: `sp run` must be the same
-# command on nibi, candide, or anywhere else, and a committed default that
-# happened to bake in one person's real paths would silently run a stranger's
-# campaign against the wrong cluster's filesystem the moment they forgot to
-# override it. Every path below is REPLACE_ME; the Snakefile refuses to parse
-# past one of the ones it cannot otherwise fail clearly on later (tile_list,
-# inputs.tiles, inputs.exposures, outputs.run_dir, outputs.index_db -- see the
-# check near the top of Snakefile). `container:` is exempt from that check: a
-# local sandbox or cached SIF (`sp container status`) is resolved first and
-# makes this key irrelevant for anyone who has one.
-#
-# A real run always supplies its own paths via SP_RUN_CONFIG, which REPLACES
-# this file wholesale rather than layering over it (workflow/bin/sp; see the
-# README's "Run configuration" section):
+# This file is nibi's own real, working default (Cail's real-data campaign,
+# the checkout's current mainline user) -- `sp run` with no other setup does
+# something real and correct on nibi. It is NOT the right config for another
+# cluster or a different campaign: `SP_RUN_CONFIG` points `sp run` at a run
+# config that REPLACES this file wholesale rather than layering over it
+# (workflow/bin/sp; see the README's "Run configuration" section), which is
+# how a candide run, an image-sims branch, or a second nibi campaign supplies
+# its own paths without touching this one:
 #
 #   SP_PROFILE=<nibi|candide> SP_RUN_CONFIG=/path/to/your_run.yaml \
 #     workflow/bin/sp run
+#
+# Every path a run genuinely cannot do without (tile_list, inputs.tiles,
+# inputs.exposures, outputs.run_dir, outputs.index_db) is checked at parse
+# time against the sentinel value REPLACE_ME (see the check near the top of
+# Snakefile) -- so a config that strips these defaults without supplying real
+# ones fails with one clear message instead of a confusing one downstream, or
+# silently running against nibi's paths from a machine that can't see them.
+# `container:` is exempt from that check: a local sandbox or cached SIF
+# (`sp container status`) is resolved first and makes this key irrelevant for
+# anyone who has one.
 #
 # A "run" is declared by a tile list plus the paths below. Everything here is
 # read at parse time; none of it is a rule input, so editing it (e.g. appending
@@ -25,14 +28,16 @@
 
 # The tile list that scopes this run (one "IDra.IDdec" per line). The
 # campaign grows by appending to this file — parse-time config, so completed
-# work is never invalidated.
-tile_list: REPLACE_ME
+# work is never invalidated. This is the real, currently-growing list for
+# nibi's smk-gN campaign; a different run always supplies its own.
+tile_list: /project/def-mjhudson/cdaley/sp-products/smk-g6/tiles.txt
 
 # Inputs are the only site-specific data paths; all committed configs consume these
-# through SP_INPUT_TILES and SP_INPUT_EXPOSURES.
+# through SP_INPUT_TILES and SP_INPUT_EXPOSURES. Pre-staged P3 data on nibi
+# (get_images RETRIEVE=symlink, below).
 inputs:
-  tiles: REPLACE_ME
-  exposures: REPLACE_ME
+  tiles: /project/def-mjhudson/unions-wl/tiles
+  exposures: /project/def-mjhudson/unions-wl/exposures
 
 # How the tile/exposure images in `inputs:` above reach the run: `symlink`
 # (a pre-staged local mirror) or `vos` (fetched from VOSpace per unit, no
@@ -44,7 +49,7 @@ inputs:
 retrieve: symlink
 
 # The container every job runs inside (apptainer software-deployment in the profile).
-container: REPLACE_ME
+container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
 
 # PSF model used by the exposure and tile interpolation stages: psfex, mccd, or
 # fake (image simulations only: the true PSF from `psf_dict`, no exposure fit).
@@ -64,7 +69,7 @@ input_type: data
 # sharded per-unit stores live under it:
 #   <run_dir>/tiles/<2-char prefix>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
 outputs:
-  run_dir: REPLACE_ME
+  run_dir: /scratch/cdaley/shapepipe-output/smk-g6
 
 # products_dir is the PERSISTENT root: the durable, low-volume products — the
 # final catalogues (<products_dir>/tiles/<prefix>/<ID>/final_cat-<ID>.fits,
@@ -77,13 +82,12 @@ outputs:
 # tile re-declare inputs against exposure stores reclamation already deleted.
 #
 # Unset means "one root": products land under run_dir, exactly the pre-D5
-# layout, which is what a fixture or smoke test wants. Delete this whole key
-# (not REPLACE_ME) if that's what you want -- it's the one path in this file
-# that's genuinely optional rather than templated.
+# layout, which is what a fixture or smoke test wants -- delete this whole
+# key, rather than pointing it at run_dir, if that's what you want.
 #
 # Snakemake's own state is the one durable-looking thing that stays on scratch
 # (<run_dir>-state; bin/sp explains why).
-  products_dir: REPLACE_ME
+  products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g6
 
 # There is no separate config_src setting: the config chain is
 # workflow/config/cfis, resolved relative to the Snakefile. The configs
@@ -95,7 +99,7 @@ outputs:
 # On the persistent root with the catalogues (D5): the index is the record of
 # which tile reads which exposure, so it is what a post-purge reconstruction
 # would otherwise have to rebuild from tile headers.
-  index_db: REPLACE_ME
+  index_db: /project/def-mjhudson/cdaley/sp-products/smk-g6/index/run_index.sqlite
 
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
