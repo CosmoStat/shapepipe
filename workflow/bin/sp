@@ -24,27 +24,44 @@
 # executor re-invokes it inside jobs, so it cannot live on a node-local path).
 # One entry point, so a fresh tmux or a restart after a crash always launches
 # with the right state.
+#
+# Three environment variables make it drivable off nibi and from outside:
+#
+#   SP_PROFILE        profiles/<name>/ to launch with (default: nibi).
+#   SP_SNAKEMAKE_ENV  venv to activate; skipped when it does not exist and a
+#                     snakemake is already on PATH (e.g. candide).
+#   SP_RUN_CONFIG     a run config merged on top of workflow/config.yaml
+#                     (scripts/run_config.py). Snapshotted with the code by
+#                     `sp run`. This is how sp_validation drives one campaign
+#                     per image-simulation shear branch.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # workflow/
 REPO="$(dirname "$HERE")"
 VENV="${SP_SNAKEMAKE_ENV:-/project/def-mjhudson/cdaley/snakemake-env}"
 SCRIPTS="$HERE/scripts"
-CONFIG="$HERE/config.yaml"
+CONFIG="${SP_RUN_CONFIG:-$HERE/config.yaml}"
+PROFILE="${SP_PROFILE:-nibi}"
+[ -f "$CONFIG" ] || { echo "sp: run config $CONFIG does not exist" >&2; exit 2; }
+[ -d "$REPO/profiles/$PROFILE" ] || {
+  echo "sp: no profile $REPO/profiles/$PROFILE (SP_PROFILE=$PROFILE)" >&2; exit 2; }
 
 module load apptainer/1.4.5 2>/dev/null || true
-# shellcheck disable=SC1091
-source "$VENV/bin/activate"
+if [ -f "$VENV/bin/activate" ]; then
+  # shellcheck disable=SC1091
+  source "$VENV/bin/activate"
+elif ! command -v snakemake >/dev/null 2>&1; then
+  echo "sp: no venv at $VENV and no snakemake on PATH (set SP_SNAKEMAKE_ENV)" >&2
+  exit 2
+fi
 
-# Scalar reader for workflow/config.yaml. The venv is active by this point and
-# snakemake depends on PyYAML, so this parses the file rather than pattern-matching
-# it -- quotes, inline comments and nesting are the parser's problem, not ours.
-cfg() { python -c 'import sys, yaml
-value = yaml.safe_load(open(sys.argv[1]))
-for key in sys.argv[2].split("."):
-    value = value[key]
-print(value or "")' "$CONFIG" "$1"; }
+# Resolved run-config value (config.yaml + SP_RUN_CONFIG + machine defaults),
+# the same resolution the Snakefile uses.
+cfg() { python "$SCRIPTS/run_config.py" "$HERE/config.yaml" "${SP_RUN_CONFIG:-}" "$1"; }
 RUN_DIR="$(cfg outputs.run_dir)"; INDEX_DB="$(cfg outputs.index_db)"
+if [ "${1:-}" != container ] && { [ -z "$RUN_DIR" ] || [ "$RUN_DIR" = TBD ]; }; then
+  echo "sp: outputs.run_dir is unset or TBD for this machine/input_type" >&2; exit 2
+fi
 
 # Snakemake state (.snakemake: metadata, locks, incomplete markers) lives NEXT TO
 # THE RUN on /scratch, never on the persistent root — the one exception to D5's
@@ -104,7 +121,7 @@ snapshot_code() {
   # rewritten HERE, in the snapshot's copy, and `sm` points --profile at that copy.
   # The checked-in profile keeps its literal checkout path and stays the source of
   # truth for the FLAGS; exactly one path is substituted, by one line of sed-work.
-  python - "$SNAPSHOT/profiles/nibi/config.yaml" "$SNAPSHOT/src" <<'PY'
+  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$SNAPSHOT/src" <<'PY'
 import pathlib, re, sys
 f, src = pathlib.Path(sys.argv[1]), sys.argv[2]
 text, n = re.subn(r'(--env PYTHONPATH=)\S+', lambda m: m.group(1) + src,
@@ -113,6 +130,41 @@ if not n:
     sys.exit("sp: no --env PYTHONPATH= found in the profile's apptainer-args; "
              "the snapshot would run against the live checkout's src/")
 f.write_text(text)
+PY
+
+  # `tile_store_root:` in the run config moves the node-local tile store
+  # (tile.smk's tile_local(): the vignette + WCS stores of each tile_shape group)
+  # off the profile's `/local/scratch` bind, for this campaign only. It is the
+  # same substitution as the pin above -- the BIND SOURCE of `/local/scratch` in
+  # the snapshot's profile -- and deliberately not a path in tile_local(): that
+  # function's output is a params rerun trigger, so a path there would reschedule
+  # every finished tile of a resumed campaign (its warning block says how badly),
+  # while a bind is not a trigger at all (a dry run after changing it schedules
+  # only the missing tiles). Why a campaign wants it: candide binds the node's
+  # 31 GB /tmp, which a few dense image-sim tile stores or failed groups' orphans
+  # fill, after which every later group on that node fails in seconds. A shared
+  # directory (NFS) trades ngmix read latency for room; the campaign-unique store
+  # names (LOCAL_TAG) keep concurrent campaigns apart in one root. Profiles with
+  # no `X:/local/scratch` bind (nibi's `--bind /local`) get one appended.
+  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$(cfg tile_store_root)" <<'PY'
+import os, pathlib, re, sys
+f, root = pathlib.Path(sys.argv[1]), sys.argv[2]
+if root:
+    root = str(root)
+    if not os.path.isabs(root):
+        sys.exit(f"sp: tile_store_root must be an absolute path, got {root!r}")
+    os.makedirs(root, exist_ok=True)
+    bind = f"--bind {root}:/local/scratch"
+    text, n = re.subn(r'--bind \S+:/local/scratch(?=[\s"])', lambda m: bind,
+                      f.read_text(), count=1)
+    if not n:
+        text, n = re.subn(r'(apptainer-args:\s*"[^"]*)"',
+                          lambda m: m.group(1) + " " + bind + '"', text, count=1)
+    if not n:
+        sys.exit("sp: tile_store_root is set but the profile has no quoted "
+                 "apptainer-args to bind it with")
+    f.write_text(text)
+    print(f"sp: tile store root {root} (bound to /local/scratch)", file=sys.stderr)
 PY
 
   python - "$SNAPSHOT/snapshot.json" "$REPO" <<'PY'
@@ -137,6 +189,11 @@ out.write_text(json.dumps({
     "dirty_files": status.splitlines() if status else [],
 }, indent=2) + "\n")
 PY
+  # An external run config is part of what is launched: snapshot it with the
+  # code, so a job re-parsing hours later reads the config the run started with.
+  if [ -n "${SP_RUN_CONFIG:-}" ]; then
+    cp "$SP_RUN_CONFIG" "$SNAPSHOT/run_config.yaml"
+  fi
   echo "sp: code snapshot refreshed at $SNAPSHOT" >&2
 }
 
@@ -164,9 +221,14 @@ code_root() { [ -f "$SNAPSHOT/workflow/Snakefile" ] && echo "$SNAPSHOT" || echo 
 # index without building it and schedules no side effects.
 sm() {
   local root; root="$(code_root)"
+  # The run config the Snakefile reads: the snapshot's copy when this run has
+  # one, so every parse of the campaign -- head and jobs -- sees the same file.
+  if [ -n "${SP_RUN_CONFIG:-}" ] && [ -f "$root/run_config.yaml" ]; then
+    export SP_RUN_CONFIG="$root/run_config.yaml"
+  fi
   SP_PHASE="${SP_PHASE:-passthrough}" \
     snakemake --snakefile "$root/workflow/Snakefile" \
-              --profile "$root/profiles/nibi" \
+              --profile "$root/profiles/$PROFILE" \
               --directory "$STATE_DIR" "$@"
 }
 
