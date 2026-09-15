@@ -69,10 +69,33 @@ One campaign per shear branch, each with its own run config:
 SP_PROFILE=candide SP_RUN_CONFIG=/path/run_1p2z_grid_1.yaml workflow/bin/sp run
 ```
 
-`SP_RUN_CONFIG` replaces `workflow/config.yaml` (it is not layered on it, so no
-key falls back to the committed run's paths) and is snapshotted with the code;
-`SP_PROFILE` picks `profiles/<name>/`. sp_validation's image-simulation workflow
-drives these campaigns and measures m from their final catalogues.
+## Run configuration
+
+`SP_RUN_CONFIG` is merged on top of `workflow/config.yaml` and snapshotted with
+the code. `machine:` (which must match `SP_PROFILE`, default `nibi`) and
+`input_type:` then select an entry of the `machines:` table, which supplies
+`tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
+`container` for any of these the run config leaves unset (`$base_dir` expands
+to that machine's `base_dir`). A value of `TBD` stops the run at parse time
+until it is set. A run config therefore only needs what differs, e.g. for one
+SKiLLS shear branch on candide:
+
+```yaml
+machine: candide
+input_type: image_sims
+psf_model: fake
+psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle
+tile_list: /path/to/tiles.txt
+inputs:
+  tiles: /n09data/hervas/skills_out/1z2z_grid_3/images/SP_tiles
+  exposures: /n09data/hervas/skills_out/1z2z_grid_3/images/SP_exp
+outputs:
+  run_dir: /path/to/run
+  index_db: /path/to/run/index.sqlite
+```
+
+sp_validation's image-simulation workflow drives these campaigns and measures m
+from their final catalogues.
 
 On candide, the node-local tile store (bound from the node's 31 GB `/tmp`) does not
 hold several dense image-sim tiles at once. Set `tile_store_root:` in the run

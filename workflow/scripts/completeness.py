@@ -354,13 +354,10 @@ def build_manifest(stage, run_dir, unit, stage_subdir=None):
 
 
 def write_if_changed(path: Path, text: str) -> None:
-    """Write only when the bytes differ — see the module docstring on mtime.
+    """Write only when the bytes differ (see the module docstring on mtime).
 
-    Via a same-directory temp file + ``os.replace``, not ``path.write_text``:
-    the latter truncates before writing, so a reader (``run_report.py``, run
-    automatically at compute's end) can catch the file empty mid-write. Same
-    directory keeps the replace on one filesystem, which is what makes it
-    atomic; a losing writer's temp file is unlinked rather than left behind.
+    Atomic (temp file + os.replace): a reader such as run_report.py must never
+    see the file truncated mid-write.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists() or path.read_text() != text:
