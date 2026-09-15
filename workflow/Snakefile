@@ -52,6 +52,31 @@ _RUN_CONFIG = os.environ.get("SP_RUN_CONFIG") or str(
     Path(workflow.snakefile).parent / "config.yaml")
 configfile: _RUN_CONFIG
 
+# The committed config.yaml is a universal template (no machine- or
+# campaign-specific path in it), so the same `sp run` invocation works on
+# every cluster: whoever runs it always supplies their own paths through
+# SP_RUN_CONFIG (see config.yaml's own top comment and the README). Left
+# unset, the template's REPLACE_ME sentinel would otherwise read as a real,
+# oddly-named path -- silently missing tiles, or a job dying hours in on a
+# node that can't see "/REPLACE_ME" -- rather than the one-line, same-message-
+# everywhere error this check gives instead. `container:` is checked
+# separately (container.py resolves a local sandbox or cached SIF first, so a
+# placeholder there is often harmless) and so is left out here.
+_PLACEHOLDER = "REPLACE_ME"
+for _key, _value in {
+        "tile_list": config.get("tile_list"),
+        "inputs.tiles": (config.get("inputs") or {}).get("tiles"),
+        "inputs.exposures": (config.get("inputs") or {}).get("exposures"),
+        "outputs.run_dir": (config.get("outputs") or {}).get("run_dir"),
+        "outputs.index_db": (config.get("outputs") or {}).get("index_db"),
+}.items():
+    if _value == _PLACEHOLDER:
+        raise WorkflowError(
+            f"{_key!r} in {_RUN_CONFIG} is still the template placeholder "
+            f"{_PLACEHOLDER!r}. workflow/config.yaml ships as a universal "
+            f"template with no real paths in it; point SP_RUN_CONFIG at your "
+            f"own run config instead (see the README, 'Run configuration').")
+
 # Every job's shell runs inside this container (apptainer software-deployment in
 # the profile); the user never types apptainer. WHICH image is the one resolution
 # order `sp container` exposes — this user's writable sandbox if they built one,

@@ -1,32 +1,41 @@
 # Run configuration for the ShapePipe Snakemake workflow.
 #
+# THIS FILE IS A UNIVERSAL TEMPLATE, NOT A LIVE CAMPAIGN'S CONFIG. It carries
+# no machine- or campaign-specific path, on purpose: `sp run` must be the same
+# command on nibi, candide, or anywhere else, and a committed default that
+# happened to bake in one person's real paths would silently run a stranger's
+# campaign against the wrong cluster's filesystem the moment they forgot to
+# override it. Every path below is REPLACE_ME; the Snakefile refuses to parse
+# past one of the ones it cannot otherwise fail clearly on later (tile_list,
+# inputs.tiles, inputs.exposures, outputs.run_dir, outputs.index_db -- see the
+# check near the top of Snakefile). `container:` is exempt from that check: a
+# local sandbox or cached SIF (`sp container status`) is resolved first and
+# makes this key irrelevant for anyone who has one.
+#
+# A real run always supplies its own paths via SP_RUN_CONFIG, which REPLACES
+# this file wholesale rather than layering over it (workflow/bin/sp; see the
+# README's "Run configuration" section):
+#
+#   SP_PROFILE=<nibi|candide> SP_RUN_CONFIG=/path/to/your_run.yaml \
+#     workflow/bin/sp run
+#
 # A "run" is declared by a tile list plus the paths below. Everything here is
 # read at parse time; none of it is a rule input, so editing it (e.g. appending
 # tiles) never invalidates completed work — it only changes which jobs exist.
 
-# The tile list that scopes this run (one "IDra.IDdec" per line).
-# The campaign grows by appending to this file — parse-time config, so
-# completed work is never invalidated. Current contents: smk-g5, ONE tile
-# (186.307), the paired control for the two fixes landed after smk-g4 — the
-# node-local WCS sqlite and tile_ngmix's mem_mb 14000 -> 5000. That tile ran
-# ALONE as smk-g4 job 20799387 (elapsed 8063 s, chunk median 6813 s, chunk mean
-# load 59%, MaxRSS 26.6 GiB), so the baseline carries no concurrency confound
-# and the contrast is same tile, same solitude, two commits apart.
-# The 34-tile smk-g4 set is preserved at smk-g4/tiles34.txt.
-# (The 210/211 quad used earlier is unusable: its tile images are symlinks into
-# anaennis' moved processed_tiles tree — ~8.5k of the 10.3k staged tiles are
-# broken.)
-tile_list: /project/def-mjhudson/cdaley/sp-products/smk-g6/tiles.txt
+# The tile list that scopes this run (one "IDra.IDdec" per line). The
+# campaign grows by appending to this file — parse-time config, so completed
+# work is never invalidated.
+tile_list: REPLACE_ME
 
 # Inputs are the only site-specific data paths; all committed configs consume these
 # through SP_INPUT_TILES and SP_INPUT_EXPOSURES.
 inputs:
-  # Pre-staged P3 data (get_images RETRIEVE=symlink).
-  tiles: /project/def-mjhudson/unions-wl/tiles
-  exposures: /project/def-mjhudson/unions-wl/exposures
+  tiles: REPLACE_ME
+  exposures: REPLACE_ME
 
 # The container every job runs inside (apptainer software-deployment in the profile).
-container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
+container: REPLACE_ME
 
 # PSF model used by the exposure and tile interpolation stages: psfex, mccd, or
 # fake (image simulations only: the true PSF from `psf_dict`, no exposure fit).
@@ -46,7 +55,7 @@ input_type: data
 # sharded per-unit stores live under it:
 #   <run_dir>/tiles/<2-char prefix>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
 outputs:
-  run_dir: /scratch/cdaley/shapepipe-output/smk-g6
+  run_dir: REPLACE_ME
 
 # products_dir is the PERSISTENT root: the durable, low-volume products — the
 # final catalogues (<products_dir>/tiles/<prefix>/<ID>/final_cat-<ID>.fits,
@@ -59,31 +68,34 @@ outputs:
 # tile re-declare inputs against exposure stores reclamation already deleted.
 #
 # Unset means "one root": products land under run_dir, exactly the pre-D5
-# layout, which is what a fixture or smoke test wants.
+# layout, which is what a fixture or smoke test wants. Delete this whole key
+# (not REPLACE_ME) if that's what you want -- it's the one path in this file
+# that's genuinely optional rather than templated.
 #
 # Snakemake's own state is the one durable-looking thing that stays on scratch
 # (<run_dir>-state; bin/sp explains why).
-  products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g6
+  products_dir: REPLACE_ME
 
-# There is no config_src knob: the config chain is workflow/config/cfis, resolved
-# relative to the Snakefile. The configs interpolate $SP_RUN / $SP_UNIT_NUM /
-# $SP_CONFIG / $SP_EXP / $NGMIX_* and the rules export them -- configs and rules
-# are one artefact and must version together, so the dir is fixed by construction.
+# There is no separate config_src setting: the config chain is
+# workflow/config/cfis, resolved relative to the Snakefile. The configs
+# interpolate $SP_RUN / $SP_UNIT_NUM / $SP_CONFIG / $SP_EXP / $NGMIX_* and the
+# rules export them -- configs and rules are one artefact and must version
+# together, so the dir is fixed by construction.
 
 # The run index, and — sharing its directory — missing.json and run_report.json.
 # On the persistent root with the catalogues (D5): the index is the record of
 # which tile reads which exposure, so it is what a post-purge reconstruction
 # would otherwise have to rebuild from tile headers.
-  index_db: /project/def-mjhudson/cdaley/sp-products/smk-g6/index/run_index.sqlite
+  index_db: REPLACE_ME
 
 # Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
 # `clean_exposure` job per exposure. It fires once every campaign tile that reads
 # that exposure has its vignets, deletes the exposure's store AND its manifests,
 # and leaves `cleaned.json`, which absorbs the manifests — `sp report` reads them
-# back out of the tombstone and reports the exposure as `cleaned`. OFF for smk-g5:
-# this is a one-tile control, its ~8 exposure stores cost ~54 GiB against 979 GiB
-# free, reclamation is already measured exactly by smk-g4, and keeping the stores
-# means a re-measurement re-runs only the shape chain instead of the whole tile.
+# back out of the tombstone and reports the exposure as `cleaned`. Set it false
+# for a small control run whose exposure stores you want to keep around (e.g. to
+# re-measure only the shape chain rather than rebuild the whole tile) -- true is
+# the right default for anything that isn't a deliberately-kept fixture.
 clean: true
 
 # Rolling TILE-store reclamation (D5). When true, the COMPUTE DAG grows one
@@ -122,8 +134,8 @@ clean: true
 # against a 1M quota. Reclaimed, a tile costs 10 inodes and 12.9 KB — 231k inodes
 # and ~300 MB for the whole of DR6.
 #
-# OFF here for the same reason `clean:` is: smk-g5 is a one-tile control, and its
-# store is what a re-measurement would read.
+# Set it false for the same kind of small control run `clean:` above would be
+# false for, when the per-tile store is what a re-measurement needs to read.
 clean_tiles: true
 
 # Tiles that may NOT pin an exposure store (default: empty).
@@ -153,7 +165,7 @@ ngmix_chunks: 8
 # tiles and failed groups' orphans fill /tmp); the cost is ngmix read latency.
 # tile_store_root: /n23data1/<user>/shapepipe/tilestore
 
-# The container's installed shapepipe is overridden by the prod worktree via
-# --env PYTHONPATH in profiles/nibi (settled call 3); no config knob here.
+# The container's installed shapepipe is overridden by the launching worktree
+# via each profile's own --env PYTHONPATH; there is no setting for it here.
 # build_index.py's missing-tile fraction threshold is passed by workflow/bin/sp
 # (SP_MISSING_THRESHOLD, default 0.0 = any missing tile is fatal).
