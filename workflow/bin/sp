@@ -30,11 +30,10 @@
 #   SP_PROFILE        profiles/<name>/ to launch with (default: nibi).
 #   SP_SNAKEMAKE_ENV  venv to activate; skipped when it does not exist and a
 #                     snakemake is already on PATH (e.g. candide).
-#   SP_RUN_CONFIG     a run config that REPLACES workflow/config.yaml (it is not
-#                     layered on it, so no key falls back to the committed run's
-#                     paths). Snapshotted with the code by `sp run`. This is how
-#                     sp_validation drives one campaign per image-simulation
-#                     shear branch.
+#   SP_RUN_CONFIG     a run config merged on top of workflow/config.yaml
+#                     (scripts/run_config.py). Snapshotted with the code by
+#                     `sp run`. This is how sp_validation drives one campaign
+#                     per image-simulation shear branch.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # workflow/
@@ -56,15 +55,13 @@ elif ! command -v snakemake >/dev/null 2>&1; then
   exit 2
 fi
 
-# Scalar reader for workflow/config.yaml. The venv is active by this point and
-# snakemake depends on PyYAML, so this parses the file rather than pattern-matching
-# it -- quotes, inline comments and nesting are the parser's problem, not ours.
-cfg() { python -c 'import sys, yaml
-value = yaml.safe_load(open(sys.argv[1]))
-for key in sys.argv[2].split("."):
-    value = value[key]
-print(value or "")' "$CONFIG" "$1"; }
+# Resolved run-config value (config.yaml + SP_RUN_CONFIG + machine defaults),
+# the same resolution the Snakefile uses.
+cfg() { python "$SCRIPTS/run_config.py" "$HERE/config.yaml" "${SP_RUN_CONFIG:-}" "$1"; }
 RUN_DIR="$(cfg outputs.run_dir)"; INDEX_DB="$(cfg outputs.index_db)"
+if [ "${1:-}" != container ] && { [ -z "$RUN_DIR" ] || [ "$RUN_DIR" = TBD ]; }; then
+  echo "sp: outputs.run_dir is unset or TBD for this machine/input_type" >&2; exit 2
+fi
 
 # Snakemake state (.snakemake: metadata, locks, incomplete markers) lives NEXT TO
 # THE RUN on /scratch, never on the persistent root — the one exception to D5's
@@ -149,10 +146,9 @@ PY
   # directory (NFS) trades ngmix read latency for room; the campaign-unique store
   # names (LOCAL_TAG) keep concurrent campaigns apart in one root. Profiles with
   # no `X:/local/scratch` bind (nibi's `--bind /local`) get one appended.
-  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$CONFIG" <<'PY'
-import os, pathlib, re, sys, yaml
-f, run_config = pathlib.Path(sys.argv[1]), sys.argv[2]
-root = (yaml.safe_load(open(run_config)) or {}).get("tile_store_root")
+  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$(cfg tile_store_root)" <<'PY'
+import os, pathlib, re, sys
+f, root = pathlib.Path(sys.argv[1]), sys.argv[2]
 if root:
     root = str(root)
     if not os.path.isabs(root):

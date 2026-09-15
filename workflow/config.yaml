@@ -1,213 +1,80 @@
 # Run configuration for the ShapePipe Snakemake workflow.
 #
-# This file is nibi's own real, working default (Cail's real-data campaign,
-# the checkout's current mainline user) -- `sp run` with no other setup does
-# something real and correct on nibi. It is NOT the right config for another
-# cluster or a different campaign: `SP_RUN_CONFIG` points `sp run` at a run
-# config that REPLACES this file wholesale rather than layering over it
-# (workflow/bin/sp; see the README's "Run configuration" section), which is
-# how a candide run, an image-sims branch, or a second nibi campaign supplies
-# its own paths without touching this one:
+# A run config given via SP_RUN_CONFIG is merged on top of this file, then
+# the `machines:` entry for (machine, input_type) fills anything still unset:
 #
-#   SP_PROFILE=<nibi|candide> SP_RUN_CONFIG=/path/to/your_run.yaml \
-#     workflow/bin/sp run
+#   SP_PROFILE=<nibi|candide> SP_RUN_CONFIG=/path/to/run.yaml workflow/bin/sp run
 #
-# A "run" is declared by a tile list plus the paths below. Everything here is
-# read at parse time; none of it is a rule input, so editing it (e.g. appending
-# tiles) never invalidates completed work — it only changes which jobs exist.
+# Everything is read at parse time; editing it (e.g. appending tiles) never
+# invalidates completed work.
 
-# Which cluster this run config is for. Must match SP_PROFILE (the
-# environment variable that picks profiles/<name>/, default "nibi") -- the
-# Snakefile raises a clear error at parse time if they disagree, since that
-# combination means a job would run under one cluster's SLURM settings
-# against another cluster's data paths.
+# Cluster; must match SP_PROFILE (default nibi).
 machine: nibi
 #machine: candide
 
-# Where the pixels come from: `data` (survey tiles/exposures, config/cfis) or
-# `image_sims` (SKiLLS simulations, config/cfis_image_sims -- an overlay that
-# differs from config/cfis only in the ingestion stages). An image_sims run
-# normally sets `psf_model: fake` and `psf_dict:`, and is driven with its own
-# run config through SP_RUN_CONFIG. There is no separate `config_src`
-# setting: input_type alone picks between the two committed ini directories,
-# which must version together with the rules that set their environment
-# variables.
+# data (survey, config/cfis) or image_sims (SKiLLS, config/cfis_image_sims).
 input_type: data
 
-# PSF model used by the exposure and tile interpolation stages: psfex, mccd, or
-# fake (image simulations only: the true PSF from `psf_dict`, no exposure fit).
+# psfex, mccd, or fake (image_sims only: true PSF from `psf_dict`).
 psf_model: psfex
 
-# Per-(machine, and on candide also input_type) settings: tile_list, retrieve,
-# inputs, outputs, container -- see the Snakefile for the exact merge and the
-# `$base_dir` substitution rule. Any of these keys given at the TOP LEVEL of
-# this file (outside `machines:`) overrides its machine default; `#retrieve:`
-# and `#container:` below are exactly that override point, commented out. A
-# value of `TBD` means: known to be needed, not yet known what it is --
-# parsing refuses to proceed past one.
+# Per machine and input_type: tile_list, retrieve (symlink|vos), inputs,
+# outputs, container. A key set at top level (or in SP_RUN_CONFIG) overrides
+# it. `$base_dir` expands to the machine's base_dir. TBD = not known yet; the
+# run refuses to start until it is set.
 #
-# THE TWO OUTPUT ROOTS EVERY MACHINE ENTRY DECLARES (D5).
-#
-# run_dir is the SCRATCH root and the $SP_RUN every config interpolates: bulk
-# intermediates, sized so a batch finishes inside the 60-day purge window. The
-# sharded per-unit stores live under it:
-#   <run_dir>/tiles/<2-char prefix>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
-#
-# products_dir is the PERSISTENT root: the durable, low-volume products — the
-# final catalogues (<products_dir>/tiles/<prefix>/<ID>/final_cat-<ID>.fits,
-# mirroring the scratch tree shard for shard), the index, the report. ~32-46 MB
-# per tile, so a full DR6 campaign is a few hundred GB. The final catalogue is
-# also the tile-finished MARKER that cuts a finished tile's exposure edges
-# (D5), which is the second reason it cannot sit on scratch: a purge would not
-# merely lose a product, it would make every finished tile re-declare inputs
-# against exposure stores reclamation already deleted. Unset means "one
-# root": products land under run_dir, exactly the pre-D5 layout, which is
-# what a fixture or smoke test wants -- omit the key, rather than pointing it
-# at run_dir, if that's what you want.
-#
-# index_db is the run index, and — sharing its directory — missing.json and
-# run_report.json. On the persistent root with the catalogues (D5): the index
-# is the record of which tile reads which exposure, so it is what a
-# post-purge reconstruction would otherwise have to rebuild from tile
-# headers. Snakemake's own state is the one durable-looking thing that stays
-# on scratch instead (<run_dir>-state; bin/sp explains why).
+# outputs: run_dir = scratch root for intermediates; products_dir = persistent
+# root for final catalogues, index and report (omit to use run_dir);
+# index_db = tile/exposure index.
 machines:
   nibi:
     base_dir: /project/def-mjhudson
-
-    # The real, currently-growing tile list for nibi's smk-gN campaign; a
-    # different run always supplies its own.
-    tile_list: $base_dir/cdaley/sp-products/smk-g6/tiles.txt
-
-    # Pre-staged P3 data (get_images RETRIEVE=symlink).
-    retrieve: symlink
-    inputs:
-      tiles: $base_dir/unions-wl/tiles
-      exposures: $base_dir/unions-wl/exposures
-
-    outputs:
-      run_dir: /scratch/cdaley/shapepipe-output/smk-g6
-      products_dir: $base_dir/cdaley/sp-products/smk-g6
-      index_db: $base_dir/cdaley/sp-products/smk-g6/index/run_index.sqlite
-
-    container: $base_dir/cdaley/containers/shapepipe-develop-runtime.sif
+    data:
+      tile_list: $base_dir/cdaley/sp-products/smk-g6/tiles.txt
+      retrieve: symlink
+      inputs:
+        tiles: $base_dir/unions-wl/tiles
+        exposures: $base_dir/unions-wl/exposures
+      outputs:
+        run_dir: /scratch/cdaley/shapepipe-output/smk-g6
+        products_dir: $base_dir/cdaley/sp-products/smk-g6
+        index_db: $base_dir/cdaley/sp-products/smk-g6/index/run_index.sqlite
+      container: $base_dir/cdaley/containers/shapepipe-develop-runtime.sif
 
   candide:
     base_dir: /n17data/UNIONS/WL
-
     data:
-      # candide has no pre-staged local mirror of the survey (unlike nibi):
-      # images are fetched from VOSpace per unit instead.
       retrieve: vos
       tile_list: TBD
       inputs:
-        tiles: TBD          # a vos: URL, once known
+        tiles: TBD          # vos: URL
         exposures: TBD
       outputs:
         run_dir: TBD
+        index_db: TBD
       container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
-
     image_sims:
-      # SKiLLS simulation output already lives on local disk.
+      # tile_list, inputs, outputs: per SKiLLS campaign, in its own run config,
+      # e.g. inputs.tiles: /n09data/hervas/skills_out/<grid>/images/SP_tiles
       retrieve: symlink
       container: /n17data/cdaley/containers/shapepipe_im_sims-runtime.sif
-      # tile_list, inputs and outputs are intentionally absent here: each
-      # SKiLLS grid/shear-branch campaign supplies its own via SP_RUN_CONFIG
-      # (e.g. inputs.tiles: /n09data/hervas/skills_out/<grid>/images/SP_tiles)
-      # -- this entry only saves such a run from restating retrieve/container
-      # too.
 
-# How the tile/exposure images in `inputs:` above reach the run: `symlink`
-# (a pre-staged local mirror) or `vos` (fetched from VOSpace per unit, no
-# local mirror). Set per machine (and, on candide, per input_type) above;
-# ignored either way for `input_type: image_sims`, which is always `symlink`
-# (simulation output is generated locally and never lives in VOSpace). Give
-# it here directly only to override the machine default for one run.
-#retrieve: symlink
-
-# The container every job runs inside (apptainer software-deployment in the
-# profile). Set per machine (and, on candide, per input_type) above; give it
-# here directly only to override that default for one run.
-#container: ...
-
-# Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
-# `clean_exposure` job per exposure. It fires once every campaign tile that reads
-# that exposure has its vignets, deletes the exposure's store AND its manifests,
-# and leaves `cleaned.json`, which absorbs the manifests — `sp report` reads them
-# back out of the tombstone and reports the exposure as `cleaned`. Set it false
-# for a small control run whose exposure stores you want to keep around (e.g. to
-# re-measure only the shape chain rather than rebuild the whole tile) -- true is
-# the right default for anything that isn't a deliberately-kept fixture.
+# Per-exposure store reclamation once every tile reading it has its vignets.
 clean: true
 
-# Rolling TILE-store reclamation (D5). When true, the COMPUTE DAG grows one
-# `clean_tile` job per in-scope tile, ordered after that tile's own final_cat, so
-# a tile's scratch store goes as soon as its chain lands rather than at the end
-# of the batch. It deletes the tile's whole <run_dir>/tiles/<shard>/<tile>/ tree
-# except four things another mechanism owns — `cleaned.json`,
-# `manifests/tile_vignets.json` (clean_exposure's eligibility currency),
-# `manifests/tile_find_exposures.json` (prepare_all_tiles' target) and the Fe
-# exposure list under output/ (build_index re-reads it at every compute parse).
-# clean_tile.py argues each one.
-#
-# A SEPARATE SWITCH FROM `clean:` ABOVE, AND NOT AN OVERSIGHT. Exposure
-# reclamation is reversible in the only sense that matters: a tile appended later
-# rebuilds the exposure chain from VOS, expensively but completely. TILE
-# reclamation DESTROYS THE PER-TILE AUDIT TRAIL and nothing rebuilds it.
-# TWO tools read it: sp-products/tools/sp_tilecost.py and sp_costmodel.py. Both
-# attribute the fused tile_shape group job's cost per tile from that tile's
-# scratch store — the SExtractor catalogue (NAXIS2 of the sexcat is the object
-# count, the cost model's independent variable; sp_costmodel also reads its
-# EPOCH_k extensions for the geometric epoch count) and the eight tile_ngmix
-# benchmark TSVs — and that model is how every mem_mb and runtime number in
-# tile.smk was derived. The sexcat is ~380 MB per tile and cannot be kept; the
-# benchmark ROWS are absorbed into the tombstone, so the measurements survive
-# but not at the paths the tools read.
-#
-# (The third artifact they read, run_sp_tile_ngmix_Ng<k>u/, is NOT lost to this
-# flag: tile_ngmix declares its chunk dir temp(), so snakemake reclaims it as
-# soon as tile_merge_cats runs. It is already absent from every finished tile,
-# clean_tiles or not.)
-#
-# The honest one-line summary: REQUIRED FOR ANY BATCH OVER ~850 TILES, AND IT
-# TURNS OFF PER-TILE COST ATTRIBUTION. The arithmetic: a finished tile leaves
-# 1.19 GiB across 137 inodes (measured on 186.307), so a 1 TiB scratch quota is
-# full at 859 tiles, and DR6's 23,114 tiles would want 26.9 TiB and 3.17M inodes
-# against a 1M quota. Reclaimed, a tile costs 10 inodes and 12.9 KB — 231k inodes
-# and ~300 MB for the whole of DR6.
-#
-# Set it false for the same kind of small control run `clean:` above would be
-# false for, when the per-tile store is what a re-measurement needs to read.
+# Per-tile store reclamation after the tile's final_cat. Needed above ~850
+# tiles (scratch quota); deletes the per-tile data sp_tilecost/sp_costmodel
+# read. Set both false for a small control run you want to re-measure.
 clean_tiles: true
 
-# Tiles that may NOT pin an exposure store (default: empty).
-#
-# An exposure is eligible for cleaning only once EVERY consuming tile has its
-# vignets. One permanently-failed tile therefore holds all its exposures
-# (~8 measured on P3: 7.9 exposures/tile) for the life of the campaign. A tile listed here is dropped from the
-# consumer sets, and its exposures become eligible.
-#
-# READ THIS BEFORE ADDING A TILE. Ignoring a tile is a decision to give up its
-# exposures' stores. If you later retry that tile, those exposure chains are
-# gone and will be REBUILT from scratch — get_images, split, psf, per
-# exposure. That is correct, and expensive. Ignore a tile when you have decided
-# it is dead, not while you are still debugging it.
+# Failed tiles that should not keep their exposures from being cleaned.
+# Their exposures are rebuilt from scratch if the tile is retried.
 clean_ignore_tiles: []
 
-# ngmix within-tile chunking: static N chunks (closed ID ranges computed
-# per-tile, in-job, from the tile's own sexcat).
+# ngmix chunks per tile.
 ngmix_chunks: 8
 
-# Where the node-local tile store lives (tile.smk's tile_local(): each tile_shape
-# group's vignette and WCS stores). Unset means the profile's `/local/scratch`
-# bind: nibi's /local NVMe, candide's 31 GB node /tmp. Set it to an absolute
-# directory to bind that instead, for this campaign only; bin/sp rewrites the
-# snapshot's profile and creates the directory. Not a rerun trigger, so it may be
-# set on a resume. Image-sim campaigns on candide want a shared directory (dense
-# tiles and failed groups' orphans fill /tmp); the cost is ngmix read latency.
+# Node-local tile store (vignets, WCS). Unset: the profile's /local/scratch
+# bind (nibi NVMe, candide node /tmp). Dense image-sim campaigns on candide
+# want a shared directory instead.
 # tile_store_root: /n23data1/<user>/shapepipe/tilestore
-
-# The container's installed shapepipe is overridden by the launching worktree
-# via each profile's own --env PYTHONPATH; there is no setting for it here.
-# build_index.py's missing-tile fraction threshold is passed by workflow/bin/sp
-# (SP_MISSING_THRESHOLD, default 0.0 = any missing tile is fatal).
