@@ -34,6 +34,15 @@ inputs:
   tiles: REPLACE_ME
   exposures: REPLACE_ME
 
+# How the tile/exposure images in `inputs:` above reach the run: `symlink`
+# (a pre-staged local mirror) or `vos` (fetched from VOSpace per unit, no
+# local mirror). This is cluster infrastructure, not a campaign choice --
+# nibi mirrors locally, candide fetches from VOSpace -- so pick the one that
+# matches wherever `inputs.tiles`/`inputs.exposures` actually point. Ignored
+# for `input_type: image_sims`, which is always `symlink` (simulation output
+# is generated locally and never lives in VOSpace).
+retrieve: symlink
+
 # The container every job runs inside (apptainer software-deployment in the profile).
 container: REPLACE_ME
 

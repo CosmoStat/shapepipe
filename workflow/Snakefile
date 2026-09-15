@@ -137,6 +137,25 @@ if PSF_MODEL == "fake" and not PSF_DICT:
     raise WorkflowError("psf_model=fake needs `psf_dict:` (the simulation's "
                         "pickled PSF dictionary) in the run config.")
 
+# How tile/exposure images reach the run: `symlink` (a pre-staged local
+# mirror -- nibi's layout) or `vos` (fetched from VOSpace per unit -- candide's
+# real-data layout, no local mirror needed). A per-cluster choice, so it is a
+# run-config key (`retrieve:`) rather than fixed in the committed ini files;
+# `unit_pre` exports it as SP_RETRIEVE for config_tile_Git.ini /
+# config_exp_Gie.ini. `image_sims` always overrides it to `symlink` below,
+# regardless of what the run config says: simulation output is generated
+# locally and never lives in VOSpace, so a `data` run config's `retrieve: vos`
+# reused as a sims campaign's base must not leak into the sims ingestion
+# stages.
+RETRIEVE_MODES = {"symlink", "vos"}
+RETRIEVE_MODE = config.get("retrieve", "symlink")
+if RETRIEVE_MODE not in RETRIEVE_MODES:
+    raise WorkflowError(
+        f"Invalid retrieve={RETRIEVE_MODE!r}; expected one of "
+        f"{sorted(RETRIEVE_MODES)}.")
+if INPUT_TYPE == "image_sims":
+    RETRIEVE_MODE = "symlink"
+
 
 # --- paths -----------------------------------------------------------------
 # RUN_DIR is the scratch root: bulk intermediates, sized so a batch finishes
@@ -570,9 +589,11 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     the committed config dir.
 
     It also exports the configured input roots as ``SP_INPUT_TILES`` and
-    ``SP_INPUT_EXPOSURES`` and the PSF choice as ``SP_PSF`` for the committed
-    ini chain (plus ``PSF_DICT`` for the image-simulation true PSF, which the
-    configs read as ``${SP_PSF}_interp_runner`` = ``fake_interp_runner``).
+    ``SP_INPUT_EXPOSURES``, how to fetch them as ``SP_RETRIEVE`` (``symlink``
+    or ``vos``; forced to ``symlink`` for ``image_sims``, see ``RETRIEVE_MODE``
+    above), and the PSF choice as ``SP_PSF`` for the committed ini chain (plus
+    ``PSF_DICT`` for the image-simulation true PSF, which the configs read as
+    ``${SP_PSF}_interp_runner`` = ``fake_interp_runner``).
 
     Every line here is part of each rule's ``params.pre`` and so of the
     ``params`` rerun trigger: a line added for every rule reruns every finished
@@ -602,6 +623,7 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
         f"export SP_CONFIG='{CONFIG_DIR}'",
         f"export SP_INPUT_TILES='{INPUTS['tiles']}'",
         f"export SP_INPUT_EXPOSURES='{INPUTS['exposures']}'",
+        f"export SP_RETRIEVE='{RETRIEVE_MODE}'",
         f"export SP_PSF='{PSF_MODEL}'",
         # Also set via apptainer-args in the profile; kept here so a hand-run of
         # this same line outside snakemake behaves identically.
