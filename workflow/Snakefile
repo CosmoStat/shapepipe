@@ -52,16 +52,16 @@ _RUN_CONFIG = os.environ.get("SP_RUN_CONFIG") or str(
     Path(workflow.snakefile).parent / "config.yaml")
 configfile: _RUN_CONFIG
 
-# The committed config.yaml is a universal template (no machine- or
-# campaign-specific path in it), so the same `sp run` invocation works on
-# every cluster: whoever runs it always supplies their own paths through
-# SP_RUN_CONFIG (see config.yaml's own top comment and the README). Left
-# unset, the template's REPLACE_ME sentinel would otherwise read as a real,
-# oddly-named path -- silently missing tiles, or a job dying hours in on a
-# node that can't see "/REPLACE_ME" -- rather than the one-line, same-message-
-# everywhere error this check gives instead. `container:` is checked
-# separately (container.py resolves a local sandbox or cached SIF first, so a
-# placeholder there is often harmless) and so is left out here.
+# config.yaml ships nibi's own real, working paths (the checkout's current
+# mainline campaign) so `sp run` does something correct there with no other
+# setup; a different cluster or campaign supplies its own via SP_RUN_CONFIG
+# (see config.yaml's own top comment and the README) rather than editing this
+# file. This check guards against a FUTURE edit that strips these defaults
+# without supplying real ones -- one clear, identical-everywhere error instead
+# of a confusing failure downstream, or (worse) a job dying hours in on a node
+# that can't see "/REPLACE_ME". `container:` is checked separately
+# (container.py resolves a local sandbox or cached SIF first, so a placeholder
+# there is often harmless) and so is left out here.
 _PLACEHOLDER = "REPLACE_ME"
 for _key, _value in {
         "tile_list": config.get("tile_list"),
@@ -73,9 +73,28 @@ for _key, _value in {
     if _value == _PLACEHOLDER:
         raise WorkflowError(
             f"{_key!r} in {_RUN_CONFIG} is still the template placeholder "
-            f"{_PLACEHOLDER!r}. workflow/config.yaml ships as a universal "
-            f"template with no real paths in it; point SP_RUN_CONFIG at your "
-            f"own run config instead (see the README, 'Run configuration').")
+            f"{_PLACEHOLDER!r}. Point SP_RUN_CONFIG at your own run config "
+            f"instead of editing the committed one (see the README, "
+            f"'Run configuration').")
+
+# `machine:` (the run config) and SP_PROFILE (the environment variable
+# bin/sp reads to pick profiles/<name>/, default "nibi") are two independent
+# switches for the same fact -- which cluster this is -- set in two different
+# places at two different times, and nothing stops them disagreeing: export
+# SP_PROFILE=candide but leave a copied run config's `machine: nibi` unedited,
+# and jobs run under candide's SLURM settings against nibi's data paths.
+# `machine:` has no code default (a wrong SLURM profile is exactly the kind
+# of mistake this check exists to catch, so guessing one on its behalf would
+# defeat the point); the check is skipped only if `machine:` truly is unset
+# (a config predating this key), never silently.
+_SP_PROFILE = os.environ.get("SP_PROFILE", "nibi")
+_MACHINE = config.get("machine")
+if _MACHINE is not None and _MACHINE != _SP_PROFILE:
+    raise WorkflowError(
+        f"machine={_MACHINE!r} in {_RUN_CONFIG} does not match "
+        f"SP_PROFILE={_SP_PROFILE!r} (env, defaults to 'nibi' when unset). "
+        f"Set SP_PROFILE={_MACHINE} to launch on the machine this config "
+        f"declares, or fix `machine:` if the config is the stale one.")
 
 # Every job's shell runs inside this container (apptainer software-deployment in
 # the profile); the user never types apptainer. WHICH image is the one resolution
