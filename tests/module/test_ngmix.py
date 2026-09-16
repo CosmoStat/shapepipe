@@ -120,7 +120,7 @@ def _metacal_noshear_g(seed):
         flags,
         jacobs,
     )
-    res, _, _ = do_ngmix_metacal(stamp, prior, 1.0, rng)
+    res, _, _ = do_ngmix_metacal(stamp, prior, 1.0, rng, centroid_source="hsm")
     return np.asarray(res["noshear"]["g"])
 
 
@@ -244,6 +244,7 @@ def _metacal_noshear_g_with_psf(seed, **kwargs):
         flags,
         jacobs,
     )
+    kwargs.setdefault("centroid_source", "hsm")
     res, _, _ = do_ngmix_metacal(stamp, prior, 1.0, rng, **kwargs)
     return np.asarray(res["noshear"]["g"])
 
@@ -655,7 +656,9 @@ def _do_ngmix_metacal_on_psf(psf_shear, seed=7, n_epochs=2):
         flags,
         jacobs,
     )
-    resdict, psf_reconv, psf_orig = do_ngmix_metacal(stamp, prior, 1.0, rng)
+    resdict, psf_reconv, psf_orig = do_ngmix_metacal(
+        stamp, prior, 1.0, rng, centroid_source="hsm",
+    )
     return resdict, psf_reconv, psf_orig
 
 
@@ -696,7 +699,7 @@ def test_original_psf_prefit_leaves_gal_obs_psf_pristine():
         gal_obs_list.append(
             make_ngmix_observation(
                 gals[n_e], weights[n_e], flags[n_e], psfs[n_e], jacobs[n_e],
-                rng,
+                rng, centroid_source="hsm",
             )
         )
 
@@ -847,6 +850,7 @@ def test_spatially_varying_rms_survives_rescale_to_observation():
         jacobs[0],
         np.random.RandomState(0),
         bkg_rms=rms_scaled,
+        centroid_source="hsm",
     )
 
     good = (weights[0] != 0) & (flags[0] == 0)

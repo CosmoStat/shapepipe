@@ -57,7 +57,7 @@ def _do_ngmix_metacal_on_psf(psf_shear, psf_fwhm=0.55, img_size=51, seed=7,
         flags,
         jacobs,
     )
-    return do_ngmix_metacal(stamp, prior, 1.0, rng)
+    return do_ngmix_metacal(stamp, prior, 1.0, rng, centroid_source="hsm")
 
 
 # Physically-sensible PSF strategies: ellipticity well inside |g| < 1 (real
