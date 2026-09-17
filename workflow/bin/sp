@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# sp — the committed launcher for the ShapePipe Snakemake workflow (PRD #848 D1).
+# Main ShapePipe launch script for Snakemake workflow
 #
-# Three verbs, nothing else:
+# Usage:
 #
 #   sp run [-c FILE] [ARGS...]
 #                      bring the products on disk up to date with the tile list.
@@ -12,6 +12,9 @@
 #                        1. PREPARE  snakemake prepare_all_tiles
 #                        2. COMPUTE  snakemake all   <- its PARSE builds the index
 #                      ARGS (--jobs, -n, --forcerun, ...) pass through to BOTH.
+#                      FILE is a user-specified config file that can be used
+#                       to add and/or overwrite entries in the default config
+#                       file workflow/config.yaml (read automatically)
 #   sp report [ARGS...]  emit run_report.json now (mid-run is fine).
 #   sp container VERB    manage the image every job runs inside: pull, status,
 #                      sandbox, exec, resolve. `sp container --help` documents
