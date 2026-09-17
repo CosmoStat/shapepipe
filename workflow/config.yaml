@@ -4,15 +4,12 @@
 
 # SP_PROFILE=nibi|candide
 
-# Optional, set the path to your personal config file, to override default
-# settings or add variables
-
-# SP_RUN_CONFIG=/path/to/my_run.yaml
-
-# A run config given via SP_RUN_CONFIG is merged on top of this file, then
-# the `machines:` entry for (machine, input_type) fills anything still unset:
+# Your own run config, passed with -c, is merged on top of this file; then the
+# `machines:` entry for (machine, input_type) fills anything still unset:
 #
-#   SP_PROFILE=<nibi|candide> SP_RUN_CONFIG=/path/to/run.yaml workflow/bin/sp run
+#   SP_PROFILE=<nibi|candide> workflow/bin/sp run -c /path/to/my_run.yaml
+#
+# It therefore states only what differs from the defaults below.
 #
 # Everything is read at parse time; editing it (e.g. appending tiles) never
 # invalidates completed work.

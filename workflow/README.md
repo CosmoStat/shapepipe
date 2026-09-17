@@ -66,13 +66,15 @@ Simulations that contain stars can run `psfex` or `mccd` exactly as the data do.
 One campaign per shear branch, each with its own run config:
 
 ```bash
-SP_PROFILE=candide SP_RUN_CONFIG=/path/run_1p2z_grid_1.yaml workflow/bin/sp run
+SP_PROFILE=candide workflow/bin/sp run -c /path/run_1p2z_grid_1.yaml
 ```
 
 ## Run configuration
 
-`SP_RUN_CONFIG` is merged on top of `workflow/config.yaml` and snapshotted with
-the code. `SP_PROFILE` (default `nibi`, or `machine:` in the run config, which must
+A run config passed with `-c/--config-file` is merged on top of
+`workflow/config.yaml` and snapshotted with the code. (`-c` is `sp`'s own flag;
+pass snakemake's cores as `--cores`/`-j`. `SP_RUN_CONFIG` still works and is what
+the jobs read.) `SP_PROFILE` (default `nibi`, or `machine:` in the run config, which must
 agree with it) and `input_type:` then select an entry of the `machines:` table, which supplies
 `tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
 `container` for any of these the run config leaves unset (`$base_dir` expands

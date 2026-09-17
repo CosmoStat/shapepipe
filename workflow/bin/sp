@@ -3,7 +3,8 @@
 #
 # Three verbs, nothing else:
 #
-#   sp run [ARGS...]   bring the products on disk up to date with the tile list.
+#   sp run [-c FILE] [ARGS...]
+#                      bring the products on disk up to date with the tile list.
 #                      Snapshots the code into the state dir first (see "the
 #                      launch code snapshot" below) and runs out of the copy, so
 #                      editing the checkout mid-campaign cannot reach the jobs.
@@ -25,24 +26,53 @@
 # One entry point, so a fresh tmux or a restart after a crash always launches
 # with the right state.
 #
-# Three environment variables make it drivable off nibi and from outside:
+# THE RUN CONFIG: -c/--config-file <file>, on any verb. It is merged on top of
+# workflow/config.yaml (scripts/run_config.py), so it states only what differs,
+# and `sp run` snapshots it with the code. This is how one campaign per
+# image-simulation shear branch is driven. NOTE: -c here is sp's own flag, not
+# snakemake's --cores; pass cores as --cores/-j, which sp forwards.
+#
+# Environment:
 #
 #   SP_PROFILE        profiles/<name>/ to launch with (default: nibi).
 #   SP_SNAKEMAKE_ENV  venv to activate; skipped when it does not exist and a
-#                     snakemake is already on PATH (e.g. candide).
-#   SP_RUN_CONFIG     a run config merged on top of workflow/config.yaml
-#                     (scripts/run_config.py). Snapshotted with the code by
-#                     `sp run`. This is how sp_validation drives one campaign
-#                     per image-simulation shear branch.
+#                     snakemake is already on PATH (e.g. candide). A site
+#                     detail, not something a run needs to set.
+#   SP_RUN_CONFIG     what -c sets, and what the jobs read. Honoured when
+#                     already set, so older callers keep working; -c wins.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # workflow/
 REPO="$(dirname "$HERE")"
 VENV="${SP_SNAKEMAKE_ENV:-/project/def-mjhudson/cdaley/snakemake-env}"
 SCRIPTS="$HERE/scripts"
-CONFIG="${SP_RUN_CONFIG:-$HERE/config.yaml}"
 PROFILE="${SP_PROFILE:-nibi}"
-[ -f "$CONFIG" ] || { echo "sp: run config $CONFIG does not exist" >&2; exit 2; }
+
+# -c/--config-file is consumed HERE and never forwarded: snakemake has its own
+# --configfile with different merge semantics, and this one also has to reach
+# the jobs (as SP_RUN_CONFIG) and the snapshot. Everything else passes through.
+RUN_CONFIG="${SP_RUN_CONFIG:-}"
+_sp_args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -c|--config|--config-file)
+      [ $# -ge 2 ] || { echo "sp: $1 needs a file" >&2; exit 2; }
+      RUN_CONFIG="$2"; shift 2 ;;
+    -c=*|--config=*|--config-file=*)
+      RUN_CONFIG="${1#*=}"; shift ;;
+    *) _sp_args+=("$1"); shift ;;
+  esac
+done
+set -- ${_sp_args[@]+"${_sp_args[@]}"}
+
+if [ -n "$RUN_CONFIG" ]; then
+  [ -f "$RUN_CONFIG" ] || {
+    echo "sp: run config $RUN_CONFIG does not exist" >&2; exit 2; }
+  # Absolute: the jobs and the snapshot resolve it from other directories.
+  RUN_CONFIG="$(cd "$(dirname "$RUN_CONFIG")" && pwd)/$(basename "$RUN_CONFIG")"
+  export SP_RUN_CONFIG="$RUN_CONFIG"
+fi
+
 [ -d "$REPO/profiles/$PROFILE" ] || {
   echo "sp: no profile $REPO/profiles/$PROFILE (SP_PROFILE=$PROFILE)" >&2; exit 2; }
 
