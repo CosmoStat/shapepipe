@@ -143,6 +143,9 @@ def main() -> None:
     p.add_argument("--param-file", required=True, type=Path,
                    help="workflow/config/cfis/final_cat.param — the column list")
     p.add_argument("--hdu", type=int, default=1)
+    p.add_argument("--snapshot-json", type=Path, default=None,
+                   help="sp run's code snapshot (bin/sp's "
+                        "$STATE_DIR/code/snapshot.json); absent outside sp run")
     args = p.parse_args()
 
     cfc = load_create_final_cat()
@@ -175,7 +178,8 @@ def main() -> None:
               f"({len(tiles)} tile(s))")
         return
     hdf5_reconcile.apply(args.output, group_path, todo, tiles, read_tile,
-                         digest, "n_tiles")
+                         digest, "n_tiles",
+                         hdf5_reconcile.code_provenance(args.snapshot_json))
     print(f"[merge_final_cat] {todo.describe()} -> {args.output} "
           f"({len(tiles)} tile(s), {len(param_list)} column(s), "
           f"group {group_path})")

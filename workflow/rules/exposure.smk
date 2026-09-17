@@ -277,6 +277,7 @@ rule star_cat_merge:
         tile_list    = str(config["tile_list"]),
         index_db     = str(INDEX_DB),
         campaign     = CAMPAIGN,
+        snapshot     = str(SNAPSHOT_JSON),
         inputs       = unit_fingerprint(star_cat_exposures()),
         script_hash  = MERGE_STAR_HASH
     threads: 1
@@ -302,3 +303,4 @@ rule star_cat_merge:
         " --tile-list '{params.tile_list}' --index-db '{params.index_db}'"
         " --output {output.star_cat}"
         " --campaign '{params.campaign}'"
+        " --snapshot-json '{params.snapshot}'"

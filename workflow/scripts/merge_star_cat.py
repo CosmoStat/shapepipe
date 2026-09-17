@@ -290,6 +290,9 @@ def main() -> None:
     p.add_argument("--output", required=True, type=Path)
     p.add_argument("--campaign", required=True,
                    help="named in the log; the group name is fixed")
+    p.add_argument("--snapshot-json", type=Path, default=None,
+                   help="sp run's code snapshot (bin/sp's "
+                        "$STATE_DIR/code/snapshot.json); absent outside sp run")
     args = p.parse_args()
 
     manifest_paths = manifests(args.products_dir, args.tile_list, args.index_db)
@@ -315,7 +318,8 @@ def main() -> None:
               f"({len(chosen)} exposure(s))")
         return
     hdf5_reconcile.apply(args.output, GROUP, todo, chosen, read_exposure,
-                         digest, "n_exposures")
+                         digest, "n_exposures",
+                         hdf5_reconcile.code_provenance(args.snapshot_json))
     print(f"[merge_star_cat] {todo.describe()} -> {args.output} "
           f"({len(chosen)} exposure(s), {len(ALL_COLUMNS)} column(s), "
           f"campaign {args.campaign})")

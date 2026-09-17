@@ -948,6 +948,7 @@ rule final_cat_merge:
         index_db     = str(INDEX_DB),
         param_file   = str(CONFIG_DIR / "final_cat.param"),
         campaign     = CAMPAIGN,
+        snapshot     = str(SNAPSHOT_JSON),
         inputs       = unit_fingerprint(TILES_READY),
         script_hash  = MERGE_FINAL_HASH
     threads: 1
@@ -970,3 +971,4 @@ rule final_cat_merge:
         " --output {output.merged}"
         " --campaign '{params.campaign}'"
         " --param-file '{params.param_file}'"
+        " --snapshot-json '{params.snapshot}'"

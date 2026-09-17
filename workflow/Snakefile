@@ -110,6 +110,11 @@ SCRIPTS    = Path(workflow.basedir) / "scripts"
 # rules that set their environment variables must be versioned together. There
 # is no `config_src` knob.
 CONFIG_DIR = Path(workflow.basedir) / "config" / "cfis"
+# `sp run`'s code snapshot (bin/sp), a sibling of workflow.basedir inside
+# $STATE_DIR/code. Read by the campaign-level merges so the products they write
+# carry the code that produced them; absent when this Snakefile is driven
+# outside `sp run`, which the merges tolerate (hdf5_reconcile.code_provenance).
+SNAPSHOT_JSON = Path(workflow.basedir).parent / "snapshot.json"
 
 sys.path.insert(0, str(SCRIPTS))
 import build_index                                     # noqa: E402
