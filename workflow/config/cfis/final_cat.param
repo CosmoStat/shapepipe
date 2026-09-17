@@ -7,9 +7,10 @@ YWIN_WORLD
 TILE_ID
 
 # UNIONS per-tile unique object ID: present only in catalogues produced with
-# tile_detection: unions_catalogue (workflow/config.yaml). create_final_cat.py
-# needs every listed column in every tile, so list it for such runs only.
-#TILE_UNIQUE_ID
+# tile_detection: unions_catalogue (workflow/config.yaml). merge_final_cat.py
+# drops this column (with a log line) when merging catalogues produced with
+# tile_detection: sextractor, where it is absent.
+TILE_UNIQUE_ID
 
 # flags
 FLAGS

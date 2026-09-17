@@ -219,7 +219,13 @@ def make_ldac_from_ascii(
 
     The unique ID is computed as ``tile_id * 10**6 + NUMBER`` where
     ``tile_id`` is derived from the tile RA/Dec grid coordinates encoded in
-    ``file_number_string`` (e.g. ``'-301-279'`` → ``tile_id = 301279``).
+    ``file_number_string`` (e.g. ``'-301-279'`` → ``tile_id = 301279``) and
+    ``NUMBER`` is the input catalogue's original object number, so
+    ``TILE_UNIQUE_ID`` preserves the identity assigned upstream. The
+    ``NUMBER`` column written to ``LDAC_OBJECTS`` is then overwritten with a
+    running index ``1..n_obj`` in output row order: downstream ShapePipe
+    (e.g. ``ngmix_range``) assumes a contiguous, in-order ``NUMBER``, which
+    the input catalogue is not guaranteed to have.
 
     Parameters
     ----------
@@ -246,6 +252,11 @@ def make_ldac_from_ascii(
     unique_id = (
         tile_id * 10**6 + np.array(cat_data["NUMBER"], dtype=np.int64)
     )
+
+    # NUMBER is not guaranteed to be a contiguous, in-order running index in
+    # the input catalogue; downstream code (ngmix_range) requires exactly
+    # that, and the original identity is preserved above in TILE_UNIQUE_ID.
+    cat_data["NUMBER"] = np.arange(1, n_obj + 1, dtype=np.int64)
 
     with fits.open(image_path) as hdul:
         img_header = hdul[0].header

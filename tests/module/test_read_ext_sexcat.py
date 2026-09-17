@@ -76,9 +76,14 @@ def test_tile_unique_id_and_aliases(ldac):
     with fits.open(ldac) as hdul:
         data = hdul["LDAC_OBJECTS"].data
     numbers = np.array([o[0] for o in OBJECTS])
-    npt.assert_array_equal(data["NUMBER"], numbers)
+    # NUMBER is renumbered to a contiguous 1..n_obj running index in output
+    # row order; the original NUMBER survives only inside TILE_UNIQUE_ID.
+    npt.assert_array_equal(data["NUMBER"], np.arange(1, len(OBJECTS) + 1))
     npt.assert_array_equal(data["TILE_UNIQUE_ID"], 301279 * 10**6 + numbers)
-    assert data["TILE_UNIQUE_ID"].dtype == np.int64
+    # A FITS 'K' column reads back as big-endian ('>i8'), not np.int64's
+    # native byte order, so compare kind and width rather than dtype.
+    assert data["TILE_UNIQUE_ID"].dtype.kind == "i"
+    assert data["TILE_UNIQUE_ID"].dtype.itemsize == 8
     npt.assert_array_equal(data["XWIN_IMAGE"], data["X_IMAGE"])
     npt.assert_array_equal(data["YWIN_IMAGE"], data["Y_IMAGE"])
     npt.assert_array_equal(data["XWIN_WORLD"], data["ALPHA_J2000"])
