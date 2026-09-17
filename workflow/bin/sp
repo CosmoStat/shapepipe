@@ -26,20 +26,48 @@
 # One entry point, so a fresh tmux or a restart after a crash always launches
 # with the right state.
 #
-# THE RUN CONFIG: -c/--config-file <file>, on any verb. It is merged on top of
-# workflow/config.yaml (scripts/run_config.py), so it states only what differs,
-# and `sp run` snapshots it with the code. This is how one campaign per
-# image-simulation shear branch is driven. NOTE: -c here is sp's own flag, not
-# snakemake's --cores; pass cores as --cores/-j, which sp forwards.
+# Typical use, from the repo root:
+#
+#   SP_PROFILE=candide workflow/bin/sp run -c ~/my_run.yaml        # a campaign
+#   SP_PROFILE=candide workflow/bin/sp run -c ~/my_run.yaml -n     # dry run
+#   SP_PROFILE=candide workflow/bin/sp report -c ~/my_run.yaml     # status now
+#   workflow/bin/sp run                                            # config.yaml only
+#
+# THE RUN CONFIG: -c/--config-file <file>, accepted on any verb (also
+# --config, and the =FILE forms). Two files are always read, in this order:
+#
+#   1. workflow/config.yaml   committed defaults, including the `machines:`
+#                             table (per machine and input_type)
+#   2. the -c file            merged on top, so it states ONLY what differs
+#
+# then anything still unset is filled from the `machines:` entry for this
+# machine (SP_PROFILE, or `machine:`) and `input_type`. scripts/run_config.py
+# does that resolution and is shared with container.py; to see what a pair of
+# files resolves to without launching:
+#
+#   python scripts/run_config.py workflow/config.yaml ~/my_run.yaml outputs.run_dir
+#
+# sp consumes -c, makes it absolute, exports it as SP_RUN_CONFIG (what the
+# jobs and the snapshot read) and never forwards it: snakemake has its own
+# --configfile with different merge semantics.
+#
+# NOTE: -c is sp's own flag, NOT snakemake's --cores. Cores pass through as
+# --cores/-j, like every other snakemake argument.
 #
 # Environment:
 #
-#   SP_PROFILE        profiles/<name>/ to launch with (default: nibi).
+#   SP_PROFILE        profiles/<name>/ to launch with (default: nibi). Also
+#                     selects the `machines:` entry, and must agree with a
+#                     `machine:` key if the run config states one.
 #   SP_SNAKEMAKE_ENV  venv to activate; skipped when it does not exist and a
 #                     snakemake is already on PATH (e.g. candide). A site
 #                     detail, not something a run needs to set.
 #   SP_RUN_CONFIG     what -c sets, and what the jobs read. Honoured when
 #                     already set, so older callers keep working; -c wins.
+#   SP_STATE_DIR      snakemake state + code snapshot (default <run_dir>-state).
+#   SP_CONTAINER      image to run in, ahead of the run config's `container:`.
+#   SP_PHASE          set by sp itself (prepare/compute/passthrough); the
+#                     Snakefile refuses to parse without it. Never set it.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # workflow/
