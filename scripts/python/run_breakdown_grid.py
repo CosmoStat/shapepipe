@@ -161,7 +161,7 @@ def fabricate_astrometry(stamp, centers, jacob, img_size):
 
 
 def one_stamp(noise, gal_hlr, psf_fwhm, img_size, n_epochs, shear, psf_shear,
-              seed, true_noise, wcs=None, centroid_source="hsm"):
+              seed, true_noise, wcs=None, centroid_source="wcs"):
     """One injected-truth realisation -> per-arm record dict.
 
     Uses ``RandomState(seed)`` for the fit rng and ``RandomState(seed+1000)`` for
@@ -378,10 +378,10 @@ def main():
                    help="subset of resolution-grid indices to run (default all).")
     p.add_argument("--true-noise", action="store_true",
                    help="route the per-pixel true-inverse-variance weight path.")
-    p.add_argument("--centroid-source", choices=["hsm", "wcs"], default="hsm",
-                   help='ngmix jacobian centre: "hsm" (legacy re-centering) or '
-                        '"wcs" (production default since 31ae736c; the harness '
-                        "fabricates the astrometry truth).")
+    p.add_argument("--centroid-source", choices=["wcs", "hsm"], default="wcs",
+                   help='ngmix jacobian centre: "wcs" (catalogue position through the '
+                        'WCS; the harness fabricates the astrometry truth) or '
+                        '"hsm" (adaptive-moment centroid from the stamp).')
     p.add_argument("--wcs-g1", type=float, default=0.0,
                    help="drawing-WCS jacobian shear g1 (ngmix#72 axis).")
     p.add_argument("--wcs-g2", type=float, default=0.0,

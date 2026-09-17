@@ -287,8 +287,8 @@ class Postage_stamp():
         # stamp so the overlay stays registered.
         self.segs = []
         self.jacobs = []
-        # Per-epoch full WCS and the object's sky position, used only by the
-        # "wcs" centroid source (skipped for the default "hsm" path).
+        # Per-epoch full WCS and the object's sky position, used by the
+        # "wcs" centroid source (unused by "hsm").
         self.wcs = []
         self.ra = []
         self.dec = []
@@ -416,12 +416,14 @@ class Ngmix(object):
     id_obj_max : int, optional
         Last galaxy ID to process, not used if the value is set to ``-1``;
         the default is ``-1``
-    centroid_source : {"hsm", "wcs"}, optional
+    centroid_source : {"wcs", "hsm"}, optional
         How to place the galaxy Jacobian origin for the centroid prior. The
-        default ``"hsm"`` re-centers on the HSM adaptive-moment centroid
-        (robust for galaxies); ``"wcs"`` uses the catalog sky position
-        projected through the WCS (better for stars, whose HSM moments are
-        noisy). See :func:`make_ngmix_observation`.
+        default ``"wcs"`` places it at the catalogue sky position projected
+        through the exposure WCS (the same pixel/offset used to cut the
+        stamp). ``"hsm"`` re-centers on the adaptive-moment centroid
+        measured from the stamp pixels; noisier, for stamps without
+        astrometry. See
+        :func:`make_ngmix_observation`.
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment; ``"noisefill"`` (default) is the historical
         noise-fill, ``"uberseg"`` hard-masks neighbour-side pixels from the
@@ -461,7 +463,7 @@ class Ngmix(object):
         id_obj_min=-1,
         id_obj_max=-1,
         bkg_sub=True,
-        centroid_source="hsm",
+        centroid_source="wcs",
         blend_handling="noisefill",
         seg_cat_path=None,
         dilate_neighbour=1,
@@ -1671,7 +1673,7 @@ def prepare_ngmix_weights(
 
 def make_ngmix_observation(
     gal, weight, flag, psf, wcs, rng,
-    bkg_rms=None, centroid_source="hsm", wcs_full=None, ra=None, dec=None,
+    bkg_rms=None, centroid_source="wcs", wcs_full=None, ra=None, dec=None,
     blend_handling="noisefill", seg=None, object_number=None,
     dilate_neighbour=0,
 ):
@@ -1681,15 +1683,14 @@ def make_ngmix_observation(
     it must sit on the object. Two ways to place it, selected by
     ``centroid_source``:
 
-    * ``"hsm"`` (default) — re-center on the HSM adaptive-moment centroid
-      measured from the stamp. Robust for **galaxies**: it follows the actual
-      light and so the centroid prior (centered at the Jacobian origin) does
-      not bias an object that is offset from the stamp center.
-    * ``"wcs"`` — place the origin at the object's catalog sky position,
-      projected through the WCS to a sub-pixel pixel offset from the stamp
-      center, with no shape measurement. Better for **stars**: their HSM
-      moments are noisy, so trusting the astrometry is more stable than
-      re-measuring the centroid.
+    * ``"wcs"`` (default) — place the origin at the object's catalogue sky
+      position, projected through the exposure WCS to a sub-pixel offset
+      from the stamp center — the same pixel/offset used to cut the stamp,
+      with no shape measurement. Stable for both galaxies and stars, and
+      the only option that stays correct when the object is off-center in
+      the stamp.
+    * ``"hsm"`` — re-center on the adaptive-moment centroid measured from
+      the stamp pixels. Noisier; for stamps without astrometry.
 
     Parameters
     ----------
@@ -1704,8 +1705,8 @@ def make_ngmix_observation(
         :func:`position_seed`).
     bkg_rms : numpy.ndarray, optional
         Per-pixel background RMS map.
-    centroid_source : {"hsm", "wcs"}, optional
-        How to place the galaxy Jacobian origin; the default is ``"hsm"``.
+    centroid_source : {"wcs", "hsm"}, optional
+        How to place the galaxy Jacobian origin; the default is ``"wcs"``.
     wcs_full : astropy.wcs.WCS, optional
         Full exposure WCS for the object's CCD. Required for
         ``centroid_source="wcs"`` (ignored for ``"hsm"``).
@@ -1970,7 +1971,7 @@ def make_runners(prior, flux_guess, rng):
 
 
 def do_ngmix_metacal(
-    stamp, prior, flux_guess, rng, centroid_source="hsm",
+    stamp, prior, flux_guess, rng, centroid_source="wcs",
     blend_handling="noisefill", object_number=None, dilate_neighbour=0,
     metacal_psf="fitgauss",
 ):
@@ -1989,12 +1990,12 @@ def do_ngmix_metacal(
         Initial flux guess.
     rng : numpy.random.RandomState
         Random state for guesses and priors.
-    centroid_source : {"hsm", "wcs"}, optional
+    centroid_source : {"wcs", "hsm"}, optional
         How to place the galaxy Jacobian origin; passed through to
-        :func:`make_ngmix_observation`. The default is ``"hsm"`` (HSM
-        adaptive-moment centroid); ``"wcs"`` uses the catalog sky position
-        projected through the WCS — see that function for the star-vs-galaxy
-        rationale.
+        :func:`make_ngmix_observation`. The default is ``"wcs"`` (catalogue
+        sky position projected through the exposure WCS — the same
+        pixel/offset used to cut the stamp); ``"hsm"`` uses the
+        adaptive-moment centroid from the stamp pixels — see that function.
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment passed through to
         :func:`make_ngmix_observation`; the default ``"noisefill"`` is the
