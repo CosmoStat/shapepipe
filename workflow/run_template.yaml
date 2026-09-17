@@ -1,0 +1,18 @@
+# Run config template file, can be specified along with main config.yaml for
+# ShapePipe run.
+
+my_base_dir: <user-defined directory>
+
+tile_list: $my_base_dir/tiles.txt
+
+sim: 1z2z_grid_1
+
+inputs:
+  tiles: /n09data/hervas/skills_out/$sim/images/SP_tiles
+  exposures: /n09data/hervas/skills_out/$sim/images/SP_exp
+
+outputs:
+  run_dir: $my_base_dir/$sim/run
+  products_dir: $my_base_dir/$sim/product
+
+shapepipe_repo: <path/to/shapepipe>

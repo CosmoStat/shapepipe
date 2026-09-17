@@ -1,5 +1,14 @@
-# Run configuration for the ShapePipe Snakemake workflow.
-#
+# Main configuration for the ShapePipe Snakemake workflow.
+
+# To run, first set a profile (machine/architecture):
+
+# SP_PROFILE=nibi|candide
+
+# Optional, set the path to your personal config file, to override default
+# settings or add variables
+
+# SP_RUN_CONFIG=/path/to/my_run.yaml
+
 # A run config given via SP_RUN_CONFIG is merged on top of this file, then
 # the `machines:` entry for (machine, input_type) fills anything still unset:
 #
@@ -7,10 +16,6 @@
 #
 # Everything is read at parse time; editing it (e.g. appending tiles) never
 # invalidates completed work.
-
-# Cluster; must match SP_PROFILE (default nibi).
-machine: nibi
-#machine: candide
 
 # data (survey, config/cfis) or image_sims (SKiLLS, config/cfis_image_sims).
 input_type: data
@@ -21,14 +26,17 @@ psf_model: psfex
 # Run name, available as `$run` in the paths below.
 run: smk-g6
 
-# Per machine and input_type: tile_list, retrieve (symlink|vos), inputs,
-# outputs, container. A key set at top level (or in SP_RUN_CONFIG) overrides
-# it. `$base_dir` expands to the machine's base_dir, `$run` to `run:`.
-# TBD = not known yet; the run refuses to start until it is set.
-#
-# outputs: run_dir = scratch root for intermediates; products_dir = persistent
-# root for final catalogues, index and report (omit to use run_dir);
-# index_db = tile/exposure index.
+# Entries per machine (SP_PROFILE, default nibi; implemented: nibi, candide)
+# and input_type. A run config may instead state `machine:`, which must
+# then agree with SP_PROFILE.
+# - base_dir
+# - tile_list: text file with tile IDs
+# - retrieve: method to get input data, allowed are symlink, vos
+# - inputs.tiles,, .exposures: path for input tile and exposure
+# - outputs.run_dir: (scratch) run directory, where tmp files will be stored
+# - outputs.products_dir: path to final products
+# - outputs.index_db: path to bookkeeping index sqlite file
+
 machines:
   nibi:
     base_dir: /project/def-mjhudson
@@ -57,9 +65,14 @@ machines:
         index_db: TBD
       container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
     image_sims:
-      # tile_list, inputs, outputs: per SKiLLS campaign, in its own run config,
-      # e.g. inputs.tiles: /n09data/hervas/skills_out/<grid>/images/SP_tiles
       retrieve: symlink
+      tile_list: TBD
+      inputs:
+        # Need to be pointed to appropriate grid
+        tiles: /n09data/hervas/skills_out/1z2z_grid_1/images/SP_tiles
+        exposures: /n09data/hervas/skills_out/1z2z_grid_1/images/SP_exp
+      # Dictionary of PSF model stamps
+      psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle 
       container: /n17data/cdaley/containers/shapepipe_im_sims-runtime.sif
 
 # Per-exposure store reclamation once every tile reading it has its vignets.

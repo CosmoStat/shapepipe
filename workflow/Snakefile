@@ -65,12 +65,12 @@ if INPUT_TYPE not in INPUT_TYPES:
         f"Invalid input_type={INPUT_TYPE!r}; expected one of "
         f"{sorted(INPUT_TYPES)}.")
 
-# `machine:` must agree with SP_PROFILE (bin/sp's profile choice, default
-# nibi): otherwise jobs run under one cluster's SLURM profile against another
-# cluster's paths. Skipped only if `machine:` is unset.
+# The machine is SP_PROFILE (bin/sp's profile choice, default nibi). A run
+# config may also state `machine:`, and must then agree with it: otherwise
+# jobs run under one cluster's SLURM profile against another's paths.
 SP_PROFILE = os.environ.get("SP_PROFILE", "nibi")
-MACHINE = config.get("machine")
-if MACHINE is not None and MACHINE != SP_PROFILE:
+MACHINE = config.get("machine") or SP_PROFILE
+if config.get("machine") is not None and config["machine"] != SP_PROFILE:
     raise WorkflowError(
         f"machine={MACHINE!r} ({_RUN_CONFIG}) does not match "
         f"SP_PROFILE={SP_PROFILE!r}. Set SP_PROFILE={MACHINE}, or fix "

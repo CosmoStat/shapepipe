@@ -7,6 +7,7 @@ CLI (used by bin/sp): run_config.py CONFIG_YAML RUN_CONFIG KEY[.SUBKEY]
 prints the resolved value, or an empty line if unset. RUN_CONFIG may be "".
 """
 
+import os
 import re
 import sys
 
@@ -43,11 +44,15 @@ def _expand(value, variables):
 def apply_machine_defaults(config):
     """Fill unset MACHINE_KEYS from machines[machine][input_type], in place.
 
+    The machine is `machine:` when the run config states one, else SP_PROFILE
+    (default nibi) -- the same value bin/sp picks the SLURM profile with.
+
     A key already in `config` wins; for `inputs`/`outputs` the merge is per
     sub-key. In all of these, `$base_dir` expands to machines[machine].base_dir
     and `$run` to the top-level `run:`.
     """
-    entry = (config.get("machines") or {}).get(config.get("machine")) or {}
+    machine = config.get("machine") or os.environ.get("SP_PROFILE", "nibi")
+    entry = (config.get("machines") or {}).get(machine) or {}
     defaults = entry.get(config.get("input_type", "data")) or {}
     variables = {"base_dir": entry.get("base_dir"), "run": config.get("run")}
     for key in MACHINE_KEYS:
