@@ -100,7 +100,8 @@ CONFIG_DIR = Path(workflow.basedir) / "config" / "cfis"
 
 sys.path.insert(0, str(SCRIPTS))
 import build_index                                     # noqa: E402
-from completeness import STAGE_DIR, TILE_DETECTIONS    # noqa: E402
+from completeness import (BLEND_HANDLINGS, STAGE_DIR,  # noqa: E402
+                          TILE_DETECTIONS)
 
 # Where the tile's galaxy sample comes from: SExtractor on the tile image, or
 # the UNIONS per-tile catalogue fetched and converted in place (tile.smk).
@@ -118,6 +119,20 @@ if TILE_DETECTION == "unions_catalogue" and not CATALOGUES:
         "tile_detection=unions_catalogue needs `inputs.catalogues:` (a local "
         "directory or vos: URL holding the per-tile CFIS.<tile>.r.cat files).")
 CATALOGUE_RETRIEVE = "vos" if CATALOGUES.startswith("vos:") else "symlink"
+
+# How ngmix treats a stamp's neighbours (its BLEND_HANDLING option): the
+# noise-fill treatment needs nothing of the workflow, while uberseg needs a
+# segmentation map labelled in the numbering of the catalogue being measured.
+# SExtractor detection writes that map as a by-product (config_tile_Sx.ini's
+# CHECKIMAGE); the UNIONS catalogue has none, so the pair below is what adds
+# tile.smk's tile_segmentation rule.
+BLEND_HANDLING = config.get("blend_handling", "noisefill")
+if BLEND_HANDLING not in BLEND_HANDLINGS:
+    raise WorkflowError(
+        f"Invalid blend_handling={BLEND_HANDLING!r}; expected one of "
+        f"{sorted(BLEND_HANDLINGS)}.")
+TILE_SEGMENTATION = (TILE_DETECTION == "unions_catalogue"
+                     and BLEND_HANDLING == "uberseg")
 
 # SP_PHASE is set by bin/sp and NOWHERE else: `prepare`/`compute` on the two
 # invocations of `sp run`, `passthrough` on direct commands (`sp --unlock`, `sp
@@ -353,6 +368,9 @@ CLEAN_TILE_HASH = script_hash("clean_tile.py")
 # fresh root: a resume across it re-measures the tile, and the failure modes a
 # mid-campaign params change can reach are catalogued at tile.smk's range_hash.
 NGMIX_RANGE_HASH = script_hash("ngmix_range.py")
+# seg_relabel.py decides which footprint is "self" for every object UberSeg
+# masks, so an edit to it changes every mask; it rides on tile_segmentation.
+SEG_RELABEL_HASH = script_hash("seg_relabel.py")
 
 # --- exposure reclamation (D5, S5) -----------------------------------------
 
@@ -640,6 +658,7 @@ rule prepare_all_tiles:
 # via `sp report`.
 def _report(status):
     shell(f"SP_TILE_DETECTION='{TILE_DETECTION}' "
+          f"SP_BLEND_HANDLING='{BLEND_HANDLING}' "
           f"python {SCRIPTS}/run_report.py --run-dir {RUN_DIR} "
           f"--index {INDEX_DB} --status {status} || true")
 

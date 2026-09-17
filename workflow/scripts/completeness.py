@@ -78,6 +78,13 @@ from pathlib import Path
 # when it is not the default, so a SExtractor run's prologue is unchanged.
 TILE_DETECTIONS = ("sextractor", "unions_catalogue")
 
+# ngmix's neighbour treatments, mirroring BLEND_HANDLINGS in
+# shapepipe.modules.ngmix_package.ngmix. Mirrored rather than imported: the
+# Snakefile parses this module in the launcher venv, outside the container
+# where shapepipe lives. tests/unit/test_workflow_tile_detection.py asserts
+# the two tuples agree.
+BLEND_HANDLINGS = ("noisefill", "uberseg")
+
 # stage -> {runner_subdir: {expect, [warn], [subpath]}}
 # exp_psf and tile_vignets are selected by $SP_PSF at check time, tile_detect
 # by $SP_TILE_DETECTION.
@@ -131,6 +138,9 @@ COMPLETENESS = {
     "tile_merge_headers": {"merge_headers_runner": dict(expect=1)},
     # The fetched UNIONS catalogue: one .cat per tile.
     "tile_get_catalogue": {"get_images_runner":     dict(expect=1)},
+    # The segmentation-only SExtractor run: its SEGMENTATION check image, plus
+    # the sexcat SExtractor always writes and nothing here reads.
+    "tile_segmentation":  {"sextractor_runner":     dict(expect=2)},
     "tile_detect": {
         "sextractor":       {"sextractor_runner":      dict(expect=2)},
         # One FITS-LDAC sexcat, converted from the fetched catalogue.
@@ -242,6 +252,7 @@ STAGE_DIR = {
     "exp_psf":             ("exp",  "run_sp_exp_SxSePsf"),
     "tile_merge_headers":  ("tile", "run_sp_tile_Mh_exp"),
     "tile_get_catalogue":  ("tile", "run_sp_tile_Gic"),
+    "tile_segmentation":   ("tile", "run_sp_tile_Sg"),
     # Both detection modes write here (config_tile_Sx.ini / config_tile_Uc.ini
     # share the RUN_NAME): the chain downstream reads one path.
     "tile_detect":         ("tile", "run_sp_tile_Sx"),

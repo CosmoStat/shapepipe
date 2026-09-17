@@ -52,8 +52,14 @@ final catalogue with every other sexcat column. The converter writes
 run_sp_tile_Sx/read_ext_sexcat_runner, and the rule links it as
 sextractor_runner, the one path every downstream config reads; the manifest is
 tile_detect.json in both modes, so tile_vignets onwards is the same DAG. What
-this path does not have is a segmentation map: ngmix's ``BLEND_HANDLING =
-uberseg`` needs the SExtractor mode.
+Steven's catalogue does not carry is a segmentation map, and ngmix's
+``BLEND_HANDLING = uberseg`` needs one. ``blend_handling: uberseg`` therefore
+adds a third rule, tile_segmentation: a SExtractor run on the tile image whose
+only product is the SEGMENTATION check image (config_tile_Sg.ini), followed by
+seg_relabel.py, which maps that image's labels into the converted catalogue's
+NUMBER space and writes it beside the sexcat -- the path vignetmaker's
+segmentation run reads. SExtractor runs once, for the one thing the catalogue
+cannot give.
 
 There is no `tile_mask` rule, and there will not be one (PR #847). ShapePipe
 generates no masks: tiles have no instrument flag image of their own, so
@@ -540,6 +546,67 @@ else:
                           '"$SP_RUN/output/run_sp_tile_Sx/sextractor_runner"\n'
                           "fi\n")
 
+# Where the tile catalogue lands, whichever mode wrote it: the one path every
+# downstream config reads, and where the relabelled segmentation map goes.
+SEXCAT_DIR = "$SP_RUN/output/run_sp_tile_Sx/sextractor_runner/output"
+
+if TILE_SEGMENTATION:
+
+    # The segmentation map UberSeg needs, and nothing else.
+    #
+    # THE SAMPLE IS STEVEN'S CATALOGUE, ALWAYS. This SExtractor run detects on
+    # the tile image with config_tile_Sx.ini's settings, but its catalogue is
+    # discarded: what leaves the rule is the SEGMENTATION check image. That
+    # image's labels are this run's own NUMBERs, which have nothing to do with
+    # the converted catalogue's, so the post step relabels it -- UberSeg finds
+    # the central object BY LABEL (uberseg_weight's `object_number` is the
+    # catalogue NUMBER), so an unmapped map would invert every mask rather than
+    # fail. seg_relabel.py's docstring owns the mapping and its fallback.
+    #
+    # It writes into tile_detect's run dir, which is where vignetmaker's
+    # segmentation run looks (`run_sp_tile_Sx:sextractor_runner`, FILE_PATTERN
+    # `segmentation`) whichever mode produced the sexcat. Safe because unit_pre
+    # clears only THIS stage's run dir (run_sp_tile_Sg), and a tile_detect
+    # rerun re-schedules this rule through the manifest edge below.
+    rule tile_segmentation:
+        input:
+            sx = rules.tile_detect.output.manifest,
+            uz = f"{TILE_DIR}/manifests/tile_uncompress.json",
+        output:
+            manifest = f"{TILE_DIR}/manifests/tile_segmentation.json"
+        log:
+            f"{TILE_DIR}/logs/tile_segmentation.json"
+        params:
+            pre = lambda wc: unit_pre("tile_segmentation", wc.tile),
+            script_hash = SCRIPT_HASH,
+            relabel_hash = SEG_RELABEL_HASH
+        threads: 8
+        resources:
+            # The same SExtractor run as tile_detect's sextractor mode.
+            mem_mb = lambda wc, attempt: 16000 * attempt,
+            runtime = 180
+        shell:
+            sp_shell(
+                "tile_segmentation", "config_tile_Sg.ini",
+                post=(
+                    "if [ $rc -eq 0 ]; then\n"
+                    f"  python {SCRIPTS}/seg_relabel.py"
+                    f' --sexcat "{SEXCAT_DIR}/sexcat$SP_UNIT_NUM.fits"'
+                    ' --segmentation "$SP_RUN/output/run_sp_tile_Sg'
+                    '/sextractor_runner/output/segmentation$SP_UNIT_NUM.fits"'
+                    f' --output "{SEXCAT_DIR}/segmentation'
+                    '$SP_UNIT_NUM.fits" || rc=1\n'
+                    "fi\n"))
+
+
+# The segmentation edge: present only when tile_segmentation is defined, so the
+# DAG carries it exactly when the map has to be built.
+def tile_seg(wc):
+    if not TILE_SEGMENTATION:
+        return []
+    return [f"{tile_dir(wc.tile)}/manifests/tile_segmentation.json"]
+
+
 # Configured PSF interpolation to galaxies + vignet postage stamps: the last
 # stage that reads exposure products, and the bulk intra-tile intermediate. The store it
 # writes is node-local (see TILE_LOCAL above).
@@ -547,6 +614,7 @@ rule tile_vignets:
     group: TILE_GROUP
     input:
         sx     = rules.tile_detect.output.manifest,
+        seg    = tile_seg,
         forest = rules.tile_exp_forest.output.forest,
         split  = tile_exp_split,
         psf    = tile_exp_psf,

@@ -207,6 +207,7 @@ case "$cmd" in
     # either way -- this is consistency, not safety.
     shift
     SP_TILE_DETECTION="$(cfg tile_detection)" \
+    SP_BLEND_HANDLING="$(cfg blend_handling)" \
     python "$(code_root)/workflow/scripts/run_report.py" \
       --run-dir "$RUN_DIR" --index "$INDEX_DB" \
       --status manual "$@"
