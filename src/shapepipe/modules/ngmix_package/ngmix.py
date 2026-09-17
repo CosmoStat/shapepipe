@@ -288,7 +288,7 @@ class Postage_stamp():
         self.segs = []
         self.jacobs = []
         # Per-epoch full WCS and the object's sky position, used by the
-        # default "wcs" centroid source (skipped for the "hsm" opt-in path).
+        # "wcs" centroid source (unused by "hsm").
         self.wcs = []
         self.ra = []
         self.dec = []
@@ -420,9 +420,9 @@ class Ngmix(object):
         How to place the galaxy Jacobian origin for the centroid prior. The
         default ``"wcs"`` places it at the catalogue sky position projected
         through the exposure WCS (the same pixel/offset used to cut the
-        stamp). ``"hsm"`` is a legacy opt-in: it re-centers on the
-        adaptive-moment centroid measured from the stamp pixels, which is
-        noisier and only still needed where astrometry is unavailable. See
+        stamp). ``"hsm"`` re-centers on the adaptive-moment centroid
+        measured from the stamp pixels; noisier, for stamps without
+        astrometry. See
         :func:`make_ngmix_observation`.
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment; ``"noisefill"`` (default) is the historical
@@ -1689,9 +1689,8 @@ def make_ngmix_observation(
       with no shape measurement. Stable for both galaxies and stars, and
       the only option that stays correct when the object is off-center in
       the stamp.
-    * ``"hsm"`` — legacy opt-in: re-center on the adaptive-moment centroid
-      measured from the stamp pixels. Noisier, and only still useful where
-      astrometry is unavailable.
+    * ``"hsm"`` — re-center on the adaptive-moment centroid measured from
+      the stamp pixels. Noisier; for stamps without astrometry.
 
     Parameters
     ----------
@@ -1995,9 +1994,8 @@ def do_ngmix_metacal(
         How to place the galaxy Jacobian origin; passed through to
         :func:`make_ngmix_observation`. The default is ``"wcs"`` (catalogue
         sky position projected through the exposure WCS — the same
-        pixel/offset used to cut the stamp); ``"hsm"`` is a legacy opt-in
-        using the adaptive-moment centroid from the stamp pixels — see that
-        function for details.
+        pixel/offset used to cut the stamp); ``"hsm"`` uses the
+        adaptive-moment centroid from the stamp pixels — see that function.
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment passed through to
         :func:`make_ngmix_observation`; the default ``"noisefill"`` is the

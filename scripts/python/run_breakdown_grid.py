@@ -379,9 +379,9 @@ def main():
     p.add_argument("--true-noise", action="store_true",
                    help="route the per-pixel true-inverse-variance weight path.")
     p.add_argument("--centroid-source", choices=["wcs", "hsm"], default="wcs",
-                   help='ngmix jacobian centre: "wcs" (production default since '
-                        '31ae736c; the harness fabricates the astrometry truth) '
-                        'or "hsm" (legacy re-centering, explicit opt-in).')
+                   help='ngmix jacobian centre: "wcs" (catalogue position through the '
+                        'WCS; the harness fabricates the astrometry truth) or '
+                        '"hsm" (adaptive-moment centroid from the stamp).')
     p.add_argument("--wcs-g1", type=float, default=0.0,
                    help="drawing-WCS jacobian shear g1 (ngmix#72 axis).")
     p.add_argument("--wcs-g2", type=float, default=0.0,
