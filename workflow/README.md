@@ -25,7 +25,8 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # Edit workflow/config.yaml: tile_list, inputs.tiles/exposures, outputs.run_dir,
 # outputs.products_dir/index_db, and container.
 
-# `psf_model` is `psfex` or `mccd`; mccd is wired but unvalidated here, while psfex is exercised by smk-g4 through smk-g6.
+# `psf_model` is `psfex` or `mccd`. psfex is exercised by smk-g4 through smk-g6; mccd has run the full chain on
+# an image-sim star tile (one focal-plane model per exposure, ~1.5 CPU-hours each).
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -44,6 +45,65 @@ plugins, and full `rerun-triggers` became the default.
 Anything other than `run`, `report`, `container`, `cancel` passes straight through to
 snakemake with the workflow's profile and state dir — the direct command path for
 `sp --unlock`, `sp --dag`, `sp exp_psf ...`.
+
+## Image simulations
+
+The same workflow runs the SKiLLS image simulations used to measure the shear
+multiplicative bias, so that m calibrates the pipeline that makes the real
+catalogue rather than a frozen copy of it. A simulation run sets
+`input_type: image_sims`, which points `$SP_CONFIG` at
+`config/cfis_image_sims/`. That directory holds real files only for the stages
+whose input naming differs (tile Git/Uz/Fe, exposure Gie/Sp) and for the true-PSF
+model; everything else is a symlink into `config/cfis/`, so a change to the
+real-data chain reaches the simulations with no second edit. Keep the diff of
+each overlay file to its `cfis/` original confined to input naming.
+
+`psf_model: fake` is the simulations' true PSF: the exposure stage runs only
+SExtractor (for the background maps the vignets read), and `tile_vignets` runs
+`fake_interp_runner`, which writes the `galaxy_psf` product from `psf_dict`.
+Simulations that contain stars can run `psfex` or `mccd` exactly as the data do.
+
+One campaign per shear branch, each with its own run config:
+
+```bash
+SP_PROFILE=candide workflow/bin/sp run -c /path/run_1p2z_grid_1.yaml
+```
+
+## Run configuration
+
+A run config passed with `-c/--config-file` is merged on top of
+`workflow/config.yaml` and snapshotted with the code. (`-c` is `sp`'s own flag;
+pass snakemake's cores as `--cores`/`-j`. `SP_RUN_CONFIG` still works and is what
+the jobs read.) `SP_PROFILE` (default `nibi`, or `machine:` in the run config, which must
+agree with it) and `input_type:` then select an entry of the `machines:` table, which supplies
+`tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
+`container` for any of these the run config leaves unset (`$base_dir` expands
+to that machine's `base_dir`, `$run` to the run config's `run:`). A value of `TBD` stops the run at parse time
+until it is set. A run config therefore only needs what differs, e.g. for one
+SKiLLS shear branch on candide:
+
+```yaml
+machine: candide
+input_type: image_sims
+psf_model: fake
+psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle
+tile_list: /path/to/tiles.txt
+inputs:
+  tiles: /n09data/hervas/skills_out/1z2z_grid_3/images/SP_tiles
+  exposures: /n09data/hervas/skills_out/1z2z_grid_3/images/SP_exp
+outputs:
+  run_dir: /path/to/run
+  index_db: /path/to/run/index.sqlite
+```
+
+sp_validation's image-simulation workflow drives these campaigns and measures m
+from their final catalogues.
+
+On candide, the node-local tile store (bound from the node's 31 GB `/tmp`) does not
+hold several dense image-sim tiles at once. Set `tile_store_root:` in the run
+config to a shared directory; `sp run` binds it to `/local/scratch` for that
+campaign. The store names carry a per-campaign hash, so all branches can share one
+root.
 
 ## The container image
 

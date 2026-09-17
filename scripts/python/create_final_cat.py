@@ -391,7 +391,7 @@ def process(params):
 
     if params["image_sims"]:
         patch_name = params["patch"]
-        run_prefix = "run_sp_tile_Mc_*"
+        run_prefix = "run_sp_tile_Mc*"
     else:
         patch_name = rf"P{params['patch']}"
         run_prefix = "run_sp_tile_Mc_*"
