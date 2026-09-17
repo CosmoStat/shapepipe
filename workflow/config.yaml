@@ -24,6 +24,17 @@ inputs:
   # Pre-staged P3 data (get_images RETRIEVE=symlink).
   tiles: /project/def-mjhudson/unions-wl/tiles
   exposures: /project/def-mjhudson/unions-wl/exposures
+  # The UNIONS per-tile object catalogues (CFIS.<tile>.r.cat), read only when
+  # tile_detection is unions_catalogue: a local directory (symlinked in) or a
+  # vos: URL (downloaded, e.g. vos:cfis/tiles_DR6).
+  # catalogues: vos:cfis/tiles_DR6
+
+# Where the tile's galaxy sample comes from: `sextractor` runs SExtractor on
+# the tile image; `unions_catalogue` fetches the UNIONS per-tile catalogue
+# (inputs.catalogues) and converts it in place, carrying its unique object ID
+# into the final catalogue as TILE_UNIQUE_ID. The catalogue path has no
+# segmentation map, so ngmix's BLEND_HANDLING = uberseg needs sextractor.
+tile_detection: sextractor
 
 # The container every job runs inside (apptainer software-deployment in the profile).
 container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif

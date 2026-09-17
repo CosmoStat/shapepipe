@@ -100,7 +100,24 @@ CONFIG_DIR = Path(workflow.basedir) / "config" / "cfis"
 
 sys.path.insert(0, str(SCRIPTS))
 import build_index                                     # noqa: E402
-from completeness import STAGE_DIR                     # noqa: E402
+from completeness import STAGE_DIR, TILE_DETECTIONS    # noqa: E402
+
+# Where the tile's galaxy sample comes from: SExtractor on the tile image, or
+# the UNIONS per-tile catalogue fetched and converted in place (tile.smk).
+# Both write run_sp_tile_Sx, so nothing downstream of tile_detect branches.
+TILE_DETECTION = config.get("tile_detection", "sextractor")
+if TILE_DETECTION not in TILE_DETECTIONS:
+    raise WorkflowError(
+        f"Invalid tile_detection={TILE_DETECTION!r}; expected one of "
+        f"{sorted(TILE_DETECTIONS)}.")
+# The catalogue source: a local directory (symlinked in) or a vos: URL
+# (downloaded); the retrieve mode follows from the prefix.
+CATALOGUES = INPUTS.get("catalogues") or ""
+if TILE_DETECTION == "unions_catalogue" and not CATALOGUES:
+    raise WorkflowError(
+        "tile_detection=unions_catalogue needs `inputs.catalogues:` (a local "
+        "directory or vos: URL holding the per-tile CFIS.<tile>.r.cat files).")
+CATALOGUE_RETRIEVE = "vos" if CATALOGUES.startswith("vos:") else "symlink"
 
 # SP_PHASE is set by bin/sp and NOWHERE else: `prepare`/`compute` on the two
 # invocations of `sp run`, `passthrough` on direct commands (`sp --unlock`, `sp
@@ -622,7 +639,8 @@ rule prepare_all_tiles:
 # emitted automatically at the end of the COMPUTE invocation, runnable any time
 # via `sp report`.
 def _report(status):
-    shell(f"python {SCRIPTS}/run_report.py --run-dir {RUN_DIR} "
+    shell(f"SP_TILE_DETECTION='{TILE_DETECTION}' "
+          f"python {SCRIPTS}/run_report.py --run-dir {RUN_DIR} "
           f"--index {INDEX_DB} --status {status} || true")
 
 if PHASE == "compute":

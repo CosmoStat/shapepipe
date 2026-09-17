@@ -42,7 +42,7 @@ source "$VENV/bin/activate"
 cfg() { python -c 'import sys, yaml
 value = yaml.safe_load(open(sys.argv[1]))
 for key in sys.argv[2].split("."):
-    value = value[key]
+    value = (value or {}).get(key)
 print(value or "")' "$CONFIG" "$1"; }
 RUN_DIR="$(cfg outputs.run_dir)"; INDEX_DB="$(cfg outputs.index_db)"
 
@@ -206,6 +206,7 @@ case "$cmd" in
     # call it through the Snakefile's SCRIPTS, which is the snapshot). Read-only
     # either way -- this is consistency, not safety.
     shift
+    SP_TILE_DETECTION="$(cfg tile_detection)" \
     python "$(code_root)/workflow/scripts/run_report.py" \
       --run-dir "$RUN_DIR" --index "$INDEX_DB" \
       --status manual "$@"

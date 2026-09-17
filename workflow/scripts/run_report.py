@@ -49,6 +49,7 @@ at one depth.
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 from collections import defaultdict
@@ -59,6 +60,11 @@ from pathlib import Path
 TILE_STAGES = ["tile_get_images", "tile_uncompress", "tile_find_exposures",
                "tile_merge_headers", "tile_detect", "tile_vignets",
                "tile_ngmix", "tile_merge_cats", "tile_make_cat"]
+# The catalogue fetch exists only when the run converts the UNIONS catalogue
+# (config.yaml's tile_detection); the callers pass the mode in the environment
+# so a SExtractor run does not report the stage as not run.
+if os.environ.get("SP_TILE_DETECTION") == "unions_catalogue":
+    TILE_STAGES.insert(TILE_STAGES.index("tile_detect"), "tile_get_catalogue")
 EXP_STAGES = ["exp_get_images", "exp_split", "exp_psf"]
 
 # The manifests clean_tile leaves on disk (workflow/scripts/clean_tile.py names
