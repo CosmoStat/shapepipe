@@ -24,6 +24,25 @@ inputs:
   # Pre-staged P3 data (get_images RETRIEVE=symlink).
   tiles: /project/def-mjhudson/unions-wl/tiles
   exposures: /project/def-mjhudson/unions-wl/exposures
+  # The UNIONS per-tile object catalogues (CFIS.<tile>.r.cat), read when
+  # tile_detection is unions_catalogue: a local directory (symlinked in) or a
+  # vos: URL (downloaded, e.g. vos:cfis/tiles_DR6). TBD: set this to the
+  # catalogue store for the run.
+  catalogues: TBD
+
+# Where the tile's galaxy sample comes from. `unions_catalogue` fetches the
+# UNIONS per-tile catalogue (inputs.catalogues) and converts it in place,
+# carrying its unique object ID into the final catalogue as TILE_UNIQUE_ID;
+# `sextractor` runs SExtractor on the tile image and takes its detections.
+tile_detection: unions_catalogue
+
+# How ngmix treats a stamp's neighbours (its BLEND_HANDLING option):
+# `noisefill` replaces neighbour pixels with a noise realisation, `uberseg`
+# hard-masks them using the tile segmentation map. Under
+# tile_detection: unions_catalogue, `uberseg` adds the tile_segmentation rule
+# -- one SExtractor run on the tile image for the segmentation map alone,
+# relabelled into the catalogue's numbering (workflow/rules/tile.smk).
+blend_handling: noisefill
 
 # The container every job runs inside (apptainer software-deployment in the profile).
 container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif

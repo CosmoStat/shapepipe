@@ -297,8 +297,16 @@ def get_patch_group(hdf5_file, patch, verbose=False):
     return patch_group
 
 
+_warned_missing_columns = set()
+
+
 def read_data(fits_file, params):
     """Read Data.
+
+    Some requested columns (e.g. ``TILE_UNIQUE_ID``, present only for tiles
+    produced with ``tile_detection: unions_catalogue``) may be absent from a
+    given tile's catalogue; such columns are skipped for that tile, with one
+    log line the first time each is seen missing.
 
     """
     with fits.open(fits_file) as hdu_list:
@@ -312,18 +320,22 @@ def read_data(fits_file, params):
     if params["param_list"] is None:
         params["param_list"] = [col for col in data.keys()]
 
-    try:
-        extracted_data = {col: data[col] for col in params["param_list"]}
-        dtype = data.dtype
-    except:
-        print(f"Error for ID {id}, path {fits_file}")
-        for col in params["param_list"]:
-            if col not in data:
-                print(col, end=" ")
-            print()
-            continue
+    available = set(data.dtype.names)
+    param_list = []
+    for col in params["param_list"]:
+        if col in available:
+            param_list.append(col)
+        elif col not in _warned_missing_columns:
+            print(
+                f"Column '{col}' not found in input catalogue "
+                f"(e.g. {fits_file}), skipping in merged catalogue"
+            )
+            _warned_missing_columns.add(col)
 
-    return extracted_data, dtype
+    extracted_data = {col: data[col] for col in param_list}
+    dtype = np.dtype([(col, data.dtype[col]) for col in param_list])
+
+    return extracted_data, dtype, param_list
 
 
 def copy_data(param_list, extracted_data, dtype):
@@ -463,9 +475,9 @@ def process(params):
                         print(f"Run without output file found for {id}, skipping")
                     continue
 
-                extracted_data, dtype = read_data(fits_file, params)
+                extracted_data, dtype, param_list = read_data(fits_file, params)
 
-                structured_data = copy_data(params["param_list"], extracted_data, dtype)
+                structured_data = copy_data(param_list, extracted_data, dtype)
 
                 # Create a new dataset
                 try:

@@ -26,6 +26,13 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # outputs.products_dir/index_db, and container.
 
 # `psf_model` is `psfex` or `mccd`; mccd is wired but unvalidated here, while psfex is exercised by smk-g4 through smk-g6.
+# `tile_detection` is `unions_catalogue` (the default: the UNIONS per-tile
+# catalogue at `inputs.catalogues` is fetched and converted in place, and its
+# object ID rides into the final catalogue as TILE_UNIQUE_ID) or `sextractor`
+# (the tile is detected with SExtractor).
+# `blend_handling` is ngmix's neighbour treatment, `noisefill` or `uberseg`.
+# With `unions_catalogue`, `uberseg` adds one SExtractor run per tile for the
+# segmentation map alone, relabelled into the catalogue's numbering.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -157,7 +164,7 @@ workflow/
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
     exposure.smk         per-exposure: get_images, split, psf (no temp())
-    tile.smk             per-tile: exp forest, merge_headers, detect, vignets, ngmix, merge, make_cat
+    tile.smk             per-tile: exp forest, merge_headers, detect (SExtractor, or fetch + convert the UNIONS catalogue), vignets, ngmix, merge, make_cat
   scripts/
     sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count check)
     build_index.py       prepare-phase run_index.sqlite builder (plain script)

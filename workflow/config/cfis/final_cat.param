@@ -6,6 +6,12 @@ YWIN_WORLD
 # Can maybe be removed.
 TILE_ID
 
+# UNIONS per-tile unique object ID: present only in catalogues produced with
+# tile_detection: unions_catalogue (workflow/config.yaml). merge_final_cat.py
+# drops this column (with a log line) when merging catalogues produced with
+# tile_detection: sextractor, where it is absent.
+TILE_UNIQUE_ID
+
 # flags
 FLAGS
 IMAFLAGS_ISO
