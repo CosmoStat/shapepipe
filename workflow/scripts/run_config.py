@@ -14,7 +14,15 @@ import sys
 import yaml
 
 PLACEHOLDER = "TBD"
-MACHINE_KEYS = ("tile_list", "retrieve", "container", "inputs", "outputs")
+# Keys the machines: table may default, per (machine, input_type).
+# psf_model/psf_dict belong here because they are per-input_type facts,
+# not per-run ones: psf_model=fake is only legal with
+# input_type=image_sims, and psf_dict is the sim PSF it reads. A key
+# also present at the TOP level of config.yaml shadows the table (the
+# setdefault below only fires when the key is absent), so a key listed
+# here must not carry a top-level default as well.
+MACHINE_KEYS = ("tile_list", "retrieve", "container", "inputs", "outputs",
+                "psf_model", "psf_dict")
 REQUIRED = ("tile_list", "inputs.tiles", "inputs.exposures",
             "outputs.run_dir", "outputs.index_db")
 

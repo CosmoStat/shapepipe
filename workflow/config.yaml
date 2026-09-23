@@ -1,24 +1,25 @@
 # Main configuration for the ShapePipe Snakemake workflow.
 
-# To run, first set a profile (machine/architecture):
+# To run, first set the profile env variable to the desired machine/architecture:
 
 # SP_PROFILE=nibi|candide
 
-# Your own run config, passed with -c, is merged on top of this file; then the
-# `machines:` entry for (machine, input_type) fills anything still unset:
-#
-#   SP_PROFILE=<nibi|candide> workflow/bin/sp run -c /path/to/my_run.yaml
-#
-# It therefore states only what differs from the defaults below.
-#
-# Everything is read at parse time; editing it (e.g. appending tiles) never
-# invalidates completed work.
+# Then, run in /path/to/shapepipe:
 
-# data (survey, config/cfis) or image_sims (SKiLLS, config/cfis_image_sims).
+# ./workflow/bin/sp run -c /path/to/my_run.yaml
+#
+# The config file my_run.yaml can contain user- or run-specific entries
+# that overwrite the main config file workflow/config.yaml .
+
+# Main keys, global for all machines
+
+# input_tyle: allowed are data or image_sims
 input_type: data
 
-# psfex, mccd, or fake (image_sims only: true PSF from `psf_dict`).
-psf_model: psfex
+# psf_model (psfex, mccd, or fake) and psf_dict are set per (machine,
+# input_type) in the machines: table below, NOT here: a top-level key
+# shadows that table. The Snakefile falls back to psfex if no entry
+# supplies one.
 
 # Run name, available as `$run` in the paths below.
 run: smk-g6
@@ -33,11 +34,13 @@ run: smk-g6
 # - outputs.run_dir: (scratch) run directory, where tmp files will be stored
 # - outputs.products_dir: path to final products
 # - outputs.index_db: path to bookkeeping index sqlite file
+# - container: TBD
 
 machines:
   nibi:
     base_dir: /project/def-mjhudson
     data:
+      psf_model: psfex
       tile_list: $base_dir/cdaley/sp-products/$run/tiles.txt
       retrieve: symlink
       inputs:
@@ -52,22 +55,19 @@ machines:
   candide:
     base_dir: /n17data/UNIONS/WL
     data:
+      psf_model: psfex
       retrieve: vos
-      tile_list: TBD
-      inputs:
-        tiles: TBD          # vos: URL
-        exposures: TBD
-      outputs:
-        run_dir: TBD
-        index_db: TBD
       container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
     image_sims:
       retrieve: symlink
-      tile_list: TBD
+      # True simulation PSF: no exposure PSF fit; fake_interp_runner
+      # reads psf_dict below.
+      psf_model: fake
       inputs:
-        # Need to be pointed to appropriate grid
-        tiles: /n09data/hervas/skills_out/1z2z_grid_1/images/SP_tiles
-        exposures: /n09data/hervas/skills_out/1z2z_grid_1/images/SP_exp
+        # $run is the branch dir (e.g. 1p2z_grid_1), so a run config
+        # picks the grid by setting `run:` alone.
+        tiles: /n09data/hervas/skills_out/$run/images/SP_tiles
+        exposures: /n09data/hervas/skills_out/$run/images/SP_exp
       # Dictionary of PSF model stamps
       psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle 
       container: /n17data/cdaley/containers/shapepipe_im_sims-runtime.sif

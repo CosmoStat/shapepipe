@@ -29,6 +29,15 @@ software-deployment-method: [apptainer]
 apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/n17data/mkilbing/astro/repositories/github/shapepipe/src --bind /home,/automnt,/n17data,/n23data1,/n09data --bind /tmp:/local/scratch"
 latency-wait: 60                 # NFS: wait for outputs to appear after a job
 keep-going: true                 # a failed job poisons only its cone; siblings run on
+# Transient node-level failures are the common case on a shared cluster:
+# a fused tile_shape group died at joblib's fork_exec with BlockingIOError
+# [Errno 11] because the node was out of process slots, killing one tile of
+# 39 outright. Without this, attempt is always 1, so every
+# `mem_mb = lambda wc, attempt: N * attempt` in tile.smk is dead code and a
+# one-off OOM or EAGAIN is fatal. Safe for the fused group: a retry
+# resubmits the same member set, tile_vignets included (tile.smk's
+# "one sharp edge" note). tile_ngmix keeps its own rule-level retries: 2.
+retries: 2
 rerun-incomplete: true           # re-do jobs left incomplete by an unclean death
 show-failed-logs: true
 printshellcmds: true

@@ -36,41 +36,24 @@
 #   SP_PROFILE=candide workflow/bin/sp report -c ~/my_run.yaml     # status now
 #   workflow/bin/sp run                                            # config.yaml only
 #
-# THE RUN CONFIG: -c/--config-file <file>, accepted on any verb (also
-# --config, and the =FILE forms). Two files are always read, in this order:
-#
-#   1. workflow/config.yaml   committed defaults, including the `machines:`
-#                             table (per machine and input_type)
-#   2. the -c file            merged on top, so it states ONLY what differs
-#
-# then anything still unset is filled from the `machines:` entry for this
-# machine (SP_PROFILE, or `machine:`) and `input_type`. scripts/run_config.py
-# does that resolution and is shared with container.py; to see what a pair of
-# files resolves to without launching:
+# Run config: -c FILE, also --config-file or --config. Read after
+# workflow/config.yaml and merged on top; anything still unset comes from the
+# machines: entry for SP_PROFILE and input_type (scripts/run_config.py).
+# To check a resolved value without running:
 #
 #   python scripts/run_config.py workflow/config.yaml ~/my_run.yaml outputs.run_dir
 #
-# sp consumes -c, makes it absolute, exports it as SP_RUN_CONFIG (what the
-# jobs and the snapshot read) and never forwards it: snakemake has its own
-# --configfile with different merge semantics.
-#
-# NOTE: -c is sp's own flag, NOT snakemake's --cores. Cores pass through as
-# --cores/-j, like every other snakemake argument.
+# -c is sp's flag, not snakemake's --cores; pass cores as --cores or -j.
 #
 # Environment:
 #
-#   SP_PROFILE        profiles/<name>/ to launch with (default: nibi). Also
-#                     selects the `machines:` entry, and must agree with a
-#                     `machine:` key if the run config states one.
-#   SP_SNAKEMAKE_ENV  venv to activate; skipped when it does not exist and a
-#                     snakemake is already on PATH (e.g. candide). A site
-#                     detail, not something a run needs to set.
-#   SP_RUN_CONFIG     what -c sets, and what the jobs read. Honoured when
-#                     already set, so older callers keep working; -c wins.
-#   SP_STATE_DIR      snakemake state + code snapshot (default <run_dir>-state).
-#   SP_CONTAINER      image to run in, ahead of the run config's `container:`.
-#   SP_PHASE          set by sp itself (prepare/compute/passthrough); the
-#                     Snakefile refuses to parse without it. Never set it.
+#   SP_PROFILE        profiles/<name> to use (default nibi); also selects the
+#                     machines: entry, and must match `machine:` if set
+#   SP_SNAKEMAKE_ENV  venv to activate; skipped if snakemake is on PATH
+#   SP_RUN_CONFIG     same as -c, and what the jobs read; -c wins
+#   SP_STATE_DIR      snakemake state and code snapshot (default <run_dir>-state)
+#   SP_CONTAINER      image to use, before the config's container:
+#   SP_PHASE          set by sp (prepare/compute/passthrough); do not set
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # workflow/
@@ -79,9 +62,8 @@ VENV="${SP_SNAKEMAKE_ENV:-/project/def-mjhudson/cdaley/snakemake-env}"
 SCRIPTS="$HERE/scripts"
 PROFILE="${SP_PROFILE:-nibi}"
 
-# -c/--config-file is consumed HERE and never forwarded: snakemake has its own
-# --configfile with different merge semantics, and this one also has to reach
-# the jobs (as SP_RUN_CONFIG) and the snapshot. Everything else passes through.
+# -c is consumed here, not forwarded: snakemake's own --configfile merges
+# differently, and the jobs and the snapshot need it as SP_RUN_CONFIG.
 RUN_CONFIG="${SP_RUN_CONFIG:-}"
 _sp_args=()
 while [ $# -gt 0 ]; do
@@ -99,7 +81,7 @@ set -- ${_sp_args[@]+"${_sp_args[@]}"}
 if [ -n "$RUN_CONFIG" ]; then
   [ -f "$RUN_CONFIG" ] || {
     echo "sp: run config $RUN_CONFIG does not exist" >&2; exit 2; }
-  # Absolute: the jobs and the snapshot resolve it from other directories.
+  # Absolute: jobs and the snapshot run from other directories.
   RUN_CONFIG="$(cd "$(dirname "$RUN_CONFIG")" && pwd)/$(basename "$RUN_CONFIG")"
   export SP_RUN_CONFIG="$RUN_CONFIG"
 fi
@@ -107,7 +89,18 @@ fi
 [ -d "$REPO/profiles/$PROFILE" ] || {
   echo "sp: no profile $REPO/profiles/$PROFILE (SP_PROFILE=$PROFILE)" >&2; exit 2; }
 
-module load apptainer/1.4.5 2>/dev/null || true
+# snakemake resolves `apptainer` via PATH at job runtime, so all this has to
+# do is put it there. candide already has it in /usr/bin and ships no
+# modulefile for it, so probing for one only produces a scary ERROR line;
+# skip the module entirely when apptainer is already usable. Both streams are
+# dropped because the message arrives on stderr under environment-modules and
+# can arrive on stdout under Lmod.
+if ! command -v apptainer >/dev/null 2>&1; then
+  module load apptainer/1.4.5 >/dev/null 2>&1 || true
+  command -v apptainer >/dev/null 2>&1 || {
+    echo "sp: apptainer is not on PATH and 'module load apptainer/1.4.5' failed" >&2
+    exit 2; }
+fi
 if [ -f "$VENV/bin/activate" ]; then
   # shellcheck disable=SC1091
   source "$VENV/bin/activate"
@@ -116,8 +109,8 @@ elif ! command -v snakemake >/dev/null 2>&1; then
   exit 2
 fi
 
-# Resolved run-config value (config.yaml + SP_RUN_CONFIG + machine defaults),
-# the same resolution the Snakefile uses.
+# Resolved config value (config.yaml + run config + machine defaults), as the
+# Snakefile resolves it.
 cfg() { python "$SCRIPTS/run_config.py" "$HERE/config.yaml" "${SP_RUN_CONFIG:-}" "$1"; }
 RUN_DIR="$(cfg outputs.run_dir)"; INDEX_DB="$(cfg outputs.index_db)"
 if [ "${1:-}" != container ] && { [ -z "$RUN_DIR" ] || [ "$RUN_DIR" = TBD ]; }; then
@@ -150,7 +143,8 @@ STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"; mkdir -p "$STATE_DIR"
 # WHAT. `sp run` copies the code it is about to launch into $STATE_DIR/code and
 # runs the campaign entirely out of that copy: the Snakefile, the rules, the
 # scripts, the ini chain (symlinks DEREFERENCED -- workflow/config/cfis points
-# into example/, and the copy must be self-contained), src/, and the profile.
+# into example/, and the copy must be self-contained), src/, the profile, and
+# the repo's top-level scripts/ (576 KB), which merge_final_cats runs out of.
 # Every workflow-internal path hangs off `workflow.basedir`, which IS the
 # snapshot, so they all follow it for free; the profile's PYTHONPATH pin is the
 # one that cannot (YAML splices nothing) and is rewritten below.
@@ -169,10 +163,10 @@ snapshot_code() {
   mkdir -p "$SNAPSHOT"
   if command -v rsync >/dev/null 2>&1; then
     rsync -a --delete --copy-links --exclude '__pycache__' --exclude '*.egg-info' \
-      "$HERE" "$REPO/src" "$REPO/profiles" "$SNAPSHOT/"
+      "$HERE" "$REPO/src" "$REPO/profiles" "$REPO/scripts" "$SNAPSHOT/"
   else
     rm -rf "$SNAPSHOT"; mkdir -p "$SNAPSHOT"
-    cp -rL "$HERE" "$REPO/src" "$REPO/profiles" "$SNAPSHOT/"
+    cp -rL "$HERE" "$REPO/src" "$REPO/profiles" "$REPO/scripts" "$SNAPSHOT/"
     find "$SNAPSHOT" -name __pycache__ -type d -prune -exec rm -rf {} +
   fi
 
