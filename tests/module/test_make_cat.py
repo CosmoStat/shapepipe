@@ -20,7 +20,11 @@ from astropy.io import fits
 from sqlitedict import SqliteDict
 
 from shapepipe.modules.make_cat_package.make_cat import SaveCatalogue
-from shapepipe.modules.ngmix_package.ngmix import Ngmix
+from shapepipe.modules.ngmix_package.ngmix import (
+    FLAG_NO_RESULT,
+    METACAL_TYPES,
+    Ngmix,
+)
 
 
 class _NullLogger:
@@ -217,9 +221,12 @@ def test_save_ngmix_data_fills_sentinels_for_absent_objects(tmp_path):
 
     make_cat pre-fills every column with a type-specific sentinel and only
     overwrites the rows whose ``NUMBER`` matches an ngmix ``id``. An object
-    SExtractor saw but ngmix never fit (no matching id) must therefore keep
-    the sentinels: 0 for sizes/flags, -10 for ellipticities, 1e30 for
-    ``T_ERR``, -1 for flux/mag errors.
+    SExtractor saw but ngmix never fit (no matching id -- e.g. "0 epoch to
+    process", or an exception caught and skipped) must therefore keep the
+    sentinels: 0 for sizes, -10 for ellipticities, 1e30 for ``T_ERR``, -1
+    for flux/mag errors, and -- shapepipe#889 -- FLAG_NO_RESULT for
+    MCAL_FLAGS and the per-shear FLAGS_<SHEAR> columns, ``len(METACAL_TYPES)``
+    for MCAL_TYPES_FAIL. A never-fit object must never read as a clean fit.
     """
     ngmix_path = tmp_path / "ngmix-2.fits"
     # ngmix fit only object 22; the final cat also carries 11 and 99.
@@ -252,6 +259,24 @@ def test_save_ngmix_data_fills_sentinels_for_absent_objects(tmp_path):
     n_epoch = np.asarray(out["NGMIX_N_EPOCH"])
     npt.assert_allclose(n_epoch[present], row["n_epoch_model"])
     npt.assert_allclose(n_epoch[absent], [0.0, 0.0])
+
+    # The never-fit objects must NOT pass a MCAL_FLAGS == 0 quality cut.
+    mcal_flags = np.asarray(out["NGMIX_MCAL_FLAGS"])
+    assert mcal_flags[present] == row["mcal_flags"] == 0
+    npt.assert_allclose(mcal_flags[absent], [FLAG_NO_RESULT, FLAG_NO_RESULT])
+
+    flags_noshear = np.asarray(out["NGMIX_FLAGS_NOSHEAR"])
+    assert flags_noshear[present] == row["flags"] == 0
+    npt.assert_allclose(
+        flags_noshear[absent], [FLAG_NO_RESULT, FLAG_NO_RESULT]
+    )
+
+    mcal_types_fail = np.asarray(out["NGMIX_MCAL_TYPES_FAIL"])
+    assert mcal_types_fail[present] == row["mcal_types_fail"] == 0
+    npt.assert_allclose(
+        mcal_types_fail[absent],
+        [len(METACAL_TYPES), len(METACAL_TYPES)],
+    )
 
 
 def test_save_ngmix_data_matches_module_serialised_catalogue(tmp_path):

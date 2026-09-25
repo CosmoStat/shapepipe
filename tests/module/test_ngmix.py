@@ -520,6 +520,91 @@ def test_get_mcal_flags_ors_per_type_fit_flags():
     assert get_mcal_flags(res) == 0xA
 
 
+def test_get_mcal_flags_flags_absent_result_and_missing_flags_key():
+    """An absent metacal type or a result missing 'flags' is not success.
+
+    Both ``get_mcal_flags`` and the ``mcal_types_fail`` counter used to
+    default a missing type / missing ``flags`` key to 0 -- success -- so a
+    fitter that silently produced no result at all (e.g. a missing library
+    feature) wrote an all-clean MCAL_FLAGS column (shapepipe#853). Absence
+    of evidence of success must set FLAG_NO_RESULT, not 0.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import (
+        FLAG_NO_RESULT,
+        get_mcal_flags,
+    )
+
+    # Every metacal type entirely absent from the result dict.
+    assert get_mcal_flags({}) == FLAG_NO_RESULT
+
+    # One type present but clean, the rest absent.
+    res = {"noshear": {"flags": 0}}
+    assert get_mcal_flags(res) == FLAG_NO_RESULT
+
+    # A type present but missing the 'flags' key itself.
+    res_no_flags_key = {
+        name: {} for name in ("noshear", "1p", "1m", "2p", "2m")
+    }
+    assert get_mcal_flags(res_no_flags_key) == FLAG_NO_RESULT
+
+    # A real failure ORs in cleanly alongside an absent type.
+    res_mixed = {"noshear": {"flags": 0x2}}
+    assert get_mcal_flags(res_mixed) == (FLAG_NO_RESULT | 0x2)
+
+
+class _RecordingLogger:
+    """Records ``error``/``info`` calls instead of raising or printing."""
+
+    def __init__(self):
+        self.errors = []
+        self.infos = []
+
+    def error(self, msg):
+        self.errors.append(msg)
+
+    def info(self, msg):
+        self.infos.append(msg)
+
+
+def test_log_run_health_logs_instead_of_raising_on_zero_fitted():
+    """0 of N objects fitted must log, not raise (shapepipe#854).
+
+    An earlier version of this guard raised ``RuntimeError``, which would
+    abort an entire multi-tile campaign job over a single tile with no
+    valid objects (e.g. one empty edge tile). It must instead emit a loud
+    error-level log line and let the run continue to write its (empty)
+    catalogue.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import log_run_health
+
+    w_log = _RecordingLogger()
+    log_run_health(w_log, count=10, n_fitted=0, n_flagged=0)
+
+    assert len(w_log.errors) == 1
+    assert "0 fitted" in w_log.errors[0]
+
+
+def test_log_run_health_logs_on_100_percent_flagged():
+    """Every fitted object carrying nonzero mcal_flags must also log."""
+    from shapepipe.modules.ngmix_package.ngmix import log_run_health
+
+    w_log = _RecordingLogger()
+    log_run_health(w_log, count=10, n_fitted=10, n_flagged=10)
+
+    assert len(w_log.errors) == 1
+    assert "100%" in w_log.errors[0]
+
+
+def test_log_run_health_silent_on_a_healthy_run():
+    """A normal run (some fitted, not all flagged) logs nothing."""
+    from shapepipe.modules.ngmix_package.ngmix import log_run_health
+
+    w_log = _RecordingLogger()
+    log_run_health(w_log, count=10, n_fitted=9, n_flagged=1)
+
+    assert w_log.errors == []
+
+
 def test_average_multiepoch_psf_skips_failed_psf_epochs():
     """A failed-PSF epoch must be skipped, not KeyError the whole object.
 
