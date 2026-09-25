@@ -27,7 +27,7 @@ the injected shear washes out, so the recovered ``m`` grows *negative* — from
 ``~+0.0004`` at ratio 1.2 through zero to ``~-0.012`` at ratio 0.15. The
 response ``R11`` does something less obvious: it does **not** slide monotonically.
 It dips through a shallow ~0.92 minimum at mid-resolution and then **rises** back
-toward 1 as the object approaches the point-source floor (a true point source is
+toward 1 as the object approaches the point-source limit (a true point source is
 pathological — the round Gaussian fit collapses and R stiffens). So the JSON
 carries the whole shape; the assertions pin only what a *resolved* survey galaxy
 must satisfy.
@@ -35,7 +35,7 @@ must satisfy.
 The guardrail: on the **resolved** rungs (``ratio >= 0.5``) the response
 correction must leave ``|m| < 5e-3`` — the same few-x-1e-3 scale as
 ``test_mbias`` (observed max ``0.0036``). The unresolved rungs are recorded but
-**not** asserted: they document where the estimator's floor lives, not a
+**not** asserted: they document where the estimator's limit lives, not a
 requirement. A response mis-scale (wrong metacal step, R not applied, a constant
 factor on R) shifts ``m`` by a roughly constant offset across every rung — a +5%
 R error moves each resolved ``m`` by ~0.05, tripping the tripwire loudly (the

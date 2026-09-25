@@ -37,10 +37,10 @@ jobs:
       packages: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
         with:
           driver-opts: network=host
 
@@ -71,7 +71,7 @@ jobs:
       # what min drops is the redundant re-export of intermediate-stage-only
       # layers, which was ~70 s of "writing layer" on every build.
       - name: Build runtime (load)
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           target: runtime
@@ -83,12 +83,11 @@ jobs:
 
       # Smoke-test the binaries baked into the runtime image. Catches the
       # class of regression where the image builds but a runtime tool
-      # (sextractor, weightwatcher) is missing or unrunnable.
+      # (sextractor, psfex) is missing or unrunnable.
       - name: Test runtime — binaries
         run: |
           IMAGE=$(echo "${{ steps.meta-runtime.outputs.tags }}" | head -n1)
           docker run --rm "$IMAGE" source-extractor --version
-          docker run --rm "$IMAGE" weightwatcher --version
           docker run --rm "$IMAGE" psfex --version
 
       - name: Test runtime — shapepipe entry point (read-only fs)
@@ -101,7 +100,7 @@ jobs:
 
       # Build dev (reuses cached `base` layer; see mode=min note above)
       - name: Build dev (load)
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           target: dev
@@ -159,7 +158,7 @@ jobs:
 
       - name: Push runtime
         if: github.event_name == 'push'
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           target: runtime
@@ -170,7 +169,7 @@ jobs:
 
       - name: Push dev
         if: github.event_name == 'push'
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           target: dev

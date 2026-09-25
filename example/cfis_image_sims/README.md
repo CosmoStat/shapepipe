@@ -18,7 +18,10 @@ those cases are documented in the last column below and, at more length, under
 Every row is derived from the two bash scripts. "Module(s)" is the ShapePipe
 runner(s) the selected `.ini` names; "`.ini` selected" is what
 `job_sp_canfar_v2.0.bash` picks for that bit under sim settings
-(`retrieve=symlink`, `psf=psfex`, `tile_det=sx`, `star_cat_for_mask=onthefly`).
+(`retrieve=symlink`, `psf=psfex`, `tile_det=sx`). Bit 32 (mask exposures) is
+gone: ShapePipe generates no masks (PR #847), so the bash scripts'
+`star_cat_for_mask` setting and the `config_*_Ma_*.ini` configs it selected no
+longer exist.
 
 | Bit | Stage | Module(s) | `.ini` selected (sim settings) | Sim special-casing |
 |----:|-------|-----------|--------------------------------|--------------------|
@@ -27,10 +30,9 @@ runner(s) the selected `.ini` names; "`.ini` selected" is what
 | 4 | find exposures | `find_exposures_runner` | `config_tile_Fe.ini` | — |
 | 8 | retrieve exposure images | `get_images_runner` | `config_exp_Gie_symlink.ini` | symlink retrieval; completeness check expects 3 files vs. 6 for data |
 | 16 | split exposures, merge WCS headers | `split_exp_runner` | `config_exp_Sp.ini` | — |
-| 32 | mask exposures | `mask_runner` | `config_exp_Ma_onthefly.ini` | — |
 | 64 | exposure PSF model | *(none — placeholder)* | *(none)* | **Placeholder.** For data this runs full exposure PSF modelling. For sims run_job writes a placeholder log and does nothing here; the sim PSF (`fake_psf_runner`) actually runs inside bit 512 |
 | 128 | merge exposure WCS headers → tile sqlite log | `merge_headers_runner` | `config_tile_Mh_exp.ini` | — |
-| 256 | object detection on tiles | `sextractor_runner` | `config_tile_Sx_nomask.ini` | `tile_det` is forced to `sx`, so the SExtractor-no-mask branch is always taken (the `uc` external-catalogue branch is never reached for sims) |
+| 256 | object detection on tiles | `sextractor_runner` | `config_tile_Sx.ini` | `tile_det` is forced to `sx`, so the SExtractor branch is always taken (the `uc` external-catalogue branch is never reached for sims). Tiles carry no flag image — ShapePipe generates no masks — so this runs with `FLAG_IMAGE = False` |
 | 512 | fake PSF + postage stamps | `fake_psf_runner`, then `vignetmaker_runner` ×2 | `config_exp_psfex.ini` (fake PSF), then `config_tile_PiViVi_canfar_sx.ini` (vignets) | **Two sub-runs.** run_job first calls the job script with `-j 64` → `config_exp_psfex.ini`, which despite its name runs `fake_psf_runner` (needs the sexcat from bit 256; run dir `run_sp_tile_fpsf`), then `-j 512` → `config_tile_PiViVi_canfar_sx.ini` for the two `vignetmaker_runner` runs. Data instead runs `psfex_interp_runner` + vignets here |
 | 1024 | multi-epoch shape measurement | `ngmix_runner` | `config_tile_Ng_batch_psfex_sx.ini` | — |
 | 2048 | create final catalogue | `make_cat_runner` | `config_tile_Mc_psfex.ini` | — |

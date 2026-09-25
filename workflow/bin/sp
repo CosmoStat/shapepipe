@@ -1,0 +1,237 @@
+#!/usr/bin/env bash
+# sp — the committed launcher for the ShapePipe Snakemake workflow (PRD #848 D1).
+#
+# Three verbs, nothing else:
+#
+#   sp run [ARGS...]   bring the products on disk up to date with the tile list.
+#                      Snapshots the code into the state dir first (see "the
+#                      launch code snapshot" below) and runs out of the copy, so
+#                      editing the checkout mid-campaign cannot reach the jobs.
+#                      Two snakemake invocations over one Snakefile:
+#                        1. PREPARE  snakemake prepare_all_tiles
+#                        2. COMPUTE  snakemake all   <- its PARSE builds the index
+#                      ARGS (--jobs, -n, --forcerun, ...) pass through to BOTH.
+#   sp report [ARGS...]  emit run_report.json now (mid-run is fine).
+#   sp container VERB    manage the image every job runs inside: pull, status,
+#                      sandbox, exec, resolve. `sp container --help` documents
+#                      the layers and the resolution order.
+#
+# Anything else is passed straight through to snakemake with the same profile and
+# state dir (the escape hatch: `sp --unlock`, `sp exp_psf ...`, `sp --dag`).
+#
+# It also loads the apptainer module (snakemake resolves `apptainer` via PATH at
+# job runtime) and activates the snakemake venv on the shared /project FS (the
+# executor re-invokes it inside jobs, so it cannot live on a node-local path).
+# One entry point, so a fresh tmux or a restart after a crash always launches
+# with the right state.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # workflow/
+REPO="$(dirname "$HERE")"
+VENV="${SP_SNAKEMAKE_ENV:-/project/def-mjhudson/cdaley/snakemake-env}"
+SCRIPTS="$HERE/scripts"
+CONFIG="$HERE/config.yaml"
+
+module load apptainer/1.4.5 2>/dev/null || true
+# shellcheck disable=SC1091
+source "$VENV/bin/activate"
+
+# Scalar reader for workflow/config.yaml. The venv is active by this point and
+# snakemake depends on PyYAML, so this parses the file rather than pattern-matching
+# it -- quotes, inline comments and nesting are the parser's problem, not ours.
+cfg() { python -c 'import sys, yaml
+value = yaml.safe_load(open(sys.argv[1]))
+for key in sys.argv[2].split("."):
+    value = value[key]
+print(value or "")' "$CONFIG" "$1"; }
+RUN_DIR="$(cfg outputs.run_dir)"; INDEX_DB="$(cfg outputs.index_db)"
+
+# Snakemake state (.snakemake: metadata, locks, incomplete markers) lives NEXT TO
+# THE RUN on /scratch, never on the persistent root — the one exception to D5's
+# "durable, low-volume products go on /project". It is neither: one small, hot
+# metadata file per output, rewritten on every job, which at DR6 is >170k files
+# of churn against a backed-up filesystem with a 1M-inode group quota. It is also
+# reconstructible — losing it costs a re-parse, not a re-run. (A hard 27/27 TiB
+# group quota killed a metadata write mid-run, live. The quota has since eased;
+# the placement is right on its own merits.)
+# --directory only moves state: all data paths are absolute, and the Snakefile
+# resolves its own configfile.
+STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"; mkdir -p "$STATE_DIR"
+
+# --- the launch code snapshot ----------------------------------------------
+# THE ONE HOME for this concept; everything else points here.
+#
+# WHY. A campaign is not one process. The SLURM executor re-invokes snakemake on
+# every job's node, so each job RE-PARSES the Snakefile, and each shell reads
+# workflow/scripts/*.py and workflow/config/cfis/* when it STARTS -- hours after
+# launch, out of whatever the checkout contains THEN. Editing the checkout
+# mid-campaign therefore fed different code to different jobs of the same run
+# (the 186.307 partition incident: an edit landed four seconds into a tile split
+# it into two disagreeing halves).
+#
+# WHAT. `sp run` copies the code it is about to launch into $STATE_DIR/code and
+# runs the campaign entirely out of that copy: the Snakefile, the rules, the
+# scripts, the ini chain (symlinks DEREFERENCED -- workflow/config/cfis points
+# into example/, and the copy must be self-contained), src/, and the profile.
+# Every workflow-internal path hangs off `workflow.basedir`, which IS the
+# snapshot, so they all follow it for free; the profile's PYTHONPATH pin is the
+# one that cannot (YAML splices nothing) and is rewritten below.
+#
+# CONSEQUENCE, and the reason the old "never edit workflow/ while a campaign
+# runs" warnings are gone: mid-campaign edits to the checkout are inert. A change
+# takes effect on the next `sp run`, and not before.
+#
+# LIFECYCLE: one snapshot per campaign state dir, REFRESHED WHOLESALE on every
+# `sp run` -- a new `sp run` IS the relaunch, and snakemake's params/code rerun
+# triggers decide what the new code invalidates. Nothing accumulates, and the
+# path is stable, so a later `sp --unlock` reaches the same workflow that took
+# the lock.
+SNAPSHOT="$STATE_DIR/code"
+snapshot_code() {
+  mkdir -p "$SNAPSHOT"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete --copy-links --exclude '__pycache__' --exclude '*.egg-info' \
+      "$HERE" "$REPO/src" "$REPO/profiles" "$SNAPSHOT/"
+  else
+    rm -rf "$SNAPSHOT"; mkdir -p "$SNAPSHOT"
+    cp -rL "$HERE" "$REPO/src" "$REPO/profiles" "$SNAPSHOT/"
+    find "$SNAPSHOT" -name __pycache__ -type d -prune -exec rm -rf {} +
+  fi
+
+  # The profile's `apptainer-args:` hardcodes one checkout's src/ in its PYTHONPATH
+  # pin and CANNOT interpolate anything (snakemake escapes a literal `$` before the
+  # string reaches any shell -- the post-mortem is on that line). So the pin is
+  # rewritten HERE, in the snapshot's copy, and `sm` points --profile at that copy.
+  # The checked-in profile keeps its literal checkout path and stays the source of
+  # truth for the FLAGS; exactly one path is substituted, by one line of sed-work.
+  python - "$SNAPSHOT/profiles/nibi/config.yaml" "$SNAPSHOT/src" <<'PY'
+import pathlib, re, sys
+f, src = pathlib.Path(sys.argv[1]), sys.argv[2]
+text, n = re.subn(r'(--env PYTHONPATH=)\S+', lambda m: m.group(1) + src,
+                  f.read_text(), count=1)
+if not n:
+    sys.exit("sp: no --env PYTHONPATH= found in the profile's apptainer-args; "
+             "the snapshot would run against the live checkout's src/")
+f.write_text(text)
+PY
+
+  python - "$SNAPSHOT/snapshot.json" "$REPO" <<'PY'
+import json, pathlib, subprocess, sys, time
+out, repo = pathlib.Path(sys.argv[1]), sys.argv[2]
+def git(*a):
+    try:
+        p = subprocess.run(["git", "-C", repo, *a], capture_output=True,
+                           text=True, timeout=30)
+    except OSError:
+        return None
+    return p.stdout.strip() if p.returncode == 0 else None
+status = git("status", "--porcelain")
+out.write_text(json.dumps({
+    "_comment": "Code snapshot taken by `sp run`; the campaign runs out of THIS "
+                "tree, never the checkout. Refreshed wholesale on every `sp run`.",
+    "source": repo,
+    "taken_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+    "head": git("rev-parse", "HEAD"),
+    "branch": git("rev-parse", "--abbrev-ref", "HEAD"),
+    "dirty": bool(status),
+    "dirty_files": status.splitlines() if status else [],
+}, indent=2) + "\n")
+PY
+  echo "sp: code snapshot refreshed at $SNAPSHOT" >&2
+}
+
+# SP_MISSING_THRESHOLD gates the compute parse's index build: the fraction of
+# declared tiles allowed to be missing their exposure list (default 0.0).
+export SP_MISSING_THRESHOLD="${SP_MISSING_THRESHOLD:-0.0}"
+
+# WHICH code a verb runs. `sp run` refreshes the snapshot and runs out of it;
+# every other verb and the escape hatch run out of the EXISTING snapshot when the
+# state dir has one -- `sp --unlock` and `sp report` must speak for the campaign
+# that is actually on disk, not for a checkout that has moved since. Before the
+# first `sp run` there is no snapshot and the live checkout is all there is.
+# (`sp container` is the exception: it is interactive tooling about the image,
+# not about a campaign, and stays on the checkout.)
+code_root() { [ -f "$SNAPSHOT/workflow/Snakefile" ] && echo "$SNAPSHOT" || echo "$REPO"; }
+
+# --snakefile pins the workflow to one tree: sp must work from any cwd (an sbatch
+# head job starts in the submission directory, not the repo), and the SLURM
+# executor re-invokes snakemake with this same path inside every job -- which is
+# exactly what makes the snapshot stick.
+#
+# SP_PHASE is REQUIRED by the Snakefile (a bare `snakemake` would build an empty
+# DAG and exit 0). `sp run` sets prepare/compute on its two invocations; every
+# other verb and the escape hatch fall through to `passthrough`, which parses the
+# index without building it and schedules no side effects.
+sm() {
+  local root; root="$(code_root)"
+  SP_PHASE="${SP_PHASE:-passthrough}" \
+    snakemake --snakefile "$root/workflow/Snakefile" \
+              --profile "$root/profiles/nibi" \
+              --directory "$STATE_DIR" "$@"
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  run)
+    shift
+    snapshot_code
+    # PREPARE failing is NOT fatal to the run: keep-going means a failed tile
+    # poisons only its own cone, and the tiles that lost their exposure list are
+    # dropped at the compute parse. The real gate is SP_MISSING_THRESHOLD, which
+    # the compute parse's index build enforces over the WHOLE tile list — so we
+    # record the failure and go on rather than letting `set -e` abort here.
+    prep_rc=0
+    SP_PHASE=prepare sm prepare_all_tiles "$@" || prep_rc=$?
+    if [ "$prep_rc" -ne 0 ]; then
+      echo "" >&2
+      echo "############################################################" >&2
+      echo "## WARNING: the PREPARE phase exited $prep_rc." >&2
+      echo "## Some tiles may be missing their exposure list and will be" >&2
+      echo "## dropped from the compute DAG. Continuing to COMPUTE; the" >&2
+      echo "## SP_MISSING_THRESHOLD gate (now $SP_MISSING_THRESHOLD) decides" >&2
+      echo "## whether that is tolerable." >&2
+      echo "############################################################" >&2
+      echo "" >&2
+    fi
+
+    comp_rc=0
+    SP_PHASE=compute sm all "$@" || comp_rc=$?
+    if [ "$prep_rc" -ne 0 ] || [ "$comp_rc" -ne 0 ]; then
+      exit "$([ "$comp_rc" -ne 0 ] && echo "$comp_rc" || echo "$prep_rc")"
+    fi
+    ;;
+  report)
+    # Out of the snapshot when there is one, so a manual report reads the trees
+    # with the same script the campaign's own onsuccess/onerror hooks use (they
+    # call it through the Snakefile's SCRIPTS, which is the snapshot). Read-only
+    # either way -- this is consistency, not safety.
+    shift
+    python "$(code_root)/workflow/scripts/run_report.py" \
+      --run-dir "$RUN_DIR" --index "$INDEX_DB" \
+      --status manual "$@"
+    ;;
+  container)
+    # The image layer, outside snakemake entirely: the script is stdlib-only so
+    # it runs on the bare host, and the apptainer module is already loaded above.
+    # Deliberately the CHECKOUT's copy, not the snapshot's: `sp container` is
+    # about the image you are working with now (status compares against HEAD, and
+    # the snapshot has no .git), and `exec` should hand you the environment your
+    # NEXT run will have. It reads the checked-in profile's apptainer-args, so a
+    # running campaign whose snapshot predates an edit to that line gets the old
+    # value while `exec` shows the new one -- the only place the two can differ,
+    # and it differs in the direction that matters (jobs stay pinned).
+    shift
+    python "$SCRIPTS/container.py" "$@"
+    ;;
+  cancel)
+    # Kept only because it is two lines: scancel this workflow's jobs by name
+    # before an --unlock. Not part of the design surface.
+    run="${2:?usage: sp cancel <run-name-substring>}"
+    squeue --me --noheader --format='%i %j' \
+      | awk -v r="$run" '$2 ~ r {print $1}' | xargs -r scancel
+    echo "cancelled jobs matching '$run'; safe to --unlock / rerun now"
+    ;;
+  *)
+    sm "$@"
+    ;;
+esac

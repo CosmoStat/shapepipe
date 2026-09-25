@@ -165,7 +165,7 @@ The Dockerfile does **not** duplicate Python deps — those come from
 The asymmetry is deliberate: Python deps go through pyproject + lockfile
 (reproducible, auditable), system deps go through Dockerfile (Debian's
 versioning). Don't `apt install` something that has a Python wheel; don't
-`pip install` something Debian packages directly (e.g. `weightwatcher`).
+`pip install` something Debian packages directly (e.g. `source-extractor`).
 
 ## Why this shape
 
@@ -175,8 +175,8 @@ versioning). Don't `apt install` something that has a Python wheel; don't
 - **`uv sync --frozen`** at build time means the image is bit-exactly
   reproducible from a tagged commit, and impossible to ship with a stale
   lockfile.
-- **Astromatic binaries from Debian** (`psfex`, `source-extractor`,
-  `weightwatcher`) instead of source builds — Debian carries the
+- **Astromatic binaries from Debian** (`psfex`, `source-extractor`)
+  instead of source builds — Debian carries the
   GCC-compatibility patches that the previous Dockerfile had to apply
   inline with `sed`.
 - **Two targets** so canfar batch deployments stay slim while interactive

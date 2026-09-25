@@ -95,6 +95,9 @@ Full detail: `docs/source/installation.md` and `docs/source/container.md`.
 
 ## Development workflow
 
+**We are in rapid iteration.** Changes that require re-running the pipeline are fine; a PR that changes science defaults (detection parameters, cuts, module options) does not need a completed rerun to be accepted — state what we expect the rerun to show, and do the rerun when it comes up.
+
+
 - **`develop` is the integration branch** — open PRs against it. `main` /
   `master` are release branches.
 - **Tests** run with `pytest`. CI runs them *inside the dev image*, so the suite

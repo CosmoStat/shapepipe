@@ -109,9 +109,12 @@ def ngmix_runner(
         # No batch saving
         save_batch = -1
 
-    # First and last galaxy ID to process
-    id_obj_min = config.getint(module_config_sec, "ID_OBJ_MIN")
-    id_obj_max = config.getint(module_config_sec, "ID_OBJ_MAX")
+    # First and last galaxy ID to process. Read via ``getexpanded`` so an
+    # orchestrator can drive the chunk bounds from environment variables
+    # (``$SP_NGMIX_ID_OBJ_MIN`` and friends); ``getexpanded`` is the only
+    # accessor in ShapePipe's config that expands ``$VAR``.
+    id_obj_min = int(config.getexpanded(module_config_sec, "ID_OBJ_MIN"))
+    id_obj_max = int(config.getexpanded(module_config_sec, "ID_OBJ_MAX"))
 
     # Centroid source for the galaxy Jacobian origin: "wcs" (default -- the
     # catalog sky position projected through the WCS, trusting the astrometry)
@@ -138,17 +141,6 @@ def ngmix_runner(
         dilate_neighbour = config.getint(module_config_sec, "DILATE_NEIGHBOUR")
     else:
         dilate_neighbour = 1
-
-    # Seed the per-object RNG from sky position instead of per tile, so
-    # metacal's fixnoise counter-noise (and the fit guesses) cancel across
-    # Pujol image-simulation shear branches (ngmix#796). Default False leaves
-    # the production path byte-identical.
-    if config.has_option(module_config_sec, "SEED_FROM_POSITION"):
-        seed_from_position = config.getboolean(
-            module_config_sec, "SEED_FROM_POSITION"
-        )
-    else:
-        seed_from_position = False
 
     # Check PSF vignets first: if all are empty dicts {}, the exposures for this
     # tile are absent from the PSF dictionary and no shape measurement is possible.
@@ -204,7 +196,6 @@ def ngmix_runner(
         blend_handling=blend_handling,
         seg_cat_path=seg_vignet_path,
         dilate_neighbour=dilate_neighbour,
-        seed_from_position=seed_from_position,
         metacal_psf=metacal_psf,
     )
 

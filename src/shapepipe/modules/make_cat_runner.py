@@ -137,4 +137,14 @@ def make_cat_runner(
     if save_psf:
         err_msg = sc_inst.process("psf", galaxy_psf_path)
 
+    # Optional per-band external healsparse mask lookup (UNIONS-WL/spherex#38):
+    # add one MASK_<BAND> column per band, queried at each object's world
+    # position. Absent config is a strict no-op.
+    if config.has_option(module_config_sec, "MASK_EXT_PATHS"):
+        band_paths = make_cat.parse_mask_ext_paths(
+            config.getexpanded(module_config_sec, "MASK_EXT_PATHS")
+        )
+        w_log.info("Save external mask data")
+        make_cat.save_mask_ext_data(final_cat_file, band_paths, w_log)
+
     return None, None

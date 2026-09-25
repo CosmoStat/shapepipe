@@ -19,11 +19,12 @@ requires-python = ">=3.12"
 # the code actually requires the newer API.
 dependencies = [
     "astropy>=7.0",          # major 6 → 7
-    "astroquery",
     "canfar",
     "cs_util>=0.2.1",
     "galsim>=2.8",
     "h5py",
+    "healsparse",
+    "hpgeom",
     "joblib>=1.4",
     "matplotlib>=3.10",
     "mccd>=1.2.4",
@@ -36,8 +37,8 @@ dependencies = [
     "python-pysap>=0.3",
     "PyQt5",
     "pyqtgraph",
-    "reproject>=0.19",
     "skaha>=1.7",
+    "skyproj",
     "sqlitedict>=2.0",
     "termcolor",
     "tqdm>=4.68.1",
@@ -62,6 +63,10 @@ jupyter = [
 lint = [
     "ruff",
 ]
+plot = [
+    "skyproj",
+    "matplotlib>=3.10",
+]
 release = [
     "build",
     "twine",
@@ -72,7 +77,7 @@ test = [
     "pytest-cov>=5.0",
 ]
 fitsio = ["fitsio"]
-dev = ["shapepipe[doc,jupyter,lint,release,test,fitsio]"]
+dev = ["shapepipe[doc,jupyter,lint,plot,release,test,fitsio]"]
 
 [project.scripts]
 shapepipe_run       = "shapepipe.shapepipe_run:main"
@@ -80,6 +85,11 @@ summary_run         = "shapepipe.summary_run:main"
 canfar_submit_job   = "shapepipe.canfar_run:run_job"
 canfar_monitor      = "shapepipe.canfar_run:run_log"
 canfar_monitor_log  = "shapepipe.canfar_run:run_monitor_log"
+get_ccds_with_psf   = "shapepipe.get_ccds_run:run_ccd_psf_handler"
+download_headers    = "shapepipe.coverage_run:run_download_headers"
+extract_field_corners = "shapepipe.coverage_run:run_extract_corners"
+build_coverage_map  = "shapepipe.coverage_run:run_build_coverage"
+plot_coverage_map   = "shapepipe.coverage_run:run_plot_coverage"
 
 [tool.uv]
 # shapepipe targets Linux only; skip Windows/macOS wheel resolution
@@ -137,4 +147,5 @@ testpaths = ["tests"]
 markers = [
     "slow: heavy compute (minutes); excluded from the fast inner loop.",
     "candide: needs the candide cluster and/or its real data; auto-skipped elsewhere.",
+    "unions: uses UNIONS-specific survey layout or data.",
 ]

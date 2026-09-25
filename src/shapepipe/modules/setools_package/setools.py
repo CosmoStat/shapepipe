@@ -658,13 +658,18 @@ class SETools(object):
 
             cat_size = len(np.where(mask)[0])
             n_keep = int(np.ceil(cat_size * ratio))
-            mask_ratio = []
-            mask_left = list(range(0, cat_size))
-            while len(mask_ratio) != n_keep:
-                idx = np.random.randint(0, len(mask_left))
-                mask_ratio.append(mask_left.pop(idx))
-            mask_ratio = np.array(mask_ratio)
-            mask_left = np.array(mask_left)
+            # Deterministic split, seeded from the unit's file number: the
+            # train/validation assignment is a pure function of the input
+            # catalogue, so the PSF star sample (and everything downstream
+            # of the PSF model) is reproducible run-to-run. An unseeded
+            # np.random here made the shear catalogue non-reproducible
+            # upstream of ngmix's own position seeding.
+            seed = int(
+                re.sub(r"\D", "", self._file_number_string) or 0
+            ) % (2 ** 32)
+            perm = np.random.RandomState(seed).permutation(cat_size)
+            mask_ratio = perm[:n_keep]
+            mask_left = np.sort(perm[n_keep:])
             self.rand_split[key]["mask"] = mask
             self.rand_split[key][f"ratio_{int(ratio * 100)}"] = mask_ratio
             self.rand_split[key][f"ratio_{100 - int(ratio * 100)}"] = mask_left

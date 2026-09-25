@@ -574,7 +574,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
-  rm -rf run_sp_Ms_20??-*
+  rm -rf run_sp_tile_Ms_20??-*
 
 fi
 
@@ -582,7 +582,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
-  rm -rf run_sp_Mc_20??-*
+  rm -rf run_sp_tile_Mc_20??-*
 
 fi
 
