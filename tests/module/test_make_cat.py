@@ -17,6 +17,7 @@ the pre-#749 code.
 import numpy as np
 import numpy.testing as npt
 from astropy.io import fits
+from sqlitedict import SqliteDict
 
 from shapepipe.modules.make_cat_package.make_cat import SaveCatalogue
 from shapepipe.modules.ngmix_package.ngmix import Ngmix
@@ -307,3 +308,143 @@ def test_save_ngmix_data_matches_module_serialised_catalogue(tmp_path):
     assert not np.allclose(
         out["NGMIX_G1_PSF_ORIG_NOSHEAR"], out["NGMIX_G1_PSF_RECONV_NOSHEAR"]
     )
+
+
+# --- _save_psf_data: EXP_ID_n / CCD_n alignment with HSM_*_PSF_n (#890) ---
+
+
+def _psf_epoch(g1, g2, t, flag=0):
+    """One epoch's interpolated-PSF HSM shape entry (psfex_interp's SHAPES dict)."""
+    return {
+        "SHAPES": {
+            "HSM_G1_PSF": g1,
+            "HSM_G2_PSF": g2,
+            "HSM_T_PSF": t,
+            "HSM_FLAG_PSF": flag,
+        },
+    }
+
+
+def _write_galaxy_psf_cat(path, per_obj):
+    """Write a synthetic ``galaxy_psf`` sqlite catalogue.
+
+    ``per_obj`` maps object id -> ``"empty"`` or an ordered mapping of
+    ``"exp_name-ccd_n"`` -> epoch entry (see ``_psf_epoch``); the mapping's
+    insertion order is what defines "epoch n" (shapepipe#890).
+    """
+    db = SqliteDict(str(path))
+    for obj_id, value in per_obj.items():
+        db[str(obj_id)] = value
+    db.commit()
+    db.close()
+
+
+class _FinalCatStub:
+    """Stand-in for the FITSCatalogue ``_save_psf_data`` reads N_EPOCH from."""
+
+    def __init__(self, n_epoch):
+        self._n_epoch = np.asarray(n_epoch)
+
+    def get_data(self):
+        return {"N_EPOCH": self._n_epoch}
+
+
+def _run_save_psf(galaxy_psf_path, obj_id, n_epoch):
+    """Drive ``_save_psf_data`` and return its populated output dict."""
+    inst = object.__new__(SaveCatalogue)
+    inst._obj_id = np.asarray(obj_id)
+    inst._output_dict = {}
+    inst._final_cat_file = _FinalCatStub(n_epoch)
+
+    inst._save_psf_data(str(galaxy_psf_path))
+    return inst._output_dict
+
+
+def test_save_psf_data_exp_id_ccd_align_with_hsm_psf_slots(tmp_path):
+    """EXP_ID_n/CCD_n name the same epoch as HSM_*_PSF_n, slot for slot.
+
+    Two epochs in a known, non-alphabetical order for one object; the
+    ordering of ``EXP_ID_n``/``CCD_n`` must follow the same ``key``
+    iteration that assigns the HSM slots -- both come from the exact same
+    enumeration in ``_save_psf_data`` (shapepipe#890), so a mis-ordering
+    here would mean the two column families were built from different
+    loops, not the same one.
+    """
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    per_obj = {
+        101: {
+            # Insertion order is deliberately not sorted -- an
+            # index-only (not key-preserving) implementation would not
+            # reproduce it by accident.
+            "2229900-13": _psf_epoch(0.03, 0.04, 0.6),
+            "2113864-7": _psf_epoch(0.01, 0.02, 0.5),
+        },
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    out = _run_save_psf(galaxy_psf_path, [101], n_epoch=[2])
+
+    npt.assert_allclose(out["HSM_G1_PSF_1"], [0.03])
+    npt.assert_allclose(out["HSM_G1_PSF_2"], [0.01])
+    assert out["EXP_ID_1"][0] == 2229900
+    assert out["CCD_1"][0] == 13
+    assert out["EXP_ID_2"][0] == 2113864
+    assert out["CCD_2"][0] == 7
+
+
+def test_save_psf_data_identity_survives_failed_hsm_fit(tmp_path):
+    """A flagged epoch keeps its EXP_ID_n/CCD_n though HSM_*_PSF_n stays sentinel.
+
+    ``_save_psf_data`` skips writing ``HSM_*_PSF_n`` when
+    ``HSM_FLAG_PSF != 0`` for that epoch (the interpolated PSF's shape fit
+    failed), leaving the column at its sentinel. The epoch identity is a
+    fact about which exposure/CCD occupies that slot, independent of
+    whether the shape fit converged there, so EXP_ID_n/CCD_n are written
+    regardless.
+    """
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    per_obj = {
+        202: {
+            "2113864-9": _psf_epoch(0.05, 0.06, 0.7),
+            "2358123-21": _psf_epoch(-10.0, -10.0, 0.0, flag=5),
+        },
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    out = _run_save_psf(galaxy_psf_path, [202], n_epoch=[2])
+
+    npt.assert_allclose(out["HSM_G1_PSF_1"], [0.05])
+    # Sentinel: the epoch-2 HSM fit failed, so the pre-fill value stands.
+    npt.assert_allclose(out["HSM_G1_PSF_2"], [-10.0])
+    assert out["HSM_FLAG_PSF_2"][0] == 1  # pre-fill, never overwritten
+
+    # But the identity of slot 2 is still recorded.
+    assert out["EXP_ID_2"][0] == 2358123
+    assert out["CCD_2"][0] == 21
+
+
+def test_save_psf_data_fills_sentinel_for_absent_epochs(tmp_path):
+    """Unused epoch slots and "empty" objects keep the -1 sentinel.
+
+    ``max_epoch`` (from the largest ``N_EPOCH`` across the catalogue) can
+    exceed a given object's own epoch count, and an object the PSF
+    catalogue reports no epochs at all for is marked ``"empty"``; both
+    cases must leave EXP_ID_n/CCD_n at -1, an exposure ID / CCD number no
+    real epoch can have.
+    """
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    per_obj = {
+        101: {"2113864-7": _psf_epoch(0.01, 0.02, 0.5)},
+        303: "empty",
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    # max(N_EPOCH) = 2 -> 3 slot columns, though obj 101 only fills slot 1.
+    out = _run_save_psf(galaxy_psf_path, [101, 303], n_epoch=[1, 2])
+
+    assert out["EXP_ID_1"][0] == 2113864
+    assert out["CCD_1"][0] == 7
+    for col in ("EXP_ID_2", "CCD_2", "EXP_ID_3", "CCD_3"):
+        assert out[col][0] == -1, col
+    for col in ("EXP_ID_1", "CCD_1", "EXP_ID_2", "CCD_2", "EXP_ID_3", "CCD_3"):
+        assert out[col][1] == -1, col
