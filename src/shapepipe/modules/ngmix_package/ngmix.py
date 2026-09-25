@@ -93,6 +93,42 @@ def get_mcal_flags(res):
     ))
 
 
+def log_run_health(w_log, count, n_fitted, n_flagged):
+    """Log Run Health.
+
+    Warn loudly, without raising, when a run's metacal fits failed
+    wholesale: either no object fitted at all, or every fitted object
+    carries nonzero ``mcal_flags``. A single bad tile (e.g. one empty edge
+    tile, or an upstream library/PSF problem) must not abort a multi-tile
+    campaign job; the error-level log line is the signal to catch in
+    review.
+
+    Parameters
+    ----------
+    w_log : logging.Logger
+        Logging instance
+    count : int
+        Number of objects considered for fitting
+    n_fitted : int
+        Number of objects that were fitted (present in the results list)
+    n_flagged : int
+        Number of fitted objects whose ``mcal_flags`` ended up nonzero
+
+    """
+    if count > 0 and n_fitted == 0:
+        w_log.error(
+            f'ngmix: all {count} objects failed the metacal fit'
+            ' (0 fitted) -- likely an upstream library/PSF problem,'
+            ' not a data property; writing an empty catalogue.'
+        )
+    if n_fitted > 0 and n_flagged == n_fitted:
+        w_log.error(
+            f'ngmix: 100% of {n_fitted} fitted objects carry nonzero'
+            ' mcal_flags -- the metacal fit failed wholesale; outputs'
+            ' are unusable.'
+        )
+
+
 def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     """Build ngmix joint prior for a 6-parameter galaxy model.
 
@@ -1151,18 +1187,7 @@ class Ngmix(object):
             + f" {n_fitted} fitted"
         )
 
-        if count > 0 and n_fitted == 0:
-            self._w_log.error(
-                f'ngmix: all {count} objects failed the metacal fit'
-                ' (0 fitted) -- likely an upstream library/PSF problem,'
-                ' not a data property; writing an empty catalogue.'
-            )
-        if n_fitted > 0 and n_flagged == n_fitted:
-            self._w_log.error(
-                f'ngmix: 100% of {n_fitted} fitted objects carry nonzero'
-                ' mcal_flags -- the metacal fit failed wholesale; outputs'
-                ' are unusable.'
-            )
+        log_run_health(self._w_log, count, n_fitted, n_flagged)
 
         vignet_cat.close()
 
