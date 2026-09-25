@@ -73,6 +73,13 @@ def get_type_flags(fit):
     Fit flags of one metacal type, reading absence of evidence of success
     as failure.
 
+    @sc [label:convention] mcal-flags-zero-means-measured
+    A flag of 0 means the fit ran, reported success and returned a finite
+    shear; no default or fallback may produce 0. FLAGS_<SHEAR>, MCAL_FLAGS
+    (OR) and MCAL_TYPES_FAIL (count) all derive from this function, and
+    sp_validation selects galaxies on MCAL_FLAGS == 0 and
+    MCAL_TYPES_FAIL == 0 as "measured".
+
     Parameters
     ----------
     fit : dict
@@ -137,12 +144,14 @@ def get_mcal_types_fail(res):
 def log_run_health(w_log, count, n_fitted, n_flagged):
     """Log Run Health.
 
-    Warn loudly, without raising, when a run's metacal fits failed
-    wholesale: either no object fitted at all, or every fitted object
-    carries nonzero ``mcal_flags``. A single bad tile (e.g. one empty edge
-    tile, or an upstream library/PSF problem) must not abort a multi-tile
-    campaign job; the error-level log line is the signal to catch in
-    review.
+    Log an error when a run's metacal fits failed wholesale: either no
+    object fitted at all, or every fitted object carries nonzero
+    ``mcal_flags``.
+
+    @sc [label:operations] run-health-logs-not-raises
+    Wholesale metacal failure is logged at error level, never raised: one
+    empty edge tile or broken input must not abort a multi-tile campaign
+    job, and the error line is the signal to catch in review.
 
     Parameters
     ----------

@@ -410,12 +410,13 @@ class SaveCatalogue:
         ``PSF_RECONV`` are independent fits of different PSFs, no longer the
         single aliased value of the pre-fix code (shapepipe#749).
 
-        An object absent from the ngmix catalogue was never fit (e.g. "0 epoch
-        to process", or an exception caught and skipped). Its flag columns
-        take the values ngmix derives for an empty metacal result
-        (:data:`~shapepipe.modules.ngmix_package.ngmix.FLAG_NO_RESULT` in
-        ``MCAL_FLAGS`` and every ``FLAGS_<SHEAR>``, all types counted in
-        ``MCAL_TYPES_FAIL``), so it never reads as a clean fit.
+        @sc [label:coupling] never-fit-is-not-clean
+        An object absent from the ngmix catalogue was never fit (e.g. "0
+        epoch to process", or an exception caught and skipped). Its flag
+        columns take what ngmix derives for an empty metacal result
+        (FLAG_NO_RESULT, every type failed), never 0: sp_validation's
+        MCAL_FLAGS == 0 and MCAL_TYPES_FAIL == 0 cut is what keeps the
+        -10 / 0 sentinel shapes of such rows out of the shear sample.
 
         Parameters
         ----------
