@@ -512,7 +512,10 @@ def test_get_mcal_flags_ors_per_type_fit_flags():
     """
     from shapepipe.modules.ngmix_package.ngmix import get_mcal_flags
 
-    res = {name: {"flags": 0} for name in ("noshear", "1p", "1m", "2p", "2m")}
+    res = {
+        name: {"flags": 0, "g": [0.01, -0.02]}
+        for name in ("noshear", "1p", "1m", "2p", "2m")
+    }
     assert get_mcal_flags(res) == 0
 
     res["1p"]["flags"] = 0x8

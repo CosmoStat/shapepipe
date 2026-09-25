@@ -29,11 +29,8 @@ BLEND_HANDLINGS = ("noisefill", "uberseg")
 
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
 
-# Bit set in mcal_flags when a metacal type carries no fit result at all
-# (absent entry or missing 'flags' key), or when a nominally clean fit
-# returns non-finite shear. Absence of evidence of success is failure,
-# not success: previously an absent flag defaulted to 0 and a silently
-# failing fitter produced an all-zero flag column.
+# Flag bit for a metacal type with no evidence of a successful fit (see
+# get_type_flags). Above every ngmix fitter bit (ngmix.flags stops at 2**15).
 FLAG_NO_RESULT = 2**30
 
 # Noise budget for the PSF observation's flat weight map (psf_wt =
@@ -70,12 +67,36 @@ class MetacalResult(NamedTuple):
     orig: dict
 
 
+def get_type_flags(fit):
+    """Get Type Flags.
+
+    Fit flags of one metacal type, reading absence of evidence of success
+    as failure.
+
+    Parameters
+    ----------
+    fit : dict
+        One metacal type's fit result; ``{}`` when the type is absent.
+
+    Returns
+    -------
+    int
+        The fit's own ``flags``, or :data:`FLAG_NO_RESULT` when the result
+        is absent, lacks ``flags``, or claims success (``flags == 0``)
+        without a finite shear ``g``.
+    """
+    flags = int(fit.get('flags', FLAG_NO_RESULT))
+    g = np.asarray(fit.get('g', (np.nan, np.nan)), dtype=float)
+    if flags == 0 and not np.all(np.isfinite(g)):
+        return FLAG_NO_RESULT
+    return flags
+
+
 def get_mcal_flags(res):
     """Get Metacal Flags.
 
-    Bitwise OR of the per-type metacal fit flags, the v1 contract for the
-    downstream NGMIX_MCAL_FLAGS column: nonzero whenever any metacal
-    type's galaxy fit failed.
+    Object-level metacal flags: the bitwise OR of :func:`get_type_flags`
+    over :data:`METACAL_TYPES` (the NGMIX_MCAL_FLAGS column).
 
     Parameters
     ----------
@@ -85,12 +106,32 @@ def get_mcal_flags(res):
     Returns
     -------
     int
-        OR of all per-type ``flags``.
+        OR of all per-type flags; 0 only if every type was measured.
     """
     return int(np.bitwise_or.reduce(
-        [res.get(name, {}).get('flags', FLAG_NO_RESULT)
-         for name in METACAL_TYPES]
+        [get_type_flags(res.get(name, {})) for name in METACAL_TYPES]
     ))
+
+
+def get_mcal_types_fail(res):
+    """Get Metacal Types Fail.
+
+    Number of metacal types (0-5) with nonzero :func:`get_type_flags` (the
+    NGMIX_MCAL_TYPES_FAIL column).
+
+    Parameters
+    ----------
+    res : dict
+        MetacalBootstrapper result dict with one entry per metacal type.
+
+    Returns
+    -------
+    int
+        Count of failed metacal types.
+    """
+    return sum(
+        get_type_flags(res.get(name, {})) != 0 for name in METACAL_TYPES
+    )
 
 
 def log_run_health(w_log, count, n_fitted, n_flagged):
@@ -714,14 +755,20 @@ class Ngmix(object):
         ]
         output_dict = {k: {kk: [] for kk in names2} for k in names}
         for idx in range(len(results)):
+            # Object-level quality columns, derived from the same per-type
+            # flags as the ``flags`` column below (see get_type_flags).
+            mcal_flags = get_mcal_flags(results[idx])
+            mcal_types_fail = get_mcal_types_fail(results[idx])
             for name in names:
-                fit = results[idx][name]
+                fit = results[idx].get(name, {})
+                flags = get_type_flags(fit)
 
                 # ngmix 2.x does not raise on fit failure: after ntry the
                 # result keeps flags != 0 and carries none of the
                 # measurement keys (g, g_cov, T, T_err, flux, flux_err,
-                # s2n).  NaN-fill those so failed types are recorded with
-                # their flags instead of crashing the tile on a KeyError.
+                # s2n). NaN-fill those (and an absent type) so failed types
+                # are recorded with their flags instead of crashing the tile
+                # on a KeyError.
                 flux = fit.get("flux", np.nan)
                 flux_err = fit.get("flux_err", np.nan)
                 g = np.asarray(fit.get("g", (np.nan, np.nan)))
@@ -738,9 +785,7 @@ class Ngmix(object):
                 output_dict[name]["n_epoch_model"].append(
                     results[idx]["n_epoch_model"]
                 )
-                output_dict[name]["mcal_types_fail"].append(
-                    results[idx]["mcal_types_fail"]
-                )
+                output_dict[name]["mcal_types_fail"].append(mcal_types_fail)
                 # Per-object blend flag (see process()); replicated across all
                 # shear types like id / n_epoch_model / mcal_types_fail.
                 output_dict[name]["neighbour_flag"].append(
@@ -787,15 +832,13 @@ class Ngmix(object):
                     output_dict[name]["s2n"].append(fit["s2n"])
                 elif "s2n_r" in fit:
                     output_dict[name]["s2n"].append(fit["s2n_r"])
-                elif fit["flags"] != 0:
+                elif flags != 0:
                     output_dict[name]["s2n"].append(np.nan)
                 else:
                     raise KeyError("No SNR key (s2n, s2n_r) found in results")
 
-                output_dict[name]["flags"].append(fit["flags"])
-                output_dict[name]["mcal_flags"].append(
-                    results[idx].get("mcal_flags", 0)
-                )
+                output_dict[name]["flags"].append(flags)
+                output_dict[name]["mcal_flags"].append(mcal_flags)
 
         return output_dict
 
@@ -1123,25 +1166,9 @@ class Ngmix(object):
             # epochs that survived the PSF fit and entered the model,
             # not the number of epochs submitted (v1 contract)
             res['n_epoch_model'] = psf_res['n_epoch']
-            # Count of metacal fit types (0-5) with nonzero fit flags.
-            # (In ngmix v1 the same-named column counted moments-initial-guess
-            # failures from get_guess, which no longer exists — hence the
-            # rename to mcal_types_fail / NGMIX_MCAL_TYPES_FAIL.)
-            res['mcal_types_fail'] = sum(
-                1 for k in METACAL_TYPES
-                if res.get(k, {}).get('flags', FLAG_NO_RESULT) != 0
-            )
-            res['mcal_flags'] = get_mcal_flags(res)
-            # A "successful" fit whose noshear shear is non-finite is a
-            # silent failure (sentinel output with flags == 0): flag it.
-            if res['mcal_flags'] == 0 and not np.all(np.isfinite(
-                np.asarray(
-                    res.get('noshear', {}).get('g', (np.nan, np.nan)),
-                    dtype=float,
-                )
-            )):
-                res['mcal_flags'] = FLAG_NO_RESULT
-            if res['mcal_flags'] != 0:
+            # The mcal flag columns are derived from the per-type results in
+            # compile_results; here they only feed the run-health count.
+            if get_mcal_flags(res) != 0:
                 n_flagged += 1
             # Two distinct PSF families (shapepipe#749), each carrying its own
             # ellipticity AND size: the metacal reconvolution kernel (psf_res)

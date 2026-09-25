@@ -15,7 +15,11 @@ from astropy import units as u
 from astropy.wcs import WCS
 from sqlitedict import SqliteDict
 
-from shapepipe.modules.ngmix_package.ngmix import FLAG_NO_RESULT, METACAL_TYPES
+from shapepipe.modules.ngmix_package.ngmix import (
+    get_mcal_flags,
+    get_mcal_types_fail,
+    get_type_flags,
+)
 from shapepipe.pipeline import file_io
 from shapepipe.utilities import mask_query
 
@@ -406,15 +410,12 @@ class SaveCatalogue:
         ``PSF_RECONV`` are independent fits of different PSFs, no longer the
         single aliased value of the pre-fix code (shapepipe#749).
 
-        An object absent from the ngmix catalogue (never fit: e.g. "0 epoch
-        to process", or an exception caught and skipped) must not read as a
-        clean fit. Its ``MCAL_FLAGS``/``FLAGS_<SHEAR>`` default to
-        :data:`~shapepipe.modules.ngmix_package.ngmix.FLAG_NO_RESULT` (the
-        same bit an absent per-type result gets in
-        :func:`~shapepipe.modules.ngmix_package.ngmix.get_mcal_flags`) and
-        ``MCAL_TYPES_FAIL`` defaults to ``len(METACAL_TYPES)`` (shapepipe#889)
-        rather than 0, so a ``MCAL_FLAGS == 0`` / ``MCAL_TYPES_FAIL == 0``
-        quality cut rejects never-fit objects automatically.
+        An object absent from the ngmix catalogue was never fit (e.g. "0 epoch
+        to process", or an exception caught and skipped). Its flag columns
+        take the values ngmix derives for an empty metacal result
+        (:data:`~shapepipe.modules.ngmix_package.ngmix.FLAG_NO_RESULT` in
+        ``MCAL_FLAGS`` and every ``FLAGS_<SHEAR>``, all types counted in
+        ``MCAL_TYPES_FAIL``), so it never reads as a clean fit.
 
         Parameters
         ----------
@@ -456,18 +457,18 @@ class SaveCatalogue:
         n_obj = len(self._obj_id)
         self._w_log.info(f"writing ngmix info for {n_obj} objects")
 
+        # An object ngmix never fit has no metacal result at all.
+        never_fit = {}
+
         if moments:
             m = "m"
         else:
             m = ""
 
             self._add2dict("NGMIX_N_EPOCH", np.zeros(n_obj))
-            # Absent means every metacal type failed to fit, not zero
-            # failures (shapepipe#889): default to len(METACAL_TYPES) so a
-            # MCAL_TYPES_FAIL == 0 quality cut rejects never-fit objects.
             self._add2dict(
                 "NGMIX_MCAL_TYPES_FAIL",
-                np.ones(n_obj) * len(METACAL_TYPES),
+                np.full(n_obj, get_mcal_types_fail(never_fit), dtype=float),
             )
             self._add2dict("NGMIX_NEIGHBOUR_FLAG", np.zeros(n_obj))
 
@@ -478,7 +479,7 @@ class SaveCatalogue:
         # average_multiepoch_psf for what each PSF family is. G1/G2 are scalar
         # reduced-shear components, not a 2-vector. Sentinels:
         # sizes/fluxes/mags 0, *_ERR fluxes/mags -1, ellipticities -10,
-        # *_ERR sizes 1e30, per-shear-type flags FLAG_NO_RESULT.
+        # *_ERR sizes 1e30; flags as for an empty metacal result (never_fit).
         for key_str in (
             f"{prefix}_T_",
             f"{prefix}_SNR_",
@@ -488,10 +489,10 @@ class SaveCatalogue:
             f"{prefix}_T_PSF_RECONV_",
         ):
             self._update_dict(key_str, np.zeros(n_obj))
-        # Absent from the ngmix output means "never fit", not "flags == 0":
-        # default the per-shear-type flags to the same FLAG_NO_RESULT bit
-        # ngmix.get_mcal_flags uses for an absent metacal result.
-        self._update_dict(f"{prefix}_FLAGS_", np.ones(n_obj) * FLAG_NO_RESULT)
+        self._update_dict(
+            f"{prefix}_FLAGS_",
+            np.full(n_obj, get_type_flags(never_fit), dtype=float),
+        )
         for key_str in (
             f"{prefix}_FLUX_ERR_",
             f"{prefix}_MAG_ERR_",
@@ -518,11 +519,9 @@ class SaveCatalogue:
             f"{prefix}_T_ERR_PSF_RECONV_",
         ):
             self._update_dict(key_str, np.ones(n_obj) * 1e30)
-        # Absent from the ngmix output means "never fit" (shapepipe#889):
-        # default to FLAG_NO_RESULT rather than 0, so an object ngmix never
-        # attempted cannot pass a MCAL_FLAGS == 0 quality cut.
         self._add2dict(
-            f"{prefix}_MCAL_FLAGS", np.ones(n_obj) * FLAG_NO_RESULT
+            f"{prefix}_MCAL_FLAGS",
+            np.full(n_obj, get_mcal_flags(never_fit), dtype=float),
         )
 
         for idx, id_tmp in enumerate(self._obj_id):
