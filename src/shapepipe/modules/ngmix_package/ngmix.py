@@ -1152,11 +1152,10 @@ class Ngmix(object):
         )
 
         if count > 0 and n_fitted == 0:
-            raise RuntimeError(
+            self._w_log.error(
                 f'ngmix: all {count} objects failed the metacal fit'
                 ' (0 fitted) -- likely an upstream library/PSF problem,'
-                ' not a data property; aborting instead of writing an'
-                ' empty catalogue.'
+                ' not a data property; writing an empty catalogue.'
             )
         if n_fitted > 0 and n_flagged == n_fitted:
             self._w_log.error(
