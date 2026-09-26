@@ -28,13 +28,13 @@ discovery root, `tests/`, with one tier per subdirectory:
   cluster. See `tests/README.md` for the full layout and markers.
 
 **CI is the single gate.** On every pull request and every push to `develop`,
-`.github/workflows/deploy-image.yml` builds the dev image and runs the suite
+`.github/workflows/deploy-image.yml` builds the image and runs the suite
 *inside it* — so the tests exercise exactly the environment that ships. A green
 check means the container actually works.
 
 ### Running it yourself
 
-The supported way is inside the dev image (it carries the `test` extra and the
+The supported way is inside the image (it carries the `test` extra and the
 astromatic binaries), exactly as CI does:
 
 ```bash
