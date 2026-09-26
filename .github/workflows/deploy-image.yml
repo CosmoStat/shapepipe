@@ -2,17 +2,17 @@ name: Docker image — build, test, publish
 
 # Single source of truth for ShapePipe's environment is the Dockerfile
 # (slim Python + apt system deps + uv-frozen wheels). This workflow builds
-# that image, runs the test suite *inside it* — so CI tests exactly what
-# ships — and publishes to ghcr.
+# that one image, runs the test suite *inside it* — so CI tests exactly what
+# ships, and canfar jobs run exactly what CI tested — and publishes to ghcr.
 #
 #   pull_request → build + test, no publish (covers fork PRs, which have no
 #                  registry token)
 #   push (any branch) → build + test + publish, tagged with the branch name
-#                  (e.g. :develop, :my-feature, and the -runtime variants)
+#                  (e.g. :develop)
 #
 # Publishing on every branch push — not just the integration branches — means
-# any open PR has a pullable image (`apptainer pull …:<branch>-runtime`) that
-# can be tested on a real cluster *before* merge. Same-repo branch pushes always
+# any open PR has a pullable image (`apptainer pull …:<branch>`) that can be
+# tested on a real cluster *before* merge. Same-repo branch pushes always
 # carry a registry-write token, so this is safe; fork PRs still only build+test.
 on:
   push:
@@ -44,76 +44,45 @@ jobs:
         with:
           driver-opts: network=host
 
-      # Two parallel tag sets. `dev` is the default (no suffix, e.g. `:latest`,
-      # `:develop`); `runtime` carries a `-runtime` suffix.
-      - name: Tags — dev (default)
-        id: meta-dev
+      - name: Tags
+        id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-      - name: Tags — runtime
-        id: meta-runtime
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          flavor: |
-            suffix=-runtime,onlatest=true
 
       # ----------------------------------------------------------------
       # Build + test (every event)
       # ----------------------------------------------------------------
-
-      # Build runtime first (smaller, used to smoke-test pipeline binaries).
-      # cache-to mode=min (not max): only the layers that survive into the
-      # final image are exported. The expensive base stage (apt + source-built
-      # OpenMPI) IS in the final image, so it still gets cached and restored —
-      # what min drops is the redundant re-export of intermediate-stage-only
-      # layers, which was ~70 s of "writing layer" on every build.
-      - name: Build runtime (load)
+      - name: Build (load)
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          target: runtime
           load: true
-          tags: ${{ steps.meta-runtime.outputs.tags }}
-          labels: ${{ steps.meta-runtime.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=min
+          cache-to: type=gha,mode=max
 
-      # Smoke-test the binaries baked into the runtime image. Catches the
-      # class of regression where the image builds but a runtime tool
-      # (sextractor, psfex) is missing or unrunnable.
-      - name: Test runtime — binaries
+      # Catches the class of regression where the image builds but a runtime
+      # tool (sextractor, psfex) is missing or unrunnable.
+      - name: Test — binaries
         run: |
-          IMAGE=$(echo "${{ steps.meta-runtime.outputs.tags }}" | head -n1)
+          IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
           docker run --rm "$IMAGE" source-extractor --version
           docker run --rm "$IMAGE" psfex --version
 
-      - name: Test runtime — shapepipe entry point (read-only fs)
+      - name: Test — shapepipe entry point (read-only fs)
         run: |
-          IMAGE=$(echo "${{ steps.meta-runtime.outputs.tags }}" | head -n1)
+          IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
           # --read-only + tmpfs /tmp emulates apptainer/SIF semantics: only
           # /tmp is writable. shapepipe_run_example wraps shapepipe_run so
           # the example tree gets copied into a mktemp workdir before running.
           docker run --rm --read-only --tmpfs /tmp:rw "$IMAGE" shapepipe_run_example
 
-      # Build dev (reuses cached `base` layer; see mode=min note above)
-      - name: Build dev (load)
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          target: dev
-          load: true
-          tags: ${{ steps.meta-dev.outputs.tags }}
-          labels: ${{ steps.meta-dev.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=min
-
-      # Verify the dev-only additions are present and runnable.
-      - name: Test dev — interactive tools
+      # Verify the interactive tooling is present and runnable.
+      - name: Test — interactive tools
         run: |
-          IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
+          IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
           docker run --rm "$IMAGE" vim --version | head -n1
           docker run --rm "$IMAGE" rg --version | head -n1
 
@@ -126,9 +95,9 @@ jobs:
       # clear signal, instead of being buried minutes deep in the full run.
       # `-m "not slow"` keeps this the fast lane (the science tier holds only
       # fast tests today; the filter makes the intent explicit and future-proof).
-      - name: Test dev — science guardrails (fast)
+      - name: Test — science guardrails (fast)
         run: |
-          IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
+          IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
           docker run --rm -e HYPOTHESIS_PROFILE=ci "$IMAGE" \
             pytest -rX -m "not slow" --no-cov tests/science
 
@@ -139,9 +108,9 @@ jobs:
       # in the image so it works on read-only filesystems too. The Hypothesis
       # profile is explicit here so CI always uses the deterministic, capped
       # property-test profile even if the default changes for local exploration.
-      - name: Test dev — pytest suite
+      - name: Test — pytest suite
         run: |
-          IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
+          IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
           docker run --rm -e HYPOTHESIS_PROFILE=ci -e SHAPEPIPE_ON_CANDIDE=0 "$IMAGE" pytest -rX
 
       # ----------------------------------------------------------------
@@ -156,24 +125,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push runtime
+      - name: Push
         if: github.event_name == 'push'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          target: runtime
           push: true
-          tags: ${{ steps.meta-runtime.outputs.tags }}
-          labels: ${{ steps.meta-runtime.outputs.labels }}
-          cache-from: type=gha
-
-      - name: Push dev
-        if: github.event_name == 'push'
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          target: dev
-          push: true
-          tags: ${{ steps.meta-dev.outputs.tags }}
-          labels: ${{ steps.meta-dev.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
