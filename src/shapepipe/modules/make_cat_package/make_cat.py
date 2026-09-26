@@ -250,6 +250,16 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
     The lookup itself is ``shapepipe.utilities.mask_query.query_map``,
     shared with the ``mask_query`` module: one primitive, two consumers.
 
+    @sc [decision:mask_default_cut,label:convention] mask-ext-ladder-columns
+    The labels in ``MASK_EXT_PATHS`` are the UNIONS mask ladder's bit names
+    (``n1`` ... ``n2048``), and this function writes ``MASK_<label>`` verbatim.
+    The eleven ``MASK_n*`` lines in ``workflow/config/cfis/final_cat.param``
+    must match those labels line for line: the post-processing merge fails
+    every tile on a name this function did not write. Nothing here cuts; the
+    catalogue's default cut, applied by the consumer, is the OR of the six
+    r-mask bits ``n1|n2|n4|n8|n64|n1024`` (astra decision
+    ``mask_default_cut``), not the OR of every column.
+
     Parameters
     ----------
     final_cat_file : file_io.FITSCatalogue
