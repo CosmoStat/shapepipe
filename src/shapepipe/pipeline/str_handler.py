@@ -270,8 +270,8 @@ class StrInterpreter(object):
         Returns
         -------
         float
-            mode, if input array has 10 or more elements;
-            median, if input array has >0 and <10 elements;
+            mode, if input array has 20 or more elements;
+            median, if input array has >0 and <20 elements;
             -1, if input array has 0 elements
 
         """
