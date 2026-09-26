@@ -57,7 +57,8 @@ UNMOVED mtime, or the mtime rerun-trigger churns the cone on every unrelated
 Per-runner fields:
     expect   nominal file count for a fully complete unit; below it fails
     warn     if True a shortfall warns instead of failing the unit (bash
-             ``:warn`` — e.g. psfex_interp on tiles missing some epochs)
+             ``:warn`` — e.g. ``exp_psf``'s ``psfex_interp_runner``; the
+             ``tile_vignets`` ``psfex_interp_runner`` is mandatory)
     subpath  count files in ``<runner>/output/<subpath>/`` instead of
              ``<runner>/output/`` (bash ``:rand_split`` — setools split cats)
 
