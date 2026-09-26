@@ -3,14 +3,11 @@
 
 Run as the shell of the in-DAG ``exp_footprint`` rule, never by hand.
 
-WHAT THIS REPLACES. The v1.x coverage chain answered "which CCDs have a valid
-PSF, and where are they on the sky" by downloading ~25k exposure headers from
-VOSpace (``header_downloader.py``), scraping a finished campaign's patch
-directories for a ``missing_job_32_all.txt`` and SUBTRACTING it from all 40*N
-candidates (``ccd_psf_handler.py``), then appending one row per CCD to a shared
-``exp_ra_dec.txt``. Every one of those three moves exists because the pre-
-Snakemake pipeline kept no per-unit record. The workflow keeps two, both already
-on disk, so this rule is a local read of things it produced itself.
+The footprint records the four sky corners of each CCD with a valid PSF model.
+It joins the persisted PSF member list to the split stage's local WCS array and
+writes ``<products_dir>/exp/<shard>/<exp>/manifests/exp_footprint.json``.
+``coverage_map`` reads these durable records to count exposures per sky pixel;
+``clean_exposure`` waits for the record before deleting its scratch inputs.
 
 THE TWO INPUTS, AND WHY EACH IS THE RIGHT ONE.
 
@@ -20,9 +17,9 @@ THE TWO INPUTS, AND WHY EACH IS THE RIGHT ONE.
    NOT_ENOUGH_STARS, BAD_CHI2 and FILE_NOT_FOUND, and writes it on success, so
    the member list IS the valid-PSF set. It is also DURABLE (persistent root,
    survives ``clean_exposure``) and a DECLARED RULE OUTPUT, so the DAG orders
-   this rule after it for free. The alternative considered and rejected was
-   ``exp_psf.json``'s psfex_interp entry: that is a COUNT, not a list of names,
-   and it lives inside the directory ``clean_exposure`` deletes wholesale.
+   this rule after it for free. ``exp_psf.json``'s psfex_interp entry is a
+   COUNT, not a list of names, and lives inside the directory
+   ``clean_exposure`` deletes wholesale.
 
 2. WCS -> ``headers-<exp>.npy``, written by ``split_exp`` beside the per-CCD
    images. A length-N ``dtype=object`` array; element ``i`` is
@@ -33,22 +30,21 @@ THE LOAD-BEARING INVARIANT, PINNED BY tests/unit/test_exp_footprint.py:
 array index ``i`` == the CCD index in ``image-<exp>-<i>.fits`` == ``<exp>-<i>``
 == ``validation_psf-<exp>-<i>.fits``. ``split_exp`` writes both the image and the
 array element from the same ``idx-1`` in one loop, so the alignment is
-structural — but it is a cross-component contract (split_exp's numbering vs.
-psfex_interp's filenames vs. this record's ids), and nothing else asserts it now
-that the old ``summary.get_all_shdus`` test is gone. No index is ever re-derived
-here: a CCD's id comes from its position in the array, never from parsing a name.
+structural. The tests enforce this cross-component contract between
+split_exp's numbering, psfex_interp's filenames and this record's ids.
+The footprint assigns each CCD's id from its position in the array; the
+persisted filenames select which of those indices have a PSF model.
 
 WHY THE SHAPE COMES FROM THE STORED HEADER AND NOT FROM THE WCS. astropy hands
 back the DECOMPRESSED header for a tile-compressed HDU, so this npy carries true
-``NAXIS1/2`` and no ``ZIMAGE`` — while the old VOSpace text headers carried the
-binary-table ``NAXIS`` and needed ``ZNAXIS1/2``. ``_image_shape`` handles both,
-and is imported rather than reimplemented for exactly that reason. ``WCS`` drops
-the ``Z*`` keywords, so it cannot answer the question either way.
+``NAXIS1/2`` and no ``ZIMAGE``. ``_image_shape`` reads the dimensions from the
+header, including ``ZNAXIS1/2`` when given a compressed binary-table header.
+``WCS`` drops the ``Z*`` keywords, so the stored header is the shape source.
 
 DATA AND MANIFEST IN ONE FILE. 40 rows of 8 floats is a few KB, and inodes are
 what bind on /project (persist_exp.py argues the quota arithmetic). Per-exposure
-JSON, never an appended shared text file: a single appended file is precisely
-what cannot survive 20k parallel jobs, and it is what the v1.x chain used.
+JSON keeps parallel exposure jobs independent; appending to one shared text
+file would make them contend on the same record.
 ``ccds_no_psf`` is carried explicitly so the record is self-describing about
 attrition — a reader can tell "this CCD is not in the map" from "this CCD was
 never looked at".

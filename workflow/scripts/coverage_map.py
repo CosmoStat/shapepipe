@@ -11,10 +11,11 @@ structural mask (``notebooks/demo_apply_hsp_masks.py``).
 CAMPAIGN-CUMULATIVE, AND THAT IS THE POINT. This script GLOBS every
 ``<products_dir>/exp/*/*/manifests/exp_footprint.json`` — not just the ones the
 rule declared as inputs, and INCLUDING exposures whose scratch stores have been
-reclaimed. The declared inputs are the in-scope, non-tombstoned footprints, which
-is what buys ordering and rerun semantics without dragging out-of-scope tiles
-into the DAG; the records themselves live on the persistent root and stay valid
-sky forever. So appending tiles GROWS the map rather than replacing it, which is
+reclaimed. The declared inputs are the in-scope footprints of live stores, which
+buys ordering without dragging out-of-scope tiles or reclaimed chains into the
+DAG, and the rule's params fingerprint the ids of every record this glob will
+find, which is what reruns the map when one arrives off the DAG; the records
+themselves live on the persistent root and stay valid sky forever. So appending tiles GROWS the map rather than replacing it, which is
 what a survey coverage mask should do. The rule's comment says the same thing
 where a reader of the DAG will meet it.
 
@@ -33,6 +34,7 @@ entirely reasonable and would not align, and the consumer would not notice.
 
 import argparse
 import filecmp
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -99,13 +101,35 @@ def write_stable(path, body):
         tmp.unlink(missing_ok=True)
 
 
+def publish_map(hsp_map, out):
+    """Write the map to a sibling temporary, then rename it over ``out``.
+
+    The rename is the publication: a job killed before it leaves the previous
+    map in place, with the manifest that describes it. Returns the published
+    file's sha256, which the manifest records to bind itself to this map.
+    """
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_name(f".{out.name}.tmp")
+    try:
+        hsp_map.write(str(tmp), clobber=True)
+        digest = hashlib.sha256()
+        with open(tmp, "rb") as f:
+            for block in iter(lambda: f.read(1 << 24), b""):
+                digest.update(block)
+        tmp.replace(out)
+    finally:
+        tmp.unlink(missing_ok=True)
+    return digest.hexdigest()
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--products-dir", required=True, type=Path,
                    help="the persistent root; every exposure footprint under "
                         "it goes into the map")
     p.add_argument("--out", required=True, type=Path,
-                   help="the HealSparse map, <products_dir>/coverage/coverage.hsp")
+                   help="the HealSparse map, "
+                        "<products_dir>/coverage/coverage_<run>.hsp")
     p.add_argument("--manifest", required=True, type=Path)
     p.add_argument("--nside-coverage", required=True, type=int)
     p.add_argument("--nside", required=True, type=int)
@@ -119,16 +143,17 @@ def main() -> None:
     hsp_map = build_map(ccd_ids, ra, dec, args.nside_coverage, args.nside,
                         verbose=args.verbose)
 
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    hsp_map.write(str(args.out), clobber=True)
+    map_sha256 = publish_map(hsp_map, args.out)
 
     # The manifest is written AFTER the map, and it is the rule's record of
     # which exposures the map contains — the question a mask's consumer asks
     # months later, and one nothing else on disk can answer once the campaign
-    # has grown past it.
+    # has grown past it. Its digest names the map it describes, so a map and
+    # manifest from different generations disagree visibly.
     write_stable(args.manifest, {
         "stage": "coverage_map", "level": "campaign", "status": "complete",
         "map": str(args.out),
+        "map_sha256": map_sha256,
         "nside_coverage": args.nside_coverage,
         "nside": args.nside,
         "n_exposures": len(units),

@@ -400,20 +400,12 @@ rule clean_exposure:
                     if not exp_store_reclaimed(wc.exp)
                     else [prod_exp_fragment(wc.exp)]
                     if Path(prod_exp_fragment(wc.exp)).exists() else []),
-        # The keepers must be off /scratch before the store goes. Unlike the
-        # consumer edges above, this edge does not depend on scope: it is the
-        # same exposure's own rule, so it drags nothing into the DAG that this
-        # exposure's chain did not already put there. No keep list removes it:
-        # exp_persist always packs the star catalogue's inputs.
         # And the footprint, for the same ordering reason one layer further out:
         # it is derived from headers-<exp>.npy, which lives in the store this job
-        # deletes. Reclamation must not overtake the read, and unlike the purge
-        # this deletion is ours to order.
-        # Only psf_model=fake drops both edges: it has no PSF products to keep
-        # and so no valid-PSF set to record (PERSISTS_PSF, Snakefile).
-        lambda wc: ([prod_exp_manifest(wc.exp, "exp_persist"),
-                     prod_exp_manifest(wc.exp, "exp_footprint")]
-                    if PERSISTS_PSF else [])
+        # deletes. Reclamation must not overtake the read; a reclaimed store has
+        # no read left to order against, and naming its footprint reopens the
+        # exposure chain: footprint_edge() (Snakefile).
+        lambda wc: (footprint_edge(wc.exp) if PERSISTS_PSF else []),
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
     params:
