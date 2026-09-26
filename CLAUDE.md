@@ -62,6 +62,8 @@ they reference (e.g. `pytest-cov`) isn't in the image. Use this for a quick
 verify; land the real fix as the `pyproject.toml` / `uv.lock` dep change so CI
 and the next image agree.
 
+**The test suite runs inside the `deploy-image.yml` build — there is no separate test workflow.**
+
 **Testing container changes: build remotely, pull locally.** Don't
 `apptainer build` images on a cluster — quotas are tight and the build is slow.
 The loop for any change to `Dockerfile` / `pyproject.toml` / `uv.lock` is: edit
