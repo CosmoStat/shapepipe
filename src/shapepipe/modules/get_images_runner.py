@@ -27,8 +27,8 @@ def get_images_runner(
     """Define The Get Images Runner."""
     # Read config file section
 
-    # Copy/download method
-    retrieve_method = config.get(module_config_sec, "RETRIEVE")
+    # Copy/download method; may be an environment variable
+    retrieve_method = config.getexpanded(module_config_sec, "RETRIEVE")
     retrieve_ok = ["vos", "symlink"]
     if retrieve_method not in retrieve_ok:
         raise ValueError(

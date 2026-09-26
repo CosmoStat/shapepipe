@@ -41,6 +41,26 @@ The heavy middle (tile_detect) stays out: it is a 16 GB / 8 thread SExtractor
 run that the shape chain does not need co-scheduled, and folding it in would add
 its runtime to a sum that has no room.
 
+``tile_detection: unions_catalogue`` (config.yaml) replaces that SExtractor run
+with two rules: tile_get_catalogue fetches the UNIONS per-tile catalogue
+(get_images_runner, config_tile_Gic.ini) and tile_detect converts it to the
+FITS-LDAC sexcat SExtractor would have written (read_ext_sexcat_runner,
+config_tile_Uc.ini), with the tile image's header, VIGNET stamps cut from the
+tile image, the multi-epoch post-processing, and the catalogue's per-tile
+unique object ID as ``TILE_UNIQUE_ID`` -- a column make_cat carries into the
+final catalogue with every other sexcat column. The converter writes
+run_sp_tile_Sx/read_ext_sexcat_runner, and the rule links it as
+sextractor_runner, the one path every downstream config reads; the manifest is
+tile_detect.json in both modes, so tile_vignets onwards is the same DAG. What
+Steven's catalogue does not carry is a segmentation map, and ngmix's
+``BLEND_HANDLING = uberseg`` needs one. ``blend_handling: uberseg`` therefore
+adds a third rule, tile_segmentation: a SExtractor run on the tile image whose
+only product is the SEGMENTATION check image (config_tile_Sg.ini), followed by
+seg_relabel.py, which maps that image's labels into the converted catalogue's
+NUMBER space and writes it beside the sexcat -- the path vignetmaker's
+segmentation run reads. SExtractor runs once, for the one thing the catalogue
+cannot give.
+
 There is no `tile_mask` rule, and there will not be one (PR #847). ShapePipe
 generates no masks: tiles have no instrument flag image of their own, so
 tile_detect runs SExtractor with FLAG_IMAGE = False against
@@ -444,24 +464,148 @@ rule tile_merge_headers:
     shell:
         sp_shell("tile_merge_headers", "config_tile_Mh_exp.ini")
 
-# SExtractor object detection on the tile.
-rule tile_detect:
-    input:
-        uz = f"{TILE_DIR}/manifests/tile_uncompress.json",
-        mh = rules.tile_merge_headers.output.manifest,
-    output:
-        manifest = f"{TILE_DIR}/manifests/tile_detect.json"
-    log:
-        f"{TILE_DIR}/logs/tile_detect.json"
-    params:
-        pre = lambda wc: unit_pre("tile_detect", wc.tile),
-        script_hash = SCRIPT_HASH
-    threads: 8
-    resources:
-        mem_mb = lambda wc, attempt: 16000 * attempt,
-        runtime = 180
-    shell:
-        sp_shell("tile_detect", "config_tile_Sx.ini")
+# The tile's galaxy sample. One of two definitions of tile_detect, chosen at
+# parse time by the run config; both produce manifests/tile_detect.json and
+# run_sp_tile_Sx/sextractor_runner/output/sexcat<num>.fits.
+if TILE_DETECTION == "sextractor":
+
+    # SExtractor object detection on the tile.
+    rule tile_detect:
+        input:
+            uz = f"{TILE_DIR}/manifests/tile_uncompress.json",
+            mh = rules.tile_merge_headers.output.manifest,
+        output:
+            manifest = f"{TILE_DIR}/manifests/tile_detect.json"
+        log:
+            f"{TILE_DIR}/logs/tile_detect.json"
+        params:
+            pre = lambda wc: unit_pre("tile_detect", wc.tile),
+            script_hash = SCRIPT_HASH
+        threads: 8
+        resources:
+            mem_mb = lambda wc, attempt: 16000 * attempt,
+            runtime = 180
+        shell:
+            sp_shell("tile_detect", "config_tile_Sx.ini")
+
+else:
+
+    # Fetch the UNIONS per-tile catalogue (CFIS.<tile>.r.cat), from a local
+    # mirror or from vos, the way tile_get_images fetches the image. Reads
+    # only tile_numbers.txt, which unit_pre writes; the edge on the image
+    # manifest is what puts it after the prepare phase.
+    rule tile_get_catalogue:
+        input:
+            git = f"{TILE_DIR}/manifests/tile_get_images.json",
+        output:
+            manifest = f"{TILE_DIR}/manifests/tile_get_catalogue.json"
+        log:
+            f"{TILE_DIR}/logs/tile_get_catalogue.json"
+        params:
+            pre = lambda wc: unit_pre(
+                "tile_get_catalogue", wc.tile,
+                env={"SP_INPUT_CATALOGUES": CATALOGUES,
+                     "SP_RETRIEVE_CATALOGUES": CATALOGUE_RETRIEVE}),
+            script_hash = SCRIPT_HASH
+        threads: 1
+        retries: 2
+        resources:
+            mem_mb = lambda wc, attempt: 4000 * attempt,
+            runtime = 60
+        shell:
+            sp_shell("tile_get_catalogue", "config_tile_Gic.ini")
+
+    # Convert the catalogue to the FITS-LDAC sexcat the chain expects. The
+    # completeness check counts read_ext_sexcat_runner's own output; the link
+    # after it is what makes that output readable at the sextractor_runner path
+    # of every downstream config, and it is made only on success so a failed
+    # run leaves nothing at that path.
+    rule tile_detect:
+        input:
+            cat = rules.tile_get_catalogue.output.manifest,
+            git = f"{TILE_DIR}/manifests/tile_get_images.json",
+            mh = rules.tile_merge_headers.output.manifest,
+        output:
+            manifest = f"{TILE_DIR}/manifests/tile_detect.json"
+        log:
+            f"{TILE_DIR}/logs/tile_detect.json"
+        params:
+            pre = lambda wc: unit_pre(
+                "tile_detect", wc.tile,
+                env={"SP_TILE_DETECTION": TILE_DETECTION}),
+            script_hash = SCRIPT_HASH
+        threads: 1
+        resources:
+            # The whole tile image plus one 51x51 float32 stamp per object.
+            mem_mb = lambda wc, attempt: 8000 * attempt,
+            runtime = 60
+        shell:
+            sp_shell("tile_detect", "config_tile_Uc.ini",
+                     post="if [ $rc -eq 0 ]; then\n"
+                          '  ln -s read_ext_sexcat_runner '
+                          '"$SP_RUN/output/run_sp_tile_Sx/sextractor_runner"\n'
+                          "fi\n")
+
+# Where the tile catalogue lands, whichever mode wrote it: the one path every
+# downstream config reads, and where the relabelled segmentation map goes.
+SEXCAT_DIR = "$SP_RUN/output/run_sp_tile_Sx/sextractor_runner/output"
+
+if TILE_SEGMENTATION:
+
+    # The segmentation map UberSeg needs, and nothing else.
+    #
+    # THE SAMPLE IS STEVEN'S CATALOGUE, ALWAYS. This SExtractor run detects on
+    # the tile image with config_tile_Sx.ini's settings, but its catalogue is
+    # discarded: what leaves the rule is the SEGMENTATION check image. That
+    # image's labels are this run's own NUMBERs, which have nothing to do with
+    # the converted catalogue's, so the post step relabels it -- UberSeg finds
+    # the central object BY LABEL (uberseg_weight's `object_number` is the
+    # catalogue NUMBER), so an unmapped map would invert every mask rather than
+    # fail. seg_relabel.py's docstring owns the mapping and its fallback.
+    #
+    # It writes into tile_detect's run dir, which is where vignetmaker's
+    # segmentation run looks (`run_sp_tile_Sx:sextractor_runner`, FILE_PATTERN
+    # `segmentation`) whichever mode produced the sexcat. Safe because unit_pre
+    # clears only THIS stage's run dir (run_sp_tile_Sg), and a tile_detect
+    # rerun re-schedules this rule through the manifest edge below.
+    rule tile_segmentation:
+        input:
+            sx = rules.tile_detect.output.manifest,
+            uz = f"{TILE_DIR}/manifests/tile_uncompress.json",
+        output:
+            manifest = f"{TILE_DIR}/manifests/tile_segmentation.json"
+        log:
+            f"{TILE_DIR}/logs/tile_segmentation.json"
+        params:
+            pre = lambda wc: unit_pre("tile_segmentation", wc.tile),
+            script_hash = SCRIPT_HASH,
+            relabel_hash = SEG_RELABEL_HASH
+        threads: 8
+        resources:
+            # The same SExtractor run as tile_detect's sextractor mode.
+            mem_mb = lambda wc, attempt: 16000 * attempt,
+            runtime = 180
+        shell:
+            sp_shell(
+                "tile_segmentation", "config_tile_Sg.ini",
+                post=(
+                    "if [ $rc -eq 0 ]; then\n"
+                    f"  python {SCRIPTS}/seg_relabel.py"
+                    f' --sexcat "{SEXCAT_DIR}/sexcat$SP_UNIT_NUM.fits"'
+                    ' --segmentation "$SP_RUN/output/run_sp_tile_Sg'
+                    '/sextractor_runner/output/segmentation$SP_UNIT_NUM.fits"'
+                    f' --output "{SEXCAT_DIR}/segmentation'
+                    '$SP_UNIT_NUM.fits" || rc=1\n'
+                    "fi\n"))
+
+
+# The segmentation edge: present only when tile_segmentation is defined, so the
+# DAG carries it exactly when the map has to be built.
+def tile_seg(wc):
+    if not TILE_SEGMENTATION:
+        return []
+    return [f"{tile_dir(wc.tile)}/manifests/tile_segmentation.json"]
+
 
 # Configured PSF interpolation to galaxies + vignet postage stamps: the last
 # stage that reads exposure products, and the bulk intra-tile intermediate. The store it
@@ -470,6 +614,7 @@ rule tile_vignets:
     group: TILE_GROUP
     input:
         sx     = rules.tile_detect.output.manifest,
+        seg    = tile_seg,
         forest = rules.tile_exp_forest.output.forest,
         split  = tile_exp_split,
         psf    = tile_exp_psf,
