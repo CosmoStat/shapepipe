@@ -1823,3 +1823,52 @@ analyses:
             excluded: true
             excluded_reason: >-
               Loses the photometry-only population and hides attrition.
+      mask_default_cut:
+        label: Default external-mask cut — the six r-mask bits of the MASK_n* ladder
+        rationale: >-
+          make_cat writes one boolean MASK_n<bit> column per map in
+          MASK_EXT_PATHS (11 bits: star halos n1/n2, star body n4, manual n8,
+          per-band no-data footprints n16..n256, MaxiMask n1024, Pan-STARRS
+          z2 footprint n2048) and cuts nothing; the cut is the consumer's
+          (sp_validation). The default is n1|n2|n4|n8|n64|n1024 because it
+          reproduces the published 2D-cosmic-shear mask
+          (/n17data/UNIONS/WL/masks/mask_r_nside131072.hsp), so the
+          catalogue's footprint matches the 2D analysis'. Measured on candide
+          against the Feb-2025 r ladder beside it: pixel-exact on three whole
+          interior coverage granules; on 4M random footprint pixels the only
+          difference is 0.46% of area at footprint-edge granules where mask_r
+          has no coverage and reads unmasked. Every bit is needed: dropping
+          any one leaves mask_r-only area (n2 most, 4.4%). The August
+          regeneration may have swapped n1 and n2, which is why they are
+          used only together. The DR6 ladder MASK_EXT_PATHS points at is not
+          yet measured against the Feb-2025 one.
+          Anchor: workflow/config/cfis/config_tile_Mc.ini#MAKE_CAT_RUNNER.MASK_EXT_PATHS;
+          workflow/config/cfis/final_cat.param;
+          src/shapepipe/modules/make_cat_package/make_cat.py::save_mask_ext_data.
+        default: r_mask_bits
+        options:
+          r_mask_bits:
+            label: "OR of n1|n2|n4|n8|n64|n1024 — reproduces mask_r"
+          defects_only:
+            label: "OR of the defect bits n1|n2|n4|n8|n1024"
+            excluded: true
+            excluded_reason: >-
+              Omits the r-footprint bit n64 (no r data) and so misses 9% of
+              mask_r's masked area; the footprint no longer matches the 2D
+              analysis'.
+          all_bits:
+            label: OR of all 11 MASK_n* columns
+            excluded: true
+            excluded_reason: >-
+              The u/g/i/z footprint bits and n2048 flag missing data in other
+              filters, not r-band defects; OR-ing them masks whole regions
+              with no u or Pan-STARRS z2 coverage.
+
+# ── Dormant science paths, surveyed but not yet recorded as sub-analyses ────
+# Candidates for future passes (each carries real scientific knobs):
+#   * External photometry match — match_external_package (TOLERANCE=0.3
+#     arcsec against UNIONS ugriz; the external catalogue path is hardcoded
+#     to an IAP/candide location).
+#   * Image-simulation validation wiring — example/cfis_image_sims/:
+#     same chain over SKiLLS images with fake_psf substitution; bash-shaped,
+#     not yet ported to snakemake.
