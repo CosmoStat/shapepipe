@@ -10,6 +10,8 @@
 #     (`path#KEY` for sectionless .sex/.psfex/.param files; .setools uses
 #     SECTION.KEY), or FILE `path`. No line numbers. Commented-out keys may
 #     resolve as locations, but only active settings can assert values.
+#     `= absent` asserts a config key has no active line (its file and any
+#     section must exist); quote it ("absent") to mean the text.
 #   * Value assertions: `Anchor: path#SECTION.KEY = 1.5; path::NAME = 51.`
 #     A ref without ` = value` is location-only. Attaching the expectation to
 #     its locator avoids guessing which file a prose number describes, while
@@ -19,9 +21,11 @@
 #     references, never parsed for values. Code/config remains execution truth.
 #   * Values are numbers, boolean words, strings (quote expressions), or flat
 #     comma lists, optionally bracketed. Semicolons are reserved for refs.
-#     Decimal equality is exact (1 = 1.0, 5e-4 = 0.0005), without rounding;
-#     Y/yes/true/on and N/no/false/off are case-insensitive boolean aliases,
-#     distinct from 1/0. Trim outer whitespace; other strings are case-sensitive.
+#     Decimal equality is exact (1 = 1.0, 5e-4 = 0.0005), without rounding.
+#     Boolean words follow the file's reader, case-insensitively: INI as
+#     ConfigParser.getboolean (yes/true/on/1, no/false/off/0; Y/N are text),
+#     .sex/.psfex also Y/N, Python True/False; elsewhere words are text and
+#     1/0 are numbers. Trim outer whitespace; other strings are case-sensitive.
 #     Lists preserve order and length. Only .param VIGNET and .psfex PSF_SIZE
 #     accept square-size shorthand: 51 = 51,51 (never 51,53).
 #   * SETools predicates retain their operators as quoted text; repeated cuts
@@ -29,8 +33,10 @@
 #     Expressions compare as text, not algebra. Python selectors may append
 #     `[key.subkey]` to a named assignment (identifier-like string dict keys);
 #     only the selected literal is read, including dict(key=value) syntax.
-#     Ambiguous bindings/settings fail; no imports, calls, arithmetic, argument
-#     defaults, environment expansion or implicit tool defaults are evaluated.
+#     Ambiguous bindings/settings fail, including NAME[...] = or NAME.attr =
+#     in the same scope; .update()-style calls and mutation from other scopes
+#     are not seen. No imports, calls, arithmetic, argument defaults,
+#     environment expansion or implicit tool defaults are evaluated.
 #     These limits keep the check static rather than a second pipeline runtime.
 #   * A decision's `default` is the option the committed code and configs
 #     select; universes/committed.yaml pins it.
@@ -132,6 +138,8 @@ decisions:
       workflow/config/cfis/default.param#VIGNET = 51;
       workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_1.STAMP_SIZE = 51;
       workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.STAMP_SIZE = 51;
+      workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_1.MASKING = False;
+      workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.MASKING = False;
       workflow/config/cfis/default.psfex#PSF_SIZE = 51.
     default: px_51
     options:
@@ -277,6 +285,9 @@ analyses:
           workflow/config/cfis/star_selection.setools#MASK:star_selection.IMAFLAGS_ISO = "== 0";
           workflow/config/cfis/star_selection.setools#MASK:preselect.IMAFLAGS_ISO = "== 0";
           workflow/config/cfis/star_selection.setools#MASK:flag.IMAFLAGS_ISO = "== 0";
+          workflow/config/cfis/star_selection.setools#MASK:star_selection.MASK_EXT = absent;
+          workflow/config/cfis/star_selection.setools#MASK:preselect.MASK_EXT = absent;
+          workflow/config/cfis/star_selection.setools#MASK:flag.MASK_EXT = absent;
           src/shapepipe/modules/mask_query_runner.py::mask_query_runner;
           src/shapepipe/utilities/mask_query.py::flag_positions.
         default: instrument_flags_only
@@ -470,6 +481,8 @@ analyses:
           workflow/config/cfis/default_exp.sex#RESCALE_WEIGHTS = Y;
           workflow/config/cfis/default_tile.sex#WEIGHT_GAIN = Y;
           workflow/config/cfis/default_exp.sex#WEIGHT_GAIN = Y;
+          workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.WEIGHT_IMAGE = True;
+          workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.WEIGHT_IMAGE = True;
           src/shapepipe/modules/sextractor_package/sextractor_script.py::SExtractorCaller.set_input_files.
         default: map_weight
         options:
@@ -543,7 +556,9 @@ analyses:
           workflow/config/cfis/default_tile.sex#SATUR_KEY = SATURATE;
           workflow/config/cfis/star_selection.setools#MASK:star_selection.FLAGS = "== 0";
           workflow/config/cfis/star_selection.setools#MASK:preselect.FLAGS = "== 0";
-          workflow/config/cfis/star_selection.setools#MASK:flag.FLAGS = "== 0".
+          workflow/config/cfis/star_selection.setools#MASK:flag.FLAGS = "== 0";
+          workflow/config/cfis/default_tile.sex#SATUR_LEVEL = absent;
+          workflow/config/cfis/default_exp.sex#SATUR_LEVEL = absent.
         default: header_saturate
         options:
           header_saturate:
@@ -608,6 +623,7 @@ analyses:
           The excluded strip is likely prescan; that interpretation is
           unverified here.
           Anchor: workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
+          workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True;
           src/shapepipe/modules/sextractor_package/sextractor_script.py::make_post_process;
           src/shapepipe/modules/sextractor_package/sextractor_script.py::ccd_candidate_mask.
         default: trimmed_bounds_33_2080

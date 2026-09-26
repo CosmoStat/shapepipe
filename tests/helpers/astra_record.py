@@ -136,6 +136,7 @@ def resolve_anchor(root, reference):
 
     try:
         kind, relative, selector = _parse_reference(reference)
+        _, expected = _split_assertion(reference)
     except ValueError as error:
         return str(error)
     path = Path(relative)
@@ -154,6 +155,8 @@ def resolve_anchor(root, reference):
     except (OSError, UnicodeError) as error:
         return f"cannot read file: {error}"
 
+    if kind == "code" and expected == ABSENT:
+        return "absent assertions need a config key, not a code symbol"
     if kind == "code":
         if _is_snakemake_file(target):
             return _snakemake_symbol(text, selector)
@@ -171,6 +174,8 @@ def resolve_anchor(root, reference):
         return None
 
     suffix = target.suffix.lower()
+    if expected == ABSENT:
+        return _absent_scope(text, selector, suffix)
     if suffix == ".ini":
         return _ini_key(text, selector)
     if suffix == ".setools":
@@ -182,6 +187,39 @@ def resolve_anchor(root, reference):
             return None
         return f"no line starts with key {key!r} (commented keys are allowed)"
     return f"unsupported config-key file type {suffix or '(no extension)'}"
+
+
+ABSENT = "absent"
+_LINE_SUFFIXES = {".sex", ".psfex", ".ww", ".param", ".conf", ".setools"}
+_SECTIONED = {".ini", ".setools"}
+
+
+def _absent_scope(text, selector, suffix):
+    """An absent key still needs a real file type and, if sectioned, section.
+
+    Without the section check a renamed section would make every absence
+    trivially true.
+    """
+
+    if suffix not in _LINE_SUFFIXES | {".ini"}:
+        return f"unsupported config-key file type {suffix or '(no extension)'}"
+    if suffix not in _SECTIONED:
+        return None
+    if "." not in selector:
+        return "sectioned config ref needs SECTION.KEY"
+    section = selector.rsplit(".", 1)[0]
+    if suffix == ".ini":
+        try:
+            parser = _ini_parser(text, strict=False)
+        except configparser.Error as error:
+            return f"cannot parse INI file: {error}"
+        if section == parser.default_section or parser.has_section(section):
+            return None
+    elif any(
+        line.strip() == f"[{section}]" for line in text.splitlines()
+    ):
+        return None
+    return f"section {section!r} is missing"
 
 
 def _ini_key(text, selector):
@@ -263,6 +301,62 @@ def _bindings(scope):
     for statement in scope.body:
         visit(statement)
     return result
+
+
+def _mutated_name(target):
+    """Base name of ``NAME[...] =`` / ``NAME.attr =`` (nested included)."""
+
+    while isinstance(target, (ast.Subscript, ast.Attribute)):
+        target = target.value
+        if isinstance(target, ast.Name):
+            return target.id
+    return None
+
+
+@lru_cache(maxsize=128)
+def _mutations(scope):
+    """Names whose bound object is item- or attribute-assigned in ``scope``.
+
+    Same lexical scope only, like ``_bindings``; method calls such as
+    ``.update()`` and mutation from other scopes are not seen.
+    """
+
+    names = set()
+
+    def visit(node):
+        if isinstance(
+            node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)
+        ):
+            return
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, (ast.AnnAssign, ast.AugAssign)):
+            targets = [node.target]
+        elif isinstance(node, ast.Delete):
+            targets = node.targets
+        elif isinstance(node, (ast.For, ast.AsyncFor)):
+            targets = [node.target]
+        elif isinstance(node, (ast.With, ast.AsyncWith)):
+            targets = [item.optional_vars for item in node.items]
+        else:
+            targets = []
+        stack = [target for target in targets if target is not None]
+        while stack:
+            target = stack.pop()
+            if isinstance(target, (ast.Tuple, ast.List)):
+                stack.extend(target.elts)
+            elif isinstance(target, ast.Starred):
+                stack.append(target.value)
+            else:
+                name = _mutated_name(target)
+                if name:
+                    names.add(name)
+        for child in ast.iter_child_nodes(node):
+            visit(child)
+
+    for statement in scope.body:
+        visit(statement)
+    return frozenset(names)
 
 
 def _has_symbol(tree, symbol):
@@ -347,6 +441,10 @@ def _selected_python_node(tree, selector):
                 f"for {part!r}"
             )
         node = declarations[0]
+        if index == len(parts) - 1 and part in _mutations(scope):
+            raise ValueError(
+                f"{symbol!r} is item- or attribute-assigned after binding"
+            )
         if index < len(parts) - 1:
             if not isinstance(
                 node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
@@ -364,8 +462,8 @@ def _selected_python_node(tree, selector):
     return node
 
 
-def _line_value(text, selector, suffix):
-    """Read active lines; SETools repeated predicates form an ordered list."""
+def _active_lines(text, selector, suffix):
+    """Every active (uncommented) setting of the key, as (value, predicate)."""
 
     section = None
     if suffix == ".setools":
@@ -396,6 +494,13 @@ def _line_value(text, selector, suffix):
             value = value[1:].strip()
         values.append(value)
         predicates.append(predicate)
+    return values, predicates
+
+
+def _line_value(text, selector, suffix):
+    """Read active lines; SETools repeated predicates form an ordered list."""
+
+    values, predicates = _active_lines(text, selector, suffix)
     if not values or any(not value for value in values):
         raise ValueError(f"no active value for {selector!r}")
     if len(values) > 1 and not all(predicates):
@@ -404,13 +509,38 @@ def _line_value(text, selector, suffix):
 
 
 _NUMBER = re.compile(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\Z")
-_BOOLEANS = {
-    "y": True, "yes": True, "true": True, "on": True,
-    "n": False, "no": False, "false": False, "off": False,
+# Boolean words each reader accepts. INI follows ConfigParser.getboolean,
+# whose 1/0 spellings are handled at comparison (see _ini_bool); SExtractor
+# and PSFEx add Y/N; Python literals are already bool, and the record spells
+# them True/False. Elsewhere words stay text.
+_INI_BOOLEANS = {
+    "yes": True, "true": True, "on": True,
+    "no": False, "false": False, "off": False,
 }
+_ASTROMATIC_BOOLEANS = {**_INI_BOOLEANS, "y": True, "n": False}
+_PYTHON_BOOLEANS = {"true": True, "false": False}
+_NO_BOOLEANS = {}
 
 
-def _normalise_value(value):
+def _booleans_for(suffix):
+    if suffix == ".ini":
+        return _INI_BOOLEANS
+    if suffix in {".sex", ".psfex"}:
+        return _ASTROMATIC_BOOLEANS
+    if suffix == ".py":
+        return _PYTHON_BOOLEANS
+    return _NO_BOOLEANS
+
+
+def _ini_bool(want, got):
+    """getboolean also reads 1/0; accept them only against a bool expectation."""
+
+    if want[0] == "bool" and got[0] == "number" and got[1] in (0, 1):
+        return "bool", got[1] == 1
+    return got
+
+
+def _normalise_value(value, booleans=_ASTROMATIC_BOOLEANS):
     """Use tagged atoms so boolean True cannot compare equal to number 1."""
 
     if isinstance(value, bool):
@@ -421,7 +551,7 @@ def _normalise_value(value):
             raise ValueError("numeric values must be finite")
         return "number", number
     if isinstance(value, (list, tuple)):
-        elements = tuple(_normalise_value(item) for item in value)
+        elements = tuple(_normalise_value(item, booleans) for item in value)
         if any(kind == "list" for kind, _ in elements):
             raise ValueError("only flat lists are supported")
         return "list", elements
@@ -435,17 +565,17 @@ def _normalise_value(value):
         # inconsistent numeric/boolean coercions. It constructs no objects.
         parsed = yaml.load(value, Loader=yaml.BaseLoader)
         if isinstance(parsed, list):
-            return _normalise_value(parsed)
+            return _normalise_value(parsed, booleans)
         if not isinstance(parsed, str):
             raise ValueError("expected a scalar or flat list, not a mapping")
         # Quotes protect commas/operators; their contents are a single atom.
         value = parsed.strip()
     elif "," in value:
-        return _normalise_value(value.split(","))
+        return _normalise_value(value.split(","), booleans)
     if _NUMBER.fullmatch(value):
         return "number", Decimal(value)
-    if value.lower() in _BOOLEANS:
-        return "bool", _BOOLEANS[value.lower()]
+    if value.lower() in booleans:
+        return "bool", booleans[value.lower()]
     return "text", value
 
 
@@ -476,6 +606,19 @@ def check_anchor_value(root, reference):
         target = Path(root) / relative
         text = target.read_text(encoding="utf-8")
         suffix = target.suffix.lower()
+        if expected == ABSENT:
+            if suffix == ".ini":
+                section, key = selector.rsplit(".", 1)
+                parser = _ini_parser(text)
+                if not parser.has_option(section, key):
+                    return None
+                actual = parser.get(section, key)
+            else:
+                active, _ = _active_lines(text, selector, suffix)
+                if not active:
+                    return None
+                actual = active if len(active) > 1 else active[0]
+            return f"expected no active setting, actual {actual!r}"
         if kind == "code" and suffix == ".py":
             node = _selected_python_node(_python_tree(text), selector)
             try:
@@ -497,8 +640,11 @@ def check_anchor_value(root, reference):
             raise ValueError(
                 "value assertions need a config key or Python assignment"
             )
-        want = _normalise_value(expected)
-        got = _normalise_value(actual)
+        booleans = _booleans_for(suffix)
+        want = _normalise_value(expected, booleans)
+        got = _normalise_value(actual, booleans)
+        if suffix == ".ini":
+            got = _ini_bool(want, got)
         if (suffix, selector) in {(".param", "VIGNET"), (".psfex", "PSF_SIZE")}:
             want, got = _square_stamp(want), _square_stamp(got)
         if want == got:

@@ -44,7 +44,7 @@ Cleaning removes detections after deblending, so switching it off or changing it
 The selected CORRECT treatment mirrors neighbour pixels across the target centre for SExtractor photometry; retain that convention when reproducing fluxes and windowed moments.
 Replacing it with blanking changes photometry and centroids, and must not be confused with ngmix's separate neighbour-weighting decision.
 
-@sc [decision:detection.saturation_level,governs:default_tile.sex#SATUR_KEY;default_exp.sex#SATUR_KEY;star_selection.setools#MASK:star_selection.FLAGS] saturation-flags-follow-image-header
+@sc [decision:detection.saturation_level,governs:default_tile.sex#SATUR_KEY;default_exp.sex#SATUR_KEY;star_selection.setools#MASK:star_selection.FLAGS;default_tile.sex;default_exp.sex] saturation-flags-follow-image-header
 SATUR_KEY must refer to the delivered image's saturation card for the intended per-image saturation flags, which FLAGS-based PSF-star rejection consumes.
 Do not interpret a missing card as evidence of no saturation: SExtractor then uses its built-in level because no SATUR_LEVEL is pinned here.
 Header availability remains unverified; changing the key or adding a fixed level requires checking the bright-star selection, not just whether SExtractor runs.
@@ -66,6 +66,10 @@ Shared pixel data and calibration
 Exposure IMAFLAGS_ISO and the multi-epoch flag stamps must come from the same delivered instrument flag image split per CCD.
 Keep the ME_IMAGE_PATTERN and ME_IMAGE_EXP_RUNNERS lists aligned so a flag stamp cannot silently become an image, weight or sky-mask product.
 Sky-fixed healsparse masks remain object-level catalogue information; substituting or rasterising them into this pixel path changes the masking decision.
+
+@sc [decision:masking.psf_star_mask_veto,governs:star_selection.setools#MASK:star_selection.IMAFLAGS_ISO;star_selection.setools#MASK:preselect.IMAFLAGS_ISO;star_selection.setools#MASK:flag.IMAFLAGS_ISO;star_selection.setools] psf-stars-vetoed-on-instrument-flags-only
+PSF-star candidates are rejected on the instrument flags (IMAFLAGS_ISO == 0) and on no sky-fixed map: no mask block cuts on MASK_EXT.
+A MASK_EXT cut changes the PSF training sample and is a change to this decision, not a cleanup; querying maps through MASK_PATHS without the cut records MASK_EXT and changes no star.
 
 @sc [decision:photometric_zeropoint,governs:default_tile.sex#MAG_ZEROPOINT;config_tile_Sx.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER;config_tile_Ng_template.ini#NGMIX_RUNNER.MAG_ZP;config_exp_psfex.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER;config_exp_psfex.ini#SEXTRACTOR_RUNNER.ZP_KEY] tile-and-epoch-photometry-share-flux-scale
 Tile MAG_ZEROPOINT, ngmix MAG_ZP and the FSCALE-rescaled epochs must describe the same flux calibration.
