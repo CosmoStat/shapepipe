@@ -18,11 +18,12 @@ Where contracts live:
 A ``decision:<id>`` meta names a decision in ``astra.yaml``: a top-level
 decision by its bare id, a sub-analysis decision as ``<analysis>.<id>``.
 A ``governs:<ref>;<ref>`` meta names the keys/files a contract constrains.
-Refs use the ASTRA anchor grammar, but paths are relative to the contract's
+Refs use ASTRA anchor locators, but paths are relative to the contract's
 own directory, not the repository root; put cross-directory couplings in
 an ancestor's ``CONTRACTS``. Semicolons separate refs without spaces, since
-commas separate metadata pairs in ``sc-list``. Repeated metadata keys are
-errors, not last-value-wins overrides. Resolution checks existence, not
+commas separate metadata pairs in ``sc-list``. Value assertions stay in
+ASTRA, not in whitespace-free ``governs:`` metadata. Repeated metadata keys
+are errors, not last-value-wins overrides. Resolution checks existence, not
 whether a key is enabled or its value satisfies the contract's prose.
 """
 
@@ -35,7 +36,12 @@ import re
 import tokenize
 import warnings
 
-from tests.helpers.astra_record import extract_anchors, resolve_anchor
+from tests.helpers.astra_record import (
+    _parse_reference,
+    _split_assertion,
+    extract_anchors,
+    resolve_anchor,
+)
 
 TAG = re.compile(r"^\s*@(sc|cc)\b.*$")
 VALID = re.compile(r"^\s*@(sc|cc)(?:\s+\[([^\]]*)\])?\s+([\w][\w.-]*)\s*$")
@@ -281,6 +287,22 @@ def governs_errors(contracts, root):
     return errors
 
 
+def _anchor_locators(record):
+    """Strip optional value assertions using the shared anchor grammar."""
+
+    locators = set()
+    for anchor in extract_anchors(record):
+        for reference in anchor.references:
+            try:
+                locator, _ = _split_assertion(reference)
+            except ValueError:
+                # The anchor tests diagnose malformed refs; coverage reports
+                # the remaining links rather than failing to print any gaps.
+                continue
+            locators.add(locator)
+    return locators
+
+
 def anchored_refs(record):
     """``(code_symbols, anchored_paths)`` named by the record's anchors.
 
@@ -289,14 +311,11 @@ def anchored_refs(record):
     """
 
     symbols, paths = set(), set()
-    for anchor in extract_anchors(record):
-        for reference in anchor.references:
-            if "::" in reference:
-                path, symbol = reference.split("::", 1)
-                symbols.add((path, symbol))
-            else:
-                path = reference.split("#", 1)[0]
-            paths.add(path)
+    for reference in _anchor_locators(record):
+        kind, path, selector = _parse_reference(reference)
+        if kind == "code":
+            symbols.add((path, selector))
+        paths.add(path)
     return symbols, paths
 
 
@@ -307,16 +326,15 @@ def coverage_report(contracts, record):
     ``@sc`` contracts whose declaration or governed refs are not anchored.
     A module-docstring contract counts as anchored when an anchor names its
     file or a symbol in it. A ``governs:`` contract counts when at least one
-    ref appears verbatim in the record after rebasing to the repo root;
-    another key in the same file is not a match. These are report-only
-    links, not proof that the prose holds or every coupled key is anchored.
+    locator appears in the record after rebasing to the repo root and
+    removing any value assertion from the record's ref; another key in the
+    same file is not a match. These are report-only links, not proof that
+    the prose holds or every coupled key is anchored.
     """
 
     cited = {c.meta["decision"] for c in contracts if "decision" in c.meta}
     uncovered = sorted(decision_ids(record) - cited)
-    references = {
-        ref for anchor in extract_anchors(record) for ref in anchor.references
-    }
+    references = _anchor_locators(record)
     symbols, paths = anchored_refs(record)
     unanchored = []
     for contract in contracts:

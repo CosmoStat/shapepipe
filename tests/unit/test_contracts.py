@@ -269,9 +269,12 @@ def test_malformed_governs_does_not_silently_drop_refs(
     assert message in errors[0]
 
 
-def test_config_coverage_uses_governed_refs_not_the_sidecar_path(tmp_path):
+@pytest.mark.parametrize("assertion", ["", " = 51"])
+def test_config_coverage_uses_governed_refs_not_the_sidecar_path(
+    tmp_path, assertion
+):
     _write(tmp_path, "workflow/config/CONTRACTS", """
-        @sc [decision:top_choice,governs:a.sex#KEY;b.ini#S.SIZE] config-coupling
+        @sc [decision:top_choice,governs:a.sex#UNRECORDED;b.ini#S.SIZE] config-coupling
         Prose.
 
         @sc [decision:stage.inner_choice,governs:a.sex#OTHER] off-record-key
@@ -283,7 +286,7 @@ def test_config_coverage_uses_governed_refs_not_the_sidecar_path(tmp_path):
     record = {
         "decisions": {
             "top_choice": {
-                "rationale": "Anchor: workflow/config/b.ini#S.SIZE."
+                "rationale": f"Anchor: workflow/config/b.ini#S.SIZE{assertion}."
             },
             "uncovered": {},
         },
