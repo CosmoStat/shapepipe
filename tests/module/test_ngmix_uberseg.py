@@ -6,10 +6,10 @@ Covers the ``BLEND_HANDLING = uberseg`` option added to the ngmix module:
   Geometry assertions on a synthetic two-object stamp: neighbour-side pixels
   are zeroed, the surviving central core is a *single connected* region (the
   emergent "circularisation"), and the neighbour footprint is fully removed.
-* :func:`prepare_ngmix_weights` — the ``noisefill`` default is byte-for-byte
-  unchanged (asserted against an independent recomputation of the legacy
-  three-line noise-fill on a shared RNG), while ``uberseg`` hard-masks the
-  weight (weight -> 0) and leaves the image untouched.
+* :func:`prepare_ngmix_weights` under ``uberseg`` — neighbour-side pixels
+  lose their weight and keep their raw image values, while defect pixels are
+  noise-filled as under any blend handling (the defect fill itself is covered
+  in ``test_ngmix_defect_fill.py``).
 * The error contract when ``uberseg`` is selected without a segmentation map
   (the seg-map source is plumbing-gated upstream).
 """
@@ -226,7 +226,7 @@ def test_uberseg_matches_bruteforce_nearest_segment():
     npt.assert_array_equal(out, brute)
 
 
-# --- prepare_ngmix_weights: default unchanged, uberseg hard-masks ----------
+# --- prepare_ngmix_weights: uberseg zeroes neighbour weights only ---------
 
 def _gal_flag_weight(npix=41, seed=7):
     rng = np.random.default_rng(seed)
@@ -237,32 +237,6 @@ def _gal_flag_weight(npix=41, seed=7):
     flag[5, 5] = 1
     flag[30, 12] = 2
     return gal, flag, weight
-
-
-def test_noisefill_default_is_byte_identical_to_legacy():
-    """The default path reproduces the legacy three-line noise-fill exactly
-    (same RNG stream): masked pixels replaced by noise, weight 1/sigma^2."""
-    gal, flag, weight = _gal_flag_weight()
-
-    gal_out, w_out, noise_out = prepare_ngmix_weights(
-        gal, weight, flag, np.random.RandomState(123),
-    )
-
-    # Independent recomputation of the legacy algorithm on the same stream.
-    from modopt.math.stats import sigma_mad
-    rng = np.random.RandomState(123)
-    mask = np.copy(weight) != 0
-    mask[flag != 0] = False
-    sig = sigma_mad(gal)
-    w_exp = mask.astype(float) / sig ** 2
-    noise_exp = rng.standard_normal(gal.shape) * sig
-    noise_gal = rng.standard_normal(gal.shape) * sig
-    gal_exp = np.copy(gal)
-    gal_exp[~mask] = noise_gal[~mask]
-
-    npt.assert_array_equal(gal_out, gal_exp)
-    npt.assert_array_equal(w_out, w_exp)
-    npt.assert_array_equal(noise_out, noise_exp)
 
 
 def test_noisefill_ignores_seg_and_dilate_kwargs():
@@ -282,9 +256,15 @@ def test_noisefill_ignores_seg_and_dilate_kwargs():
         npt.assert_array_equal(a, b)
 
 
-def test_uberseg_hard_masks_weight_and_leaves_image_untouched():
-    """uberseg: image returned untouched, weight zeroed on neighbour-side and
-    flagged pixels, positive on the central core."""
+def test_uberseg_fills_defects_and_leaves_neighbour_pixels_raw():
+    """uberseg: flagged pixels are noise-filled at weight 0; neighbour-side
+    pixels get weight 0 and keep their raw image values; the central core
+    keeps weight and image.
+
+    Failure modes: the defect fill is skipped under uberseg, so raw bad
+    pixels reach metacal; or the neighbour side is noise-filled
+    (defects-filled-neighbours-raw).
+    """
     npix = 41
     gal, flag, weight = _gal_flag_weight(npix=npix)
     seg, centre, neigh = two_object_seg(npix=npix, sep=12)
@@ -294,13 +274,16 @@ def test_uberseg_hard_masks_weight_and_leaves_image_untouched():
         blend_handling="uberseg", seg=seg, object_number=1,
     )
 
-    # Image untouched under uberseg (no noise fill).
-    npt.assert_array_equal(gal_out, gal)
-    # Neighbour footprint hard-masked; central centre kept.
+    # Flagged pixels: zero weight, image replaced by noise.
+    for pix in [(5, 5), (30, 12)]:
+        assert w_out[pix] == 0.0
+        assert gal_out[pix] != gal[pix]
+    # Neighbour footprint: zero weight, raw image (never noise-filled).
     assert np.all(w_out[seg == 2] == 0.0)
+    npt.assert_array_equal(gal_out[seg == 2], gal[seg == 2])
+    # Central core: weight and image untouched.
     assert w_out[centre] > 0.0
-    # Flagged bad pixels remain at weight 0 (folded into the base mask).
-    assert w_out[5, 5] == 0.0
+    assert gal_out[centre] == gal[centre]
 
 
 def test_uberseg_requires_seg_and_object_number():
@@ -422,3 +405,11 @@ def test_runner_missing_seg_vignet_file_raises(tmp_path):
             "NGMIX_RUNNER",
             _RecordingLogger(),
         )
+
+
+def test_retired_noisefill_name_is_rejected():
+    """Do not silently interpret the retired neighbour option."""
+    with pytest.raises(ValueError, match="noisefill"):
+        prepare_ngmix_weights(np.ones((5, 5)), np.ones((5, 5)),
+                              np.zeros((5, 5)), np.random.RandomState(3),
+                              blend_handling="noisefill")
