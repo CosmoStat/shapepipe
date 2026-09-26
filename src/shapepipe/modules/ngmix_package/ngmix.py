@@ -180,6 +180,57 @@ def log_run_health(w_log, count, n_fitted, n_flagged):
         )
 
 
+def check_wcs_centroid_offset(centroid_source, tile_cat, gal_vign_cat):
+    """Check WCS Centroid Offset.
+
+    Fail once, up front, when ``centroid_source="wcs"`` would have no
+    coadd-centroid offset to place the galaxy Jacobian at.
+
+    @sc [label:coupling] wcs-centroid-needs-offset
+    ``centroid_source="wcs"`` reads the ``OFFSET`` the stamp extractor
+    (:func:`shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps`)
+    writes into every vignette epoch entry; vignettes cut before that
+    extractor carry none. Left unchecked, :func:`make_ngmix_observation`
+    raises for every object in turn and :meth:`Ngmix.process`'s per-object
+    exception handling turns the whole tile into a silently empty
+    catalogue. OFFSET is a property of the extraction run, not of any one
+    object, so the first object with epochs speaks for the whole vignette
+    file: checking it is enough, and scanning every object would only cost
+    more sqlitedict unpickling for the same answer.
+
+    Parameters
+    ----------
+    centroid_source : {"wcs", "hsm"}
+        The configured centroid source; a no-op unless it is ``"wcs"``.
+    tile_cat : Tile_cat
+        Tile catalogue, read for its object ID order.
+    gal_vign_cat : Mapping
+        Galaxy vignette store, keyed by ``str(obj_id)``.
+
+    Raises
+    ------
+    ValueError
+        If ``centroid_source == "wcs"`` and the first object with epochs
+        has an epoch entry with no ``OFFSET``.
+    """
+    if centroid_source != "wcs":
+        return
+    for obj_id in tile_cat.obj_id:
+        gal_obj = gal_vign_cat[str(obj_id)]
+        if gal_obj == 'empty' or not gal_obj:
+            continue
+        first_epoch = next(iter(gal_obj.values()))
+        if 'OFFSET' not in first_epoch:
+            raise ValueError(
+                "centroid_source='wcs' requires the coadd-centroid OFFSET"
+                " the stamp extractor writes into every vignette epoch,"
+                " but this tile's vignettes carry none: re-extract the"
+                " stamps with the current vignetmaker, or set"
+                " centroid_source='hsm'."
+            )
+        return
+
+
 def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     """Build ngmix joint prior for a 6-parameter galaxy model.
 
@@ -1068,9 +1119,20 @@ class Ngmix(object):
         dict
             Dictionary containing the NGMIX metacal results
 
+        Raises
+        ------
+        ValueError
+            If ``centroid_source == "wcs"`` and the vignette catalogue
+            carries no coadd-centroid OFFSET (see
+            :func:`check_wcs_centroid_offset`).
+
         """
         tile_cat = Tile_cat(self._tile_cat_path, self._seg_cat_path)
         vignet_cat = self._vignet_cat
+
+        check_wcs_centroid_offset(
+            self._centroid_source, tile_cat, vignet_cat.gal_vign_cat
+        )
 
         final_res = []
 

@@ -614,6 +614,89 @@ def test_process_survives_a_tile_with_nothing_to_fit(tmp_path):
         assert len(hdul["NOSHEAR"].data) == 0
 
 
+def _write_tile_cat_with_one_object(tmp_path):
+    """A tile catalogue with a single object, for the OFFSET-check tests."""
+    tile_cat = tmp_path / "tile_cat.fits"
+    objects = fits.BinTableHDU.from_columns(
+        [
+            fits.Column(name="NUMBER", format="J", array=np.array([1])),
+            fits.Column(name="XWIN_WORLD", format="D", array=np.zeros(1)),
+            fits.Column(name="YWIN_WORLD", format="D", array=np.zeros(1)),
+        ],
+        name="LDAC_OBJECTS",
+    )
+    imhead = fits.BinTableHDU.from_columns(
+        [fits.Column(name="Field Header Card", format="1A", array=["x"])],
+        name="LDAC_IMHEAD",
+    )
+    fits.HDUList([fits.PrimaryHDU(), imhead, objects]).writeto(tile_cat)
+    return tile_cat
+
+
+def _ngmix_with_offsetless_vignette(tmp_path, centroid_source):
+    """One object whose galaxy vignette has an epoch entry with no OFFSET.
+    Its PSF is marked 'empty', so a run that reaches the per-object loop
+    skips the object cleanly instead of failing for some other reason.
+    """
+    tile_cat = _write_tile_cat_with_one_object(tmp_path)
+
+    sqlite_paths = []
+    for name in ("gal", "bkg", "psf", "weight", "flag", "headers"):
+        path = str(tmp_path / f"{name}.sqlite")
+        db = SqliteDict(path)
+        if name == "gal":
+            db["1"] = {"expA-1": {"VIGNET": np.ones((5, 5))}}
+        if name == "psf":
+            db["1"] = "empty"
+        db.commit()
+        db.close()
+        sqlite_paths.append(path)
+
+    return Ngmix(
+        [str(tile_cat)] + sqlite_paths[:5],
+        str(tmp_path),
+        "-001-001",
+        30.0,
+        0.186,
+        sqlite_paths[5],
+        _RecordingLogger(),
+        centroid_source=centroid_source,
+    )
+
+
+def test_process_raises_before_any_fit_when_wcs_offset_is_missing(tmp_path):
+    """Contract wcs-centroid-needs-offset, through ``Ngmix.process``.
+
+    Vignettes cut before the OFFSET-writing stamp extractor carry no
+    OFFSET. Under the default ``centroid_source="wcs"`` this must raise
+    once, up front -- not disappear into the per-object try/except that
+    would otherwise turn a wholesale failure into a silently empty
+    catalogue. The fixture's PSF store marks the object 'empty', so if the
+    check did not run first, ``process`` would simply skip the object and
+    return cleanly rather than raising at all.
+    """
+    ngmix = _ngmix_with_offsetless_vignette(tmp_path, centroid_source="wcs")
+
+    with pytest.raises(ValueError, match="OFFSET"):
+        ngmix.process()
+
+
+def test_process_ignores_missing_offset_under_hsm(tmp_path):
+    """Contract wcs-centroid-needs-offset: a no-op under ``centroid_source=
+    "hsm"``, which never reads OFFSET.
+
+    The same offset-less vignette that raises under "wcs" must not trip the
+    check under "hsm": the object is simply skipped (its PSF is marked
+    'empty') and the run completes.
+    """
+    ngmix = _ngmix_with_offsetless_vignette(tmp_path, centroid_source="hsm")
+
+    ngmix.process()
+
+    with fits.open(ngmix.get_output_path(str(tmp_path))) as hdul:
+        assert len(hdul["NOSHEAR"].data) == 0
+
+
 def test_average_multiepoch_psf_skips_failed_psf_epochs():
     """A failed-PSF epoch must be skipped, not KeyError the whole object.
 
