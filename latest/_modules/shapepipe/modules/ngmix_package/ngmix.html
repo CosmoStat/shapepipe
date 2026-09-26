@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="25 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="26 Sep, 2026"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -864,6 +864,10 @@
         <span class="c1"># stamp so the overlay stays registered.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">segs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">jacobs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Per-epoch sub-pixel [row, col] coadd-centroid offset propagated from</span>
+        <span class="c1"># the stamp extractor, used only by the "wcs" centroid source (skipped</span>
+        <span class="c1"># for the default "hsm" path).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offsets</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Per-epoch full WCS and the object's sky position, used only by the</span>
         <span class="c1"># "wcs" centroid source (skipped for the default "hsm" path).</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1880,6 +1884,14 @@
         <span class="k">if</span> <span class="n">tile_seg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">stamp</span><span class="o">.</span><span class="n">segs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_seg</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">jacobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jacob</span><span class="p">)</span>
+        <span class="c1"># Coadd-centroid offset the stamp extractor used, propagated on the</span>
+        <span class="c1"># galaxy vignette. Consumed only by the "wcs" centroid source (see</span>
+        <span class="c1"># make_ngmix_observation), which raises if it is missing; the "hsm"</span>
+        <span class="c1"># path ignores it, so read it leniently rather than coupling hsm to a</span>
+        <span class="c1"># field it never uses.</span>
+        <span class="n">stamp</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">vignet</span><span class="o">.</span><span class="n">gal_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)][</span><span class="n">expccd_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'OFFSET'</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="c1"># For the "wcs" centroid source (see make_ngmix_observation).</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_wcs</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">i_tile</span><span class="p">])</span>
@@ -2314,7 +2326,7 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">make_ngmix_observation</span><span class="p">(</span>
     <span class="n">gal</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">psf</span><span class="p">,</span> <span class="n">wcs</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span>
-    <span class="n">bkg_rms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">"hsm"</span><span class="p">,</span> <span class="n">wcs_full</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ra</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">bkg_rms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">"hsm"</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">blend_handling</span><span class="o">=</span><span class="s2">"noisefill"</span><span class="p">,</span> <span class="n">seg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
 <span class="p">):</span>
@@ -2328,11 +2340,15 @@
 <span class="sd">      measured from the stamp. Robust for **galaxies**: it follows the actual</span>
 <span class="sd">      light and so the centroid prior (centered at the Jacobian origin) does</span>
 <span class="sd">      not bias an object that is offset from the stamp center.</span>
-<span class="sd">    * ``"wcs"`` — place the origin at the object's catalog sky position,</span>
-<span class="sd">      projected through the WCS to a sub-pixel pixel offset from the stamp</span>
+<span class="sd">    * ``"wcs"`` — the **coadd centroid** (Axel, #767): place the origin at the</span>
+<span class="sd">      object's catalog sky position as a sub-pixel offset from the stamp</span>
 <span class="sd">      center, with no shape measurement. Better for **stars**: their HSM</span>
 <span class="sd">      moments are noisy, so trusting the astrometry is more stable than</span>
-<span class="sd">      re-measuring the centroid.</span>
+<span class="sd">      re-measuring the centroid. The offset is not recomputed here — it is the</span>
+<span class="sd">      value the stamp extractor already used to round the extraction pixel</span>
+<span class="sd">      (:func:`shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps`),</span>
+<span class="sd">      propagated on the vignette. One projection, one rounding: the extraction</span>
+<span class="sd">      and the centroid prior cannot disagree near a rounding tie.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -2349,12 +2365,10 @@
 <span class="sd">        Per-pixel background RMS map.</span>
 <span class="sd">    centroid_source : {"hsm", "wcs"}, optional</span>
 <span class="sd">        How to place the galaxy Jacobian origin; the default is ``"hsm"``.</span>
-<span class="sd">    wcs_full : astropy.wcs.WCS, optional</span>
-<span class="sd">        Full exposure WCS for the object's CCD. Required for</span>
-<span class="sd">        ``centroid_source="wcs"`` (ignored for ``"hsm"``).</span>
-<span class="sd">    ra, dec : float, optional</span>
-<span class="sd">        Object sky position in degrees. Required for</span>
-<span class="sd">        ``centroid_source="wcs"`` (ignored for ``"hsm"``).</span>
+<span class="sd">    offset : array_like, optional</span>
+<span class="sd">        Sub-pixel ``[row, col]`` coadd-centroid offset propagated from the</span>
+<span class="sd">        stamp extractor. Required for ``centroid_source="wcs"`` (ignored for</span>
+<span class="sd">        ``"hsm"``).</span>
 <span class="sd">    blend_handling : {"noisefill", "uberseg"}, optional</span>
 <span class="sd">        Neighbour treatment passed through to :func:`prepare_ngmix_weights`;</span>
 <span class="sd">        the default ``"noisefill"`` is the historical behaviour.</span>
@@ -2412,16 +2426,20 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">cen_row</span><span class="p">,</span> <span class="n">cen_col</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span>
     <span class="k">elif</span> <span class="n">centroid_source</span> <span class="o">==</span> <span class="s2">"wcs"</span><span class="p">:</span>
-        <span class="c1"># Place the origin at the catalog sky position projected through the</span>
-        <span class="c1"># WCS — no shape measurement. Stars have noisy HSM moments, so trust</span>
-        <span class="c1"># the astrometry instead of re-measuring the centroid.</span>
-        <span class="n">g_wcs</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">fitswcs</span><span class="o">.</span><span class="n">AstropyWCS</span><span class="p">(</span><span class="n">wcs</span><span class="o">=</span><span class="n">wcs_full</span><span class="p">)</span>
-        <span class="n">world_pos</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">CelestialCoord</span><span class="p">(</span>
-            <span class="n">ra</span> <span class="o">*</span> <span class="n">galsim</span><span class="o">.</span><span class="n">degrees</span><span class="p">,</span> <span class="n">dec</span> <span class="o">*</span> <span class="n">galsim</span><span class="o">.</span><span class="n">degrees</span>
-        <span class="p">)</span>
-        <span class="n">pos</span> <span class="o">=</span> <span class="n">g_wcs</span><span class="o">.</span><span class="n">toImage</span><span class="p">(</span><span class="n">world_pos</span><span class="p">)</span>
-        <span class="n">cen_col</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-        <span class="n">cen_row</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="c1"># Coadd centroid: use the sub-pixel offset the stamp extractor already</span>
+        <span class="c1"># computed and rounded against (propagated on the vignette), rather</span>
+        <span class="c1"># than re-projecting the sky position through the WCS and re-rounding.</span>
+        <span class="c1"># This is the fix for #767 — one projection, one rounding, so a</span>
+        <span class="c1"># milli-pixel WCS disagreement can no longer flip a rounding tie and</span>
+        <span class="c1"># put the prior a whole pixel off.</span>
+        <span class="k">if</span> <span class="n">offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"centroid_source='wcs' requires the coadd-centroid offset "</span>
+                <span class="o">+</span> <span class="s2">"propagated from the stamp extractor, but none was found on "</span>
+                <span class="o">+</span> <span class="s2">"the vignette (were the stamps made before in-house "</span>
+                <span class="o">+</span> <span class="s2">"extraction landed?)"</span>
+            <span class="p">)</span>
+        <span class="n">cen_row</span><span class="p">,</span> <span class="n">cen_col</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">offset</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">offset</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"Unknown centroid_source '</span><span class="si">{</span><span class="n">centroid_source</span><span class="si">}</span><span class="s2">'; expected"</span>
@@ -2704,9 +2722,7 @@
             <span class="n">rng</span><span class="p">,</span>
             <span class="n">bkg_rms</span><span class="o">=</span><span class="n">bkg_rms</span><span class="p">,</span>
             <span class="n">centroid_source</span><span class="o">=</span><span class="n">centroid_source</span><span class="p">,</span>
-            <span class="n">wcs_full</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">wcs</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">ra</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">dec</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">dec</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">offset</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">offsets</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">offsets</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">blend_handling</span><span class="o">=</span><span class="n">blend_handling</span><span class="p">,</span>
             <span class="n">seg</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">segs</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">segs</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">object_number</span><span class="o">=</span><span class="n">object_number</span><span class="p">,</span>
@@ -2806,7 +2822,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 25 Sep, 2026.
+  Last updated on 26 Sep, 2026.
   <br/>
 </p>
   </div>

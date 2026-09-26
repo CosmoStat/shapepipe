@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="25 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="26 Sep, 2026"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -568,10 +568,81 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.wcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">WCS</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sf_tools.image.stamp</span><span class="w"> </span><span class="kn">import</span> <span class="n">FetchStamps</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlitedict</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteDict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
+
+
+<div class="viewcode-block" id="get_stamps">
+<a class="viewcode-back" href="../../../../shapepipe.modules.vignetmaker_package.vignetmaker.html#shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_stamps</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">rad</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Get Stamps.</span>
+
+<span class="sd">    Extract postage stamps and record their sub-pixel centring.</span>
+
+<span class="sd">    The image is zero-padded by ``rad`` on every side and a</span>
+<span class="sd">    ``(2 * rad + 1, 2 * rad + 1)`` stamp is sliced around the integer pixel</span>
+<span class="sd">    nearest each position (``numpy.round``). The stamp values are</span>
+<span class="sd">    bit-identical to the ``sf_tools.image.stamp.FetchStamps`` this replaces</span>
+<span class="sd">    for in-bounds positions; unlike ``FetchStamps``, an out-of-bounds centre</span>
+<span class="sd">    raises rather than being silently wrapped modulo the image shape.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : numpy.ndarray</span>
+<span class="sd">        2D image array to extract from</span>
+<span class="sd">    positions : numpy.ndarray</span>
+<span class="sd">        ``(N, 2)`` array of 0-indexed ``[row, col]`` float positions</span>
+<span class="sd">    rad : int</span>
+<span class="sd">        Stamp radius; stamps are ``2 * rad + 1`` pixels on a side</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    stamps : numpy.ndarray</span>
+<span class="sd">        ``(N, 2 * rad + 1, 2 * rad + 1)`` array of extracted stamps</span>
+<span class="sd">    int_pos : numpy.ndarray</span>
+<span class="sd">        ``(N, 2)`` integer array of the rounded ``[row, col]`` pixel each</span>
+<span class="sd">        stamp is centred on</span>
+<span class="sd">    offsets : numpy.ndarray</span>
+<span class="sd">        ``(N, 2)`` float array of the sub-pixel ``[row, col]`` offset</span>
+<span class="sd">        (``positions - int_pos``), in ``[-0.5, 0.5]``. This is the centroid</span>
+<span class="sd">        prior consumed downstream by the ngmix ``"wcs"`` (coadd) centroid</span>
+<span class="sd">        source, so the stamp and the prior share a single rounding and cannot</span>
+<span class="sd">        disagree.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``positions`` is not ``(N, 2)`` or any stamp centre rounds to a</span>
+<span class="sd">        pixel outside the image.</span>
+
+<span class="sd">    """</span>
+    <span class="n">rad</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rad</span><span class="p">)</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">positions</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">positions</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">positions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"positions must have shape (N, 2)"</span><span class="p">)</span>
+
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">int_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">offsets</span> <span class="o">=</span> <span class="n">positions</span> <span class="o">-</span> <span class="n">int_pos</span>
+
+    <span class="n">out_of_bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">int_pos</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">int_pos</span> <span class="o">&gt;=</span> <span class="n">shape</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">out_of_bounds</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Stamp centre(s) fall outside the image (shape </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">): "</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">positions</span><span class="p">[</span><span class="n">out_of_bounds</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+
+    <span class="n">padded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">((</span><span class="n">rad</span><span class="p">,</span> <span class="n">rad</span><span class="p">),</span> <span class="p">(</span><span class="n">rad</span><span class="p">,</span> <span class="n">rad</span><span class="p">)),</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"constant"</span><span class="p">)</span>
+    <span class="n">stamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">padded</span><span class="p">[</span><span class="n">row</span> <span class="p">:</span> <span class="n">row</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">rad</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">col</span> <span class="p">:</span> <span class="n">col</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">rad</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">int_pos</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">stamps</span><span class="p">,</span> <span class="n">int_pos</span><span class="p">,</span> <span class="n">offsets</span></div>
+
 
 
 <div class="viewcode-block" id="VignetMaker">
@@ -652,7 +723,10 @@
                     <span class="o">+</span> <span class="s2">"'SPHE' (spherical world coordinates))"</span>
                 <span class="p">)</span>
 
-            <span class="n">vign</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_stamp</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">rad</span><span class="p">)</span>
+            <span class="c1"># Single-epoch (tile) path: the coadd-centroid offset is not</span>
+            <span class="c1"># consumed here (only the multi-epoch path feeds the ngmix</span>
+            <span class="c1"># centroid prior), so the extraction bookkeeping is discarded.</span>
+            <span class="n">vign</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_stamp</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">rad</span><span class="p">)</span>
 
             <span class="n">save_vignet</span><span class="p">(</span>
                 <span class="n">vign</span><span class="p">,</span>
@@ -756,8 +830,13 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        numpy.ndarray</span>
+<span class="sd">        stamps : numpy.ndarray</span>
 <span class="sd">            Array containing the vignets</span>
+<span class="sd">        int_pos : numpy.ndarray</span>
+<span class="sd">            ``(N, 2)`` rounded ``[row, col]`` extraction pixels</span>
+<span class="sd">        offsets : numpy.ndarray</span>
+<span class="sd">            ``(N, 2)`` sub-pixel ``[row, col]`` offsets (see</span>
+<span class="sd">            :func:`get_stamps`)</span>
 
 <span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
@@ -781,12 +860,7 @@
             <span class="k">raise</span>
         <span class="n">img_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-        <span class="n">fs</span> <span class="o">=</span> <span class="n">FetchStamps</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">rad</span><span class="p">))</span>
-        <span class="n">fs</span><span class="o">.</span><span class="n">get_pixels</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
-
-        <span class="n">vign</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">vign</span></div>
+        <span class="k">return</span> <span class="n">get_stamps</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">rad</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="VignetMaker._get_stamp_me">
@@ -839,6 +913,8 @@
             <span class="n">array_vign</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">array_id</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">array_exp_name</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">array_offset</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">array_int_pos</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="k">for</span> <span class="n">ccd</span> <span class="ow">in</span> <span class="n">ccd_list</span><span class="p">:</span>
 
@@ -871,12 +947,28 @@
                 <span class="p">)</span><span class="o">.</span><span class="n">T</span>
                 <span class="n">pos</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pos</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
 
-                <span class="n">tmp_vign</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_stamp</span><span class="p">(</span><span class="n">img_path</span><span class="p">,</span> <span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rad</span><span class="p">)</span>
+                <span class="n">tmp_vign</span><span class="p">,</span> <span class="n">tmp_int_pos</span><span class="p">,</span> <span class="n">tmp_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_stamp</span><span class="p">(</span>
+                    <span class="n">img_path</span><span class="p">,</span> <span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rad</span>
+                <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">array_vign</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">array_vign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tmp_vign</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">array_vign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">array_vign</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tmp_vign</span><span class="p">)))</span>
+
+                <span class="k">if</span> <span class="n">array_offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">array_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tmp_offset</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">array_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">array_offset</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tmp_offset</span><span class="p">))</span>
+                    <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">array_int_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">array_int_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tmp_int_pos</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">array_int_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">array_int_pos</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tmp_int_pos</span><span class="p">))</span>
+                    <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">array_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">array_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)</span>
@@ -892,7 +984,15 @@
                     <span class="n">array_exp_name</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">array_exp_name</span><span class="p">,</span> <span class="n">exp_name_tmp</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="n">array_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">final_list</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">array_id</span><span class="p">,</span> <span class="n">array_vign</span><span class="p">,</span> <span class="n">array_exp_name</span><span class="p">])</span>
+                <span class="n">final_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">array_id</span><span class="p">,</span>
+                        <span class="n">array_vign</span><span class="p">,</span>
+                        <span class="n">array_exp_name</span><span class="p">,</span>
+                        <span class="n">array_offset</span><span class="p">,</span>
+                        <span class="n">array_int_pos</span><span class="p">,</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">"All CCDs skipped for exposure </span><span class="si">{</span><span class="n">exp_name</span><span class="si">}</span><span class="s2"> "</span>
@@ -916,6 +1016,20 @@
                     <span class="n">index</span> <span class="o">=</span> <span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
                     <span class="n">output_dict</span><span class="p">[</span><span class="n">id_tmp</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
                     <span class="n">output_dict</span><span class="p">[</span><span class="n">id_tmp</span><span class="p">][</span><span class="n">index</span><span class="p">][</span><span class="s2">"VIGNET"</span><span class="p">]</span> <span class="o">=</span> <span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span>
+                        <span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="p">]</span>
+                    <span class="c1"># Sub-pixel [row, col] offset of the coadd centroid from</span>
+                    <span class="c1"># the integer pixel this stamp was extracted around, plus</span>
+                    <span class="c1"># that integer pixel itself. Both ride with the vignette</span>
+                    <span class="c1"># (no sidecar file); OFFSET is consumed by the ngmix "wcs"</span>
+                    <span class="c1"># (coadd) centroid source so the extraction and the</span>
+                    <span class="c1"># centroid prior share one rounding (see #767), and</span>
+                    <span class="c1"># INT_POS + OFFSET reconstruct the absolute exposure</span>
+                    <span class="c1"># centroid for diagnostics.</span>
+                    <span class="n">output_dict</span><span class="p">[</span><span class="n">id_tmp</span><span class="p">][</span><span class="n">index</span><span class="p">][</span><span class="s2">"OFFSET"</span><span class="p">]</span> <span class="o">=</span> <span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span>
+                        <span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="p">]</span>
+                    <span class="n">output_dict</span><span class="p">[</span><span class="n">id_tmp</span><span class="p">][</span><span class="n">index</span><span class="p">][</span><span class="s2">"INT_POS"</span><span class="p">]</span> <span class="o">=</span> <span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">4</span><span class="p">][</span>
                         <span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="p">]</span>
                     <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -1130,7 +1244,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 25 Sep, 2026.
+  Last updated on 26 Sep, 2026.
   <br/>
 </p>
   </div>

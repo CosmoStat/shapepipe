@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="25 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="26 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -1378,7 +1378,7 @@ for <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&q
 
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation">
-<span class="sig-name descname"><span class="pre">make_ngmix_observation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_rms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hsm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs_full</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#make_ngmix_observation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">make_ngmix_observation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_rms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hsm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#make_ngmix_observation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="Link to this definition">#</a></dt>
 <dd><p>Build an ngmix Observation for a single galaxy epoch.</p>
 <p>The galaxy Jacobian origin sets where the centroid prior is centered, so
 it must sit on the object. Two ways to place it, selected by
@@ -1388,11 +1388,15 @@ it must sit on the object. Two ways to place it, selected by
 measured from the stamp. Robust for <strong>galaxies</strong>: it follows the actual
 light and so the centroid prior (centered at the Jacobian origin) does
 not bias an object that is offset from the stamp center.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">&quot;wcs&quot;</span></code> — place the origin at the object’s catalog sky position,
-projected through the WCS to a sub-pixel pixel offset from the stamp
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;wcs&quot;</span></code> — the <strong>coadd centroid</strong> (Axel, #767): place the origin at the
+object’s catalog sky position as a sub-pixel offset from the stamp
 center, with no shape measurement. Better for <strong>stars</strong>: their HSM
 moments are noisy, so trusting the astrometry is more stable than
-re-measuring the centroid.</p></li>
+re-measuring the centroid. The offset is not recomputed here — it is the
+value the stamp extractor already used to round the extraction pixel
+(<a class="reference internal" href="shapepipe.modules.vignetmaker_package.vignetmaker.html#shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps" title="shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps"><code class="xref py py-func docutils literal notranslate"><span class="pre">shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps()</span></code></a>),
+propagated on the vignette. One projection, one rounding: the extraction
+and the centroid prior cannot disagree near a rounding tie.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1406,12 +1410,9 @@ re-measuring the centroid.</p></li>
 <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="xref py py-func docutils literal notranslate"><span class="pre">position_seed()</span></code></a>).</p></li>
 <li><p><strong>bkg_rms</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Per-pixel background RMS map.</p></li>
 <li><p><strong>centroid_source</strong> (<em>{&quot;hsm&quot;</em><em>, </em><em>&quot;wcs&quot;}</em><em>, </em><em>optional</em>) – How to place the galaxy Jacobian origin; the default is <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code>.</p></li>
-<li><p><strong>wcs_full</strong> (<a class="reference external" href="https://docs.astropy.org/en/latest/api/astropy.wcs.WCS.html#astropy.wcs.WCS" title="(in Astropy v8.1)"><em>astropy.wcs.WCS</em></a><em>, </em><em>optional</em>) – Full exposure WCS for the object’s CCD. Required for
-<code class="docutils literal notranslate"><span class="pre">centroid_source=&quot;wcs&quot;</span></code> (ignored for <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code>).</p></li>
-<li><p><strong>ra</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Object sky position in degrees. Required for
-<code class="docutils literal notranslate"><span class="pre">centroid_source=&quot;wcs&quot;</span></code> (ignored for <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code>).</p></li>
-<li><p><strong>dec</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Object sky position in degrees. Required for
-<code class="docutils literal notranslate"><span class="pre">centroid_source=&quot;wcs&quot;</span></code> (ignored for <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code>).</p></li>
+<li><p><strong>offset</strong> (<em>array_like</em><em>, </em><em>optional</em>) – Sub-pixel <code class="docutils literal notranslate"><span class="pre">[row,</span> <span class="pre">col]</span></code> coadd-centroid offset propagated from the
+stamp extractor. Required for <code class="docutils literal notranslate"><span class="pre">centroid_source=&quot;wcs&quot;</span></code> (ignored for
+<code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code>).</p></li>
 <li><p><strong>blend_handling</strong> (<em>{&quot;noisefill&quot;</em><em>, </em><em>&quot;uberseg&quot;}</em><em>, </em><em>optional</em>) – Neighbour treatment passed through to <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a>;
 the default <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> is the historical behaviour.</p></li>
 <li><p><strong>seg</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Segmentation map on the stamp grid. Required for
@@ -1740,7 +1741,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 25 Sep, 2026.
+  Last updated on 26 Sep, 2026.
   <br/>
 </p>
   </div>

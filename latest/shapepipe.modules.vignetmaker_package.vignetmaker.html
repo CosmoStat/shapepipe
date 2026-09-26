@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="25 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="26 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -574,6 +574,7 @@
             </div>
             <nav aria-label="Page">
                 <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps"><code class="docutils literal notranslate"><span class="pre">get_stamps()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.vignetmaker_package.vignetmaker.VignetMaker"><code class="docutils literal notranslate"><span class="pre">VignetMaker</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.vignetmaker_package.vignetmaker.VignetMaker.process"><code class="docutils literal notranslate"><span class="pre">VignetMaker.process()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.vignetmaker_package.vignetmaker.VignetMaker.get_pos"><code class="docutils literal notranslate"><span class="pre">VignetMaker.get_pos()</span></code></a></li>
@@ -607,6 +608,45 @@
 <dd class="field-odd"><p>Axel Guinot</p>
 </dd>
 </dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps">
+<span class="sig-name descname"><span class="pre">get_stamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rad</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/vignetmaker_package/vignetmaker.html#get_stamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps" title="Link to this definition">#</a></dt>
+<dd><p>Get Stamps.</p>
+<p>Extract postage stamps and record their sub-pixel centring.</p>
+<p>The image is zero-padded by <code class="docutils literal notranslate"><span class="pre">rad</span></code> on every side and a
+<code class="docutils literal notranslate"><span class="pre">(2</span> <span class="pre">*</span> <span class="pre">rad</span> <span class="pre">+</span> <span class="pre">1,</span> <span class="pre">2</span> <span class="pre">*</span> <span class="pre">rad</span> <span class="pre">+</span> <span class="pre">1)</span></code> stamp is sliced around the integer pixel
+nearest each position (<code class="docutils literal notranslate"><span class="pre">numpy.round</span></code>). The stamp values are
+bit-identical to the <code class="docutils literal notranslate"><span class="pre">sf_tools.image.stamp.FetchStamps</span></code> this replaces
+for in-bounds positions; unlike <code class="docutils literal notranslate"><span class="pre">FetchStamps</span></code>, an out-of-bounds centre
+raises rather than being silently wrapped modulo the image shape.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – 2D image array to extract from</p></li>
+<li><p><strong>positions</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">2)</span></code> array of 0-indexed <code class="docutils literal notranslate"><span class="pre">[row,</span> <span class="pre">col]</span></code> float positions</p></li>
+<li><p><strong>rad</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Stamp radius; stamps are <code class="docutils literal notranslate"><span class="pre">2</span> <span class="pre">*</span> <span class="pre">rad</span> <span class="pre">+</span> <span class="pre">1</span></code> pixels on a side</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>stamps</strong> (<em>numpy.ndarray</em>) – <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">2</span> <span class="pre">*</span> <span class="pre">rad</span> <span class="pre">+</span> <span class="pre">1,</span> <span class="pre">2</span> <span class="pre">*</span> <span class="pre">rad</span> <span class="pre">+</span> <span class="pre">1)</span></code> array of extracted stamps</p></li>
+<li><p><strong>int_pos</strong> (<em>numpy.ndarray</em>) – <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">2)</span></code> integer array of the rounded <code class="docutils literal notranslate"><span class="pre">[row,</span> <span class="pre">col]</span></code> pixel each
+stamp is centred on</p></li>
+<li><p><strong>offsets</strong> (<em>numpy.ndarray</em>) – <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">2)</span></code> float array of the sub-pixel <code class="docutils literal notranslate"><span class="pre">[row,</span> <span class="pre">col]</span></code> offset
+(<code class="docutils literal notranslate"><span class="pre">positions</span> <span class="pre">-</span> <span class="pre">int_pos</span></code>), in <code class="docutils literal notranslate"><span class="pre">[-0.5,</span> <span class="pre">0.5]</span></code>. This is the centroid
+prior consumed downstream by the ngmix <code class="docutils literal notranslate"><span class="pre">&quot;wcs&quot;</span></code> (coadd) centroid
+source, so the stamp and the prior share a single rounding and cannot
+disagree.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">positions</span></code> is not <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">2)</span></code> or any stamp centre rounds to a
+pixel outside the image.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.vignetmaker_package.vignetmaker.VignetMaker">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">VignetMaker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">galcat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/vignetmaker_package/vignetmaker.html#VignetMaker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.vignetmaker_package.vignetmaker.VignetMaker" title="Link to this definition">#</a></dt>
@@ -695,10 +735,13 @@ image header WCS.</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Array containing the vignets</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>stamps</strong> (<em>numpy.ndarray</em>) – Array containing the vignets</p></li>
+<li><p><strong>int_pos</strong> (<em>numpy.ndarray</em>) – <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">2)</span></code> rounded <code class="docutils literal notranslate"><span class="pre">[row,</span> <span class="pre">col]</span></code> extraction pixels</p></li>
+<li><p><strong>offsets</strong> (<em>numpy.ndarray</em>) – <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">2)</span></code> sub-pixel <code class="docutils literal notranslate"><span class="pre">[row,</span> <span class="pre">col]</span></code> offsets (see
+<a class="reference internal" href="#shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps" title="shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_stamps()</span></code></a>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -866,6 +909,7 @@ Length of outer list has to match image_pattern, or be single item.</p></li>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps"><code class="docutils literal notranslate"><span class="pre">get_stamps()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.vignetmaker_package.vignetmaker.VignetMaker"><code class="docutils literal notranslate"><span class="pre">VignetMaker</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.vignetmaker_package.vignetmaker.VignetMaker.process"><code class="docutils literal notranslate"><span class="pre">VignetMaker.process()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.vignetmaker_package.vignetmaker.VignetMaker.get_pos"><code class="docutils literal notranslate"><span class="pre">VignetMaker.get_pos()</span></code></a></li>
@@ -912,7 +956,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 25 Sep, 2026.
+  Last updated on 26 Sep, 2026.
   <br/>
 </p>
   </div>
