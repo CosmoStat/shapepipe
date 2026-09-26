@@ -11,7 +11,10 @@ import os
 from sqlitedict import SqliteDict
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.ngmix_package.ngmix import Ngmix
+from shapepipe.modules.ngmix_package.ngmix import (
+    EPOCH_MASKED_FRACTION_CUT,
+    Ngmix,
+)
 
 
 @module_runner(
@@ -144,6 +147,15 @@ def ngmix_runner(
     else:
         dilate_neighbour = 1
 
+    # EPOCH_MASKED_FRACTION_CUT (optional): drop an epoch when more than this
+    # fraction of its stamp is masked (the symmetrized defect set above).
+    if config.has_option(module_config_sec, "EPOCH_MASKED_FRACTION_CUT"):
+        epoch_masked_fraction_cut = config.getfloat(
+            module_config_sec, "EPOCH_MASKED_FRACTION_CUT"
+        )
+    else:
+        epoch_masked_fraction_cut = EPOCH_MASKED_FRACTION_CUT
+
     # Check PSF vignets first: if all are empty dicts {}, the exposures for this
     # tile are absent from the PSF dictionary and no shape measurement is possible.
     # This check must come before reading image vignets to avoid a C-level malloc
@@ -199,6 +211,7 @@ def ngmix_runner(
         seg_cat_path=seg_vignet_path,
         dilate_neighbour=dilate_neighbour,
         metacal_psf=metacal_psf,
+        epoch_masked_fraction_cut=epoch_masked_fraction_cut,
     )
 
     # Process ngmix shape measurement and metacalibration

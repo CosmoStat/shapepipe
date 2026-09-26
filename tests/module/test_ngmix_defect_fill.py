@@ -235,3 +235,16 @@ def test_epoch_cut_counts_the_symmetrized_defect_set():
     """
     assert _surviving(_epochs()) == ["2100001-10", "2100002-11"]
 
+
+def test_epoch_cut_threshold_is_the_configured_fraction():
+    """At a 10% cut (the DES Y3/Y6 value), only the clean epoch survives. The
+    3-column band sits under the cut raw (5.9%) but over it symmetrized
+    (22.1%).
+
+    Failure mode: the configured threshold is ignored, or it is applied to
+    the raw mask.
+    """
+    assert _surviving(_epochs(), epoch_masked_fraction_cut=0.1) == [
+        "2100001-10"
+    ]
+

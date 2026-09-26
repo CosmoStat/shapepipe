@@ -27,8 +27,8 @@ from shapepipe.pipeline import file_io
 # Neighbour treatments selectable with the BLEND_HANDLING option.
 BLEND_HANDLINGS = ("noisefill", "uberseg")
 
-# An epoch is dropped when more than this fraction of its stamp is in
-# :func:`defect_mask` (see :func:`prepare_postage_stamps`).
+# Default of the EPOCH_MASKED_FRACTION_CUT option: an epoch is dropped when
+# more than this fraction of its stamp is in :func:`defect_mask`.
 EPOCH_MASKED_FRACTION_CUT = 1 / 3
 
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
@@ -442,6 +442,10 @@ class Ngmix(object):
     dilate_neighbour : int, optional
         Neighbour-mask dilation iterations for ``"uberseg"`` (see
         :func:`uberseg_weight`); the default is ``1``.
+    epoch_masked_fraction_cut : float, optional
+        Drop an epoch when more than this fraction of its stamp is masked
+        (see :func:`prepare_postage_stamps`); the default is
+        ``EPOCH_MASKED_FRACTION_CUT``.
 
     Notes
     -----
@@ -476,6 +480,7 @@ class Ngmix(object):
         seg_cat_path=None,
         dilate_neighbour=1,
         metacal_psf="fitgauss",
+        epoch_masked_fraction_cut=EPOCH_MASKED_FRACTION_CUT,
     ):
 
         # Base count = catalogue + vignets, excluding the f_wcs headers (passed
@@ -545,6 +550,7 @@ class Ngmix(object):
         self._seg_cat_path = seg_cat_path
         self._dilate_neighbour = dilate_neighbour
         self._metacal_psf = metacal_psf
+        self._epoch_masked_fraction_cut = epoch_masked_fraction_cut
 
         self._w_log = w_log
 
@@ -1020,6 +1026,7 @@ class Ngmix(object):
                 self._bkg_sub,
                 psf_obj,
                 gal_obj,
+                epoch_masked_fraction_cut=self._epoch_masked_fraction_cut,
             )
 
             if len(stamp.gals) == 0:
@@ -1156,17 +1163,18 @@ def prepare_postage_stamps(
     bkg_sub=True,
     psf_obj=None,
     gal_obj=None,
+    epoch_masked_fraction_cut=EPOCH_MASKED_FRACTION_CUT,
 ):
     """Gather one object's epoch stamps, dropping heavily masked epochs.
 
     @sc [decision:epoch_masked_fraction_cut,decision:defect_fill] epoch-cut-on-symmetrized-mask
-    An epoch is dropped when more than ``EPOCH_MASKED_FRACTION_CUT`` of its
+    An epoch is dropped when more than ``epoch_masked_fraction_cut`` of its
     stamp lies in :func:`defect_mask`, the symmetrized set that
     :func:`prepare_ngmix_weights` zero-weights and noise-fills. Counting the
     raw mask, or flags alone, would keep epochs whose filled area exceeds the
     cut; the 4-fold OR turns an edge band into a frame of up to four times
-    its area. The cut is 1/3; 10%, the DES Y3 and Y6 value, is the
-    alternative to test.
+    its area. The default is 1/3 (``EPOCH_MASKED_FRACTION_CUT``); 10%, the
+    DES Y3 and Y6 value, is the alternative to test.
 
     Parameters
     ----------
@@ -1182,6 +1190,9 @@ def prepare_postage_stamps(
         Subtract the background vignet; the default is ``True``.
     psf_obj, gal_obj : dict, optional
         The object's PSF and galaxy vignet dicts, if already read.
+    epoch_masked_fraction_cut : float, optional
+        Drop an epoch when more than this fraction of its stamp is in
+        :func:`defect_mask`; the default is ``EPOCH_MASKED_FRACTION_CUT``.
 
     Returns
     -------
@@ -1266,7 +1277,7 @@ def prepare_postage_stamps(
         # Drop the epoch when too much of it would be zero-weighted and
         # noise-filled (epoch-cut-on-symmetrized-mask).
         masked = defect_mask(weight_vign, flag_vign, bkg_rms_vign)
-        if masked.mean() > EPOCH_MASKED_FRACTION_CUT:
+        if masked.mean() > epoch_masked_fraction_cut:
             continue
 
         # One unpickle per exposure (all CCDs), reused across this object's
