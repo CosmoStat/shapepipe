@@ -15,7 +15,8 @@ BASE_RULES = {
     "tile_ngmix", "tile_merge_cats", "tile_make_cat", "clean_tile",
     "final_cat_merge",
 }
-PSF_RULES = {"exp_persist", "star_cat_merge"}
+PSF_RULES = {"exp_persist", "star_cat_merge", "exp_footprint"}
+# coverage_map joins only with coverage.enabled, which the fixture leaves off.
 DEFECT_RULES = {"exp_defect_map", "defect_map_merge"}   # MAPS_DEFECTS: data only
 
 
@@ -42,6 +43,7 @@ def test_clean_exposure_waits_on_persist_iff_psf(campaign, dag):
         ]
         if campaign.psf_model != "fake":
             expected.append(campaign.persist_manifest(exp))
+            expected.append(campaign.exp_manifest(exp, "exp_footprint"))
         if campaign.input_type == "data":
             expected.append(campaign.exp_manifest(exp, "exp_defect_map"))
         assert Counter(map(str, job.input)) == Counter(map(str, expected)), (
