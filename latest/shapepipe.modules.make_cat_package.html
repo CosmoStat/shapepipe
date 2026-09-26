@@ -620,7 +620,10 @@
 previous module runs. This gathers all relevant information on the measured
 galaxies for weak-lensing post-processing. This includes galaxy detection and
 basic measurement parameters, the PSF model at galaxy positions, the
-spread-model classification, and the shape measurement.</p>
+spread-model classification, and the shape measurement. Each object is
+tagged with its source tile via the <code class="docutils literal notranslate"><span class="pre">TILE_ID</span></code> column; objects duplicated
+across overlapping tiles are not deduplicated here, and are left to
+downstream selection.</p>
 </section>
 <section id="module-specific-config-file-entries">
 <h2>Module-specific config file entries<a class="headerlink" href="#module-specific-config-file-entries" title="Link to this heading">#</a></h2>
@@ -644,9 +647,6 @@ is <code class="docutils literal notranslate"><span class="pre">0.01</span></cod
 retained as the extension point for a future estimator family)</p>
 </dd>
 <dt>SAVE_PSF_DATA<span class="classifier">bool, optional</span></dt><dd><p>Save PSF information if <code class="docutils literal notranslate"><span class="pre">True</span></code>; default value is <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
-</dd>
-<dt>TILE_LIST<span class="classifier">str, optional</span></dt><dd><p>Path to list of all tile IDs, used to flag objects in areas of overlap
-between tiles</p>
 </dd>
 </dl>
 </section>
