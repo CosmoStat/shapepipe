@@ -524,13 +524,19 @@ def test_get_mcal_flags_ors_per_type_fit_flags():
 
 
 class _RecordingLogger:
-    """Records ``error`` calls."""
+    """Records ``error`` calls; drops ``info`` and ``warning``."""
 
     def __init__(self):
         self.errors = []
 
     def error(self, msg):
         self.errors.append(msg)
+
+    def info(self, *_args, **_kwargs):
+        pass
+
+    def warning(self, *_args, **_kwargs):
+        pass
 
 
 @pytest.mark.parametrize(
@@ -555,6 +561,57 @@ def test_log_run_health_logs_wholesale_failure_without_raising(
     log_run_health(w_log, count=count, n_fitted=n_fitted, n_flagged=n_flagged)
 
     assert len(w_log.errors) == n_errors
+
+
+def test_process_survives_a_tile_with_nothing_to_fit(tmp_path):
+    """Contract run-health-logs-not-raises, through ``Ngmix.process``.
+
+    A tile whose every object has no stamps (an empty edge tile) fits
+    nothing. ``process`` must log the 0-fitted error and still write its
+    (empty) catalogue, not abort the campaign job.
+    """
+    n_obj = 3
+    tile_cat = tmp_path / "tile_cat.fits"
+    objects = fits.BinTableHDU.from_columns(
+        [
+            fits.Column(name="NUMBER", format="J", array=np.arange(1, n_obj + 1)),
+            fits.Column(name="XWIN_WORLD", format="D", array=np.zeros(n_obj)),
+            fits.Column(name="YWIN_WORLD", format="D", array=np.zeros(n_obj)),
+        ],
+        name="LDAC_OBJECTS",
+    )
+    imhead = fits.BinTableHDU.from_columns(
+        [fits.Column(name="Field Header Card", format="1A", array=["x"])],
+        name="LDAC_IMHEAD",
+    )
+    fits.HDUList([fits.PrimaryHDU(), imhead, objects]).writeto(tile_cat)
+
+    sqlite_paths = []
+    for name in ("gal", "bkg", "psf", "weight", "flag", "headers"):
+        path = str(tmp_path / f"{name}.sqlite")
+        db = SqliteDict(path)
+        if name in ("gal", "psf"):
+            for obj_id in range(1, n_obj + 1):
+                db[str(obj_id)] = "empty"
+            db.commit()
+        db.close()
+        sqlite_paths.append(path)
+
+    w_log = _RecordingLogger()
+    ngmix = Ngmix(
+        [str(tile_cat)] + sqlite_paths[:5],
+        str(tmp_path),
+        "-001-001",
+        30.0,
+        0.186,
+        sqlite_paths[5],
+        w_log,
+    )
+    ngmix.process()
+
+    assert any("0 fitted" in msg for msg in w_log.errors)
+    with fits.open(ngmix.get_output_path(str(tmp_path))) as hdul:
+        assert len(hdul["NOSHEAR"].data) == 0
 
 
 def test_average_multiepoch_psf_skips_failed_psf_epochs():
