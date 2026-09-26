@@ -633,8 +633,8 @@ to spread work across multiple nodes of a cluster. Set <code class="docutils lit
 <p>On a cluster you run ShapePipe from the published image as a standard Apptainer
 <em>hybrid</em> MPI job: the <strong>host</strong> <code class="docutils literal notranslate"><span class="pre">mpirun</span></code>/<code class="docutils literal notranslate"><span class="pre">mpiexec</span></code> launches one container rank per
 slot, and the OpenMPI bundled in the image wires the ranks together.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># one-time: pull the runtime image</span>
-apptainer<span class="w"> </span>pull<span class="w"> </span>shapepipe.sif<span class="w"> </span>docker://ghcr.io/cosmostat/shapepipe:develop-runtime
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># one-time: pull the image</span>
+apptainer<span class="w"> </span>pull<span class="w"> </span>shapepipe.sif<span class="w"> </span>docker://ghcr.io/cosmostat/shapepipe:develop
 
 <span class="c1"># load a host MPI in the same family as the image's OpenMPI (5.0.x), then launch</span>
 module<span class="w"> </span>load<span class="w"> </span>openmpi

@@ -592,18 +592,18 @@
   <section id="running-on-a-cluster">
 <h1>Running on a Cluster<a class="headerlink" href="#running-on-a-cluster" title="Link to this heading">#</a></h1>
 <p>ShapePipe runs the same way on every cluster: <strong>through the container</strong>. You
-pull the slim <code class="docutils literal notranslate"><span class="pre">runtime</span></code> image once, bind-mount your clone, and run
-<code class="docutils literal notranslate"><span class="pre">shapepipe_run</span></code> (or the CANFAR submission tooling) inside it — there is no
-environment to install or activate on the host. This page covers the shared
-pattern, then the specifics for each supported machine.</p>
+pull the image once, bind-mount your clone, and run <code class="docutils literal notranslate"><span class="pre">shapepipe_run</span></code> (or the
+CANFAR submission tooling) inside it — there is no environment to install or
+activate on the host. This page covers the shared pattern, then the specifics
+for each supported machine.</p>
 <p>For what is <em>inside</em> the image and how it is built, see
 <a class="reference internal" href="container.html"><span class="std std-doc">Container Workflow</span></a>.</p>
 <section id="the-pattern">
 <h2>The pattern<a class="headerlink" href="#the-pattern" title="Link to this heading">#</a></h2>
 <p>Three things hold on any cluster:</p>
 <ul class="simple">
-<li><p><strong>The container is the unit of execution.</strong> Pull the runtime image to a SIF
-(<code class="docutils literal notranslate"><span class="pre">apptainer</span> <span class="pre">pull</span> <span class="pre">…</span> <span class="pre">docker://ghcr.io/cosmostat/shapepipe:&lt;tag&gt;-runtime</span></code>) and run
+<li><p><strong>The container is the unit of execution.</strong> Pull the image to a SIF
+(<code class="docutils literal notranslate"><span class="pre">apptainer</span> <span class="pre">pull</span> <span class="pre">…</span> <span class="pre">docker://ghcr.io/cosmostat/shapepipe:&lt;tag&gt;</span></code>) and run
 the pipeline inside it. Nothing else is installed on the host.</p></li>
 <li><p><strong>Bind-mount your clone at the same path.</strong> The config files reference their
 location for the input and output directories; bind-mounting the host clone at
@@ -626,14 +626,14 @@ the bundled single-tile example end to end:</p>
 <span class="nb">export</span><span class="w"> </span><span class="nv">DATA</span><span class="o">=</span>/n17data/<span class="nv">$USER</span><span class="w">                 </span><span class="c1"># adjust to your data partition</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">APPTAINER_CACHEDIR</span><span class="o">=</span><span class="nv">$DATA</span>/.apptainer
 
-<span class="c1"># Pull the runtime image (~850 MB).</span>
-apptainer<span class="w"> </span>pull<span class="w"> </span><span class="s2">"</span><span class="nv">$DATA</span><span class="s2">/shapepipe-runtime.sif"</span><span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>docker://ghcr.io/cosmostat/shapepipe:develop-runtime
+<span class="c1"># Pull the image (~850 MB).</span>
+apptainer<span class="w"> </span>pull<span class="w"> </span><span class="s2">"</span><span class="nv">$DATA</span><span class="s2">/shapepipe.sif"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>docker://ghcr.io/cosmostat/shapepipe:develop
 
 <span class="c1"># Submit. SPDIR is your clone, bind-mounted at the same path inside the</span>
 <span class="c1"># container; SP_IMAGE is the SIF. The same script serves the example and a real</span>
 <span class="c1"># run — point the config inside it at your own pipeline.</span>
-<span class="nv">SP_IMAGE</span><span class="o">=</span><span class="s2">"</span><span class="nv">$DATA</span><span class="s2">/shapepipe-runtime.sif"</span><span class="w"> </span><span class="nv">SPDIR</span><span class="o">=</span><span class="s2">"/path/to/shapepipe"</span><span class="w"> </span><span class="se">\</span>
+<span class="nv">SP_IMAGE</span><span class="o">=</span><span class="s2">"</span><span class="nv">$DATA</span><span class="s2">/shapepipe.sif"</span><span class="w"> </span><span class="nv">SPDIR</span><span class="o">=</span><span class="s2">"/path/to/shapepipe"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>sbatch<span class="w"> </span>example/pbs/candide_smp.sh
 </pre></div>
 </div>

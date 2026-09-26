@@ -574,7 +574,7 @@
             </div>
             <nav aria-label="Page">
                 <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#two-image-targets">Two image targets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#one-image">One image</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#two-ways-to-use-the-image">Two ways to use the image</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#read-only-sif-running-testing-batch">Read-only SIF — running, testing, batch</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#writable-sandbox-development-exploration">Writable sandbox — development, exploration</a></li>
@@ -602,39 +602,20 @@
                   
   <section id="container-workflow">
 <h1>Container Workflow<a class="headerlink" href="#container-workflow" title="Link to this heading">#</a></h1>
-<p>ShapePipe ships as a container image. This page covers the two image
-targets and the three configuration files (<code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>,
-<code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>) that determine what’s inside. For running the image on a batch
-cluster (candide, CANFAR), see <a class="reference internal" href="clusters.html"><span class="std std-doc">Running on a cluster</span></a>.</p>
-<section id="two-image-targets">
-<h2>Two image targets<a class="headerlink" href="#two-image-targets" title="Link to this heading">#</a></h2>
-<p>The Dockerfile builds two flavours of the image from a shared base:</p>
-<div class="pst-scrollable-table-container"><table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Tag</p></th>
-<th class="head"><p>Target</p></th>
-<th class="head"><p>Use case</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:&lt;branch&gt;</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">:develop</span></code>, <code class="docutils literal notranslate"><span class="pre">:latest</span></code>)</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">dev</span></code></p></td>
-<td><p>Interactive work, sandboxed apptainers, CI test runs. Includes everyday CLI tools (<code class="docutils literal notranslate"><span class="pre">vim</span></code>, <code class="docutils literal notranslate"><span class="pre">tmux</span></code>, <code class="docutils literal notranslate"><span class="pre">htop</span></code>, <code class="docutils literal notranslate"><span class="pre">rg</span></code>, <code class="docutils literal notranslate"><span class="pre">fd</span></code>, <code class="docutils literal notranslate"><span class="pre">jq</span></code>, <code class="docutils literal notranslate"><span class="pre">bat</span></code>, <code class="docutils literal notranslate"><span class="pre">less</span></code>, <code class="docutils literal notranslate"><span class="pre">git-lfs</span></code>, …) and <strong>all</strong> Python extras (test, lint, doc, jupyter, fitsio, release).</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:&lt;branch&gt;-runtime</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">runtime</span></code></p></td>
-<td><p>Canfar batch jobs, downstream <code class="docutils literal notranslate"><span class="pre">FROM</span></code> clauses. Slim — no interactive tools, only the <code class="docutils literal notranslate"><span class="pre">jupyter</span></code> and <code class="docutils literal notranslate"><span class="pre">fitsio</span></code> Python extras on top of core deps.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>Both share the <code class="docutils literal notranslate"><span class="pre">base</span></code> stage (system libraries + uv + lockfile copy), so
-the heavy work happens once during the build.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Default = dev (everyday image)</span>
-apptainer<span class="w"> </span>build<span class="w"> </span>--sandbox<span class="w"> </span>shapepipe<span class="w"> </span>docker://ghcr.io/cosmostat/shapepipe:develop
-
-<span class="c1"># Slim runtime image for batch jobs</span>
-docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ghcr.io/cosmostat/shapepipe:develop-runtime<span class="w"> </span>shapepipe_run<span class="w"> </span>-c<span class="w"> </span>/app/example/config.ini
+<p>ShapePipe ships as a single container image. This page covers what’s in it
+and the three configuration files (<code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>, <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>)
+that determine that. For running the image on a batch cluster (candide,
+CANFAR), see <a class="reference internal" href="clusters.html"><span class="std std-doc">Running on a cluster</span></a>.</p>
+<section id="one-image">
+<h2>One image<a class="headerlink" href="#one-image" title="Link to this heading">#</a></h2>
+<p>Every tag (<code class="docutils literal notranslate"><span class="pre">:develop</span></code>, a feature branch, <code class="docutils literal notranslate"><span class="pre">:v1.1.0</span></code>, …) is the same build:
+everyday CLI tools (<code class="docutils literal notranslate"><span class="pre">vim</span></code>, <code class="docutils literal notranslate"><span class="pre">tmux</span></code>, <code class="docutils literal notranslate"><span class="pre">htop</span></code>, <code class="docutils literal notranslate"><span class="pre">rg</span></code>, <code class="docutils literal notranslate"><span class="pre">fd</span></code>, <code class="docutils literal notranslate"><span class="pre">jq</span></code>, <code class="docutils literal notranslate"><span class="pre">bat</span></code>, <code class="docutils literal notranslate"><span class="pre">less</span></code>,
+<code class="docutils literal notranslate"><span class="pre">git-lfs</span></code>, …) and <strong>all</strong> Python extras (test, lint, doc, jupyter, fitsio,
+release) on top of core deps. CI runs the test suite inside it before
+publishing, so the image a canfar batch job pulls, a downstream <code class="docutils literal notranslate"><span class="pre">FROM</span></code>
+clause builds on, and CI tested are the same bytes.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>apptainer<span class="w"> </span>build<span class="w"> </span>--sandbox<span class="w"> </span>shapepipe<span class="w"> </span>docker://ghcr.io/cosmostat/shapepipe:develop
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ghcr.io/cosmostat/shapepipe:develop<span class="w"> </span>shapepipe_run<span class="w"> </span>-c<span class="w"> </span>/app/example/config.ini
 </pre></div>
 </div>
 </section>
@@ -679,7 +660,7 @@ uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </s
 <span class="c1"># uv.lock back to the host repo, commit, and rebuild the image.</span>
 </pre></div>
 </div>
-<p>The dev image’s <code class="docutils literal notranslate"><span class="pre">/app</span></code> filesystem is <code class="docutils literal notranslate"><span class="pre">chmod</span> <span class="pre">-R</span> <span class="pre">go+rwX</span></code> so non-root users
+<p>The image’s <code class="docutils literal notranslate"><span class="pre">/app</span></code> filesystem is <code class="docutils literal notranslate"><span class="pre">chmod</span> <span class="pre">-R</span> <span class="pre">go+rwX</span></code> so non-root users
 in a writable sandbox can mutate the venv freely. The default
 <code class="docutils literal notranslate"><span class="pre">UV_NO_SYNC=1</span></code> still prevents <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span></code> from auto-syncing, which keeps
 the venv stable until you explicitly call <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> or <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">add</span></code>. Run
@@ -826,9 +807,9 @@ lockfile.</p></li>
 instead of source builds — Debian carries the
 GCC-compatibility patches that the previous Dockerfile had to apply
 inline with <code class="docutils literal notranslate"><span class="pre">sed</span></code>.</p></li>
-<li><p><strong>Two targets</strong> so canfar batch deployments stay slim while interactive
-users get a working environment with <code class="docutils literal notranslate"><span class="pre">vim</span></code>, <code class="docutils literal notranslate"><span class="pre">pytest</span></code>, etc. on the
-default tag.</p></li>
+<li><p><strong>One image</strong> so a canfar batch job, a downstream <code class="docutils literal notranslate"><span class="pre">FROM</span></code> clause, and CI’s
+test run are never three different environments — <code class="docutils literal notranslate"><span class="pre">vim</span></code>, <code class="docutils literal notranslate"><span class="pre">pytest</span></code>, and
+everything else ship on every tag.</p></li>
 </ul>
 </section>
 </section>
@@ -880,7 +861,7 @@ default tag.</p></li>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#two-image-targets">Two image targets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#one-image">One image</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#two-ways-to-use-the-image">Two ways to use the image</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#read-only-sif-running-testing-batch">Read-only SIF — running, testing, batch</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#writable-sandbox-development-exploration">Writable sandbox — development, exploration</a></li>

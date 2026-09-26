@@ -598,7 +598,7 @@ data should be processed.</p>
 </div>
 <section id="container-installation-recommended">
 <h2>Container Installation (Recommended)<a class="headerlink" href="#container-installation-recommended" title="Link to this heading">#</a></h2>
-<p>The easiest way to install ShapePipe is via a container. Docker images are automatically built and pushed to the <a class="reference internal" href="#ghcr.io/cosmostat/shapepipe"><span class="xref myst">Github Container Registry (GHCR)</span></a> on every push. Two image targets are published per branch — the default tag is the rich <code class="docutils literal notranslate"><span class="pre">dev</span></code> image; <code class="docutils literal notranslate"><span class="pre">&lt;tag&gt;-runtime</span></code> is a slim variant for batch jobs. See <a class="reference internal" href="container.html"><span class="std std-doc">Container Workflow</span></a> for the full rationale and the relationship between <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>, and the <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>.</p>
+<p>The easiest way to install ShapePipe is via a container. Docker images are automatically built, tested, and pushed to the <a class="reference internal" href="#ghcr.io/cosmostat/shapepipe"><span class="xref myst">Github Container Registry (GHCR)</span></a> on every push — one image per branch, the same image CI’s test suite ran against. See <a class="reference internal" href="container.html"><span class="std std-doc">Container Workflow</span></a> for the full rationale and the relationship between <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>, and the <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>.</p>
 <p>We recommend running the image with <strong>Apptainer</strong> (formerly Singularity) which is installed on most HPC clusters. To simply run the image, use the following command:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># build writeable "sandbox" container in the current directory</span>
 <span class="c1"># ./shapepipe will be a directory that functions like a vm</span>
@@ -613,8 +613,8 @@ apptainer<span class="w"> </span>shell<span class="w"> </span>--writable<span cl
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>ghcr.io/cosmostat/shapepipe:develop<span class="w"> </span>shapepipe_run<span class="w"> </span>-c<span class="w"> </span>/app/example/config.ini
 </pre></div>
 </div>
-<p>For canfar batch jobs or downstream images, the slim runtime tag is preferred:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>pull<span class="w"> </span>ghcr.io/cosmostat/shapepipe:develop-runtime
+<p>For canfar batch jobs or downstream images, pull the same tag:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>pull<span class="w"> </span>ghcr.io/cosmostat/shapepipe:develop
 </pre></div>
 </div>
 <div class="admonition attention">

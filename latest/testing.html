@@ -619,12 +619,12 @@ real on-disk catalogs; the latter are marked <code class="docutils literal notra
 cluster. See <code class="docutils literal notranslate"><span class="pre">tests/README.md</span></code> for the full layout and markers.</p></li>
 </ul>
 <p><strong>CI is the single gate.</strong> On every pull request and every push to <code class="docutils literal notranslate"><span class="pre">develop</span></code>,
-<code class="docutils literal notranslate"><span class="pre">.github/workflows/deploy-image.yml</span></code> builds the dev image and runs the suite
+<code class="docutils literal notranslate"><span class="pre">.github/workflows/deploy-image.yml</span></code> builds the image and runs the suite
 <em>inside it</em> — so the tests exercise exactly the environment that ships. A green
 check means the container actually works.</p>
 <section id="running-it-yourself">
 <h3>Running it yourself<a class="headerlink" href="#running-it-yourself" title="Link to this heading">#</a></h3>
-<p>The supported way is inside the dev image (it carries the <code class="docutils literal notranslate"><span class="pre">test</span></code> extra and the
+<p>The supported way is inside the image (it carries the <code class="docutils literal notranslate"><span class="pre">test</span></code> extra and the
 astromatic binaries), exactly as CI does:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-e<span class="w"> </span><span class="nv">HYPOTHESIS_PROFILE</span><span class="o">=</span>ci<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>ghcr.io/cosmostat/shapepipe:develop<span class="w"> </span>pytest<span class="w"> </span>-rX
