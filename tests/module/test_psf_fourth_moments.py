@@ -121,6 +121,119 @@ def test_composite_has_nonzero_spin2():
 
 
 # ---------------------------------------------------------------------------
+# Analytic oracle and spin-2 transformation -- pin the PSFHOME convention.
+# ---------------------------------------------------------------------------
+
+# Pixel-frame composite (wcs=None): sigmas >= 3 px, so the pixel-centre
+# sampling of each Gaussian reproduces its continuous moments essentially
+# exactly and the oracle below needs no pixelisation correction.
+_PIX_COMPONENTS = [(1.0, 3.0, 0.5), (1.0, 6.0, 0.1)]  # (flux, sigma, e1)
+
+
+def pixel_composite(beta_deg):
+    """Coaxial two-Gaussian composite in pixel units, rotated by ``beta_deg``."""
+    prof = galsim.Add(
+        [
+            galsim.Gaussian(flux=f, sigma=s).shear(e1=e1)
+            for f, s, e1 in _PIX_COMPONENTS
+        ]
+    )
+    return prof.rotate(beta_deg * galsim.degrees)
+
+
+def pixel_measure(prof):
+    """Draw ``prof`` at unit pixel scale; return ``(moms, _fourth_moments)``."""
+    image = prof.drawImage(nx=_STAMP, ny=_STAMP, scale=1.0, method="no_pixel")
+    moms = galsim.hsm.FindAdaptiveMom(galsim.Image(image.array))
+    return moms, _fourth_moments(image.array, moms)
+
+
+def oracle_fourth_moments(moms, beta_deg):
+    """Analytic weighted fourth moments of :func:`pixel_composite`.
+
+    Component k is a Gaussian of flux F_k and covariance
+    ``C_k = s_k**2 R A_k A_k R^T`` (A_k the unit-determinant shear matrix,
+    R the rotation). Whitening by ``S = sqrtm(inv(M))``, with ``M`` rebuilt
+    independently from HSM's ``(sigma, e1, e2)`` as ``sigma**2 A A^T``, gives
+    ``C_k' = S C_k S``. The weight ``exp(-r^T r / 2)`` turns it into a Gaussian
+    of covariance ``Sig_k = inv(I + inv(C_k'))`` and integrated amplitude
+    ``a_k = F_k sqrt(det Sig_k / det C_k')``. Isserlis then gives
+    ``E[u^4] = 3 Sig_uu^2``, ``E[v^4] = 3 Sig_vv^2``,
+    ``E[u^3 v] = 3 Sig_uu Sig_uv``, ``E[u v^3] = 3 Sig_vv Sig_uv``, and each
+    ``M_pq`` is the ``a_k``-weighted mean over components.
+    """
+    shape = moms.observed_shape
+    a_obj = galsim.Shear(e1=shape.e1, e2=shape.e2).getMatrix()
+    M = moms.moments_sigma**2 * a_obj @ a_obj.T
+    w, V = np.linalg.eigh(M)
+    S = V @ np.diag(w**-0.5) @ V.T
+
+    th = np.deg2rad(beta_deg)
+    R = np.array([[np.cos(th), -np.sin(th)], [np.sin(th), np.cos(th)]])
+
+    amp, m40, m04, m31, m13 = [], [], [], [], []
+    for flux, sigma, e1 in _PIX_COMPONENTS:
+        a_k = galsim.Shear(e1=e1).getMatrix()
+        C = S @ (sigma**2 * R @ a_k @ a_k.T @ R.T) @ S
+        Sig = np.linalg.inv(np.eye(2) + np.linalg.inv(C))
+        amp.append(flux * np.sqrt(np.linalg.det(Sig) / np.linalg.det(C)))
+        suu, svv, suv = Sig[0, 0], Sig[1, 1], Sig[0, 1]
+        m40.append(3 * suu**2)
+        m04.append(3 * svv**2)
+        m31.append(3 * suu * suv)
+        m13.append(3 * svv * suv)
+
+    amp = np.array(amp)
+
+    def mean(x):
+        return np.sum(amp * np.array(x)) / np.sum(amp)
+
+    return mean(m40) - mean(m04), 2 * (mean(m13) + mean(m31))
+
+
+@pytest.mark.parametrize("beta", [30.0, -55.0])
+def test_fourth_moments_match_analytic_oracle(beta):
+    """Pixel-frame composite: ``_fourth_moments`` equals the Isserlis oracle.
+
+    Pins the PSFHOME convention absolutely -- whitening by the object's own
+    adaptive second moments, weight ``exp(-r^2/2)`` in whitened coordinates,
+    flux-normalised ``M4_1 = M40 - M04`` and ``M4_2 = 2 (M13 + M31)``. The
+    rotation puts signal in both spin-2 components.
+
+    Tolerance ``rtol=1e-6``: with sigmas >= 3 px the pixel-centre sampling
+    error is exponentially small and the stamp holds > 8 sigma, so the only
+    residual is HSM's centroid/moment convergence. Measured agreement is
+    ~5e-8 relative on both components (beta = 30, -55 deg).
+    """
+    moms, (m4_1, m4_2, _) = pixel_measure(pixel_composite(beta))
+    o4_1, o4_2 = oracle_fourth_moments(moms, beta)
+
+    assert abs(o4_1) > 1e-2 and abs(o4_2) > 1e-2  # both components excited
+    npt.assert_allclose(m4_1, o4_1, rtol=1e-6)
+    npt.assert_allclose(m4_2, o4_2, rtol=1e-6)
+
+
+@pytest.mark.parametrize("delta", [25.0, 70.0, -40.0])
+def test_fourth_moments_rotate_as_spin2(delta):
+    """Rotating the object by ``delta`` multiplies ``M4_1 + i M4_2`` by
+    ``exp(2 i delta)``.
+
+    Independent of the oracle, this fixes the relative sign and factor
+    between the two components and their spin: a flipped sign, a lost factor
+    of 2, or swapped whitened axes each break the transformation law.
+    """
+    beta = 30.0
+    _, (a1, a2, _) = pixel_measure(pixel_composite(beta))
+    _, (b1, b2, _) = pixel_measure(pixel_composite(beta + delta))
+
+    z_ref = complex(a1, a2)
+    assert abs(a1) > 1e-2 and abs(a2) > 1e-2  # both components excited
+    expected = np.exp(2j * np.deg2rad(delta)) * z_ref
+    npt.assert_allclose(b1, expected.real, rtol=1e-3, atol=1e-3 * abs(z_ref))
+    npt.assert_allclose(b2, expected.imag, rtol=1e-3, atol=1e-3 * abs(z_ref))
+
+
+# ---------------------------------------------------------------------------
 # Frame invariance -- the science guarantee.
 # ---------------------------------------------------------------------------
 
