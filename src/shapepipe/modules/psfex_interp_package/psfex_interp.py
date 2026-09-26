@@ -2,7 +2,7 @@
 
 This module computes the PSFs from a PSFEx model at several galaxy positions.
 
-:Authors: Morgan Schmitz, Axel Guinot, Martin Kilbinger
+:Authors: Morgan Schmitz, Axel Guinot, Martin Kilbinger, Sacha Guerrini
 
 """
 
@@ -10,6 +10,7 @@ import os
 import re
 
 import numpy as np
+import scipy.linalg as alg
 from astropy.io import fits
 from cs_util import size as cs_size
 from sqlitedict import SqliteDict
@@ -60,6 +61,178 @@ def local_wcs_list(wcs, positions):
         wcs.local(image_pos=galsim.PositionD(float(x), float(y)))
         for x, y in positions
     ]
+
+
+def _fourth_moments(image, moms, wcs=None):
+    r"""Fourth-Order Moments.
+
+    @sc [label:frame] fourth-moments-single-frame
+    ``moms`` and the pixel-grid mapping must live in one frame. With ``wcs``,
+    ``moms`` comes from ``FindAdaptiveMom(use_sky_coords=True)`` on an image
+    carrying that same local WCS, and the whitening matrix is built from those
+    world-frame moments; mixing frames silently breaks the CCD-orientation
+    invariance that ``test_psf_fourth_moments_frame_invariant`` enforces.
+
+    Compute the spin-2 fourth-moment combinations and galsim's spin-0
+    ``moments_rho4`` for a single object, given its HSM adaptive-moment result.
+
+    The spin-2 combinations follow the PSFHOME convention: whiten the pixel grid
+    with the object's own second-moment matrix ``M`` (so a matched elliptical
+    Gaussian becomes a unit circle), Gaussian-weight it, form the centred
+    ``p + q = 4`` moments ``M_pq`` over the whitened coordinates ``(u, v)``, and
+    return ::
+
+        fourth_moment_1 = M_40 - M_04
+        fourth_moment_2 = 2 * (M_13 + M_31)
+
+    **Frame handling.** Whitening with the *symmetric* matrix square root
+    ``sqrt(inv(M))`` leaves the whitened axes aligned with the coordinate frame
+    in which ``M`` and the grid are built (it rescales along the object's
+    principal axes but does not rotate the frame). The spin-2 combinations are
+    therefore measured relative to *those* axes. To make them a property of the
+    sky and not of the CCD orientation, everything must live in one frame — the
+    world frame:
+
+    * ``moms`` comes from ``FindAdaptiveMom(use_sky_coords=True)``, so
+      ``observed_shape``, ``moments_sigma`` (arcsec) and ``moments_centroid``
+      are already in world ``(u, v)`` coordinates. ``M`` built from them is the
+      world-frame second-moment matrix.
+    * The pixel grid is mapped to world offsets about the centroid with the local
+      WCS Jacobian ``J``: ``world = J @ (pixel - true_center)``. galsim reports
+      ``moments_centroid`` relative to the stamp ``true_center``, so subtracting
+      it gives ``J @ (pixel - pixel_centroid)`` — the world offset from the
+      centroid, in the same arcsec units as ``M``.
+
+    The result is invariant under a re-orientation of the pixel frame (a
+    different WCS rotation viewing the same sky object) — the science guarantee
+    that motivates the sky-coordinate measurement. When ``wcs`` is ``None`` the
+    computation is done consistently in the pixel frame instead (the axes are
+    then the CCD axes and the result is *not* frame-invariant); this path exists
+    only for the legacy pixel-frame branch.
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        Object postage stamp (PSF or star vignet), masked pixels already zeroed.
+    moms : galsim.hsm.ShapeData
+        Adaptive-moment result for ``image``. Measured with
+        ``use_sky_coords=True`` when ``wcs`` is provided.
+    wcs : galsim.JacobianWCS, optional
+        Local WCS at the object position, matching the one attached to the image
+        for the ``use_sky_coords`` measurement. ``None`` selects the pixel frame.
+
+    Returns
+    -------
+    tuple of float
+        ``(fourth_moment_1, fourth_moment_2, moments_rho4)``. On an HSM failure
+        (``moms.error_message`` set) the spin-2 terms are filled with ``0.0`` and
+        ``moments_rho4`` is passed through (``-1`` on failure); the accompanying
+        ``FLAG`` column is the source of truth for validity.
+
+    """
+    if moms.error_message:
+        return 0.0, 0.0, moms.moments_rho4
+
+    ny, nx = image.shape
+    # 1-indexed pixel-centre coordinates (galsim Image origin is (1, 1)).
+    y_grid, x_grid = np.mgrid[:ny, :nx] + 1.0
+
+    # Second-moment matrix M with det(M) = sigma**4, built in the measurement
+    # frame from the (distortion) ellipticity and size. In sky mode these are
+    # world-frame quantities, so M is the world-frame second-moment matrix.
+    e1 = moms.observed_shape.e1
+    e2 = moms.observed_shape.e2
+    sigma4 = moms.moments_sigma**4
+    c = (1 + e1) / (1 - e1)
+    M = np.zeros((2, 2))
+    M[1, 1] = np.sqrt(sigma4 / (c - 0.25 * e2**2 * (1 + c) ** 2))
+    M[0, 0] = c * M[1, 1]
+    M[0, 1] = M[1, 0] = 0.5 * e2 * (M[0, 0] + M[1, 1])
+
+    if wcs is not None:
+        # Map the pixel grid to world offsets about the world centroid.
+        x0 = 0.5 * (nx + 1)
+        y0 = 0.5 * (ny + 1)
+        pix = np.array([x_grid - x0, y_grid - y0])
+        jac = wcs.jacobian().getMatrix()  # [[dudx, dudy], [dvdx, dvdy]]
+        world = np.einsum("ij,jqp->iqp", jac, pix)
+        u = world[0] - moms.moments_centroid.x
+        v = world[1] - moms.moments_centroid.y
+    else:
+        # Pixel frame: offsets straight from the pixel-frame centroid.
+        u = x_grid - moms.moments_centroid.x
+        v = y_grid - moms.moments_centroid.y
+
+    # Whiten with the symmetric square root of inv(M); M is SPD so the principal
+    # square root is real (drop the ~1e-16 imaginary residue sqrtm returns).
+    sqrt_inv_M = np.real(alg.sqrtm(np.linalg.inv(M)))
+    std_pos = np.einsum("ij,jqp->iqp", sqrt_inv_M, np.array([u, v]))
+    std_x, std_y = std_pos[0], std_pos[1]
+
+    weight = np.exp(-0.5 * (std_x**2 + std_y**2))
+    image_weight = weight * image
+    normalization = np.sum(image_weight)
+
+    def _m(p, q):
+        return np.sum(image_weight * std_x**p * std_y**q) / normalization
+
+    fourth_moment_1 = _m(4, 0) - _m(0, 4)
+    fourth_moment_2 = 2 * (_m(1, 3) + _m(3, 1))
+    return fourth_moment_1, fourth_moment_2, moms.moments_rho4
+
+
+# One HSM shape row per object, in this order; ``_hsm_columns`` names them.
+_HSM_ROW = ("G1", "G2", "SIGMA", "FLAG", "M4_1", "M4_2", "RHO4")
+
+
+def _hsm_row(image, moms, wcs=None):
+    """HSM shape row for one object, ordered as ``_HSM_ROW``."""
+    return [
+        moms.observed_shape.g1,
+        moms.observed_shape.g2,
+        moms.moments_sigma,
+        int(bool(moms.error_message)),
+        *_fourth_moments(image, moms, wcs),
+    ]
+
+
+def _hsm_columns(shapes, obj):
+    """Named ``HSM_*_<obj>`` columns from HSM shape rows.
+
+    @sc [label:schema] hsm-column-grammar
+    The only place the ``_HSM_ROW`` slot order meets the column grammar:
+    sigma is stored as ``T`` (``cs_util.size.sigma_to_T``), ``FLAG`` as int,
+    the fourth moments under ``M4_1``/``M4_2``/``RHO4``. Every writer in this
+    module (single-epoch, validation, multi-epoch) goes through here.
+
+    Parameters
+    ----------
+    shapes : numpy.ndarray
+        Shape rows, ``(n_obj, len(_HSM_ROW))`` or a single ``(len(_HSM_ROW),)``
+        row; a single row yields Python scalars.
+    obj : str
+        Object token, ``"PSF"`` or ``"STAR"``.
+
+    Returns
+    -------
+    dict
+        Column name -> values.
+
+    """
+    shapes = np.asarray(shapes)
+    col = {name: shapes[..., i] for i, name in enumerate(_HSM_ROW)}
+    out = {
+        f"HSM_G1_{obj}": col["G1"],
+        f"HSM_G2_{obj}": col["G2"],
+        f"HSM_T_{obj}": cs_size.sigma_to_T(col["SIGMA"]),
+        f"HSM_FLAG_{obj}": col["FLAG"].astype(int),
+        f"HSM_M4_1_{obj}": col["M4_1"],
+        f"HSM_M4_2_{obj}": col["M4_2"],
+        f"HSM_RHO4_{obj}": col["RHO4"],
+    }
+    if shapes.ndim == 1:
+        out = {key: np.asarray(val).item() for key, val in out.items()}
+    return out
 
 
 class PSFExInterpolator(object):
@@ -355,6 +528,14 @@ class PSFExInterpolator(object):
             returned are already in sky coordinates and need no post-hoc
             rotation. When ``None``, moments are measured in the pixel frame.
 
+        Notes
+        -----
+        In addition to the second-moment shape, the spin-2 fourth-moment
+        combinations and galsim's spin-0 ``moments_rho4`` are stored (the
+        ``M4_1``, ``M4_2``, ``RHO4`` slots of ``_HSM_ROW``). With a ``wcs_list`` these are computed in the
+        world frame so they are invariant to the CCD orientation; see
+        :func:`_fourth_moments`.
+
         """
         if import_fail:
             raise ImportError("Galsim is required to get shapes information")
@@ -371,16 +552,12 @@ class PSFExInterpolator(object):
                 hsm.FindAdaptiveMom(Image(psf), strict=False)
                 for psf in self.interp_PSFs
             ]
+            wcs_list = [None] * len(self.interp_PSFs)
 
         self.psf_shapes = np.array(
             [
-                [
-                    moms.observed_shape.g1,
-                    moms.observed_shape.g2,
-                    moms.moments_sigma,
-                    int(bool(moms.error_message)),
-                ]
-                for moms in psf_moms
+                _hsm_row(psf, moms, wcs)
+                for psf, moms, wcs in zip(self.interp_PSFs, psf_moms, wcs_list)
             ]
         )
 
@@ -399,10 +576,7 @@ class PSFExInterpolator(object):
         if self._compute_shape:
             data = {
                 "VIGNET": self.interp_PSFs,
-                "HSM_G1_PSF": self.psf_shapes[:, 0],
-                "HSM_G2_PSF": self.psf_shapes[:, 1],
-                "HSM_T_PSF": cs_size.sigma_to_T(self.psf_shapes[:, 2]),
-                "HSM_FLAG_PSF": self.psf_shapes[:, 3].astype(int),
+                **_hsm_columns(self.psf_shapes, "PSF"),
             }
         else:
             data = {"VIGNET": self.interp_PSFs}
@@ -484,6 +658,14 @@ class PSFExInterpolator(object):
             provided, moments are measured in world coordinates
             (``use_sky_coords=True``).
 
+        Notes
+        -----
+        As in :meth:`_get_psfshapes`, the spin-2 fourth-moment combinations and
+        galsim's ``moments_rho4`` are stored (the ``M4_1``, ``M4_2``, ``RHO4``
+        slots of ``_HSM_ROW``),
+        world-frame when a ``wcs_list`` is given. Masked pixels are zeroed before
+        the fourth-moment sum so they do not contribute.
+
         """
         if import_fail:
             raise ImportError("Galsim is required to get shapes information")
@@ -508,16 +690,14 @@ class PSFExInterpolator(object):
                 )
                 for star, mask in zip(star_vign, masks)
             ]
+            wcs_list = [None] * len(star_vign)
 
         self.star_shapes = np.array(
             [
-                [
-                    moms.observed_shape.g1,
-                    moms.observed_shape.g2,
-                    moms.moments_sigma,
-                    int(bool(moms.error_message)),
-                ]
-                for moms in star_moms
+                _hsm_row(np.where(mask == 1, 0.0, star), moms, wcs)
+                for star, mask, moms, wcs in zip(
+                    star_vign, masks, star_moms, wcs_list
+                )
             ]
         )
 
@@ -579,6 +759,11 @@ class PSFExInterpolator(object):
 
         Save computed PSFs and stars to fits file.
 
+        @sc [label:schema] psfex-validation-hsm-columns
+        Writes ``_hsm_columns`` for both ``PSF`` and ``STAR`` — the exact
+        ``HSM_*`` set ``MergeStarCatPSFEX.process`` reads without fallback;
+        add or rename on both sides together (``test_hsm_column_seams``).
+
         Parameters
         ----------
         star_dict : dict
@@ -594,14 +779,8 @@ class PSFExInterpolator(object):
         )
 
         data = {
-            "HSM_G1_PSF": self.psf_shapes[:, 0],
-            "HSM_G2_PSF": self.psf_shapes[:, 1],
-            "HSM_T_PSF": cs_size.sigma_to_T(self.psf_shapes[:, 2]),
-            "HSM_FLAG_PSF": self.psf_shapes[:, 3].astype(int),
-            "HSM_G1_STAR": self.star_shapes[:, 0],
-            "HSM_G2_STAR": self.star_shapes[:, 1],
-            "HSM_T_STAR": cs_size.sigma_to_T(self.star_shapes[:, 2]),
-            "HSM_FLAG_STAR": self.star_shapes[:, 3].astype(int),
+            **_hsm_columns(self.psf_shapes, "PSF"),
+            **_hsm_columns(self.star_shapes, "STAR"),
         }
         data = {**data, **star_dict}
 
@@ -652,6 +831,11 @@ class PSFExInterpolator(object):
         """Interpolate Multi-Epoch.
 
         Interpolate PSFs for multi-epoch run.
+
+        @sc [label:schema] psfex-me-shapes-columns
+        The per-epoch ``SHAPES`` dict is ``_hsm_columns(row, "PSF")`` and
+        must carry every column ``make_cat._save_psf_data`` copies into
+        ``HSM_*_PSF_n`` (``test_hsm_column_seams`` checks the superset).
 
         Raises
         ------
@@ -861,22 +1045,9 @@ class PSFExInterpolator(object):
                         "VIGNET"
                     ] = final_list[j][1][where_res[0]]
                     if self._compute_shape:
-                        shape_dict = {}
-                        shape_dict["HSM_G1_PSF"] = final_list[j][2][
-                            where_res[0]
-                        ][0]
-                        shape_dict["HSM_G2_PSF"] = final_list[j][2][
-                            where_res[0]
-                        ][1]
-                        shape_dict["HSM_T_PSF"] = cs_size.sigma_to_T(
-                            final_list[j][2][where_res[0]][2]
-                        )
-                        shape_dict["HSM_FLAG_PSF"] = final_list[j][2][
-                            where_res[0]
-                        ][3]
                         output_dict[id_tmp][final_list[j][3][where_res[0]]][
                             "SHAPES"
-                        ] = shape_dict
+                        ] = _hsm_columns(final_list[j][2][where_res[0]], "PSF")
                     counter += 1
             if counter == 0:
                 output_dict[id_tmp] = "empty"
