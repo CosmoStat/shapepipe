@@ -202,11 +202,10 @@ ngmix_chunks: 8
 # it.
 #
 # The map counts, per sky pixel, the number of exposures with a VALID PSF MODEL
-# — only CCDs whose PSF model was actually written are stamped. In the v1.x
-# chain that set was approximated by subtracting a summary-scrape file from all
-# 40*N candidates; in the workflow it is exact, read off exp_persist.json's
-# files[] (psfex_interp returns WITHOUT writing on NOT_ENOUGH_STARS / BAD_CHI2 /
-# FILE_NOT_FOUND). Those catalogues are the `psf_validation` product, which
+# — only CCDs with a PSF validation catalogue are stamped. That set comes from
+# exp_persist.json's files[]: psfex_interp writes validation_psf-*.fits on
+# success, and returns WITHOUT writing on NOT_ENOUGH_STARS / BAD_CHI2 /
+# FILE_NOT_FOUND. Those catalogues are the `psf_validation` product, which
 # exp_persist packs for every exposure whatever `persist_exp:` above says, so
 # there is nothing to configure here. psf_model: fake writes no PSF model and so
 # records no footprint: an image-sims campaign on the true PSF has no map.
