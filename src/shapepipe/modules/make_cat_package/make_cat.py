@@ -250,6 +250,12 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
     The lookup itself is ``shapepipe.utilities.mask_query.query_map``,
     shared with the ``mask_query`` module: one primitive, two consumers.
 
+    @sc [decision:masking.sky_mask_application,label:scope] mask-columns-verbatim
+    Each ``MASK_<BAND>`` holds the map value at the object's windowed position
+    verbatim, off-coverage sentinel included; nothing here thresholds,
+    interprets or removes an object. Without MASK_EXT_PATHS no column is
+    written and every mask cut happens downstream.
+
     Parameters
     ----------
     final_cat_file : file_io.FITSCatalogue
@@ -411,6 +417,14 @@ class SaveCatalogue:
             Path to NGMIX catalogue
         moments : bool, optional
             If True, write the parallel ``NGMIXm_*`` (moments-branch) columns.
+
+        @sc [decision:catalogue_assembly.failure_sentinels,label:coupling] never-fit-sentinels-out-of-range
+        A detection with no ngmix row keeps NGMIX_N_EPOCH 0 and shape sentinels
+        outside any measured range: ellipticities and their errors -10, flux
+        and magnitude errors -1, size errors 1e30. A cut on NGMIX_N_EPOCH > 0
+        or on these values removes such a row independently of the flag
+        columns; the size and flux sentinels (0) lie inside the physical range
+        and do not. Keep every sentinel out of range when changing one.
 
         """
         self._key_ends = ["1M", "1P", "2M", "2P", "NOSHEAR"]

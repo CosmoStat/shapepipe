@@ -53,6 +53,12 @@ def ccd_candidate_mask(w, ra, dec, ccd_size, margin_frac=0.5):
 
     Flag catalogue positions that lie near a CCD's sky footprint.
 
+    @sc [decision:detection.epoch_membership_ccd_bounds,label:invariant] candidate-mask-is-superset
+    The mask only prefilters the strict CCD_SIZE test in
+    :func:`make_post_process`; it must keep every position that test could
+    accept. Tightening it (margin, radius) silently drops epochs and lowers
+    N_EPOCH instead of just skipping divergent WCS inversions.
+
     The footprint is obtained by forward-projecting (pixel to world) the
     CCD centre and corners, which is always well defined.  The returned
     mask selects positions within the corner radius plus a fractional
@@ -109,6 +115,13 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
 
     This function will add one HDU for each epoch to the SExtractor catalogue.
     Note that this only works for tiles.
+
+    @sc [decision:detection.epoch_membership_ccd_bounds,label:convention] epoch-bounds-strict-per-ccd
+    An object is on a CCD when its inverse-projected pixel lies strictly inside
+    CCD_SIZE (33, 2080, 1, 4612 committed), and each such CCD adds one to
+    N_EPOCH. A WCS inversion that fails drops that one CCD's epoch for the
+    objects near it, never the tile. CCD_N is the 0-based index that split_exp
+    gives the CCD file and its header entry.
 
     The columns will be:
 
@@ -362,6 +375,15 @@ class SExtractorCaller:
         """Set Input Files.
 
         Set up all of the input image files.
+
+        @sc [decision:detection.weight_map_usage,label:convention] weight-map-on-both-images
+        With a weight file, the same map weights detection and measurement (a
+        separate detection weight only when DETECTION_WEIGHT is set); without
+        one, the command line forces ``-WEIGHT_TYPE None`` over the config's
+        MAP_WEIGHT, which changes the detection set. Extra inputs are
+        positional (image, weight, flag, psf, detection image, detection
+        weight): a reordering that keeps the count mis-assigns files without
+        raising.
 
         Parameters
         ----------

@@ -37,7 +37,15 @@ def make_cat_runner(
     module_config_sec,
     w_log,
 ):
-    """Define The Make Catalogue Runner."""
+    """Define The Make Catalogue Runner.
+
+    @sc [decision:catalogue_assembly.star_galaxy_classification,label:scope] classification-deferred-downstream
+    The final catalogue carries every detection: no star/galaxy cut is made
+    here, and separation happens downstream. With SM_DO_CLASSIFICATION on, the
+    thresholds must come from SM_STAR_THRESH and SM_GAL_THRESH; the function
+    defaults of :func:`make_cat.save_sm_data` are never used.
+
+    """
     # Set input file paths
     if len(input_file_list) == 3:
         # No spread model input

@@ -61,6 +61,14 @@ class FindExposures:
         Return list of exposure file used for the tile in process, from tiles
         FITS header.
 
+        @sc [decision:preparation.epoch_provenance_from_tile_history,label:convention] epochs-from-tile-history
+        The epoch list is the deduplicated file names in HISTORY column COLNUM
+        with the extension stripped and the trailing ``p`` kept; a tile whose
+        header cannot be read must fail, never yield an empty or partial list.
+        EXP_PREFIX is meant to strip a name prefix; removeprefix does nothing
+        to CFIS names, where ``p`` is a suffix, a [LINT] the decision record
+        carries.
+
         Returns
         -------
         list

@@ -618,6 +618,14 @@ class SETools(object):
         This function creates mask with random indices corresponding to the
         specfied ratio.
 
+        @sc [decision:star_selection_psf.psf_train_validation_split,label:reproducibility] split-seeded-by-file-number
+        The permutation is seeded from the digits of the unit's file number, so
+        a CCD gets the same PSF training and validation stars on every run;
+        never draw from a global or unseeded generator here. The
+        ``ratio_<RATIO>`` subset (20 % under RATIO = 20) is the validation
+        sample and its complement trains PSFEx (``star_split_ratio_80``);
+        swapping them starves the model of stars below the acceptance gate.
+
         Raises
         ------
         ValueError

@@ -21,6 +21,13 @@ def get_stamps(image, positions, rad):
 
     Extract postage stamps and record their sub-pixel centring.
 
+    @sc [decision:preparation.stamp_positioning_and_padding,label:convention] stamps-off-image-raise
+    Stamps are cut around the rounded pixel with no interpolation, and OFFSET
+    is the remainder of that same rounding, the Jacobian origin ngmix uses; two
+    roundings would put the stamp and its centroid prior out of step. Edge
+    overruns are zero-padded and kept; a centre rounding outside the image
+    raises, never wraps.
+
     The image is zero-padded by ``rad`` on every side and a
     ``(2 * rad + 1, 2 * rad + 1)`` stamp is sliced around the integer pixel
     nearest each position (``numpy.round``). The stamp values are
