@@ -147,7 +147,8 @@ INPUTS = config["inputs"]
 OUTPUTS = config["outputs"]
 RUN_DIR    = Path(OUTPUTS["run_dir"])
 # Defaults to RUN_DIR so a scratch-only run (a fixture, a smoke test) needs no
-# second path: one root, exactly the pre-D5 layout.
+# second path. Such a one-root run must set clean: false and clean_tiles:
+# false; refuse_one_root_cleaners enforces it.
 PRODUCTS_DIR = Path(OUTPUTS.get("products_dir") or RUN_DIR)
 INDEX_DB   = Path(OUTPUTS["index_db"])
 # The campaign's NAME is the run config's `run:` — the same name `$run` expands
@@ -1025,6 +1026,30 @@ def final_cat_targets():
 # CLEAN is, and read through flag() for the same reason (`--config
 # clean_tiles=false` arrives as the string "false").
 CLEAN_TILES = flag(config.get("clean_tiles", False)) and PHASE == "compute"
+
+
+def refuse_one_root_cleaners(products_dir, run_dir, clean, clean_tiles):
+    """Refuse reclamation when products and scratch share one root.
+
+    With products_dir == run_dir the per-tile final_cat sits inside the tile
+    store clean_tile prunes, and the exp_persist manifests sit inside the
+    exposure tree clean_exposure deletes, so reclamation would destroy the
+    products it exists to protect. A one-root run is for fixtures and smoke
+    tests, which keep everything anyway.
+    """
+    if Path(products_dir).resolve() != Path(run_dir).resolve():
+        return
+    if clean or clean_tiles:
+        raise WorkflowError(
+            f"outputs.products_dir is outputs.run_dir ({run_dir}): a one-root "
+            "run is for fixtures and smoke tests only, and must run with "
+            "clean: false and clean_tiles: false, since clean_tile would "
+            "delete final_cat and clean_exposure the persisted manifests. Set "
+            "both false, or give products_dir its own root.")
+
+
+refuse_one_root_cleaners(PRODUCTS_DIR, RUN_DIR, flag(config.get("clean")),
+                         flag(config.get("clean_tiles")))
 
 
 def tile_tombstone(tile):
