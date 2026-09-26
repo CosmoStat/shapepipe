@@ -407,7 +407,7 @@ def path_hash(path):
     A rule whose behaviour comes from more than its own script needs all of it
     in one trigger. final_cat_merge is the case: what it writes is decided by
     scripts/python/create_final_cat.py (the column extraction) and by
-    config/cfis/final_cat.param (which columns), and NEITHER is under
+    CONFIG_DIR's final_cat.param (which columns), and NEITHER is under
     workflow/scripts/ nor a declared input. Without them in the hash, this PR's
     own edits to both would have left every finished campaign's hdf5 untouched
     and nothing would have said so.
@@ -1175,54 +1175,6 @@ include: "rules/tile.smk"
 # outside every group already (exp_psf is heavy, clean_exposure is local), so it
 # adds no new grouping constraint.
 localrules: all, prepare_all_tiles, clean_exposure, clean_tile, exp_persist
-
-# --- merged catalogue (image sims only) ------------------------------------
-# The sp_validation side starts from ONE hdf5 per branch, not 39 FITS tiles, so
-# the campaign is not finished until they are merged. Image sims only: the data
-# path's patches are merged separately, on a different naming convention.
-#
-# Paths are derived from products_dir rather than from `run:`, so they hold
-# whatever the run config calls things. create_final_cat.py takes a root to
-# scan (-i) and a patch name (-P) that is BOTH the directory to match under it
-# and the hdf5 group, so the patch directory is the branch dir and the root is
-# its parent -- exactly the `-i .. -P <sim>` the old sp_validation rule ran
-# from inside the branch.
-MERGE_PATCH_DIR = PRODUCTS_DIR.parent      # the branch dir, holding product/tiles
-MERGE_ROOT = MERGE_PATCH_DIR.parent        # -i
-MERGE_PATCH = MERGE_PATCH_DIR.name         # -P, and the hdf5 group
-MERGED_CAT = PRODUCTS_DIR / f"final_cat_{MERGE_PATCH}.hdf5"
-CREATE_FINAL_CAT = Path(workflow.basedir).parent / "scripts" / "python" / "create_final_cat.py"
-
-
-def merge_targets():
-    """The merged catalogue, once every ready tile has published."""
-    return [str(MERGED_CAT)] if INPUT_TYPE == "image_sims" and TILES_READY else []
-
-
-rule merge_final_cats:
-    """Merge the per-tile final catalogues into one hdf5 (image sims).
-
-    Reads the PRODUCTS root, not the run dir: clean_tile deletes the run-dir
-    copies, so on a reclaimed campaign the published ones are all that is left.
-    Ordering needs no edge to clean_tile for the same reason.
-    """
-    input:
-        [final_cat(t) for t in TILES_READY],
-    output:
-        cat = str(MERGED_CAT),
-        n_tiles = str(PRODUCTS_DIR / "n_tiles_final.txt"),
-    params:
-        root = str(MERGE_ROOT),
-        patch = MERGE_PATCH,
-        param_file = str(CONFIG_DIR / "final_cat.param"),
-    threads: 1
-    resources:
-        mem_mb = lambda wc, attempt: 8000 * attempt,
-        runtime = 120
-    shell:
-        f"python {CREATE_FINAL_CAT} -I"
-        " -m {output.cat} -i {params.root} -p {params.param_file}"
-        " -P {params.patch} -o {output.n_tiles} -v"
 
 
 rule all:

@@ -4,8 +4,9 @@
 Run as the shell of the campaign-level ``final_cat_merge`` rule, never by hand.
 
 WHAT IT PRODUCES, AND FOR WHOM. ``<products_dir>/final_cat_<campaign>.hdf5``:
-one dataset per tile, carrying the columns named by
-``workflow/config/cfis/final_cat.param``, plus an ``n_tiles`` attribute on the
+one dataset per tile, carrying the columns named by the input type's
+``final_cat.param`` (``workflow/config/cfis/`` for data,
+``workflow/config/cfis_image_sims/`` for image sims), plus an ``n_tiles`` attribute on the
 file root. sp_validation opens that file as its ``galaxy_cat_path``
 (``sp_validation/catalog.py``), so its SCHEMA is an interface and not a choice —
 see ``SPVAL_GROUP`` below for the one legacy literal in it.
@@ -141,7 +142,7 @@ def main() -> None:
     p.add_argument("--campaign", required=True,
                    help="names the campaign's group in the output file")
     p.add_argument("--param-file", required=True, type=Path,
-                   help="workflow/config/cfis/final_cat.param — the column list")
+                   help="the input type's final_cat.param — the column list")
     p.add_argument("--hdu", type=int, default=1)
     p.add_argument("--snapshot-json", type=Path, default=None,
                    help="sp run's code snapshot (bin/sp's "

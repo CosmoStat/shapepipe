@@ -98,7 +98,11 @@ outputs:
 ```
 
 sp_validation's image-simulation workflow drives these campaigns and measures m
-from their final catalogues.
+from their final catalogues. A simulation campaign ends in the same merged
+catalogue as a data campaign, written by the same `final_cat_merge` rule:
+`<products_dir>/final_cat_<run>.hdf5`, with the columns of
+`config/cfis_image_sims/final_cat.param` and the tile count as the file's
+`n_tiles` attribute (there is no `n_tiles_final.txt`).
 
 On candide, the node-local tile store (bound from the node's 31 GB `/tmp`) does not
 hold several dense image-sim tiles at once. Set `tile_store_root:` in the run

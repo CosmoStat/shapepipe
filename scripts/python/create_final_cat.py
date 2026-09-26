@@ -58,8 +58,9 @@ def params_from_run_config(params, defaults):
         raise ValueError(f"run config {params['run_config']} sets neither "
                          "outputs.products_dir nor outputs.run_dir")
 
-    # The same derivation as the workflow's merge_final_cats rule: the patch
-    # dir is the branch dir holding product/tiles, and -i is its parent.
+    # The patch dir is the branch dir holding product/tiles, and -i is its
+    # parent. With the run template's layout (products_dir = <run>/product)
+    # this is the path and group the workflow's final_cat_merge writes.
     patch_dir = os.path.dirname(os.path.normpath(products))
     patch = os.path.basename(patch_dir)
     derived = {

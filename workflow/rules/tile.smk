@@ -927,9 +927,11 @@ rule clean_tile:
 #
 # THE OUTPUT SCHEMA IS AN INTERFACE, NOT A CHOICE. sp_validation opens this file
 # as its `galaxy_cat_path`: one dataset per tile under a named group, the
-# columns of workflow/config/cfis/final_cat.param, an `n_tiles` attribute on the
+# columns of CONFIG_DIR's final_cat.param, an `n_tiles` attribute on the
 # root. The group is named for the CAMPAIGN, which is the only unit this
-# workflow has above the tile. So the rule reuses
+# workflow has above the tile. It is the merger for both input types: an
+# image-sims campaign reads config/cfis_image_sims/final_cat.param, whose
+# columns are what sp_validation's image-sims extract step reads. So the rule reuses
 # scripts/python/create_final_cat.py's column extraction rather than restating
 # it, and writes the file itself — merge_final_cat.py argues that split, the one
 # legacy literal in the schema, and the two places where the reference
