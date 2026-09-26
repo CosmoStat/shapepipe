@@ -115,7 +115,7 @@ COMPLETENESS = {
             # into one train and one test catalogue, not one output per CCD.
             "mccd_preprocessing_runner":  dict(expect=2, warn=True),
             # Fit/validation is exposure-wide: one model and one validation
-            # catalogue, unlike the per-CCD preprocessing outputs.
+            # catalogue.
             "mccd_fit_val_runner":        dict(expect=2, warn=True),
             "merge_starcat_runner":       dict(expect=1, warn=True),
             # config_exp_mccd enables the ten meanshape and six histogram plots.
