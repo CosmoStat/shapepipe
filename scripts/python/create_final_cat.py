@@ -27,6 +27,66 @@ from cs_util import args as cs_args
 from cs_util import logging
 
 
+def params_from_run_config(params, defaults):
+    """Fill unset paths from a workflow run config.
+
+    The workflow already knows where a campaign writes, so a manual merge
+    should not have to restate it. Resolution goes through the workflow's own
+    resolver (workflow/scripts/run_config.py), layering the run config on
+    workflow/config.yaml and then the machines: table, so what lands here is
+    what the rules would have used.
+
+    Only values still at their default are filled -- an explicit flag always
+    wins. Nothing is derived for the data path: its patch naming differs and
+    is not this function's business.
+    """
+    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    sys.path.insert(0, os.path.join(repo, "workflow", "scripts"))
+    import run_config as _rc
+
+    cfg = _rc.load(os.path.join(repo, "workflow", "config.yaml"),
+                   params["run_config"])
+    if cfg.get("input_type") != "image_sims":
+        raise ValueError(
+            f"run config {params['run_config']} has input_type="
+            f"{cfg.get('input_type', 'data')!r}; -c derives paths for "
+            "image_sims only")
+
+    outputs = cfg.get("outputs") or {}
+    products = outputs.get("products_dir") or outputs.get("run_dir")
+    if not products:
+        raise ValueError(f"run config {params['run_config']} sets neither "
+                         "outputs.products_dir nor outputs.run_dir")
+
+    # The group and file are named for `run:`, as the workflow's
+    # final_cat_merge names them. -P is also the directory the -I walk
+    # matches under -i, so this needs the run template's layout,
+    # products_dir = <root>/<run>/product, and -i is <root>.
+    patch = cfg["run"]
+    patch_dir = os.path.dirname(os.path.normpath(products))
+    if os.path.basename(patch_dir) != patch:
+        raise ValueError(
+            f"run config {params['run_config']}: products_dir {products} is "
+            f"not <root>/{patch}/product, so -c cannot locate the tiles; "
+            "pass -i and -P explicitly")
+    derived = {
+        "image_sims": True,
+        "input_root_dir": os.path.dirname(patch_dir),
+        "patch": patch,
+        "merged_cat_path": os.path.join(products, f"final_cat_{patch}.hdf5"),
+        "param_path": os.path.join(repo, "workflow", "config",
+                                   "cfis_image_sims", "final_cat.param"),
+    }
+    for key, value in derived.items():
+        if params.get(key) == defaults.get(key):
+            params[key] = value
+    # The tile count is the file's n_tiles attribute; the text summary is
+    # written only when -o asks for it.
+    if params.get("output_summary") == defaults.get("output_summary"):
+        params["output_summary"] = None
+    return params
+
+
 def set_params_from_command_line(args):                               
     """Set Params From Command Line.                                        
                                                                                 
@@ -48,6 +108,12 @@ def set_params_from_command_line(args):
         _params[key] = options[key]                           
                                                                                 
     del options                                                             
+
+    # A run config fills in whatever is still at its default
+    # (see the docstring); explicit flags always win.
+    if _params.get("run_config"):
+        _defaults, _, _, _ = params_default()
+        _params = params_from_run_config(_params, _defaults)
                                                                                 
     # Save calling command                                                  
     logging.log_command(args)
@@ -72,6 +138,7 @@ def params_default():
         "ID": None,
         "single_op": None,
         "image_sims": False,
+        "run_config": None,
     }
     _short_options = {
         "input_root_dir": "-i",
@@ -82,6 +149,7 @@ def params_default():
         "output_summary": "-o",
         "single_op": "-s",
         "image_sims": "-I",
+        "run_config": "-c",
     }
     _types = {
         "hdu_num": "int",
@@ -94,10 +162,14 @@ def params_default():
         "param_path": "parameter file path, if not given use all columns, default={}",
         "patch": "patch number (data) or grid subdir (image_sims), default={}",
         "list_only": "print list of patches and IDs only, default={}",
-        "output_summary": "output file for numbre of tiles, default={}",
+        "output_summary": "output file for number of tiles (with -c, written"
+                          " only if given), default={}",
         "ID": "ID for single-ID operation, default={}",
         "single_op": "single ID operation, allowed are 'check', 'add', 'remove'; default={}",
         "image_sims": "image simulations mode (different dir layout and run prefix), default={}",
+        "run_config": "workflow run config (e.g. sp_1p2z_grid_1.yaml); fills"
+                      " in the paths below that were not given explicitly,"
+                      " default={}",
     }
 
     return _params, _short_options, _types, _help_strings
@@ -260,8 +332,9 @@ def print_list(params):
     if verbose:
         print(f"Total: {n_tiles} tiles")
 
-    with open(params["output_summary"], "w") as f_out:
-        print(n_tiles, file=f_out)
+    if params["output_summary"]:
+        with open(params["output_summary"], "w") as f_out:
+            print(n_tiles, file=f_out)
 
     # Write n_tiles to HDF5 file header
     with h5py.File(params["merged_cat_path"], "a") as hdf5_file:
@@ -394,9 +467,17 @@ def collect_tile_ids_image_sims(patch_path):
     list of (tile_id, tile_path) tuples
     """
     id_pattern = re.compile(r"^\d+\.\d+$")
-    tiles_root = os.path.join(patch_path, "tiles")
+    # Two layouts. The Gen-2 / native runs keep tiles under the patch dir
+    # itself; the unified workflow (shapepipe #891) publishes to a separate
+    # products root, and clean_tile deletes the run-dir copies -- so on a
+    # reclaimed campaign <patch>/product/tiles holds the ONLY catalogues.
     result = []
-    if not os.path.isdir(tiles_root):
+    for sub in ("tiles", os.path.join("product", "tiles"),
+                os.path.join("products", "tiles")):
+        tiles_root = os.path.join(patch_path, sub)
+        if os.path.isdir(tiles_root):
+            break
+    else:
         return result
     for prefix in os.listdir(tiles_root):
         prefix_path = os.path.join(tiles_root, prefix)
@@ -408,11 +489,33 @@ def collect_tile_ids_image_sims(patch_path):
     return result
 
 
+def find_final_cat(id, id_path, run_prefix):
+    """Path of this tile's final catalogue, or None.
+
+    Flat layout first: the unified workflow copies one catalogue per tile to
+    <products>/tiles/<shard>/<tile>/final_cat-<tile>.fits, in DOT form and with
+    no run sub-tree. Then the legacy layout, where the catalogue sits under the
+    tile's own shapepipe run dir in DASH form, newest run wins.
+    """
+    flat = os.path.join(id_path, f"final_cat-{id}.fits")
+    if os.path.exists(flat):
+        return flat
+
+    base_pattern = os.path.join(id_path, "output", run_prefix)
+    all_matches = [d for d in glob.glob(base_pattern) if os.path.isdir(d)]
+    if not all_matches:
+        return None
+    newest_dir = max(all_matches, key=os.path.getmtime)
+    id_dash = re.sub(r"\.", "-", id)
+    legacy = f"{newest_dir}/make_cat_runner/output/final_cat-{id_dash}.fits"
+    return legacy if os.path.exists(legacy) else None
+
+
 def process(params):
 
     if params["image_sims"]:
         patch_name = params["patch"]
-        run_prefix = "run_sp_tile_Mc_*"
+        run_prefix = "run_sp_tile_Mc*"
     else:
         patch_name = rf"P{params['patch']}"
         run_prefix = "run_sp_tile_Mc_*"
@@ -467,21 +570,10 @@ def process(params):
                         print(f"Skipping {id} (already processed)")
                     continue
 
-                base_pattern = os.path.join(id_path, "output", run_prefix)
-                all_matches = [d for d in glob.glob(base_pattern) if os.path.isdir(d)]
-                if not all_matches:
+                fits_file = find_final_cat(id, id_path, run_prefix)
+                if fits_file is None:
                     if params["verbose"]:
                         print(f"Final cat for {id} not found, continuing")
-                    continue
-                newest_dir = max(all_matches, key=os.path.getmtime)
-
-                id_dash = re.sub(r"\.", "-", id)
-                fits_file = f"{newest_dir}/make_cat_runner/output/final_cat-{id_dash}.fits"
-
-                # Exclude unsuccessful run without output FITS file
-                if not os.path.exists(fits_file):
-                    if params["verbose"]:
-                        print(f"Run without output file found for {id}, skipping")
                     continue
 
                 extracted_data, dtype = read_data(fits_file, params)

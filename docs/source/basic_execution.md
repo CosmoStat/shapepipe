@@ -53,8 +53,8 @@ On a cluster you run ShapePipe from the published image as a standard Apptainer
 slot, and the OpenMPI bundled in the image wires the ranks together.
 
 ```bash
-# one-time: pull the runtime image
-apptainer pull shapepipe.sif docker://ghcr.io/cosmostat/shapepipe:develop-runtime
+# one-time: pull the image
+apptainer pull shapepipe.sif docker://ghcr.io/cosmostat/shapepipe:develop
 
 # load a host MPI in the same family as the image's OpenMPI (5.0.x), then launch
 module load openmpi

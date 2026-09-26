@@ -17,7 +17,7 @@ from shapepipe.pipeline.exp_utils import get_exp_output_dirs
     input_module="sextractor_runner",
     file_pattern=["galaxy_selection", "image"],
     file_ext=[".fits", ".fits"],
-    depends=["numpy", "astropy", "sf_tools", "sqlitedict"],
+    depends=["numpy", "astropy", "sqlitedict"],
 )
 def vignetmaker_runner(
     input_file_list,

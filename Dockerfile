@@ -1,15 +1,12 @@
 # syntax=docker/dockerfile:1.27
 #
-# Two-target image:
-#   --target runtime  →  minimal, for canfar batch jobs and downstream stacks
-#   --target dev      →  runtime + everyday CLI tools + all extras (test,
-#                        lint, doc, …); default if --target is omitted
-#
-# Both share the `base` stage (system deps + uv + lockfile copy), so the
-# heavy apt + wheel-resolution work is cached once.
+# One image: CI tests it, canfar batch jobs run it, downstream stacks (e.g.
+# sp_validation) build FROM it. Everyday CLI tools and all extras (test,
+# lint, doc, jupyter, fitsio, …) are baked in, so there is nothing a job
+# runs that CI did not already exercise.
 
 # ----------------------------------------------------------------------
-# base — system deps shared by every target
+# base — system deps
 # ----------------------------------------------------------------------
 FROM python:3.12-slim-bookworm AS base
 
@@ -101,39 +98,10 @@ WORKDIR /app
 COPY pyproject.toml uv.lock /app/
 
 # ----------------------------------------------------------------------
-# runtime — minimal target for batch jobs and downstream FROM clauses
+# shapepipe — the image
 # ----------------------------------------------------------------------
-FROM base AS runtime
-LABEL description="ShapePipe runtime — slim Python + uv-frozen deps"
-
-# Lockfile-frozen Python deps + jupyter + fitsio. Test/lint/doc extras
-# are intentionally left out here; they live in the dev target.
-RUN uv sync --frozen --no-install-project --extra jupyter --extra fitsio
-
-# Copy the source and install shapepipe into the same venv.
-COPY . /app/.
-# go+rwX so non-root users on canfar/skaha can read/traverse /app and
-# write into the venv when they need to (e.g. uv add for ad-hoc deps).
-RUN chmod -R go+rwX /app && \
-    uv pip install --no-deps -e . && \
-    for ext in .py .sh .bash; do \
-        for script in /app/scripts/*/*$ext; do \
-            [ -e "$script" ] || continue; \
-            link_name=$(basename $script $ext); \
-            ln -s $script /usr/local/bin/$link_name; \
-        done; \
-    done
-
-# Activate the uv-managed venv on container start so shapepipe_run etc
-# resolve against it without explicit activation.
-ENV PATH="/app/.venv/bin:${PATH}" \
-    VIRTUAL_ENV=/app/.venv
-
-# ----------------------------------------------------------------------
-# dev — everyday working environment (default target)
-# ----------------------------------------------------------------------
-FROM base AS dev
-LABEL description="ShapePipe dev — runtime + interactive CLI tools + all extras"
+FROM base AS shapepipe
+LABEL description="ShapePipe — runtime + interactive CLI tools + all extras"
 
 # Interactive tools for working inside the container. Curated subset of
 # cailmdaley/containers focused on the search/edit/process loop; heavier
@@ -161,8 +129,9 @@ RUN apt-get update -y --quiet && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # All extras pre-installed (dev = doc + jupyter + lint + release + test +
-# fitsio). Pre-installing avoids the read-only-fs failure Martin hit when
-# trying to live `uv sync --extra test` inside the runtime image on canfar.
+# fitsio): the image is read-only once shipped (a SIF, or a non-`--writable`
+# sandbox), so a live `uv sync --extra X` there fails on the read-only
+# filesystem. Baking every extra in means nothing needs one.
 RUN uv sync --frozen --no-install-project --extra dev
 
 COPY . /app/.

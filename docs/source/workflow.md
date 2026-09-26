@@ -28,14 +28,19 @@ uv venv /project/<alloc>/<user>/snakemake-env --python 3.12
 source /project/<alloc>/<user>/snakemake-env/bin/activate
 uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 
-# Edit workflow/config.yaml: tile_list, run_dir, products_dir, container,
-# star_cats.
+# Write a run config that sets at least `run:`, the campaign's name;
+# workflow/config.yaml's machines: table supplies the rest.
 
-workflow/bin/sp run       # bring products on disk up to date with the tile list
-workflow/bin/sp report    # the success/failure tables, any time, mid-run is fine
-workflow/bin/sp container status   # which image the jobs will run inside
-workflow/bin/sp cancel <name>      # scancel this workflow's jobs
+workflow/bin/sp run -c my_run.yaml     # bring products on disk up to date with the tile list
+workflow/bin/sp report -c my_run.yaml  # the success/failure tables, any time, mid-run is fine
+workflow/bin/sp container status       # which image the jobs will run inside
+workflow/bin/sp cancel <name>          # scancel this workflow's jobs
 ```
+
+The run config is merged on top of `workflow/config.yaml`; `SP_PROFILE` and
+`input_type:` (`data` or `image_sims`) select the `machines:` entry that fills
+in whatever it leaves unset. The README's *Run configuration* section has the
+full resolution.
 
 `workflow/bin/sp` is the entry point for everything. It loads the apptainer
 module and the venv, snapshots the code it is about to launch, and sets the
@@ -116,11 +121,11 @@ with one.
 
 `sp container` owns which image the jobs run inside, in one resolution order
 shared by the CLI and the workflow: **sandbox → your cached SIF → the
-`container:` path in `config.yaml`**.
+machine's `container:` in `config.yaml`'s `machines:` table**.
 
 ```bash
 sp container status                  # layers present, active one, revision vs HEAD
-sp container pull                    # ghcr.io/cosmostat/shapepipe:develop-runtime
+sp container pull                    # ghcr.io/cosmostat/shapepipe:develop
 sp container sandbox                 # unpack the SIF writable (opt-in)
 sp container exec --writable pip install <pkg>
 sp container resolve                 # just the path the workflow will run

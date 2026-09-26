@@ -1,10 +1,9 @@
 # Running on a Cluster
 
 ShapePipe runs the same way on every cluster: **through the container**. You
-pull the slim `runtime` image once, bind-mount your clone, and run
-`shapepipe_run` inside it — there is no environment to install or activate on
-the host. This page covers the shared pattern, then the specifics for each
-supported machine.
+pull the image once, bind-mount your clone, and run `shapepipe_run` inside it —
+there is no environment to install or activate on the host. This page covers
+the shared pattern, then the specifics for each supported machine.
 
 For what is *inside* the image and how it is built, see
 [Container Workflow](container.md).
@@ -13,8 +12,8 @@ For what is *inside* the image and how it is built, see
 
 Three things hold on any cluster:
 
-- **The container is the unit of execution.** Pull the runtime image to a SIF
-  (`apptainer pull … docker://ghcr.io/cosmostat/shapepipe:<tag>-runtime`) and run
+- **The container is the unit of execution.** Pull the image to a SIF
+  (`apptainer pull … docker://ghcr.io/cosmostat/shapepipe:<tag>`) and run
   the pipeline inside it. Nothing else is installed on the host.
 - **Bind-mount your clone at the same path.** The config files reference their
   location for the input and output directories; bind-mounting the host clone at
@@ -39,14 +38,14 @@ the bundled single-tile example end to end:
 export DATA=/n17data/$USER                 # adjust to your data partition
 export APPTAINER_CACHEDIR=$DATA/.apptainer
 
-# Pull the runtime image (~850 MB).
-apptainer pull "$DATA/shapepipe-runtime.sif" \
-    docker://ghcr.io/cosmostat/shapepipe:develop-runtime
+# Pull the image (~850 MB).
+apptainer pull "$DATA/shapepipe.sif" \
+    docker://ghcr.io/cosmostat/shapepipe:develop
 
 # Submit. SPDIR is your clone, bind-mounted at the same path inside the
 # container; SP_IMAGE is the SIF. The same script serves the example and a real
 # run — point the config inside it at your own pipeline.
-SP_IMAGE="$DATA/shapepipe-runtime.sif" SPDIR="/path/to/shapepipe" \
+SP_IMAGE="$DATA/shapepipe.sif" SPDIR="/path/to/shapepipe" \
     sbatch example/pbs/candide_smp.sh
 ```
 
