@@ -125,6 +125,10 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
     all_exposures: set[tuple[str, str]] = set()
     for tile_id in tile_ids:
         if tile_id in missing_set:
+            # Not ready (ready_tiles reads the tiles table), but its edges stay:
+            # clean_exposure's consumer sets must still see a tile that read an
+            # exposure.
+            con.execute("DELETE FROM tiles WHERE tile_id = ?", (tile_id,))
             continue
         ra_dir = tile_id.split(".")[0]
         exp_pairs = read_exposure_list(exp_list_path(run_dir, tile_id))
@@ -163,11 +167,27 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
 # than two hand-written queries that could drift apart.
 
 
+def ready_tiles(db_path: Path) -> set[str]:
+    """Tiles whose exposure list the last build over them found non-empty.
+
+    Readiness is the ``tiles`` row, which a build removes when the list goes
+    missing; the edges in ``tile_exposures`` outlive it as cleanup consumers,
+    so they alone do not make a tile ready. ``n_exp`` is the number of edges
+    the build wrote beside the row. Only the small ``tiles`` table is read,
+    since every job's parse of the Snakefile calls this.
+    """
+    con = sqlite3.connect(db_path, timeout=60)
+    ready = {r[0] for r in con.execute(
+        "SELECT tile_id FROM tiles WHERE n_exp > 0")}
+    con.close()
+    return ready
+
+
 def campaign_tiles(tile_list: Path, db_path: Path) -> list[str]:
-    """The campaign's ready tiles: declared in the list AND indexed.
+    """The campaign's ready tiles: declared in the list AND ready_tiles().
 
     Exactly the Snakefile's TILES_READY, computed the same way from the same two
-    files — a declared tile with no indexed exposure list cannot have been
+    files — a declared tile with no current exposure list cannot have been
     computed, so it has no catalogue to merge.
     """
     # DEDUPED, order preserved. The tile list is appended to by hand across a
@@ -181,10 +201,8 @@ def campaign_tiles(tile_list: Path, db_path: Path) -> list[str]:
             if tile and tile not in seen:
                 seen.add(tile)
                 declared.append(tile)
-    con = sqlite3.connect(db_path, timeout=60)
-    indexed = {r[0] for r in con.execute("SELECT DISTINCT tile_id FROM tile_exposures")}
-    con.close()
-    return [t for t in declared if t in indexed]
+    ready = ready_tiles(db_path)
+    return [t for t in declared if t in ready]
 
 
 def campaign_exposures(tile_list: Path, db_path: Path) -> list[str]:

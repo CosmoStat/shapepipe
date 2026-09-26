@@ -68,7 +68,10 @@ def test_refit_with_equal_sizes_refreshes_the_exposure(tmp_path):
     tiles.write_text("210.282\n")
     db = tmp_path / "index.sqlite"
     with sqlite3.connect(db) as con:
+        con.execute("CREATE TABLE tiles(tile_id TEXT PRIMARY KEY, "
+                    "ra_dir TEXT, n_exp INTEGER)")
         con.execute("CREATE TABLE tile_exposures(tile_id TEXT, exp_id TEXT)")
+        con.execute("INSERT INTO tiles VALUES ('210.282', '210', 1)")
         con.execute("INSERT INTO tile_exposures VALUES ('210.282', ?)", (EXP,))
     out = tmp_path / "stars.h5"
     merge_args = ("--products-dir", tmp_path, "--tile-list", tiles,

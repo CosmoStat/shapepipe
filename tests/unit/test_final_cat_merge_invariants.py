@@ -114,7 +114,11 @@ def _campaign(root: Path, drop=None):
     tile_list.write_text("\n".join(TILES) + "\n")
     index = root / "index.sqlite"
     con = sqlite3.connect(index)
+    con.execute("CREATE TABLE tiles(tile_id TEXT PRIMARY KEY, ra_dir TEXT, "
+                "n_exp INTEGER)")
     con.execute("CREATE TABLE tile_exposures(tile_id TEXT, exp_id TEXT)")
+    con.executemany("INSERT INTO tiles VALUES (?, ?, 1)",
+                    [(t, t.split(".")[0]) for t in TILES])
     con.executemany("INSERT INTO tile_exposures VALUES (?, ?)",
                     [(t, "2605805") for t in TILES])
     con.commit()

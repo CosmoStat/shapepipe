@@ -311,9 +311,14 @@ else:
             "SELECT tile_id FROM tile_exposures WHERE exp_id = ? ORDER BY rowid",
             (exp,))]
 
-# Tiles this run can actually compute: declared AND indexed. The index spans the
-# campaign, so it is intersected with the declared list, not used as it.
-TILES_READY = [t for t in TILES if tile_exposures(t)]
+# Tiles this run can actually compute: declared AND ready in the index
+# (build_index.ready_tiles, as the merges read it). The index spans the
+# campaign, so it is intersected with the declared list, not used as it. A tile
+# whose exposure list went missing keeps its edges for clean_consumers but is
+# not ready.
+_READY_INDEXED = (build_index.ready_tiles(INDEX_DB) if INDEX_DB.exists()
+                  else set())
+TILES_READY = [t for t in TILES if t in _READY_INDEXED]
 READY_SET = set(TILES_READY)
 
 # A compute invocation with nothing to compute is never a success. Without this,
