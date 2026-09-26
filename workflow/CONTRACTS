@@ -9,8 +9,9 @@ prose names it.
 A campaign's name is the run config's `run:` and nothing else. The Snakefile
 binds it once, `CAMPAIGN = config["run"]`, and every product that carries a
 campaign name takes it from there: `final_cat_<run>.hdf5` and its
-`patches/<run>` group, `full_starcat_<run>.hdf5`, and the `$run` in the
-machine defaults' `products_dir`/`index_db`. No rule or script reads a
+`patches/<run>` group, `full_starcat_<run>.hdf5`,
+`coverage/coverage_<run>.hsp`, and the `$run` in the machine defaults'
+`products_dir`/`index_db`. No rule or script reads a
 `campaign` key or derives a name from a directory (`PRODUCTS_DIR.name`); two
 sources that can disagree would file one campaign's merge under another's name.
 Every campaign product path is rooted in `PRODUCTS_DIR`. Enforced by

@@ -185,19 +185,15 @@ FILE_NOT_FOUND — and the WCS off the `headers-<exp>.npy` written by `exp_split
 has no configuration precondition. Under `psf_model: fake` there is no PSF model,
 no footprint is recorded, and `coverage.enabled` is refused at parse time.
 
-Set `coverage: {enabled: true}` and one further job, `coverage_map`, stamps every
-footprint into `<products_dir>/coverage/coverage.hsp` — a HealSparse map counting,
-per sky pixel, the exposures with a valid PSF there. It is **campaign-cumulative**:
-its declared inputs are the in-scope footprints, but the script reads every record
-on the products root, reclaimed exposures included, so appending tiles grows the map
-instead of replacing it. `nside` is set in `config.yaml` to the production
-128/131072 pair, chosen to align pixel-wise with the UNIONS bit masks — nothing
-defaults to it, and a coarser map would look plausible and silently fail to align.
+Set `coverage: {enabled: true}` and one further job, `coverage_map`, stamps every footprint into `<products_dir>/coverage/coverage_<run>.hsp` — a HealSparse map counting, per sky pixel, the exposures with a valid PSF there.
+The filename takes the campaign name from `run:`, like the merged catalogues, so it identifies the campaign outside the products directory.
+The map is **campaign-cumulative**: its declared inputs are the in-scope footprints, but the script reads every record on the products root, reclaimed exposures included, so appending tiles grows the map instead of replacing it.
+`nside` is set in `config.yaml` to the production 128/131072 pair, chosen to align pixel-wise with the UNIONS bit masks — nothing defaults to it, and a coarser map would look plausible and silently fail to align.
 
 Plotting stays out of the DAG, as a human act on a durable product:
 
 ```bash
-plot_coverage_map -i <products_dir>/coverage/coverage.hsp ...
+plot_coverage_map -i <products_dir>/coverage/coverage_<run>.hsp ...
 ```
 
 with the sky windows under `coverage.plot` in `config.yaml`.

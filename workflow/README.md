@@ -254,7 +254,7 @@ workflow/
     ngmix_range.py       the ngmix chunk partition: written once by tile_vignets, read by each chunk
     persist_exp.py       ONE exposure's keepable PSF products -> one tar on products_dir (the exp_persist rule)
     exp_footprint.py     ONE exposure's per-CCD sky corners, for the CCDs with a PSF (the exp_footprint rule)
-    coverage_map.py      every exposure footprint on products_dir -> coverage.hsp (the coverage_map rule)
+    coverage_map.py      every exposure footprint on products_dir -> coverage_<run>.hsp (the coverage_map rule)
     hdf5_reconcile.py    bring an hdf5 catalogue into agreement with a campaign (shared by both merges)
     merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<run>.hdf5
     merge_final_cat.py   ALL tiles' final_cat -> final_cat_<run>.hdf5 (the final_cat_merge rule)
@@ -441,19 +441,13 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   `psf_validation` product `exp_persist` packs for every exposure whatever the
   keep list says. Like `exp_persist` it runs whatever `clean:` and `coverage:`
   say, because its input is on /scratch and the purge takes it; `clean_exposure`
-  takes its manifest as an input. Set
-  `coverage: {enabled: true}` and one further job, `coverage_map`, stamps every
-  footprint into `<products_dir>/coverage/coverage.hsp` — a HealSparse map
-  counting, per sky pixel, the exposures with a valid PSF there. That job is
-  **campaign-cumulative**: its declared inputs are the in-scope footprints, but
-  the script reads *every* record on the products root, reclaimed exposures
-  included, so appending tiles grows the map instead of replacing it. `nside` is
-  set in `config.yaml` to the production 128/131072 pair, ~0.1"/pixel, chosen to
-  align pixel-wise with the UNIONS bit masks; nothing defaults to it, and a
-  coarser map would look plausible and not align. Plotting stays out of the DAG: run `plot_coverage_map -i
-  <products_dir>/coverage/coverage.hsp ...` by hand, with the sky windows under
-  `coverage.plot` in `config.yaml`. sp_validation consumes the map in
-  `notebooks/demo_apply_hsp_masks.py`.
+  takes its manifest as an input.
+  Set `coverage: {enabled: true}` and one further job, `coverage_map`, stamps every footprint into `<products_dir>/coverage/coverage_<run>.hsp` — a HealSparse map counting, per sky pixel, the exposures with a valid PSF there.
+  The filename takes the campaign name from `run:`, like the merged catalogues, so it identifies the campaign outside the products directory.
+  The job is **campaign-cumulative**: its declared inputs are the in-scope footprints, but the script reads *every* record on the products root, reclaimed exposures included, so appending tiles grows the map instead of replacing it.
+  `nside` is set in `config.yaml` to the production 128/131072 pair, ~0.1"/pixel, chosen to align pixel-wise with the UNIONS bit masks; nothing defaults to it, and a coarser map would look plausible and not align.
+  Plotting stays out of the DAG: run `plot_coverage_map -i <products_dir>/coverage/coverage_<run>.hsp ...` by hand, with the sky windows under `coverage.plot` in `config.yaml`.
+  sp_validation consumes the map in `notebooks/demo_apply_hsp_masks.py`.
 - **A dead tile can be told to stop pinning exposures.** An exposure is
   cleanable only once every consuming tile has its vignets, so one
   permanently-failed tile holds its ~80 exposures for the life of the

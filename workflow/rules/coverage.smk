@@ -2,9 +2,9 @@
 
     exp_footprint (per exposure, exposure.smk) -> coverage_map (per campaign)
 
-One rule, and it is the only campaign-level product besides the report. The
-precedent it follows is ``star_catalogue`` (exposure.smk): a rule keyed by the
-campaign rather than by a unit, whose inputs are the units' own records.
+One campaign-level rule alongside ``star_cat_merge`` and ``final_cat_merge``:
+its inputs are per-exposure records, and its map carries the run config's
+campaign name.
 
 CAMPAIGN-CUMULATIVE. The declared inputs are the IN-SCOPE, non-tombstoned
 footprint manifests — ordering and rerun semantics for free, without dragging
@@ -14,16 +14,15 @@ records outlive their scratch stores and are still valid sky. So appending tiles
 grows the map instead of replacing it, which is what a survey coverage mask
 should do, and rebuilding is one job rather than a campaign.
 
-NOT A LOCALRULE, unlike every other rule that writes to the persistent root: at
-DR6 scale this stamps ~1M polygons at nside=131072 in a Python loop
-(coverage_map_builder.build_map). The resources below are a first sizing from
-that count and not a measurement — the polygon loop is unmeasured above a few
-thousand CCDs.
+NOT A LOCALRULE. At DR6 scale this stamps ~1M polygons at nside=131072 in a
+Python loop (coverage_map_builder.build_map). The resources below are a first
+sizing from that count and not a measurement — the polygon loop is unmeasured
+above a few thousand CCDs.
 
 PLOTS STAY OUT OF THE DAG. `plot_coverage_map -i <products_dir>/coverage/
-coverage.hsp ...`, by hand, with the windows in config.yaml's `coverage.plot`
-block — the same argument that keeps run_report.py a standalone script: it is a
-human act on a durable product.
+coverage_<run>.hsp ...`, by hand, with the windows in config.yaml's
+`coverage.plot` block — the same argument that keeps run_report.py a standalone
+script: it is a human act on a durable product.
 """
 
 # `coverage:` is OFF by default: the map is a campaign-end product, and a
@@ -35,7 +34,8 @@ NSIDE_COVERAGE = int(COVERAGE.get("nside_coverage", 128))
 NSIDE = int(COVERAGE.get("nside", 131072))
 
 COVERAGE_DIR = f"{PRODUCTS_DIR}/coverage"
-COVERAGE_HSP = f"{COVERAGE_DIR}/coverage.hsp"
+# The map carries run: so it identifies its campaign outside the products root.
+COVERAGE_HSP = f"{COVERAGE_DIR}/coverage_{CAMPAIGN}.hsp"
 COVERAGE_MANIFEST = f"{COVERAGE_DIR}/manifests/coverage_map.json"
 COVERAGE_HASH = script_hash("coverage_map.py")
 

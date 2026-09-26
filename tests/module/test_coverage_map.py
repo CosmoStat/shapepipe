@@ -64,7 +64,7 @@ def box(ra_min, ra_max, dec_min, dec_max):
 
 
 def run(products, tmp_path, monkeypatch, nside="1024"):
-    out = tmp_path / "coverage" / "coverage.hsp"
+    out = tmp_path / "coverage" / "coverage_fixture-run.hsp"
     manifest = tmp_path / "coverage" / "manifests" / "coverage_map.json"
     monkeypatch.setattr(sys, "argv", [
         "coverage_map.py",
@@ -98,6 +98,8 @@ def test_two_exposures_accumulate_to_nexp(tmp_path, monkeypatch):
     assert manifest["exposures"] == ["1000001", "2000001"]
     assert manifest["n_ccds"] == 2
     assert manifest["nside_coverage"] == 32
+    assert manifest["map"] == str(
+        tmp_path / "coverage" / "coverage_fixture-run.hsp")
 
 
 def test_every_record_on_the_root_is_used(tmp_path, monkeypatch):

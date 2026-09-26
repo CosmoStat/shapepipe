@@ -105,7 +105,8 @@ def main() -> None:
                    help="the persistent root; every exposure footprint under "
                         "it goes into the map")
     p.add_argument("--out", required=True, type=Path,
-                   help="the HealSparse map, <products_dir>/coverage/coverage.hsp")
+                   help="the HealSparse map, "
+                        "<products_dir>/coverage/coverage_<run>.hsp")
     p.add_argument("--manifest", required=True, type=Path)
     p.add_argument("--nside-coverage", required=True, type=int)
     p.add_argument("--nside", required=True, type=int)
