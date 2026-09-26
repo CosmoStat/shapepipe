@@ -13,7 +13,8 @@ campaign name takes it from there: `final_cat_<run>.hdf5` and its
 machine defaults' `products_dir`/`index_db`. No rule or script reads a
 `campaign` key or derives a name from a directory (`PRODUCTS_DIR.name`); two
 sources that can disagree would file one campaign's merge under another's name.
-Every campaign product path is rooted in `PRODUCTS_DIR`.
+Every campaign product path is rooted in `PRODUCTS_DIR`. Enforced by
+tests/unit/test_campaign_lineage.py.
 
 @sc [label:schema] final-cat-param-is-exact-allow-list
 Each input type's `config/*/final_cat.param` is the merged catalogue's exact
