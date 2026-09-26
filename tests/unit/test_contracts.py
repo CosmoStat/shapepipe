@@ -4,6 +4,8 @@ from functools import cache
 from pathlib import Path
 import textwrap
 
+import pytest
+
 from tests.helpers.astra_record import load_yaml
 from tests.helpers.contracts import (
     collect,
@@ -11,6 +13,8 @@ from tests.helpers.contracts import (
     decision_errors,
     decision_ids,
     forbid_rules,
+    governed_refs,
+    governs_errors,
     import_violations,
 )
 
@@ -156,9 +160,154 @@ def test_unknown_decision_is_an_error(tmp_path):
     assert decision_ids(RECORD) == {"top_choice", "stage.inner_choice"}
 
 
+def test_governs_resolves_all_refs_relative_to_the_contract_file(tmp_path):
+    """A multi-key coupling must not lose refs or resolve them from cwd."""
+
+    base = "workflow/config/cfis"
+    _write(tmp_path, f"{base}/default.sex", "DEBLEND_MINCONT 0.002\n")
+    _write(tmp_path, f"{base}/default.psfex", "PSF_SIZE 51,51\n")
+    _write(tmp_path, f"{base}/stamps.ini", "[STAMP]\nSIZE = 51\n")
+    _write(tmp_path, f"{base}/default.param", "VIGNET(51,51)\n")
+    _write(tmp_path, f"{base}/stars.setools", "[MASK:stars]\nFLAGS == 0\n")
+    _write(tmp_path, f"{base}/kernel.conv", "CONV NORM\n1 2 1\n")
+    # Bare-file refs also cover formats the shared resolver cannot select into.
+    _write(tmp_path, "workflow/config.yaml", "psf_model: psfex\n")
+    refs = (
+        "default.sex#DEBLEND_MINCONT",
+        "default.psfex#PSF_SIZE",
+        "stamps.ini#STAMP.SIZE",
+        "default.param#VIGNET",
+        "stars.setools#MASK:stars.FLAGS",
+        "kernel.conv",
+    )
+    _write(tmp_path, f"{base}/CONTRACTS", f"""
+        @sc [decision:top_choice,governs:{';'.join(refs)}] coupled-config
+        Keep the apertures coupled.
+        Ordinary prose is not an import rule.
+        """)
+    _write(tmp_path, "workflow/CONTRACTS", """
+        @sc [decision:stage.inner_choice,governs:config.yaml] model-choice
+        Select matching exposure and tile models.
+        """)
+
+    contracts, errors = collect(tmp_path)
+    by_id = {c.id: c for c in contracts}
+    coupled = by_id["coupled-config"]
+
+    assert errors == []
+    assert coupled.meta["governs"] == ";".join(refs)
+    assert coupled.scope == base
+    assert coupled.line == 2
+    assert coupled.prose == (
+        "Keep the apertures coupled. Ordinary prose is not an import rule."
+    )
+    assert governed_refs(coupled) == tuple(f"{base}/{ref}" for ref in refs)
+    assert governs_errors(contracts, tmp_path) == []
+    assert decision_errors(contracts, RECORD) == []
+    assert forbid_rules(tmp_path / base / "CONTRACTS") == []
+
+
+@pytest.mark.parametrize("bad_ref", [
+    "missing.sex#KEY",
+    "default.sex#MISSING",
+    "stamps.ini#STAMP.MISSING",
+    "stamps.ini#SIZE",  # INI selectors need SECTION.KEY.
+    "stars.setools#MASK:missing.FLAGS",
+    "../default.sex#KEY",  # No escape from the governing directory.
+    "/absolute/default.sex#KEY",
+])
+@pytest.mark.parametrize("bad_first", [True, False])
+def test_every_unresolvable_governs_ref_is_an_error(
+    tmp_path, bad_ref, bad_first
+):
+    """Checking only the first/last ref silently loses part of a coupling."""
+
+    base = "workflow/config"
+    _write(tmp_path, f"{base}/default.sex", "KEY 1\n")
+    _write(tmp_path, f"{base}/stamps.ini", "[STAMP]\nSIZE = 51\n")
+    _write(tmp_path, f"{base}/stars.setools", "[MASK:stars]\nFLAGS == 0\n")
+    refs = [bad_ref, "default.sex#KEY"]
+    if not bad_first:
+        refs.reverse()
+    _write(tmp_path, f"{base}/CONTRACTS", f"""
+        @sc [governs:{';'.join(refs)}] broken-coupling
+        Prose.
+        """)
+
+    contracts, errors = collect(tmp_path)
+    problems = governs_errors(contracts, tmp_path)
+
+    assert errors == []
+    assert len(problems) == 1
+    assert f"{base}/CONTRACTS:2" in problems[0]
+    assert "broken-coupling" in problems[0]
+    assert bad_ref in problems[0]
+
+
+@pytest.mark.parametrize("metadata, message", [
+    ("governs:", "malformed contract metadata"),
+    ("governs:a.sex#KEY b.sex#KEY", "malformed contract metadata"),
+    ("governs:a.sex#KEY,b.sex#KEY", "malformed contract metadata"),
+    ("governs:;a.sex#KEY", "empty governs ref"),
+    ("governs:a.sex#KEY;", "empty governs ref"),
+    ("governs:a.sex#KEY;;b.sex#KEY", "empty governs ref"),
+    ("governs:a.sex#KEY,governs:b.sex#KEY", "duplicate metadata key"),
+])
+def test_malformed_governs_does_not_silently_drop_refs(
+    tmp_path, metadata, message
+):
+    _write(tmp_path, "workflow/config/CONTRACTS", f"""
+        @sc [{metadata}] malformed-coupling
+        Prose.
+        """)
+
+    contracts, errors = collect(tmp_path)
+
+    assert contracts == []
+    assert len(errors) == 1
+    assert "workflow/config/CONTRACTS:2" in errors[0]
+    assert message in errors[0]
+
+
+def test_config_coverage_uses_governed_refs_not_the_sidecar_path(tmp_path):
+    _write(tmp_path, "workflow/config/CONTRACTS", """
+        @sc [decision:top_choice,governs:a.sex#KEY;b.ini#S.SIZE] config-coupling
+        Prose.
+
+        @sc [decision:stage.inner_choice,governs:a.sex#OTHER] off-record-key
+        A different key in the same file is not the anchored key.
+
+        @sc [governs:config.yaml] whole-file
+        Prose.
+        """)
+    record = {
+        "decisions": {
+            "top_choice": {
+                "rationale": "Anchor: workflow/config/b.ini#S.SIZE."
+            },
+            "uncovered": {},
+        },
+        "analyses": {"stage": {"decisions": {"inner_choice": {
+            "rationale": "Anchor: workflow/config/a.sex#KEY."
+        }}}},
+        "description": "Anchor: workflow/config/config.yaml.",
+    }
+
+    contracts, errors = collect(tmp_path)
+    uncovered, unanchored = coverage_report(contracts, record)
+
+    assert errors == []
+    assert uncovered == ["uncovered"]
+    assert [c.id for c in unanchored] == ["off-record-key"]
+
+
 def test_repository_contracts_are_valid_and_cite_real_decisions():
     record, contracts, errors = _repository()
-    errors = errors + decision_errors(contracts, record)
+    errors = (
+        errors
+        + decision_errors(contracts, record)
+        + governs_errors(contracts, REPO_ROOT)
+    )
 
     message = "Contract problems:\n - " + "\n - ".join(errors)
     assert not errors, message
@@ -176,7 +325,11 @@ def test_contract_coverage_report():
         print(f"  {decision}")
     print(f"{len(unanchored)} @sc contracts off the record's anchors:")
     for contract in unanchored:
-        print(f"  {contract.id} at {contract.path}::{contract.scope}")
+        targets = governed_refs(contract)
+        where = "; ".join(targets) if targets else (
+            f"{contract.path}::{contract.scope}"
+        )
+        print(f"  {contract.id} at {where}")
 
 
 def test_forbidden_import_is_found(tmp_path):

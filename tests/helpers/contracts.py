@@ -13,9 +13,17 @@ Where contracts live:
   ``.py`` file is reported as an error rather than silently ignored.
 * Snakemake (``.smk``, ``Snakefile``): in ``#`` comment blocks.
 * ``CONTRACTS`` files: anywhere in the file; they govern their directory.
+  Prose needs no ``only:`` or ``forbid:`` prefix (those are import rules).
 
 A ``decision:<id>`` meta names a decision in ``astra.yaml``: a top-level
 decision by its bare id, a sub-analysis decision as ``<analysis>.<id>``.
+A ``governs:<ref>;<ref>`` meta names the keys/files a contract constrains.
+Refs use the ASTRA anchor grammar, but paths are relative to the contract's
+own directory, not the repository root; put cross-directory couplings in
+an ancestor's ``CONTRACTS``. Semicolons separate refs without spaces, since
+commas separate metadata pairs in ``sc-list``. Repeated metadata keys are
+errors, not last-value-wins overrides. Resolution checks existence, not
+whether a key is enabled or its value satisfies the contract's prose.
 """
 
 from dataclasses import dataclass, field
@@ -27,7 +35,7 @@ import re
 import tokenize
 import warnings
 
-from tests.helpers.astra_record import extract_anchors
+from tests.helpers.astra_record import extract_anchors, resolve_anchor
 
 TAG = re.compile(r"^\s*@(sc|cc)\b.*$")
 VALID = re.compile(r"^\s*@(sc|cc)(?:\s+\[([^\]]*)\])?\s+([\w][\w.-]*)\s*$")
@@ -77,6 +85,14 @@ def parse_block(text, path, offset=0, scope=""):
                 errors.append(f"{where}: malformed contract metadata: {meta_text}")
                 continue
             meta = dict(part.split(":", 1) for part in pairs)
+            if len(meta) != len(pairs):
+                errors.append(f"{where}: duplicate metadata key: {meta_text}")
+                continue
+            if "governs" in meta and any(
+                not ref for ref in meta["governs"].split(";")
+            ):
+                errors.append(f"{where}: empty governs ref: {meta['governs']}")
+                continue
         prose = []
         for body in lines[index + 1:]:
             if not body.strip():
@@ -233,6 +249,38 @@ def decision_errors(contracts, record):
     ]
 
 
+def governed_refs(contract):
+    """Repo-relative anchor refs named by a contract's ``governs:`` meta.
+
+    Paths start at the contract's directory; the shared anchor resolver
+    rejects absolute paths and parent traversal. The parser has already
+    rejected empty refs and whitespace in the list.
+    """
+
+    if "governs" not in contract.meta:
+        return ()
+    directory = Path(contract.path).parent
+    return tuple(
+        (directory / ref).as_posix()
+        for ref in contract.meta["governs"].split(";")
+    )
+
+
+def governs_errors(contracts, root):
+    """Diagnostics for every ``governs:`` ref the ASTRA resolver rejects."""
+
+    errors = []
+    for contract in contracts:
+        for reference in governed_refs(contract):
+            problem = resolve_anchor(root, reference)
+            if problem:
+                errors.append(
+                    f"{contract.path}:{contract.line}: contract {contract.id} "
+                    f"governs {reference!r}: {problem}"
+                )
+    return errors
+
+
 def anchored_refs(record):
     """``(code_symbols, anchored_paths)`` named by the record's anchors.
 
@@ -256,17 +304,25 @@ def coverage_report(contracts, record):
     """Report-only gaps between the contracts and the record.
 
     Returns ``(uncovered, unanchored)``: decision ids no contract cites, and
-    ``@sc`` contracts whose declaration is not an anchored symbol. A
-    module-docstring contract counts as anchored when an anchor names its
-    file or a symbol in it.
+    ``@sc`` contracts whose declaration or governed refs are not anchored.
+    A module-docstring contract counts as anchored when an anchor names its
+    file or a symbol in it. A ``governs:`` contract counts when at least one
+    ref appears verbatim in the record after rebasing to the repo root;
+    another key in the same file is not a match. These are report-only
+    links, not proof that the prose holds or every coupled key is anchored.
     """
 
     cited = {c.meta["decision"] for c in contracts if "decision" in c.meta}
     uncovered = sorted(decision_ids(record) - cited)
+    references = {
+        ref for anchor in extract_anchors(record) for ref in anchor.references
+    }
     symbols, paths = anchored_refs(record)
     unanchored = []
     for contract in contracts:
         if contract.tag != "sc":
+            continue
+        if references.intersection(governed_refs(contract)):
             continue
         if contract.scope == "module":
             if contract.path in paths:
