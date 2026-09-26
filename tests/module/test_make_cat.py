@@ -20,11 +20,7 @@ from astropy.io import fits
 from sqlitedict import SqliteDict
 
 from shapepipe.modules.make_cat_package.make_cat import SaveCatalogue
-from shapepipe.modules.ngmix_package.ngmix import (
-    FLAG_NO_RESULT,
-    METACAL_TYPES,
-    Ngmix,
-)
+from shapepipe.modules.ngmix_package.ngmix import Ngmix
 
 
 class _NullLogger:
@@ -221,12 +217,10 @@ def test_save_ngmix_data_fills_sentinels_for_absent_objects(tmp_path):
 
     make_cat pre-fills every column with a type-specific sentinel and only
     overwrites the rows whose ``NUMBER`` matches an ngmix ``id``. An object
-    SExtractor saw but ngmix never fit (no matching id -- e.g. "0 epoch to
-    process", or an exception caught and skipped) must therefore keep the
-    sentinels: 0 for sizes, -10 for ellipticities, 1e30 for ``T_ERR``, -1
-    for flux/mag errors, and -- shapepipe#889 -- FLAG_NO_RESULT for
-    MCAL_FLAGS and the per-shear FLAGS_<SHEAR> columns, ``len(METACAL_TYPES)``
-    for MCAL_TYPES_FAIL. A never-fit object must never read as a clean fit.
+    SExtractor saw but ngmix never fit (no matching id) must therefore keep
+    the sentinels: 0 for sizes, -10 for ellipticities, 1e30 for ``T_ERR``,
+    -1 for flux/mag errors. (Its flag columns are pinned by
+    ``test_galaxy_cut_admits_only_measured_objects``.)
     """
     ngmix_path = tmp_path / "ngmix-2.fits"
     # ngmix fit only object 22; the final cat also carries 11 and 99.
@@ -260,23 +254,46 @@ def test_save_ngmix_data_fills_sentinels_for_absent_objects(tmp_path):
     npt.assert_allclose(n_epoch[present], row["n_epoch_model"])
     npt.assert_allclose(n_epoch[absent], [0.0, 0.0])
 
-    # The never-fit objects must NOT pass a MCAL_FLAGS == 0 quality cut.
-    mcal_flags = np.asarray(out["NGMIX_MCAL_FLAGS"])
-    assert mcal_flags[present] == row["mcal_flags"] == 0
-    npt.assert_allclose(mcal_flags[absent], [FLAG_NO_RESULT, FLAG_NO_RESULT])
 
-    flags_noshear = np.asarray(out["NGMIX_FLAGS_NOSHEAR"])
-    assert flags_noshear[present] == row["flags"] == 0
-    npt.assert_allclose(
-        flags_noshear[absent], [FLAG_NO_RESULT, FLAG_NO_RESULT]
-    )
+def _metacal_result(obj_id):
+    """One clean object's result as ``Ngmix.process`` hands it on.
 
-    mcal_types_fail = np.asarray(out["NGMIX_MCAL_TYPES_FAIL"])
-    assert mcal_types_fail[present] == row["mcal_types_fail"] == 0
-    npt.assert_allclose(
-        mcal_types_fail[absent],
-        [len(METACAL_TYPES), len(METACAL_TYPES)],
-    )
+    Every metacal type carries a successful fit; the PSF families are
+    object-level, copied from ``_ngmix_row``.
+    """
+    row = _ngmix_row(obj_id)
+    fit = {
+        "nfev": row["nfev_fit"],
+        "g": [row["g1"], row["g2"]],
+        "g_cov": np.diag([row["g1_err"] ** 2, row["g2_err"] ** 2]),
+        "T": row["T"], "T_err": row["T_err"],
+        "flux": row["flux"], "flux_err": row["flux_err"],
+        "s2n": row["s2n"], "flags": 0,
+    }
+    res = {
+        "obj_id": obj_id,
+        "n_epoch_model": row["n_epoch_model"],
+        "neighbour_flag": row["neighbour_flag"],
+    }
+    for key in NGMIX_KEYS:
+        if key.endswith("_psf_orig") or key.endswith("_psf_reconv"):
+            res[key] = row[key]
+    res.update({name: dict(fit) for name in SHEAR_EXTS_LOWER})
+    return res
+
+
+def _serialise_then_merge(tmp_path, results, cat_ids):
+    """Write ``results`` with ngmix's own write path, read via make_cat.
+
+    ``compile_results`` + ``save_results`` produce the ngmix catalogue;
+    ``_save_ngmix_data`` merges it into a final catalogue of ``cat_ids``.
+    """
+    ngmix_inst = object.__new__(Ngmix)
+    ngmix_inst._zero_point = 30.0
+    ngmix_inst._output_dir = str(tmp_path)
+    ngmix_inst._file_number_string = "-0"
+    ngmix_inst.save_results(ngmix_inst.compile_results(results))
+    return _run_save_ngmix(ngmix_inst.get_output_path(str(tmp_path)), cat_ids)
 
 
 def test_save_ngmix_data_matches_module_serialised_catalogue(tmp_path):
@@ -288,39 +305,9 @@ def test_save_ngmix_data_matches_module_serialised_catalogue(tmp_path):
     drift in the ngmix key set: the keys must line up end to end.
     """
     obj_ids = [5, 7]
-    results = []
-    for oid in obj_ids:
-        row = _ngmix_row(oid)
-        per_type = {
-            "nfev": row["nfev_fit"],
-            "g": [row["g1"], row["g2"]],
-            "g_cov": np.diag([row["g1_err"] ** 2, row["g2_err"] ** 2]),
-            "T": row["T"], "T_err": row["T_err"],
-            "flux": row["flux"], "flux_err": row["flux_err"],
-            "s2n": row["s2n"], "flags": 0,
-        }
-        res = {
-            "obj_id": oid,
-            "n_epoch_model": row["n_epoch_model"],
-            "mcal_types_fail": row["mcal_types_fail"],
-            "neighbour_flag": row["neighbour_flag"],
-            "mcal_flags": row["mcal_flags"],
-        }
-        for key in NGMIX_KEYS:
-            if key.endswith("_psf_orig") or key.endswith("_psf_reconv"):
-                res[key] = row[key]
-        res.update({name: dict(per_type) for name in SHEAR_EXTS_LOWER})
-        results.append(res)
-
-    ngmix_inst = object.__new__(Ngmix)
-    ngmix_inst._zero_point = 30.0
-    ngmix_inst._output_dir = str(tmp_path)
-    ngmix_inst._file_number_string = "-0"
-    out_dict = ngmix_inst.compile_results(results)
-    ngmix_inst.save_results(out_dict)
-
-    ngmix_path = ngmix_inst.get_output_path(str(tmp_path))
-    out = _run_save_ngmix(ngmix_path, obj_ids)
+    out = _serialise_then_merge(
+        tmp_path, [_metacal_result(oid) for oid in obj_ids], obj_ids
+    )
 
     # Both PSF families survive the round trip, distinct, on every object.
     npt.assert_allclose(
@@ -473,3 +460,52 @@ def test_save_psf_data_fills_sentinel_for_absent_epochs(tmp_path):
         assert out[col][0] == -1, col
     for col in ("EXP_ID_1", "CCD_1", "EXP_ID_2", "CCD_2", "EXP_ID_3", "CCD_3"):
         assert out[col][1] == -1, col
+
+
+def test_galaxy_cut_admits_only_measured_objects(tmp_path):
+    """Contracts mcal-flags-zero-means-measured and never-fit-is-not-clean.
+
+    Consumer-side invariant through the real write path: synthetic metacal
+    results -> ``compile_results`` / ``save_results`` -> ``_save_ngmix_data``
+    -> sp_validation's galaxy cut ``MCAL_FLAGS == 0 & MCAL_TYPES_FAIL == 0``.
+    One object per way a fit can fail to be a measurement, plus objects
+    ngmix never fit. Only the two clean objects may pass, and every passing
+    row must carry a fitted shape in all five metacal types.
+    """
+    nan, inf = float("nan"), float("inf")
+    results = {oid: _metacal_result(oid) for oid in range(1, 9)}
+    # 1, 8: clean.
+    results[2]["1p"] = {"flags": 0x8, "nfev": 5}  # fitter reported failure
+    del results[3]["noshear"]  # type absent from the result
+    del results[4]["2m"]["flags"]  # no flags key, shape present
+    results[5]["noshear"]["g"] = [nan, nan]  # flags 0, non-finite shear
+    results[6]["1m"]["g"] = [inf, 0.1]  # flags 0, infinite shear
+    del results[7]["2p"]["g"]  # flags 0, no shear at all
+    # 101, 102: in the final catalogue but never fit by ngmix.
+    cat_ids = np.array([101, 1, 2, 3, 102, 4, 5, 6, 7, 8])
+
+    out = _serialise_then_merge(tmp_path, list(results.values()), cat_ids)
+
+    mcal_flags = np.asarray(out["NGMIX_MCAL_FLAGS"]).astype(np.int64)
+    types_fail = np.asarray(out["NGMIX_MCAL_TYPES_FAIL"]).astype(np.int64)
+    passed = (mcal_flags == 0) & (types_fail == 0)
+
+    assert set(cat_ids[passed]) == {1, 8}, (
+        "mcal-flags-zero-means-measured / never-fit-is-not-clean: the cut"
+        f" admitted {sorted(set(cat_ids[passed]) - {1, 8})}"
+    )
+    assert np.all(np.asarray(out["NGMIX_N_EPOCH"])[passed] > 0)
+    for shear in SHEAR_EXTS:
+        for comp in ("G1", "G2"):
+            shape = np.asarray(out[f"NGMIX_{comp}_{shear}"])[passed]
+            assert np.all(np.isfinite(shape) & (shape != -10.0)), (
+                f"NGMIX_{comp}_{shear}: a row passing the cut has no fitted shape"
+            )
+
+    # The three flag columns agree on every row, fitted or never fit:
+    # MCAL_FLAGS is the OR and MCAL_TYPES_FAIL the count of FLAGS_<SHEAR>.
+    type_flags = np.array(
+        [np.asarray(out[f"NGMIX_FLAGS_{shear}"]) for shear in SHEAR_EXTS]
+    ).astype(np.int64)
+    npt.assert_array_equal(mcal_flags, np.bitwise_or.reduce(type_flags))
+    npt.assert_array_equal(types_fail, np.count_nonzero(type_flags, axis=0))

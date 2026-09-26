@@ -252,10 +252,8 @@ _SENTINELS = {
     "NGMIX_T_ERR_PSF_ORIG_NOSHEAR": 1e30,
     "NGMIX_T_ERR_PSF_RECONV_NOSHEAR": 1e30,
     "NGMIX_N_EPOCH": 0.0,
-    # Absent means "never fit", not "clean fit" (shapepipe#889): MCAL_FLAGS
-    # and the per-shear FLAGS_ default to the same FLAG_NO_RESULT bit an
-    # absent per-type result gets in ngmix.get_mcal_flags, and
-    # MCAL_TYPES_FAIL defaults to len(METACAL_TYPES) (all types failed).
+    # Never fit reads as an empty metacal result, not a clean fit
+    # (contract never-fit-is-not-clean): FLAG_NO_RESULT, all types failed.
     "NGMIX_MCAL_FLAGS": FLAG_NO_RESULT,
     "NGMIX_MCAL_TYPES_FAIL": len(METACAL_TYPES),
     "NGMIX_NEIGHBOUR_FLAG": 0.0,
