@@ -160,11 +160,12 @@ def check_free_space(output: Path) -> None:
 def check_sole_group(output: Path, group_path: str) -> None:
     """One file, one campaign — refuse to half-update a file holding two.
 
-    Renaming `run:` mid-flight points the rule at a NEW group inside the
-    SAME file (the path carries the campaign only on the tile side, where the
-    group does). Reconciling would then add a second group beside the first,
-    leave the first frozen and stale, and set a count attribute describing only
-    one of them. Nothing downstream reads such a file correctly, and no rule
+    The output path carries `run:`, so renaming a campaign produces a new
+    file, not a second group in this one. What this guards is a file already
+    at this path that holds ANOTHER campaign's group (a hand merge, or a copy).
+    Reconciling would then add a second group beside the first, leave the
+    first frozen and stale, and set a count attribute describing only one of
+    them. Nothing downstream reads such a file correctly, and no rule
     here means to produce one. Say what is there and stop.
     """
     if not output.exists() or "/" not in group_path:

@@ -247,10 +247,11 @@ clean_tiles: true
 # Their exposures are rebuilt from scratch if the tile is retried.
 clean_ignore_tiles: []
 
-# The ceiling on any rule's mem_mb. A request above the partition maximum is a
-# job SLURM never schedules and snakemake never diagnoses: it sits PENDING while
-# the campaign looks alive. Nibi's standard compute node is 766 GB (192 cores at
-# 4 GB/core), so 750000 leaves room for the OS and slurm's own overhead. The two
+# The ceiling on any rule's mem_mb: nibi's, whose standard compute node is
+# 766 GB (192 cores at 4 GB/core), so 750000 leaves room for the OS and slurm's
+# own overhead. A candide run never reaches it. A request above the partition
+# maximum is a job SLURM never schedules and snakemake never diagnoses: it sits
+# PENDING while the campaign looks alive. The two
 # campaign-level merges size themselves from the campaign's bytes and will cross
 # this at survey scale — the cap turns "never runs" into "runs on the biggest
 # node there is", with a parse-time warning saying which rule was capped.
