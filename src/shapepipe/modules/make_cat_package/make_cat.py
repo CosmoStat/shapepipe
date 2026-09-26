@@ -299,6 +299,7 @@ class SaveCatalogue:
         mode="",
         cat_path=None,
         moments=False,
+        n_epoch_slots=None,
     ):
         """Process Catalogue.
 
@@ -310,6 +311,9 @@ class SaveCatalogue:
             Path to input catalogue
         moments : bool
             Option to run ``ngmix`` mode with moments
+        n_epoch_slots : int, optional
+            Number of per-epoch slots in ``psf`` mode; if ``None``, the
+            tile's ``max(N_EPOCH) + 1``
 
         Returns
         --------
@@ -326,7 +330,7 @@ class SaveCatalogue:
         if mode == "ngmix":
             err_msg = self._save_ngmix_data(cat_path, moments)
         elif mode == "psf":
-            self._save_psf_data(cat_path)
+            self._save_psf_data(cat_path, n_epoch_slots)
         else:
             err_msg = (
                 f"Invalid process mode ({mode}) for "
@@ -614,73 +618,70 @@ class SaveCatalogue:
 
         return None
 
-    def _save_psf_data(self, galaxy_psf_path):
+    def _save_psf_data(self, galaxy_psf_path, n_epoch_slots=None):
         """Save PSF data.
 
-        Save the PSF catalogue into the final one.
+        Save the PSF catalogue into the final one, as per-epoch column
+        families ``HSM_G1_PSF_n``, ``HSM_G2_PSF_n``, ``HSM_T_PSF_n``,
+        ``HSM_FLAG_PSF_n``, ``EXP_ID_n`` and ``CCD_n``. Slot ``n`` of every
+        family refers to the same epoch; slots no epoch fills keep the
+        family's sentinel.
 
         Parameters
         ----------
         galaxy_psf_path : str
             Path to the PSF catalogue to save
+        n_epoch_slots : int, optional
+            Number of slots written per family; if ``None``, the tile's
+            ``max(N_EPOCH) + 1``
+
+        Raises
+        ------
+        ValueError
+            If an object has more epochs than ``n_epoch_slots``
 
         """
         galaxy_psf_cat = SqliteDict(galaxy_psf_path)
 
-        max_epoch = np.max(self._final_cat_file.get_data()["N_EPOCH"]) + 1
+        n_epoch = self._final_cat_file.get_data()["N_EPOCH"]
+        if n_epoch_slots is None:
+            n_slots = np.max(n_epoch) + 1
+        else:
+            n_slots = n_epoch_slots
 
-        self._output_dict = {
-            f"HSM_G1_PSF_{idx + 1}": np.ones(len(self._obj_id)) * -10.0
-            for idx in range(max_epoch)
+        # Empty-slot sentinel and dtype per family. EXP_ID/CCD reuse the
+        # CCD_N convention: -1 is no exposure ID or CCD number.
+        slot_families = {
+            "HSM_G1_PSF": (-10.0, "float64"),
+            "HSM_G2_PSF": (-10.0, "float64"),
+            "HSM_T_PSF": (0.0, "float64"),
+            "HSM_FLAG_PSF": (1, "int16"),
+            "EXP_ID": (-1, "int32"),
+            "CCD": (-1, "int32"),
         }
         self._output_dict = {
-            **self._output_dict,
-            **{
-                f"HSM_G2_PSF_{idx + 1}": np.ones(len(self._obj_id)) * -10.0
-                for idx in range(max_epoch)
-            },
-        }
-        self._output_dict = {
-            **self._output_dict,
-            **{
-                f"HSM_T_PSF_{idx + 1}": np.zeros(len(self._obj_id))
-                for idx in range(max_epoch)
-            },
-        }
-        self._output_dict = {
-            **self._output_dict,
-            **{
-                f"HSM_FLAG_PSF_{idx + 1}": np.ones(
-                    len(self._obj_id), dtype="int16"
-                )
-                for idx in range(max_epoch)
-            },
-        }
-        # Per-epoch exposure ID and CCD number, slot-aligned with HSM_*_PSF_n;
-        # -1 marks an empty slot (the CCD_N sentinel convention).
-        self._output_dict = {
-            **self._output_dict,
-            **{
-                f"EXP_ID_{idx + 1}": np.ones(len(self._obj_id), dtype="int32") * -1
-                for idx in range(max_epoch)
-            },
-        }
-        self._output_dict = {
-            **self._output_dict,
-            **{
-                f"CCD_{idx + 1}": np.ones(len(self._obj_id), dtype="int32") * -1
-                for idx in range(max_epoch)
-            },
+            f"{family}_{slot + 1}": np.full(
+                len(self._obj_id), sentinel, dtype=dtype
+            )
+            for family, (sentinel, dtype) in slot_families.items()
+            for slot in range(n_slots)
         }
 
         for idx, id_tmp in enumerate(self._obj_id):
 
-            if galaxy_psf_cat[str(id_tmp)] == "empty":
+            obj_epochs = galaxy_psf_cat[str(id_tmp)]
+            if obj_epochs == "empty":
                 continue
 
-            for epoch, key in enumerate(galaxy_psf_cat[str(id_tmp)].keys()):
+            if len(obj_epochs) > n_slots:
+                galaxy_psf_cat.close()
+                raise ValueError(
+                    f"Object {id_tmp} has {len(obj_epochs)} PSF epochs"
+                    + f" (N_EPOCH={n_epoch[idx]}), more than the {n_slots}"
+                    + f" per-epoch slots (N_EPOCH_SLOTS={n_epoch_slots})"
+                )
 
-                gpc_data = galaxy_psf_cat[str(id_tmp)][key]
+            for epoch, (key, gpc_data) in enumerate(obj_epochs.items()):
 
                 # `key` is "<exp>-<ccd>"; reading it in the enumeration that
                 # assigns `epoch` aligns EXP_ID_n/CCD_n with HSM_*_PSF_n by
