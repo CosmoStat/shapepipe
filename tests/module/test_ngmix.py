@@ -512,12 +512,250 @@ def test_get_mcal_flags_ors_per_type_fit_flags():
     """
     from shapepipe.modules.ngmix_package.ngmix import get_mcal_flags
 
-    res = {name: {"flags": 0} for name in ("noshear", "1p", "1m", "2p", "2m")}
+    res = {
+        name: {"flags": 0, "g": [0.01, -0.02]}
+        for name in ("noshear", "1p", "1m", "2p", "2m")
+    }
     assert get_mcal_flags(res) == 0
 
     res["1p"]["flags"] = 0x8
     res["2m"]["flags"] = 0x2
     assert get_mcal_flags(res) == 0xA
+
+
+class _RecordingLogger:
+    """Records ``error`` calls; drops ``info`` and ``warning``."""
+
+    def __init__(self):
+        self.errors = []
+
+    def error(self, msg):
+        self.errors.append(msg)
+
+    def info(self, *_args, **_kwargs):
+        pass
+
+    def warning(self, *_args, **_kwargs):
+        pass
+
+
+@pytest.mark.parametrize(
+    "count, n_fitted, n_flagged, n_errors",
+    [
+        (10, 0, 0, 1),  # nothing fitted: an error line, not an exception
+        (10, 10, 10, 1),  # every fit flagged: an error line
+        (10, 9, 1, 0),  # healthy run: no false alarm
+    ],
+)
+def test_log_run_health_logs_wholesale_failure_without_raising(
+    count, n_fitted, n_flagged, n_errors
+):
+    """Contract run-health-logs-not-raises.
+
+    Failure modes: raising (one empty tile aborts a campaign job), staying
+    silent on a wholesale failure, and alarming on a healthy run.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import log_run_health
+
+    w_log = _RecordingLogger()
+    log_run_health(w_log, count=count, n_fitted=n_fitted, n_flagged=n_flagged)
+
+    assert len(w_log.errors) == n_errors
+
+
+def test_process_survives_a_tile_with_nothing_to_fit(tmp_path):
+    """Contract run-health-logs-not-raises, through ``Ngmix.process``.
+
+    A tile whose every object has no stamps (an empty edge tile) fits
+    nothing. ``process`` must log the 0-fitted error and still write its
+    (empty) catalogue, not abort the campaign job.
+    """
+    n_obj = 3
+    tile_cat = tmp_path / "tile_cat.fits"
+    objects = fits.BinTableHDU.from_columns(
+        [
+            fits.Column(name="NUMBER", format="J", array=np.arange(1, n_obj + 1)),
+            fits.Column(name="XWIN_WORLD", format="D", array=np.zeros(n_obj)),
+            fits.Column(name="YWIN_WORLD", format="D", array=np.zeros(n_obj)),
+        ],
+        name="LDAC_OBJECTS",
+    )
+    imhead = fits.BinTableHDU.from_columns(
+        [fits.Column(name="Field Header Card", format="1A", array=["x"])],
+        name="LDAC_IMHEAD",
+    )
+    fits.HDUList([fits.PrimaryHDU(), imhead, objects]).writeto(tile_cat)
+
+    sqlite_paths = []
+    for name in ("gal", "bkg", "psf", "weight", "flag", "headers"):
+        path = str(tmp_path / f"{name}.sqlite")
+        db = SqliteDict(path)
+        if name in ("gal", "psf"):
+            for obj_id in range(1, n_obj + 1):
+                db[str(obj_id)] = "empty"
+            db.commit()
+        db.close()
+        sqlite_paths.append(path)
+
+    w_log = _RecordingLogger()
+    ngmix = Ngmix(
+        [str(tile_cat)] + sqlite_paths[:5],
+        str(tmp_path),
+        "-001-001",
+        30.0,
+        0.186,
+        sqlite_paths[5],
+        w_log,
+    )
+    ngmix.process()
+
+    assert any("0 fitted" in msg for msg in w_log.errors)
+    with fits.open(ngmix.get_output_path(str(tmp_path))) as hdul:
+        assert len(hdul["NOSHEAR"].data) == 0
+
+
+@pytest.mark.parametrize("flags", [(8, 8), (8, 0), (0, 8)])
+def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags):
+    """Contract run-health-logs-not-raises includes every fitted batch.
+
+    Known fitter outcomes feed the real process loop and FITS writer. Only
+    an all-flagged run should log an error, even when each fit is saved in
+    its own batch and no results remain in memory at the end.
+    """
+    from types import SimpleNamespace
+    from shapepipe.modules.ngmix_package import ngmix as module
+
+    tile = SimpleNamespace(obj_id=[1, 2], flux=None, seg=None)
+    galaxies = {str(i): {"exp-1": {"OFFSET": [0., 0.]}} for i in tile.obj_id}
+    stamp = SimpleNamespace(
+        gals=[np.ones((5, 5))], ra=[42.], dec=[30.], ccd=20,
+    )
+    psf = dict(
+        n_epoch=1, g_psf=[.01, -.01], g_psf_err=[.001, .001],
+        T_psf=.1, T_psf_err=.01,
+    )
+    results = []
+    for flag in flags:
+        result = _fake_metacal_result(.18, .02, .09, .001)
+        result["1p"]["flags"] = flag
+        results.append((result, psf, psf))
+    fits_to_return = iter(results)
+    monkeypatch.setattr(module, "Tile_cat", lambda *args: tile)
+    monkeypatch.setattr(module, "prepare_postage_stamps", lambda *args: stamp)
+    monkeypatch.setattr(
+        module, "do_ngmix_metacal", lambda *args, **kwargs: next(fits_to_return),
+    )
+    inst = object.__new__(Ngmix)
+    inst._tile_cat_path = "in-memory-tile"
+    inst._seg_cat_path = None
+    inst._vignet_cat = SimpleNamespace(
+        gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
+    )
+    inst._centroid_source = "wcs"
+    inst._id_obj_min = inst._id_obj_max = -1
+    inst._bkg_sub = True
+    inst._pixel_scale = .186
+    inst._blend_handling = "noisefill"
+    inst._dilate_neighbour = 1
+    inst._metacal_psf = "fitgauss"
+    inst._save_batch = 1
+    inst._zero_point = 30.
+    inst._output_dir = str(tmp_path)
+    inst._file_number_string = "-001-001"
+    inst._w_log = _RecordingLogger()
+
+    inst.process()
+
+    with fits.open(inst.get_output_path(str(tmp_path))) as hdul:
+        npt.assert_array_equal(hdul["NOSHEAR"].data["mcal_flags"], flags)
+    if all(flags):
+        assert len(inst._w_log.errors) == 1
+        assert "100% of 2 fitted objects carry nonzero mcal_flags" in inst._w_log.errors[0]
+    else:
+        assert inst._w_log.errors == []
+
+
+def _write_tile_cat_with_one_object(tmp_path):
+    """A tile catalogue with a single object, for the OFFSET-check tests."""
+    tile_cat = tmp_path / "tile_cat.fits"
+    objects = fits.BinTableHDU.from_columns(
+        [
+            fits.Column(name="NUMBER", format="J", array=np.array([1])),
+            fits.Column(name="XWIN_WORLD", format="D", array=np.zeros(1)),
+            fits.Column(name="YWIN_WORLD", format="D", array=np.zeros(1)),
+        ],
+        name="LDAC_OBJECTS",
+    )
+    imhead = fits.BinTableHDU.from_columns(
+        [fits.Column(name="Field Header Card", format="1A", array=["x"])],
+        name="LDAC_IMHEAD",
+    )
+    fits.HDUList([fits.PrimaryHDU(), imhead, objects]).writeto(tile_cat)
+    return tile_cat
+
+
+def _ngmix_with_offsetless_vignette(tmp_path, centroid_source):
+    """One object whose galaxy vignette has an epoch entry with no OFFSET.
+    Its PSF is marked 'empty', so a run that reaches the per-object loop
+    skips the object cleanly instead of failing for some other reason.
+    """
+    tile_cat = _write_tile_cat_with_one_object(tmp_path)
+
+    sqlite_paths = []
+    for name in ("gal", "bkg", "psf", "weight", "flag", "headers"):
+        path = str(tmp_path / f"{name}.sqlite")
+        db = SqliteDict(path)
+        if name == "gal":
+            db["1"] = {"expA-1": {"VIGNET": np.ones((5, 5))}}
+        if name == "psf":
+            db["1"] = "empty"
+        db.commit()
+        db.close()
+        sqlite_paths.append(path)
+
+    return Ngmix(
+        [str(tile_cat)] + sqlite_paths[:5],
+        str(tmp_path),
+        "-001-001",
+        30.0,
+        0.186,
+        sqlite_paths[5],
+        _RecordingLogger(),
+        centroid_source=centroid_source,
+    )
+
+
+def test_process_raises_before_any_fit_when_wcs_offset_is_missing(tmp_path):
+    """Contract wcs-centroid-needs-offset, through ``Ngmix.process``.
+
+    Vignettes cut before the OFFSET-writing stamp extractor carry no
+    OFFSET. Under the default ``centroid_source="wcs"`` this must raise
+    once, up front -- not disappear into the per-object try/except that
+    would otherwise turn a wholesale failure into a silently empty
+    catalogue. The fixture's PSF store marks the object 'empty', so if the
+    check did not run first, ``process`` would simply skip the object and
+    return cleanly rather than raising at all.
+    """
+    ngmix = _ngmix_with_offsetless_vignette(tmp_path, centroid_source="wcs")
+
+    with pytest.raises(ValueError, match="OFFSET"):
+        ngmix.process()
+
+
+def test_process_ignores_missing_offset_under_hsm(tmp_path):
+    """Contract wcs-centroid-needs-offset: a no-op under ``centroid_source=
+    "hsm"``, which never reads OFFSET.
+
+    The same offset-less vignette that raises under "wcs" must not trip the
+    check under "hsm": the object is simply skipped (its PSF is marked
+    'empty') and the run completes.
+    """
+    ngmix = _ngmix_with_offsetless_vignette(tmp_path, centroid_source="hsm")
+
+    ngmix.process()
+
+    with fits.open(ngmix.get_output_path(str(tmp_path))) as hdul:
+        assert len(hdul["NOSHEAR"].data) == 0
 
 
 def test_average_multiepoch_psf_skips_failed_psf_epochs():
