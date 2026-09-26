@@ -375,8 +375,14 @@ def get_patch_group(hdf5_file, patch, verbose=False):
 
 
 def read_data(fits_file, params):
-    """Read Data.
+    """Read the parameter list's columns out of one catalogue.
 
+    @sc [label:schema] read-data-raises-on-missing-column
+    A requested column the catalogue lacks raises `KeyError` naming it; it is
+    never skipped or filled. `copy_data` keeps only columns present in the
+    source, so this raise is the one place a missing name stops a merge, and
+    without it a tile short a per-epoch slot would land in the merged file
+    silently narrower, with that slot's exposure identity gone.
     """
     with fits.open(fits_file) as hdu_list:
         try:

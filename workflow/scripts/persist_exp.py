@@ -85,6 +85,15 @@ It carries no timestamp and is written tmp-then-``cmp``-then-``mv`` (the pattern
 ``clean_exposure`` uses), so a rerun that packs the same files leaves the mtime
 alone — mtime is a rerun trigger, and an unconditional rewrite would make every
 downstream ``clean_exposure`` look out of date once per invocation.
+
+@sc [label:safety] persist-exp-additive-and-always-validation
+`persist_exp:` only ever adds: an existing tar is a floor whose members are
+carried into the rewrite whatever the current keep list says, and
+`psf_validation` is packed on every run whether or not the list names it. A
+keep-list edit reruns this script, so a subtractive rewrite would delete
+products from `products_dir` after their scratch store is gone, and a pack
+without `psf_validation` would leave `star_cat_merge` short an exposure.
+Enforced by tests/unit/test_persist_exp_props.py.
 """
 
 import argparse
