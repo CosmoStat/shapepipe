@@ -488,13 +488,12 @@ analyses:
           DETECTION_IMAGE=False and FLAG_IMAGE=False with the
           default_noimaflags.param column list: tiles have no instrument flag
           image and no detection coadd exists, so detection sees every tile
-          pixel and the tile catalogue carries no IMAFLAGS_ISO. [LINT]
-          final_cat.param, read by the post-processing merge, requests
-          IMAFLAGS_ISO, which the tile chain never produces.
+          pixel and the tile catalogue carries no IMAFLAGS_ISO; final_cat.param,
+          the merge's exact allow-list, does not request it.
           Anchor: workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.DETECTION_IMAGE;
           workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE;
           workflow/config/cfis/default_noimaflags.param;
-          workflow/config/cfis/final_cat.param#IMAFLAGS_ISO.
+          workflow/config/cfis/final_cat.param.
         default: sx_nomask_single_image
         options:
           sx_nomask_single_image:
@@ -795,13 +794,13 @@ analyses:
           independently. MCCD (Liaudat+2021) fits all 40 CCDs at once with a
           hybrid local+global model (N_COMP_LOC 8, D_COMP_GLOB 8, MIN_N_STARS
           20, RMSE_THRESH 1.25); the completeness table treats its counts as
-          warnings because no campaign has run it. [LINT] config_exp_mccd.ini
-          still reads pipeline_flag images from mask_runner, which no longer
-          exists, so the MCCD exposure chain cannot run as committed.
+          warnings because no campaign has run it. The MCCD exposure chain
+          reads exp_split's image/weight/flag files and queries the sky masks
+          with mask_query_runner, like the PSFEx chain.
           Anchor: workflow/config.yaml;
           workflow/config/cfis/config_MCCD.ini#INSTANCE.N_COMP_LOC;
           workflow/config/cfis/config_MCCD.ini#INPUTS.MIN_N_STARS;
-          workflow/config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.INPUT_MODULE;
+          workflow/config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.FILE_PATTERN;
           src/shapepipe/modules/mccd_package.
         default: psfex
         options:
