@@ -110,6 +110,9 @@ def _main(merge, root: Path, exps, monkeypatch, missing=(), nside=NSIDE):
     tile_list.write_text("000.000\n")
     index_db.unlink(missing_ok=True)
     with sqlite3.connect(index_db) as con:
+        con.execute("CREATE TABLE tiles(tile_id TEXT PRIMARY KEY, ra_dir TEXT, "
+                    "n_exp INTEGER)")
+        con.execute("INSERT INTO tiles VALUES ('000.000', '000', 1)")
         con.execute("CREATE TABLE tile_exposures(tile_id TEXT, exp_id TEXT)")
         con.executemany("INSERT INTO tile_exposures VALUES ('000.000', ?)",
                         [(e,) for e in [*exps, *missing]])

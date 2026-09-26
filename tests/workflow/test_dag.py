@@ -16,6 +16,7 @@ BASE_RULES = {
     "final_cat_merge",
 }
 PSF_RULES = {"exp_persist", "star_cat_merge"}
+DEFECT_RULES = {"exp_defect_map", "defect_map_merge"}   # MAPS_DEFECTS: data only
 
 
 def test_rule_set_matches_input_mode(campaign, dag):
@@ -23,6 +24,8 @@ def test_rule_set_matches_input_mode(campaign, dag):
     expected = BASE_RULES.copy()
     if campaign.psf_model != "fake":
         expected |= PSF_RULES
+    if campaign.input_type == "data":
+        expected |= DEFECT_RULES
     assert dag.rule_names == expected
     assert "merge_final_cats" not in dag.declared_rule_names
 
@@ -39,6 +42,8 @@ def test_clean_exposure_waits_on_persist_iff_psf(campaign, dag):
         ]
         if campaign.psf_model != "fake":
             expected.append(campaign.persist_manifest(exp))
+        if campaign.input_type == "data":
+            expected.append(campaign.exp_manifest(exp, "exp_defect_map"))
         assert Counter(map(str, job.input)) == Counter(map(str, expected)), (
             "clean-exposure-waits-on-persist-iff-psf", exp, list(job.input)
         )
