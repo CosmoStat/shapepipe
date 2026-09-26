@@ -334,3 +334,32 @@ def test_repeated_refresh_does_not_grow_the_file():
         assert len(set(sizes)) == 1, f"file size drifted across refreshes: {sizes}"
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def test_a_type_change_in_the_reader_refreshes_every_unit(tmp_path):
+    """The column list is unchanged, so the digest is too; a reader that now
+    yields another dtype must still leave one dtype in the file, by re-reading
+    the units it would otherwise keep."""
+    columns = COLUMN_SETS[0]
+    sources = {}
+    for i, unit in enumerate(UNITS[:2]):
+        sources[unit] = tmp_path / f"{unit}.npy"
+        _write_source(sources[unit], _array(columns, 3, i), 10**18 + i)
+    _build(tmp_path / "cat.h5", sources, columns)
+
+    sources["u2"] = tmp_path / "u2.npy"
+    _write_source(sources["u2"], _array(columns, 3, 2), 10**18 + 2)
+    units = sorted(sources.items())
+    digest = reconcile.schema_digest(columns)
+    todo = reconcile.plan(tmp_path / "cat.h5", GROUP, units, digest)
+    assert (todo.add, todo.refresh) == (["u2"], [])
+
+    narrow = lambda unit, source: _read(unit, source).astype(
+        [(c, "<f4") for c in columns])
+    reconcile.apply(tmp_path / "cat.h5", GROUP, todo, units, narrow, digest,
+                    COUNT_ATTR)
+    with h5py.File(tmp_path / "cat.h5", "r") as f:
+        assert {f[GROUP][u].dtype["RA"] for u in f[GROUP]} == {np.dtype("<f4")}
+        for unit, path in sources.items():
+            np.testing.assert_array_equal(f[GROUP][unit][...],
+                                          narrow(unit, path))
