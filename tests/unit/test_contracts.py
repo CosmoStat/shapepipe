@@ -10,6 +10,8 @@ from tests.helpers.contracts import (
     coverage_report,
     decision_errors,
     decision_ids,
+    forbid_rules,
+    import_violations,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -175,3 +177,31 @@ def test_contract_coverage_report():
     print(f"{len(unanchored)} @sc contracts off the record's anchors:")
     for contract in unanchored:
         print(f"  {contract.id} at {contract.path}::{contract.scope}")
+
+
+def test_forbidden_import_is_found(tmp_path):
+    _write(tmp_path, "pkg/utilities/CONTRACTS", """
+        @cc no-up-imports
+        forbid: pkg.utilities.* -> pkg.modules.*
+        """)
+    _write(tmp_path, "pkg/utilities/good.py", "import os\n")
+    _write(tmp_path, "pkg/utilities/bad.py", "from ..modules import runner\n")
+    _write(tmp_path, "pkg/modules/runner.py", "from pkg.utilities import good\n")
+
+    rules = forbid_rules(tmp_path / "pkg/utilities/CONTRACTS")
+    violations = import_violations(tmp_path, rules)
+
+    assert rules == [("no-up-imports", "pkg.utilities.*", "pkg.modules.*")]
+    assert len(violations) == 2
+    assert all("bad.py:1" in v and "no-up-imports" in v for v in violations)
+
+
+def test_utilities_do_not_import_modules():
+    contracts_file = REPO_ROOT / "src/shapepipe/utilities/CONTRACTS"
+    rules = forbid_rules(contracts_file)
+    assert [rule[0] for rule in rules] == ["utilities-do-not-import-modules"]
+
+    violations = import_violations(REPO_ROOT / "src", rules)
+
+    message = "Forbidden imports:\n - " + "\n - ".join(violations)
+    assert not violations, message

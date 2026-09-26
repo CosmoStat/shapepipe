@@ -20,6 +20,7 @@ decision by its bare id, a sub-analysis decision as ``<analysis>.<id>``.
 
 from dataclasses import dataclass, field
 import ast
+import fnmatch
 import io
 from pathlib import Path
 import re
@@ -274,3 +275,87 @@ def coverage_report(contracts, record):
             continue
         unanchored.append(contract)
     return uncovered, unanchored
+
+
+FORBID = re.compile(r"^\s*forbid:\s*(\S+)\s*->\s*(\S+)\s*$")
+
+
+def forbid_rules(contracts_file):
+    """``(contract_id, source, target)`` for each ``forbid:`` line."""
+
+    rules, ident = [], None
+    for line in Path(contracts_file).read_text(encoding="utf-8").splitlines():
+        match = VALID.match(line)
+        if match:
+            ident = match.group(3)
+            continue
+        match = FORBID.match(line)
+        if match and ident:
+            rules.append((ident, *match.groups()))
+    return rules
+
+
+def module_matches(name, pattern):
+    """Glob match; ``pkg.*`` also matches ``pkg`` itself."""
+
+    return fnmatch.fnmatchcase(name, pattern) or (
+        pattern.endswith(".*") and name == pattern[:-2]
+    )
+
+
+def module_name(path, src_root):
+    """Dotted module name of ``path`` under ``src_root``."""
+
+    parts = list(Path(path).relative_to(src_root).with_suffix("").parts)
+    if parts[-1] == "__init__":
+        parts.pop()
+    return ".".join(parts)
+
+
+def imported_names(path, module):
+    """``(line, dotted_name)`` for every import in ``path``.
+
+    Relative imports resolve against ``module``; ``from a import b`` yields
+    both ``a`` and ``a.b``, since ``b`` may be a submodule.
+    """
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SyntaxWarning)
+        tree = ast.parse(Path(path).read_text(encoding="utf-8"))
+    package = module.split(".")
+    if Path(path).name != "__init__.py":
+        package = package[:-1]
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                yield node.lineno, alias.name
+        elif isinstance(node, ast.ImportFrom):
+            base = node.module or ""
+            if node.level:
+                parent = package[: len(package) - (node.level - 1)]
+                base = ".".join([*parent, *([base] if base else [])])
+            yield node.lineno, base
+            for alias in node.names:
+                if alias.name != "*":
+                    yield node.lineno, f"{base}.{alias.name}"
+
+
+def import_violations(src_root, rules):
+    """Imports under ``src_root`` that a ``forbid:`` rule rejects."""
+
+    src_root = Path(src_root)
+    found = []
+    for path in sorted(src_root.rglob("*.py")):
+        if any(part in SKIP for part in path.parts):
+            continue
+        module = module_name(path, src_root)
+        for ident, source, target in rules:
+            if not module_matches(module, source):
+                continue
+            for line, name in imported_names(path, module):
+                if module_matches(name, target):
+                    found.append(
+                        f"{path.relative_to(src_root)}:{line}: {module} "
+                        f"imports {name} (contract {ident})"
+                    )
+    return found
