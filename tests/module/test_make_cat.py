@@ -313,16 +313,21 @@ def test_save_ngmix_data_matches_module_serialised_catalogue(tmp_path):
 # --- _save_psf_data: EXP_ID_n / CCD_n alignment with HSM_*_PSF_n (#890) ---
 
 
-def _psf_epoch(g1, g2, t, flag=0):
-    """One epoch's interpolated-PSF HSM shape entry (psfex_interp's SHAPES dict)."""
-    return {
-        "SHAPES": {
-            "HSM_G1_PSF": g1,
-            "HSM_G2_PSF": g2,
-            "HSM_T_PSF": t,
-            "HSM_FLAG_PSF": flag,
-        },
+def _psf_epoch(g1, g2, t, flag=0, m4=None):
+    """One epoch's interpolated-PSF HSM shape entry (psfex_interp's SHAPES dict).
+
+    ``m4`` is an optional ``(M4_1, M4_2, RHO4)`` triple; omitted, the entry
+    mimics a producer that predates the fourth-moment columns.
+    """
+    shapes = {
+        "HSM_G1_PSF": g1,
+        "HSM_G2_PSF": g2,
+        "HSM_T_PSF": t,
+        "HSM_FLAG_PSF": flag,
     }
+    if m4 is not None:
+        shapes.update(zip(("HSM_M4_1_PSF", "HSM_M4_2_PSF", "HSM_RHO4_PSF"), m4))
+    return {"SHAPES": shapes}
 
 
 def _write_galaxy_psf_cat(path, per_obj):
@@ -448,3 +453,31 @@ def test_save_psf_data_fills_sentinel_for_absent_epochs(tmp_path):
         assert out[col][0] == -1, col
     for col in ("EXP_ID_1", "CCD_1", "EXP_ID_2", "CCD_2", "EXP_ID_3", "CCD_3"):
         assert out[col][1] == -1, col
+
+
+def test_save_psf_data_carries_fourth_moments_per_epoch(tmp_path):
+    """HSM_M4_1/M4_2/RHO4_PSF_n ride the same slots as HSM_G1_PSF_n.
+
+    The fourth-moment columns psfex_interp writes into SHAPES (shapepipe#697)
+    land per epoch; a SHAPES dict without them (an older producer) leaves
+    the slot at its fill, as does an unused slot.
+    """
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    per_obj = {
+        101: {
+            "2113864-7": _psf_epoch(0.01, 0.02, 0.5, m4=(0.11, -0.22, 2.05)),
+            "2113865-3": _psf_epoch(0.03, 0.04, 0.6),
+        },
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    out = _run_save_psf(galaxy_psf_path, [101], n_epoch=[2])
+
+    npt.assert_allclose(out["HSM_M4_1_PSF_1"], [0.11])
+    npt.assert_allclose(out["HSM_M4_2_PSF_1"], [-0.22])
+    npt.assert_allclose(out["HSM_RHO4_PSF_1"], [2.05])
+    for n in (2, 3):
+        npt.assert_allclose(out[f"HSM_M4_1_PSF_{n}"], [0.0])
+        npt.assert_allclose(out[f"HSM_M4_2_PSF_{n}"], [0.0])
+        npt.assert_allclose(out[f"HSM_RHO4_PSF_{n}"], [-1.0])
+    npt.assert_allclose(out["HSM_G1_PSF_2"], [0.03])
