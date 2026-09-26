@@ -180,6 +180,141 @@ def log_run_health(w_log, count, n_fitted, n_flagged):
         )
 
 
+def empty_metacal_output():
+    """Empty Metacal Output.
+
+    The five-HDU-shaped output dict :meth:`Ngmix.compile_results` returns
+    for zero fitted objects: one empty list per column, per metacal type.
+    Factored out so a tile with no measurable objects gets the identical
+    catalogue shape whether it is discovered by :meth:`Ngmix.process`
+    (partly-empty tile, one skipped object at a time) or by one of
+    ``ngmix_runner``'s all-empty-store guards (wholesale-empty tile, before
+    any object is read).
+
+    Returns
+    -------
+    dict
+        ``{metacal_type: {column: []}}``, matching an empty
+        :meth:`Ngmix.compile_results` call.
+
+    Raises
+    ------
+    ValueError
+        If the hardcoded HDU name list drifts out of sync with
+        :data:`METACAL_TYPES`.
+    """
+    # Output HDU order. Same set as METACAL_TYPES, but kept in this
+    # fixed order so output catalogues stay byte-reproducible; the check
+    # below guards against the two lists silently diverging.
+    names = ["1m", "1p", "2m", "2p", "noshear"]
+    if set(names) != set(METACAL_TYPES):
+        raise ValueError(
+            "compile_results metacal type list is out of sync with"
+            + " METACAL_TYPES"
+        )
+    names2 = [
+        'id',
+        'n_epoch_model',
+        'mcal_types_fail',
+        'neighbour_flag',
+        'nfev_fit',
+        # galaxy
+        'g1',
+        'g1_err',
+        'g2',
+        'g2_err',
+        'T',
+        'T_err',
+        'flux',
+        'flux_err',
+        's2n',
+        'mag',
+        'mag_err',
+        'flags',
+        'mcal_flags',
+        # original image PSF (psfex/mccd), fit by average_original_psf
+        'g1_psf_orig',
+        'g2_psf_orig',
+        'g1_err_psf_orig',
+        'g2_err_psf_orig',
+        'T_psf_orig',
+        'T_err_psf_orig',
+        # metacal reconvolution kernel, fit by average_multiepoch_psf
+        'g1_psf_reconv',
+        'g2_psf_reconv',
+        'g1_err_psf_reconv',
+        'g2_err_psf_reconv',
+        'T_psf_reconv',
+        'T_err_psf_reconv',
+    ]
+    return {k: {kk: [] for kk in names2} for k in names}
+
+
+def write_ngmix_fits(output_path, output_dict):
+    """Write Ngmix Fits.
+
+    Write a compiled ngmix results dict to a fresh output FITS file, one
+    HDU per metacal type. The file must not already exist; an existing
+    output is appended to by :meth:`Ngmix.save_results`, not this function.
+
+    Parameters
+    ----------
+    output_path : str
+        Path of the FITS file to create
+    output_dict : dict
+        Compiled results, as returned by :meth:`Ngmix.compile_results` or
+        :func:`empty_metacal_output`
+
+    Raises
+    ------
+    IndexError
+        If ``output_dict`` does not have exactly five HDUs
+    """
+    n_hdu = len(output_dict.keys())
+    if n_hdu != 5:
+        raise IndexError(
+            f"FITS output file data has {n_hdu} HDUs,"
+            + " expected are 5"
+        )
+    f_out = file_io.FITSCatalogue(
+        output_path, open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
+    )
+    for key in output_dict.keys():
+        f_out.save_as_fits(output_dict[key], ext_name=key.upper())
+
+
+def write_empty_tile_output(output_dir, file_number_string, w_log, count):
+    """Write Empty Tile Output.
+
+    Write ngmix's empty-tile product for a guard that fires before any
+    stamp is read: the same five-HDU empty catalogue and run-health error
+    line that :meth:`Ngmix.process` writes once every object in a tile has
+    been skipped, without constructing an ``Ngmix`` instance (which would
+    open the galaxy vignette store) or reading any vignette.
+
+    Used by ``ngmix_runner``'s all-empty-store guards, which must return
+    before the galaxy vignette store is opened at all -- reading its
+    many-epoch, many-object arrays is what triggers a C-level malloc crash
+    when the store is large (see the PSF-empty guard's own comment).
+
+    Parameters
+    ----------
+    output_dir : str
+        Output directory
+    file_number_string : str
+        File numbering scheme
+    w_log : logging.Logger
+        Logging instance
+    count : int
+        Number of objects considered for fitting (see :func:`log_run_health`);
+        for these guards, the number of entries in the empty store.
+    """
+    log_run_health(w_log, count, n_fitted=0, n_flagged=0)
+    output_path = f"{output_dir}/ngmix{file_number_string}.fits"
+    if not os.path.exists(output_path):
+        write_ngmix_fits(output_path, empty_metacal_output())
+
+
 def check_wcs_centroid_offset(centroid_source, tile_cat, gal_vign_cat):
     """Check WCS Centroid Offset.
 
@@ -770,51 +905,11 @@ class Ngmix(object):
             If SNR key not found
 
         """
-        # Output HDU order. Same set as METACAL_TYPES, but kept in this
-        # fixed order so output catalogues stay byte-reproducible; the check
-        # below guards against the two lists silently diverging.
-        names = ["1m", "1p", "2m", "2p", "noshear"]
-        if set(names) != set(METACAL_TYPES):
-            raise ValueError(
-                "compile_results metacal type list is out of sync with"
-                + " METACAL_TYPES"
-            )
-        names2 = [
-            'id',
-            'n_epoch_model',
-            'mcal_types_fail',
-            'neighbour_flag',
-            'nfev_fit',
-            # galaxy
-            'g1',
-            'g1_err',
-            'g2',
-            'g2_err',
-            'T',
-            'T_err',
-            'flux',
-            'flux_err',
-            's2n',
-            'mag',
-            'mag_err',
-            'flags',
-            'mcal_flags',
-            # original image PSF (psfex/mccd), fit by average_original_psf
-            'g1_psf_orig',
-            'g2_psf_orig',
-            'g1_err_psf_orig',
-            'g2_err_psf_orig',
-            'T_psf_orig',
-            'T_err_psf_orig',
-            # metacal reconvolution kernel, fit by average_multiepoch_psf
-            'g1_psf_reconv',
-            'g2_psf_reconv',
-            'g1_err_psf_reconv',
-            'g2_err_psf_reconv',
-            'T_psf_reconv',
-            'T_err_psf_reconv',
-        ]
-        output_dict = {k: {kk: [] for kk in names2} for k in names}
+        # Column layout (HDU names and per-type columns) lives in
+        # empty_metacal_output, shared with the runner's all-empty-store
+        # guards so every zero-object catalogue has the identical shape.
+        output_dict = empty_metacal_output()
+        names = list(output_dict.keys())
         for idx in range(len(results)):
             # Object-level quality columns, derived from the same per-type
             # flags as the ``flags`` column below (see get_type_flags).
@@ -942,11 +1037,7 @@ class Ngmix(object):
 
         output_name = self.get_output_path(self._output_dir)
         if not os.path.exists(output_name):
-            f_out = file_io.FITSCatalogue(
-                output_name, open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
-            )
-            for key in output_dict.keys():
-                f_out.save_as_fits(output_dict[key], ext_name=key.upper())
+            write_ngmix_fits(output_name, output_dict)
             return
 
         with fits.open(output_name, mode='update') as hdul:
