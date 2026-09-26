@@ -264,22 +264,31 @@ rule clean_exposure:
         # this DAG, so the clean must be ordered after them.
         lambda wc: [tile_manifest(t, "tile_vignets")
                     for t in clean_consumers(wc.exp) if t in READY_SET],
-        # The keepers must be off /scratch before the store goes. Unlike the
-        # consumer edges above, this edge does not depend on scope: it is the
-        # same exposure's own rule, so it drags nothing into the DAG that this
-        # exposure's chain did not already put there. No keep list removes it:
-        # exp_persist always packs the star catalogue's inputs.
+        # The keepers must be off /scratch before the store goes. No keep list
+        # removes this edge: exp_persist always packs the star catalogue's
+        # inputs. Only psf_model=fake does, which has no PSF products to keep
+        # (PERSISTS_PSF, Snakefile).
+        #
+        # A LIVE exposure is asked for its exp_persist manifest: the thing to
+        # build, and what orders this rule after the pack. A RECLAIMED one
+        # (exp_store_reclaimed, Snakefile) is asked for its TAR if it has one —
+        # on the persistent root, no rule's declared output, hence a leaf that
+        # requires nothing — and for nothing if it has none. Naming the
+        # manifest there reopens the reclaimed chain: a `persist_exp:` edit
+        # changes exp_persist's params, the manifest reruns, and it sits behind
+        # exp_psf's manifest, which went with the store, so snakemake rebuilds
+        # the exposure from VOS.
+        lambda wc: ([] if not PERSISTS_PSF
+                    else [prod_exp_manifest(wc.exp, "exp_persist")]
+                    if not exp_store_reclaimed(wc.exp)
+                    else [prod_exp_tar(wc.exp)]
+                    if Path(prod_exp_tar(wc.exp)).exists() else []),
         # And the footprint, for the same ordering reason one layer further out:
         # it is derived from headers-<exp>.npy, which lives in the store this job
-        # deletes. Reclamation must not overtake the read, and unlike the purge
-        # this deletion is ours to order.
-        # A reclaimed store has no read left to order against, and naming its
-        # footprint reopens the exposure chain: footprint_edge() (Snakefile).
-        # Only psf_model=fake drops both edges: it has no PSF products to keep
-        # and so no valid-PSF set to record (PERSISTS_PSF, Snakefile).
-        lambda wc: ([prod_exp_manifest(wc.exp, "exp_persist"),
-                     *footprint_edge(wc.exp)]
-                    if PERSISTS_PSF else [])
+        # deletes. Reclamation must not overtake the read; a reclaimed store has
+        # no read left to order against, and naming its footprint reopens the
+        # exposure chain: footprint_edge() (Snakefile).
+        lambda wc: (footprint_edge(wc.exp) if PERSISTS_PSF else []),
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
     params:

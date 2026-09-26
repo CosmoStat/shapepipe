@@ -114,7 +114,11 @@ def _campaign(root: Path, drop=None):
     tile_list.write_text("\n".join(TILES) + "\n")
     index = root / "index.sqlite"
     con = sqlite3.connect(index)
+    con.execute("CREATE TABLE tiles(tile_id TEXT PRIMARY KEY, ra_dir TEXT, "
+                "n_exp INTEGER)")
     con.execute("CREATE TABLE tile_exposures(tile_id TEXT, exp_id TEXT)")
+    con.executemany("INSERT INTO tiles VALUES (?, ?, 1)",
+                    [(t, t.split(".")[0]) for t in TILES])
     con.executemany("INSERT INTO tile_exposures VALUES (?, ?)",
                     [(t, "2605805") for t in TILES])
     con.commit()
@@ -183,3 +187,39 @@ def test_a_tile_missing_a_listed_column_stops_the_merge(tmp_path):
     assert run.returncode != 0, "merge succeeded over a tile short a column"
     assert missing in run.stderr
     assert not output.exists()
+
+
+def _rewrite_tile(tile_path, retype=None):
+    """Rewrite one tile's catalogue, optionally narrowing one column to f4."""
+    cat = fits.getdata(tile_path, 1)
+    arr = np.array(cat)
+    if retype:
+        dtype = [(n, "f4" if n == retype else arr.dtype[n])
+                 for n in arr.dtype.names]
+        arr = arr.astype(dtype)
+    fits.HDUList([fits.PrimaryHDU(), fits.BinTableHDU(arr)]).writeto(
+        tile_path, overwrite=True)
+
+
+def test_one_column_type_per_campaign(tmp_path):
+    """A tile rewritten with the same types refreshes alone (FITS byte order
+    is not a type change); a tile whose column changes type beside tiles that
+    kept the old one is refused, naming the column and both dtypes, and the
+    published catalogue is left as it was."""
+    argv, output, _ = _campaign(tmp_path)
+    assert subprocess.run(argv, capture_output=True).returncode == 0
+    tile = lambda t: (output.parent / "tiles" / t[:2] / t
+                      / f"final_cat-{t}.fits")
+
+    _rewrite_tile(tile(TILES[0]))
+    run = subprocess.run(argv, capture_output=True, text=True)
+    assert run.returncode == 0, run.stderr
+    assert "0 added, 1 refreshed" in run.stdout, run.stdout
+
+    before = output.read_bytes()
+    _rewrite_tile(tile(TILES[-1]), retype="NGMIX_T_NOSHEAR")
+    run = subprocess.run(argv, capture_output=True, text=True)
+    assert run.returncode != 0, "a campaign with two dtypes for one column"
+    assert "NGMIX_T_NOSHEAR" in run.stderr
+    assert "float32" in run.stderr and "float64" in run.stderr, run.stderr
+    assert output.read_bytes() == before

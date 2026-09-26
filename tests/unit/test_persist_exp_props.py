@@ -358,3 +358,20 @@ def test_overlapping_patterns_never_fail(keep):
             members)
     finally:
         s.close()
+
+
+def test_same_size_new_bytes_changes_the_manifest(store):
+    """The manifest is the DAG edge star_cat_merge waits on, so a refit that
+    keeps every member's size must still change it; a rerun over the same
+    bytes must not."""
+    store.write(ALWAYS, b"\x01" * 32)
+    assert store.pack([]) == 0
+    before = store.manifest.read_bytes()
+    assert store.pack([]) == 0
+    assert store.manifest.read_bytes() == before, "a no-op rerun moved it"
+
+    store.write(ALWAYS, b"\x02" * 32)
+    assert store.pack([]) == 0
+    assert store.manifest.read_bytes() != before
+    (entry,) = json.loads(store.manifest.read_text())["files"]
+    assert entry["sha256"] == hashlib.sha256(b"\x02" * 32).hexdigest()

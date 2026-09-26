@@ -23,6 +23,13 @@ data. So the file is brought INTO AGREEMENT with the campaign instead:
     file's root.
   * a dataset that agrees with its source and its schema is left alone, unread.
 
+ONE TYPE PER COLUMN. The digest covers names only, because no merge knows its
+column types before reading: they come from the sources. So `apply` checks
+types as it reads. A unit whose column types differ from the datasets it would
+keep means the reader changed under them, and every unit is re-read. If the
+sources themselves still disagree, the merge refuses, naming the column and
+both types; concatenating them would silently promote one.
+
 An append therefore READS exactly the appended units. It still WRITES the whole
 file: the existing one is copied so the result can be moved into place
 atomically, which costs one pass over it and, briefly, twice its size on disk.
@@ -87,6 +94,29 @@ def stamp(path: Path) -> tuple:
     """
     st = Path(path).stat()
     return st.st_size, st.st_mtime_ns
+
+
+def column_types(dtype) -> dict:
+    """``{column: (kind, itemsize, shape)}``: a dataset's schema, as compared
+    across units. Byte order is left out: FITS sources are big-endian, hdf5
+    may hand them back either way, and neither changes a value."""
+    return {n: (dtype[n].base.kind, dtype[n].base.itemsize, dtype[n].shape)
+            for n in dtype.names}
+
+
+def type_conflict(a_unit, a_dtype, b_unit, b_dtype) -> str:
+    """Name the first column whose type differs between two units' dtypes."""
+    a, b = column_types(a_dtype), column_types(b_dtype)
+    for col in a:
+        if a[col] != b.get(col):
+            got = b_dtype[col].base.name if col in b else "absent"
+            return (f"column {col} is {a_dtype[col].base.name} in {a_unit} "
+                    f"but {got} in {b_unit}")
+    return f"{b_unit} carries columns {a_unit} does not"
+
+
+class _Retyped(Exception):
+    """A read unit's types differ from the datasets `apply` would keep."""
 
 
 class Plan:
@@ -185,6 +215,25 @@ def check_sole_group(output: Path, group_path: str) -> None:
 
 def apply(output: Path, group_path: str, todo: Plan, units: list, read,
           digest: str, count_attr: str, provenance: dict | None = None) -> None:
+    """Carry the plan out; re-read every unit if the column types changed.
+
+    See ``_apply``. When a unit read under the plan has other column types
+    than the datasets the plan would keep, the plan widens to refresh every
+    kept unit, so the file keeps one type per column (module docstring).
+    """
+    try:
+        _apply(output, group_path, todo, units, read, digest, count_attr,
+               provenance)
+    except _Retyped as exc:
+        every = Plan(todo.add, [u for u, _ in units if u not in todo.add],
+                     todo.remove)
+        print(f"[hdf5_reconcile] {exc}; re-reading all {len(units)} unit(s)")
+        _apply(output, group_path, every, units, read, digest, count_attr,
+               provenance)
+
+
+def _apply(output: Path, group_path: str, todo: Plan, units: list, read,
+           digest: str, count_attr: str, provenance: dict | None) -> None:
     """Carry the plan out on a tmp file, then move it into place.
 
     ``read(unit, source)`` returns the structured array for one unit; it is
@@ -217,18 +266,21 @@ def apply(output: Path, group_path: str, todo: Plan, units: list, read,
     Either way the tmp is moved into place at the end, so a crash mid-merge
     leaves the old catalogue intact rather than a half-written one. A SIGKILL
     between writing the tmp and renaming it leaves the tmp behind — one file,
-    beside the catalogue, overwritten by the next run; the rename itself is
-    atomic, which is the property that matters.
+    beside the catalogue, deleted by the next run before its space check; the
+    rename itself is atomic, which is the property that matters.
     """
     sources = dict(units)
     rewrite = bool(todo.remove or todo.refresh)
+    tmp = output.with_name(output.name + ".tmp")
+    # A tmp left by a killed run is this run's to delete (one writer per
+    # output), and deleting it first keeps it from counting against the space
+    # this run needs.
+    tmp.unlink(missing_ok=True)
     check_free_space(output)
     check_sole_group(output, group_path)
     written = set(todo.add) | set(todo.refresh)
     keep = [u for u, _ in units if u not in written]
-    tmp = output.with_name(output.name + ".tmp")
     try:
-        tmp.unlink(missing_ok=True)
         if output.exists() and not rewrite:
             shutil.copy2(output, tmp)
         with h5py.File(tmp, "a") as f:
@@ -241,9 +293,27 @@ def apply(output: Path, group_path: str, todo: Plan, units: list, read,
                         # exist, and the difference only shows when a plan both
                         # rewrites and keeps something.
                         src.copy(f"{group_path}/{unit}", group, name=unit)
+            # The kept datasets' types are the reference a read unit must
+            # match; with nothing kept, the first unit read is. Kept datasets
+            # that already disagree (a file an older merge left) re-read too.
+            kept = [(u, group[u].dtype) for u in keep if u in group]
+            ref = kept[0] if kept else None
+            for unit, dtype in kept[1:]:
+                if column_types(dtype) != column_types(ref[1]):
+                    raise _Retyped(type_conflict(*ref, unit, dtype))
             for unit in todo.add + todo.refresh:
                 source = sources[unit]
                 data = read(unit, source)
+                if ref is None:
+                    ref = (unit, data.dtype)
+                elif column_types(data.dtype) != column_types(ref[1]):
+                    conflict = type_conflict(*ref, unit, data.dtype)
+                    if keep:
+                        raise _Retyped(conflict)
+                    sys.exit(f"hdf5_reconcile: {conflict}. One catalogue "
+                             f"holds one type per column; remake the units "
+                             f"whose sources are stale. {output} is "
+                             f"untouched.")
                 dset = group.create_dataset(unit, data=data, dtype=data.dtype)
                 # The dataset's own record of what it was read from; this is
                 # what lets a later invocation leave it alone.
@@ -252,6 +322,11 @@ def apply(output: Path, group_path: str, todo: Plan, units: list, read,
             f.attrs[count_attr] = len(group)
             f.attrs["param_digest"] = digest
             if provenance:
+                # One record at a time: an add-only merge copied the last
+                # one's attributes, and a snapshot-less record must not keep
+                # its branch, dirty flag, dirty files or time.
+                for attr in [a for a in f.attrs if a.startswith("code_")]:
+                    del f.attrs[attr]
                 f.attrs["code_head"] = provenance.get("head", "unknown")
                 for key, attr in (("branch", "code_branch"),
                                   ("dirty", "code_dirty"),
