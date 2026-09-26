@@ -98,7 +98,7 @@ class FindExposures:
             temp = _hist.split(" ")
 
             # Non-greedy: stop at the first extension so a multi-extension
-            # name (e.g. "2243881p.fits.fz") is not left with ".fz" on it.
+            # name (e.g. "2243881p.fits.fz") is not left with ".fits" on it.
             pattern = r"(.*?)\..*"
             pattern_match = re.search(pattern, temp[self._colnum])
             if not pattern_match:

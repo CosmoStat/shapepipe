@@ -37,12 +37,7 @@ def _make_find_exposures(tmp_path, colnum, prefix=""):
 
 
 def test_get_exposure_list_raises_when_history_missing(tmp_path):
-    """A tile with no readable HISTORY must fail deliberately.
-
-    Before the fix, the missing-HISTORY branch logged and continued, then
-    raised an accidental ``NameError`` on the undefined ``hist`` variable
-    instead of a clear, deliberate error.
-    """
+    """A tile with no readable HISTORY fails deliberately with IOError."""
     _write_tile(tmp_path / "tile.fits", history_lines=None)
     find_exp = _make_find_exposures(tmp_path, colnum=2)
 
@@ -51,17 +46,30 @@ def test_get_exposure_list_raises_when_history_missing(tmp_path):
 
 
 def test_get_exposure_list_strips_full_extension(tmp_path):
-    """A multi-extension exposure name has every extension stripped.
-
-    Before the fix, the greedy extension-stripping regex left a
-    ``"2243881p.fits.fz"`` HISTORY token as ``"2243881p.fits"`` instead of
-    ``"2243881p"``.
-    """
+    """A multi-extension exposure name has every extension stripped."""
     _write_tile(
         tmp_path / "tile.fits",
         history_lines=["input image 2243881p.fits.fz 6 extension(s)"],
     )
     find_exp = _make_find_exposures(tmp_path, colnum=2)
+
+    assert find_exp.get_exposure_list() == ["2243881p"]
+
+
+def test_get_exposure_list_matches_committed_cfis_colnum(tmp_path):
+    """The committed CFIS config's COLNUM=3 lands on the exposure filename.
+
+    Production HISTORY values carry a leading space after the ``HISTORY``
+    keyword (the FITS comment-field convention), so splitting on space
+    shifts every column by one relative to a value with no leading space;
+    ``config_tile_Fe.ini`` sets ``COLNUM = 3`` to land on the filename
+    under that convention.
+    """
+    _write_tile(
+        tmp_path / "tile.fits",
+        history_lines=[" input image 2243881p.fits 6 extension(s)"],
+    )
+    find_exp = _make_find_exposures(tmp_path, colnum=3)
 
     assert find_exp.get_exposure_list() == ["2243881p"]
 
