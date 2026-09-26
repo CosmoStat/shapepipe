@@ -60,7 +60,7 @@ def _uberseg_seg(n):
 
 @given(
     stamp=defect_stamps(),
-    blend_handling=st.sampled_from(["noisefill", "uberseg"]),
+    blend_handling=st.sampled_from(["none", "uberseg"]),
     seed=st.integers(0, 2**31 - 1),
 )
 def test_filled_set_is_the_smallest_rot90_invariant_defect_superset(

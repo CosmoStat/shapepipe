@@ -25,7 +25,7 @@ from sqlitedict import SqliteDict
 from shapepipe.pipeline import file_io
 
 # Neighbour treatments selectable with the BLEND_HANDLING option.
-BLEND_HANDLINGS = ("noisefill", "uberseg")
+BLEND_HANDLINGS = ("none", "uberseg")
 
 # Default of the EPOCH_MASKED_FRACTION_CUT option: an epoch is dropped when
 # more than this fraction of its stamp is in :func:`defect_mask`.
@@ -195,7 +195,7 @@ class Tile_cat():
         vignetmaker output cut from the tile ``SEGMENTATION`` check image),
         row-aligned to ``cat_path``. When given, ``self.seg`` holds one integer
         seg stamp per object for the ``"uberseg"`` blend handling; ``None``
-        leaves ``self.seg`` unset (the noise-fill path is unaffected).
+        leaves ``self.seg`` unset (``"none"`` blend handling needs no seg).
 
     """
     def __init__(
@@ -230,7 +230,7 @@ class Tile_cat():
         # Coadd-frame SExtractor segmentation stamp (integer labels), one per
         # object and row-aligned to the tile catalogue, overlaid unchanged on
         # every epoch for uberseg neighbour masking (shapepipe#776). None ->
-        # uberseg unavailable; the noise-fill path is unaffected.
+        # uberseg unavailable; blend handling "none" needs no seg.
         self.seg = None
         if self.seg_cat_path:
             seg_cat = file_io.FITSCatalogue(
@@ -285,7 +285,7 @@ class Postage_stamp():
         self.flags = []
         self.bkg_rms = []
         # Segmentation stamps, one per epoch, used only by the "uberseg" blend
-        # handling; empty for the default noise-fill path. All epochs carry the
+        # handling; empty under the default "none". All epochs carry the
         # SAME coadd-frame seg stamp (shapepipe#776: one coadd seg per object,
         # no per-epoch reprojection), each MegaCam-flipped to match its galaxy
         # stamp so the overlay stays registered.
@@ -430,8 +430,8 @@ class Ngmix(object):
         propagated on the vignette. ``"hsm"`` re-centers on the
         adaptive-moment centroid measured from the stamp pixels. See
         :func:`make_ngmix_observation`.
-    blend_handling : {"noisefill", "uberseg"}, optional
-        Neighbour treatment. ``"noisefill"`` (default) leaves neighbour pixels
+    blend_handling : {"none", "uberseg"}, optional
+        Neighbour treatment. ``"none"`` (default) leaves neighbour pixels
         untouched; ``"uberseg"`` zeroes the weight of neighbour-side pixels
         from the coadd segmentation map and requires ``seg_cat_path``. Defect
         pixels are noise-filled under both (see
@@ -476,7 +476,7 @@ class Ngmix(object):
         id_obj_max=-1,
         bkg_sub=True,
         centroid_source="wcs",
-        blend_handling="noisefill",
+        blend_handling="none",
         seg_cat_path=None,
         dilate_neighbour=1,
         metacal_psf="fitgauss",
@@ -1697,7 +1697,7 @@ def defect_mask(weight, flag, bkg_rms=None):
 
 def prepare_ngmix_weights(
     gal, weight, flag, rng, bkg_rms=None,
-    blend_handling="noisefill", seg=None, object_number=None,
+    blend_handling="none", seg=None, object_number=None,
     dilate_neighbour=0,
 ):
     """Build one epoch's image, weight map and noise image for ngmix.
@@ -1735,8 +1735,8 @@ def prepare_ngmix_weights(
         ``1 / bkg_rms**2`` as the ngmix inverse variance, and non-finite or
         non-positive values mark defects. Otherwise every clean pixel gets
         ``1 / sigma_mad(gal)**2``.
-    blend_handling : {"noisefill", "uberseg"}, optional
-        Neighbour treatment. ``"noisefill"`` (default) leaves neighbour
+    blend_handling : {"none", "uberseg"}, optional
+        Neighbour treatment. ``"none"`` (default) leaves neighbour
         pixels weighted and untouched. ``"uberseg"`` zeroes the weight of
         every pixel closer to a neighbour's segmentation footprint than to the
         central object's and keeps its raw image value (see
@@ -1830,7 +1830,7 @@ def prepare_ngmix_weights(
 def make_ngmix_observation(
     gal, weight, flag, psf, wcs, rng,
     bkg_rms=None, centroid_source="wcs", offset=None,
-    blend_handling="noisefill", seg=None, object_number=None,
+    blend_handling="none", seg=None, object_number=None,
     dilate_neighbour=0,
 ):
     """Build an ngmix Observation for a single galaxy epoch.
@@ -1873,9 +1873,9 @@ def make_ngmix_observation(
         Sub-pixel ``[row, col]`` coadd-centroid offset propagated from the
         stamp extractor. Required for ``centroid_source="wcs"`` (ignored for
         ``"hsm"``).
-    blend_handling : {"noisefill", "uberseg"}, optional
+    blend_handling : {"none", "uberseg"}, optional
         Neighbour treatment passed through to :func:`prepare_ngmix_weights`;
-        the default ``"noisefill"`` leaves neighbour pixels untouched.
+        the default ``"none"`` leaves neighbour pixels untouched.
     seg : numpy.ndarray, optional
         Segmentation map on the stamp grid. Required for
         ``blend_handling="uberseg"`` (ignored otherwise).
@@ -2136,7 +2136,7 @@ def make_runners(prior, flux_guess, rng):
 
 def do_ngmix_metacal(
     stamp, prior, flux_guess, rng, centroid_source="wcs",
-    blend_handling="noisefill", object_number=None, dilate_neighbour=0,
+    blend_handling="none", object_number=None, dilate_neighbour=0,
     metacal_psf="fitgauss",
 ):
     """Do Ngmix Metacal.
@@ -2160,9 +2160,9 @@ def do_ngmix_metacal(
         coadd-centroid offset in ``stamp.offsets``, propagated from the stamp
         extractor); ``"hsm"`` uses the adaptive-moment centroid from the
         stamp pixels — see that function.
-    blend_handling : {"noisefill", "uberseg"}, optional
+    blend_handling : {"none", "uberseg"}, optional
         Neighbour treatment passed through to
-        :func:`make_ngmix_observation`; the default ``"noisefill"`` leaves
+        :func:`make_ngmix_observation`; the default ``"none"`` leaves
         neighbour pixels untouched. ``"uberseg"`` consumes ``stamp.segs`` and
         ``object_number``.
     object_number : int, optional
