@@ -194,6 +194,53 @@ max_mem_mb: 750000
 # ngmix chunks per tile.
 ngmix_chunks: 8
 
+# COVERAGE MASK. `enabled: true` adds ONE campaign-level job, `coverage_map`
+# (workflow/rules/coverage.smk), which builds a HealSparse nexp map from every
+# exposure footprint on the products root. OFF by default because the map is a
+# campaign-END product: a half-finished campaign's map is a picture of how far it
+# has got, not of the survey. Turning it on costs one job and no rebuild — the
+# per-exposure records it reads are written all along, by `exp_footprint`,
+# whether or not this block is on: its input is on /scratch and the purge takes
+# it.
+#
+# The map counts, per sky pixel, the number of exposures with a VALID PSF MODEL
+# — only CCDs with a PSF validation catalogue are stamped. That set comes from
+# exp_persist.json's files[]: psfex_interp writes validation_psf-*.fits on
+# success, and returns WITHOUT writing on NOT_ENOUGH_STARS / BAD_CHI2 /
+# FILE_NOT_FOUND. Those catalogues are the `psf_validation` product, which
+# exp_persist packs for every exposure whatever `persist_exp:` above says, so
+# there is nothing to configure here. psf_model: fake writes no PSF model and so
+# records no footprint: an image-sims campaign on the true PSF has no map.
+#
+# nside_coverage / nside: 128 / 131072 is the PRODUCTION pair, and NOTHING
+# defaults to it — build_map takes both as required arguments, and this block is
+# the only place the pair is written down. nside=131072 is ~0.1"/pixel,
+# CHOSEN TO MATCH THE UNIONS BIT-MASK RESOLUTION so that coverage and mask align
+# pixel-wise. A coarser map
+# looks entirely reasonable and does not align, and the consumer would not
+# notice.
+#
+# Consumer: sp_validation applies these healsparse structural masks in
+# notebooks/demo_apply_hsp_masks.py (it reads the coverage .hsp and writes the
+# masked comprehensive catalogue).
+#
+# Plot windows are the two UNIONS sky regions, with the colourbar clipped to the
+# 1-5 exposure range; plotting stays OUT of the DAG (a human act on a durable
+# product), so these are defaults for `plot_coverage_map`, not rule params.
+#
+coverage:
+  enabled: false
+  nside_coverage: 128
+  nside: 131072
+  # Read by `plot_coverage_map`, not by any rule (plotting stays out of the DAG).
+  plot:
+    colorbar: true
+    n_exp_min: 1
+    n_exp_max: 5
+    regions:
+      SGC: {ra_min: -20, ra_max: 45, dec_min: 18, dec_max: 40}
+      NGC: {ra_min: 110, ra_max: 270, dec_min: 28, dec_max: 90}
+
 # Node-local tile store (vignets, WCS). Unset: the profile's /local/scratch
 # bind (nibi NVMe, candide node /tmp). Dense image-sim campaigns on candide
 # want a shared directory instead.

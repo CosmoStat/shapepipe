@@ -1,0 +1,98 @@
+"""Coverage — the campaign's HealSparse nexp mask, from the exposure footprints.
+
+    exp_footprint (per exposure, exposure.smk) -> coverage_map (per campaign)
+
+One campaign-level rule alongside ``star_cat_merge`` and ``final_cat_merge``:
+its inputs are per-exposure records, and its map carries the run config's
+campaign name.
+
+CAMPAIGN-CUMULATIVE. The declared inputs are the IN-SCOPE footprint manifests
+of live stores — ordering, and reruns when one is rewritten, without dragging
+out-of-scope tiles or reclaimed exposures' chains into the DAG. The SCRIPT then
+reads every footprint record on the persistent root, reclaimed exposures
+included: their records outlive their scratch stores and are still valid sky.
+`params.footprints` fingerprints that whole set by exposure id
+(coverage_exposures(), Snakefile), so a record that reaches the root without
+being an edge still reruns the map. So appending tiles grows the map instead of
+replacing it, which is what a survey coverage mask should do, and rebuilding is
+one job rather than a campaign.
+
+NOT A LOCALRULE. At DR6 scale this stamps ~1M polygons at nside=131072 in a
+Python loop (coverage_map_builder.build_map). The resources below are a first
+sizing from that count and not a measurement — the polygon loop is unmeasured
+above a few thousand CCDs.
+
+PLOTS STAY OUT OF THE DAG. `plot_coverage_map -i <products_dir>/coverage/
+coverage_<run>.hsp ...`, by hand, with the windows in config.yaml's
+`coverage.plot` block — the same argument that keeps run_report.py a standalone
+script: it is a human act on a durable product.
+"""
+
+# `coverage:` is OFF by default: the map is a campaign-end product, and a
+# half-finished campaign's map is a picture of how far it has got rather than of
+# the survey. flag() because `--config` delivers booleans as strings.
+COVERAGE = config.get("coverage") or {}
+COVERAGE_ENABLED = flag(COVERAGE.get("enabled", False))
+NSIDE_COVERAGE = int(COVERAGE.get("nside_coverage", 128))
+NSIDE = int(COVERAGE.get("nside", 131072))
+
+COVERAGE_DIR = f"{PRODUCTS_DIR}/coverage"
+# The map carries run: so it identifies its campaign outside the products root.
+COVERAGE_HSP = f"{COVERAGE_DIR}/coverage_{CAMPAIGN}.hsp"
+COVERAGE_MANIFEST = f"{COVERAGE_DIR}/manifests/coverage_map.json"
+COVERAGE_HASH = script_hash("coverage_map.py")
+
+# PARSE-TIME GUARD, and it fails before submission rather than after: healsparse
+# requires powers of two, and it says so only once a job has reached a node.
+#
+# There is no guard on `persist_exp:`. The valid-PSF CCD set exp_footprint reads
+# comes from the psf_validation members exp_persist packs for every exposure
+# whatever the keep list says, so the chain has no config precondition to check.
+for _key, _n in (("nside_coverage", NSIDE_COVERAGE), ("nside", NSIDE)):
+    if COVERAGE_ENABLED and (_n <= 0 or _n & (_n - 1)):
+        raise WorkflowError(f"coverage.{_key} must be a power of 2, got {_n}")
+
+# psf_model=fake fits no PSF model, so no exposure records a footprint
+# (footprint_targets, Snakefile) and coverage_map would reach its job only to
+# find no record on the products root. Refused here, before the campaign runs.
+if COVERAGE_ENABLED and not PERSISTS_PSF:
+    raise WorkflowError(
+        "coverage.enabled needs a fitted PSF model: psf_model=fake records no "
+        "exposure footprint, so there is no coverage map to build")
+
+
+def coverage_targets():
+    """The campaign map, when `coverage:` asks for one.
+
+    HEAD PROCESS ONLY, for the reason clean_targets() gives: this feeds `rule
+    all` at module level, so it is evaluated on every per-job re-parse too, none
+    of which can schedule `all`.
+    """
+    if not COVERAGE_ENABLED or not workflow.is_main_process:
+        return []
+    return [COVERAGE_HSP, COVERAGE_MANIFEST]
+
+
+rule coverage_map:
+    input:
+        footprint_targets()
+    output:
+        hsp      = COVERAGE_HSP,
+        manifest = COVERAGE_MANIFEST
+    # No `log:`: this is one job with one verdict, and its stderr is the job's.
+    params:
+        products       = PRODUCTS_DIR,
+        nside_coverage = NSIDE_COVERAGE,
+        nside          = NSIDE,
+        footprints     = lambda wc: unit_fingerprint(coverage_exposures()),
+        script_hash    = COVERAGE_HASH
+    threads: 1
+    resources:
+        mem_mb = 32000,
+        runtime = 240
+    shell:
+        "set -euo pipefail\n"
+        f"python {SCRIPTS}/coverage_map.py"
+        " --products-dir '{params.products}'"
+        " --out {output.hsp} --manifest {output.manifest}"
+        " --nside-coverage {params.nside_coverage} --nside {params.nside}"

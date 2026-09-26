@@ -4,9 +4,10 @@ This package contains the module for ``merge_headers``.
 
 :Author: Axel Guinot
 
-:Parent module: ``split_exp_runner``
+:Parent module: ``find_exposures_runner``
 
-:Input: Numpy binary files (``.npy``) with single-exposure header information
+:Input: An ``exp_numbers`` text file listing the tile's exposures; the
+    per-exposure header files (``.npy``) are found under ``EXP_BASE_DIR``
 
 :Output: Single SQL file with combined header information
 
@@ -20,8 +21,10 @@ single-exposure images. The merged information is saved as a single SQL file.
 Module-specific config file entries
 ===================================
 
-OUTPUT_PATH : str, optional
-    Overrides the default module output directory under ``[FILE]:OUTPUT_DIR``
+EXP_BASE_DIR : str
+    Root of the per-exposure work directories; the header ``.npy`` files are
+    collected from ``<EXP_BASE_DIR>/<prefix>/<base>/`` for every exposure
+    listed in the input ``exp_numbers`` file
 
 """
 
