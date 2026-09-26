@@ -11,9 +11,11 @@ NO MASK RULE, and that is the design (PR #847). ShapePipe generates no masks.
 The only mask that reaches pixels is the instrument flag image delivered with
 the exposure, which ``exp_split`` splits per CCD alongside image and weight and
 SExtractor reads directly. Sky-fixed masks are healsparse maps, queried once per
-object: ``mask_query`` (inside exp_psf's config chain) writes ``FLAG_EXT`` onto
-each CCD's SExtractor catalogue for setools' star cut, and ``make_cat`` writes
-the per-band ``MASK_<band>`` columns on the tile side. Neither needs a rule, a
+object: ``mask_query`` (inside exp_psf's config chain) writes ``MASK_EXT`` onto
+each CCD's SExtractor catalogue, carried for transparency and measurement (star
+selection cuts on ``IMAFLAGS_ISO`` alone; imposing ``MASK_EXT`` is opt-in, see
+``star_selection.setools``), and ``make_cat`` writes the per-band
+``MASK_<band>`` columns on the tile side. Neither needs a rule, a
 star catalogue, or a network fetch — hence no ``star_catalogue`` / ``exp_star_cat``
 here, and no ``exp_mask``.
 
@@ -77,10 +79,9 @@ rule exp_split:
     shell:
         sp_shell("exp_split", "config_exp_Sp.ini")
 
-# SExtractor -> mask_query (FLAG_EXT) -> setools star selection -> PSFEx model
-# -> psfex_interp, per CCD.
-# setools may reject a sparse CCD (~0.2% attrition) — tolerated by the floor's
-# :warn on psfex_interp_runner.
+# SExtractor -> mask_query (MASK_EXT) -> setools star selection -> PSFEx model
+# -> psfex_interp, per CCD. setools_runner is mandatory (expect=80); only
+# psfex_interp_runner is :warn (see completeness.py's COMPLETENESS table).
 rule exp_psf:
     input:
         rules.exp_split.output.manifest
