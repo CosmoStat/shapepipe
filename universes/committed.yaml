@@ -54,6 +54,7 @@ analyses:
       defect_fill: noise
       blend_handling: none
       epoch_masked_fraction_cut: one_third
+      central_defect_veto: disabled
   catalogue_assembly:
     decisions:
       star_galaxy_classification: deferred_downstream

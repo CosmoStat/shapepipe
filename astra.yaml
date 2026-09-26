@@ -1045,7 +1045,7 @@ analyses:
            metacal_scheme, centroid_source, epoch_flux_rescaling,
            psf_epoch_averaging, galaxy_pixel_weights, psf_likelihood_noise,
            megacam_ccd_flip, defect_fill, blend_handling,
-           epoch_masked_fraction_cut]
+           epoch_masked_fraction_cut, central_defect_veto]
     decisions:
       ngmix_seed_mode:
         label: Per-object RNG seeded from sky position
@@ -1287,7 +1287,10 @@ analyses:
           90-degree compensating mask. Every DES pipeline symmetrized the
           defect mask, and ShapePipe does not. The fill should be set
           independently of blend_handling; the recommended option is
-          symmetrized_noise.
+          symmetrized_4fold_noise. A single 90-degree rotation is not enough:
+          it leaves a coherent c2 of about -0.006 to -0.012 for columns 2-3 px
+          off-centre, while the 4-fold OR gives |c| < 2e-4 (measured on
+          feat/symmetrized-defect-fill).
           Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::prepare_ngmix_weights;
           src/shapepipe/modules/ngmix_package/ngmix.py::do_ngmix_metacal;
           src/shapepipe/modules/ngmix_runner.py::ngmix_runner.
@@ -1317,17 +1320,20 @@ analyses:
               reaches this option only as a side effect of BLEND_HANDLING =
               uberseg.
             insights: [mask_metacal_acts_on_whole_stamp, mask_des_defect_practice]
-          symmetrized_noise:
-            label: 90-degree-symmetrized mask, then noise fill
+          symmetrized_4fold_noise:
+            label: 4-fold-symmetrized mask (M | rot90 | rot180 | rot270), then noise fill
             description: >-
-              Not implemented. OR the defect mask with its 90-degree rotation
-              about the stamp centre, zero the weight on the union, and
-              noise-fill the union as noisefill does. This mirrors the DES
-              mask symmetrization (Y1/Y3 ngmixer symmetrize_weight; Y6
-              symmetrize_masking) and cancels the leading column-aligned
-              additive term. It roughly doubles the masked area, so the epoch
-              cut must be applied after symmetrizing. ShapePipe stamps are
-              square, so rot90 is well defined. The noise image needs no change.
+              Not implemented on develop; implemented on
+              feat/symmetrized-defect-fill. OR the defect mask with its 90,
+              180 and 270-degree rotations about the stamp centre, zero the
+              weight on the union, and noise-fill the union as noisefill does.
+              This extends the DES mask symmetrization (Y1/Y3 ngmixer
+              symmetrize_weight; Y6 symmetrize_masking, a single rotation) and
+              cancels the column-aligned additive term that one rotation leaves
+              for off-centre columns. It can quadruple the masked area, so the
+              epoch cut must be applied after symmetrizing. ShapePipe stamps
+              are square, so the rotations are well defined. The noise image
+              needs no change.
             insights: [mask_bad_column_symmetrize, mask_des_defect_practice, mask_fixed_orientation]
           interpolate:
             label: Symmetrize, then interpolate image and noise image (DES Y6)
@@ -1426,6 +1432,28 @@ analyses:
               simulations, although Sheldon et al. 2020 found similar blend
               biases with and without MOF.
             insights: [mask_des_y1_uberseg_only, mask_blend_bias_detection]
+      central_defect_veto:
+        label: Per-epoch veto on a defect near the stamp centre
+        rationale: >-
+          The committed code has no veto; the option below is implemented on
+          feat/symmetrized-defect-fill, not on develop. There it drops an epoch
+          when any defect pixel lies within EPOCH_CENTRAL_DEFECT_RADIUS px of
+          the stamp centre (0 disables), beside the masked-fraction cut in the
+          epoch loop. A noise-filled hole near the centre removes the galaxy's
+          core light, which no fill or symmetrization restores: on a round
+          galaxy with a 0.7 arcsec PSF, single epoch, it biases m by -6.4% for
+          a column 8 px from centre and -0.17% at 10 px.
+          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::prepare_postage_stamps.
+        default: disabled
+        options:
+          disabled:
+            label: No central veto (committed code)
+          radius_10px:
+            label: Drop the epoch if a defect lies within 10 px of the centre
+            description: >-
+              Implemented on feat/symmetrized-defect-fill, not on develop, and
+              recommended there: 10 px is the smallest radius with |m| < 1% for
+              both columns and single pixels.
       epoch_masked_fraction_cut:
         label: Per-epoch masked-fraction cut
         rationale: >-
@@ -1445,12 +1473,11 @@ analyses:
           simulations show avoids calibration bias. Sheldon & Huff
           2017 recommend dropping problematic epochs when many are
           available. The cut interacts with defect_fill:
-          symmetrizing roughly doubles the masked fraction, so the
+          symmetrizing multiplies the masked fraction (up to fourfold), so the
           cut should be applied after symmetrizing. UNIONS has fewer
           epochs than DES, so the cost in effective number density
-          has to be measured, not assumed. A central-region veto
-          (drop the epoch if a defect lies within a few pixels of
-          the centre) is a cheap refinement.
+          has to be measured, not assumed. A defect near the centre
+          is handled separately (central_defect_veto).
           Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::prepare_postage_stamps.
         default: one_third
         options:
