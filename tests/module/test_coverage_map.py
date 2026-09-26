@@ -18,6 +18,7 @@ Two exposures, one CCD each, offset so they overlap — the same fixture geometr
 as the CLI test, so the two routes are comparable by eye.
 """
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -158,3 +159,48 @@ def test_records_naming_no_ccd_is_a_loud_failure(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as exc:
         run(products, tmp_path, monkeypatch)
     assert "not one names a CCD with a PSF model" in str(exc.value)
+
+
+def test_manifest_records_the_map_digest(tmp_path, monkeypatch):
+    """The manifest names the map generation it describes, by content."""
+    products = tmp_path / "products"
+    write_footprint(products, "1000001", [box(9.8, 10.2, 19.8, 20.2)])
+
+    _, manifest = run(products, tmp_path, monkeypatch)
+
+    out = Path(manifest["map"])
+    assert manifest["map_sha256"] == hashlib.sha256(out.read_bytes()).hexdigest()
+
+
+def test_interrupted_write_keeps_the_published_map(tmp_path, monkeypatch):
+    """A job killed after writing the new map, before publishing it, leaves the
+    previous map and its manifest exactly as they were."""
+    products = tmp_path / "products"
+    write_footprint(products, "1000001", [box(9.8, 10.2, 19.8, 20.2)])
+    _, manifest = run(products, tmp_path, monkeypatch)
+    out = Path(manifest["map"])
+    manifest_path = tmp_path / "coverage" / "manifests" / "coverage_map.json"
+    old_map, old_manifest = out.read_bytes(), manifest_path.read_bytes()
+
+    build_map = coverage_map.build_map
+
+    def killed_after_write(*args, **kwargs):
+        hsp_map = build_map(*args, **kwargs)
+        write = hsp_map.write
+
+        def write_then_die(path, **kw):
+            write(path, **kw)
+            raise RuntimeError("killed after the map was written")
+
+        hsp_map.write = write_then_die
+        return hsp_map
+
+    monkeypatch.setattr(coverage_map, "build_map", killed_after_write)
+    write_footprint(products, "2000001", [box(40.0, 40.4, 19.8, 20.2)])
+    with pytest.raises(RuntimeError, match="killed"):
+        run(products, tmp_path, monkeypatch)
+
+    assert out.read_bytes() == old_map
+    assert manifest_path.read_bytes() == old_manifest
+    assert sorted(p.name for p in out.parent.iterdir()) == [
+        "coverage_fixture-run.hsp", "manifests"]
