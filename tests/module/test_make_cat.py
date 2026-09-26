@@ -16,6 +16,7 @@ the pre-#749 code.
 
 import numpy as np
 import numpy.testing as npt
+import pytest
 from astropy.io import fits
 from sqlitedict import SqliteDict
 
@@ -460,6 +461,23 @@ def test_save_psf_data_fills_sentinel_for_absent_epochs(tmp_path):
         assert out[col][0] == -1, col
     for col in ("EXP_ID_1", "CCD_1", "EXP_ID_2", "CCD_2", "EXP_ID_3", "CCD_3"):
         assert out[col][1] == -1, col
+
+
+@pytest.mark.parametrize("shear", SHEAR_EXTS)
+@pytest.mark.parametrize("component", [0, 1], ids=["g1", "g2"])
+@pytest.mark.parametrize("nonfinite", [np.nan, np.inf, -np.inf])
+def test_galaxy_cut_rejects_each_nonfinite_shear_component(
+    tmp_path, shear, component, nonfinite,
+):
+    """A non-finite component in any metacal type cannot pass the galaxy cut."""
+    result = _metacal_result(1)
+    result[shear.lower()]["g"] = [0.1, 0.2]
+    result[shear.lower()]["g"][component] = nonfinite
+    out = _serialise_then_merge(tmp_path, [result], np.array([1]))
+
+    assert out["NGMIX_MCAL_FLAGS"][0] != 0
+    assert out["NGMIX_MCAL_TYPES_FAIL"][0] == 1
+    assert out[f"NGMIX_FLAGS_{shear}"][0] != 0
 
 
 def test_galaxy_cut_admits_only_measured_objects(tmp_path):

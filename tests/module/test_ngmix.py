@@ -614,6 +614,67 @@ def test_process_survives_a_tile_with_nothing_to_fit(tmp_path):
         assert len(hdul["NOSHEAR"].data) == 0
 
 
+@pytest.mark.parametrize("flags", [(8, 8), (8, 0), (0, 8)])
+def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags):
+    """Contract run-health-logs-not-raises includes every fitted batch.
+
+    Known fitter outcomes feed the real process loop and FITS writer. Only
+    an all-flagged run should log an error, even when each fit is saved in
+    its own batch and no results remain in memory at the end.
+    """
+    from types import SimpleNamespace
+    from shapepipe.modules.ngmix_package import ngmix as module
+
+    tile = SimpleNamespace(obj_id=[1, 2], flux=None, seg=None)
+    galaxies = {str(i): {"exp-1": {"OFFSET": [0., 0.]}} for i in tile.obj_id}
+    stamp = SimpleNamespace(
+        gals=[np.ones((5, 5))], ra=[42.], dec=[30.], ccd=20,
+    )
+    psf = dict(
+        n_epoch=1, g_psf=[.01, -.01], g_psf_err=[.001, .001],
+        T_psf=.1, T_psf_err=.01,
+    )
+    results = []
+    for flag in flags:
+        result = _fake_metacal_result(.18, .02, .09, .001)
+        result["1p"]["flags"] = flag
+        results.append((result, psf, psf))
+    fits_to_return = iter(results)
+    monkeypatch.setattr(module, "Tile_cat", lambda *args: tile)
+    monkeypatch.setattr(module, "prepare_postage_stamps", lambda *args: stamp)
+    monkeypatch.setattr(
+        module, "do_ngmix_metacal", lambda *args, **kwargs: next(fits_to_return),
+    )
+    inst = object.__new__(Ngmix)
+    inst._tile_cat_path = "in-memory-tile"
+    inst._seg_cat_path = None
+    inst._vignet_cat = SimpleNamespace(
+        gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
+    )
+    inst._centroid_source = "wcs"
+    inst._id_obj_min = inst._id_obj_max = -1
+    inst._bkg_sub = True
+    inst._pixel_scale = .186
+    inst._blend_handling = "noisefill"
+    inst._dilate_neighbour = 1
+    inst._metacal_psf = "fitgauss"
+    inst._save_batch = 1
+    inst._zero_point = 30.
+    inst._output_dir = str(tmp_path)
+    inst._file_number_string = "-001-001"
+    inst._w_log = _RecordingLogger()
+
+    inst.process()
+
+    with fits.open(inst.get_output_path(str(tmp_path))) as hdul:
+        npt.assert_array_equal(hdul["NOSHEAR"].data["mcal_flags"], flags)
+    if all(flags):
+        assert len(inst._w_log.errors) == 1
+        assert "100% of 2 fitted objects carry nonzero mcal_flags" in inst._w_log.errors[0]
+    else:
+        assert inst._w_log.errors == []
+
+
 def _write_tile_cat_with_one_object(tmp_path):
     """A tile catalogue with a single object, for the OFFSET-check tests."""
     tile_cat = tmp_path / "tile_cat.fits"
