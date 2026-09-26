@@ -149,14 +149,12 @@ RUN_DIR    = Path(OUTPUTS["run_dir"])
 # second path: one root, exactly the pre-D5 layout.
 PRODUCTS_DIR = Path(OUTPUTS.get("products_dir") or RUN_DIR)
 INDEX_DB   = Path(OUTPUTS["index_db"])
-# The campaign's NAME — what the two campaign-level merges label their output
-# with (`final_cat_<campaign>.hdf5`, and the group inside it that holds the
-# campaign's per-tile datasets). It
-# defaults to the persistent root's basename, which is already how every
-# campaign here is named (smk-g4, smk-g5, smk-g6: run_dir, products_dir and
-# index all end in it), so the common case needs no key at all. Set `campaign:`
-# in config.yaml when the two must differ.
-CAMPAIGN = config.get("campaign") or PRODUCTS_DIR.name
+# The campaign's NAME is the run config's `run:` — the same name `$run` expands
+# to in the paths above. The two campaign-level merges label their output with
+# it (`final_cat_<run>.hdf5` and the group inside it holding the per-tile
+# datasets, `full_starcat_<run>.hdf5`). REQUIRED in run_config.py, so an unset
+# `run:` has already refused above.
+CAMPAIGN = config["run"]
 SCRIPTS    = Path(workflow.basedir) / "scripts"
 # The config chain is the repo's committed directory (D2). The configs and
 # rules that set their environment variables must be versioned together. There
@@ -671,9 +669,9 @@ def exp_store_reclaimed(exp):
 # --- the campaign-level merges ---------------------------------------------
 # Two rules, one job each per campaign, both writing to the persistent root, and
 # both the LAST link of a chain whose per-unit half the workflow already had:
-# the exposure side ends in one `full_starcat_<campaign>.hdf5` (every CCD's PSF
+# the exposure side ends in one `full_starcat_<run>.hdf5` (every CCD's PSF
 # validation catalogue — the rho/tau statistics input) and the tile side in one
-# `final_cat_<campaign>.hdf5` (every tile's final catalogue — the shear
+# `final_cat_<run>.hdf5` (every tile's final catalogue — the shear
 # catalogue sp_validation reads). Until they existed the workflow's product set
 # was two files short of what the old `combine_runs.bash` + `create_final_cat.py`
 # chain delivered, and every campaign ended with a manual merge.

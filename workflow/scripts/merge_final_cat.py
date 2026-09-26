@@ -3,7 +3,7 @@
 
 Run as the shell of the campaign-level ``final_cat_merge`` rule, never by hand.
 
-WHAT IT PRODUCES, AND FOR WHOM. ``<products_dir>/final_cat_<campaign>.hdf5``:
+WHAT IT PRODUCES, AND FOR WHOM. ``<products_dir>/final_cat_<run>.hdf5``:
 one dataset per tile, carrying the columns named by the input type's
 ``final_cat.param`` (``workflow/config/cfis/`` for data,
 ``workflow/config/cfis_image_sims/`` for image sims), plus an ``n_tiles`` attribute on the

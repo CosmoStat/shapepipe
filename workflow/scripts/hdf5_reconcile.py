@@ -160,7 +160,7 @@ def check_free_space(output: Path) -> None:
 def check_sole_group(output: Path, group_path: str) -> None:
     """One file, one campaign — refuse to half-update a file holding two.
 
-    Renaming `campaign:` mid-flight points the rule at a NEW group inside the
+    Renaming `run:` mid-flight points the rule at a NEW group inside the
     SAME file (the path carries the campaign only on the tile side, where the
     group does). Reconciling would then add a second group beside the first,
     leave the first frozen and stale, and set a count attribute describing only
@@ -179,7 +179,7 @@ def check_sole_group(output: Path, group_path: str) -> None:
             f"hdf5_reconcile: {output} already holds {parent}/"
             f"{', '.join(others)} beside {group_path}. One file is one "
             f"campaign: reconciling would freeze the other group and count "
-            f"only this one. Point `campaign:` back, or write to a new path.")
+            f"only this one. Point `run:` back, or write to a new path.")
 
 
 def apply(output: Path, group_path: str, todo: Plan, units: list, read,

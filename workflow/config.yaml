@@ -21,8 +21,9 @@ input_type: data
 # shadows that table. The Snakefile falls back to psfex if no entry
 # supplies one.
 
-# Run name, available as `$run` in the paths below.
-run: smk-g6
+# Run name, available as `$run` in the paths below; it also names the
+# campaign's merged catalogues. Required, and set by the run config.
+# run: smk-g6
 
 # Entries per machine (SP_PROFILE, default nibi; implemented: nibi, candide)
 # and input_type. A run config may instead state `machine:`, which must
@@ -78,7 +79,7 @@ machines:
 #
 # WHAT IS ALWAYS KEPT, AND IS NOT A CHOICE HERE: psf_validation, the psfex_interp
 # validation catalogue, one per CCD. `star_cat_merge` stacks every one of them
-# into <products_dir>/full_starcat_<campaign>.hdf5, so they are that
+# into <products_dir>/full_starcat_<run>.hdf5, so they are that
 # catalogue's PROVENANCE — a merged star catalogue with no per-exposure inputs
 # beside it cannot be audited, re-cut, or recomputed after a purge — and they are
 # what keeps APPENDING TILES CHEAP, since a tile added next month brings

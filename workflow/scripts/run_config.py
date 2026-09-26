@@ -23,7 +23,10 @@ PLACEHOLDER = "TBD"
 # here must not carry a top-level default as well.
 MACHINE_KEYS = ("tile_list", "retrieve", "container", "inputs", "outputs",
                 "psf_model", "psf_dict")
-REQUIRED = ("tile_list", "inputs.tiles", "inputs.exposures",
+# `run` is required in its own right, not only through `$run` in the paths:
+# it names the campaign's merged catalogues, so a run config whose paths
+# never mention `$run` must still set it.
+REQUIRED = ("run", "tile_list", "inputs.tiles", "inputs.exposures",
             "outputs.run_dir", "outputs.index_db")
 
 

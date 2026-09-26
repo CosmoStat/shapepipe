@@ -232,7 +232,7 @@ rule clean_exposure:
 
 # --- the campaign's star catalogue ------------------------------------------
 # ONE job per campaign: every exposure's every CCD's `validation_psf-<exp>-<ccd>.fits`,
-# collected into `<products_dir>/full_starcat_<campaign>.hdf5`, one dataset per
+# collected into `<products_dir>/full_starcat_<run>.hdf5`, one dataset per
 # exposure. That file is the rho/tau statistics input; the old bash chain built
 # a flat FITS table with `combine_runs.bash psf` + a `merge_starcat_runner`
 # pass, and the workflow emitted neither. sp_validation still opens the FITS

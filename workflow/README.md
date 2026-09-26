@@ -22,16 +22,16 @@ uv venv /project/def-mjhudson/cdaley/snakemake-env --python 3.12
 source /project/def-mjhudson/cdaley/snakemake-env/bin/activate
 uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 
-# Edit workflow/config.yaml: tile_list, inputs.tiles/exposures, outputs.run_dir,
-# outputs.products_dir/index_db, and container.
+# Write a run config (see Run configuration below) that sets at least `run:`,
+# the campaign's name; workflow/config.yaml's machines: table supplies the rest.
 
 # `psf_model` is `psfex` or `mccd`. psfex is exercised by smk-g4 through smk-g6; mccd has run the full chain on
 # an image-sim star tile (one focal-plane model per exposure, ~1.5 CPU-hours each).
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
-workflow/bin/sp run       # bring products on disk up to date with the tile list
-workflow/bin/sp report    # emit run_report.json now (mid-run is fine)
+workflow/bin/sp run -c my_run.yaml      # bring products on disk up to date with the tile list
+workflow/bin/sp report -c my_run.yaml   # emit run_report.json now (mid-run is fine)
 workflow/bin/sp cancel <run-name-substring>   # scancel this workflow's jobs
 workflow/bin/sp container status              # which image the jobs will run
 ```
@@ -78,13 +78,16 @@ the jobs read.) `SP_PROFILE` (default `nibi`, or `machine:` in the run config, w
 agree with it) and `input_type:` then select an entry of the `machines:` table, which supplies
 `tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
 `container` for any of these the run config leaves unset (`$base_dir` expands
-to that machine's `base_dir`, `$run` to the run config's `run:`). A value of `TBD` stops the run at parse time
+to that machine's `base_dir`, `$run` to the run config's `run:`). `run:` is
+required: it also names the campaign's merged catalogues, and config.yaml leaves
+it unset. An unset required key, or a value of `TBD`, stops the run at parse time
 until it is set. A run config therefore only needs what differs, e.g. for one
 SKiLLS shear branch on candide:
 
 ```yaml
 machine: candide
 input_type: image_sims
+run: 1z2z_grid_3
 psf_model: fake
 psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle
 tile_list: /path/to/tiles.txt
@@ -233,8 +236,8 @@ workflow/
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
     persist_exp.py       ONE exposure's keepable PSF products -> one tar on products_dir (the exp_persist rule)
     hdf5_reconcile.py    bring an hdf5 catalogue into agreement with a campaign (shared by both merges)
-    merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<campaign>.hdf5
-    merge_final_cat.py   ALL tiles' final_cat -> final_cat_<campaign>.hdf5 (the final_cat_merge rule)
+    merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<run>.hdf5
+    merge_final_cat.py   ALL tiles' final_cat -> final_cat_<run>.hdf5 (the final_cat_merge rule)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
@@ -364,7 +367,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   opens are per *campaign*, and until these rules existed each was a manual pass
   after the run.
   `star_cat_merge` collects every exposure's every CCD's `psf_validation` into
-  `<products_dir>/full_starcat_<campaign>.hdf5`, one dataset per exposure at
+  `<products_dir>/full_starcat_<run>.hdf5`, one dataset per exposure at
   `exposures/<exp>` — the rho/tau statistics input. It reads the members
   straight out of the per-exposure tars (`tarfile`; unpacking ~800k files to
   merge them would defeat the tar's whole purpose), keeps their native dtypes,
@@ -381,13 +384,13 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   writer would just be missing from the other's product. `tests/unit/`
   `test_star_cat_columns.py` is what holds them together.
   `final_cat_merge` collects every ready tile's `final_cat-<ID>.fits` into
-  `<products_dir>/final_cat_<campaign>.hdf5`: one dataset per tile under a group
+  `<products_dir>/final_cat_<run>.hdf5`: one dataset per tile under a group
   named for the campaign, the `final_cat.param` columns, an `n_tiles` attribute.
   That schema is what sp_validation's reader opens, so it is fixed; the column
   extraction reuses `scripts/python/create_final_cat.py` while the file is
   written here, because that script's own discovery walks a directory layout
-  this workflow does not have. `campaign:` in `config.yaml` names the group and
-  defaults to the persistent root's basename.
+  this workflow does not have. The run config's `run:` names both files and the
+  group.
   BOTH RECONCILE, through one shared module (`hdf5_reconcile.py`) so the
   campaign's two products cannot disagree about what an output owes its inputs.
   Each adds the units that have no dataset, drops datasets whose unit left the

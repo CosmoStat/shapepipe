@@ -3,7 +3,7 @@
 
 Run as the shell of the campaign-level ``star_cat_merge`` rule, never by hand.
 
-WHAT IT PRODUCES, AND FOR WHOM. ``<products_dir>/full_starcat_<campaign>.hdf5``:
+WHAT IT PRODUCES, AND FOR WHOM. ``<products_dir>/full_starcat_<run>.hdf5``:
 one dataset per exposure at ``exposures/<exp>``, holding that exposure's every
 CCD's ``validation_psf-<exp>-<ccd>.fits`` rows stacked, with a ``CCD_NB`` column
 recording which CCD each row came from. It is the input to the rho/tau
