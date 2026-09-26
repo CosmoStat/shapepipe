@@ -429,3 +429,30 @@ def test_an_abandoned_tmp_does_not_count_against_free_space(tmp_path,
     assert not orphan.exists()
     with h5py.File(output, "r") as f:
         assert set(f[GROUP]) == {"u0", "u1"}
+
+
+def test_each_provenance_record_replaces_the_last(tmp_path):
+    """An add-only merge copies the file, attributes and all. A merge run
+    without a snapshot records code_head=unknown, and must not keep the last
+    snapshot's branch, dirty flag, dirty files or time beside it."""
+    columns = COLUMN_SETS[0]
+    output = tmp_path / "cat.h5"
+    digest = reconcile.schema_digest(columns)
+    sources = {}
+
+    def add(unit, provenance):
+        sources[unit] = tmp_path / f"{unit}.npy"
+        _write_source(sources[unit], _array(columns, 3, len(sources)),
+                      10**18 + len(sources))
+        units = sorted(sources.items())
+        todo = reconcile.plan(output, GROUP, units, digest)
+        assert todo.add == [unit] and not (todo.refresh or todo.remove)
+        reconcile.apply(output, GROUP, todo, units, _read, digest,
+                        COUNT_ATTR, provenance)
+
+    add("u0", {"head": "abc123", "branch": "old", "dirty": True,
+               "taken_at": "yesterday", "dirty_files": ["old.py"]})
+    add("u1", {"head": "unknown"})
+    with h5py.File(output, "r") as f:
+        code = {k: f.attrs[k] for k in f.attrs if k.startswith("code_")}
+    assert code == {"code_head": "unknown"}

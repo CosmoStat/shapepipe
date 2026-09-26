@@ -322,6 +322,11 @@ def _apply(output: Path, group_path: str, todo: Plan, units: list, read,
             f.attrs[count_attr] = len(group)
             f.attrs["param_digest"] = digest
             if provenance:
+                # One record at a time: an add-only merge copied the last
+                # one's attributes, and a snapshot-less record must not keep
+                # its branch, dirty flag, dirty files or time.
+                for attr in [a for a in f.attrs if a.startswith("code_")]:
+                    del f.attrs[attr]
                 f.attrs["code_head"] = provenance.get("head", "unknown")
                 for key, attr in (("branch", "code_branch"),
                                   ("dirty", "code_dirty"),
