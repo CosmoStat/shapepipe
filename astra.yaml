@@ -1336,110 +1336,88 @@ analyses:
           megapipe_flip:
             label: Flip CCDs < 18 and 36/37 (MegaPipe orientation)
       defect_fill:
-        label: Image content of flagged / zero-weight pixels before metacal
+        label: Image content of defect pixels before metacal
         rationale: >-
-          prepare_ngmix_weights gives weight 0 to every pixel with a nonzero
-          instrument flag, zero exposure weight or invalid background RMS. What
-          the IMAGE holds in those pixels still matters, because metacal never
-          looks at weights: ngmix builds a galsim InterpolatedImage from the
-          whole observation image, deconvolves, shears and reconvolves it, and
-          copies the weight map through unchanged. Whatever sits in a
-          zero-weight pixel is therefore spread into the weighted pixels within
-          about a PSF width, with ringing at sharp features. DES's own
-          corrector (ngmixer) says why it fills: "it may be important for codes
-          that take moments or use FFTs". The fill is coupled to the neighbour
-          treatment through the single BLEND_HANDLING key, which the committed
-          config leaves at its default. Under noisefill, masked pixels get an
-          independent noise realisation at the per-pixel RMS. Under uberseg,
-          the fill is skipped, so raw bad columns, bleeds, cosmic rays and
-          bright-star light enter metacal. [LINT] the prepare_ngmix_weights
-          docstring says noisefill keeps the weight of filled pixels (the code
-          zeroes it), and the ngmix_runner comment says noisefill fills
-          neighbour pixels (it fills flagged pixels and leaves neighbours
-          untouched). No DES metacal pipeline passed raw defects through
-          metacal: Y1 dropped every epoch with a masked pixel
-          (max_zero_weight_frac 0.0), Y3 filled symmetrized defects with the
-          best-fit central model (both candidate Y3 configs do this; which one
-          was production is not recorded), and Y6 interpolated symmetrized
-          defects in the image and in every noise image. The residual cost of
-          any fill is anisotropy. A filled bad column that crosses the galaxy
-          removes or misplaces light along one detector axis. The
-          reconvolution spreads that into an additive e1-type term, coherent on
-          the sky because CFHT/MegaCam, like DECam, has a fixed sky orientation
-          (inferred from CFHT's equatorial mount, no derotator). Sheldon & Huff
-          2017 saw a large additive e1 even with model fill, removed by a
-          90-degree compensating mask. Every DES pipeline symmetrized the
-          defect mask, and ShapePipe does not. The fill should be set
-          independently of blend_handling; the recommended option is
-          symmetrized_4fold_noise. A single 90-degree rotation is not enough:
-          it leaves a coherent c2 of about -0.006 to -0.012 for columns 2-3 px
-          off-centre, while the 4-fold OR gives |c| < 2e-4 (measured on
-          feat/symmetrized-defect-fill).
+          A defect pixel is one with a nonzero instrument flag, zero exposure
+          weight or invalid background RMS; prepare_ngmix_weights gives it
+          weight 0. What the IMAGE holds there still matters, because metacal
+          never looks at weights: ngmix builds a galsim InterpolatedImage from
+          the whole observation image, deconvolves, shears and reconvolves it,
+          and copies the weight map through unchanged, so whatever sits in a
+          zero-weight pixel spreads into the weighted pixels within about a PSF
+          width. DES's own corrector (ngmixer) fills for that reason: "it may
+          be important for codes that take moments or use FFTs". On develop
+          the fill rides on BLEND_HANDLING, which the committed config leaves
+          at noisefill: defect pixels get independent noise at the per-pixel
+          RMS; under uberseg the fill is skipped and raw defects enter
+          metacal. [LINT] the prepare_ngmix_weights docstring says noisefill
+          keeps the weight of filled pixels (the code zeroes it), and the
+          ngmix_runner comment says noisefill fills neighbour pixels (it fills
+          flagged pixels and leaves neighbours untouched). On
+          feat/defect-fill-veto every defect pixel is zero-weighted and filled
+          before metacal under every BLEND_HANDLING; under uberseg,
+          neighbour-side pixels only lose weight. The fill uses the
+          unsymmetrized defect set. DES symmetrized its defect masks, but
+          measured on feat/defect-fill-veto, four-fold symmetrization
+          quadruples the multiplicative bias (m = -2.7% against -0.64% for a
+          3-px bleed 10 px from a galaxy of half-light radius 0.5 arcsec
+          through a 0.7 arcsec PSF) and still leaves c1 = 7.3e-4 through an
+          elliptical PSF. The residual cost of an unsymmetrized fill is a hole
+          in the galaxy light; the central veto bounds it
+          (central_defect_veto). Noise stays the default until a survey A/B
+          against interpolation.
           Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::prepare_ngmix_weights;
           src/shapepipe/modules/ngmix_package/ngmix.py::do_ngmix_metacal;
           src/shapepipe/modules/ngmix_runner.py::ngmix_runner.
         default: noise
         options:
           noise:
-            label: Noise fill (BLEND_HANDLING = noisefill)
+            label: Independent noise on the unsymmetrized defect set
             description: >-
-              Masked pixels are replaced by an independent noise realisation at
-              the per-pixel background RMS and keep weight 0. Consistent with
-              metacal's fixnoise noise image, which covers every pixel. Removes
-              defects, but leaves an unsymmetrized hole in the galaxy light
-              wherever a defect crosses the object, which can give an e1-type
-              additive term.
+              Defect pixels are replaced by an independent noise realisation at
+              the per-pixel background RMS and keep weight 0, consistent with
+              metacal's fixnoise noise image, which covers every pixel. On
+              develop this happens only under BLEND_HANDLING = noisefill; on
+              the fill branches it is DEFECT_FILL = noise under every
+              BLEND_HANDLING.
             insights: [mask_metacal_acts_on_whole_stamp, mask_bad_column_symmetrize]
-          raw:
-            label: "No fill: raw defect values (BLEND_HANDLING = uberseg)"
+          interpolate:
+            label: Interpolate short bounded runs; noise-fill the rest
             description: >-
-              Masked pixels keep weight 0, but their raw values (bad columns,
+              Implemented on feat/defect-interpolation (a stacked draft), not on
+              develop; DEFECT_FILL = interpolate. Only short bounded runs (at
+              most 3 px across, clean on both sides) are interpolated;
+              everything else is noise-filled. The interpolation is
+              Clough-Tocher from clean pixels within 4 px, averaged over the
+              four quarter turns, and shared with the fixnoise image. Weights
+              are also zeroed on the quarter-turn orbit of each interpolated
+              pixel while those pixels keep their light, which cancels the
+              weight term: c1 goes from -1.3e-3 to 2e-6 for a column 8 px from
+              a 0.5 arcsec galaxy. The fill itself is never symmetrized:
+              symmetrizing it gives m = +0.89% against +0.19% for a 3-px bleed
+              at 6 px. Measured on feat/defect-interpolation.
+            insights: [mask_interpolate_with_noise, mask_sharp_edges_ring]
+          symmetrized_4fold_noise:
+            label: Four-fold-symmetrized defect set (M | rot90 | rot180 | rot270), then noise fill
+            excluded: true
+            excluded_reason: >-
+              Measured on feat/defect-fill-veto, it quadruples m (-2.7% against
+              -0.64% for a 3-px bleed at 10 px, half-light radius 0.5 arcsec,
+              PSF 0.7 arcsec) and still leaves c1 = 7.3e-4 through an
+              elliptical PSF.
+            insights: [mask_bad_column_symmetrize, mask_des_defect_practice, mask_fixed_orientation]
+          raw:
+            label: "No fill: raw defect values (develop under BLEND_HANDLING = uberseg)"
+            description: >-
+              Defect pixels keep weight 0, but their raw values (bad columns,
               saturation, bleeds, cosmic rays, bright-star light) stay in the
               image that metacal deconvolves, shears and reconvolves.
             excluded: true
             excluded_reason: >-
               Metacal acts on every pixel regardless of weight, so raw defects
               leak into the weighted pixels. No published metacal pipeline does
-              this: DES dropped, model-filled or interpolated defects. The code
-              reaches this option only as a side effect of BLEND_HANDLING =
-              uberseg.
+              this: DES dropped, model-filled or interpolated defects.
             insights: [mask_metacal_acts_on_whole_stamp, mask_des_defect_practice]
-          symmetrized_4fold_noise:
-            label: 4-fold-symmetrized mask (M | rot90 | rot180 | rot270), then noise fill
-            description: >-
-              Not implemented on develop; implemented on
-              feat/symmetrized-defect-fill. OR the defect mask with its 90,
-              180 and 270-degree rotations about the stamp centre, zero the
-              weight on the union, and noise-fill the union as noisefill does.
-              This extends the DES mask symmetrization (Y1/Y3 ngmixer
-              symmetrize_weight; Y6 symmetrize_masking, a single rotation) and
-              cancels the column-aligned additive term that one rotation leaves
-              for off-centre columns. It can quadruple the masked area, so the
-              epoch cut must be applied after symmetrizing. ShapePipe stamps
-              are square, so the rotations are well defined. The noise image
-              needs no change.
-            insights: [mask_bad_column_symmetrize, mask_des_defect_practice, mask_fixed_orientation]
-          interpolate:
-            label: Symmetrize, then interpolate image and noise image (DES Y6)
-            description: >-
-              Not implemented. Symmetrize as above, then fill the union by 2D
-              Clough-Tocher interpolation (scipy) of the image and, identically,
-              of the fixnoise noise image. This restores galaxy light across
-              narrow defects instead of leaving a hole. It is the DES Y6 and
-              Rubin metadetect practice. Poor for large holes (star masks),
-              which Y6 zeroes with apodized edges.
-            insights: [mask_interpolate_with_noise, mask_bad_column_symmetrize, mask_sharp_edges_ring]
-          model:
-            label: Symmetrize, then fill with the best-fit central model (DES Y3)
-            description: >-
-              Not implemented. Fill symmetrized defects with the PSF-convolved
-              best-fit model of the central object from a pre-metacal fit
-              (ngmix v1.3.9 replace_masked_pixels). The uberseg-only Y3 config
-              adds no noise (add_noise=False); the MOF-corrector config adds
-              it. This restores galaxy light; without noise it leaves
-              noise-free patches that the full-stamp fixnoise noise image does
-              not mirror.
-            insights: [mask_bad_column_symmetrize, mask_des_defect_practice]
       blend_handling:
         label: Neighbour treatment before metacal
         rationale: >-
@@ -1519,63 +1497,77 @@ analyses:
       central_defect_veto:
         label: Per-epoch veto on a defect near the stamp centre
         rationale: >-
-          The committed code has no veto; the option below is implemented on
-          feat/symmetrized-defect-fill, not on develop. There it drops an epoch
-          when any defect pixel lies within EPOCH_CENTRAL_DEFECT_RADIUS px of
-          the stamp centre (0 disables), beside the masked-fraction cut in the
-          epoch loop. A noise-filled hole near the centre removes the galaxy's
-          core light, which no fill or symmetrization restores: on a round
-          galaxy with a 0.7 arcsec PSF, single epoch, it biases m by -6.4% for
-          a column 8 px from centre and -0.17% at 10 px.
+          The committed code has no veto; the veto is implemented on
+          feat/defect-fill-veto (7777181b), not on develop. There an epoch is
+          dropped when a defect pixel lies strictly closer to the stamp centre
+          than its fill's radius, beside the masked-fraction cut in the epoch
+          loop. It reads only the defect mask, so it selects on nothing
+          shear-responsive. The radii are fixed, not scaled by galaxy size,
+          because a size-scaled veto would select on a shear-responsive
+          quantity: 10 px for noise-filled pixels
+          (EPOCH_CENTRAL_DEFECT_RADIUS) and 7 px for interpolated pixels
+          (EPOCH_INTERPOLATED_DEFECT_RADIUS, feat/defect-interpolation). They
+          are calibrated on 51-px stamps at known RMS and high S/N, through a
+          round PSF and a (0.05, 0.02) elliptical PSF: for noise fill on
+          galaxies of half-light radius 0.3 and 0.5 arcsec through a 0.7 arcsec
+          PSF, and for interpolation also on 0.7 and 0.9 arcsec galaxies.
+          Known limits: at 10 px, wide defects through the elliptical PSF sit
+          at the 1% bound (m11 = -0.98%, and -0.24% at 11 px), and noise fill
+          needs 14 px for 0.7 and 0.9 arcsec galaxies. Measured on
+          feat/defect-fill-veto and feat/defect-interpolation.
           Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::prepare_postage_stamps.
         default: disabled
         options:
           disabled:
             label: No central veto (committed code)
-          radius_10px:
-            label: Drop the epoch if a defect lies within 10 px of the centre
+          fixed_radii:
+            label: Fixed radii, 10 px for noise-filled and 7 px for interpolated defects
             description: >-
-              Implemented on feat/symmetrized-defect-fill, not on develop, and
-              recommended there: 10 px is the smallest radius with |m| < 1% for
-              both columns and single pixels.
+              Implemented on feat/defect-fill-veto and feat/defect-interpolation,
+              not on develop.
+          size_scaled_radius:
+            label: Veto radius scaled by galaxy size
+            excluded: true
+            excluded_reason: >-
+              Galaxy size responds to shear, so a size-scaled veto selects on
+              a shear-responsive quantity.
       epoch_masked_fraction_cut:
         label: Per-epoch masked-fraction cut
         rationale: >-
-          [HARDCODED] an epoch whose stamp has more than 1/3 of its
-          pixels flagged (any nonzero flag bit, including the
-          tile-coverage bit 2**10 set where the tile vignet is
-          off-image) is dropped from the multi-epoch fit; an object
-          with no surviving epoch has no shape. The cut counts flag
-          pixels only, not zero-weight or invalid-RMS pixels. Before
-          it, an epoch is dropped silently if its galaxy stamp is
-          all zeros or its background-subtracted noise estimate
-          (sigma_mad) is not positive. DES was stricter. Y1 rejected
-          any epoch with a masked or zero-weight pixel, and any
-          whose central 4-pixel region was masked. Y3 cut at 10% of
-          raw zero-weight pixels. Y6 dropped images more than 10%
-          missing and cut objects at mfrac < 0.1, which its
-          simulations show avoids calibration bias. Sheldon & Huff
-          2017 recommend dropping problematic epochs when many are
-          available. The cut interacts with defect_fill:
-          symmetrizing multiplies the masked fraction (up to fourfold), so the
-          cut should be applied after symmetrizing. UNIONS has fewer
-          epochs than DES, so the cost in effective number density
-          has to be measured, not assumed. A defect near the centre
-          is handled separately (central_defect_veto).
+          [HARDCODED] on develop, an epoch whose stamp has more than 1/3 of its
+          pixels flagged (any nonzero flag bit, including the tile-coverage bit
+          2**10 set where the tile vignet is off-image) is dropped from the
+          multi-epoch fit; an object with no surviving epoch has no shape. The
+          develop cut counts flag pixels only, not zero-weight or invalid-RMS
+          pixels. On feat/defect-fill-veto it counts the raw defect set
+          (flagged, zero-weight and invalid-RMS pixels, not symmetrized), with
+          the threshold configurable as EPOCH_MASKED_FRACTION_CUT, default
+          1/3. Before the cut, an epoch is dropped silently if its galaxy stamp
+          is all zeros or its background-subtracted noise estimate (sigma_mad)
+          is not positive. DES was stricter. Y1 rejected any epoch with a
+          masked or zero-weight pixel, and any whose central 4-pixel region was
+          masked. Y3 cut at 10% of raw zero-weight pixels. Y6 dropped images
+          more than 10% missing and cut objects at mfrac < 0.1, which its
+          simulations show avoids calibration bias. Sheldon & Huff 2017
+          recommend dropping problematic epochs when many are available.
+          UNIONS has fewer epochs than DES, so the cost in effective number
+          density has to be measured, not assumed. A defect near the centre is
+          handled separately (central_defect_veto).
           Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::prepare_postage_stamps.
         default: one_third
         options:
           one_third:
-            label: 1/3 of the stamp flagged
+            label: 1/3 of the stamp in the defect set
             description: >-
-              Drop an epoch only if more than 1/3 of the stamp pixels carry a
-              nonzero flag.
+              Drop an epoch only if more than 1/3 of the stamp pixels are
+              defects (on develop, flagged pixels).
           ten_percent:
             label: 10% (DES Y3 / Y6)
             description: >-
-              Not implemented. Drop an epoch if more than 10% of the
-              (symmetrized) stamp is masked, matching DES Y3
-              max_zero_weight_frac and Y6 max_masked_fraction.
+              Not implemented as a default; EPOCH_MASKED_FRACTION_CUT = 0.1 on
+              feat/defect-fill-veto. Drop an epoch if more than 10% of the stamp
+              is in the defect set, matching DES Y3 max_zero_weight_frac and Y6
+              max_masked_fraction.
             insights: [mask_multi_epoch_drop]
           any_masked:
             label: Any masked pixel (DES Y1)
