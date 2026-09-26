@@ -52,9 +52,9 @@ class ContainerError(Exception):
     SystemExit. ``main`` below turns it back into a one-line CLI error.
     """
 
-# The published image. CI pushes one tag per branch, sanitized; `-runtime` is
-# the slim variant the workflow runs.
-CONTAINER_URI = "docker://ghcr.io/cosmostat/shapepipe:develop-runtime"
+# The published image. CI pushes one tag per branch, sanitized; jobs run the
+# same image CI tested.
+CONTAINER_URI = "docker://ghcr.io/cosmostat/shapepipe:develop"
 
 # The fallback image is the run config's resolved `container:` (config.yaml,
 # SP_RUN_CONFIG on top, then the machine default; see run_config.py).

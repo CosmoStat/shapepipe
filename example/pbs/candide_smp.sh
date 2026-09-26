@@ -21,9 +21,9 @@
 # Path to the local ShapePipe clone (holds the example configs and data).
 export SPDIR="${SPDIR:-$HOME/shapepipe}"
 
-# Path to the ShapePipe runtime image. Pull it once with:
-#   apptainer pull "$SP_IMAGE" docker://ghcr.io/cosmostat/shapepipe:develop-runtime
-export SP_IMAGE="${SP_IMAGE:-$HOME/shapepipe_develop-runtime.sif}"
+# Path to the ShapePipe image. Pull it once with:
+#   apptainer pull "$SP_IMAGE" docker://ghcr.io/cosmostat/shapepipe:develop
+export SP_IMAGE="${SP_IMAGE:-$HOME/shapepipe_develop.sif}"
 
 # Run ShapePipe through the container -- no Python environment to activate. The
 # clone is bind-mounted at the same path so that $SPDIR resolves identically
