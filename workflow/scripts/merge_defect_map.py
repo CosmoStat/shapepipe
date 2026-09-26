@@ -47,16 +47,32 @@ FITS blocks (measured: 1,586,880 B rebuilt vs 1,589,760 B appended, identical
 nothing — cheap while nothing consumes the map, and the thing to fix (by
 rebuilding whenever the append path would rewrite anyway) if something ever
 does. The no-op case is unaffected: it compares the PLAN, not the bytes, and
-never opens the map at all.
+never reads the map's pixels, only its coverage table.
 
 Which exposures are already in the map is recorded in a SIDECAR beside it
-(``defect_map_<campaign>.json``), each with its fragment's size and mtime — the
-same "did this change since we read it" stamp ``merge_final_cat.py`` records on
-each hdf5 dataset, and for the same reason. The map itself cannot carry that
+(``defect_map_<campaign>.json``), each with its fragment's SHA-256 as its
+``exp_defect_map`` manifest records it. The CONTENT digest, not a size/mtime
+stamp: a re-rasterization can move a defect while keeping the file's size, and
+the manifest carries the digest precisely so that such a change reaches this
+rule as a changed input. Reading it from the manifest costs one small JSON read
+per exposure, where hashing every fragment would read the whole campaign on
+every invocation. The map itself cannot carry that
 record: a healsparse FITS header is no place for twenty thousand exposures. The
 sidecar is therefore a DECLARED OUTPUT of the rule alongside the map; losing one
 without the other would be a map nobody can reconcile, and snakemake removing
 both on a failure is the correct recovery (the next run rebuilds).
+
+MAP AND SIDECAR ARE BOUND BY A GENERATION ID, because two files cannot be
+replaced atomically together. Both are written to temporaries first, so a kill
+before publication leaves the previous pair; a kill BETWEEN the two renames
+still leaves a new map under the old sidecar, and snakemake cannot be relied on
+to clean up after its own head process dies. So each merge stamps
+``generation`` — a digest of the resolution and every exposure's fragment
+digest, the whole of what determines the map's content — into both the map's
+healsparse metadata (``DMAPGEN`` in its primary FITS header) and the sidecar.
+``reconcile_plan`` reads the header and rebuilds on any disagreement. The id is
+a function of the input set, not a fresh token, so an unchanged campaign
+rewrites nothing.
 
 MEMORY IS FLAT IN THE NUMBER OF EXPOSURES, which is the reason for the loop
 below and not for a list comprehension over ``HealSparseMap.read``. Fragments
@@ -89,6 +105,7 @@ recorded in the sidecar instead.
 
 import argparse
 import filecmp
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -96,17 +113,15 @@ from pathlib import Path
 import numpy as np
 
 import healsparse as hsp
+from astropy.io import fits
 
 # Same directory; the rule invokes this file by path, so it is sys.path[0].
+# The vocabulary below (`Plan`, `empty`, `describe`, plan-then-apply,
+# untouched-on-a-no-op) is hdf5_reconcile.py's, deliberately.
 import build_index
-# The two hdf5 merges' reconciler. This file cannot use its `plan`/`apply` — a
-# union is not a group of independent datasets, so removing an exposure is a
-# rebuild here and a `del` there — but "did this source change since we read
-# it" is the SAME question, and answering it twice in two ways is how the two
-# halves of a campaign's reconciliation drift apart. So the stamp is imported,
-# not re-derived, and the vocabulary below (`stamp`, `Plan`, `empty`,
-# `describe`, plan-then-apply, untouched-on-a-no-op) is deliberately theirs.
-from hdf5_reconcile import stamp
+# The fragment's writer defines its digest; one definition, so the digest a
+# manifest records and the one computed here for a manifest without it agree.
+from defect_map_exp import file_digest
 
 
 def fragment_path(products_dir: Path, exp: str) -> Path:
@@ -115,9 +130,24 @@ def fragment_path(products_dir: Path, exp: str) -> Path:
             / f"defect-{exp}.hsp")
 
 
-def sidecar_stamp(path: Path) -> list:
-    """``stamp`` as JSON round-trips it: a list, so a read record compares."""
-    return list(stamp(path))
+def manifest_path(products_dir: Path, exp: str) -> Path:
+    """``exp_defect_map``'s declared output: the Snakefile's
+    ``prod_exp_manifest(exp, "exp_defect_map")``."""
+    return (products_dir / "exp" / exp[:2] / exp / "manifests"
+            / "exp_defect_map.json")
+
+
+def fragment_digest(products_dir: Path, exp: str) -> str:
+    """The fragment's SHA-256, as its manifest records it.
+
+    A manifest that lacks the digest, or cannot be read, is answered by hashing
+    the fragment itself: an exposure whose store is reclaimed cannot be
+    re-rasterized to supply one.
+    """
+    try:
+        return json.loads(manifest_path(products_dir, exp).read_text())["sha256"]
+    except (OSError, ValueError, KeyError):
+        return file_digest(fragment_path(products_dir, exp))
 
 
 def fragments(products_dir: Path, tile_list: Path, index_db: Path) -> tuple:
@@ -152,6 +182,26 @@ class Plan:
         return f"{len(self.append)} fragment(s) appended"
 
 
+# The map's metadata key for the generation id; a FITS keyword, so <= 8 chars.
+GENERATION_KEY = "DMAPGEN"
+
+
+def generation(digests: dict, nside: int, nside_coverage: int) -> str:
+    """The id binding a map to its sidecar: a digest of everything that
+    determines the map's content, so the same inputs give the same id."""
+    blob = json.dumps({"nside": nside, "nside_coverage": nside_coverage,
+                       "exposures": digests}, sort_keys=True)
+    return hashlib.sha256(blob.encode()).hexdigest()
+
+
+def map_generation(output: Path):
+    """The generation id stamped in the map's primary header, or ``None``."""
+    try:
+        return fits.getheader(str(output), 0).get(GENERATION_KEY)
+    except OSError:
+        return None
+
+
 def read_sidecar(path: Path) -> dict:
     try:
         return json.loads(path.read_text())
@@ -159,7 +209,8 @@ def read_sidecar(path: Path) -> dict:
         return {}
 
 
-def reconcile_plan(output: Path, sidecar: Path, have: dict) -> Plan:
+def reconcile_plan(output: Path, sidecar: Path, digests: dict, nside: int,
+                   nside_coverage: int) -> Plan:
     """Compare what is on disk with the campaign, WITHOUT writing anything.
 
     @sc [decision:defect_map_from_flags,label:convention] defect-map-is-the-sidecars-union
@@ -169,24 +220,47 @@ def reconcile_plan(output: Path, sidecar: Path, have: dict) -> Plan:
     which exposure set a pixel. Only a pure addition may append in place.
     Checked by ``tests/unit/test_defect_map_reconcile.py``.
 
+    ``digests`` is ``{exp: fragment_digest}`` over the campaign's fragments; a
+    fragment has changed exactly when its digest differs from the recorded one.
+
     A missing map, or a sidecar that does not describe it, is a rebuild: the two
     are written together and either one alone is not evidence about the other.
+    "Describes it" is checked, not assumed: the map's ``DMAPGEN`` header must
+    equal the sidecar's ``generation`` (the module docstring argues why).
+
+    So is a map at another resolution than the one requested. Unchanged
+    fragments would otherwise make that an empty plan, leaving the map at its
+    old resolution under a sidecar rewritten to claim the new one. The rebuild
+    then reads the fragments, and ``accumulate`` refuses any at the wrong
+    resolution before either file is written. The resolution is read from the
+    map itself — its coverage table, a few kilobytes — not from the sidecar.
     """
     record = read_sidecar(sidecar)
     known = record.get("exposures") or {}
     if not output.exists() or not known:
-        return Plan([], sorted(have), "no map on disk")
+        return Plan([], sorted(digests), "no map on disk")
 
-    gone = sorted(set(known) - set(have))
+    if map_generation(output) != record.get("generation"):
+        return Plan([], sorted(digests),
+                    "map and sidecar are from different merges")
+
+    cov = hsp.HealSparseCoverage.read(str(output))
+    if (cov.nside_sparse, cov.nside_coverage) != (nside, nside_coverage):
+        return Plan([], sorted(digests),
+                    f"map is nside {cov.nside_sparse} / nside_coverage "
+                    f"{cov.nside_coverage}, not the requested {nside} / "
+                    f"{nside_coverage}")
+
+    gone = sorted(set(known) - set(digests))
     if gone:
-        return Plan([], sorted(have),
+        return Plan([], sorted(digests),
                     f"{len(gone)} exposure(s) left the campaign")
-    changed = sorted(exp for exp, path in have.items()
-                     if exp in known and list(known[exp]) != sidecar_stamp(path))
+    changed = sorted(exp for exp, digest in digests.items()
+                     if exp in known and known[exp] != digest)
     if changed:
-        return Plan([], sorted(have),
+        return Plan([], sorted(digests),
                     f"{len(changed)} fragment(s) changed on disk")
-    return Plan(sorted(set(have) - set(known)), [], "")
+    return Plan(sorted(set(digests) - set(known)), [], "")
 
 
 def union_coverage(paths, nside_coverage) -> np.ndarray:
@@ -257,7 +331,7 @@ def write_stable(tmp: Path, dest: Path) -> None:
         tmp.replace(dest)
 
 
-def build_record(have: dict, missing: list, nside_coverage: int, nside: int,
+def build_record(digests: dict, missing: list, nside_coverage: int, nside: int,
                  n_pixels: int, n_coverage: int) -> dict:
     """The sidecar: what is in the map, and what the campaign wanted but lacked.
 
@@ -271,36 +345,44 @@ def build_record(have: dict, missing: list, nside_coverage: int, nside: int,
     even when the map is untouched.
     """
     return {
-        "campaign_exposures": len(have) + len(missing),
+        "campaign_exposures": len(digests) + len(missing),
         "nside": nside,
         "nside_coverage": nside_coverage,
         "n_pixels": n_pixels,
         "n_coverage_pixels": n_coverage,
+        # Must equal the DMAPGEN header of the map beside it.
+        "generation": generation(digests, nside, nside_coverage),
         # What the NEXT invocation reconciles against; sorted so the sidecar is
         # byte-stable for a given campaign state.
-        "exposures": {exp: sidecar_stamp(path)
-                      for exp, path in sorted(have.items())},
+        "exposures": dict(sorted(digests.items())),
         # Recorded rather than merely printed: a map short of exposures should
         # say so on disk, not only in a job log nobody keeps.
         "exposures_without_fragment": sorted(missing),
     }
 
 
+def dump_record(record: dict) -> str:
+    return json.dumps(record, indent=2, sort_keys=True) + "\n"
+
+
 def write_sidecar(sidecar: Path, record: dict) -> None:
     tmp = sidecar.with_name(sidecar.name + ".tmp")
     try:
-        tmp.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
+        tmp.write_text(dump_record(record))
         write_stable(tmp, sidecar)
     finally:
         tmp.unlink(missing_ok=True)
 
 
 def apply_plan(output: Path, sidecar: Path, plan: Plan, have: dict,
-               missing: list, nside_coverage: int, nside: int) -> dict:
+               digests: dict, missing: list, nside_coverage: int,
+               nside: int) -> dict:
     """Carry the plan out on tmp copies, then move both files into place.
 
-    Map and sidecar are moved together at the end, so a crash mid-merge leaves
-    the previous PAIR intact rather than a map the record no longer describes.
+    Both temporaries are complete before either rename, so a crash before
+    publication leaves the previous PAIR intact. A crash between the two
+    renames leaves a new map under the old sidecar; their generation ids then
+    disagree and the next ``reconcile_plan`` rebuilds.
     """
     if plan.rebuild:
         todo = plan.rebuild
@@ -314,17 +396,21 @@ def apply_plan(output: Path, sidecar: Path, plan: Plan, have: dict,
     accumulate(target, [(exp, have[exp]) for exp in todo],
                nside_coverage, nside)
 
-    record = build_record(have, missing, nside_coverage, nside,
+    record = build_record(digests, missing, nside_coverage, nside,
                           int(target.n_valid),
                           int(target.coverage_mask.sum()))
 
+    target.metadata = {GENERATION_KEY: record["generation"]}
     map_tmp = output.with_name(output.name + ".tmp")
+    sidecar_tmp = sidecar.with_name(sidecar.name + ".tmp")
     try:
         target.write(str(map_tmp), clobber=True)
+        sidecar_tmp.write_text(dump_record(record))
         write_stable(map_tmp, output)
+        write_stable(sidecar_tmp, sidecar)
     finally:
         map_tmp.unlink(missing_ok=True)
-    write_sidecar(sidecar, record)
+        sidecar_tmp.unlink(missing_ok=True)
     return record
 
 
@@ -350,8 +436,10 @@ def main() -> None:
         sys.exit(f"merge_defect_map: no campaign exposure in {args.tile_list} "
                  f"has a defect fragment under {args.products_dir}")
 
+    digests = {exp: fragment_digest(args.products_dir, exp) for exp in have}
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    plan = reconcile_plan(args.output, args.sidecar, have)
+    plan = reconcile_plan(args.output, args.sidecar, digests, args.nside,
+                          args.nside_coverage)
     if plan.empty():
         # The MAP is untouched — that is what an empty plan means, and its mtime
         # must not move. The RECORD still can be stale: campaign_exposures and
@@ -360,7 +448,7 @@ def main() -> None:
         # a single bit of the union. Rewrite it alone when it differs;
         # write_stable drops the tmp when it does not.
         old_record = read_sidecar(args.sidecar)
-        record = build_record(have, missing, args.nside_coverage, args.nside,
+        record = build_record(digests, missing, args.nside_coverage, args.nside,
                               int(old_record.get("n_pixels", 0)),
                               int(old_record.get("n_coverage_pixels", 0)))
         stale = record != old_record
@@ -370,8 +458,8 @@ def main() -> None:
               f"({len(have)} exposure(s)"
               f"{'; sidecar refreshed' if stale else ''})")
         return
-    record = apply_plan(args.output, args.sidecar, plan, have, missing,
-                        args.nside_coverage, args.nside)
+    record = apply_plan(args.output, args.sidecar, plan, have, digests,
+                        missing, args.nside_coverage, args.nside)
     warn = (f"; {len(missing)} campaign exposure(s) have no fragment"
             if missing else "")
     print(f"[merge_defect_map] {plan.describe()} -> {args.output} "

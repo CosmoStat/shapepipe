@@ -14,7 +14,8 @@ machine defaults' `products_dir`/`index_db`. No rule or script reads a
 `campaign` key or derives a name from a directory (`PRODUCTS_DIR.name`); two
 sources that can disagree would file one campaign's merge under another's name.
 Every campaign product path is rooted in `PRODUCTS_DIR`. Enforced by
-tests/unit/test_campaign_lineage.py.
+tests/unit/test_campaign_lineage.py and
+tests/workflow/test_dag.py::test_products_use_products_dir_and_run_name.
 
 @sc [label:schema] final-cat-param-is-exact-allow-list
 Each input type's `config/*/final_cat.param` is the merged catalogue's exact
@@ -33,11 +34,22 @@ replans every finished unit of the campaign. Mid-campaign that rerun is
 unsatisfiable for tiles whose exposure stores were reclaimed, and the failed
 tile group's cleanup deletes those finished tiles' `final_cat`. Change
 `unit_pre` output, or anything else in a rule's `params`, only at a campaign
-boundary on a fresh root.
+boundary on a fresh root. The rendered `unit_pre`, per-job `params.pre`, and
+shell strings are pinned by
+tests/workflow/test_params_pin.py::test_unit_pre_changes_at_campaign_boundary;
+test_params_is_a_rerun_trigger_under_both_profiles checks the profile premise.
+Regenerate tests/workflow/params_pin.json only at that boundary with
+`pytest tests/workflow/test_params_pin.py --update-params-pin`.
 
 @sc [label:custody] clean-exposure-waits-on-persist-iff-psf
-`clean_exposure` takes the exposure's `exp_persist` manifest as input exactly
-when `PERSISTS_PSF` (`psf_model != "fake"`). Dropping the edge under a real PSF
-model lets reclamation delete the scratch store before its PSF products reach
-`products_dir`; keeping it under `fake` makes every clean wait on a rule that
-is not in the DAG.
+`clean_exposure` waits on the exposure's persisted PSF products exactly when
+`PERSISTS_PSF` (`psf_model != "fake"`, which is `psfex`: `mccd` is refused at
+parse time by `refuse_unpersistable_psf`): on the `exp_persist` manifest for a
+live store, and on the tar (a leaf), or nothing, for a reclaimed one. Dropping
+the edge under psfex lets reclamation delete the scratch store before its PSF
+products reach `products_dir`; keeping it under `fake` makes every clean wait on
+a rule that is not in the DAG; naming the manifest for a reclaimed store lets a
+`persist_exp:` edit rebuild the exposure from VOS. Enforced by
+tests/workflow/test_dag.py::test_clean_exposure_waits_on_persist_iff_psf,
+which also checks that the consumer edges are exactly the in-scope vignets
+manifests.

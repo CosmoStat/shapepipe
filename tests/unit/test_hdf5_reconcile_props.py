@@ -334,3 +334,125 @@ def test_repeated_refresh_does_not_grow_the_file():
         assert len(set(sizes)) == 1, f"file size drifted across refreshes: {sizes}"
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def test_a_type_change_in_the_reader_refreshes_every_unit(tmp_path):
+    """The column list is unchanged, so the digest is too; a reader that now
+    yields another dtype must still leave one dtype in the file, by re-reading
+    the units it would otherwise keep."""
+    columns = COLUMN_SETS[0]
+    sources = {}
+    for i, unit in enumerate(UNITS[:2]):
+        sources[unit] = tmp_path / f"{unit}.npy"
+        _write_source(sources[unit], _array(columns, 3, i), 10**18 + i)
+    _build(tmp_path / "cat.h5", sources, columns)
+
+    sources["u2"] = tmp_path / "u2.npy"
+    _write_source(sources["u2"], _array(columns, 3, 2), 10**18 + 2)
+    units = sorted(sources.items())
+    digest = reconcile.schema_digest(columns)
+    todo = reconcile.plan(tmp_path / "cat.h5", GROUP, units, digest)
+    assert (todo.add, todo.refresh) == (["u2"], [])
+
+    narrow = lambda unit, source: _read(unit, source).astype(
+        [(c, "<f4") for c in columns])
+    reconcile.apply(tmp_path / "cat.h5", GROUP, todo, units, narrow, digest,
+                    COUNT_ATTR)
+    with h5py.File(tmp_path / "cat.h5", "r") as f:
+        assert {f[GROUP][u].dtype["RA"] for u in f[GROUP]} == {np.dtype("<f4")}
+        for unit, path in sources.items():
+            np.testing.assert_array_equal(f[GROUP][unit][...],
+                                          narrow(unit, path))
+
+
+def test_a_schema_only_change_refreshes_every_unit(tmp_path):
+    """The machine's change_columns also rewrites every source, so its stamps
+    alone would refresh everything. Here no stamp moves: the sources hold the
+    wider column set throughout and only the requested columns change, so
+    schema invalidation is the only thing that can refresh a unit."""
+    wide = COLUMN_SETS[1]
+    sources = {}
+    for i, unit in enumerate(UNITS[:3]):
+        sources[unit] = tmp_path / f"{unit}.npy"
+        _write_source(sources[unit], _array(wide, 3, i), 10**18 + i)
+    units = sorted(sources.items())
+    output = tmp_path / "cat.h5"
+
+    def build(columns):
+        read = lambda unit, source: np.ascontiguousarray(
+            _read(unit, source)[list(columns)]).astype(
+            [(c, "<f8") for c in columns])
+        digest = reconcile.schema_digest(columns)
+        todo = reconcile.plan(output, GROUP, units, digest)
+        if not todo.empty():
+            reconcile.apply(output, GROUP, todo, units, read, digest,
+                            COUNT_ATTR)
+        return todo
+
+    build(COLUMN_SETS[0])
+    stamps = {u: reconcile.stamp(p) for u, p in units}
+    todo = build(wide)
+    assert {u: reconcile.stamp(p) for u, p in units} == stamps
+    assert (todo.add, sorted(todo.refresh)) == ([], sorted(sources))
+    with h5py.File(output, "r") as f:
+        assert {f[GROUP][u].dtype.names for u in f[GROUP]} == {wide}
+
+
+def test_an_abandoned_tmp_does_not_count_against_free_space(tmp_path,
+                                                             monkeypatch):
+    """A killed rewrite leaves its tmp copy behind. The next run owns it (one
+    writer per output), so the copy is deleted before free space is judged:
+    2.5x the file free counting the orphan clears the 2.1x margin; 1.5x, as
+    if the orphan still stood, would not."""
+    import shutil
+
+    columns = COLUMN_SETS[0]
+    sources = {"u0": tmp_path / "u0.npy"}
+    _write_source(sources["u0"], _array(columns, 3, 0), 10**18)
+    output = tmp_path / "cat.h5"
+    _build(output, sources, columns)
+    size = output.stat().st_size
+    orphan = output.with_name(output.name + ".tmp")
+    shutil.copy2(output, orphan)
+
+    usage = shutil.disk_usage(tmp_path)
+
+    def disk_usage(_):
+        free = int(2.5 * size) - (orphan.stat().st_size
+                                  if orphan.exists() else 0)
+        return type(usage)(10 * size, 10 * size - free, free)
+
+    monkeypatch.setattr(reconcile.shutil, "disk_usage", disk_usage)
+    sources["u1"] = tmp_path / "u1.npy"
+    _write_source(sources["u1"], _array(columns, 3, 1), 10**18 + 1)
+    assert _build(output, sources, columns).add == ["u1"]
+    assert not orphan.exists()
+    with h5py.File(output, "r") as f:
+        assert set(f[GROUP]) == {"u0", "u1"}
+
+
+def test_each_provenance_record_replaces_the_last(tmp_path):
+    """An add-only merge copies the file, attributes and all. A merge run
+    without a snapshot records code_head=unknown, and must not keep the last
+    snapshot's branch, dirty flag, dirty files or time beside it."""
+    columns = COLUMN_SETS[0]
+    output = tmp_path / "cat.h5"
+    digest = reconcile.schema_digest(columns)
+    sources = {}
+
+    def add(unit, provenance):
+        sources[unit] = tmp_path / f"{unit}.npy"
+        _write_source(sources[unit], _array(columns, 3, len(sources)),
+                      10**18 + len(sources))
+        units = sorted(sources.items())
+        todo = reconcile.plan(output, GROUP, units, digest)
+        assert todo.add == [unit] and not (todo.refresh or todo.remove)
+        reconcile.apply(output, GROUP, todo, units, _read, digest,
+                        COUNT_ATTR, provenance)
+
+    add("u0", {"head": "abc123", "branch": "old", "dirty": True,
+               "taken_at": "yesterday", "dirty_files": ["old.py"]})
+    add("u1", {"head": "unknown"})
+    with h5py.File(output, "r") as f:
+        code = {k: f.attrs[k] for k in f.attrs if k.startswith("code_")}
+    assert code == {"code_head": "unknown"}

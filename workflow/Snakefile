@@ -86,7 +86,8 @@ run_config.apply_machine_defaults(config)
 _unresolved = run_config.unresolved(config)
 if _unresolved:
     raise WorkflowError(
-        f"Unset or {run_config.PLACEHOLDER!r} for machine={MACHINE!r}, "
+        f"Unset, {run_config.PLACEHOLDER!r}, or holding an unexpanded "
+        f"$variable for machine={MACHINE!r}, "
         f"input_type={INPUT_TYPE!r}: {', '.join(_unresolved)}. Set them in "
         f"your run config (SP_RUN_CONFIG).")
 # The external masks are a data-only input: config_tile_Mc.ini's
@@ -117,7 +118,8 @@ container: _image
 
 # `fake` is the image-simulation true PSF: no exposure PSF fit; the tile's
 # galaxy_psf comes from `psf_dict` via fake_interp_runner (read by the
-# configs as ${SP_PSF}_interp_runner). Sims with stars may use psfex/mccd.
+# configs as ${SP_PSF}_interp_runner). Sims with stars may use psfex. mccd is
+# a valid chain but refused by refuse_unpersistable_psf below.
 PSF_MODELS = {"psfex", "mccd", "fake"}
 PSF_MODEL = config.get("psf_model", "psfex")
 if PSF_MODEL not in PSF_MODELS:
@@ -156,7 +158,8 @@ INPUTS = config["inputs"]
 OUTPUTS = config["outputs"]
 RUN_DIR    = Path(OUTPUTS["run_dir"])
 # Defaults to RUN_DIR so a scratch-only run (a fixture, a smoke test) needs no
-# second path: one root, exactly the pre-D5 layout.
+# second path. Such a one-root run must set clean: false and clean_tiles:
+# false; refuse_one_root_cleaners enforces it.
 PRODUCTS_DIR = Path(OUTPUTS.get("products_dir") or RUN_DIR)
 INDEX_DB   = Path(OUTPUTS["index_db"])
 # The campaign's NAME is the run config's `run:` — the same name `$run` expands
@@ -318,9 +321,14 @@ else:
             "SELECT tile_id FROM tile_exposures WHERE exp_id = ? ORDER BY rowid",
             (exp,))]
 
-# Tiles this run can actually compute: declared AND indexed. The index spans the
-# campaign, so it is intersected with the declared list, not used as it.
-TILES_READY = [t for t in TILES if tile_exposures(t)]
+# Tiles this run can actually compute: declared AND ready in the index
+# (build_index.ready_tiles, as the merges read it). The index spans the
+# campaign, so it is intersected with the declared list, not used as it. A tile
+# whose exposure list went missing keeps its edges for clean_consumers but is
+# not ready.
+_READY_INDEXED = (build_index.ready_tiles(INDEX_DB) if INDEX_DB.exists()
+                  else set())
+TILES_READY = [t for t in TILES if t in _READY_INDEXED]
 READY_SET = set(TILES_READY)
 
 # A compute invocation with nothing to compute is never a success. Without this,
@@ -591,6 +599,26 @@ PERSIST_EXP = list(config.get("persist_exp") or [])
 # and clean_exposure stops waiting on exp_persist; final_cat_merge is
 # unaffected. psf_exposures() below is where this gate acts.
 PERSISTS_PSF = PSF_MODEL != "fake"
+
+
+def refuse_unpersistable_psf(psf_model):
+    """Refuse a PSF model whose products the persistence path cannot read.
+
+    exp_persist packs PSFEx products (persist_exp.py maps psf_model to
+    *.psf) and star_cat_merge reads PSFEx's per-CCD validation table in HDU 2
+    (merge_star_cat.py). MCCD writes fitted_model-<exp>.npy and one
+    exposure-wide table in HDU 1, so an MCCD campaign would run every exposure
+    and then fail at star_cat_merge. Refusing at parse time costs nothing.
+    """
+    if psf_model == "mccd":
+        raise WorkflowError(
+            "psf_model=mccd: PSF persistence (workflow/scripts/persist_exp.py) "
+            "and the star-catalogue merge (workflow/scripts/merge_star_cat.py) "
+            "read PSFEx products only. An MCCD campaign needs an MCCD-aware "
+            "persist table and star-catalogue reader first (tracked in the PR).")
+
+
+refuse_unpersistable_psf(PSF_MODEL)
 
 # The keep list names PRODUCTS (`psf_model`), not globs (`*.psf`); the
 # catalogue that maps one to the other lives in persist_exp.py, which is also
@@ -1282,6 +1310,30 @@ def footprint_targets():
 # CLEAN is, and read through flag() for the same reason (`--config
 # clean_tiles=false` arrives as the string "false").
 CLEAN_TILES = flag(config.get("clean_tiles", False)) and PHASE == "compute"
+
+
+def refuse_one_root_cleaners(products_dir, run_dir, clean, clean_tiles):
+    """Refuse reclamation when products and scratch share one root.
+
+    With products_dir == run_dir the per-tile final_cat sits inside the tile
+    store clean_tile prunes, and the exp_persist manifests sit inside the
+    exposure tree clean_exposure deletes, so reclamation would destroy the
+    products it exists to protect. A one-root run is for fixtures and smoke
+    tests, which keep everything anyway.
+    """
+    if Path(products_dir).resolve() != Path(run_dir).resolve():
+        return
+    if clean or clean_tiles:
+        raise WorkflowError(
+            f"outputs.products_dir is outputs.run_dir ({run_dir}): a one-root "
+            "run is for fixtures and smoke tests only, and must run with "
+            "clean: false and clean_tiles: false, since clean_tile would "
+            "delete final_cat and clean_exposure the persisted manifests. Set "
+            "both false, or give products_dir its own root.")
+
+
+refuse_one_root_cleaners(PRODUCTS_DIR, RUN_DIR, flag(config.get("clean")),
+                         flag(config.get("clean_tiles")))
 
 
 def tile_tombstone(tile):

@@ -354,6 +354,25 @@ rule clean_exposure:
         # this DAG, so the clean must be ordered after them.
         lambda wc: [tile_manifest(t, "tile_vignets")
                     for t in clean_consumers(wc.exp) if t in READY_SET],
+        # The keepers must be off /scratch before the store goes. No keep list
+        # removes this edge: exp_persist always packs the star catalogue's
+        # inputs. Only psf_model=fake does, which has no PSF products to keep
+        # (PERSISTS_PSF, Snakefile).
+        #
+        # A LIVE exposure is asked for its exp_persist manifest: the thing to
+        # build, and what orders this rule after the pack. A RECLAIMED one
+        # (exp_store_reclaimed, Snakefile) is asked for its TAR if it has one —
+        # on the persistent root, no rule's declared output, hence a leaf that
+        # requires nothing — and for nothing if it has none. Naming the
+        # manifest there reopens the reclaimed chain: a `persist_exp:` edit
+        # changes exp_persist's params, the manifest reruns, and it sits behind
+        # exp_psf's manifest, which went with the store, so snakemake rebuilds
+        # the exposure from VOS.
+        lambda wc: ([] if not PERSISTS_PSF
+                    else [prod_exp_manifest(wc.exp, "exp_persist")]
+                    if not exp_store_reclaimed(wc.exp)
+                    else [prod_exp_tar(wc.exp)]
+                    if Path(prod_exp_tar(wc.exp)).exists() else []),
         # The fragment must be off /scratch before the store goes too — the flag
         # splits go with it — but this edge is CONDITIONAL, and it is exactly
         # defect_map_inputs()' split (Snakefile), for exactly its reason.
@@ -566,7 +585,7 @@ rule defect_map_merge:
         #
         # AND IT IS THE EXPENSIVE CASE THAT SETS IT. An append reads exactly the
         # appended exposures and finishes in minutes; a REBUILD — any exposure
-        # leaving the campaign, any fragment restamped — reads all of them, ~40
+        # leaving the campaign, any fragment changed — reads all of them, ~40
         # GB at DR6 scale, and that is the ~6 h this formula sizes for at 20k
         # exposures. Capped below 12 h because the job holds no partial state
         # and Alliance policy asks anything longer to checkpoint: it cannot, so
