@@ -2,12 +2,14 @@
 
 A defect is a stamp pixel with a nonzero flag, zero exposure weight or an
 invalid background RMS. Before metacal, :func:`prepare_ngmix_weights` gives
-every defect weight 0 and fills it with noise at its background RMS, whatever
-``BLEND_HANDLING`` is. Under uberseg, pixels on the neighbour side only lose
-their weight, and their image values stay raw. The per-epoch cuts in
-:func:`prepare_postage_stamps` act on the same defect set: the masked-fraction
-cut counts it, and the central-defect veto drops an epoch with a defect near
-the stamp centre.
+every defect weight 0 and fills it, whatever ``BLEND_HANDLING`` is: with noise
+at its background RMS (``DEFECT_FILL = noise``, the default) or, for short
+defect runs, with an interpolant of the clean pixels around them
+(``DEFECT_FILL = interpolate``). Under uberseg, pixels on the neighbour side
+only lose their weight, and their image values stay raw. The per-epoch cuts
+in :func:`prepare_postage_stamps` act on the same defect set: the
+masked-fraction cut counts it, and the central-defect veto drops an epoch
+with a defect near the stamp centre, at a radius set by the defect's fill.
 """
 
 import re
@@ -15,6 +17,7 @@ from types import SimpleNamespace
 
 import numpy as np
 import numpy.testing as npt
+import pytest
 from astropy.io import fits
 from astropy.wcs import WCS
 from hypothesis import given
@@ -22,8 +25,14 @@ from hypothesis import strategies as st
 from sqlitedict import SqliteDict
 from shapepipe.modules.ngmix_package import ngmix as ngmix_module
 
+from shapepipe.modules.ngmix_package.defect_interpolation import (
+    fourfold,
+    interpolable_defects,
+    interpolate_defects,
+)
 from shapepipe.modules.ngmix_package.ngmix import (
     EPOCH_CENTRAL_DEFECT_RADIUS,
+    EPOCH_INTERPOLATED_DEFECT_RADIUS,
     Ngmix,
     make_ngmix_observation,
     prepare_ngmix_weights,
@@ -461,8 +470,9 @@ class _OptionConfig:
 
 
 def test_runner_threads_the_epoch_cut_options(tmp_path, monkeypatch):
-    """EPOCH_CENTRAL_DEFECT_RADIUS and EPOCH_MASKED_FRACTION_CUT reach Ngmix
-    as configured, and default to the module constants when absent.
+    """EPOCH_CENTRAL_DEFECT_RADIUS, EPOCH_MASKED_FRACTION_CUT, DEFECT_FILL and
+    EPOCH_INTERPOLATED_DEFECT_RADIUS reach Ngmix as configured, and default
+    to the module constants (and the noise fill) when absent.
 
     Failure mode: the runner drops or ignores an option, so a configured A/B
     arm silently runs the default cuts.
@@ -483,11 +493,15 @@ def test_runner_threads_the_epoch_cut_options(tmp_path, monkeypatch):
     for path in inputs:
         SqliteDict(path).close()
 
-    for options, radius, fraction in (
+    for options, radius, fraction, fill, interpolated_radius in (
         ({"EPOCH_CENTRAL_DEFECT_RADIUS": "7.5",
-          "EPOCH_MASKED_FRACTION_CUT": "0.1"}, 7.5, 0.1),
+          "EPOCH_MASKED_FRACTION_CUT": "0.1",
+          "DEFECT_FILL": "interpolate",
+          "EPOCH_INTERPOLATED_DEFECT_RADIUS": "5.5"},
+         7.5, 0.1, "interpolate", 5.5),
         ({}, EPOCH_CENTRAL_DEFECT_RADIUS,
-         ngmix_module.EPOCH_MASKED_FRACTION_CUT),
+         ngmix_module.EPOCH_MASKED_FRACTION_CUT, "noise",
+         EPOCH_INTERPOLATED_DEFECT_RADIUS),
     ):
         runner_module.ngmix_runner(
             inputs, {"output": str(tmp_path)}, "-001-001",
@@ -495,6 +509,9 @@ def test_runner_threads_the_epoch_cut_options(tmp_path, monkeypatch):
         )
         assert captured[-1]["epoch_central_defect_radius"] == radius
         assert captured[-1]["epoch_masked_fraction_cut"] == fraction
+        assert captured[-1]["defect_fill"] == fill
+        assert (captured[-1]["epoch_interpolated_defect_radius"]
+                == interpolated_radius)
 
 
 # --- make_ngmix_observation: the HSM centroid reads the filled image -------
@@ -530,3 +547,187 @@ def test_hsm_centroid_ignores_raw_defect_values():
     npt.assert_allclose(
         [row - centre, col - centre], [d_row, d_col], atol=0.05
     )
+
+
+# --- DEFECT_FILL = interpolate ----------------------------------------------
+
+def _hot_stamp():
+    """A bright object with hot defects: a column and a finite 3-px bleed
+    (interpolated), an edge band and a 5x5 blob (noise-filled)."""
+    centre = N_STAMP // 2
+    rows, cols = np.mgrid[:N_STAMP, :N_STAMP]
+    gal = 1e3 * np.exp(
+        -((rows - centre) ** 2 + (cols - centre) ** 2) / (2 * 3.0 ** 2)
+    )
+    flag = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+    flag[:, centre + 8] = 1
+    flag[centre - 5:centre + 6, centre - 11:centre - 8] = 1
+    flag[:, :4] = 1
+    flag[centre + 9:centre + 14, centre + 12:centre + 17] = 1
+    gal[flag != 0] = 5e4
+    return gal, np.ones((N_STAMP, N_STAMP)), flag
+
+
+@pytest.mark.parametrize("blend_handling", ["none", "uberseg"])
+def test_interpolated_fill_and_its_weights(blend_handling):
+    """Short defect runs take the interpolant of the clean image; other
+    defects take noise; the weight is zero on the defects and on the
+    quarter-turn orbit of the interpolated pixels, whose light stays; the
+    metacal noise image is interpolated with the same operator.
+
+    Failure modes: the orbit is not zero-weighted (a one-sided hole in the
+    likelihood biases c), or its light is replaced; the fill mask is
+    symmetrized; wide defects or edge bands are extrapolated; raw defect
+    values leak; the noise image keeps independent noise where the science
+    image is smooth.
+    """
+    gal, weight, flag = _hot_stamp()
+    defect = flag != 0
+    target = interpolable_defects(defect)
+    assert target.any() and (defect & ~target).any()
+    kwargs = (
+        dict(seg=_uberseg_seg(N_STAMP), object_number=1, dilate_neighbour=1)
+        if blend_handling == "uberseg"
+        else {}
+    )
+    gal_out, w_out, noise_out = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(4),
+        bkg_rms=np.ones((N_STAMP, N_STAMP)), blend_handling=blend_handling,
+        defect_fill="interpolate", **kwargs,
+    )
+
+    neighbour = (
+        uberseg_weight(np.ones_like(gal), kwargs["seg"], 1, dilate_neighbour=1)
+        == 0.0
+        if kwargs else np.zeros_like(defect)
+    )
+    npt.assert_array_equal(w_out == 0.0, defect | fourfold(target) | neighbour)
+    npt.assert_array_equal(gal_out[~defect], gal[~defect])
+    expected = interpolate_defects(gal[None], defect, target)[0]
+    npt.assert_allclose(gal_out[target], expected[target], rtol=1e-5)
+    assert np.all(np.abs(gal_out[defect & ~target]) < 10.0)
+    refilled = interpolate_defects(noise_out[None], defect, target)[0]
+    npt.assert_allclose(noise_out[target], refilled[target], atol=1e-5)
+
+
+def test_noise_is_the_default_fill():
+    """Leaving DEFECT_FILL unset is bit-identical to the noise fill."""
+    gal, weight, flag = _hot_stamp()
+    rms = np.ones_like(gal)
+    default = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(9), bkg_rms=rms
+    )
+    noise = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(9), bkg_rms=rms,
+        defect_fill="noise",
+    )
+    for a, b in zip(default, noise):
+        npt.assert_array_equal(a, b)
+
+
+def test_unknown_defect_fill_is_rejected():
+    gal, weight, flag = _hot_stamp()
+    with pytest.raises(ValueError, match="DEFECT_FILL"):
+        prepare_ngmix_weights(
+            gal, weight, flag, np.random.RandomState(0),
+            defect_fill="interp",
+        )
+
+
+def _fill_veto_epochs():
+    """A clean epoch; a column at the interpolated-defect radius; a column
+    one pixel inside it; a 5-px bleed (noise-filled) at the same radius."""
+    centre = N_STAMP // 2
+    radius = int(EPOCH_INTERPOLATED_DEFECT_RADIUS)
+    clean = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+    ones = np.ones((N_STAMP, N_STAMP))
+    at, inside, wide = clean.copy(), clean.copy(), clean.copy()
+    at[:, centre + radius] = 1
+    inside[:, centre + radius - 1] = 1
+    wide[:, centre + radius:centre + radius + 5] = 1
+    return {
+        "2100001-10": (clean, ones),
+        "2100002-11": (at, ones),
+        "2100003-12": (inside, ones),
+        "2100004-13": (wide, ones),
+    }
+
+
+def test_the_veto_radius_follows_the_fill():
+    """Under interpolation, an interpolated defect is vetoed inside
+    EPOCH_INTERPOLATED_DEFECT_RADIUS and a noise-filled one inside
+    EPOCH_CENTRAL_DEFECT_RADIUS. Under the noise fill every defect keeps the
+    noise radius. The masked-fraction cut counts the raw defect set in
+    both modes.
+
+    Failure modes: the interpolated radius is applied to noise-filled pixels
+    (a wide hole next to the object survives), or not applied at all; the
+    configured radius is ignored; the boundary is inclusive; the fraction
+    cut counts the zero-weight orbit.
+    """
+    epochs = _fill_veto_epochs()
+    assert _surviving(epochs, defect_fill="interpolate") == [
+        "2100001-10", "2100002-11"
+    ]
+    assert _surviving(epochs) == ["2100001-10"]
+    assert _surviving(
+        epochs, defect_fill="interpolate",
+        epoch_interpolated_defect_radius=EPOCH_INTERPOLATED_DEFECT_RADIUS + 1,
+    ) == ["2100001-10"]
+    assert _surviving(_epochs(), defect_fill="interpolate") == [
+        "2100001-10", "2100002-11"
+    ]
+
+
+def test_process_threads_the_defect_fill(tmp_path, monkeypatch):
+    """Ngmix hands DEFECT_FILL to both the epoch cuts and metacal: under
+    interpolation the column at the interpolated-defect radius survives and
+    metacal is asked to interpolate; under noise it is vetoed.
+
+    Failure mode: the option is dropped on the way to either, so the tile
+    silently runs the noise fill or the noise cuts.
+    """
+    epochs = {k: v for k, v in _fill_veto_epochs().items()
+              if k in ("2100001-10", "2100002-11")}
+    vignet, tile_cat, psf_obj, _ = _fake_inputs(epochs)
+    vignet.psf_vign_cat = {"1": psf_obj}
+    vignet.close = lambda: None
+    tile_cat.obj_id = np.array([1])
+    tile_cat.flux = None
+    monkeypatch.setattr(ngmix_module, "Tile_cat", lambda *a, **k: tile_cat)
+    for method in ("compile_results", "save_results", "log_mean_ellipticity"):
+        monkeypatch.setattr(Ngmix, method, lambda *_a, **_k: None)
+    calls = []
+
+    def record(stamp, *_args, **kwargs):
+        calls.append((len(stamp.gals), kwargs.get("defect_fill")))
+        raise RuntimeError("metacal is not under test")
+
+    monkeypatch.setattr(ngmix_module, "do_ngmix_metacal", record)
+    paths = [tmp_path / f"{name}.sqlite" for name in
+             ("gal", "psf", "weight", "flag", "headers")]
+    for path in paths:
+        SqliteDict(str(path)).close()
+    for fill in ("interpolate", "noise"):
+        ngmix = Ngmix(
+            ["tile_cat.fits"] + [str(p) for p in paths[:4]],
+            str(tmp_path), "-001-001", 30.0, 0.186, str(paths[4]),
+            _RecordingLogger(), bkg_sub=False, defect_fill=fill,
+        )
+        ngmix._vignet_cat.close()
+        ngmix._vignet_cat = vignet
+        ngmix.process()
+    assert calls == [(2, "interpolate"), (1, "noise")]
+
+
+def test_ngmix_rejects_an_unknown_defect_fill(tmp_path):
+    paths = [tmp_path / f"{name}.sqlite" for name in
+             ("gal", "psf", "weight", "flag", "headers")]
+    for path in paths:
+        SqliteDict(str(path)).close()
+    with pytest.raises(ValueError, match="DEFECT_FILL"):
+        Ngmix(
+            ["tile_cat.fits"] + [str(p) for p in paths[:4]],
+            str(tmp_path), "-001-001", 30.0, 0.186, str(paths[4]),
+            _RecordingLogger(), bkg_sub=False, defect_fill="interp",
+        )
