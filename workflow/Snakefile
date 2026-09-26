@@ -85,7 +85,8 @@ run_config.apply_machine_defaults(config)
 _unresolved = run_config.unresolved(config)
 if _unresolved:
     raise WorkflowError(
-        f"Unset or {run_config.PLACEHOLDER!r} for machine={MACHINE!r}, "
+        f"Unset, {run_config.PLACEHOLDER!r}, or holding an unexpanded "
+        f"$variable for machine={MACHINE!r}, "
         f"input_type={INPUT_TYPE!r}: {', '.join(_unresolved)}. Set them in "
         f"your run config (SP_RUN_CONFIG).")
 

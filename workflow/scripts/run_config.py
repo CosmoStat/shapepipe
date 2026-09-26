@@ -41,14 +41,28 @@ def merge(base, over):
     return out
 
 
-def _expand(value, variables):
-    """Replace $name for each set name in `variables` (base_dir, run)."""
+# A variable's value may itself hold a variable (`base_dir: /x/$run`), so
+# expansion repeats until nothing changes; the bound stops a self-reference.
+EXPAND_PASSES = 3
+
+
+def _expand_once(value, variables):
     if isinstance(value, str):
         return re.sub(r"\$(\w+)",
                       lambda m: str(variables.get(m.group(1)) or m.group(0)),
                       value)
     if isinstance(value, dict):
-        return {k: _expand(v, variables) for k, v in value.items()}
+        return {k: _expand_once(v, variables) for k, v in value.items()}
+    return value
+
+
+def _expand(value, variables):
+    """Replace $name for each set name in `variables` (base_dir, run)."""
+    for _ in range(EXPAND_PASSES):
+        expanded = _expand_once(value, variables)
+        if expanded == value:
+            break
+        value = expanded
     return value
 
 
@@ -84,11 +98,22 @@ def get(config, dotted):
     return value
 
 
+def _dollar_keys(value, prefix):
+    """Dotted keys under `value` whose string still holds a `$`."""
+    if isinstance(value, dict):
+        return [k for key, sub in value.items()
+                for k in _dollar_keys(sub, f"{prefix}.{key}")]
+    return [prefix] if isinstance(value, str) and "$" in value else []
+
+
 def unresolved(config):
-    """REQUIRED keys that are unset, the placeholder, or hold an unexpanded
-    $variable (e.g. `$run` with no `run:` set)."""
-    return [k for k in REQUIRED
-            if get(config, k) in (None, "", PLACEHOLDER) or "$" in str(get(config, k))]
+    """REQUIRED keys that are unset or the placeholder, then every MACHINE_KEYS
+    value (recursively through inputs/outputs) that still holds an unexpanded
+    $variable (e.g. `$run` with no `run:` set, or a misspelt name)."""
+    missing = [k for k in REQUIRED
+               if get(config, k) in (None, "", PLACEHOLDER)]
+    dollar = [k for key in MACHINE_KEYS for k in _dollar_keys(config.get(key), key)]
+    return missing + [k for k in dollar if k not in missing]
 
 
 def load(config_yaml, run_config=None):
