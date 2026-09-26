@@ -54,7 +54,7 @@ def ngmix_runner(
 
     # Pixel scale -- optional override. When absent (or non-positive) it is
     # derived from the image WCS inside Ngmix, so it cannot drift from the
-    # pixels. Only the centroid-prior width and noise window use it.
+    # pixels. Only the centroid-prior width uses it.
     if config.has_option(module_config_sec, "PIXEL_SCALE"):
         pixel_scale = config.getfloat(module_config_sec, "PIXEL_SCALE")
     else:

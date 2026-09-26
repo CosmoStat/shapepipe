@@ -367,11 +367,11 @@ def pixel_scale_from_wcs(f_wcs_file):
     """Representative pixel scale (arcsec) from the tile's image WCS.
 
     The ngmix fit builds each object's Jacobian from the full per-epoch WCS,
-    so this scalar only sets the centroid-prior width and the noise-window
-    scale (see :func:`get_prior`, :func:`get_noise`). A single value read from
-    the astrometry is therefore sufficient -- and, unlike a hard-coded config
-    constant, it cannot silently drift from the pixels it describes (this
-    mirrors SExtractor's ``PIXEL_SCALE 0`` convention).
+    so this scalar only sets the centroid-prior width (see :func:`get_prior`).
+    A single value read from the astrometry is therefore sufficient -- and,
+    unlike a hard-coded config constant, it cannot silently drift from the
+    pixels it describes (this mirrors SExtractor's ``PIXEL_SCALE 0``
+    convention).
 
     Parameters
     ----------
@@ -578,8 +578,8 @@ class Ngmix(object):
         # Pixel scale: an explicit positive PIXEL_SCALE overrides; otherwise
         # derive it from the image WCS so it can never drift from the pixels
         # (mirrors SExtractor's ``PIXEL_SCALE 0`` convention). Only the
-        # centroid-prior width and noise window use it -- the fit Jacobian is
-        # built per object from the full WCS.
+        # centroid-prior width uses it -- the fit Jacobian is built per
+        # object from the full WCS.
         if pixel_scale is None or pixel_scale <= 0:
             self._pixel_scale = pixel_scale_from_wcs(
                 self._vignet_cat.f_wcs_file
@@ -1359,9 +1359,7 @@ def prepare_postage_stamps(
         # make_ngmix_observation), which raises if it is missing; the "hsm"
         # path ignores it, so read it leniently rather than coupling hsm to a
         # field it never uses.
-        stamp.offsets.append(
-            vignet.gal_vign_cat[str(obj_id)][expccd_name].get('OFFSET')
-        )
+        stamp.offsets.append(gal_obj[expccd_name].get('OFFSET'))
         stamp.ra.append(tile_cat.ra[i_tile])
         stamp.dec.append(tile_cat.dec[i_tile])
         # CCD of the first surviving epoch — Fabian's coord_list[0] convention
