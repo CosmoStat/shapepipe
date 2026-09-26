@@ -1161,8 +1161,12 @@ class Ngmix(object):
             # Read each store once here and pass the dicts down: every
             # sqlitedict access unpickles the object's whole all-epoch dict.
             psf_obj = vignet_cat.psf_vign_cat[str(obj_id)]
+            # Avoid allocating galaxy stamp arrays when there is no PSF coverage.
+            if psf_obj == 'empty' or not psf_obj:
+                n_empty_cat += 1
+                continue
             gal_obj = vignet_cat.gal_vign_cat[str(obj_id)]
-            if psf_obj == 'empty' or gal_obj == 'empty':
+            if gal_obj == 'empty' or not gal_obj:
                 n_empty_cat += 1
                 continue
 
