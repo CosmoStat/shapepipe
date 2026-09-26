@@ -42,7 +42,9 @@ def recover(seed, shear, psf_shear=(0.0, 0.0), gal_hlr=0.3, psf_fwhm=0.55,
     sim = make_data(rng=np.random.RandomState(seed + 100), shear=shear,
                     psf_shear=psf_shear, noise=noise, n_epochs=n_epochs,
                     img_size=img_size, gal_hlr=gal_hlr, psf_fwhm=psf_fwhm)
-    res, _, _ = do_ngmix_metacal(build_stamp(sim, transform), prior, 1.0, rng)
+    res, _, _ = do_ngmix_metacal(
+        build_stamp(sim, transform), prior, 1.0, rng, centroid_source="hsm",
+    )
     step = METACAL_STEP
     R = np.array([
         [(res["1p"]["g"][0] - res["1m"]["g"][0]) / (2 * step),
@@ -77,7 +79,9 @@ def _paired_arm(seed, shear, gal_hlr, psf_fwhm, n_epochs, img_size, noise):
     sim = make_data(rng=np.random.RandomState(seed + 1000), shear=shear,
                     noise=noise, n_epochs=n_epochs, img_size=img_size,
                     gal_hlr=gal_hlr, psf_fwhm=psf_fwhm)
-    res, _, _ = do_ngmix_metacal(build_stamp(sim), prior, 1.0, rng)
+    res, _, _ = do_ngmix_metacal(
+        build_stamp(sim), prior, 1.0, rng, centroid_source="hsm",
+    )
     ns = res["noshear"]
     finite = bool(np.all(np.isfinite(ns["g"])))
     R11 = ((res["1p"]["g"][0] - res["1m"]["g"][0]) / (2 * METACAL_STEP)

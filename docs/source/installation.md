@@ -8,7 +8,7 @@ data should be processed.
 
 ## Container Installation (Recommended)
 
-The easiest way to install ShapePipe is via a container. Docker images are automatically built and pushed to the [Github Container Registry (GHCR)](ghcr.io/cosmostat/shapepipe) on every push. Two image targets are published per branch — the default tag is the rich `dev` image; `<tag>-runtime` is a slim variant for batch jobs. See [Container Workflow](container.md) for the full rationale and the relationship between `pyproject.toml`, `uv.lock`, and the `Dockerfile`.
+The easiest way to install ShapePipe is via a container. Docker images are automatically built, tested, and pushed to the [Github Container Registry (GHCR)](ghcr.io/cosmostat/shapepipe) on every push — one image per branch, the same image CI's test suite ran against. See [Container Workflow](container.md) for the full rationale and the relationship between `pyproject.toml`, `uv.lock`, and the `Dockerfile`.
 
 We recommend running the image with **Apptainer** (formerly Singularity) which is installed on most HPC clusters. To simply run the image, use the following command:
 
@@ -28,10 +28,10 @@ You can also run the image with **Docker**:
 docker run --rm -it ghcr.io/cosmostat/shapepipe:develop shapepipe_run -c /app/example/config.ini
 ```
 
-For canfar batch jobs or downstream images, the slim runtime tag is preferred:
+For canfar batch jobs or downstream images, pull the same tag:
 
 ```bash
-docker pull ghcr.io/cosmostat/shapepipe:develop-runtime
+docker pull ghcr.io/cosmostat/shapepipe:develop
 ```
 
 ```{attention}

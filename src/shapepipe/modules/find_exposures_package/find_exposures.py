@@ -28,7 +28,10 @@ class FindExposures:
     colnum: int
         column number for exposure name in fits header
     prefix: str
-        prefix for exposures
+        prefix to strip from the exposure filename, e.g. ``simu_image-``
+        for simulated exposures; empty for CFIS exposures, which carry no
+        prefix (the trailing epoch letter, e.g. ``p``, is kept as part of
+        the exposure name and is not affected by this parameter)
     """
 
     def __init__(self, img_tile_path, output_path, w_log, colnum, prefix):
@@ -66,18 +69,25 @@ class FindExposures:
         list
             List of exposure basenames
 
+        Raises
+        ------
+        IOError
+            If the tile image FITS header has no ``HISTORY`` records to
+            read exposure names from; a tile whose header cannot be read
+            cannot have epochs, so this is a hard failure, not a partial
+            or empty exposure list.
+
         """
         try:
             # Get history from tiles FITS header
             hdu = fits.open(self._img_tile_path)
             hist = hdu[0].header["HISTORY"]
 
-        except Exception:
-            # Key word not found -> raise error
-            self._w_log.info(
-                "Error while reading tile image FITS file "
-                + f"{self._img_tile_path}, continuing..."
-            )
+        except Exception as error:
+            raise IOError(
+                "Could not read exposure HISTORY from tile image FITS "
+                + f"header '{self._img_tile_path}': {error}"
+            ) from error
 
         exp_list = []
 
@@ -87,7 +97,9 @@ class FindExposures:
         for _hist in hist:
             temp = _hist.split(" ")
 
-            pattern = r"(.*)\.{1}.*"
+            # Non-greedy: stop at the first extension so a multi-extension
+            # name (e.g. "2243881p.fits.fz") is not left with ".fits" on it.
+            pattern = r"(.*?)\..*"
             pattern_match = re.search(pattern, temp[self._colnum])
             if not pattern_match:
                 raise IndexError(

@@ -126,7 +126,7 @@ until you opt in.
 
 ```bash
 sp container status                      # layers present, active one, revision vs HEAD
-sp container pull                        # ghcr.io/cosmostat/shapepipe:develop-runtime
+sp container pull                        # ghcr.io/cosmostat/shapepipe:develop
 sp container pull --tag docker://...     # some other image
 sp container sandbox                     # unpack the SIF writable (opt-in)
 sp container exec --writable pip install <pkg>
