@@ -36,9 +36,11 @@ tile group's cleanup deletes those finished tiles' `final_cat`. Change
 boundary on a fresh root.
 
 @sc [label:custody] clean-exposure-waits-on-persist-iff-psf
-`clean_exposure` takes the exposure's `exp_persist` manifest as input exactly
-when `PERSISTS_PSF` (`psf_model != "fake"`, which is `psfex`: `mccd` is refused
-at parse time by `refuse_unpersistable_psf`). Dropping the edge under psfex
-lets reclamation delete the scratch store before its PSF products reach
-`products_dir`; keeping it under `fake` makes every clean wait on a rule that
-is not in the DAG.
+`clean_exposure` waits on the exposure's persisted PSF products exactly when
+`PERSISTS_PSF` (`psf_model != "fake"`, which is `psfex`: `mccd` is refused at
+parse time by `refuse_unpersistable_psf`): on the `exp_persist` manifest for a
+live store, and on the tar (a leaf), or nothing, for a reclaimed one. Dropping
+the edge under psfex lets reclamation delete the scratch store before its PSF
+products reach `products_dir`; keeping it under `fake` makes every clean wait on
+a rule that is not in the DAG; naming the manifest for a reclaimed store lets a
+`persist_exp:` edit rebuild the exposure from VOS.
