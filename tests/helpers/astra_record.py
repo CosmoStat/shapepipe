@@ -1,10 +1,14 @@
 """Reusable parsing and resolution helpers for ShapePipe's ASTRA record."""
 
+import argparse
 import ast
 import configparser
 from dataclasses import dataclass
+import json
 from pathlib import Path
 import re
+import subprocess
+import sys
 
 import yaml
 
@@ -89,6 +93,26 @@ def _parse_reference(reference):
     return "path", reference, ""
 
 
+_SNAKEMAKE_SUFFIXES = {".smk"}
+_SNAKEFILE_NAMES = {"Snakefile"}
+
+
+def _is_snakemake_file(target):
+    return target.suffix in _SNAKEMAKE_SUFFIXES or target.name in _SNAKEFILE_NAMES
+
+
+def _snakemake_symbol(text, symbol):
+    rule_pattern = re.compile(
+        rf"^\s*(?:rule|checkpoint)\s+{re.escape(symbol)}\s*:", re.MULTILINE
+    )
+    if rule_pattern.search(text):
+        return None
+    def_pattern = re.compile(rf"^\s*def\s+{re.escape(symbol)}\(", re.MULTILINE)
+    if def_pattern.search(text):
+        return None
+    return f"no rule/checkpoint/def named {symbol!r}"
+
+
 def resolve_anchor(root, reference):
     """Return ``None`` if a reference resolves, otherwise a diagnostic."""
 
@@ -110,6 +134,8 @@ def resolve_anchor(root, reference):
         return f"cannot read file: {error}"
 
     if kind == "code":
+        if _is_snakemake_file(target):
+            return _snakemake_symbol(text, selector)
         if target.suffix != ".py":
             return "code-symbol refs must name a .py file"
         try:
@@ -282,3 +308,79 @@ def _decisions(document, location=""):
         if isinstance(analysis, dict):
             result.update(_decisions(analysis, child))
     return result
+
+
+def _git_sha(root):
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            capture_output=True,
+            check=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def build_report(root):
+    """Resolve every anchor and universe pin under ``root`` into a report dict."""
+
+    root = Path(root)
+    astra_yaml = root / "astra.yaml"
+    record = load_yaml(astra_yaml)
+    anchors = extract_anchors(record)
+
+    unresolved = []
+    for anchor in anchors:
+        if anchor.error:
+            unresolved.append(
+                {"location": anchor.location, "ref": None, "problem": anchor.error}
+            )
+            continue
+        for reference in anchor.references:
+            problem = resolve_anchor(root, reference)
+            if problem:
+                unresolved.append(
+                    {
+                        "location": anchor.location,
+                        "ref": reference,
+                        "problem": problem,
+                    }
+                )
+
+    universe = load_yaml(root / "universes" / "committed.yaml")
+    errors = universe_errors(record, universe)
+
+    return {
+        "astra_yaml": str(astra_yaml),
+        "git_sha": _git_sha(root),
+        "anchors_total": len(anchors),
+        "unresolved": unresolved,
+        "universe_errors": errors,
+        "ok": not unresolved and not errors,
+    }
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--report", required=True, help="path to write the JSON report to"
+    )
+    parser.add_argument(
+        "--root",
+        default=Path(__file__).resolve().parents[2],
+        help="repository root (default: repo root inferred from this file)",
+    )
+    args = parser.parse_args(argv)
+
+    report = build_report(args.root)
+    report_path = Path(args.report)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+
+    return 0 if report["ok"] else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

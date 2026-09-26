@@ -1,0 +1,43 @@
+Scientific contracts governing workflow/ and everything beneath it.
+
+Format: `@sc [meta] id`, then one paragraph of prose. `sc-list <path>` prints
+every contract governing a path; the Snakefile and rules/*.smk carry theirs here
+because sc-list does not parse Snakemake. Where a check enforces a contract, the
+prose names it.
+
+@sc [label:provenance] campaign-name-is-run
+A campaign's name is the run config's `run:` and nothing else. The Snakefile
+binds it once, `CAMPAIGN = config["run"]`, and every product that carries a
+campaign name takes it from there: `final_cat_<run>.hdf5` and its
+`patches/<run>` group, `full_starcat_<run>.hdf5`, and the `$run` in the
+machine defaults' `products_dir`/`index_db`. No rule or script reads a
+`campaign` key or derives a name from a directory (`PRODUCTS_DIR.name`); two
+sources that can disagree would file one campaign's merge under another's name.
+Every campaign product path is rooted in `PRODUCTS_DIR`. Enforced by
+tests/unit/test_campaign_lineage.py.
+
+@sc [label:schema] final-cat-param-is-exact-allow-list
+Each input type's `config/*/final_cat.param` is the merged catalogue's exact
+column list, in order: `final_cat_merge` writes those columns and no others,
+and the reader raises on a listed column a tile lacks. So a name belongs there
+only if `make_cat` writes it on EVERY tile. A per-epoch family (`EXP_ID_n`,
+`CCD_n`, `HSM_*_PSF_n`) qualifies only with a fixed slot count, since
+`make_cat` otherwise sizes it from the tile's own maximum `N_EPOCH`. Enforced
+by tests/unit/test_final_cat_merge_invariants.py (the merge) and
+tests/module/test_psf_grammar_properties.py (the shipped names).
+
+@sc [label:hazard] unit-pre-changes-at-campaign-boundary
+Every line `unit_pre()` emits is part of each rule's `params.pre`, and both
+profiles run with the `params` rerun trigger, so any change to its output
+replans every finished unit of the campaign. Mid-campaign that rerun is
+unsatisfiable for tiles whose exposure stores were reclaimed, and the failed
+tile group's cleanup deletes those finished tiles' `final_cat`. Change
+`unit_pre` output, or anything else in a rule's `params`, only at a campaign
+boundary on a fresh root.
+
+@sc [label:custody] clean-exposure-waits-on-persist-iff-psf
+`clean_exposure` takes the exposure's `exp_persist` manifest as input exactly
+when `PERSISTS_PSF` (`psf_model != "fake"`). Dropping the edge under a real PSF
+model lets reclamation delete the scratch store before its PSF products reach
+`products_dir`; keeping it under `fake` makes every clean wait on a rule that
+is not in the DAG.

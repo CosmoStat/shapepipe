@@ -132,8 +132,9 @@ class CoveragePlotter(object):
         )
         self._params = options
 
-        # Save calling command
-        logging.log_command(args)
+        # Save calling command to log_plot_coverage_map; args excludes the program
+        # name, which log_command takes from argv[0]
+        logging.log_command(["plot_coverage_map", *args])
 
     def update_params(self):
         """Update parameters.
