@@ -19,6 +19,7 @@ analyses:
       zero_weight_interpolation: interp_all
       spurious_detection_cleaning: clean_1
       blend_photometry_mask_type: correct
+      saturation_level: header_saturate
       photometry_parameters: kron_25_35
       detection_source_mode: sx_nomask_single_image
       epoch_membership_ccd_bounds: trimmed_bounds_33_2080

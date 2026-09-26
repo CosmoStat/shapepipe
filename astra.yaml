@@ -331,7 +331,8 @@ analyses:
           [detection_threshold_policy, deblending_policy, background_model,
            weight_map_usage, zero_weight_interpolation, detection_source_mode,
            epoch_membership_ccd_bounds, photometry_parameters,
-           spurious_detection_cleaning, blend_photometry_mask_type]
+           spurious_detection_cleaning, blend_photometry_mask_type,
+           saturation_level]
     decisions:
       detection_threshold_policy:
         label: Detection significance, minimum area, matched filter
@@ -472,6 +473,28 @@ analyses:
             label: MASK_TYPE CORRECT
           blank:
             label: MASK_TYPE BLANK
+      saturation_level:
+        label: Saturation level read from each image's header
+        rationale: >-
+          SATUR_KEY SATURATE on both passes and no SATUR_LEVEL: SExtractor
+          takes each image's saturation level from its SATURATE header card and
+          sets the saturation bit (4) of FLAGS on objects with saturated
+          pixels. Star selection requires FLAGS == 0 at every step, so the
+          level decides which bright stars are rejected from the PSF sample;
+          tile FLAGS reach the catalogue for downstream cuts. Where the card is
+          absent, SExtractor falls back to SATUR_LEVEL, which neither .sex file
+          sets, so its built-in default applies (50000 ADU per the SExtractor
+          documentation). Whether the delivered exposure CCDs and MegaPipe
+          tiles carry SATURATE is unverified here.
+          Anchor: workflow/config/cfis/default_exp.sex#SATUR_KEY;
+          workflow/config/cfis/default_tile.sex#SATUR_KEY;
+          workflow/config/cfis/star_selection.setools#MASK:star_selection.FLAGS.
+        default: header_saturate
+        options:
+          header_saturate:
+            label: SATURATE header card; SExtractor default level where absent
+          fixed_level:
+            label: Fixed SATUR_LEVEL set in the .sex files
       photometry_parameters:
         label: Kron and aperture photometry definitions
         rationale: >-
@@ -857,10 +880,14 @@ analyses:
         label: PSFEx pixel basis with degree-2 spatial variation per CCD
         rationale: >-
           BASIS_TYPE PIXEL, BASIS_NUMBER 20, PSF_SAMPLING 1, PSFVAR_DEGREES 2
-          in XWIN/YWIN per CCD. Model flexibility sets the balance between PSF
-          leakage and overfitting, the dominant additive systematic in cosmic
-          shear. Stock values; no rationale recorded.
+          in XWIN/YWIN per CCD. PSF_ACCURACY 0.01 is the fractional accuracy
+          PSFEx assumes for PSF pixel values, which per the PSFEx documentation
+          enters the fit weights and so how closely the model follows bright
+          stars. Model flexibility sets the balance between PSF leakage and
+          overfitting, the dominant additive systematic in cosmic shear. Stock
+          values; no rationale recorded.
           Anchor: workflow/config/cfis/default.psfex#BASIS_TYPE;
+          workflow/config/cfis/default.psfex#PSF_ACCURACY;
           workflow/config/cfis/default.psfex#BASIS_NUMBER;
           workflow/config/cfis/default.psfex#PSFVAR_DEGREES.
         default: pixel_basis_deg2_per_ccd
