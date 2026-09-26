@@ -3298,17 +3298,6 @@ wheels = [
 ]
 
 [[package]]
-name = "sf-tools"
-version = "2.0.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "future" },
-    { name = "modopt" },
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c2/41/6281d12b863867fc7d7db0aeb55db7ec94fb8f35873b9940edeeb3c29d0f/sf_tools-2.0.4.tar.gz", hash = "sha256:607204b7369cb381c02ba95f49f13d2733877a625026fac340dcddcca6700d24", size = 10426, upload-time = "2019-08-22T08:41:46.961Z" }
-
-[[package]]
 name = "shapepipe"
 version = "1.1.0"
 source = { editable = "." }
@@ -3333,7 +3322,6 @@ dependencies = [
     { name = "pyqtgraph" },
     { name = "python-dateutil" },
     { name = "python-pysap" },
-    { name = "sf-tools" },
     { name = "skaha" },
     { name = "skyproj" },
     { name = "sqlitedict" },
@@ -3427,7 +3415,6 @@ requires-dist = [
     { name = "python-dateutil" },
     { name = "python-pysap", specifier = ">=0.3" },
     { name = "ruff", marker = "extra == 'lint'" },
-    { name = "sf-tools", specifier = ">=2.0.4" },
     { name = "shapepipe", extras = ["doc", "jupyter", "lint", "plot", "release", "test", "fitsio"], marker = "extra == 'dev'" },
     { name = "skaha", specifier = ">=1.7" },
     { name = "skyproj" },
