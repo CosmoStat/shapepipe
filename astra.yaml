@@ -931,7 +931,9 @@ analyses:
           nor ellipticity, so MINSN and MAXELLIP can reject stars it
           kept. BADPIXEL_FILTER N and PSF_RECENTER N, also the compiled
           defaults, accept flagged star vignets unfiltered and do not
-          recentre candidates.
+          recentre candidates. Compiled-in values admit no `= value`
+          assertion, so the anchors assert only that default.psfex omits
+          each SAMPLE_* key; issue #919 pins them in default.psfex.
           Anchor: workflow/config/cfis/default.psfex#SAMPLE_AUTOSELECT = N;
           workflow/config/cfis/default.psfex#BADPIXEL_FILTER = N;
           workflow/config/cfis/default.psfex#PSF_RECENTER = N;
