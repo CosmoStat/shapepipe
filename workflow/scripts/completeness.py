@@ -108,9 +108,12 @@ COMPLETENESS = {
         # warning-only until a real campaign validates its counts.
         "mccd": {
             "sextractor_runner":          dict(expect=120, warn=True),
+            "mask_query_runner":          dict(expect=40, warn=True),
             "setools_runner":             dict(expect=80, warn=True,
                                                 subpath="rand_split"),
-            "mccd_preprocessing_runner":  dict(expect=80, warn=True),
+            # mccd_preprocessing merges the exposure's per-CCD star catalogues
+            # into one train and one test catalogue, not one output per CCD.
+            "mccd_preprocessing_runner":  dict(expect=2, warn=True),
             # Fit/validation is exposure-wide: one model and one validation
             # catalogue, unlike the per-CCD preprocessing outputs.
             "mccd_fit_val_runner":        dict(expect=2, warn=True),
