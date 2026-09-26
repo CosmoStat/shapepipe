@@ -1,11 +1,11 @@
-"""Defect fill and the epoch masked-fraction cut (ngmix module).
+"""Defect fill and the epoch cuts (ngmix module).
 
 A defect is a stamp pixel with a nonzero flag, zero exposure weight or an
 invalid background RMS. Before metacal, :func:`prepare_ngmix_weights` ORs the
 defect mask with its 90-, 180- and 270-degree rotations. It then gives that
 set weight 0 and fills it with noise, whatever ``BLEND_HANDLING`` is. Under
 uberseg, pixels on the neighbour side only lose their weight, and their image
-values stay raw. The per-epoch cut in :func:`prepare_postage_stamps` counts
+values stay raw. The per-epoch cuts in :func:`prepare_postage_stamps` act on
 the same symmetrized set.
 """
 
@@ -20,6 +20,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from shapepipe.modules.ngmix_package.ngmix import (
+    EPOCH_CENTRAL_DEFECT_RADIUS,
     prepare_ngmix_weights,
     prepare_postage_stamps,
     uberseg_weight,
@@ -248,3 +249,50 @@ def test_epoch_cut_threshold_is_the_configured_fraction():
         "2100001-10"
     ]
 
+
+# --- prepare_postage_stamps: the central-defect veto -----------------------
+
+def _veto_epochs(radius):
+    """A clean epoch, one with a single flagged pixel just inside
+    ``radius`` of the stamp centre, and one with a flagged column exactly
+    ``radius`` away. Both masked epochs are far below the fraction cut.
+    """
+    centre = N_STAMP // 2
+    clean = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+    ones = np.ones((N_STAMP, N_STAMP))
+    near, far = clean.copy(), clean.copy()
+    near[centre, centre + radius - 1] = 1
+    far[:, centre + radius] = 1
+    return {
+        "2100001-10": (clean, ones),
+        "2100002-11": (near, ones),
+        "2100003-12": (far, ones),
+    }
+
+
+def test_central_defect_vetoes_the_epoch():
+    """At the default radius, a single defect pixel inside it drops the
+    epoch, and a column at the radius does not.
+
+    Failure mode: the veto is skipped, so an epoch whose filled hole overlaps
+    the object's light (a per-epoch m of -5% to -35% on the calibration sim)
+    enters the fit; or the boundary is inclusive, dropping the column at the
+    radius (epoch-central-defect-veto).
+    """
+    epochs = _veto_epochs(EPOCH_CENTRAL_DEFECT_RADIUS)
+    assert _surviving(epochs) == ["2100001-10", "2100003-12"]
+
+
+def test_central_defect_radius_is_the_configured_value():
+    """Radius 0 disables the veto; a radius one pixel larger than the far
+    column's distance drops that epoch too.
+
+    Failure mode: the configured radius is ignored.
+    """
+    epochs = _veto_epochs(EPOCH_CENTRAL_DEFECT_RADIUS)
+    assert _surviving(epochs, epoch_central_defect_radius=0) == [
+        "2100001-10", "2100002-11", "2100003-12"
+    ]
+    assert _surviving(
+        epochs, epoch_central_defect_radius=EPOCH_CENTRAL_DEFECT_RADIUS + 1
+    ) == ["2100001-10"]

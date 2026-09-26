@@ -31,6 +31,11 @@ BLEND_HANDLINGS = ("none", "uberseg")
 # more than this fraction of its stamp is in :func:`defect_mask`.
 EPOCH_MASKED_FRACTION_CUT = 1 / 3
 
+# Default of the EPOCH_CENTRAL_DEFECT_RADIUS option (pixels): an epoch is
+# dropped when a pixel of :func:`defect_mask` lies closer than this to the
+# stamp centre.
+EPOCH_CENTRAL_DEFECT_RADIUS = 10
+
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
 
 # Noise budget for the PSF observation's flat weight map (psf_wt =
@@ -446,6 +451,10 @@ class Ngmix(object):
         Drop an epoch when more than this fraction of its stamp is masked
         (see :func:`prepare_postage_stamps`); the default is
         ``EPOCH_MASKED_FRACTION_CUT``.
+    epoch_central_defect_radius : float, optional
+        Drop an epoch when a masked pixel lies closer than this many pixels
+        to the stamp centre (see :func:`prepare_postage_stamps`); the default
+        is ``EPOCH_CENTRAL_DEFECT_RADIUS``.
 
     Notes
     -----
@@ -481,6 +490,7 @@ class Ngmix(object):
         dilate_neighbour=1,
         metacal_psf="fitgauss",
         epoch_masked_fraction_cut=EPOCH_MASKED_FRACTION_CUT,
+        epoch_central_defect_radius=EPOCH_CENTRAL_DEFECT_RADIUS,
     ):
 
         # Base count = catalogue + vignets, excluding the f_wcs headers (passed
@@ -551,6 +561,7 @@ class Ngmix(object):
         self._dilate_neighbour = dilate_neighbour
         self._metacal_psf = metacal_psf
         self._epoch_masked_fraction_cut = epoch_masked_fraction_cut
+        self._epoch_central_defect_radius = epoch_central_defect_radius
 
         self._w_log = w_log
 
@@ -1027,6 +1038,7 @@ class Ngmix(object):
                 psf_obj,
                 gal_obj,
                 epoch_masked_fraction_cut=self._epoch_masked_fraction_cut,
+                epoch_central_defect_radius=self._epoch_central_defect_radius,
             )
 
             if len(stamp.gals) == 0:
@@ -1164,8 +1176,9 @@ def prepare_postage_stamps(
     psf_obj=None,
     gal_obj=None,
     epoch_masked_fraction_cut=EPOCH_MASKED_FRACTION_CUT,
+    epoch_central_defect_radius=EPOCH_CENTRAL_DEFECT_RADIUS,
 ):
-    """Gather one object's epoch stamps, dropping heavily masked epochs.
+    """Gather one object's epoch stamps, dropping epochs its defects spoil.
 
     @sc [decision:epoch_masked_fraction_cut,decision:defect_fill] epoch-cut-on-symmetrized-mask
     An epoch is dropped when more than ``epoch_masked_fraction_cut`` of its
@@ -1175,6 +1188,21 @@ def prepare_postage_stamps(
     cut; the 4-fold OR turns an edge band into a frame of up to four times
     its area. The default is 1/3 (``EPOCH_MASKED_FRACTION_CUT``); 10%, the
     DES Y3 and Y6 value, is the alternative to test.
+
+    @sc [decision:central_defect_veto,decision:defect_fill] epoch-central-defect-veto
+    An epoch is also dropped when any pixel of :func:`defect_mask` lies
+    closer than ``epoch_central_defect_radius`` pixels to the stamp centre.
+    A noise-filled hole in the object's light is sheared by metacal but not by
+    the sky, so the metacal response is wrong for that epoch. On a round
+    galaxy (half-light radius 0.3") through a 0.7" PSF, a 4-fold-filled
+    column gives a single-epoch m of -6% at 8 px and -0.2% at 10 px; a single
+    defect pixel gives -1.5% and -0.06%. The default, 10 px (1.9"), is the
+    smallest radius with |m| < 1% for both; larger objects need more (-2.5%
+    at 10 px for a 0.5" galaxy). The distance is measured from the stamp
+    centre, the symmetrization centre, where the extractor places the object
+    to within half a pixel. The veto reads only the defect mask, never the
+    object's pixels, so it selects on nothing that responds to shear. 0
+    disables it.
 
     Parameters
     ----------
@@ -1193,6 +1221,10 @@ def prepare_postage_stamps(
     epoch_masked_fraction_cut : float, optional
         Drop an epoch when more than this fraction of its stamp is in
         :func:`defect_mask`; the default is ``EPOCH_MASKED_FRACTION_CUT``.
+    epoch_central_defect_radius : float, optional
+        Drop an epoch when a pixel of :func:`defect_mask` lies closer than
+        this many pixels to the stamp centre; 0 disables the veto. The
+        default is ``EPOCH_CENTRAL_DEFECT_RADIUS``.
 
     Returns
     -------
@@ -1275,9 +1307,17 @@ def prepare_postage_stamps(
             else None
         )
         # Drop the epoch when too much of it would be zero-weighted and
-        # noise-filled (epoch-cut-on-symmetrized-mask).
+        # noise-filled (epoch-cut-on-symmetrized-mask), or when a filled
+        # pixel would sit near the object (epoch-central-defect-veto).
         masked = defect_mask(weight_vign, flag_vign, bkg_rms_vign)
         if masked.mean() > epoch_masked_fraction_cut:
+            continue
+        rows, cols = np.nonzero(masked)
+        centre = (masked.shape[0] - 1) / 2
+        if np.any(
+            np.hypot(rows - centre, cols - centre)
+            < epoch_central_defect_radius
+        ):
             continue
 
         # One unpickle per exposure (all CCDs), reused across this object's
@@ -1634,7 +1674,8 @@ def symmetrize_defects(defect):
     overlap of the column and its image, which lies on one diagonal whatever
     the offset, and so a c2 that does not average over defect positions.
     The price is up to twice the filled area of one rotation, and with it a
-    larger multiplicative bias from filled holes near the object. Guarded by
+    larger multiplicative bias from filled holes near the object, which the
+    central-defect veto removes (epoch-central-defect-veto). Guarded by
     ``tests/science/test_defect_symmetry.py``.
 
     Parameters

@@ -22,6 +22,10 @@ offset over a 90-degree orbit. When the filled set is invariant under a
 that is not invariant keeps its bias, because the galaxy rotates and the
 column does not.
 
+The off-centre column lies inside the central-defect veto radius, so
+production would drop that epoch (``epoch-central-defect-veto``). The fill's
+symmetry is tested here on its own, through ``do_ngmix_metacal``.
+
 Measured values are in the test report of the implementing PR; the positive
 control below keeps the fixture's power in the suite.
 

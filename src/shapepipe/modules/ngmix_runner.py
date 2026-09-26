@@ -12,6 +12,7 @@ from sqlitedict import SqliteDict
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.ngmix_package.ngmix import (
+    EPOCH_CENTRAL_DEFECT_RADIUS,
     EPOCH_MASKED_FRACTION_CUT,
     Ngmix,
 )
@@ -156,6 +157,15 @@ def ngmix_runner(
     else:
         epoch_masked_fraction_cut = EPOCH_MASKED_FRACTION_CUT
 
+    # EPOCH_CENTRAL_DEFECT_RADIUS (optional, pixels): drop an epoch when a
+    # masked pixel lies closer than this to the stamp centre; 0 disables.
+    if config.has_option(module_config_sec, "EPOCH_CENTRAL_DEFECT_RADIUS"):
+        epoch_central_defect_radius = config.getfloat(
+            module_config_sec, "EPOCH_CENTRAL_DEFECT_RADIUS"
+        )
+    else:
+        epoch_central_defect_radius = EPOCH_CENTRAL_DEFECT_RADIUS
+
     # Check PSF vignets first: if all are empty dicts {}, the exposures for this
     # tile are absent from the PSF dictionary and no shape measurement is possible.
     # This check must come before reading image vignets to avoid a C-level malloc
@@ -212,6 +222,7 @@ def ngmix_runner(
         dilate_neighbour=dilate_neighbour,
         metacal_psf=metacal_psf,
         epoch_masked_fraction_cut=epoch_masked_fraction_cut,
+        epoch_central_defect_radius=epoch_central_defect_radius,
     )
 
     # Process ngmix shape measurement and metacalibration
