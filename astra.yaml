@@ -63,16 +63,21 @@ decisions:
   per_unit_completeness:
     label: Per-unit completeness gate
     rationale: >-
-      Every rule checks its products against a nominal per-runner count: a
-      runner below its count fails the unit (an exposure or a tile), so a
-      partial unit never enters the catalogue; the missing unit's objects do
-      not appear at all. The one tolerated shortfall is the exposure-side
+      Every rule that runs shapepipe_run checks its products against a
+      nominal per-runner count (tile_ngmix per chunk): a runner below
+      its count fails the unit (an exposure or a tile), so a partial
+      unit never enters the catalogue; the missing unit's objects do not
+      appear at all. The one tolerated shortfall is the exposure-side
       psfex_interp VALIDATION output, where a CCD whose model fails the
-      acceptance gate (star_selection_psf.psf_acceptance_thresholds) produces
-      nothing and the unit only warns; the MCCD chain, never run in a
-      campaign, warns on every runner. Science-path PSF rejection does not go
-      through this table: psfex_interp drops the epoch per object inside the
-      tile run.
+      acceptance gate (star_selection_psf.psf_acceptance_thresholds)
+      produces nothing and the unit only warns; the MCCD chain, never
+      run in a campaign, warns on every runner. Science-path PSF
+      rejection does not go through this table: psfex_interp drops the
+      epoch per object inside the tile run. [LINT] the completeness.py
+      docstring gives tile psfex_interp as its warn example, but that
+      runner is mandatory, and a workflow/rules/exposure.smk comment
+      says a floor's :warn tolerates setools rejecting a sparse CCD, but
+      setools has a mandatory count and no floor exists.
       Anchor: workflow/scripts/completeness.py::COMPLETENESS.
     default: exact_counts
     options:
@@ -232,18 +237,20 @@ analyses:
       psf_star_mask_veto:
         label: PSF-star candidates rejected on instrument flags only
         rationale: >-
-          The star selection cuts IMAFLAGS_ISO == 0 and nothing else from the
-          masks. mask_query sits in the exposure module chain between
-          SExtractor and setools: when MASK_PATHS names maps it writes MASK_EXT
-          (0 clean, nonzero flagged; off-coverage counts as clean) onto each
-          CCD's catalogue. MASK_PATHS ships commented out, so the committed
-          module passes the catalogue through with no MASK_EXT column. The
-          intended map is the UNIONS star-body product (bit 2); halo bits 0
-          and 1 are excluded because halos say nothing about whether a star is
-          a good PSF sample. Imposing the veto is one line per mask block in
-          star_selection.setools (MASK_EXT == 0). [LINT] the
-          workflow/rules/exposure.smk docstring names the column FLAG_EXT; the
-          code writes MASK_EXT.
+          The star selection cuts IMAFLAGS_ISO == 0 and nothing else
+          from the masks. mask_query sits in the exposure module
+          chain between SExtractor and setools: when MASK_PATHS
+          names maps it writes MASK_EXT (0 clean, nonzero flagged;
+          off-coverage counts as clean) onto each CCD's catalogue.
+          MASK_PATHS ships commented out, so the committed module
+          passes the catalogue through with no MASK_EXT column. The
+          intended map is the UNIONS star-body product (bit 2); halo
+          bits 0 and 1 are excluded because halos say nothing about
+          whether a star is a good PSF sample. Imposing the veto is
+          one line per mask block in star_selection.setools
+          (MASK_EXT == 0). [LINT] the workflow/rules/exposure.smk
+          docstring names the column FLAG_EXT and says setools cuts
+          on it; the code writes MASK_EXT and nothing cuts on it.
           Anchor: workflow/config/cfis/config_exp_psfex.ini;
           workflow/config/cfis/star_selection.setools#MASK:star_selection.IMAFLAGS_ISO;
           src/shapepipe/modules/mask_query_runner.py::mask_query_runner;
@@ -504,11 +511,12 @@ analyses:
       epoch_membership_ccd_bounds:
         label: Which exposure CCDs an object belongs to (N_EPOCH)
         rationale: >-
-          CCD_SIZE = 33,2080,1,4612 with strict inequalities: the 33-px left
-          trim removes a CCD strip from epoch membership, and a WCS inversion
-          failure skips the CCD, lowering N_EPOCH. This sets how many exposures
-          enter each galaxy's multi-epoch fit. The trim is unexplained beyond
-          "number of pixels in a CCD".
+          CCD_SIZE = 33,2080,1,4612 with strict inequalities:
+          positions with x at or below 33 are outside the bounds,
+          and a WCS inversion failure skips the CCD, lowering
+          N_EPOCH. This sets how many exposures enter each galaxy's
+          multi-epoch fit. The x range spans 2048 px; whether the
+          excluded strip is prescan or science pixels is unverified.
           Anchor: workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.CCD_SIZE;
           src/shapepipe/modules/sextractor_package/sextractor_script.py::make_post_process;
           src/shapepipe/modules/sextractor_package/sextractor_script.py::ccd_candidate_mask.
@@ -517,7 +525,7 @@ analyses:
           trimmed_bounds_33_2080:
             label: "x in (33,2080), y in (1,4612), strict"
           full_ccd:
-            label: Full 1-2048 x-range, inclusive bounds
+            label: Untrimmed x-range, inclusive bounds
     prior_insights:
       guinot22_stacked_detection:
         claim: >-
@@ -590,11 +598,17 @@ analyses:
       epoch_provenance_from_tile_history:
         label: Epoch sets parsed from tile FITS HISTORY cards
         rationale: >-
-          A tile's contributing exposures are column 3 (COLNUM) of each HISTORY
-          line, with prefix p stripped and duplicates removed: the coadd's own
-          provenance is trusted as the epoch list. A mis-parse changes N_EPOCH
-          and which exposures are fit.
+          A tile's contributing exposures are the file names in
+          column 3 (COLNUM) of each HISTORY line, stripped of their
+          extension and deduplicated: the coadd's own provenance is
+          trusted as the epoch list. Names keep their trailing p
+          (2243881p); downstream code drops it when it needs the
+          bare exposure ID. A mis-parse changes N_EPOCH and which
+          exposures are fit. [LINT] EXP_PREFIX = p is passed to
+          removeprefix, which does nothing to names where p is a
+          suffix, so the key has no effect.
           Anchor: workflow/config/cfis/config_tile_Fe.ini#FIND_EXPOSURES_RUNNER.COLNUM;
+          workflow/config/cfis/config_tile_Fe.ini#FIND_EXPOSURES_RUNNER.EXP_PREFIX;
           src/shapepipe/modules/find_exposures_package/find_exposures.py::FindExposures.get_exposure_list.
         default: history_parse
         options:
@@ -603,13 +617,18 @@ analyses:
       object_position_columns:
         label: Windowed centroids (XWIN/YWIN) define every position
         rationale: >-
-          PSF interpolation sites, tile and multi-epoch stamp centres, and the
-          catalogue position all use SExtractor's windowed centroid:
-          XWIN_WORLD/YWIN_WORLD on the tile side, XWIN_IMAGE/YWIN_IMAGE on
-          exposures. Windowed, isophotal and model centroids differ
-          systematically for blends and asymmetric galaxies, and the centroid
-          feeds the position seed and the centroid prior.
-          Anchor: workflow/config/cfis/config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS;
+          PSF interpolation sites, tile and multi-epoch stamp
+          centres, and the catalogue position all use SExtractor's
+          windowed centroid. Tile stamps are cut at
+          XWIN_IMAGE/YWIN_IMAGE in tile pixels (COORD = PIX); PSF
+          interpolation and multi-epoch stamps use
+          XWIN_WORLD/YWIN_WORLD; exposure-side PSF validation uses
+          XWIN_IMAGE/YWIN_IMAGE. Windowed, isophotal and model
+          centroids differ systematically for blends and asymmetric
+          galaxies, and the centroid feeds the position seed and the
+          centroid prior.
+          Anchor: workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_1.POSITION_PARAMS;
+          workflow/config/cfis/config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS;
           workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.POSITION_PARAMS;
           workflow/config/cfis/config_exp_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS.
         default: xwin_windowed
@@ -619,14 +638,17 @@ analyses:
       stamp_positioning_and_padding:
         label: Nearest-pixel stamp extraction with zero padding
         rationale: >-
-          [HARDCODED] stamps are cut around the pixel nearest the object's
-          position, with no sub-pixel interpolation; the sub-pixel remainder is
-          stored as the stamp's OFFSET, which ngmix uses as the Jacobian origin
-          (shape_measurement.centroid_source), so extraction and centroid
-          prior share one rounding. Multi-epoch stamps take the position from
-          the tile world coordinate through the stored per-CCD WCS. Objects
-          whose stamp overruns an image edge are kept, with out-of-image pixels
-          zero-filled; there is no boundary rejection.
+          [HARDCODED] stamps are cut around the pixel nearest the
+          object's position, with no sub-pixel interpolation; the
+          sub-pixel remainder is stored as the stamp's OFFSET, which
+          ngmix uses as the Jacobian origin
+          (shape_measurement.centroid_source), so extraction and
+          centroid prior share one rounding. Multi-epoch stamps take
+          the position from the tile world coordinate through the
+          stored per-CCD WCS. Objects whose stamp overruns an image
+          edge are kept, with out-of-image pixels zero-filled. A
+          stamp centre that rounds outside the image raises, which
+          fails the vignet run for the whole tile.
           Anchor: src/shapepipe/modules/vignetmaker_package/vignetmaker.py::get_stamps;
           src/shapepipe/modules/vignetmaker_package/vignetmaker.py::VignetMaker._get_stamp_me.
         default: round_and_zero_pad
@@ -683,17 +705,20 @@ analyses:
       star_selection_box:
         label: Stellar-locus selection, magnitude window and FWHM window around the mode
         rationale: >-
-          18 < MAG_AUTO < 22, |FWHM - mode| <= 0.2 px, FLAGS == 0 and
-          IMAFLAGS_ISO == 0. The mode is computed on a preselection (MAG_AUTO <
-          21, FWHM 0.3-1.5 arcsec at 0.187 arcsec/px) by an iterative
-          histogram-zoom estimator that falls back to the median below 20
-          objects, so small-N behaviour changes selection on sparse CCDs.
-          PSFEx's own selection is off (SAMPLE_AUTOSELECT N), but its
-          compiled-in cuts still apply (psfex_candidate_vetting). [LINT] the
-          file's statistics log the FWHM cut as mode +- 0.1 px and its plot
-          uses 0.186 arcsec/px, while the applied cut is +- 0.2 px at 0.187.
+          18 < MAG_AUTO < 22, |FWHM - mode| <= 0.2 px, FLAGS == 0
+          and IMAFLAGS_ISO == 0. The mode is computed on a
+          preselection (MAG_AUTO < 21, FWHM 0.3-1.5 arcsec at 0.187
+          arcsec/px) by an iterative histogram-zoom estimator that
+          falls back to the median below 20 objects, so small-N
+          behaviour changes selection on sparse CCDs. PSFEx's own
+          selection is off (SAMPLE_AUTOSELECT N); see
+          psfex_candidate_vetting for what PSFEx may still apply.
+          [LINT] the file's statistics log the FWHM cut as mode +-
+          0.1 px and its plot uses 0.186 arcsec/px, while the
+          applied cut is +- 0.2 px at 0.187; the _mode docstring
+          puts the median fallback at 10 objects, the code at 20.
           Anchor: workflow/config/cfis/star_selection.setools#MASK:star_selection.MAG_AUTO;
-          workflow/config/cfis/star_selection.setools#MASK:preselect.FWHM_IMAGE;
+          workflow/config/cfis/star_selection.setools#MASK:preselect.MAG_AUTO;
           workflow/config/cfis/default.psfex#SAMPLE_AUTOSELECT;
           src/shapepipe/pipeline/str_handler.py::StrInterpreter._mode.
         default: mode_centred_box
@@ -714,13 +739,15 @@ analyses:
       psf_train_validation_split:
         label: Seeded 80/20 star split, model fit vs held-out validation
         rationale: >-
-          RAND_SPLIT RATIO 20: the 80% sample fits the PSFEx model and feeds the
-          tile multi-epoch interpolation (ME_DOT_PSF_PATTERN); the 20% sample
-          is the independent residual diagnostic (psfex_interp VALIDATION
-          mode). The split trades training stars per CCD, which interacts with
-          the acceptance gate, against an independent residual test. It is
-          deterministic: a permutation seeded from the unit's file number, so
-          the PSF star sample is a pure function of the input catalogue.
+          RAND_SPLIT RATIO 20: the 80% sample fits the PSFEx model
+          and feeds the tile multi-epoch interpolation
+          (ME_DOT_PSF_PATTERN); the 20% sample is the independent
+          residual diagnostic (psfex_interp VALIDATION mode). The
+          split trades training stars per CCD, which interacts with
+          the acceptance gate, against an independent residual test.
+          It is deterministic: a permutation seeded from the digits
+          of the unit's file number, so a given CCD gets the same
+          split on every run.
           Anchor: workflow/config/cfis/star_selection.setools#RAND_SPLIT:star_split.RATIO;
           src/shapepipe/modules/setools_package/setools.py::SETools._make_rand_split;
           workflow/config/cfis/config_exp_psfex.ini#PSFEX_RUNNER.FILE_PATTERN;
@@ -743,20 +770,21 @@ analyses:
       psfex_candidate_vetting:
         label: PSFEx built-in candidate cuts, unpinned
         rationale: >-
-          default.psfex sets SAMPLE_AUTOSELECT N but omits SAMPLE_MINSN,
-          SAMPLE_MAXELLIP, SAMPLE_FWHMRANGE and SAMPLE_VARIABILITY, so
-          [HARDCODED] PSFEx's compiled-in defaults apply (MINSN 20, MAXELLIP
-          0.3, FWHMRANGE 2-10 px, VARIABILITY 0.2): a second star selection no
-          config records, which changes with the PSFEx version.
-          BADPIXEL_FILTER N and PSF_RECENTER N accept flagged star vignets
-          unfiltered and do not recentre candidates.
+          default.psfex sets SAMPLE_AUTOSELECT N but omits
+          SAMPLE_MINSN, SAMPLE_MAXELLIP, SAMPLE_FWHMRANGE and
+          SAMPLE_VARIABILITY, so [HARDCODED] whatever PSFEx compiles
+          in for them governs, changing with the PSFEx version;
+          which of these cuts still act with SAMPLE_AUTOSELECT N is
+          unverified. BADPIXEL_FILTER N and PSF_RECENTER N accept
+          flagged star vignets unfiltered and do not recentre
+          candidates.
           Anchor: workflow/config/cfis/default.psfex#SAMPLE_AUTOSELECT;
           workflow/config/cfis/default.psfex#BADPIXEL_FILTER;
           workflow/config/cfis/default.psfex#PSF_RECENTER.
         default: builtin_defaults
         options:
           builtin_defaults:
-            label: Compiled-in SAMPLE_* defaults, no bad-pixel filter
+            label: PSFEx built-in SAMPLE_* values, no bad-pixel filter
           pinned_explicit:
             label: Write the SAMPLE_* values explicitly into default.psfex
       psf_modelling_software:
@@ -989,13 +1017,19 @@ analyses:
       fit_initialisation:
         label: Fit guesses and retries
         rationale: >-
-          [HARDCODED] TPSFFluxAndPriorGuesser (galaxy) and TFluxGuesser (PSF)
-          start from T = 0.25 and the catalogue flux; the galaxy runner retries
-          5 times, the PSF runner twice. With a non-convex likelihood the guess
-          and retries decide which objects converge; a failed fit is flagged,
-          not raised. Guinot+22 initialised the whole guess vector from HSM
-          adaptive moments on each sheared image; the code no longer does.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::make_runners.
+          [HARDCODED] the galaxy guesser (TPSFFluxAndPriorGuesser)
+          starts from T = 0.25 with a flux taken from a PSF-flux
+          fit; the PSF guesser (TFluxGuesser) starts from T = 0.25
+          and the catalogue flux. The galaxy runner retries 5 times,
+          the PSF runner twice. With a non-convex likelihood the
+          guess and retries decide which objects converge. A failed
+          ngmix fit is flagged; any exception during an object's fit
+          drops it with no ngmix row, leaving it to the catalogue
+          sentinels (catalogue_assembly.failure_sentinels).
+          Guinot+22 initialised the whole guess vector from HSM
+          adaptive moments on each sheared image; the code does not.
+          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::make_runners;
+          src/shapepipe/modules/ngmix_package/ngmix.py::Ngmix.process.
         default: prior_guess_t025_ntry5_2
         options:
           prior_guess_t025_ntry5_2:
@@ -1006,15 +1040,21 @@ analyses:
       fit_priors:
         label: ngmix joint prior
         rationale: >-
-          [HARDCODED] ellipticity GPriorBA with sigma 0.4; flat T in [-1, 1e3]
-          and flat F in [-100, 1e9], with negative support (the bounds decide
-          which noisy fits survive and which rail); a centroid prior of width
-          one pixel scale, PIXEL_SCALE 0.186 arcsec (derived from the WCS when
-          the key is absent). Prior width drives noise bias; no rationale
-          recorded. Guinot+22 states a flat F in [-1e4, 1e9] and a flat r50
-          prior rather than T. [LINT] the epoch stamps are exposure pixels, and
-          star selection uses 0.187 arcsec/px.
+          [HARDCODED] ellipticity GPriorBA with sigma 0.4; flat T in
+          [-1, 1e3] and flat F in [-100, 1e9], with negative support
+          (the bounds decide which noisy fits survive and which
+          rail); a centroid prior of width one pixel scale,
+          PIXEL_SCALE 0.186 arcsec (derived from the WCS when the
+          key is absent). The same joint prior also constrains the
+          PSF fits: the PSF fitter is built with the galaxy prior.
+          Prior width drives noise bias; no rationale recorded.
+          Guinot+22 states a flat F in [-1e4, 1e9] and a flat r50
+          prior rather than T. [LINT] the epoch stamps are exposure
+          pixels, and star selection uses 0.187 arcsec/px; the
+          ngmix_runner comment says pixel scale also sets a noise
+          window, but get_noise is never called.
           Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::get_prior;
+          src/shapepipe/modules/ngmix_package/ngmix.py::make_runners;
           workflow/config/cfis/config_tile_Ng_template.ini#NGMIX_RUNNER.PIXEL_SCALE.
         default: gpriorba04_flat
         options:
@@ -1317,21 +1357,28 @@ analyses:
       epoch_masked_fraction_cut:
         label: Per-epoch masked-fraction cut
         rationale: >-
-          [HARDCODED] an epoch whose stamp has more than 1/3 of its pixels
-          flagged (any nonzero flag bit, including the tile-coverage bit 2**10
-          set where the tile vignet is off-image) is dropped from the
-          multi-epoch fit; an object with no surviving epoch has no shape. DES
-          was stricter. Y1 rejected any epoch with a masked or zero-weight
-          pixel, and any whose central 4-pixel region was masked. Y3 cut at 10%
-          of raw zero-weight pixels. Y6 dropped images more than 10% missing
-          and cut objects at mfrac < 0.1, which its simulations show avoids
-          calibration bias. Sheldon & Huff 2017 recommend dropping problematic
-          epochs when many are available. The cut interacts with defect_fill:
-          symmetrizing roughly doubles the masked fraction, so the cut should
-          be applied after symmetrizing. UNIONS has fewer epochs than DES, so
-          the cost in effective number density has to be measured, not
-          assumed. A central-region veto (drop the epoch if a defect lies
-          within a few pixels of the centre) is a cheap refinement.
+          [HARDCODED] an epoch whose stamp has more than 1/3 of its
+          pixels flagged (any nonzero flag bit, including the
+          tile-coverage bit 2**10 set where the tile vignet is
+          off-image) is dropped from the multi-epoch fit; an object
+          with no surviving epoch has no shape. The cut counts flag
+          pixels only, not zero-weight or invalid-RMS pixels. Before
+          it, an epoch is dropped silently if its galaxy stamp is
+          all zeros or its background-subtracted noise estimate
+          (sigma_mad) is not positive. DES was stricter. Y1 rejected
+          any epoch with a masked or zero-weight pixel, and any
+          whose central 4-pixel region was masked. Y3 cut at 10% of
+          raw zero-weight pixels. Y6 dropped images more than 10%
+          missing and cut objects at mfrac < 0.1, which its
+          simulations show avoids calibration bias. Sheldon & Huff
+          2017 recommend dropping problematic epochs when many are
+          available. The cut interacts with defect_fill:
+          symmetrizing roughly doubles the masked fraction, so the
+          cut should be applied after symmetrizing. UNIONS has fewer
+          epochs than DES, so the cost in effective number density
+          has to be measured, not assumed. A central-region veto
+          (drop the epoch if a defect lies within a few pixels of
+          the centre) is a cheap refinement.
           Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::prepare_postage_stamps.
         default: one_third
         options:
@@ -1705,15 +1752,20 @@ analyses:
       star_galaxy_classification:
         label: Star/galaxy separation deferred out of the pipeline
         rationale: >-
-          SM_DO_CLASSIFICATION=False and no spread-model input is wired, so the
-          catalogue ships every object and separation happens downstream. The
-          dormant make_cat classifier uses class = sm + 2 sm_err with stars at
-          |class| < 0.003 and galaxies at class > 0.01, thresholds fixed in the
-          function signature. Guinot+22 selected galaxies in the pipeline at s
-          + 2 sigma_s > 0.0003 together with s > 0 and 20 < MAG_AUTO < 26; the
-          dormant code implements only the spread-model test, at a galaxy
-          boundary thirty times higher.
+          SM_DO_CLASSIFICATION=False and no spread-model input is
+          wired, so the catalogue ships every object and separation
+          happens downstream. The dormant make_cat classifier uses
+          class = sm + 2 sm_err with stars at |class| <
+          SM_STAR_THRESH and galaxies at class > SM_GAL_THRESH, read
+          from config when classification is on; the function
+          defaults are 0.003 and 0.01, and the committed config sets
+          neither key, so enabling classification alone raises.
+          Guinot+22 selected galaxies in the pipeline at s + 2
+          sigma_s > 0.0003 together with s > 0 and 20 < MAG_AUTO <
+          26; the dormant code implements only the spread-model
+          test.
           Anchor: workflow/config/cfis/config_tile_Mc.ini#MAKE_CAT_RUNNER.SM_DO_CLASSIFICATION;
+          src/shapepipe/modules/make_cat_runner.py::make_cat_runner;
           src/shapepipe/modules/make_cat_package/make_cat.py::save_sm_data;
           workflow/config/cfis/final_cat.param#SPREAD_CLASS.
         default: deferred_downstream
@@ -1721,10 +1773,11 @@ analyses:
           deferred_downstream:
             label: No in-pipeline classification; catalogue ships all objects
           spread_model_inline:
-            label: spread_model classification in make_cat (0.003 / 0.01)
+            label: spread_model classification in make_cat
             description: >-
               Not wired in the workflow; needs spread_model_runner after the
-              PSF interpolation and its output added to make_cat's inputs.
+              PSF interpolation, its output added to make_cat's inputs, and
+              SM_STAR_THRESH / SM_GAL_THRESH set.
       tile_overlap_handling:
         label: Tile-overlap duplicates neither removed nor flagged
         rationale: >-
@@ -1752,12 +1805,15 @@ analyses:
       failure_sentinels:
         label: Objects without shape measurements kept, with sentinel values
         rationale: >-
-          [HARDCODED] detections with no ngmix row stay in the catalogue with
-          sentinels: sizes, fluxes, magnitudes and flags 0, flux and magnitude
-          errors -1, ellipticities -10, size errors 1e30. The sentinels define
-          what a downstream cut must exclude: a failed object's
-          NGMIX_MCAL_FLAGS reads 0, the success value, so a cut on flags alone
-          keeps it.
+          [HARDCODED] detections with no ngmix row (no surviving
+          epoch, or an exception during the fit) stay in the
+          catalogue with sentinels: sizes, fluxes, magnitudes and
+          flags 0, flux and magnitude errors -1, ellipticities and
+          their errors -10, size errors 1e30, and NGMIX_N_EPOCH 0.
+          The sentinels define what a downstream cut must exclude: a
+          failed object's NGMIX_MCAL_FLAGS reads 0, the success
+          value, so a cut on flags alone keeps it; a cut on
+          NGMIX_N_EPOCH > 0 removes it.
           Anchor: src/shapepipe/modules/make_cat_package/make_cat.py::SaveCatalogue._save_ngmix_data.
         default: sentinel_values
         options:
