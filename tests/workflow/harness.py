@@ -228,7 +228,8 @@ def resolve(campaign, monkeypatch):
                     snakefile=REPO / "workflow" / "Snakefile",
                     workdir=campaign.state_dir,
                     resource_settings=ResourceSettings(
-                        cores=4,
+                        # Cluster jobs retain each rule's full thread count.
+                        nodes=profile["jobs"],
                         default_resources=profile["default-resources"],
                         overwrite_resources=profile.get("set-resources", {}),
                     ),

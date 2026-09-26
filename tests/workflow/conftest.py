@@ -2,7 +2,15 @@
 
 import pytest
 
-from tests.workflow.harness import MODES, Campaign, resolve
+from tests.workflow.harness import MODES, Campaign, load_profile, resolve
+
+
+def pytest_addoption(parser):
+    """Expose the explicit campaign-boundary pin update switch."""
+    parser.addoption(
+        "--update-params-pin", action="store_true", default=False,
+        help="Update the reviewed params.pre/shell pin at a campaign boundary",
+    )
 
 
 @pytest.fixture(params=MODES, ids=[f"{mode}+{psf}" for mode, psf in MODES])
@@ -22,3 +30,16 @@ def dag(campaign, resolve_dag):
     """Keep the API and its jobs alive for the duration of one check."""
     with resolve_dag(campaign) as resolved:
         yield resolved
+
+
+@pytest.fixture
+def psfex_dag(tmp_path, resolve_dag):
+    """Resolve the canonical data+psfex campaign for the prologue pin."""
+    with resolve_dag(Campaign(tmp_path / "campaign", "data", "psfex")) as dag:
+        yield dag
+
+
+@pytest.fixture(params=["candide", "nibi"])
+def profile(request):
+    """Read each profile's actual rerun-trigger policy."""
+    return load_profile(request.param)

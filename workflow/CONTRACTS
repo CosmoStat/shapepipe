@@ -34,7 +34,12 @@ replans every finished unit of the campaign. Mid-campaign that rerun is
 unsatisfiable for tiles whose exposure stores were reclaimed, and the failed
 tile group's cleanup deletes those finished tiles' `final_cat`. Change
 `unit_pre` output, or anything else in a rule's `params`, only at a campaign
-boundary on a fresh root.
+boundary on a fresh root. The rendered `unit_pre`, per-job `params.pre`, and
+shell strings are pinned by
+tests/workflow/test_params_pin.py::test_unit_pre_changes_at_campaign_boundary;
+test_params_is_a_rerun_trigger_under_both_profiles checks the profile premise.
+Regenerate tests/workflow/params_pin.json only at that boundary with
+`pytest tests/workflow/test_params_pin.py --update-params-pin`.
 
 @sc [label:custody] clean-exposure-waits-on-persist-iff-psf
 `clean_exposure` waits on the exposure's persisted PSF products exactly when
