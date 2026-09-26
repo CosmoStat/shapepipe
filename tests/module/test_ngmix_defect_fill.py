@@ -9,6 +9,7 @@ values stay raw. The per-epoch cuts in :func:`prepare_postage_stamps` act on
 the same symmetrized set.
 """
 
+import re
 from types import SimpleNamespace
 
 import numpy as np
@@ -18,9 +19,13 @@ from astropy.io import fits
 from astropy.wcs import WCS
 from hypothesis import given
 from hypothesis import strategies as st
+from sqlitedict import SqliteDict
+
+from shapepipe.modules.ngmix_package import ngmix as ngmix_module
 
 from shapepipe.modules.ngmix_package.ngmix import (
     EPOCH_CENTRAL_DEFECT_RADIUS,
+    Ngmix,
     prepare_ngmix_weights,
     prepare_postage_stamps,
     uberseg_weight,
@@ -320,3 +325,99 @@ def test_each_surviving_epoch_carries_its_own_offset():
     assert len(stamp.offsets) == len(stamp.flags) == 3
     for flag, offset in zip(stamp.flags, stamp.offsets):
         npt.assert_array_equal(offset, gal_obj[names[id(flag)]]["OFFSET"])
+
+
+# --- Ngmix.process: the per-tile epoch-cut tally ---------------------------
+
+class _RecordingLogger:
+    def __init__(self):
+        self.messages = []
+
+    def info(self, msg, *_args, **_kwargs):
+        self.messages.append(msg)
+
+
+def test_process_logs_the_epoch_cut_tally(tmp_path, monkeypatch):
+    """One tile, four objects; the end-of-tile line counts each cut's drops.
+
+    * object 1: clean, 5-column edge band, defect inside the radius -> one
+      epoch each for considered, masked_fraction, central_veto; survives.
+    * object 2: edge band and central defect -> both epochs dropped; emptied.
+    * object 3: one all-zero stamp, skipped before the cuts -> not considered,
+      and not emptied by the cuts.
+    * object 4: no PSF ('empty') -> never reaches the cuts.
+
+    Failure modes: a cut's drops are not counted or land in the wrong
+    counter; epochs skipped before the cuts are counted as considered; an
+    object with no epoch at all is reported as emptied by the cuts; counts
+    from one object overwrite another's.
+    """
+    radius = EPOCH_CENTRAL_DEFECT_RADIUS
+    centre = N_STAMP // 2
+    clean = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+    ones = np.ones((N_STAMP, N_STAMP))
+    edge5, near = clean.copy(), clean.copy()
+    edge5[:, -5:] = 1
+    near[centre, centre + radius - 1] = 1
+    objects = {
+        1: {"2100001-10": (clean, ones), "2100002-11": (edge5, ones),
+            "2100003-12": (near, ones)},
+        2: {"2100004-13": (edge5.copy(), ones), "2100005-14": (near.copy(), ones)},
+        3: {"2100006-15": (clean.copy(), ones)},
+    }
+    stores = {}
+    for obj_id, epochs in objects.items():
+        vignet, _, psf_obj, gal_obj = _fake_inputs(epochs)
+        if obj_id == 3:
+            gal_obj["2100006-15"]["VIGNET"] = np.zeros((N_STAMP, N_STAMP))
+        stores[obj_id] = (vignet, psf_obj, gal_obj)
+    vignet = SimpleNamespace(
+        bkg_vign_cat=None,
+        bkg_rms_vign_cat=None,
+        psf_vign_cat={"4": "empty", **{str(i): s[1] for i, s in stores.items()}},
+        gal_vign_cat={"4": "empty", **{str(i): s[2] for i, s in stores.items()}},
+        flag_vign_cat={str(i): s[0].flag_vign_cat["1"] for i, s in stores.items()},
+        weight_vign_cat={
+            str(i): s[0].weight_vign_cat["1"] for i, s in stores.items()
+        },
+        f_wcs_file={
+            k: v for s in stores.values() for k, v in s[0].f_wcs_file.items()
+        },
+        close=lambda: None,
+    )
+    tile_cat = SimpleNamespace(
+        obj_id=np.array([1, 2, 3, 4]), ra=np.full(4, RA), dec=np.full(4, DEC),
+        vign=None, seg=None, flux=None,
+    )
+
+    paths = [tmp_path / f"{name}.sqlite" for name in
+             ("gal", "psf", "weight", "flag", "headers")]
+    for path in paths:
+        SqliteDict(str(path)).close()
+    log = _RecordingLogger()
+    ngmix = Ngmix(
+        ["tile_cat.fits"] + [str(p) for p in paths[:4]],
+        str(tmp_path), "-001-001", 30.0, 0.186, str(paths[4]), log,
+        bkg_sub=False,
+    )
+    ngmix._vignet_cat.close()
+    ngmix._vignet_cat = vignet
+    monkeypatch.setattr(ngmix_module, "Tile_cat", lambda *a, **k: tile_cat)
+
+    def no_fit(*_args, **_kwargs):
+        raise RuntimeError("metacal is not under test")
+
+    monkeypatch.setattr(ngmix_module, "do_ngmix_metacal", no_fit)
+    for method in ("compile_results", "save_results", "log_mean_ellipticity"):
+        monkeypatch.setattr(Ngmix, method, lambda *_a, **_k: None)
+
+    ngmix.process()
+
+    lines = [m for m in log.messages if m.startswith("epoch cuts:")]
+    assert len(lines) == 1, log.messages
+    tally = dict(
+        (k, int(v)) for k, v in re.findall(r"(\w+)=(\d+)", lines[0])
+    )
+    assert tally == dict(
+        considered=5, masked_fraction=2, central_veto=2, objects_emptied=1
+    ), lines[0]

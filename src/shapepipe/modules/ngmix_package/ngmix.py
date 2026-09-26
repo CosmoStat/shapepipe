@@ -8,6 +8,7 @@ This module contains a class for ngmix shape measurement.
 
 import os
 import re
+from collections import Counter
 from typing import NamedTuple
 
 import ngmix
@@ -307,6 +308,11 @@ class Postage_stamp():
         # CCD number of the first epoch, used only to build the per-object
         # position seed (see :func:`position_seed`).
         self.ccd = None
+        # Epochs that reached the defect cuts in prepare_postage_stamps, and
+        # how many each cut dropped.
+        self.epoch_cuts = Counter(
+            considered=0, masked_fraction=0, central_veto=0
+        )
         self.bkg_sub = bkg_sub
         self.megacam_flip = megacam_flip
 
@@ -1008,6 +1014,10 @@ class Ngmix(object):
         id_first = -1
         id_last = -1
         count_batch = 0
+        # Tile totals of the per-epoch defect cuts, and the objects whose
+        # every epoch that reached the cuts was dropped by them.
+        epoch_cuts = Counter(considered=0, masked_fraction=0, central_veto=0)
+        n_emptied = 0
         saved_batch_cumul = 0
 
         for i_tile, obj_id in enumerate(tile_cat.obj_id):
@@ -1040,9 +1050,11 @@ class Ngmix(object):
                 epoch_masked_fraction_cut=self._epoch_masked_fraction_cut,
                 epoch_central_defect_radius=self._epoch_central_defect_radius,
             )
+            epoch_cuts.update(stamp.epoch_cuts)
 
             if len(stamp.gals) == 0:
                 n_no_epoch += 1
+                n_emptied += stamp.epoch_cuts["considered"] > 0
                 continue
 
             # Per-object RNG, seeded from (ra, dec, ccd) — see
@@ -1154,6 +1166,14 @@ class Ngmix(object):
             + f" {n_no_epoch} no valid epoch,"
             + f" {n_ngmix_fail} fit failed,"
             + f" {n_fitted} fitted"
+        )
+        # One greppable line per tile: the epoch loss to the defect cuts.
+        self._w_log.info(
+            "epoch cuts:"
+            + f" considered={epoch_cuts['considered']}"
+            + f" masked_fraction={epoch_cuts['masked_fraction']}"
+            + f" central_veto={epoch_cuts['central_veto']}"
+            + f" objects_emptied={n_emptied}"
         )
 
         vignet_cat.close()
@@ -1310,7 +1330,9 @@ def prepare_postage_stamps(
         # noise-filled (epoch-cut-on-symmetrized-mask), or when a filled
         # pixel would sit near the object (epoch-central-defect-veto).
         masked = defect_mask(weight_vign, flag_vign, bkg_rms_vign)
+        stamp.epoch_cuts["considered"] += 1
         if masked.mean() > epoch_masked_fraction_cut:
+            stamp.epoch_cuts["masked_fraction"] += 1
             continue
         rows, cols = np.nonzero(masked)
         centre = (masked.shape[0] - 1) / 2
@@ -1318,6 +1340,7 @@ def prepare_postage_stamps(
             np.hypot(rows - centre, cols - centre)
             < epoch_central_defect_radius
         ):
+            stamp.epoch_cuts["central_veto"] += 1
             continue
 
         # One unpickle per exposure (all CCDs), reused across this object's
