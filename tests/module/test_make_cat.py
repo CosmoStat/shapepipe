@@ -16,11 +16,16 @@ the pre-#749 code.
 
 import numpy as np
 import numpy.testing as npt
+import pytest
 from astropy.io import fits
 from sqlitedict import SqliteDict
 
+from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.make_cat_package.make_cat import SaveCatalogue
+from shapepipe.modules.make_cat_runner import make_cat_runner
 from shapepipe.modules.ngmix_package.ngmix import Ngmix
+from shapepipe.pipeline import file_io
+from shapepipe.pipeline.config import CustomParser
 
 
 class _NullLogger:
@@ -448,3 +453,321 @@ def test_save_psf_data_fills_sentinel_for_absent_epochs(tmp_path):
         assert out[col][0] == -1, col
     for col in ("EXP_ID_1", "CCD_1", "EXP_ID_2", "CCD_2", "EXP_ID_3", "CCD_3"):
         assert out[col][1] == -1, col
+
+
+
+
+# --- make_cat_runner / save_sm_data: spread-model path ---
+#
+# New tests live in TestSpreadModelPathDefects below, appended as a single
+# class so a concurrent append to this file's end merges as one block
+# rather than interleaving with these functions line by line.
+
+
+class _RecordingLogger:
+    """Minimal stand-in for the pipeline's ``w_log``, recording calls."""
+
+    def __init__(self):
+        self.infos = []
+        self.warnings = []
+
+    def info(self, msg, *_args, **_kwargs):
+        self.infos.append(msg)
+
+    def warning(self, msg, *_args, **_kwargs):
+        self.warnings.append(msg)
+
+
+def _write_sex_like_cat(path, data):
+    """Write a minimal SExtractor-format FITS (data lives at HDU index 2)."""
+    fits.HDUList(
+        [
+            fits.PrimaryHDU(),
+            fits.BinTableHDU(name="LDAC_IMHEAD"),
+            fits.BinTableHDU(data, name="LDAC_OBJECTS"),
+        ]
+    ).writeto(str(path), overwrite=True)
+
+
+def _numbered_data(obj_ids):
+    """A ``NUMBER`` + dummy second field structured array, one row per id.
+
+    A structured array with a single field gets collapsed by
+    ``file_io.FITSCatalogue._save_to_fits`` into one row holding a
+    vector-valued column (``len(names) == 1`` triggers a
+    ``data = np.array([data])`` wrap), so every SExtractor-like fixture
+    that ``save_sextractor_data`` re-saves through ``save_as_fits`` needs a
+    second field to keep one row per object.
+    """
+    return np.array(
+        [(oid, 0.0) for oid in obj_ids],
+        dtype=[("NUMBER", "i8"), ("X_IMAGE", "f8")],
+    )
+
+
+def _write_matching_ngmix_cat(path, obj_ids):
+    """Reuse the module's ngmix-catalogue writer for full-runner tests."""
+    _write_ngmix_cat(path, obj_ids)
+
+
+def _run_make_cat_runner(tmp_path, obj_ids, sm_obj_ids, do_classif=False):
+    """Drive ``make_cat_runner`` end to end with synthetic 4-input data."""
+    tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
+    _write_sex_like_cat(tile_sexcat_path, _numbered_data(obj_ids))
+
+    sexcat_sm_path = tmp_path / "sexcat_sm-350-100.fits"
+    _write_sex_like_cat(
+        sexcat_sm_path,
+        np.array(
+            [(0.001, 0.0001) for _ in sm_obj_ids],
+            dtype=[("SPREAD_MODEL", "f8"), ("SPREADERR_MODEL", "f8")],
+        ),
+    )
+
+    ngmix_path = tmp_path / "ngmix-350-100.fits"
+    _write_matching_ngmix_cat(ngmix_path, obj_ids)
+
+    galaxy_psf_path = tmp_path / "galaxy_psf-350-100.sqlite"  # unused: no SAVE_PSF_DATA
+
+    config = CustomParser()
+    config.read_dict(
+        {
+            "MAKE_CAT_RUNNER": {
+                "SM_DO_CLASSIFICATION": str(do_classif),
+                "SHAPE_MEASUREMENT_TYPE": "ngmix",
+                **(
+                    {"SM_STAR_THRESH": "0.003", "SM_GAL_THRESH": "0.01"}
+                    if do_classif
+                    else {}
+                ),
+            }
+        }
+    )
+
+    w_log = _RecordingLogger()
+    result = make_cat_runner(
+        [
+            str(tile_sexcat_path),
+            str(sexcat_sm_path),
+            str(galaxy_psf_path),
+            str(ngmix_path),
+        ],
+        {"output": str(tmp_path)},
+        "-350-100",
+        config,
+        "MAKE_CAT_RUNNER",
+        w_log,
+    )
+    return result, w_log
+
+
+class TestSpreadModelPathDefects:
+    """Runner/``save_sm_data`` behaviour on the spread-model input path.
+
+    Each test guards one defect in that path: a broken size check, a
+    crashing log call, a log message that misdescribes what is written,
+    and configuration errors that must surface clearly.
+    """
+
+    def test_save_sm_data_returns_actual_saved_count(self, tmp_path):
+        """``save_sm_data`` reports how many rows it wrote, not its ``n_obj``.
+
+        The runner compares this count against the SExtractor catalogue's
+        size to catch a mismatch; if ``save_sm_data`` echoed back the
+        ``n_obj`` it was handed instead of its own row count, the two sides
+        of that comparison would always be equal and the check could never
+        fire.
+        """
+        final_cat_path = tmp_path / "final_cat-0.fits"
+        final_cat_file = file_io.FITSCatalogue(
+            str(final_cat_path),
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+        )
+        final_cat_file.save_as_fits(_numbered_data([1, 2, 3]), ext_name="RESULTS")
+
+        sm_path = tmp_path / "sexcat_sm.fits"
+        _write_sex_like_cat(
+            sm_path,
+            np.array(
+                [(0.001, 0.0001), (0.002, 0.0002)],
+                dtype=[("SPREAD_MODEL", "f8"), ("SPREADERR_MODEL", "f8")],
+            ),
+        )
+
+        n_saved = make_cat.save_sm_data(
+            final_cat_file,
+            str(sm_path),
+            do_classif=False,
+            n_obj=3,
+        )
+
+        # Two rows were actually written to the spread-model catalogue, not
+        # the three the (mismatched) SExtractor catalogue carried.
+        assert n_saved == 2
+
+    def test_make_cat_runner_warns_on_size_mismatch_without_crashing(
+        self, tmp_path
+    ):
+        """A SExtractor/spread-model size mismatch is logged, not fatal.
+
+        With three SExtractor objects and only two spread-model rows, the
+        run completes and the mismatch shows up as a warning, naming both
+        sizes.
+        """
+        obj_ids = [1, 2, 3]
+        result, w_log = _run_make_cat_runner(
+            tmp_path, obj_ids=obj_ids, sm_obj_ids=[1, 2]
+        )
+
+        assert result == (None, None)
+        assert any(
+            "3" in msg and "2" in msg and "different" in msg
+            for msg in w_log.warnings
+        ), w_log.warnings
+
+        final_cat = file_io.FITSCatalogue(
+            str(make_cat.get_output_name(str(tmp_path), "-350-100"))
+        )
+        final_cat.open()
+        npt.assert_array_equal(final_cat.get_data()["NUMBER"], obj_ids)
+        final_cat.close()
+
+    def test_make_cat_runner_no_sm_input_logs_honestly_and_writes_no_column(
+        self, tmp_path
+    ):
+        """With no spread-model input, the log matches reality: no column.
+
+        This is the committed, currently-run configuration
+        (``SM_DO_CLASSIFICATION = False``, three inputs): the log message
+        must describe what actually happens, and no ``SPREAD_MODEL`` column
+        is written.
+        """
+        obj_ids = [1, 2, 3]
+        tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
+        _write_sex_like_cat(tile_sexcat_path, _numbered_data(obj_ids))
+        galaxy_psf_path = tmp_path / "galaxy_psf-350-100.sqlite"
+        ngmix_path = tmp_path / "ngmix-350-100.fits"
+        _write_matching_ngmix_cat(ngmix_path, obj_ids)
+
+        config = CustomParser()
+        config.read_dict(
+            {
+                "MAKE_CAT_RUNNER": {
+                    "SM_DO_CLASSIFICATION": "False",
+                    "SHAPE_MEASUREMENT_TYPE": "ngmix",
+                }
+            }
+        )
+        w_log = _RecordingLogger()
+
+        result = make_cat_runner(
+            [str(tile_sexcat_path), str(galaxy_psf_path), str(ngmix_path)],
+            {"output": str(tmp_path)},
+            "-350-100",
+            config,
+            "MAKE_CAT_RUNNER",
+            w_log,
+        )
+
+        assert result == (None, None)
+        assert not any("99" in msg for msg in w_log.infos)
+
+        final_cat = file_io.FITSCatalogue(
+            str(make_cat.get_output_name(str(tmp_path), "-350-100"))
+        )
+        final_cat.open()
+        data = final_cat.get_data()
+        assert "SPREAD_MODEL" not in data.dtype.names
+        npt.assert_array_equal(data["NUMBER"], obj_ids)
+        final_cat.close()
+
+    def test_make_cat_runner_refuses_classification_without_sm_input(
+        self, tmp_path
+    ):
+        """``SM_DO_CLASSIFICATION = True`` with no spread-model input is a config error.
+
+        Classifying stars/galaxies needs real spread-model values; with no
+        spread-model catalogue there is nothing to classify on, so this
+        must raise clearly rather than silently skip classification or
+        crash deep inside the classifier.
+        """
+        obj_ids = [1, 2, 3]
+        tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
+        _write_sex_like_cat(tile_sexcat_path, _numbered_data(obj_ids))
+        galaxy_psf_path = tmp_path / "galaxy_psf-350-100.sqlite"
+        ngmix_path = tmp_path / "ngmix-350-100.fits"
+        _write_matching_ngmix_cat(ngmix_path, obj_ids)
+
+        config = CustomParser()
+        config.read_dict(
+            {
+                "MAKE_CAT_RUNNER": {
+                    "SM_DO_CLASSIFICATION": "True",
+                    "SM_STAR_THRESH": "0.003",
+                    "SM_GAL_THRESH": "0.01",
+                    "SHAPE_MEASUREMENT_TYPE": "ngmix",
+                }
+            }
+        )
+        w_log = _RecordingLogger()
+
+        with pytest.raises(ValueError, match="SM_DO_CLASSIFICATION"):
+            make_cat_runner(
+                [str(tile_sexcat_path), str(galaxy_psf_path), str(ngmix_path)],
+                {"output": str(tmp_path)},
+                "-350-100",
+                config,
+                "MAKE_CAT_RUNNER",
+                w_log,
+            )
+
+    def test_make_cat_runner_raises_clear_error_for_missing_threshold_config(
+        self, tmp_path
+    ):
+        """A missing ``SM_STAR_THRESH``/``SM_GAL_THRESH`` fails clearly.
+
+        With classification on but a threshold key missing, the error
+        names the missing key rather than surfacing as a bare
+        ``configparser.NoOptionError`` from inside ``config.getfloat``.
+        """
+        obj_ids = [1, 2, 3]
+        tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
+        _write_sex_like_cat(tile_sexcat_path, _numbered_data(obj_ids))
+        sexcat_sm_path = tmp_path / "sexcat_sm-350-100.fits"
+        _write_sex_like_cat(
+            sexcat_sm_path,
+            np.array(
+                [(0.001, 0.0001) for _ in obj_ids],
+                dtype=[("SPREAD_MODEL", "f8"), ("SPREADERR_MODEL", "f8")],
+            ),
+        )
+        galaxy_psf_path = tmp_path / "galaxy_psf-350-100.sqlite"
+        ngmix_path = tmp_path / "ngmix-350-100.fits"
+
+        config = CustomParser()
+        config.read_dict(
+            {
+                "MAKE_CAT_RUNNER": {
+                    "SM_DO_CLASSIFICATION": "True",
+                    "SM_STAR_THRESH": "0.003",
+                    # SM_GAL_THRESH deliberately omitted
+                    "SHAPE_MEASUREMENT_TYPE": "ngmix",
+                }
+            }
+        )
+        w_log = _RecordingLogger()
+
+        with pytest.raises(ValueError, match="SM_GAL_THRESH"):
+            make_cat_runner(
+                [
+                    str(tile_sexcat_path),
+                    str(sexcat_sm_path),
+                    str(galaxy_psf_path),
+                    str(ngmix_path),
+                ],
+                {"output": str(tmp_path)},
+                "-350-100",
+                config,
+                "MAKE_CAT_RUNNER",
+                w_log,
+            )

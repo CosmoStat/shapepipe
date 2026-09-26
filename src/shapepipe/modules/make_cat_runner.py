@@ -62,6 +62,18 @@ def make_cat_runner(
         "SM_DO_CLASSIFICATION",
     )
     if do_classif:
+        if sexcat_sm_path is None:
+            raise ValueError(
+                "SM_DO_CLASSIFICATION is True but no spread-model "
+                "catalogue input was provided; star/galaxy classification "
+                "requires a spread-model input to classify on"
+            )
+        for key in ("SM_STAR_THRESH", "SM_GAL_THRESH"):
+            if not config.has_option(module_config_sec, key):
+                raise ValueError(
+                    f"SM_DO_CLASSIFICATION is True but {key} is not set "
+                    "in the config"
+                )
         star_thresh = config.getfloat(module_config_sec, "SM_STAR_THRESH")
         gal_thresh = config.getfloat(module_config_sec, "SM_GAL_THRESH")
     else:
@@ -96,7 +108,10 @@ def make_cat_runner(
 
     # Save spread-model data
     if sexcat_sm_path is None:
-        w_log.info("No sm cat input, setting spread model to 99")
+        w_log.info(
+            "No sm cat input, spread model will not be written to the "
+            "final catalogue"
+        )
     else:
         w_log.info("Save spread-model data")
         cat_size_sm = make_cat.save_sm_data(
@@ -109,10 +124,10 @@ def make_cat_runner(
         )
 
         if cat_size_sextractor != cat_size_sm:
-            w_log(
-                f"Warnign: SExtractor catalogue {tile_sexcat_path} has different size"
-                + f" ({cat_size_sextractor} than spread_model catalogue"
-                + f" {sexcat_sm_path} ({cat_size_sm})"
+            w_log.warning(
+                f"SExtractor catalogue {tile_sexcat_path} has different"
+                f" size ({cat_size_sextractor}) than spread_model"
+                f" catalogue {sexcat_sm_path} ({cat_size_sm})"
             )
 
     # Save shape data
