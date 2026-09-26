@@ -36,8 +36,16 @@ tile group's cleanup deletes those finished tiles' `final_cat`. Change
 boundary on a fresh root.
 
 @sc [label:custody] clean-exposure-waits-on-persist-iff-psf
-`clean_exposure` takes the exposure's `exp_persist` manifest as input exactly
-when `PERSISTS_PSF` (`psf_model != "fake"`). Dropping the edge under a real PSF
-model lets reclamation delete the scratch store before its PSF products reach
-`products_dir`; keeping it under `fake` makes every clean wait on a rule that
-is not in the DAG.
+`clean_exposure` takes the exposure's `exp_persist` and `exp_footprint`
+manifests as inputs exactly when `PERSISTS_PSF` (`psf_model != "fake"`).
+Dropping either edge under a fitted PSF model lets reclamation delete the
+scratch store before its PSF products or WCS-derived footprint reach
+`products_dir`; keeping them under `fake` makes every clean wait on products
+that do not exist. Enforced by tests/unit/test_coverage_gates.py.
+
+@sc [label:custody] coverage-requires-fitted-psf
+`footprint_targets()` requests the ready tiles' exposures only for a fitted
+PSF model in the head process. Under `psf_model: fake` no exposure has a
+valid-PSF CCD set to record, so footprints are absent and `coverage.enabled`
+must fail at parse time, before submission. Disabled coverage remains valid
+under either PSF mode. Enforced by tests/unit/test_coverage_gates.py.
