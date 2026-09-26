@@ -61,7 +61,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # mode=min: exporting only the final image's layers is what keeps the
+          # cache restore useful without paying CI time for intermediate layers.
+          cache-to: type=gha,mode=min
 
       # Catches the class of regression where the image builds but a runtime
       # tool (sextractor, psfex) is missing or unrunnable.
