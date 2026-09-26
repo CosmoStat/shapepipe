@@ -417,7 +417,7 @@ FROZEN_GRAMMAR_RE = re.compile(
     r"|NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH|NEIGHBOUR_FLAG)"
     # HSM: g-type, explicit PSF/STAR object, singular FLAG; the multi-epoch
     # sink in make_cat._save_psf_data appends a bare epoch index.
-    r"|HSM_(?:G1|G2|T)_(?:PSF|STAR)(?:_\d+)?"
+    r"|HSM_(?:G1|G2|T|M4_1|M4_2|RHO4)_(?:PSF|STAR)(?:_\d+)?"
     r"|HSM_FLAG_(?:PSF|STAR)(?:_\d+)?"
     r")$"
 )
@@ -438,6 +438,9 @@ _GRAMMAR_VALID_EXAMPLES = [
     "HSM_G1_PSF_3",  # make_cat multi-epoch sink
     "HSM_T_PSF_2",
     "HSM_FLAG_STAR_1",
+    "HSM_M4_1_PSF",  # spin-2 fourth moments + rho4 (shapepipe#697)
+    "HSM_RHO4_STAR",
+    "HSM_M4_2_PSF_2",
 ]
 
 # Pre-#761 / off-grammar columns the rename REMOVES — each violates exactly
@@ -452,6 +455,7 @@ _GRAMMAR_INVALID_EXAMPLES = [
     "HSM_FLAGS_PSF",  # plural — HSM is singular FLAG
     "NGMIX_ELL_PSF_ORIG_NOSHEAR",  # packed ellipticity, not G1/G2
     "SPREAD_MODEL",  # removed entirely, not renamed
+    "M_4_PSF_1",  # pre-#859 fourth-moment naming (shapepipe#698)
 ]
 
 

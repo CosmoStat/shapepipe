@@ -556,6 +556,11 @@ class MergeStarCatPSFEX(object):
 
         Process merging.
 
+        @sc [label:schema] psfex-starcat-columns-strict
+        Every ``HSM_*`` column is read by name with no fallback, so the set
+        read here equals the set ``PSFExInterpolator._write_output_validation``
+        writes (``test_hsm_column_seams``).
+
         """
         x, y, ra, dec = [], [], [], []
         g1_psf, g2_psf, size_psf = [], [], []

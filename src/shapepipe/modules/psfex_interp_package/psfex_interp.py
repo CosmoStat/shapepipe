@@ -66,6 +66,13 @@ def local_wcs_list(wcs, positions):
 def _fourth_moments(image, moms, wcs=None):
     r"""Fourth-Order Moments.
 
+    @sc [label:frame] fourth-moments-single-frame
+    ``moms`` and the pixel-grid mapping must live in one frame. With ``wcs``,
+    ``moms`` comes from ``FindAdaptiveMom(use_sky_coords=True)`` on an image
+    carrying that same local WCS, and the whitening matrix is built from those
+    world-frame moments; mixing frames silently breaks the CCD-orientation
+    invariance that ``test_psf_fourth_moments_frame_invariant`` enforces.
+
     Compute the spin-2 fourth-moment combinations and galsim's spin-0
     ``moments_rho4`` for a single object, given its HSM adaptive-moment result.
 
@@ -715,6 +722,11 @@ class PSFExInterpolator(object):
 
         Save computed PSFs and stars to fits file.
 
+        @sc [label:schema] psfex-validation-hsm-columns
+        The ``HSM_*`` columns written here are the exact set
+        ``MergeStarCatPSFEX.process`` reads without fallback; add or rename on
+        both sides together (``test_hsm_column_seams`` checks the two agree).
+
         Parameters
         ----------
         star_dict : dict
@@ -794,6 +806,11 @@ class PSFExInterpolator(object):
         """Interpolate Multi-Epoch.
 
         Interpolate PSFs for multi-epoch run.
+
+        @sc [label:schema] psfex-me-shapes-columns
+        The per-epoch ``SHAPES`` dict must carry every column
+        ``make_cat._save_psf_data`` copies into ``HSM_*_PSF_n``
+        (``test_hsm_column_seams`` checks the superset).
 
         Raises
         ------
