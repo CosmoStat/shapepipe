@@ -26,7 +26,9 @@ from snakemake_interface_executor_plugins.settings import DeploymentMethod
 from workflow.scripts import build_index
 
 REPO = Path(__file__).resolve().parents[2]
-MODES = [("data", "psfex"), ("data", "mccd"), ("image_sims", "fake")]
+MODES = [("data", "psfex"), ("image_sims", "fake")]
+# psf_model=mccd is refused at parse time (refuse_unpersistable_psf), so it
+# has no DAG to resolve; test_mccd_is_refused_during_parse pins the refusal.
 
 
 @dataclass

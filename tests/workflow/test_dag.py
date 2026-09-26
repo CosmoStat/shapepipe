@@ -6,6 +6,8 @@ from pathlib import Path
 import pytest
 from snakemake.exceptions import WorkflowError
 
+from tests.workflow.harness import Campaign
+
 BASE_RULES = {
     "all", "tile_get_images", "tile_uncompress", "tile_find_exposures",
     "exp_get_images", "exp_split", "exp_psf", "clean_exposure",
@@ -100,8 +102,16 @@ def test_missing_run_fails_during_parse(campaign, resolve_dag):
     """Explicit paths cannot bypass the required campaign name diagnostic."""
     campaign.omit_run()
     with pytest.raises(WorkflowError, match=(
-        r"Unset or 'TBD' for machine='candide', input_type="
+        r"for machine='candide', input_type="
         r".*: run\. Set them in your run config \(SP_RUN_CONFIG\)\."
     )):
         with resolve_dag(campaign):
             pytest.fail("a campaign without run: must fail at parse time")
+
+
+def test_mccd_is_refused_during_parse(tmp_path, resolve_dag):
+    """MCCD products are unreadable to persistence and the star merge."""
+    campaign = Campaign(tmp_path / "campaign", "data", "mccd")
+    with pytest.raises(WorkflowError, match=r"psf_model=mccd: PSF persistence"):
+        with resolve_dag(campaign):
+            pytest.fail("psf_model=mccd must be refused at parse time")
