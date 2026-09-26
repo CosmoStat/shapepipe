@@ -29,7 +29,10 @@ COLNUM : int
    Column number to find exposure in fits header of tile image for the HISTORY
    string
 EXP_PREFIX: str
-   Prefix of exposures 
+   Prefix to strip from the exposure filename, e.g. ``simu_image-`` for
+   simulated exposures. Leave empty for CFIS exposures, which carry no
+   prefix -- the trailing epoch letter (``p``) is a suffix, kept as part
+   of the exposure name and unaffected by this key.
 """
 
 __all__ = ["find_exposures.py"]
