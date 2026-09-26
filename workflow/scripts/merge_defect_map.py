@@ -162,6 +162,13 @@ def read_sidecar(path: Path) -> dict:
 def reconcile_plan(output: Path, sidecar: Path, have: dict) -> Plan:
     """Compare what is on disk with the campaign, WITHOUT writing anything.
 
+    @sc [decision:defect_map_from_flags,label:convention] defect-map-is-the-sidecars-union
+    The map is the OR of exactly the fragments its sidecar records, and never
+    un-OR-ed: an exposure that left the campaign, or a fragment that changed
+    on disk, is a rebuild from every fragment, because a union cannot tell
+    which exposure set a pixel. Only a pure addition may append in place.
+    Checked by ``tests/unit/test_defect_map_reconcile.py``.
+
     A missing map, or a sidecar that does not describe it, is a rebuild: the two
     are written together and either one alone is not evidence about the other.
     """

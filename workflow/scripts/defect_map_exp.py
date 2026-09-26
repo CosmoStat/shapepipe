@@ -211,6 +211,15 @@ def rasterize_ccd(flag_path: Path, image_path: Path, nside: int,
                   off_x, off_y) -> np.ndarray:
     """The healpix pixel ids (NEST, ``nside``) this CCD's flags touch.
 
+    @sc [decision:defect_map_from_flags,label:convention] defect-fragment-contains-flags
+    Conservative by construction: every CCD pixel with a nonzero flag, centre
+    and four corners, lands in a returned healpix pixel. The corners are what
+    bound a pixel's footprint, so ``offsets`` always samples them; sampling
+    centres alone erases one-pixel bad columns and lone hot pixels that
+    straddle a healpix boundary. Pixel coordinates are 1-based into
+    ``all_pix2world(..., 1)``. Checked by
+    ``tests/unit/test_defect_map_contains_flags.py``.
+
     ONE CCD AT A TIME AND, WITHIN IT, ONE BATCH AT A TIME. The first is why the
     loop in ``main`` is a loop; the second is why this one is. A MegaCam
     exposure routinely carries a dead or saturated chip, and a FULLY flagged CCD
