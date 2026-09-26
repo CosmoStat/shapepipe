@@ -11,6 +11,7 @@ is driven by `pytest` from the repo root (in the dev container — see the proje
 |----------|-------|----------|
 | `tests/module/` | **module-unit tests** — the fitter, file handler, split-exp, vignetmaker, ngmix internals, the GalSim weight-validation suite | per-module unit/property/integration tests; import package internals directly. (Relocated from `src/shapepipe/tests/` so the suite has one home.) |
 | `tests/unit/` | **structural tests** — every submodule imports, configs parse, shell scripts lint, runner metadata is well-formed, console entry points respond to `-h` | suite-level checks on the *tree*, not any one module |
+| `tests/workflow/` | **Snakemake DAG checks** — isolated campaigns resolved through the Python API, without executing jobs | checks per-job dependencies, input modes, and campaign product paths |
 | `tests/science/` | **fast scientific guardrails** — controlled simulations with a known answer, runnable in the inner loop with nothing from the cluster | scientific correctness that must stay green on every commit |
 | `tests/cluster/` | **candide guardrails** — read real on-disk catalogs / submit cluster jobs | need the cluster + real data; marked and auto-skipped off it |
 | `tests/helpers/` | shared, non-test library code (cluster submission, artifact emission, the star-response R-function) | imported by tests as `tests.helpers.*`; not collected as tests |

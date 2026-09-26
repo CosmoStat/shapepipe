@@ -117,9 +117,9 @@ def ngmix_runner(
     id_obj_max = int(config.getexpanded(module_config_sec, "ID_OBJ_MAX"))
 
     # Centroid source for the galaxy Jacobian origin: "wcs" (default -- the
-    # catalog sky position projected through the WCS, trusting the astrometry)
-    # or "hsm" (legacy HSM adaptive-moment centroid, being phased out: noisy
-    # for stars and flagged as incorrect by Fabian -- see #767).
+    # coadd-centroid offset the stamp extractor propagates on the vignette)
+    # or "hsm" (adaptive-moment centroid re-measured from the stamp; opt-in).
+    # See make_ngmix_observation.
     if config.has_option(module_config_sec, "CENTROID_SOURCE"):
         centroid_source = config.get(module_config_sec, "CENTROID_SOURCE")
     else:

@@ -22,16 +22,16 @@ uv venv /project/def-mjhudson/cdaley/snakemake-env --python 3.12
 source /project/def-mjhudson/cdaley/snakemake-env/bin/activate
 uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 
-# Edit workflow/config.yaml: tile_list, inputs.tiles/exposures, outputs.run_dir,
-# outputs.products_dir/index_db, and container.
+# Write a run config (see Run configuration below) that sets at least `run:`,
+# the campaign's name; workflow/config.yaml's machines: table supplies the rest.
 
 # `psf_model` is `psfex` or `mccd`. psfex is exercised by smk-g4 through smk-g6; mccd has run the full chain on
 # an image-sim star tile (one focal-plane model per exposure, ~1.5 CPU-hours each).
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
-workflow/bin/sp run       # bring products on disk up to date with the tile list
-workflow/bin/sp report    # emit run_report.json now (mid-run is fine)
+workflow/bin/sp run -c my_run.yaml      # bring products on disk up to date with the tile list
+workflow/bin/sp report -c my_run.yaml   # emit run_report.json now (mid-run is fine)
 workflow/bin/sp cancel <run-name-substring>   # scancel this workflow's jobs
 workflow/bin/sp container status              # which image the jobs will run
 ```
@@ -61,6 +61,8 @@ each overlay file to its `cfis/` original confined to input naming.
 `psf_model: fake` is the simulations' true PSF: the exposure stage runs only
 SExtractor (for the background maps the vignets read), and `tile_vignets` runs
 `fake_interp_runner`, which writes the `galaxy_psf` product from `psf_dict`.
+With no PSF model there is nothing to persist per exposure, so `exp_persist` and
+`star_cat_merge` do not run and `clean_exposure` does not wait on them.
 Simulations that contain stars can run `psfex` or `mccd` exactly as the data do.
 
 One campaign per shear branch, each with its own run config:
@@ -78,13 +80,16 @@ the jobs read.) `SP_PROFILE` (default `nibi`, or `machine:` in the run config, w
 agree with it) and `input_type:` then select an entry of the `machines:` table, which supplies
 `tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
 `container` for any of these the run config leaves unset (`$base_dir` expands
-to that machine's `base_dir`, `$run` to the run config's `run:`). A value of `TBD` stops the run at parse time
+to that machine's `base_dir`, `$run` to the run config's `run:`). `run:` is
+required: it also names the campaign's merged catalogues, and config.yaml leaves
+it unset. An unset required key, or a value of `TBD`, stops the run at parse time
 until it is set. A run config therefore only needs what differs, e.g. for one
 SKiLLS shear branch on candide:
 
 ```yaml
 machine: candide
 input_type: image_sims
+run: 1z2z_grid_3
 psf_model: fake
 psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle
 tile_list: /path/to/tiles.txt
@@ -98,7 +103,11 @@ outputs:
 ```
 
 sp_validation's image-simulation workflow drives these campaigns and measures m
-from their final catalogues.
+from their final catalogues. A simulation campaign ends in the same merged
+catalogue as a data campaign, written by the same `final_cat_merge` rule:
+`<products_dir>/final_cat_<run>.hdf5`, with the columns of
+`config/cfis_image_sims/final_cat.param` and the tile count as the file's
+`n_tiles` attribute (there is no `n_tiles_final.txt`).
 
 On candide, the node-local tile store (bound from the node's 31 GB `/tmp`) does not
 hold several dense image-sim tiles at once. Set `tile_store_root:` in the run
@@ -126,7 +135,7 @@ until you opt in.
 
 ```bash
 sp container status                      # layers present, active one, revision vs HEAD
-sp container pull                        # ghcr.io/cosmostat/shapepipe:develop-runtime
+sp container pull                        # ghcr.io/cosmostat/shapepipe:develop
 sp container pull --tag docker://...     # some other image
 sp container sandbox                     # unpack the SIF writable (opt-in)
 sp container exec --writable pip install <pkg>
@@ -168,7 +177,9 @@ and the run fails if either phase failed.
 ## The launch code snapshot
 
 `sp run` copies the code it is about to launch — `workflow/` (config symlinks
-dereferenced), `src/` and the profile — into `<state dir>/code`, records HEAD
+dereferenced), `src/`, the repo's `scripts/` (`final_cat_merge` loads
+`scripts/python/create_final_cat.py` by path) and the profile — into
+`<state dir>/code`, records HEAD
 plus a dirty flag in `<state dir>/code/snapshot.json`, and runs the campaign
 entirely out of that copy. It matters because a campaign is not one process: the
 SLURM executor re-invokes snakemake on every job's node, so jobs re-parse the
@@ -217,15 +228,18 @@ workflow/
   bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
-    exposure.smk         per-exposure: get_images, split, psf (no temp())
-    tile.smk             per-tile: exp forest, merge_headers, detect, vignets, ngmix, merge, make_cat
+    exposure.smk         per-exposure: get_images, split, psf, persist (no temp()); campaign star_cat_merge
+    tile.smk             per-tile: exp forest, merge_headers, detect, vignets, ngmix, merge, make_cat; campaign final_cat_merge
   scripts/
-    sp_rule.py           the thin per-unit wrapper (isolation furniture, config copy, log-sync, count check)
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
     completeness.py      the ported count table (shared by sp_rule + run_report)
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
+    persist_exp.py       ONE exposure's keepable PSF products -> one tar on products_dir (the exp_persist rule)
+    hdf5_reconcile.py    bring an hdf5 catalogue into agreement with a campaign (shared by both merges)
+    merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<run>.hdf5
+    merge_final_cat.py   ALL tiles' final_cat -> final_cat_<run>.hdf5 (the final_cat_merge rule)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
@@ -301,6 +315,99 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   trigger reads that cut as a reason to rerun the very tiles it protects.
   Know the consequence — `--forcerun` on a tile whose `final_cat` exists will
   not rebuild its reclaimed exposures. Delete the `final_cat` first.
+- **PSF products leave scratch before the purge does.** `exp_persist` packs
+  the products named by `persist_exp:` in `config.yaml` from the exposure's
+  scratch store into ONE uncompressed tar,
+  `<products_dir>/exp/<prefix>/<base>/psf/<base>.tar` (inodes, not bytes, bind
+  on /project), and writes ONE manifest beside it recording the patterns, the
+  members and their sizes. The
+  threat it answers is the /scratch purge, not `clean_exposure` — the store goes
+  in 60 days whether or not the workflow reclaimed it — so it runs even with
+  `clean: false`, requested directly by `rule all`. `clean_exposure` takes its
+  manifest as an input, so reclamation can never overtake the copy. It is a
+  rule of its own rather than a `cp` on the end of `exp_psf` because the keep
+  list rides on `params`: adding a pattern reruns seconds of packing, not four
+  hours of PSF fitting per exposure. A pattern that matches nothing is a
+  recorded warning (setools rejects sparse CCDs); matching nothing at all is a
+  failure. A `localrule`, by the same arithmetic as `clean_exposure`.
+- **The star catalogue's inputs are always kept; `persist_exp:` is what you
+  keep on top.** `exp_persist` packs `psf_validation` — the psfex_interp
+  validation catalogue, one per CCD — for every exposure whatever the config
+  says, because `star_cat_merge` stacks exactly those into the campaign's
+  `full_starcat`. They are that catalogue's provenance, and they are what keeps
+  appending a tile next month cheap rather than a rebuild from VOS. About 2 MB
+  per exposure: ~40 GB and ~40k inodes at DR6 scale, against a ~1 M-inode group
+  quota. `persist_exp:` is purely additive, and an empty list is legal — the tar
+  then holds the merge's inputs and nothing else.
+- **The keep list names products, not globs.** Entries are names from a
+  catalogue in `workflow/scripts/persist_exp.py`, which is the single source of
+  truth for what each one means and what keeping it buys
+  ([#844](https://github.com/CosmoStat/shapepipe/issues/844)); `config.yaml`'s
+  block is that catalogue rendered, and `persist_exp.py --list-products` prints
+  it. Sizes are per exposure, 40 CCDs, measured on smk-m2.
+
+  | product | glob | per exposure | what it buys |
+  |---|---|---|---|
+  | `psf_model` | `*.psf` | 2.8 MB | re-interpolate the PSF anywhere later, no rebuild |
+  | `psfex_cat` | `psfex_cat-*.cat` | unmeasured | which stars PSFEx's outlier rejection clipped |
+  | `star_selection` | `star_selection-*.fits` | 24.5 MB | which stars the selection cuts rejected, and why |
+  | `star_train` | `star_split_ratio_80-*.fits` | 19.9 MB | the 80% sample PSFEx fitted |
+  | `star_test` | `star_split_ratio_20-*.fits` | 7.1 MB | the 20% sample `psf_validation` corresponds to |
+  | `star_stats` | `star_stat-*.txt` | unmeasured | setools' per-CCD counts, density and FWHM cuts |
+
+  The default is `psf_model`. `psf_validation` is in the catalogue too but needs
+  no naming; naming it anyway is harmless. **Retention is additive**: an
+  existing tar is a floor, so shrinking the list adds nothing and removes
+  nothing. Dropping a product is a deliberate act on `products_dir`, not a
+  config edit — otherwise editing a config would delete products from the
+  backed-up filesystem whose scratch originals are long gone. A raw glob is still accepted as an
+  escape hatch — anything with a glob metacharacter or a dot is read as one —
+  and an unknown *name* is a parse-time error listing the valid ones. The list
+  is exposure-side only; tile-side retention is #844 follow-up.
+- **The campaign ends in two merged catalogues, and the workflow makes both.**
+  Everything above is per unit; the two products downstream analysis actually
+  opens are per *campaign*, and until these rules existed each was a manual pass
+  after the run.
+  `star_cat_merge` collects every exposure's every CCD's `psf_validation` into
+  `<products_dir>/full_starcat_<run>.hdf5`, one dataset per exposure at
+  `exposures/<exp>` — the rho/tau statistics input. It reads the members
+  straight out of the per-exposure tars (`tarfile`; unpacking ~800k files to
+  merge them would defeat the tar's whole purpose), keeps their native dtypes,
+  and stores `CCD_NB` as an int. sp_validation still opens the old flat FITS
+  name, `full_starcat-0000000.fits`; its readers move to this file under
+  [sp_validation#340](https://github.com/CosmoStat/sp_validation/issues/340),
+  the same migration that retires the `patches/` key on the tile side. The rule
+  exists whenever the campaign has a persisted exposure.
+  **Two writers, one schema.** The module runner still emits the flat FITS
+  table through `MergeStarCatPSFEX`, and this rule emits the hdf5; they are
+  separate implementations on purpose, because only one of them reads tars,
+  keeps native dtypes and reconciles. Their 16 COLUMN NAMES must not drift
+  apart, and nothing else would notice if they did — a column added to one
+  writer would just be missing from the other's product. `tests/unit/`
+  `test_star_cat_columns.py` is what holds them together.
+  `final_cat_merge` collects every ready tile's `final_cat-<ID>.fits` into
+  `<products_dir>/final_cat_<run>.hdf5`: one dataset per tile under a group
+  named for the campaign, the `final_cat.param` columns, an `n_tiles` attribute.
+  That schema is what sp_validation's reader opens, so it is fixed; the column
+  extraction reuses `scripts/python/create_final_cat.py` while the file is
+  written here, because that script's own discovery walks a directory layout
+  this workflow does not have. The run config's `run:` names both files and the
+  group.
+  BOTH RECONCILE, through one shared module (`hdf5_reconcile.py`) so the
+  campaign's two products cannot disagree about what an output owes its inputs.
+  Each adds the units that have no dataset, drops datasets whose unit left the
+  campaign, re-reads one whose source changed (every dataset records its
+  source's size and mtime) or whose column set moved (a digest on the file's
+  root), and leaves the rest unread — because re-reading a campaign to add one
+  unit is ~800 GB of IO at DR6 scale. The *content* is still a function of the
+  input set; the byte layout is not, and a no-op leaves the file untouched
+  rather than rewritten.
+  Both rerun when the set changes: the unit ids' fingerprint rides on `params`.
+  Neither is a `localrule` — one job over ~20k units is real work — and neither
+  puts its input paths in its shell, which is not fastidiousness: ~20k paths is
+  an order of magnitude over Linux's 128 KiB `MAX_ARG_STRLEN` for a single argv
+  entry, so each job is handed the tile list and the run index and derives the
+  same set from them.
 - **A dead tile can be told to stop pinning exposures.** An exposure is
   cleanable only once every consuming tile has its vignets, so one
   permanently-failed tile holds its ~80 exposures for the life of the

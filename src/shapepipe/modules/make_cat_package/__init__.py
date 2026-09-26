@@ -47,6 +47,12 @@ SHAPE_MEASUREMENT_TYPE : list
     retained as the extension point for a future estimator family)
 SAVE_PSF_DATA : bool, optional
     Save PSF information if ``True``; default value is ``False``
+N_EPOCH_SLOTS : int, optional
+    Number of slots written for each per-epoch PSF column family
+    (``HSM_*_PSF_n``, ``EXP_ID_n``, ``CCD_n``) when ``SAVE_PSF_DATA`` is
+    ``True``; unfilled slots hold the family's sentinel, and an object with
+    more epochs than slots raises an error. A fixed count gives every tile
+    the same schema. Default is the tile's maximum ``N_EPOCH`` plus one
 TILE_LIST : str, optional
     Path to list of all tile IDs, used to flag objects in areas of overlap
     between tiles

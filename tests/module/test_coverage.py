@@ -28,6 +28,7 @@ from shapepipe.utilities.coverage_map_builder import (
     CoverageMapBuilder,
     unwrap_ra,
 )
+from shapepipe.utilities.coverage_plotter import CoveragePlotter
 from shapepipe.utilities.field_corners_extractor import (
     FieldCornersExtractor,
     _ccd_corners,
@@ -36,6 +37,12 @@ from shapepipe.utilities.field_corners_extractor import (
     _parse_header_to_wcs,
 )
 from shapepipe.utilities.header_downloader import HeaderDownloader
+
+
+@pytest.fixture(autouse=True)
+def _run_in_tmp_path(tmp_path, monkeypatch):
+    """Run each test in its own tmp dir: the runners log to ``log_<prog>`` in cwd."""
+    monkeypatch.chdir(tmp_path)
 
 
 def _tan_wcs(crval_ra, crval_dec=0.0, nx=2080, ny=4612):
@@ -672,3 +679,26 @@ def test_run_help_flag_exits_cleanly(monkeypatch):
         FieldCornersExtractor().run()
 
     assert excinfo.value.code == 0
+
+
+@pytest.mark.parametrize(
+    "runner, prog",
+    [
+        (CcdPsfHandler, "get_ccds_with_psf"),
+        (HeaderDownloader, "download_headers"),
+        (FieldCornersExtractor, "extract_field_corners"),
+        (CoverageMapBuilder, "build_coverage_map"),
+        (CoveragePlotter, "plot_coverage_map"),
+    ],
+)
+def test_command_logged_under_program_name(tmp_path, runner, prog):
+    """Each runner logs its command line to ``log_<prog>``.
+
+    ``args`` excludes the program name while ``log_command`` names the file
+    after ``argv[0]``; guards against the log being named after the first
+    flag (``log_-o``).
+    """
+    runner().set_params_from_command_line(["-o", "out"])
+
+    assert (tmp_path / f"log_{prog}").read_text() == f"{prog} -o out\n"
+    assert sorted(f.name for f in tmp_path.iterdir()) == [f"log_{prog}"]

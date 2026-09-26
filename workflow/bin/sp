@@ -34,14 +34,13 @@
 #   SP_PROFILE=candide workflow/bin/sp run -c ~/my_run.yaml        # a campaign
 #   SP_PROFILE=candide workflow/bin/sp run -c ~/my_run.yaml -n     # dry run
 #   SP_PROFILE=candide workflow/bin/sp report -c ~/my_run.yaml     # status now
-#   workflow/bin/sp run                                            # config.yaml only
 #
 # Run config: -c FILE, also --config-file. Read after workflow/config.yaml and
 # merged on top; anything still unset comes from the machines: entry for
-# SP_PROFILE and input_type (scripts/run_config.py).
+# SP_PROFILE and input_type (workflow/scripts/run_config.py).
 # To check a resolved value without running:
 #
-#   python scripts/run_config.py workflow/config.yaml ~/my_run.yaml outputs.run_dir
+#   python workflow/scripts/run_config.py workflow/config.yaml ~/my_run.yaml outputs.run_dir
 #
 # -c is sp's flag, not snakemake's --cores; pass cores as --cores or -j.
 #
@@ -74,7 +73,7 @@ _sp_args=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --)
-      _sp_args+=("$@"); break ;;
+      shift; _sp_args+=("$@"); break ;;
     -c|--config-file)
       [ $# -ge 2 ] || { echo "sp: $1 needs a file" >&2; exit 2; }
       RUN_CONFIG="$2"; shift 2 ;;
@@ -127,8 +126,17 @@ fi
 # Snakefile resolves it.
 cfg() { python "$SCRIPTS/run_config.py" "$HERE/config.yaml" "${SP_RUN_CONFIG:-}" "$1"; }
 RUN_DIR="$(cfg outputs.run_dir)"; INDEX_DB="$(cfg outputs.index_db)"
-if [ "${1:-}" != container ] && { [ -z "$RUN_DIR" ] || [ "$RUN_DIR" = TBD ]; }; then
-  echo "sp: outputs.run_dir is unset or TBD for this machine/input_type" >&2; exit 2
+# `sp container`, `sp cancel` and the help forms (bare `sp`, -h, --help) need
+# neither a campaign nor its state dir; every other verb does. Checked here, before the state dir is created from
+# RUN_DIR: with `run:` unset, RUN_DIR still holds a literal `$run`.
+case "${1:-}" in container|cancel|""|-h|--help) NEEDS_CAMPAIGN=0 ;; *) NEEDS_CAMPAIGN=1 ;; esac
+if [ "$NEEDS_CAMPAIGN" = 1 ]; then
+  if [ -z "$(cfg run)" ]; then
+    echo "sp: \`run:\` is unset; the run config (-c FILE) names the campaign" >&2; exit 2
+  fi
+  if [ -z "$RUN_DIR" ] || [ "$RUN_DIR" = TBD ] || [[ "$RUN_DIR" == *'$'* ]]; then
+    echo "sp: outputs.run_dir is unset, TBD or unexpanded ($RUN_DIR) for this machine/input_type" >&2; exit 2
+  fi
 fi
 
 # Snakemake state (.snakemake: metadata, locks, incomplete markers) lives NEXT TO
@@ -141,7 +149,8 @@ fi
 # the placement is right on its own merits.)
 # --directory only moves state: all data paths are absolute, and the Snakefile
 # resolves its own configfile.
-STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"; mkdir -p "$STATE_DIR"
+STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"
+[ "$NEEDS_CAMPAIGN" = 0 ] || mkdir -p "$STATE_DIR"
 
 # --- the launch code snapshot ----------------------------------------------
 # THE ONE HOME for this concept; everything else points here.
@@ -157,8 +166,10 @@ STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"; mkdir -p "$STATE_DIR"
 # WHAT. `sp run` copies the code it is about to launch into $STATE_DIR/code and
 # runs the campaign entirely out of that copy: the Snakefile, the rules, the
 # scripts, the ini chain (symlinks DEREFERENCED -- workflow/config/cfis points
-# into example/, and the copy must be self-contained), src/, the profile, and
-# the repo's top-level scripts/ (576 KB), which merge_final_cats runs out of.
+# into example/, and the copy must be self-contained), src/, the repo's own
+# scripts/ (final_cat_merge loads scripts/python/create_final_cat.py by path --
+# it is a script, not an installed module, and the hdf5 layout it defines must
+# be pinned to the campaign like everything else here), and the profile.
 # Every workflow-internal path hangs off `workflow.basedir`, which IS the
 # snapshot, so they all follow it for free; the profile's PYTHONPATH pin is the
 # one that cannot (YAML splices nothing) and is rewritten below.
@@ -177,10 +188,10 @@ snapshot_code() {
   mkdir -p "$SNAPSHOT"
   if command -v rsync >/dev/null 2>&1; then
     rsync -a --delete --copy-links --exclude '__pycache__' --exclude '*.egg-info' \
-      "$HERE" "$REPO/src" "$REPO/profiles" "$REPO/scripts" "$SNAPSHOT/"
+      "$HERE" "$REPO/src" "$REPO/scripts" "$REPO/profiles" "$SNAPSHOT/"
   else
     rm -rf "$SNAPSHOT"; mkdir -p "$SNAPSHOT"
-    cp -rL "$HERE" "$REPO/src" "$REPO/profiles" "$REPO/scripts" "$SNAPSHOT/"
+    cp -rL "$HERE" "$REPO/src" "$REPO/scripts" "$REPO/profiles" "$SNAPSHOT/"
     find "$SNAPSHOT" -name __pycache__ -type d -prune -exec rm -rf {} +
   fi
 
@@ -361,6 +372,10 @@ case "$cmd" in
     squeue --me --noheader --format='%i %j' \
       | awk -v r="$run" '$2 ~ r {print $1}' | xargs -r scancel
     echo "cancelled jobs matching '$run'; safe to --unlock / rerun now"
+    ;;
+  ""|-h|--help)
+    # snakemake's own usage: parsing the Snakefile would need a campaign.
+    snakemake --help
     ;;
   *)
     sm "$@"

@@ -6,9 +6,32 @@ YWIN_WORLD
 # Can maybe be removed.
 TILE_ID
 
+# SExtractor object number within the tile: sp_validation's extraction joins
+# on it, and the per-tile catalogue always carries it.
+NUMBER
+
 # flags
 FLAGS
-IMAFLAGS_ISO
+# NO IMAFLAGS_ISO, AND NO MASK COLUMN AT ALL — READ THIS BEFORE ADDING ONE.
+# The tile-side SExtractor runs with FLAG_IMAGE = False and DOT_PARAM_FILE =
+# default_noimaflags.param (config_tile_Sx.ini), so IMAFLAGS_ISO is never
+# written into a tile catalogue and asking for it here only made the merge
+# fail. Instrument flags reach the pipeline on the EXPOSURE side, where
+# exp_split delivers the flag image and SExtractor reads it.
+#
+# Its intended replacement is make_cat's per-band MASK_<band> columns, queried
+# from the sky-fixed healsparse maps named by MASK_EXT_PATHS. THE WORKFLOW SETS
+# NO SUCH PATHS: config_tile_Mc.ini has no MASK_EXT_PATHS entry, so
+# save_mask_ext_data is never called, no MASK_<band> column exists in any tile
+# catalogue this workflow has produced, and smk-g6's carry none (checked).
+# Naming one here would fail every merge on every campaign.
+#
+# So the merged catalogue carries NO mask information today, and that is a
+# CONFIG gap and not a gap in this file: turning it on is setting
+# MASK_EXT_PATHS in config_tile_Mc.ini (`band:path` pairs, the same grammar as
+# the commented MASK_PATHS in config_exp_psfex.ini) and adding the matching
+# MASK_<band> names here, in that order. No healsparse map is staged under
+# /project/def-mjhudson yet.
 NGMIX_MCAL_FLAGS
 
 # PSF ellipticity (original image PSF)
@@ -25,6 +48,83 @@ NGMIX_G2_PSF_ORIG_NOSHEAR
 # Number of epochs (exposures)
 N_EPOCH
 NGMIX_N_EPOCH
+
+# Per-epoch identity and PSF shape, slot n = 1..12 (config_tile_Mc.ini's
+# N_EPOCH_SLOTS): EXP_ID_n/CCD_n name the exposure and CCD of epoch n, aligned
+# with HSM_*_PSF_n; empty slots carry -1 (ids), -10 (g), 0 (T), 1 (flag). The
+# count is fixed at the source so every tile shares this schema.
+EXP_ID_1
+EXP_ID_2
+EXP_ID_3
+EXP_ID_4
+EXP_ID_5
+EXP_ID_6
+EXP_ID_7
+EXP_ID_8
+EXP_ID_9
+EXP_ID_10
+EXP_ID_11
+EXP_ID_12
+CCD_1
+CCD_2
+CCD_3
+CCD_4
+CCD_5
+CCD_6
+CCD_7
+CCD_8
+CCD_9
+CCD_10
+CCD_11
+CCD_12
+HSM_G1_PSF_1
+HSM_G1_PSF_2
+HSM_G1_PSF_3
+HSM_G1_PSF_4
+HSM_G1_PSF_5
+HSM_G1_PSF_6
+HSM_G1_PSF_7
+HSM_G1_PSF_8
+HSM_G1_PSF_9
+HSM_G1_PSF_10
+HSM_G1_PSF_11
+HSM_G1_PSF_12
+HSM_G2_PSF_1
+HSM_G2_PSF_2
+HSM_G2_PSF_3
+HSM_G2_PSF_4
+HSM_G2_PSF_5
+HSM_G2_PSF_6
+HSM_G2_PSF_7
+HSM_G2_PSF_8
+HSM_G2_PSF_9
+HSM_G2_PSF_10
+HSM_G2_PSF_11
+HSM_G2_PSF_12
+HSM_T_PSF_1
+HSM_T_PSF_2
+HSM_T_PSF_3
+HSM_T_PSF_4
+HSM_T_PSF_5
+HSM_T_PSF_6
+HSM_T_PSF_7
+HSM_T_PSF_8
+HSM_T_PSF_9
+HSM_T_PSF_10
+HSM_T_PSF_11
+HSM_T_PSF_12
+HSM_FLAG_PSF_1
+HSM_FLAG_PSF_2
+HSM_FLAG_PSF_3
+HSM_FLAG_PSF_4
+HSM_FLAG_PSF_5
+HSM_FLAG_PSF_6
+HSM_FLAG_PSF_7
+HSM_FLAG_PSF_8
+HSM_FLAG_PSF_9
+HSM_FLAG_PSF_10
+HSM_FLAG_PSF_11
+HSM_FLAG_PSF_12
 
 # Blend flag: coadd seg stamp held a non-central footprint (shapepipe#776)
 NGMIX_NEIGHBOUR_FLAG
@@ -113,5 +213,6 @@ NGMIX_T_PSF_ORIG_NOSHEAR
 # PSF size measured on reconvolved image
 # NGMIX_T_PSF_RECONV_NOSHEAR
 
-# ngmix moment failure flag
-NGMIX_MOM_FAIL
+# ngmix metacalibration type failure flag (renamed from NGMIX_MOM_FAIL in
+# f0fca23e; catalogues written before that commit carry the old name)
+NGMIX_MCAL_TYPES_FAIL

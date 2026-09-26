@@ -1,9 +1,8 @@
 # Final-catalogue column selection for the image simulations.
 #
-# create_final_cat.py -I selects exactly these columns from each simulated
-# tile's make_cat output (tiles/<shard>/<tile>/output/run_sp_tile_Mc/...) into
-# final_cat_{sim}.hdf5, and sp_validation's extract step reads the same list;
-# every entry must exist in that catalogue.
+# final_cat_merge selects exactly these columns from each simulated tile's
+# final catalogue into <products_dir>/final_cat_<run>.hdf5, and sp_validation's
+# extract step reads the same list; every entry must exist in that catalogue.
 #
 # A real file in this overlay dir, not a symlink into ../cfis/, because the
 # real-data list names columns make_cat does not write for the simulations:

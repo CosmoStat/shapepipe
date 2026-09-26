@@ -25,9 +25,9 @@
 # Path to the local ShapePipe clone (holds the example configs and data).
 export SPDIR="${SPDIR:-$HOME/shapepipe}"
 
-# Path to the ShapePipe runtime image. Pull it once with:
-#   apptainer pull "$SP_IMAGE" docker://ghcr.io/cosmostat/shapepipe:develop-runtime
-export SP_IMAGE="${SP_IMAGE:-$HOME/shapepipe_develop-runtime.sif}"
+# Path to the ShapePipe image. Pull it once with:
+#   apptainer pull "$SP_IMAGE" docker://ghcr.io/cosmostat/shapepipe:develop
+export SP_IMAGE="${SP_IMAGE:-$HOME/shapepipe_develop.sif}"
 
 # Host MPI. The image ships OpenMPI 5.0.x, and any host OpenMPI in the 5.0.x
 # family is PMIx-compatible with it, so the cluster default is fine. If candide's
