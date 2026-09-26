@@ -47,7 +47,7 @@ FITS blocks (measured: 1,586,880 B rebuilt vs 1,589,760 B appended, identical
 nothing — cheap while nothing consumes the map, and the thing to fix (by
 rebuilding whenever the append path would rewrite anyway) if something ever
 does. The no-op case is unaffected: it compares the PLAN, not the bytes, and
-never opens the map at all.
+never reads the map's pixels, only its coverage table.
 
 Which exposures are already in the map is recorded in a SIDECAR beside it
 (``defect_map_<campaign>.json``), each with its fragment's SHA-256 as its
@@ -175,7 +175,8 @@ def read_sidecar(path: Path) -> dict:
         return {}
 
 
-def reconcile_plan(output: Path, sidecar: Path, digests: dict) -> Plan:
+def reconcile_plan(output: Path, sidecar: Path, digests: dict, nside: int,
+                   nside_coverage: int) -> Plan:
     """Compare what is on disk with the campaign, WITHOUT writing anything.
 
     @sc [decision:defect_map_from_flags,label:convention] defect-map-is-the-sidecars-union
@@ -190,11 +191,25 @@ def reconcile_plan(output: Path, sidecar: Path, digests: dict) -> Plan:
 
     A missing map, or a sidecar that does not describe it, is a rebuild: the two
     are written together and either one alone is not evidence about the other.
+
+    So is a map at another resolution than the one requested. Unchanged
+    fragments would otherwise make that an empty plan, leaving the map at its
+    old resolution under a sidecar rewritten to claim the new one. The rebuild
+    then reads the fragments, and ``accumulate`` refuses any at the wrong
+    resolution before either file is written. The resolution is read from the
+    map itself — its coverage table, a few kilobytes — not from the sidecar.
     """
     record = read_sidecar(sidecar)
     known = record.get("exposures") or {}
     if not output.exists() or not known:
         return Plan([], sorted(digests), "no map on disk")
+
+    cov = hsp.HealSparseCoverage.read(str(output))
+    if (cov.nside_sparse, cov.nside_coverage) != (nside, nside_coverage):
+        return Plan([], sorted(digests),
+                    f"map is nside {cov.nside_sparse} / nside_coverage "
+                    f"{cov.nside_coverage}, not the requested {nside} / "
+                    f"{nside_coverage}")
 
     gone = sorted(set(known) - set(digests))
     if gone:
@@ -371,7 +386,8 @@ def main() -> None:
 
     digests = {exp: fragment_digest(args.products_dir, exp) for exp in have}
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    plan = reconcile_plan(args.output, args.sidecar, digests)
+    plan = reconcile_plan(args.output, args.sidecar, digests, args.nside,
+                          args.nside_coverage)
     if plan.empty():
         # The MAP is untouched — that is what an empty plan means, and its mtime
         # must not move. The RECORD still can be stale: campaign_exposures and

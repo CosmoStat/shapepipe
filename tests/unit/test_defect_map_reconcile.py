@@ -99,7 +99,7 @@ def _run(merge, root: Path, have: dict, missing=()):
     output = root / "defect_map_test.hsp"
     sidecar = root / "defect_map_test.json"
     digests = {exp: merge.fragment_digest(root, exp) for exp in have}
-    plan = merge.reconcile_plan(output, sidecar, digests)
+    plan = merge.reconcile_plan(output, sidecar, digests, NSIDE, NSIDE_COV)
     if plan.empty():
         return plan, json.loads(sidecar.read_text())
     record = merge.apply_plan(output, sidecar, plan, have, digests,
@@ -287,7 +287,8 @@ def test_no_op_still_refreshes_a_stale_sidecar(merge, campaign):
     assert plan.empty()
 
     missing = ["2079999p"]
-    plan = merge.reconcile_plan(output, sidecar, record["exposures"])
+    plan = merge.reconcile_plan(output, sidecar, record["exposures"],
+                                NSIDE, NSIDE_COV)
     assert plan.empty(), "an exposure with no fragment is not in the plan"
     fresh = merge.build_record(
         record["exposures"], missing, NSIDE_COV, NSIDE,
@@ -298,6 +299,31 @@ def test_no_op_still_refreshes_a_stale_sidecar(merge, campaign):
     assert after["exposures_without_fragment"] == missing
     assert after["campaign_exposures"] == len(have) + 1
     assert output.stat().st_mtime_ns == before_map, "map must not move"
+
+
+def test_resolution_change_is_not_a_no_op(merge, tmp_path, monkeypatch):
+    """A new ``--nside`` over unchanged fragments must not pass as a no-op.
+
+    The fragments did not change, so without a resolution check the plan is
+    empty, the map stays at the old nside and the sidecar is rewritten to
+    claim the new one. The plan has to see the map's resolution and rebuild,
+    and the rebuild refuses fragments at another resolution before either
+    file is touched.
+    """
+    import healsparse as hsp
+
+    _fragment(merge, tmp_path, "2079612p", [10, 11])
+    _main(merge, tmp_path, ["2079612p"], monkeypatch)
+    output = tmp_path / "defect_map_test.hsp"
+    sidecar = tmp_path / "defect_map_test.json"
+    before = sidecar.read_bytes(), output.stat().st_mtime_ns
+
+    with pytest.raises(SystemExit) as exc:
+        _main(merge, tmp_path, ["2079612p"], monkeypatch, nside=2 * NSIDE)
+    assert "re-rasterize 2079612p" in str(exc.value)
+    assert (sidecar.read_bytes(), output.stat().st_mtime_ns) == before
+    assert json.loads(sidecar.read_text())["nside"] == NSIDE
+    assert hsp.HealSparseCoverage.read(str(output)).nside_sparse == NSIDE
 
 
 def test_nside_mismatch_is_an_error_not_an_upgrade(merge, campaign):
