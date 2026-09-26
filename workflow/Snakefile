@@ -1016,9 +1016,8 @@ def footprint_targets():
     scratch-only input coverage needs: milliseconds and a few KB now, against an
     irrecoverable loss later.
 
-    Scope, and the tombstone exclusion, are persist_targets' exactly: a cleaned
-    exposure's footprint was written before its store went (clean_exposure takes
-    this manifest as an input), and asking again would rebuild the chain from VOS.
+    Scope, and the reclaimed-store exclusion, are persist_targets' exactly;
+    footprint_edge() below argues the exclusion.
 
     The exposures are psf_exposures(): the record is the valid-PSF CCD set,
     read off exp_persist's manifest, so psf_model=fake (no PSF model, no
@@ -1028,8 +1027,35 @@ def footprint_targets():
     """
     if not workflow.is_main_process:
         return []
-    return sorted(prod_exp_manifest(e, "exp_footprint") for e in psf_exposures()
-                  if not Path(tombstone(e)).exists())
+    return sorted(m for e in psf_exposures() for m in footprint_edge(e))
+
+
+def footprint_edge(exp):
+    """The footprint manifest to depend on for this exposure: itself while the
+    store is live, nothing once it is reclaimed.
+
+    The one edge `rule all` and clean_exposure both take to an exposure's
+    footprint. A live exposure is asked for its manifest — the thing to build,
+    and what orders clean_exposure after the read of headers-<exp>.npy.
+
+    A RECLAIMED exposure is asked for nothing. Its manifest is exp_footprint's
+    declared output, which hangs off exp_persist's manifest and through it off
+    exp_psf's, so naming it keeps the whole producer chain in the DAG: any
+    change upstream — a `persist_exp:` edit changes exp_persist's params —
+    reschedules exp_get_images, exp_split and exp_psf from VOS to rebuild a
+    record that is already on the persistent root. Unlike the defect fragment,
+    the record has no undeclared leaf to depend on instead; the manifest IS the
+    record. Nothing is lost by the omission: the store the edge ordered against
+    is already gone, and coverage_map reads every durable record whether or not
+    it is an edge.
+
+    exp_store_reclaimed(), not the tombstone, is the test, for the purge case
+    its docstring names: a purged store has no tombstone, and a manifest asked
+    for there is a chain rebuilt, or, with no record written, an exp_footprint
+    job that fails reading headers that are gone.
+    """
+    return ([] if exp_store_reclaimed(exp)
+            else [prod_exp_manifest(exp, "exp_footprint")])
 
 # --- tile reclamation (D5) --------------------------------------------------
 # A separate flag from `clean:` (config.yaml carries the full

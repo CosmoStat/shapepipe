@@ -47,6 +47,7 @@ def _namespace(psf_model, tmp_path, *, main=True):
     assert assignment, "Snakefile must bind PERSISTS_PSF"
     exec(assignment.group(0), ns)
     for name in ("prod_exp_dir", "prod_exp_manifest", "exp_dir", "tombstone",
+                 "exp_manifest", "exp_store_reclaimed", "footprint_edge",
                  "tile_dir", "tile_manifest", "psf_exposures",
                  "footprint_targets", "flag"):
         definition = re.search(

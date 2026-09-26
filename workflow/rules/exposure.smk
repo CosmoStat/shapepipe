@@ -273,10 +273,12 @@ rule clean_exposure:
         # it is derived from headers-<exp>.npy, which lives in the store this job
         # deletes. Reclamation must not overtake the read, and unlike the purge
         # this deletion is ours to order.
+        # A reclaimed store has no read left to order against, and naming its
+        # footprint reopens the exposure chain: footprint_edge() (Snakefile).
         # Only psf_model=fake drops both edges: it has no PSF products to keep
         # and so no valid-PSF set to record (PERSISTS_PSF, Snakefile).
         lambda wc: ([prod_exp_manifest(wc.exp, "exp_persist"),
-                     prod_exp_manifest(wc.exp, "exp_footprint")]
+                     *footprint_edge(wc.exp)]
                     if PERSISTS_PSF else [])
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
