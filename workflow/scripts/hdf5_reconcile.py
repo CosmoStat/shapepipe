@@ -266,18 +266,21 @@ def _apply(output: Path, group_path: str, todo: Plan, units: list, read,
     Either way the tmp is moved into place at the end, so a crash mid-merge
     leaves the old catalogue intact rather than a half-written one. A SIGKILL
     between writing the tmp and renaming it leaves the tmp behind — one file,
-    beside the catalogue, overwritten by the next run; the rename itself is
-    atomic, which is the property that matters.
+    beside the catalogue, deleted by the next run before its space check; the
+    rename itself is atomic, which is the property that matters.
     """
     sources = dict(units)
     rewrite = bool(todo.remove or todo.refresh)
+    tmp = output.with_name(output.name + ".tmp")
+    # A tmp left by a killed run is this run's to delete (one writer per
+    # output), and deleting it first keeps it from counting against the space
+    # this run needs.
+    tmp.unlink(missing_ok=True)
     check_free_space(output)
     check_sole_group(output, group_path)
     written = set(todo.add) | set(todo.refresh)
     keep = [u for u, _ in units if u not in written]
-    tmp = output.with_name(output.name + ".tmp")
     try:
-        tmp.unlink(missing_ok=True)
         if output.exists() and not rewrite:
             shutil.copy2(output, tmp)
         with h5py.File(tmp, "a") as f:

@@ -396,3 +396,36 @@ def test_a_schema_only_change_refreshes_every_unit(tmp_path):
     assert (todo.add, sorted(todo.refresh)) == ([], sorted(sources))
     with h5py.File(output, "r") as f:
         assert {f[GROUP][u].dtype.names for u in f[GROUP]} == {wide}
+
+
+def test_an_abandoned_tmp_does_not_count_against_free_space(tmp_path,
+                                                             monkeypatch):
+    """A killed rewrite leaves its tmp copy behind. The next run owns it (one
+    writer per output), so the copy is deleted before free space is judged:
+    2.5x the file free counting the orphan clears the 2.1x margin; 1.5x, as
+    if the orphan still stood, would not."""
+    import shutil
+
+    columns = COLUMN_SETS[0]
+    sources = {"u0": tmp_path / "u0.npy"}
+    _write_source(sources["u0"], _array(columns, 3, 0), 10**18)
+    output = tmp_path / "cat.h5"
+    _build(output, sources, columns)
+    size = output.stat().st_size
+    orphan = output.with_name(output.name + ".tmp")
+    shutil.copy2(output, orphan)
+
+    usage = shutil.disk_usage(tmp_path)
+
+    def disk_usage(_):
+        free = int(2.5 * size) - (orphan.stat().st_size
+                                  if orphan.exists() else 0)
+        return type(usage)(10 * size, 10 * size - free, free)
+
+    monkeypatch.setattr(reconcile.shutil, "disk_usage", disk_usage)
+    sources["u1"] = tmp_path / "u1.npy"
+    _write_source(sources["u1"], _array(columns, 3, 1), 10**18 + 1)
+    assert _build(output, sources, columns).add == ["u1"]
+    assert not orphan.exists()
+    with h5py.File(output, "r") as f:
+        assert set(f[GROUP]) == {"u0", "u1"}
