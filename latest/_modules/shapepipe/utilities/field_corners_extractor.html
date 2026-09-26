@@ -768,8 +768,9 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="n">options</span>
 
-        <span class="c1"># Save calling command</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">log_command</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+        <span class="c1"># Save calling command to log_extract_field_corners; args excludes the program</span>
+        <span class="c1"># name, which log_command takes from argv[0]</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">log_command</span><span class="p">([</span><span class="s2">"extract_field_corners"</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="FieldCornersExtractor.update_params">
