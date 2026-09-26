@@ -301,6 +301,33 @@ def test_no_op_still_refreshes_a_stale_sidecar(merge, campaign):
     assert output.stat().st_mtime_ns == before_map, "map must not move"
 
 
+def test_interrupted_publish_is_detected_and_rebuilt(merge, tmp_path,
+                                                    monkeypatch):
+    """A kill between replacing the map and replacing the sidecar leaves a
+    NEW map under an OLD sidecar. Returning to the campaign that old sidecar
+    describes must rebuild, not read as a no-op over a map that still carries
+    the other campaign's pixels.
+
+    The interruption is simulated by putting the old sidecar back after a
+    complete merge: the resulting pair is exactly what the kill leaves.
+    """
+    _fragment(merge, tmp_path, "2079612p", [10, 11])
+    _fragment(merge, tmp_path, "2079613p", [20])
+    output = tmp_path / "defect_map_test.hsp"
+    sidecar = tmp_path / "defect_map_test.json"
+
+    _main(merge, tmp_path, ["2079612p"], monkeypatch)
+    old_sidecar = sidecar.read_bytes()
+    _main(merge, tmp_path, ["2079612p", "2079613p"], monkeypatch)
+    assert _valid(output) == {10, 11, 20}
+    sidecar.write_bytes(old_sidecar)
+
+    out = _main(merge, tmp_path, ["2079612p"], monkeypatch)
+    assert "rebuilt" in out, out
+    assert _valid(output) == {10, 11}
+    assert set(json.loads(sidecar.read_text())["exposures"]) == {"2079612p"}
+
+
 def test_resolution_change_is_not_a_no_op(merge, tmp_path, monkeypatch):
     """A new ``--nside`` over unchanged fragments must not pass as a no-op.
 

@@ -62,6 +62,18 @@ sidecar is therefore a DECLARED OUTPUT of the rule alongside the map; losing one
 without the other would be a map nobody can reconcile, and snakemake removing
 both on a failure is the correct recovery (the next run rebuilds).
 
+MAP AND SIDECAR ARE BOUND BY A GENERATION ID, because two files cannot be
+replaced atomically together. Both are written to temporaries first, so a kill
+before publication leaves the previous pair; a kill BETWEEN the two renames
+still leaves a new map under the old sidecar, and snakemake cannot be relied on
+to clean up after its own head process dies. So each merge stamps
+``generation`` — a digest of the resolution and every exposure's fragment
+digest, the whole of what determines the map's content — into both the map's
+healsparse metadata (``DMAPGEN`` in its primary FITS header) and the sidecar.
+``reconcile_plan`` reads the header and rebuilds on any disagreement. The id is
+a function of the input set, not a fresh token, so an unchanged campaign
+rewrites nothing.
+
 MEMORY IS FLAT IN THE NUMBER OF EXPOSURES, which is the reason for the loop
 below and not for a list comprehension over ``HealSparseMap.read``. Fragments
 are never held together and are never OR-ed as maps: each is read, reduced to
@@ -93,6 +105,7 @@ recorded in the sidecar instead.
 
 import argparse
 import filecmp
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -100,6 +113,7 @@ from pathlib import Path
 import numpy as np
 
 import healsparse as hsp
+from astropy.io import fits
 
 # Same directory; the rule invokes this file by path, so it is sys.path[0].
 # The vocabulary below (`Plan`, `empty`, `describe`, plan-then-apply,
@@ -168,6 +182,26 @@ class Plan:
         return f"{len(self.append)} fragment(s) appended"
 
 
+# The map's metadata key for the generation id; a FITS keyword, so <= 8 chars.
+GENERATION_KEY = "DMAPGEN"
+
+
+def generation(digests: dict, nside: int, nside_coverage: int) -> str:
+    """The id binding a map to its sidecar: a digest of everything that
+    determines the map's content, so the same inputs give the same id."""
+    blob = json.dumps({"nside": nside, "nside_coverage": nside_coverage,
+                       "exposures": digests}, sort_keys=True)
+    return hashlib.sha256(blob.encode()).hexdigest()
+
+
+def map_generation(output: Path):
+    """The generation id stamped in the map's primary header, or ``None``."""
+    try:
+        return fits.getheader(str(output), 0).get(GENERATION_KEY)
+    except OSError:
+        return None
+
+
 def read_sidecar(path: Path) -> dict:
     try:
         return json.loads(path.read_text())
@@ -191,6 +225,8 @@ def reconcile_plan(output: Path, sidecar: Path, digests: dict, nside: int,
 
     A missing map, or a sidecar that does not describe it, is a rebuild: the two
     are written together and either one alone is not evidence about the other.
+    "Describes it" is checked, not assumed: the map's ``DMAPGEN`` header must
+    equal the sidecar's ``generation`` (the module docstring argues why).
 
     So is a map at another resolution than the one requested. Unchanged
     fragments would otherwise make that an empty plan, leaving the map at its
@@ -203,6 +239,10 @@ def reconcile_plan(output: Path, sidecar: Path, digests: dict, nside: int,
     known = record.get("exposures") or {}
     if not output.exists() or not known:
         return Plan([], sorted(digests), "no map on disk")
+
+    if map_generation(output) != record.get("generation"):
+        return Plan([], sorted(digests),
+                    "map and sidecar are from different merges")
 
     cov = hsp.HealSparseCoverage.read(str(output))
     if (cov.nside_sparse, cov.nside_coverage) != (nside, nside_coverage):
@@ -310,6 +350,8 @@ def build_record(digests: dict, missing: list, nside_coverage: int, nside: int,
         "nside_coverage": nside_coverage,
         "n_pixels": n_pixels,
         "n_coverage_pixels": n_coverage,
+        # Must equal the DMAPGEN header of the map beside it.
+        "generation": generation(digests, nside, nside_coverage),
         # What the NEXT invocation reconciles against; sorted so the sidecar is
         # byte-stable for a given campaign state.
         "exposures": dict(sorted(digests.items())),
@@ -319,10 +361,14 @@ def build_record(digests: dict, missing: list, nside_coverage: int, nside: int,
     }
 
 
+def dump_record(record: dict) -> str:
+    return json.dumps(record, indent=2, sort_keys=True) + "\n"
+
+
 def write_sidecar(sidecar: Path, record: dict) -> None:
     tmp = sidecar.with_name(sidecar.name + ".tmp")
     try:
-        tmp.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
+        tmp.write_text(dump_record(record))
         write_stable(tmp, sidecar)
     finally:
         tmp.unlink(missing_ok=True)
@@ -333,8 +379,10 @@ def apply_plan(output: Path, sidecar: Path, plan: Plan, have: dict,
                nside: int) -> dict:
     """Carry the plan out on tmp copies, then move both files into place.
 
-    Map and sidecar are moved together at the end, so a crash mid-merge leaves
-    the previous PAIR intact rather than a map the record no longer describes.
+    Both temporaries are complete before either rename, so a crash before
+    publication leaves the previous PAIR intact. A crash between the two
+    renames leaves a new map under the old sidecar; their generation ids then
+    disagree and the next ``reconcile_plan`` rebuilds.
     """
     if plan.rebuild:
         todo = plan.rebuild
@@ -352,13 +400,17 @@ def apply_plan(output: Path, sidecar: Path, plan: Plan, have: dict,
                           int(target.n_valid),
                           int(target.coverage_mask.sum()))
 
+    target.metadata = {GENERATION_KEY: record["generation"]}
     map_tmp = output.with_name(output.name + ".tmp")
+    sidecar_tmp = sidecar.with_name(sidecar.name + ".tmp")
     try:
         target.write(str(map_tmp), clobber=True)
+        sidecar_tmp.write_text(dump_record(record))
         write_stable(map_tmp, output)
+        write_stable(sidecar_tmp, sidecar)
     finally:
         map_tmp.unlink(missing_ok=True)
-    write_sidecar(sidecar, record)
+        sidecar_tmp.unlink(missing_ok=True)
     return record
 
 
