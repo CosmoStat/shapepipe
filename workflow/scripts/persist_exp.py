@@ -50,8 +50,8 @@ find nothing. ZERO FILES IN TOTAL IS A FAILURE: it means the store was not what
 we think it is, and writing a green manifest over that would let
 ``clean_exposure`` delete an exposure whose products were never saved.
 
-The manifest lists every member (name, pattern, source path, bytes), so a reader
-knows what the tar holds without opening it.
+The manifest lists every member (name, pattern, source path, bytes, sha256),
+so a reader knows what the tar holds without opening it.
 
 ONE UNCOMPRESSED TAR PER EXPOSURE, ``<dest>/<exp>.tar``, NOT LOOSE COPIES.
 Inodes, not bytes, are what bind on /project: the group quota is ~1 M files,
@@ -98,6 +98,7 @@ Enforced by tests/unit/test_persist_exp_props.py.
 
 import argparse
 import filecmp
+import hashlib
 import json
 import sys
 import tarfile
@@ -416,6 +417,14 @@ def main() -> None:
             tmp.replace(tar_path)         # atomic: no half-written archive
     finally:
         tmp.unlink(missing_ok=True)
+
+    # Each member's sha256, read back from the tar as published. The manifest
+    # is the DAG edge star_cat_merge waits on: a refit that changes values but
+    # no sizes must change it, and a rerun over the same bytes must not.
+    with tarfile.open(tar_path) as tf:
+        for f in files:
+            f["sha256"] = hashlib.file_digest(
+                tf.extractfile(f["name"]), "sha256").hexdigest()
 
     body = {
         "stage": "exp_persist", "level": "exp", "unit": args.exp,

@@ -67,8 +67,8 @@ an earlier, larger tile list sharing the products root, stacking rows the
 fingerprint never saw and no rerun trigger would notice.
 
 THE MANIFEST, NOT THE TAR, IS WHAT IT READS FIRST: the manifest records what was
-actually packed, member by member, with sizes and the product each came from, so
-this script never guesses at tar contents.
+actually packed, member by member, with sizes, sha256 digests and the product
+each came from, so this script never guesses at tar contents.
 """
 
 import argparse
