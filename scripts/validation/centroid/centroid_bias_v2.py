@@ -105,9 +105,9 @@ def main(ntrial=50, seed=42, sig_noise=1e-10, n_epochs=3, pixel_scale=0.1857):
             stamp.jacobs = jacob_lists
 
             try:
-                resdict, psf_res = do_ngmix_metacal(
+                resdict = do_ngmix_metacal(
                     stamp, prior, 1.0, rng, centroid_source="hsm",
-                )
+                ).resdict
                 stt = [make_struct(resdict[st], st) for st in shear_types]
             except Exception:
                 continue
