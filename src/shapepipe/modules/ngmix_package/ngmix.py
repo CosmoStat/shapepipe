@@ -1361,9 +1361,7 @@ def prepare_postage_stamps(
         # make_ngmix_observation), which raises if it is missing; the "hsm"
         # path ignores it, so read it leniently rather than coupling hsm to a
         # field it never uses.
-        stamp.offsets.append(
-            vignet.gal_vign_cat[str(obj_id)][expccd_name].get('OFFSET')
-        )
+        stamp.offsets.append(gal_obj[expccd_name].get('OFFSET'))
         stamp.ra.append(tile_cat.ra[i_tile])
         stamp.dec.append(tile_cat.dec[i_tile])
         # CCD of the first surviving epoch — Fabian's coord_list[0] convention

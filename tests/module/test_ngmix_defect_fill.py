@@ -176,7 +176,6 @@ def _fake_inputs(epochs):
     psf_obj = per_epoch(lambda k: np.ones((N_STAMP, N_STAMP)))
     gal_obj = per_epoch(lambda k: rng.normal(0.0, 1.0, (N_STAMP, N_STAMP)))
     vignet = SimpleNamespace(
-        gal_vign_cat={"1": gal_obj},
         bkg_vign_cat=None,
         bkg_rms_vign_cat=None,
         flag_vign_cat={"1": per_epoch(lambda k: epochs[k][0])},
@@ -296,3 +295,28 @@ def test_central_defect_radius_is_the_configured_value():
     assert _surviving(
         epochs, epoch_central_defect_radius=EPOCH_CENTRAL_DEFECT_RADIUS + 1
     ) == ["2100001-10"]
+
+
+# --- prepare_postage_stamps: per-epoch OFFSET ------------------------------
+
+def test_each_surviving_epoch_carries_its_own_offset():
+    """``stamp.offsets`` holds each surviving epoch's vignette OFFSET, in the
+    order of ``stamp.flags``.
+
+    Failure mode: the offset is dropped or read from another epoch, so the
+    default "wcs" centroid raises or puts the Jacobian origin off the object.
+    """
+    clean = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+    ones = np.ones((N_STAMP, N_STAMP))
+    epochs = {f"210000{i}-1{i}": (clean.copy(), ones) for i in range(3)}
+    vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(epochs)
+    for i, name in enumerate(epochs):
+        gal_obj[name]["OFFSET"] = np.array([0.1 * i, -0.1 * i])
+    stamp = prepare_postage_stamps(
+        vignet, 1, 0, tile_cat, bkg_sub=False,
+        psf_obj=psf_obj, gal_obj=gal_obj,
+    )
+    names = {id(flag): name for name, (flag, _) in epochs.items()}
+    assert len(stamp.offsets) == len(stamp.flags) == 3
+    for flag, offset in zip(stamp.flags, stamp.offsets):
+        npt.assert_array_equal(offset, gal_obj[names[id(flag)]]["OFFSET"])
