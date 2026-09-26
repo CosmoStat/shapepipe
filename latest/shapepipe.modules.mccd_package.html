@@ -588,7 +588,7 @@
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mccd-plots-runner">MCCD_PLOTS_RUNNER</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Module-specific config file entries</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Module-specific config file entries</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
@@ -773,28 +773,25 @@ The specifier “last:” is not required</p>
 </dl>
 <p>This module generates different series of plots of the input merged star
 catalogue.</p>
-<p>One series of plots are the _mean <a href="#id7"><span class="problematic" id="id8">shapes_</span></a>, which is the PSF ellipticity and
+<p>One series of plots are the _mean <a href="#id5"><span class="problematic" id="id6">shapes_</span></a>, which is the PSF ellipticity and
 size and their residuals as a function of the focal plane positions. Values and
 residuals are combined from all merged catalogues, and binned in the focal
 plane according to <code class="docutils literal notranslate"><span class="pre">X_GRID</span></code> and <code class="docutils literal notranslate"><span class="pre">Y_GRID</span></code>.</p>
 <p>Another series of plots are a histogram of the ellipticity errors.</p>
-<p>A third series are the rho statistics plot, which are correlation functions of
-various combinations of PSF ellipticity, size, and their residuals,
-see <span class="bibtex-citation" id="id4">[<a class="reference internal" href="z_ref.html#id38" title="B. Rowe. Improving PSF modelling for weak gravitational lensing using new methods in model selection. \mnras , 404:350-366, 2010. arXiv:0904.3056, doi:10.1111/j.1365-2966.2010.16277.x.">Rowe, 2010</a>]</span> and <span class="bibtex-citation" id="id5">[<a class="reference internal" href="z_ref.html#id26" title="M. Jarvis, E. Sheldon, J. Zuntz, T. Kacprzak, S. L. Bridle, A. Amara, R. Armstrong, M. R. Becker, G. M. Bernstein, C. Bonnett, C. Chang, R. Das, J. P. Dietrich, A. Drlica-Wagner, T. F. Eifler, C. Gangkofner, D. Gruen, M. Hirsch, E. M. Huff, B. Jain, S. Kent, D. Kirk, N. MacCrann, P. Melchior, A. A. Plazas, A. Refregier, B. Rowe, E. S. Rykoff, S. Samuroff, C. Sánchez, E. Suchyta, M. A. Troxel, V. Vikram, T. Abbott, F. B. Abdalla, S. Allam, J. Annis, A. Benoit-Lévy, E. Bertin, D. Brooks, E. Buckley-Geer, D. L. Burke, D. Capozzi, A. Carnero Rosell, M. Carrasco Kind, J. Carretero, F. J. Castander, J. Clampitt, M. Crocce, C. E. Cunha, C. B. D'Andrea, L. N. da Costa, D. L. DePoy, S. Desai, H. T. Diehl, P. Doel, A. Fausti Neto, B. Flaugher, P. Fosalba, J. Frieman, E. Gaztanaga, D. W. Gerdes, R. A. Gruendl, G. Gutierrez, K. Honscheid, D. J. James, K. Kuehn, N. Kuropatkin, O. Lahav, T. S. Li, M. Lima, M. March, P. Martini, R. Miquel, J. J. Mohr, E. Neilsen, B. Nord, R. Ogando, K. Reil, A. K. Romer, A. Roodman, M. Sako, E. Sanchez, V. Scarpine, M. Schubnell, I. Sevilla-Noarbe, R. C. Smith, M. Soares-Santos, F. Sobreira, M. E. C. Swanson, G. Tarle, J. Thaler, D. Thomas, A. R. Walker, and R. H. Wechsler. The DES Science Verification weak lensing shear catalogues. \mnras , 460:2245-2281, August 2016. arXiv:1507.05603, doi:10.1093/mnras/stw990.">Jarvis <em>et al.</em>, 2016</a>]</span>.</p>
-<section id="id6">
-<h3>Module-specific config file entries<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<section id="id4">
+<h3>Module-specific config file entries<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
 <dl class="simple">
 <dt>PSF: str</dt><dd><p>PSF model type, options are <code class="docutils literal notranslate"><span class="pre">mccd</span></code> or <code class="docutils literal notranslate"><span class="pre">psfex</span></code></p>
 </dd>
-<dt>PLOT_MEANSHAPES: bool</dt><dd><p>Option to produce _mean <a href="#id9"><span class="problematic" id="id10">shapes_</span></a> plots</p>
+<dt>PLOT_MEANSHAPES: bool</dt><dd><p>Option to produce _mean <a href="#id7"><span class="problematic" id="id8">shapes_</span></a> plots</p>
 </dd>
-<dt>X_GRID: int</dt><dd><p>Number of bins in the X axis of one CCD for the _mean <a href="#id11"><span class="problematic" id="id12">shapes_</span></a> plot grid</p>
+<dt>X_GRID: int</dt><dd><p>Number of bins in the X axis of one CCD for the _mean <a href="#id9"><span class="problematic" id="id10">shapes_</span></a> plot grid</p>
 </dd>
-<dt>Y_GRID: int</dt><dd><p>Number of bins in the Y axis of one CCD for the _mean <a href="#id13"><span class="problematic" id="id14">shapes_</span></a> plot grid</p>
+<dt>Y_GRID: int</dt><dd><p>Number of bins in the Y axis of one CCD for the _mean <a href="#id11"><span class="problematic" id="id12">shapes_</span></a> plot grid</p>
 </dd>
-<dt>MAX_E: float</dt><dd><p>Max value for ellipticity in the _mean <a href="#id15"><span class="problematic" id="id16">shapes_</span></a> plot</p>
+<dt>MAX_E: float</dt><dd><p>Max value for ellipticity in the _mean <a href="#id13"><span class="problematic" id="id14">shapes_</span></a> plot</p>
 </dd>
-<dt>MAX_DE: float</dt><dd><p>Max value for the residual ellipticity in the _mean <a href="#id17"><span class="problematic" id="id18">shapes_</span></a> plot</p>
+<dt>MAX_DE: float</dt><dd><p>Max value for the residual ellipticity in the _mean <a href="#id15"><span class="problematic" id="id16">shapes_</span></a> plot</p>
 </dd>
 <dt>PLOT_HISTOGRAMS: bool</dt><dd><p>Option to produce histogram plots for shape errors</p>
 </dd>
@@ -907,7 +904,7 @@ before drawing the plots</p>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mccd-plots-runner">MCCD_PLOTS_RUNNER</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Module-specific config file entries</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Module-specific config file entries</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
