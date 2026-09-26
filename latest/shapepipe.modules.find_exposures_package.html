@@ -621,7 +621,10 @@ identification (<code class="docutils literal notranslate"><span class="pre">HIS
 <dt>COLNUM<span class="classifier">int</span></dt><dd><p>Column number to find exposure in fits header of tile image for the HISTORY
 string</p>
 </dd>
-<dt>EXP_PREFIX: str</dt><dd><p>Prefix of exposures</p>
+<dt>EXP_PREFIX: str</dt><dd><p>Prefix to strip from the exposure filename, e.g. <code class="docutils literal notranslate"><span class="pre">simu_image-</span></code> for
+simulated exposures. Leave empty for CFIS exposures, which carry no
+prefix – the trailing epoch letter (<code class="docutils literal notranslate"><span class="pre">p</span></code>) is a suffix, kept as part
+of the exposure name and unaffected by this key.</p>
 </dd>
 </dl>
 </section>

@@ -587,7 +587,10 @@
 <span class="sd">    colnum: int</span>
 <span class="sd">        column number for exposure name in fits header</span>
 <span class="sd">    prefix: str</span>
-<span class="sd">        prefix for exposures</span>
+<span class="sd">        prefix to strip from the exposure filename, e.g. ``simu_image-``</span>
+<span class="sd">        for simulated exposures; empty for CFIS exposures, which carry no</span>
+<span class="sd">        prefix (the trailing epoch letter, e.g. ``p``, is kept as part of</span>
+<span class="sd">        the exposure name and is not affected by this parameter)</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img_tile_path</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">w_log</span><span class="p">,</span> <span class="n">colnum</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
@@ -630,18 +633,25 @@
 <span class="sd">        list</span>
 <span class="sd">            List of exposure basenames</span>
 
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        IOError</span>
+<span class="sd">            If the tile image FITS header has no ``HISTORY`` records to</span>
+<span class="sd">            read exposure names from; a tile whose header cannot be read</span>
+<span class="sd">            cannot have epochs, so this is a hard failure, not a partial</span>
+<span class="sd">            or empty exposure list.</span>
+
 <span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Get history from tiles FITS header</span>
             <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_img_tile_path</span><span class="p">)</span>
             <span class="n">hist</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">"HISTORY"</span><span class="p">]</span>
 
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="c1"># Key word not found -&gt; raise error</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="s2">"Error while reading tile image FITS file "</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_img_tile_path</span><span class="si">}</span><span class="s2">, continuing..."</span>
-            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span>
+                <span class="s2">"Could not read exposure HISTORY from tile image FITS "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"header '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_img_tile_path</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
 
         <span class="n">exp_list</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -651,7 +661,9 @@
         <span class="k">for</span> <span class="n">_hist</span> <span class="ow">in</span> <span class="n">hist</span><span class="p">:</span>
             <span class="n">temp</span> <span class="o">=</span> <span class="n">_hist</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
 
-            <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"(.*)\.</span><span class="si">{1}</span><span class="s2">.*"</span>
+            <span class="c1"># Non-greedy: stop at the first extension so a multi-extension</span>
+            <span class="c1"># name (e.g. "2243881p.fits.fz") is not left with ".fits" on it.</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"(.*?)\..*"</span>
             <span class="n">pattern_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">temp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_colnum</span><span class="p">])</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">pattern_match</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>

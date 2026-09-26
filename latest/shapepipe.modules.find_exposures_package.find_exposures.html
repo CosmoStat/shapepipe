@@ -613,7 +613,10 @@ to create tiles.</p>
 <li><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Output file path</p></li>
 <li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a>) – Log file</p></li>
 <li><p><strong>colnum</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – column number for exposure name in fits header</p></li>
-<li><p><strong>prefix</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – prefix for exposures</p></li>
+<li><p><strong>prefix</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – prefix to strip from the exposure filename, e.g. <code class="docutils literal notranslate"><span class="pre">simu_image-</span></code>
+for simulated exposures; empty for CFIS exposures, which carry no
+prefix (the trailing epoch letter, e.g. <code class="docutils literal notranslate"><span class="pre">p</span></code>, is kept as part of
+the exposure name and is not affected by this parameter)</p></li>
 </ul>
 </dd>
 </dl>
@@ -636,6 +639,12 @@ FITS header.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#IOError" title="(in Python v3.14)"><strong>IOError</strong></a> – If the tile image FITS header has no <code class="docutils literal notranslate"><span class="pre">HISTORY</span></code> records to
+read exposure names from; a tile whose header cannot be read
+cannot have epochs, so this is a hard failure, not a partial
+or empty exposure list.</p>
 </dd>
 </dl>
 </dd></dl>
