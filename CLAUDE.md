@@ -62,6 +62,8 @@ they reference (e.g. `pytest-cov`) isn't in the image. Use this for a quick
 verify; land the real fix as the `pyproject.toml` / `uv.lock` dep change so CI
 and the next image agree.
 
+**The test suite runs inside the `deploy-image.yml` build — there is no separate test workflow.**
+
 **Testing container changes: build remotely, pull locally.** Don't
 `apptainer build` images on a cluster — quotas are tight and the build is slow.
 The loop for any change to `Dockerfile` / `pyproject.toml` / `uv.lock` is: edit
@@ -122,38 +124,27 @@ where the change lives — and *scientific* decisions in `astra.yaml`, below.
 
 `astra.yaml` at the repo root is the pipeline's decision record: every
 consequential scientific choice embedded in the code and the committed configs,
-each with its rationale, the alternatives that were considered and why they were
-rejected, and an anchor back to the code or config that implements it.
-`universes/committed.yaml` pins the option this branch's configuration
-selects for every decision. The format
-is ASTRA; `uvx astra-tools@0.2.17 guide` is the briefing and
-`uvx astra-tools@0.2.17 spec` the field reference.
+with its rationale, its alternatives, and an anchor to the code or config that
+implements it. `universes/committed.yaml` pins the option the committed
+configuration selects for every decision. The format is ASTRA;
+`uvx astra-tools@0.2.17 guide` is the briefing and `uvx astra-tools@0.2.17 spec`
+the field reference. The file's header states its conventions (anchor grammar,
+`[HARDCODED]`, `[LINT]`).
+
+Membership test: a different defensible choice would change which objects enter
+the shear catalogue, or the numbers attached to them. Detection thresholds,
+masking, star-selection cuts, PSF model degree, ngmix priors and seeding, flag
+semantics, completeness gates: in. Workflow policy (manifests, chunking,
+allocation, failure reporting, provenance) is out; it lives in the PR and in the
+PRD, CosmoStat/shapepipe#848.
 
 **A scientific change is not finished until the record is.** When a change moves
-what the pipeline measures, amend `astra.yaml` in the same PR — add the decision
-if it is new, or edit its rationale, options and anchors if it moved — pin the
-selected option in `universes/committed.yaml`, and say so in the PR description.
-Purely technical changes (refactors, performance, packaging, I/O) leave it alone,
-except where they move a value the record carries: the completeness floors in
-`workflow/scripts/completeness.py` are orchestration code holding a scientific
-decision.
-
-The membership test is whether *a different defensible choice would change which
-objects enter the shear catalogue, or the numbers attached to them.* Detection
-threshold and deblending contrast, masking geometry, star-selection cuts, PSF
-model degree, ngmix priors and seeding, flag semantics, completeness floors — in.
-Manifest sentinels, chunk sizes, allocation strategy, directory layout — out;
-those live in the PR and the PRD.
-
-The file's own header states the conventions it follows. In short: every
-rationale ends with a greppable `Anchor: path::symbol; path#SECTION.KEY`
-sentence whose refs never cite line numbers; `[HARDCODED]` marks a scientific value
-with no config exposure; `[LINT]` marks a place where the record and the code, or
-the code and itself, disagree. Validate before committing:
+what the pipeline measures, amend `astra.yaml` in the same PR (add the decision,
+or edit its rationale, options and anchors), pin the selected option in
+`universes/committed.yaml`, and say so in the PR description. The anchor test
+`tests/unit/test_astra_anchors.py` runs in CI; a scientific change that breaks it
+or leaves the record stale is unfinished. Before committing:
 
 ```bash
 uvx astra-tools@0.2.17 validate
 ```
-
-The record was authored against this branch's workflow configs; entries marked
-`[PENDING #NNN]` describe state that has not yet reached `develop`.
