@@ -287,9 +287,12 @@ class Postage_stamp():
         # stamp so the overlay stays registered.
         self.segs = []
         self.jacobs = []
-        # Per-epoch full WCS and the object's sky position, used by the
-        # "wcs" centroid source (unused by "hsm").
-        self.wcs = []
+        # Per-epoch sub-pixel [row, col] coadd-centroid offset propagated from
+        # the stamp extractor; the "wcs" centroid source places the Jacobian
+        # origin there (unused by "hsm").
+        self.offsets = []
+        # The object's sky position, per epoch; seeds the per-object RNG (see
+        # :func:`position_seed`).
         self.ra = []
         self.dec = []
         # CCD number of the first epoch, used only to build the per-object
@@ -418,11 +421,10 @@ class Ngmix(object):
         the default is ``-1``
     centroid_source : {"wcs", "hsm"}, optional
         How to place the galaxy Jacobian origin for the centroid prior. The
-        default ``"wcs"`` places it at the catalogue sky position projected
-        through the exposure WCS (the same pixel/offset used to cut the
-        stamp). ``"hsm"`` re-centers on the adaptive-moment centroid
-        measured from the stamp pixels; noisier, for stamps without
-        astrometry. See
+        default ``"wcs"`` places it at the coadd centroid: the sub-pixel
+        offset the stamp extractor computed when it cut the stamp,
+        propagated on the vignette. ``"hsm"`` re-centers on the
+        adaptive-moment centroid measured from the stamp pixels. See
         :func:`make_ngmix_observation`.
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment; ``"noisefill"`` (default) is the historical
@@ -1266,8 +1268,14 @@ def prepare_postage_stamps(
         if tile_seg is not None:
             stamp.segs.append(tile_seg)
         stamp.jacobs.append(jacob)
-        # For the "wcs" centroid source (see make_ngmix_observation).
-        stamp.wcs.append(epoch_wcs)
+        # Coadd-centroid offset the stamp extractor used, propagated on the
+        # galaxy vignette. Consumed only by the "wcs" centroid source (see
+        # make_ngmix_observation), which raises if it is missing; the "hsm"
+        # path ignores it, so read it leniently rather than coupling hsm to a
+        # field it never uses.
+        stamp.offsets.append(
+            vignet.gal_vign_cat[str(obj_id)][expccd_name].get('OFFSET')
+        )
         stamp.ra.append(tile_cat.ra[i_tile])
         stamp.dec.append(tile_cat.dec[i_tile])
         # CCD of the first surviving epoch — Fabian's coord_list[0] convention
@@ -1673,7 +1681,7 @@ def prepare_ngmix_weights(
 
 def make_ngmix_observation(
     gal, weight, flag, psf, wcs, rng,
-    bkg_rms=None, centroid_source="wcs", wcs_full=None, ra=None, dec=None,
+    bkg_rms=None, centroid_source="wcs", offset=None,
     blend_handling="noisefill", seg=None, object_number=None,
     dilate_neighbour=0,
 ):
@@ -1683,14 +1691,20 @@ def make_ngmix_observation(
     it must sit on the object. Two ways to place it, selected by
     ``centroid_source``:
 
-    * ``"wcs"`` (default) — place the origin at the object's catalogue sky
-      position, projected through the exposure WCS to a sub-pixel offset
-      from the stamp center — the same pixel/offset used to cut the stamp,
-      with no shape measurement. Stable for both galaxies and stars, and
-      the only option that stays correct when the object is off-center in
-      the stamp.
-    * ``"hsm"`` — re-center on the adaptive-moment centroid measured from
-      the stamp pixels. Noisier; for stamps without astrometry.
+    * ``"wcs"`` (default) — the **coadd centroid**: place the origin at the
+      object's catalogue sky position as a sub-pixel ``offset`` from the
+      stamp center, with no shape measurement. The offset is not recomputed
+      here — it is the value the stamp extractor already used to round the
+      extraction pixel
+      (:func:`shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps`),
+      propagated on the vignette. One projection, one rounding: the
+      extraction and the centroid prior cannot disagree near a rounding tie.
+      Stable for both galaxies and stars, and correct when the object sits
+      off the stamp center.
+    * ``"hsm"`` — re-center on the HSM adaptive-moment centroid measured from
+      the stamp pixels, following the light rather than the astrometry.
+      Noisier, notably for stars; the option for stamps that carry no
+      propagated offset.
 
     Parameters
     ----------
@@ -1707,12 +1721,10 @@ def make_ngmix_observation(
         Per-pixel background RMS map.
     centroid_source : {"wcs", "hsm"}, optional
         How to place the galaxy Jacobian origin; the default is ``"wcs"``.
-    wcs_full : astropy.wcs.WCS, optional
-        Full exposure WCS for the object's CCD. Required for
-        ``centroid_source="wcs"`` (ignored for ``"hsm"``).
-    ra, dec : float, optional
-        Object sky position in degrees. Required for
-        ``centroid_source="wcs"`` (ignored for ``"hsm"``).
+    offset : array_like, optional
+        Sub-pixel ``[row, col]`` coadd-centroid offset propagated from the
+        stamp extractor. Required for ``centroid_source="wcs"`` (ignored for
+        ``"hsm"``).
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment passed through to :func:`prepare_ngmix_weights`;
         the default ``"noisefill"`` is the historical behaviour.
@@ -1756,9 +1768,9 @@ def make_ngmix_observation(
     )
 
     if centroid_source == "hsm":
-        # Re-center Jacobian on HSM centroid (pixel offset from stamp center).
-        # Fixes: centroid prior biases fit when galaxy is offset from stamp
-        # center. Robust for galaxies; noisy for stars (use "wcs" there).
+        # Re-center the Jacobian on the HSM adaptive-moment centroid (pixel
+        # offset from the stamp center); fall back to the stamp center if
+        # HSM fails.
         try:
             _hsm = galsim.hsm.FindAdaptiveMom(
                 galsim.Image(gal, scale=1.0), strict=False
@@ -1770,16 +1782,20 @@ def make_ngmix_observation(
         except Exception:
             cen_row, cen_col = 0.0, 0.0
     elif centroid_source == "wcs":
-        # Place the origin at the catalog sky position projected through the
-        # WCS — no shape measurement. Stars have noisy HSM moments, so trust
-        # the astrometry instead of re-measuring the centroid.
-        g_wcs = galsim.fitswcs.AstropyWCS(wcs=wcs_full)
-        world_pos = galsim.CelestialCoord(
-            ra * galsim.degrees, dec * galsim.degrees
-        )
-        pos = g_wcs.toImage(world_pos)
-        cen_col = pos.x - np.round(pos.x).astype(int)
-        cen_row = pos.y - np.round(pos.y).astype(int)
+        # Coadd centroid: use the sub-pixel offset the stamp extractor already
+        # computed and rounded against (propagated on the vignette), rather
+        # than re-projecting the sky position through the WCS and re-rounding:
+        # one projection, one rounding, so a milli-pixel WCS disagreement
+        # cannot flip a rounding tie and put the prior a whole pixel off.
+        if offset is None:
+            raise ValueError(
+                "centroid_source='wcs' requires the coadd-centroid offset "
+                + "propagated from the stamp extractor (the vignette's "
+                + "OFFSET), but none was given: re-extract the stamps with "
+                + "the current vignetmaker, or opt in to "
+                + "centroid_source='hsm'"
+            )
+        cen_row, cen_col = float(offset[0]), float(offset[1])
     else:
         raise ValueError(
             f"Unknown centroid_source '{centroid_source}'; expected"
@@ -1992,10 +2008,10 @@ def do_ngmix_metacal(
         Random state for guesses and priors.
     centroid_source : {"wcs", "hsm"}, optional
         How to place the galaxy Jacobian origin; passed through to
-        :func:`make_ngmix_observation`. The default is ``"wcs"`` (catalogue
-        sky position projected through the exposure WCS — the same
-        pixel/offset used to cut the stamp); ``"hsm"`` uses the
-        adaptive-moment centroid from the stamp pixels — see that function.
+        :func:`make_ngmix_observation`. The default is ``"wcs"`` (the
+        coadd-centroid offset in ``stamp.offsets``, propagated from the stamp
+        extractor); ``"hsm"`` uses the adaptive-moment centroid from the
+        stamp pixels — see that function.
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment passed through to
         :func:`make_ngmix_observation`; the default ``"noisefill"`` is the
@@ -2047,9 +2063,7 @@ def do_ngmix_metacal(
             rng,
             bkg_rms=bkg_rms,
             centroid_source=centroid_source,
-            wcs_full=stamp.wcs[n_e] if n_e < len(stamp.wcs) else None,
-            ra=stamp.ra[n_e] if n_e < len(stamp.ra) else None,
-            dec=stamp.dec[n_e] if n_e < len(stamp.dec) else None,
+            offset=stamp.offsets[n_e] if n_e < len(stamp.offsets) else None,
             blend_handling=blend_handling,
             seg=stamp.segs[n_e] if n_e < len(stamp.segs) else None,
             object_number=object_number,
