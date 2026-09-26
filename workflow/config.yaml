@@ -38,7 +38,8 @@ input_type: data
 #   Consumed by MASK_EXT_PATHS in config/cfis/config_tile_Mc.ini, which
 #   carries the bit table. Required for input_type: data.
 # - outputs.run_dir: (scratch) run directory, where tmp files will be stored
-# - outputs.products_dir: path to final products
+# - outputs.products_dir: path to final products (default run_dir; one root
+#   needs clean: false and clean_tiles: false)
 # - outputs.index_db: path to bookkeeping index sqlite file
 # - container: TBD
 
@@ -168,10 +169,11 @@ machines:
 # straight to products_dir. A tile keep list is #844 follow-up.
 #
 # NOTE ON products_dir DEFAULTING TO run_dir (a fixture or smoke test): the tar
-# then lands beside the store on the same filesystem and buys nothing, and the
-# manifest sits in the exposure's own manifests/ dir, which clean_exposure
-# deletes wholesale — so a one-root run re-persists after every reclamation.
-# Harmless, and exactly the pre-D5 behaviour a one-root run asks for.
+# then lands beside the store on the same filesystem and buys nothing, and
+# final_cat and the persist manifests sit inside the trees clean_tile and
+# clean_exposure delete. A one-root run is for fixtures and smoke tests only and
+# must set clean: false and clean_tiles: false; the Snakefile refuses it
+# otherwise.
 persist_exp:
   - psf_model
 

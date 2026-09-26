@@ -6,6 +6,10 @@ YWIN_WORLD
 # Can maybe be removed.
 TILE_ID
 
+# SExtractor object number within the tile: sp_validation's extraction joins
+# on it, and the per-tile catalogue always carries it.
+NUMBER
+
 # flags
 FLAGS
 # NO IMAFLAGS_ISO — the MASK_n* columns below replace it.
