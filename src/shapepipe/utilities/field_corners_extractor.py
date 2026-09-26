@@ -192,8 +192,9 @@ class FieldCornersExtractor(object):
         )
         self._params = options
 
-        # Save calling command
-        logging.log_command(args)
+        # Save calling command to log_extract_field_corners; args excludes the program
+        # name, which log_command takes from argv[0]
+        logging.log_command(["extract_field_corners", *args])
 
     def update_params(self):
         """Update parameters.
