@@ -11,7 +11,11 @@ import os
 from sqlitedict import SqliteDict
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.ngmix_package.ngmix import Ngmix
+from shapepipe.modules.ngmix_package.ngmix import (
+    EPOCH_CENTRAL_DEFECT_RADIUS,
+    EPOCH_MASKED_FRACTION_CUT,
+    Ngmix,
+)
 
 
 @module_runner(
@@ -50,7 +54,7 @@ def ngmix_runner(
 
     # Pixel scale -- optional override. When absent (or non-positive) it is
     # derived from the image WCS inside Ngmix, so it cannot drift from the
-    # pixels. Only the centroid-prior width and noise window use it.
+    # pixels. Only the centroid-prior width uses it.
     if config.has_option(module_config_sec, "PIXEL_SCALE"):
         pixel_scale = config.getfloat(module_config_sec, "PIXEL_SCALE")
     else:
@@ -125,14 +129,16 @@ def ngmix_runner(
     else:
         centroid_source = "wcs"
 
-    # Neighbour treatment: "noisefill" (default, historical) replaces a
-    # neighbour's pixels with a noise realisation; "uberseg" hard-masks
-    # (weight -> 0) every pixel closer to a neighbour than to the central
-    # object, from the segmentation map. See the ngmix module docstrings.
+    # Neighbour treatment: "none" (default) leaves neighbour pixels
+    # weighted and untouched; "uberseg" zeroes the weight of every pixel
+    # closer to a neighbour than to the central object, from the segmentation
+    # map, and leaves its image raw. Defect pixels (flagged, zero-weight or
+    # invalid-RMS) are zero-weighted and noise-filled under both; see
+    # prepare_ngmix_weights.
     if config.has_option(module_config_sec, "BLEND_HANDLING"):
         blend_handling = config.get(module_config_sec, "BLEND_HANDLING")
     else:
-        blend_handling = "noisefill"
+        blend_handling = "none"
 
     # DILATE_NEIGHBOUR (optional): binary-dilation iterations enlarging the
     # uberseg neighbour mask, to absorb the few-pixel coadd-vs-epoch seg-overlay
@@ -141,6 +147,24 @@ def ngmix_runner(
         dilate_neighbour = config.getint(module_config_sec, "DILATE_NEIGHBOUR")
     else:
         dilate_neighbour = 1
+
+    # EPOCH_CENTRAL_DEFECT_RADIUS (optional, pixels): drop an epoch when a
+    # masked pixel lies closer than this to the stamp centre; 0 disables.
+    if config.has_option(module_config_sec, "EPOCH_CENTRAL_DEFECT_RADIUS"):
+        epoch_central_defect_radius = config.getfloat(
+            module_config_sec, "EPOCH_CENTRAL_DEFECT_RADIUS"
+        )
+    else:
+        epoch_central_defect_radius = EPOCH_CENTRAL_DEFECT_RADIUS
+
+    # EPOCH_MASKED_FRACTION_CUT (optional): drop an epoch when more than this
+    # fraction of its stamp is masked (flagged, zero-weight or invalid-RMS).
+    if config.has_option(module_config_sec, "EPOCH_MASKED_FRACTION_CUT"):
+        epoch_masked_fraction_cut = config.getfloat(
+            module_config_sec, "EPOCH_MASKED_FRACTION_CUT"
+        )
+    else:
+        epoch_masked_fraction_cut = EPOCH_MASKED_FRACTION_CUT
 
     # Check PSF vignets first: if all are empty dicts {}, the exposures for this
     # tile are absent from the PSF dictionary and no shape measurement is possible.
@@ -197,6 +221,8 @@ def ngmix_runner(
         seg_cat_path=seg_vignet_path,
         dilate_neighbour=dilate_neighbour,
         metacal_psf=metacal_psf,
+        epoch_central_defect_radius=epoch_central_defect_radius,
+        epoch_masked_fraction_cut=epoch_masked_fraction_cut,
     )
 
     # Process ngmix shape measurement and metacalibration

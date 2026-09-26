@@ -36,8 +36,8 @@ MAG_ZP : float
 PIXEL_SCALE : float, optional
     Pixel scale in arcsec. Optional override; when omitted (or non-positive)
     it is read from the image WCS so it cannot drift from the pixels. Only
-    sets the centroid-prior width and noise window -- the fit Jacobian is
-    built per object from the full WCS.
+    sets the centroid-prior width -- the fit Jacobian is built per object
+    from the full WCS.
 SAVE_BATCH : int, optional
     Save the output catalogue in batches of this size; default is ``-1``
     (no batch saving)
