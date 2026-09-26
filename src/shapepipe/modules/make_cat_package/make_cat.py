@@ -656,6 +656,22 @@ class SaveCatalogue:
                 for idx in range(max_epoch)
             },
         }
+        # Per-epoch exposure ID and CCD number, slot-aligned with HSM_*_PSF_n;
+        # -1 marks an empty slot (the CCD_N sentinel convention).
+        self._output_dict = {
+            **self._output_dict,
+            **{
+                f"EXP_ID_{idx + 1}": np.ones(len(self._obj_id), dtype="int32") * -1
+                for idx in range(max_epoch)
+            },
+        }
+        self._output_dict = {
+            **self._output_dict,
+            **{
+                f"CCD_{idx + 1}": np.ones(len(self._obj_id), dtype="int32") * -1
+                for idx in range(max_epoch)
+            },
+        }
 
         for idx, id_tmp in enumerate(self._obj_id):
 
@@ -665,6 +681,14 @@ class SaveCatalogue:
             for epoch, key in enumerate(galaxy_psf_cat[str(id_tmp)].keys()):
 
                 gpc_data = galaxy_psf_cat[str(id_tmp)][key]
+
+                # `key` is "<exp>-<ccd>"; reading it in the enumeration that
+                # assigns `epoch` aligns EXP_ID_n/CCD_n with HSM_*_PSF_n by
+                # construction. Recorded before the HSM_FLAG_PSF check so a
+                # failed PSF-shape fit still keeps its epoch identity.
+                exp_name, ccd_n = re.split('-', key)
+                self._add2dict(f"EXP_ID_{epoch + 1}", int(exp_name), idx)
+                self._add2dict(f"CCD_{epoch + 1}", int(ccd_n), idx)
 
                 if gpc_data["SHAPES"]["HSM_FLAG_PSF"] != 0:
                     continue

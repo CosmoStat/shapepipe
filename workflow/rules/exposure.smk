@@ -95,6 +95,13 @@ rule exp_split:
 # -> psfex_interp, per CCD.
 # setools may reject a sparse CCD (~0.2% attrition) — tolerated by the floor's
 # :warn on psfex_interp_runner.
+#
+# MCCD instead fits ONE focal-plane model per exposure after the per-CCD
+# stages: ~85 min single-threaded for ~2500 stars (SKiLLS star sim, 8.3 GB),
+# and only 1.75x faster on 8 BLAS threads (which the thread caps forbid anyway).
+# With 8 cores reserved the fit would idle 7 of them for its whole length, so
+# the mccd chain takes 2: the per-CCD stages run 2 wide (minutes), the fit is
+# unchanged, and the exposure reserves a quarter of the core-hours.
 rule exp_psf:
     input:
         rules.exp_split.output.manifest
@@ -105,7 +112,7 @@ rule exp_psf:
     params:
         pre = lambda wc: unit_pre("exp_psf", wc.exp),
         script_hash = SCRIPT_HASH
-    threads: 8
+    threads: 2 if PSF_MODEL == "mccd" else 8
     retries: 2
     benchmark:
         # BESIDE manifests/, not inside it: clean_exposure deletes manifests/
@@ -296,10 +303,12 @@ rule clean_exposure:
         # The keepers must be off /scratch before the store goes. Unlike the
         # consumer edges above, this edge does not depend on scope: it is the
         # same exposure's own rule, so it drags nothing into the DAG that this
-        # exposure's chain did not already put there. It is UNCONDITIONAL now:
-        # exp_persist always packs the star catalogue's inputs, so there is no
-        # keep list under which this rule has nothing to wait for.
-        lambda wc: [prod_exp_manifest(wc.exp, "exp_persist")],
+        # exposure's chain did not already put there. No keep list removes it:
+        # exp_persist always packs the star catalogue's inputs. Only
+        # psf_model=fake does, which has no PSF products to keep
+        # (PERSISTS_PSF, Snakefile).
+        lambda wc: ([prod_exp_manifest(wc.exp, "exp_persist")]
+                    if PERSISTS_PSF else []),
         # The fragment must be off /scratch before the store goes too — the flag
         # splits go with it — but this edge is CONDITIONAL, and it is exactly
         # defect_map_inputs()' split (Snakefile), for exactly its reason.
@@ -342,7 +351,7 @@ rule clean_exposure:
 
 # --- the campaign's star catalogue ------------------------------------------
 # ONE job per campaign: every exposure's every CCD's `validation_psf-<exp>-<ccd>.fits`,
-# collected into `<products_dir>/full_starcat_<campaign>.hdf5`, one dataset per
+# collected into `<products_dir>/full_starcat_<run>.hdf5`, one dataset per
 # exposure. That file is the rho/tau statistics input; the old bash chain built
 # a flat FITS table with `combine_runs.bash psf` + a `merge_starcat_runner`
 # pass, and the workflow emitted neither. sp_validation still opens the FITS
@@ -394,6 +403,7 @@ rule star_cat_merge:
         tile_list    = str(config["tile_list"]),
         index_db     = str(INDEX_DB),
         campaign     = CAMPAIGN,
+        snapshot     = str(SNAPSHOT_JSON),
         inputs       = unit_fingerprint(star_cat_exposures()),
         script_hash  = MERGE_STAR_HASH
     threads: 1
@@ -419,6 +429,7 @@ rule star_cat_merge:
         " --tile-list '{params.tile_list}' --index-db '{params.index_db}'"
         " --output {output.star_cat}"
         " --campaign '{params.campaign}'"
+        " --snapshot-json '{params.snapshot}'"
 
 
 # --- the campaign's defect map (#878) ---------------------------------------

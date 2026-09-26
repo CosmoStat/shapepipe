@@ -22,15 +22,16 @@ uv venv /project/def-mjhudson/cdaley/snakemake-env --python 3.12
 source /project/def-mjhudson/cdaley/snakemake-env/bin/activate
 uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 
-# Edit workflow/config.yaml: tile_list, inputs.tiles/exposures, outputs.run_dir,
-# outputs.products_dir/index_db, and container.
+# Write a run config (see Run configuration below) that sets at least `run:`,
+# the campaign's name; workflow/config.yaml's machines: table supplies the rest.
 
-# `psf_model` is `psfex` or `mccd`; mccd is wired but unvalidated here, while psfex is exercised by smk-g4 through smk-g6.
+# `psf_model` is `psfex` or `mccd`. psfex is exercised by smk-g4 through smk-g6; mccd has run the full chain on
+# an image-sim star tile (one focal-plane model per exposure, ~1.5 CPU-hours each).
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
-workflow/bin/sp run       # bring products on disk up to date with the tile list
-workflow/bin/sp report    # emit run_report.json now (mid-run is fine)
+workflow/bin/sp run -c my_run.yaml      # bring products on disk up to date with the tile list
+workflow/bin/sp report -c my_run.yaml   # emit run_report.json now (mid-run is fine)
 workflow/bin/sp cancel <run-name-substring>   # scancel this workflow's jobs
 workflow/bin/sp container status              # which image the jobs will run
 ```
@@ -44,6 +45,75 @@ plugins, and full `rerun-triggers` became the default.
 Anything other than `run`, `report`, `container`, `cancel` passes straight through to
 snakemake with the workflow's profile and state dir — the direct command path for
 `sp --unlock`, `sp --dag`, `sp exp_psf ...`.
+
+## Image simulations
+
+The same workflow runs the SKiLLS image simulations used to measure the shear
+multiplicative bias, so that m calibrates the pipeline that makes the real
+catalogue rather than a frozen copy of it. A simulation run sets
+`input_type: image_sims`, which points `$SP_CONFIG` at
+`config/cfis_image_sims/`. That directory holds real files only for the stages
+whose input naming differs (tile Git/Uz/Fe, exposure Gie/Sp) and for the true-PSF
+model; everything else is a symlink into `config/cfis/`, so a change to the
+real-data chain reaches the simulations with no second edit. Keep the diff of
+each overlay file to its `cfis/` original confined to input naming.
+
+`psf_model: fake` is the simulations' true PSF: the exposure stage runs only
+SExtractor (for the background maps the vignets read), and `tile_vignets` runs
+`fake_interp_runner`, which writes the `galaxy_psf` product from `psf_dict`.
+With no PSF model there is nothing to persist per exposure, so `exp_persist` and
+`star_cat_merge` do not run and `clean_exposure` does not wait on them.
+Simulations that contain stars can run `psfex` or `mccd` exactly as the data do.
+
+One campaign per shear branch, each with its own run config:
+
+```bash
+SP_PROFILE=candide workflow/bin/sp run -c /path/run_1p2z_grid_1.yaml
+```
+
+## Run configuration
+
+A run config passed with `-c/--config-file` is merged on top of
+`workflow/config.yaml` and snapshotted with the code. (`-c` is `sp`'s own flag;
+pass snakemake's cores as `--cores`/`-j`. `SP_RUN_CONFIG` still works and is what
+the jobs read.) `SP_PROFILE` (default `nibi`, or `machine:` in the run config, which must
+agree with it) and `input_type:` then select an entry of the `machines:` table, which supplies
+`tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
+`container` for any of these the run config leaves unset (`$base_dir` expands
+to that machine's `base_dir`, `$run` to the run config's `run:`). `run:` is
+required: it also names the campaign's merged catalogues, and config.yaml leaves
+it unset. An unset required key, or a value of `TBD`, stops the run at parse time
+until it is set. A run config therefore only needs what differs, e.g. for one
+SKiLLS shear branch on candide:
+
+```yaml
+machine: candide
+input_type: image_sims
+run: 1z2z_grid_3
+psf_model: fake
+psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle
+tile_list: /path/to/tiles.txt
+inputs:
+  tiles: /n09data/hervas/skills_out/1z2z_grid_3/images/SP_tiles
+  exposures: /n09data/hervas/skills_out/1z2z_grid_3/images/SP_exp
+outputs:
+  run_dir: /path/to/run
+  products_dir: /path/to/product
+  index_db: /path/to/run/index.sqlite
+```
+
+sp_validation's image-simulation workflow drives these campaigns and measures m
+from their final catalogues. A simulation campaign ends in the same merged
+catalogue as a data campaign, written by the same `final_cat_merge` rule:
+`<products_dir>/final_cat_<run>.hdf5`, with the columns of
+`config/cfis_image_sims/final_cat.param` and the tile count as the file's
+`n_tiles` attribute (there is no `n_tiles_final.txt`).
+
+On candide, the node-local tile store (bound from the node's 31 GB `/tmp`) does not
+hold several dense image-sim tiles at once. Set `tile_store_root:` in the run
+config to a shared directory; `sp run` binds it to `/local/scratch` for that
+campaign. The store names carry a per-campaign hash, so all branches can share one
+root.
 
 ## The container image
 
@@ -65,7 +135,7 @@ until you opt in.
 
 ```bash
 sp container status                      # layers present, active one, revision vs HEAD
-sp container pull                        # ghcr.io/cosmostat/shapepipe:develop-runtime
+sp container pull                        # ghcr.io/cosmostat/shapepipe:develop
 sp container pull --tag docker://...     # some other image
 sp container sandbox                     # unpack the SIF writable (opt-in)
 sp container exec --writable pip install <pkg>
@@ -168,8 +238,8 @@ workflow/
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
     persist_exp.py       ONE exposure's keepable PSF products -> one tar on products_dir (the exp_persist rule)
     hdf5_reconcile.py    bring an hdf5 catalogue into agreement with a campaign (shared by both merges)
-    merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<campaign>.hdf5
-    merge_final_cat.py   ALL tiles' final_cat -> final_cat_<campaign>.hdf5 (the final_cat_merge rule)
+    merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<run>.hdf5
+    merge_final_cat.py   ALL tiles' final_cat -> final_cat_<run>.hdf5 (the final_cat_merge rule)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
     defect_map_exp.py    ONE exposure's per-CCD instrument flags -> a boolean healsparse fragment (the exp_defect_map rule)
     merge_defect_map.py  ALL exposures' fragments -> defect_map_<campaign>.hsp (the defect_map_merge rule)
@@ -223,7 +293,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   catalogue server, staged, or rasterized, which is why the old
   `star_catalogue` / `exp_star_cat` / `exp_mask` rules and their cache root are
   gone.
-- **The one pixel-domain mask now leaves the pixel domain.** The instrument
+- **The one pixel-domain mask leaves the pixel domain.** The instrument
   flag image is the exception to everything above: bad columns, saturated
   pixels and bleed trails, split per CCD by `exp_split` and read by SExtractor
   as `IMAFLAGS_ISO`, and never sky-fixed. The survey footprint is built from the
@@ -266,8 +336,9 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   says what would have to change if anything ever consumed the map).
   `tests/unit/test_defect_map_reconcile.py` pins the four reconcile branches and
   the sidecar refresh.
-- **External masks are wired, on the tile side only.** `inputs.masks` is a third
-  input root beside tiles and exposures, exported as `$SP_INPUT_MASKS` and
+- **External masks are wired, on the tile side only (data runs).** `inputs.masks`
+  is a third input root beside tiles and exposures, set per machine in the
+  `machines:` table, exported as `$SP_INPUT_MASKS` and
   pointing at the UNIONS DR6 ugriz bit ladder: one boolean healsparse map per
   bit, nside 131072, `True` = masked. `config_tile_Mc.ini` names all 11 of them
   in `MASK_EXT_PATHS`, so `make_cat` writes `MASK_n1` … `MASK_n2048` and
@@ -357,7 +428,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   opens are per *campaign*, and until these rules existed each was a manual pass
   after the run.
   `star_cat_merge` collects every exposure's every CCD's `psf_validation` into
-  `<products_dir>/full_starcat_<campaign>.hdf5`, one dataset per exposure at
+  `<products_dir>/full_starcat_<run>.hdf5`, one dataset per exposure at
   `exposures/<exp>` — the rho/tau statistics input. It reads the members
   straight out of the per-exposure tars (`tarfile`; unpacking ~800k files to
   merge them would defeat the tar's whole purpose), keeps their native dtypes,
@@ -374,13 +445,13 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   writer would just be missing from the other's product. `tests/unit/`
   `test_star_cat_columns.py` is what holds them together.
   `final_cat_merge` collects every ready tile's `final_cat-<ID>.fits` into
-  `<products_dir>/final_cat_<campaign>.hdf5`: one dataset per tile under a group
+  `<products_dir>/final_cat_<run>.hdf5`: one dataset per tile under a group
   named for the campaign, the `final_cat.param` columns, an `n_tiles` attribute.
   That schema is what sp_validation's reader opens, so it is fixed; the column
   extraction reuses `scripts/python/create_final_cat.py` while the file is
   written here, because that script's own discovery walks a directory layout
-  this workflow does not have. `campaign:` in `config.yaml` names the group and
-  defaults to the persistent root's basename.
+  this workflow does not have. The run config's `run:` names both files and the
+  group.
   BOTH RECONCILE, through one shared module (`hdf5_reconcile.py`) so the
   campaign's two products cannot disagree about what an output owes its inputs.
   Each adds the units that have no dataset, drops datasets whose unit left the

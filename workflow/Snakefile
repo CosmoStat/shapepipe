@@ -48,41 +48,102 @@ from snakemake.exceptions import WorkflowError
 from snakemake.logging import logger
 
 # Resolved relative to THIS file, not the working directory: snakemake runs with
-# --directory on /scratch (bin/sp) so .snakemake/ state never lands on /project
-# (group quota is a hard 27/27 TiB — a metadata write mid-run died on it live).
-configfile: str(Path(workflow.snakefile).parent / "config.yaml")
-
-# Every job's shell runs inside this container (apptainer software-deployment in
-# the profile); the user never types apptainer. WHICH image is the one resolution
-# order `sp container` exposes — this user's writable sandbox if they built one,
-# else their cached SIF if they pulled one, else `container:` above. An empty
-# cache therefore lands on exactly the shared /project image the workflow has
-# always run, and a package installed into a sandbox reaches the jobs too.
+# --directory on /scratch (bin/sp) so .snakemake/ state never lands on /project.
+#
+# config.yaml is always loaded; SP_RUN_CONFIG (bin/sp) is merged on top, then
+# the `machines:` entry for (machine, input_type) fills whatever is still unset
+# (scripts/run_config.py, shared with bin/sp and container.py).
 sys.path.insert(0, str(Path(workflow.snakefile).parent / "scripts"))
+import run_config                                      # noqa: E402
+
+_RUN_CONFIG = os.environ.get("SP_RUN_CONFIG") or str(
+    Path(workflow.snakefile).parent / "config.yaml")
+configfile: str(Path(workflow.snakefile).parent / "config.yaml")
+if os.environ.get("SP_RUN_CONFIG"):
+    workflow.configfile(os.environ["SP_RUN_CONFIG"])
+
+# input_type picks where the pixels come from (and config/cfis vs
+# config/cfis_image_sims); everything after ingestion is the same chain.
+INPUT_TYPES = {"data", "image_sims"}
+INPUT_TYPE = config.get("input_type", "data")
+if INPUT_TYPE not in INPUT_TYPES:
+    raise WorkflowError(
+        f"Invalid input_type={INPUT_TYPE!r}; expected one of "
+        f"{sorted(INPUT_TYPES)}.")
+
+# The machine is SP_PROFILE (bin/sp's profile choice, default nibi). A run
+# config may also state `machine:`, and must then agree with it: otherwise
+# jobs run under one cluster's SLURM profile against another's paths.
+SP_PROFILE = os.environ.get("SP_PROFILE", "nibi")
+MACHINE = config.get("machine") or SP_PROFILE
+if config.get("machine") is not None and config["machine"] != SP_PROFILE:
+    raise WorkflowError(
+        f"machine={MACHINE!r} ({_RUN_CONFIG}) does not match "
+        f"SP_PROFILE={SP_PROFILE!r}. Set SP_PROFILE={MACHINE}, or fix "
+        f"`machine:`.")
+
+run_config.apply_machine_defaults(config)
+_unresolved = run_config.unresolved(config)
+if _unresolved:
+    raise WorkflowError(
+        f"Unset or {run_config.PLACEHOLDER!r} for machine={MACHINE!r}, "
+        f"input_type={INPUT_TYPE!r}: {', '.join(_unresolved)}. Set them in "
+        f"your run config (SP_RUN_CONFIG).")
+# The external masks are a data-only input: config_tile_Mc.ini's
+# MASK_EXT_PATHS reads $SP_INPUT_MASKS, and the sims Mc.ini carries no mask
+# block. Checked here rather than in run_config.REQUIRED because it depends on
+# input_type.
+if INPUT_TYPE == "data" and not config.get("inputs", {}).get("masks"):
+    raise WorkflowError(
+        f"inputs.masks is unset for machine={MACHINE!r}, input_type='data': "
+        "the tile chain queries the UNIONS sky-fixed masks (MASK_EXT_PATHS in "
+        "config/cfis/config_tile_Mc.ini). Set it in the run config.")
+
+# The image every job runs in: this user's sandbox, else their cached SIF,
+# else the run config's `container:`. Checked at parse time, since an empty
+# container directive passes a dry run and only fails on a node.
 import container as _container                          # noqa: E402
 
-# Loud at PARSE time, both ways: a broken SP_CONTAINER override, or nothing to
-# resolve at all (empty cache AND no `container:` key). The empty string the
-# resolver returns for "none" is a valid-looking container directive that passes
-# dry-run and only fails once jobs reach a node.
 try:
-    _image, _kind = _container.resolve_image()
+    _image, _kind = _container.resolve_image(config.get("container"))
 except _container.ContainerError as _exc:
     raise WorkflowError(str(_exc))
 if _kind == "none":
     raise WorkflowError(
-        f"No container image resolved: no sandbox, no cached SIF, and no "
-        f"'{_container.CONFIG_KEY}:' key in {_container.CONFIG_FILE}. "
-        f"Run `sp container pull`, or restore the key.")
+        "No container image resolved: no sandbox, no cached SIF, and no "
+        "`container:` in the run config. Run `sp container pull`, or set it.")
 
 container: _image
 
-PSF_MODELS = {"psfex", "mccd"}
+# `fake` is the image-simulation true PSF: no exposure PSF fit; the tile's
+# galaxy_psf comes from `psf_dict` via fake_interp_runner (read by the
+# configs as ${SP_PSF}_interp_runner). Sims with stars may use psfex/mccd.
+PSF_MODELS = {"psfex", "mccd", "fake"}
 PSF_MODEL = config.get("psf_model", "psfex")
 if PSF_MODEL not in PSF_MODELS:
     raise WorkflowError(
         f"Invalid psf_model={PSF_MODEL!r}; expected one of "
         f"{sorted(PSF_MODELS)}.")
+if PSF_MODEL == "fake" and INPUT_TYPE != "image_sims":
+    raise WorkflowError(
+        "psf_model=fake is the image-simulation true PSF; it needs "
+        "input_type=image_sims.")
+PSF_DICT = config.get("psf_dict") or ""
+if PSF_MODEL == "fake" and not PSF_DICT:
+    raise WorkflowError("psf_model=fake needs `psf_dict:` (the simulation's "
+                        "pickled PSF dictionary) in the run config.")
+
+# How images reach the run (exported as SP_RETRIEVE for the Git/Gie configs):
+# `symlink` to a local mirror, or `vos` download. Sims are always local.
+RETRIEVE_MODES = {"symlink", "vos"}
+RETRIEVE_MODE = config.get("retrieve", "symlink")
+if RETRIEVE_MODE not in RETRIEVE_MODES:
+    raise WorkflowError(
+        f"Invalid retrieve={RETRIEVE_MODE!r}; expected one of "
+        f"{sorted(RETRIEVE_MODES)}.")
+if INPUT_TYPE == "image_sims":
+    RETRIEVE_MODE = "symlink"
+
 
 # --- paths -----------------------------------------------------------------
 # RUN_DIR is the scratch root: bulk intermediates, sized so a batch finishes
@@ -98,19 +159,23 @@ RUN_DIR    = Path(OUTPUTS["run_dir"])
 # second path: one root, exactly the pre-D5 layout.
 PRODUCTS_DIR = Path(OUTPUTS.get("products_dir") or RUN_DIR)
 INDEX_DB   = Path(OUTPUTS["index_db"])
-# The campaign's NAME — what the two campaign-level merges label their output
-# with (`final_cat_<campaign>.hdf5`, and the group inside it that holds the
-# campaign's per-tile datasets). It
-# defaults to the persistent root's basename, which is already how every
-# campaign here is named (smk-g4, smk-g5, smk-g6: run_dir, products_dir and
-# index all end in it), so the common case needs no key at all. Set `campaign:`
-# in config.yaml when the two must differ.
-CAMPAIGN = config.get("campaign") or PRODUCTS_DIR.name
+# The campaign's NAME is the run config's `run:` — the same name `$run` expands
+# to in the paths above. The two campaign-level merges label their output with
+# it (`final_cat_<run>.hdf5` and the group inside it holding the per-tile
+# datasets, `full_starcat_<run>.hdf5`). REQUIRED in run_config.py, so an unset
+# `run:` has already refused above.
+CAMPAIGN = config["run"]
 SCRIPTS    = Path(workflow.basedir) / "scripts"
 # The config chain is the repo's committed directory (D2). The configs and
 # rules that set their environment variables must be versioned together. There
-# is no `config_src` knob.
-CONFIG_DIR = Path(workflow.basedir) / "config" / "cfis"
+# is no separate `config_src` setting; input_type picks between the two dirs.
+CONFIG_DIR = Path(workflow.basedir) / "config" / {
+    "data": "cfis", "image_sims": "cfis_image_sims"}[INPUT_TYPE]
+# `sp run`'s code snapshot (bin/sp), a sibling of workflow.basedir inside
+# $STATE_DIR/code. Read by the campaign-level merges so the products they write
+# carry the code that produced them; absent when this Snakefile is driven
+# outside `sp run`, which the merges tolerate (hdf5_reconcile.code_provenance).
+SNAPSHOT_JSON = Path(workflow.basedir).parent / "snapshot.json"
 
 sys.path.insert(0, str(SCRIPTS))
 import build_index                                     # noqa: E402
@@ -350,7 +415,7 @@ def path_hash(path):
     A rule whose behaviour comes from more than its own script needs all of it
     in one trigger. final_cat_merge is the case: what it writes is decided by
     scripts/python/create_final_cat.py (the column extraction) and by
-    config/cfis/final_cat.param (which columns), and NEITHER is under
+    CONFIG_DIR's final_cat.param (which columns), and NEITHER is under
     workflow/scripts/ nor a declared input. Without them in the hash, this PR's
     own edits to both would have left every finished campaign's hdf5 untouched
     and nothing would have said so.
@@ -517,6 +582,14 @@ def clean_targets():
 # a switch that turns persistence off: the tar then holds the star catalogue's
 # inputs and nothing else, and exp_persist still runs for every exposure.
 PERSIST_EXP = list(config.get("persist_exp") or [])
+
+# Whether exposures have PSF products to persist at all. psf_model=fake (the
+# image-simulation true PSF) fits no model: exp_psf runs SExtractor only and
+# writes no validation_psf-*.fits, so exp_persist would find nothing to pack
+# and star_cat_merge nothing to stack. Under fake both drop out of the DAG,
+# and clean_exposure stops waiting on exp_persist; final_cat_merge is
+# unaffected. psf_exposures() below is where this gate acts.
+PERSISTS_PSF = PSF_MODEL != "fake"
 
 # The keep list names PRODUCTS (`psf_model`), not globs (`*.psf`); the
 # catalogue that maps one to the other lives in persist_exp.py, which is also
@@ -735,9 +808,17 @@ def persist_manifests():
     merge job's own re-parse under the slurm executor, which genuinely needs it.
     So this half carries no guard and the memo keeps either parse to one walk.
     """
-    exps = {e for t in TILES_READY for e in tile_exposures(t)}
-    return sorted(prod_exp_manifest(e, "exp_persist") for e in exps
+    return sorted(prod_exp_manifest(e, "exp_persist") for e in psf_exposures()
                   if not exp_store_reclaimed(e))
+
+
+def psf_exposures():
+    """The ready tiles' exposures that have PSF products to persist and stack:
+    all of them, or none under psf_model=fake (PERSISTS_PSF). The one set
+    exp_persist's targets and star_cat_merge's inputs are drawn from."""
+    if not PERSISTS_PSF:
+        return []
+    return sorted({e for t in TILES_READY for e in tile_exposures(t)})
 
 
 def exp_store_reclaimed(exp):
@@ -781,9 +862,9 @@ def exp_store_reclaimed(exp):
 # --- the campaign-level merges ---------------------------------------------
 # Two rules, one job each per campaign, both writing to the persistent root, and
 # both the LAST link of a chain whose per-unit half the workflow already had:
-# the exposure side ends in one `full_starcat_<campaign>.hdf5` (every CCD's PSF
+# the exposure side ends in one `full_starcat_<run>.hdf5` (every CCD's PSF
 # validation catalogue — the rho/tau statistics input) and the tile side in one
-# `final_cat_<campaign>.hdf5` (every tile's final catalogue — the shear
+# `final_cat_<run>.hdf5` (every tile's final catalogue — the shear
 # catalogue sp_validation reads). Until they existed the workflow's product set
 # was two files short of what the old `combine_runs.bash` + `create_final_cat.py`
 # chain delivered, and every campaign ended with a manual merge.
@@ -889,7 +970,7 @@ def star_cat_inputs():
     VOS recovers it; the merge reports how many exposures it found.
     """
     live, reclaimed = [], []
-    for exp in sorted({e for t in TILES_READY for e in tile_exposures(t)}):
+    for exp in psf_exposures():
         if not exp_store_reclaimed(exp):
             live.append(prod_exp_manifest(exp, "exp_persist"))
         elif Path(prod_exp_tar(exp)).exists():
@@ -909,9 +990,9 @@ def star_cat_exposures():
     is what the trigger is for. It is also what merge_star_cat.py derives on the
     job side, so the two agree on the set AND on how it is named.
     """
-    return sorted(e for e in {e for t in TILES_READY for e in tile_exposures(t)}
-                  if Path(prod_exp_manifest(e, "exp_persist")).exists()
-                  or not exp_store_reclaimed(e))
+    return [e for e in psf_exposures()
+            if Path(prod_exp_manifest(e, "exp_persist")).exists()
+            or not exp_store_reclaimed(e)]
 
 
 # --- sizing the two merges (D4) ---------------------------------------------
@@ -1220,8 +1301,20 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     the committed config dir.
 
     It also exports the configured input roots as ``SP_INPUT_TILES``,
-    ``SP_INPUT_EXPOSURES`` and ``SP_INPUT_MASKS`` and the PSF choice as
-    ``SP_PSF`` for the committed ini chain.
+    ``SP_INPUT_EXPOSURES`` and (data only) ``SP_INPUT_MASKS``, the retrieve
+    mode as ``SP_RETRIEVE`` and the PSF choice as ``SP_PSF`` for the committed
+    ini chain (plus ``PSF_DICT`` for the image-simulation true PSF).
+
+    Every line here is part of each rule's ``params.pre`` and so of the
+    ``params`` rerun trigger: a line added for every rule reruns every finished
+    unit of a campaign on its next ``sp run``. The image-simulation lines are
+    therefore conditional, and a data run's prologue is byte-identical to what
+    it was before input_type existed.
+
+    ``tile_numbers.txt`` carries the number in the form the INPUT files are
+    named with, because get_images substitutes it verbatim into
+    INPUT_FILE_PATTERN: dot format for the survey tiles (``CFIS.210.282.r``),
+    dash format for the simulations (``CFIS_simu_image-210-282``).
 
     Finally it ``rm -rf``s this stage's own fixed run dir — ShapePipe's
     FileHandler raises on an existing run dir, and it is how a rerun never sees
@@ -1240,20 +1333,25 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
         f"export SP_CONFIG='{CONFIG_DIR}'",
         f"export SP_INPUT_TILES='{INPUTS['tiles']}'",
         f"export SP_INPUT_EXPOSURES='{INPUTS['exposures']}'",
-        f"export SP_INPUT_MASKS='{INPUTS['masks']}'",
+        f"export SP_RETRIEVE='{RETRIEVE_MODE}'",
         f"export SP_PSF='{PSF_MODEL}'",
         # Also set via apptainer-args in the profile; kept here so a hand-run of
         # this same line outside snakemake behaves identically.
         f"export {_THREAD_CAPS}",
         'mkdir -p "$SP_RUN/output" "$SP_RUN/manifests" "$SP_RUN/logs"',
     ]
+    if PSF_DICT:
+        lines.append(f"export PSF_DICT='{PSF_DICT}'")
+    if INPUT_TYPE == "data":
+        lines.append(f"export SP_INPUT_MASKS='{INPUTS['masks']}'")
     if forest:
         lines.append(f"export SP_EXP='{forest}'")
     for k, v in (env or {}).items():
         lines.append(f"export {k}='{v}'")
 
     if level == "tile":
-        lines.append(f"printf '%s\\n' '{unit}' > \"$SP_RUN/tile_numbers.txt\"")
+        number = unit.replace(".", "-") if INPUT_TYPE == "image_sims" else unit
+        lines.append(f"printf '%s\\n' '{number}' > \"$SP_RUN/tile_numbers.txt\"")
     else:
         fe = "$SP_RUN/output/run_sp_tile_Fe/find_exposures_runner/output"
         lines += [f'mkdir -p "{fe}"',
@@ -1321,6 +1419,7 @@ include: "rules/tile.smk"
 # outside every group already (exp_psf is heavy, clean_exposure is local), so it
 # adds no new grouping constraint.
 localrules: all, prepare_all_tiles, clean_exposure, clean_tile, exp_persist
+
 
 rule all:
     input:

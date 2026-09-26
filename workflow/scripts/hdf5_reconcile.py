@@ -45,6 +45,7 @@ change.
 """
 
 import hashlib
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -55,6 +56,25 @@ import h5py
 def schema_digest(columns) -> str:
     """A fingerprint of the COLUMN SET the datasets were written with."""
     return hashlib.md5("\n".join(columns).encode()).hexdigest()[:16]
+
+
+def code_provenance(snapshot_json) -> dict:
+    """The launch code's identity, to stamp onto the merged file's root.
+
+    ``snapshot_json`` is ``sp run``'s code snapshot (``bin/sp``'s
+    ``$STATE_DIR/code/snapshot.json``), passed through by the calling rule. A
+    workflow driven outside ``sp run`` has no such file — the merge still
+    succeeds, and the caller writes ``code_head = "unknown"`` rather than
+    failing an otherwise-good build.
+    """
+    if not snapshot_json or not Path(snapshot_json).exists():
+        return {"head": "unknown"}
+    data = json.loads(Path(snapshot_json).read_text())
+    out = {k: data[k] for k in ("head", "branch", "dirty", "taken_at")
+           if k in data}
+    if data.get("dirty") and data.get("dirty_files"):
+        out["dirty_files"] = data["dirty_files"]
+    return out
 
 
 def stamp(path: Path) -> tuple:
@@ -140,7 +160,7 @@ def check_free_space(output: Path) -> None:
 def check_sole_group(output: Path, group_path: str) -> None:
     """One file, one campaign — refuse to half-update a file holding two.
 
-    Renaming `campaign:` mid-flight points the rule at a NEW group inside the
+    Renaming `run:` mid-flight points the rule at a NEW group inside the
     SAME file (the path carries the campaign only on the tile side, where the
     group does). Reconciling would then add a second group beside the first,
     leave the first frozen and stale, and set a count attribute describing only
@@ -159,16 +179,25 @@ def check_sole_group(output: Path, group_path: str) -> None:
             f"hdf5_reconcile: {output} already holds {parent}/"
             f"{', '.join(others)} beside {group_path}. One file is one "
             f"campaign: reconciling would freeze the other group and count "
-            f"only this one. Point `campaign:` back, or write to a new path.")
+            f"only this one. Point `run:` back, or write to a new path.")
 
 
 def apply(output: Path, group_path: str, todo: Plan, units: list, read,
-          digest: str, count_attr: str) -> None:
+          digest: str, count_attr: str, provenance: dict | None = None) -> None:
     """Carry the plan out on a tmp file, then move it into place.
 
     ``read(unit, source)`` returns the structured array for one unit; it is
     called only for the units the plan names, which is what makes an append
     cheap.
+
+    ``provenance`` (``code_provenance()``'s return) is stamped onto the file's
+    root as ``code_head``/``code_branch``/``code_dirty``/``code_snapshot_at``,
+    plus ``code_dirty_files`` (newline-joined) when the snapshot was dirty. It
+    is written here, alongside ``count_attr`` and ``param_digest``, rather than
+    on every no-op invocation: reconciling is planned against a read-only open,
+    and an empty plan must leave the file's mtime alone (see the module
+    docstring), so a run that changes no data never touches the file even if
+    the code that would have produced it has moved on.
 
     TWO WAYS TO BUILD THE TMP, and which one is used is about SPACE, not speed.
     HDF5 never reclaims the space a deleted dataset occupied, so a file that is
@@ -221,6 +250,16 @@ def apply(output: Path, group_path: str, todo: Plan, units: list, read,
                     stamp(source)
             f.attrs[count_attr] = len(group)
             f.attrs["param_digest"] = digest
+            if provenance:
+                f.attrs["code_head"] = provenance.get("head", "unknown")
+                for key, attr in (("branch", "code_branch"),
+                                  ("dirty", "code_dirty"),
+                                  ("taken_at", "code_snapshot_at")):
+                    if key in provenance:
+                        f.attrs[attr] = provenance[key]
+                if provenance.get("dirty_files"):
+                    f.attrs["code_dirty_files"] = \
+                        "\n".join(provenance["dirty_files"])
         tmp.replace(output)              # atomic: same filesystem
     finally:
         tmp.unlink(missing_ok=True)

@@ -20,7 +20,7 @@ per exposure. The list rides on this rule's ``params``, so editing it makes
 snakemake rerun THIS rule (seconds of cp) and leaves the PSF chain alone. Folded
 into ``exp_psf``, the same edit would re-derive every PSF model in the campaign.
 
-WHAT IT SEARCHES. ``<exp-dir>/output/run_sp_exp_SxSePsfPi/*/output/`` — the four
+WHAT IT SEARCHES. ``<exp-dir>/output/run_sp_exp_SxSePsf/*/output/`` — the four
 module output dirs of the PSF config (sextractor, setools, psfex, psfex_interp)
 — RECURSIVELY. The recursion is not laziness: setools does not write flat, it
 writes into ``mask/``, ``rand_split/``, ``new_cat/``, ``plot/`` and ``stat/``
@@ -94,11 +94,13 @@ import sys
 import tarfile
 from pathlib import Path
 
-# The PSF chain's run dir (RUN_NAME in config_exp_psfex.ini). Hardcoded rather
-# than passed: this rule persists the PSF stage's products and nothing else, and
-# a knob here would be a knob for "persist some other stage", which is a
-# different rule.
-RUN_NAME = "run_sp_exp_SxSePsfPi"
+# The PSF chain's run dir: RUN_NAME in config_exp_psfex.ini AND in
+# config_exp_mccd.ini, which carry the same name on purpose so nothing
+# downstream of exp_psf branches on the PSF model. Hardcoded rather than passed:
+# this rule persists the PSF stage's products and nothing else, and a knob here
+# would be a knob for "persist some other stage", which is a different rule.
+# tests/unit/test_workflow_run_names.py holds this equal to the configs.
+RUN_NAME = "run_sp_exp_SxSePsf"
 
 # --- the product catalogue (CosmoStat/shapepipe#844) ------------------------
 # THE SINGLE SOURCE OF TRUTH for what an exposure can keep. `persist_exp:` in

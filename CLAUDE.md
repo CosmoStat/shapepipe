@@ -24,17 +24,16 @@ way to get all of that is the container.
   when the code actually requires the newer API. System-level tools live in the
   `Dockerfile`.
 - **Images** publish to `ghcr.io/cosmostat/shapepipe` on every push to an
-  integration branch, in two targets:
-  - `:<tag>` — the **dev** image: the full stack plus interactive tooling and the
-    test / lint / doc extras.
-  - `:<tag>-runtime` — a slim image for batch jobs and downstream `FROM` clauses.
+  integration branch, one image per branch (`:<tag>`): full stack, interactive
+  tooling, and the test / lint / doc extras all baked in. Batch jobs, downstream
+  `FROM` clauses, and CI's own test run all use this same image.
 - **On a cluster**, run with Apptainer:
   ```bash
   apptainer build --sandbox shapepipe docker://ghcr.io/cosmostat/shapepipe:develop
   apptainer shell --writable shapepipe
   cd /app && shapepipe_run -c /app/example/config.ini
   ```
-- **For development**, work inside the dev image — it carries vim, ripgrep,
+- **For development**, work inside the image — it carries vim, ripgrep,
   pytest, and the rest. A common pattern is a long-lived `--writable` Apptainer
   sandbox with a host clone of the repo bind-mounted in and `pip install -e`
   pointed at it, so edits on the host are live inside the container.
@@ -67,7 +66,7 @@ and the next image agree.
 `apptainer build` images on a cluster — quotas are tight and the build is slow.
 The loop for any change to `Dockerfile` / `pyproject.toml` / `uv.lock` is: edit
 → push → let GitHub Actions build and publish to GHCR → `apptainer pull
-docker://ghcr.io/cosmostat/shapepipe:<branch>[-runtime]` on the cluster → test.
+docker://ghcr.io/cosmostat/shapepipe:<branch>` on the cluster → test.
 Watch the remote build with `gh run watch` (or `gh run list --branch <branch>`).
 The only things that run locally are the pull and the test. On a quota-limited
 cluster, keep SIFs and Apptainer's scratch off `$HOME`: point
@@ -95,10 +94,13 @@ Full detail: `docs/source/installation.md` and `docs/source/container.md`.
 
 ## Development workflow
 
+**We are in rapid iteration.** Changes that require re-running the pipeline are fine; a PR that changes science defaults (detection parameters, cuts, module options) does not need a completed rerun to be accepted — state what we expect the rerun to show, and do the rerun when it comes up.
+
+
 - **`develop` is the integration branch** — open PRs against it. `main` /
   `master` are release branches.
-- **Tests** run with `pytest`. CI runs them *inside the dev image*, so the suite
-  exercises exactly what ships — run them the same way, in the dev container.
+- **Tests** run with `pytest`. CI runs them *inside the image*, so the suite
+  exercises exactly what ships — run them the same way, in the container.
 - **CI** (`.github/workflows/deploy-image.yml`): every PR and push builds the
   image and runs the test suite + the example pipeline + binary smokes; pushes to
   `develop` / `main` / `master` additionally publish the images. API docs deploy
@@ -114,4 +116,44 @@ keep in their own stores outside it. A `.felt/` directory (a markdown "fiber" no
 store used with the `felt` CLI) is **not tracked here**: it's gitignored, and where
 it exists it's a machine-local symlink into a private, separately git-synced store,
 so a fresh clone won't have one. Record durable decisions in the PR, issue, or docs
-where the change lives.
+where the change lives — and *scientific* decisions in `astra.yaml`, below.
+
+## Scientific decisions live in `astra.yaml`
+
+`astra.yaml` at the repo root is the pipeline's decision record: every
+consequential scientific choice embedded in the code and the committed configs,
+each with its rationale, the alternatives that were considered and why they were
+rejected, and an anchor back to the code or config that implements it.
+`universes/committed.yaml` pins the option this branch's configuration
+selects for every decision. The format
+is ASTRA; `uvx astra-tools@0.2.17 guide` is the briefing and
+`uvx astra-tools@0.2.17 spec` the field reference.
+
+**A scientific change is not finished until the record is.** When a change moves
+what the pipeline measures, amend `astra.yaml` in the same PR — add the decision
+if it is new, or edit its rationale, options and anchors if it moved — pin the
+selected option in `universes/committed.yaml`, and say so in the PR description.
+Purely technical changes (refactors, performance, packaging, I/O) leave it alone,
+except where they move a value the record carries: the completeness floors in
+`workflow/scripts/completeness.py` are orchestration code holding a scientific
+decision.
+
+The membership test is whether *a different defensible choice would change which
+objects enter the shear catalogue, or the numbers attached to them.* Detection
+threshold and deblending contrast, masking geometry, star-selection cuts, PSF
+model degree, ngmix priors and seeding, flag semantics, completeness floors — in.
+Manifest sentinels, chunk sizes, allocation strategy, directory layout — out;
+those live in the PR and the PRD.
+
+The file's own header states the conventions it follows. In short: every
+rationale ends with a greppable `Anchor: path::symbol; path#SECTION.KEY`
+sentence whose refs never cite line numbers; `[HARDCODED]` marks a scientific value
+with no config exposure; `[LINT]` marks a place where the record and the code, or
+the code and itself, disagree. Validate before committing:
+
+```bash
+uvx astra-tools@0.2.17 validate
+```
+
+The record was authored against this branch's workflow configs; entries marked
+`[PENDING #NNN]` describe state that has not yet reached `develop`.
