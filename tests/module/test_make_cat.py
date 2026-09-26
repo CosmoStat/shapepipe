@@ -459,8 +459,8 @@ def test_save_psf_data_carries_fourth_moments_per_epoch(tmp_path):
     """HSM_M4_1/M4_2/RHO4_PSF_n ride the same slots as HSM_G1_PSF_n.
 
     The fourth-moment columns psfex_interp writes into SHAPES (shapepipe#697)
-    land per epoch; a SHAPES dict without them (an older producer) leaves
-    the slot at its fill, as does an unused slot.
+    land per epoch; a SHAPES dict without them (MCCD, or an older producer)
+    leaves the slot at its out-of-range fill, as does an unused slot.
     """
     galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
     per_obj = {
@@ -477,7 +477,7 @@ def test_save_psf_data_carries_fourth_moments_per_epoch(tmp_path):
     npt.assert_allclose(out["HSM_M4_2_PSF_1"], [-0.22])
     npt.assert_allclose(out["HSM_RHO4_PSF_1"], [2.05])
     for n in (2, 3):
-        npt.assert_allclose(out[f"HSM_M4_1_PSF_{n}"], [0.0])
-        npt.assert_allclose(out[f"HSM_M4_2_PSF_{n}"], [0.0])
+        npt.assert_allclose(out[f"HSM_M4_1_PSF_{n}"], [-10.0])
+        npt.assert_allclose(out[f"HSM_M4_2_PSF_{n}"], [-10.0])
         npt.assert_allclose(out[f"HSM_RHO4_PSF_{n}"], [-1.0])
     npt.assert_allclose(out["HSM_G1_PSF_2"], [0.03])

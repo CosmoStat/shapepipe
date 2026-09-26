@@ -637,15 +637,17 @@ class SaveCatalogue:
         n_obj = len(self._obj_id)
 
         # Per-epoch PSF shape columns copied from the producer's SHAPES dict:
-        # (column, empty-slot fill, dtype). HSM_T_PSF already holds T
-        # (sigma_to_T applied at the producer's _interpolate_me).
+        # (column, empty-slot fill, dtype). Fills are out of physical range
+        # so an unmeasured slot cannot pass for a measurement. HSM_T_PSF
+        # already holds T (sigma_to_T applied at the producer's
+        # _interpolate_me).
         psf_shape_cols = [
             ("HSM_G1_PSF", -10.0, float),
             ("HSM_G2_PSF", -10.0, float),
             ("HSM_T_PSF", 0.0, float),
             ("HSM_FLAG_PSF", 1, "int16"),
-            ("HSM_M4_1_PSF", 0.0, float),
-            ("HSM_M4_2_PSF", 0.0, float),
+            ("HSM_M4_1_PSF", -10.0, float),
+            ("HSM_M4_2_PSF", -10.0, float),
             ("HSM_RHO4_PSF", -1.0, float),
         ]
         # Per-epoch exposure ID and CCD number, slot-aligned with HSM_*_PSF_n;
@@ -679,8 +681,9 @@ class SaveCatalogue:
                     continue
 
                 for name, fill, _ in psf_shape_cols:
-                    # A SHAPES dict from an older producer may lack the
-                    # fourth-moment keys; the slot then keeps its fill.
+                    # A SHAPES dict without the fourth-moment keys (MCCD, or
+                    # a producer predating them) leaves those slots at their
+                    # out-of-range fill while FLAG still reports the fit.
                     self._add2dict(
                         f"{name}_{epoch + 1}", shapes.get(name, fill), idx
                     )

@@ -181,6 +181,60 @@ def _fourth_moments(image, moms, wcs=None):
     return fourth_moment_1, fourth_moment_2, moms.moments_rho4
 
 
+# One HSM shape row per object, in this order; ``_hsm_columns`` names them.
+_HSM_ROW = ("G1", "G2", "SIGMA", "FLAG", "M4_1", "M4_2", "RHO4")
+
+
+def _hsm_row(image, moms, wcs=None):
+    """HSM shape row for one object, ordered as ``_HSM_ROW``."""
+    return [
+        moms.observed_shape.g1,
+        moms.observed_shape.g2,
+        moms.moments_sigma,
+        int(bool(moms.error_message)),
+        *_fourth_moments(image, moms, wcs),
+    ]
+
+
+def _hsm_columns(shapes, obj):
+    """Named ``HSM_*_<obj>`` columns from HSM shape rows.
+
+    @sc [label:schema] hsm-column-grammar
+    The only place the ``_HSM_ROW`` slot order meets the column grammar:
+    sigma is stored as ``T`` (``cs_util.size.sigma_to_T``), ``FLAG`` as int,
+    the fourth moments under ``M4_1``/``M4_2``/``RHO4``. Every writer in this
+    module (single-epoch, validation, multi-epoch) goes through here.
+
+    Parameters
+    ----------
+    shapes : numpy.ndarray
+        Shape rows, ``(n_obj, len(_HSM_ROW))`` or a single ``(len(_HSM_ROW),)``
+        row; a single row yields Python scalars.
+    obj : str
+        Object token, ``"PSF"`` or ``"STAR"``.
+
+    Returns
+    -------
+    dict
+        Column name -> values.
+
+    """
+    shapes = np.asarray(shapes)
+    col = {name: shapes[..., i] for i, name in enumerate(_HSM_ROW)}
+    out = {
+        f"HSM_G1_{obj}": col["G1"],
+        f"HSM_G2_{obj}": col["G2"],
+        f"HSM_T_{obj}": cs_size.sigma_to_T(col["SIGMA"]),
+        f"HSM_FLAG_{obj}": col["FLAG"].astype(int),
+        f"HSM_M4_1_{obj}": col["M4_1"],
+        f"HSM_M4_2_{obj}": col["M4_2"],
+        f"HSM_RHO4_{obj}": col["RHO4"],
+    }
+    if shapes.ndim == 1:
+        out = {key: np.asarray(val).item() for key, val in out.items()}
+    return out
+
+
 class PSFExInterpolator(object):
     """The PSFEx Interpolator Class.
 
@@ -477,8 +531,8 @@ class PSFExInterpolator(object):
         Notes
         -----
         In addition to the second-moment shape, the spin-2 fourth-moment
-        combinations and galsim's spin-0 ``moments_rho4`` are stored (columns 4,
-        5, 6 of ``psf_shapes``). With a ``wcs_list`` these are computed in the
+        combinations and galsim's spin-0 ``moments_rho4`` are stored (the
+        ``M4_1``, ``M4_2``, ``RHO4`` slots of ``_HSM_ROW``). With a ``wcs_list`` these are computed in the
         world frame so they are invariant to the CCD orientation; see
         :func:`_fourth_moments`.
 
@@ -502,13 +556,7 @@ class PSFExInterpolator(object):
 
         self.psf_shapes = np.array(
             [
-                [
-                    moms.observed_shape.g1,
-                    moms.observed_shape.g2,
-                    moms.moments_sigma,
-                    int(bool(moms.error_message)),
-                    *_fourth_moments(psf, moms, wcs),
-                ]
+                _hsm_row(psf, moms, wcs)
                 for psf, moms, wcs in zip(self.interp_PSFs, psf_moms, wcs_list)
             ]
         )
@@ -528,13 +576,7 @@ class PSFExInterpolator(object):
         if self._compute_shape:
             data = {
                 "VIGNET": self.interp_PSFs,
-                "HSM_G1_PSF": self.psf_shapes[:, 0],
-                "HSM_G2_PSF": self.psf_shapes[:, 1],
-                "HSM_T_PSF": cs_size.sigma_to_T(self.psf_shapes[:, 2]),
-                "HSM_FLAG_PSF": self.psf_shapes[:, 3].astype(int),
-                "HSM_M4_1_PSF": self.psf_shapes[:, 4],
-                "HSM_M4_2_PSF": self.psf_shapes[:, 5],
-                "HSM_RHO4_PSF": self.psf_shapes[:, 6],
+                **_hsm_columns(self.psf_shapes, "PSF"),
             }
         else:
             data = {"VIGNET": self.interp_PSFs}
@@ -619,7 +661,8 @@ class PSFExInterpolator(object):
         Notes
         -----
         As in :meth:`_get_psfshapes`, the spin-2 fourth-moment combinations and
-        galsim's ``moments_rho4`` are stored (columns 4, 5, 6 of ``star_shapes``),
+        galsim's ``moments_rho4`` are stored (the ``M4_1``, ``M4_2``, ``RHO4``
+        slots of ``_HSM_ROW``),
         world-frame when a ``wcs_list`` is given. Masked pixels are zeroed before
         the fourth-moment sum so they do not contribute.
 
@@ -651,13 +694,7 @@ class PSFExInterpolator(object):
 
         self.star_shapes = np.array(
             [
-                [
-                    moms.observed_shape.g1,
-                    moms.observed_shape.g2,
-                    moms.moments_sigma,
-                    int(bool(moms.error_message)),
-                    *_fourth_moments(np.where(mask == 1, 0.0, star), moms, wcs),
-                ]
+                _hsm_row(np.where(mask == 1, 0.0, star), moms, wcs)
                 for star, mask, moms, wcs in zip(
                     star_vign, masks, star_moms, wcs_list
                 )
@@ -723,9 +760,9 @@ class PSFExInterpolator(object):
         Save computed PSFs and stars to fits file.
 
         @sc [label:schema] psfex-validation-hsm-columns
-        The ``HSM_*`` columns written here are the exact set
-        ``MergeStarCatPSFEX.process`` reads without fallback; add or rename on
-        both sides together (``test_hsm_column_seams`` checks the two agree).
+        Writes ``_hsm_columns`` for both ``PSF`` and ``STAR`` — the exact
+        ``HSM_*`` set ``MergeStarCatPSFEX.process`` reads without fallback;
+        add or rename on both sides together (``test_hsm_column_seams``).
 
         Parameters
         ----------
@@ -742,20 +779,8 @@ class PSFExInterpolator(object):
         )
 
         data = {
-            "HSM_G1_PSF": self.psf_shapes[:, 0],
-            "HSM_G2_PSF": self.psf_shapes[:, 1],
-            "HSM_T_PSF": cs_size.sigma_to_T(self.psf_shapes[:, 2]),
-            "HSM_FLAG_PSF": self.psf_shapes[:, 3].astype(int),
-            "HSM_M4_1_PSF": self.psf_shapes[:, 4],
-            "HSM_M4_2_PSF": self.psf_shapes[:, 5],
-            "HSM_RHO4_PSF": self.psf_shapes[:, 6],
-            "HSM_G1_STAR": self.star_shapes[:, 0],
-            "HSM_G2_STAR": self.star_shapes[:, 1],
-            "HSM_T_STAR": cs_size.sigma_to_T(self.star_shapes[:, 2]),
-            "HSM_FLAG_STAR": self.star_shapes[:, 3].astype(int),
-            "HSM_M4_1_STAR": self.star_shapes[:, 4],
-            "HSM_M4_2_STAR": self.star_shapes[:, 5],
-            "HSM_RHO4_STAR": self.star_shapes[:, 6],
+            **_hsm_columns(self.psf_shapes, "PSF"),
+            **_hsm_columns(self.star_shapes, "STAR"),
         }
         data = {**data, **star_dict}
 
@@ -808,9 +833,9 @@ class PSFExInterpolator(object):
         Interpolate PSFs for multi-epoch run.
 
         @sc [label:schema] psfex-me-shapes-columns
-        The per-epoch ``SHAPES`` dict must carry every column
-        ``make_cat._save_psf_data`` copies into ``HSM_*_PSF_n``
-        (``test_hsm_column_seams`` checks the superset).
+        The per-epoch ``SHAPES`` dict is ``_hsm_columns(row, "PSF")`` and
+        must carry every column ``make_cat._save_psf_data`` copies into
+        ``HSM_*_PSF_n`` (``test_hsm_column_seams`` checks the superset).
 
         Raises
         ------
@@ -1020,31 +1045,9 @@ class PSFExInterpolator(object):
                         "VIGNET"
                     ] = final_list[j][1][where_res[0]]
                     if self._compute_shape:
-                        shape_dict = {}
-                        shape_dict["HSM_G1_PSF"] = final_list[j][2][
-                            where_res[0]
-                        ][0]
-                        shape_dict["HSM_G2_PSF"] = final_list[j][2][
-                            where_res[0]
-                        ][1]
-                        shape_dict["HSM_T_PSF"] = cs_size.sigma_to_T(
-                            final_list[j][2][where_res[0]][2]
-                        )
-                        shape_dict["HSM_FLAG_PSF"] = final_list[j][2][
-                            where_res[0]
-                        ][3]
-                        shape_dict["HSM_M4_1_PSF"] = final_list[j][2][
-                            where_res[0]
-                        ][4]
-                        shape_dict["HSM_M4_2_PSF"] = final_list[j][2][
-                            where_res[0]
-                        ][5]
-                        shape_dict["HSM_RHO4_PSF"] = final_list[j][2][
-                            where_res[0]
-                        ][6]
                         output_dict[id_tmp][final_list[j][3][where_res[0]]][
                             "SHAPES"
-                        ] = shape_dict
+                        ] = _hsm_columns(final_list[j][2][where_res[0]], "PSF")
                     counter += 1
             if counter == 0:
                 output_dict[id_tmp] = "empty"
