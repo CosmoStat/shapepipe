@@ -382,7 +382,8 @@ def read_data(fits_file, params):
     never skipped or filled. `copy_data` keeps only columns present in the
     source, so this raise is the one place a missing name stops a merge, and
     without it a tile short a per-epoch slot would land in the merged file
-    silently narrower, with that slot's exposure identity gone.
+    silently narrower, with that slot's exposure identity gone. Enforced by
+    tests/unit/test_final_cat_merge_invariants.py.
     """
     with fits.open(fits_file) as hdu_list:
         try:

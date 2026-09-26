@@ -23,7 +23,8 @@ and the reader raises on a listed column a tile lacks. So a name belongs there
 only if `make_cat` writes it on EVERY tile. A per-epoch family (`EXP_ID_n`,
 `CCD_n`, `HSM_*_PSF_n`) qualifies only with a fixed slot count, since
 `make_cat` otherwise sizes it from the tile's own maximum `N_EPOCH`. Enforced
-by tests/module/test_psf_grammar_properties.py (the shipped names).
+by tests/unit/test_final_cat_merge_invariants.py (the merge) and
+tests/module/test_psf_grammar_properties.py (the shipped names).
 
 @sc [label:hazard] unit-pre-changes-at-campaign-boundary
 Every line `unit_pre()` emits is part of each rule's `params.pre`, and both

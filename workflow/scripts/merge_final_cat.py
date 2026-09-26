@@ -76,7 +76,8 @@ including objects ngmix never fit. Those carry `NGMIX_N_EPOCH == 0` with
 sentinel values (`NGMIX_MCAL_FLAGS == 0`, ellipticities `-10`, `T == 0`), so
 `NGMIX_MCAL_FLAGS == 0` is not a validity cut: consumers select fitted objects
 with `NGMIX_N_EPOCH > 0`. The merge neither fills these rows nor drops them;
-that selection belongs to the consumer.
+that selection belongs to the consumer. Enforced by
+tests/unit/test_final_cat_merge_invariants.py.
 """
 
 import argparse
