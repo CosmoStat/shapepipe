@@ -37,7 +37,8 @@ boundary on a fresh root.
 
 @sc [label:custody] clean-exposure-waits-on-persist-iff-psf
 `clean_exposure` takes the exposure's `exp_persist` manifest as input exactly
-when `PERSISTS_PSF` (`psf_model != "fake"`). Dropping the edge under a real PSF
-model lets reclamation delete the scratch store before its PSF products reach
+when `PERSISTS_PSF` (`psf_model != "fake"`, which is `psfex`: `mccd` is refused
+at parse time by `refuse_unpersistable_psf`). Dropping the edge under psfex
+lets reclamation delete the scratch store before its PSF products reach
 `products_dir`; keeping it under `fake` makes every clean wait on a rule that
 is not in the DAG.
