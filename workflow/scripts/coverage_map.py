@@ -11,10 +11,11 @@ structural mask (``notebooks/demo_apply_hsp_masks.py``).
 CAMPAIGN-CUMULATIVE, AND THAT IS THE POINT. This script GLOBS every
 ``<products_dir>/exp/*/*/manifests/exp_footprint.json`` — not just the ones the
 rule declared as inputs, and INCLUDING exposures whose scratch stores have been
-reclaimed. The declared inputs are the in-scope, non-tombstoned footprints, which
-is what buys ordering and rerun semantics without dragging out-of-scope tiles
-into the DAG; the records themselves live on the persistent root and stay valid
-sky forever. So appending tiles GROWS the map rather than replacing it, which is
+reclaimed. The declared inputs are the in-scope footprints of live stores, which
+buys ordering without dragging out-of-scope tiles or reclaimed chains into the
+DAG, and the rule's params fingerprint the ids of every record this glob will
+find, which is what reruns the map when one arrives off the DAG; the records
+themselves live on the persistent root and stay valid sky forever. So appending tiles GROWS the map rather than replacing it, which is
 what a survey coverage mask should do. The rule's comment says the same thing
 where a reader of the DAG will meet it.
 

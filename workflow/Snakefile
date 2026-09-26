@@ -33,6 +33,7 @@ the manifest says "this stage succeeded", the log says "here is what happened"
 
 import fnmatch
 import functools
+import glob
 import hashlib
 import json
 import os
@@ -1056,6 +1057,35 @@ def footprint_edge(exp):
     """
     return ([] if exp_store_reclaimed(exp)
             else [prod_exp_manifest(exp, "exp_footprint")])
+
+
+@functools.lru_cache(maxsize=1)
+def coverage_exposures():
+    """The exposure IDs coverage_map's map is built from — what its
+    fingerprint is taken over.
+
+    coverage_map.py globs EVERY footprint record on the persistent root, but
+    its declared inputs are only footprint_targets(): a record of a reclaimed
+    or out-of-scope exposure is no edge, so without this set on `params` a
+    record added while coverage was off, and then reclaimed, never reruns the
+    map. The set is the records already on the root plus the ones this
+    invocation is declared to write, which is exactly what the job will glob
+    when it runs.
+
+    IDS, NOT STAMPS, for unit_fingerprint's reason. A record written in this
+    invocation has no stamp at parse time and one at the next parse, and an
+    exposure moves from edge to glob-only when its store is reclaimed; a
+    fingerprint over mtimes or digests would move on both and rerun a
+    many-hour job over the same records. A declared record's content is
+    covered by its input edge instead, and a reclaimed exposure's record has
+    no producer left in this workflow to change it.
+    """
+    # prod_exp_manifest("*", ...) is the record's path with the shard and the
+    # exposure id both "*": the same layout exp_footprint writes, as a glob.
+    durable = {Path(m).parent.parent.name
+               for m in glob.glob(prod_exp_manifest("*", "exp_footprint"))}
+    declared = {e for e in psf_exposures() if footprint_edge(e)}
+    return sorted(durable | declared)
 
 # --- tile reclamation (D5) --------------------------------------------------
 # A separate flag from `clean:` (config.yaml carries the full

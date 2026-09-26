@@ -7,11 +7,19 @@ scratch chain. Two rules name it — ``rule all`` and ``clean_exposure`` — thr
 a named record keeps the producer chain in the DAG, and any upstream params
 change then reschedules the exposure's download, split and PSF fit.
 
+coverage_map reads every record on the products root, edge or not, so what
+reruns it is a fingerprint of that whole set on its params
+(``coverage_exposures()``): it must move when a record arrives off the DAG, and
+must NOT move when a record this invocation writes appears or when its store is
+later reclaimed — either would rerun a many-hour job over the same records.
+
 The Snakefile helpers are lifted out by name and evaluated against a temporary
 run root and products root, so these tests exercise what the helpers RETURN for
 real files on disk.
 """
 
+import glob
+import hashlib
 import re
 from pathlib import Path
 
@@ -22,7 +30,10 @@ SNAKEFILE = REPO_ROOT / "workflow" / "Snakefile"
 
 EXP = "2243881"
 HELPERS = ("exp_dir", "exp_manifest", "prod_exp_dir", "prod_exp_manifest",
-           "tombstone", "exp_store_reclaimed", "footprint_edge")
+           "tombstone", "exp_store_reclaimed", "footprint_edge",
+           "unit_fingerprint", "coverage_exposures")
+# The ready tiles' exposures, as psf_exposures() would return them.
+IN_SCOPE = ["2243881", "2243882"]
 
 
 def _snakefile_def(name):
@@ -36,8 +47,9 @@ def _snakefile_def(name):
 @pytest.fixture
 def roots(tmp_path):
     """The lifted helpers, bound to a temporary scratch and products root."""
-    ns = {"Path": Path, "RUN_DIR": tmp_path / "run",
-          "PRODUCTS_DIR": tmp_path / "products"}
+    ns = {"Path": Path, "glob": glob, "hashlib": hashlib,
+          "RUN_DIR": tmp_path / "run", "PRODUCTS_DIR": tmp_path / "products",
+          "psf_exposures": lambda: list(IN_SCOPE)}
     for name in HELPERS:
         exec(_snakefile_def(name), ns)
     return ns
@@ -93,3 +105,58 @@ def test_both_footprint_edges_use_footprint_edge():
     code = [line for src in (targets, clean) for line in src.splitlines()
             if not line.lstrip().startswith("#")]
     assert not any('"exp_footprint"' in line for line in code), code
+
+
+def fingerprint(roots):
+    return roots["unit_fingerprint"](roots["coverage_exposures"]())
+
+
+def reclaim(roots, exp):
+    """exp's store after clean_exposure: record kept, tombstone written."""
+    touch(roots["prod_exp_manifest"](exp, "exp_persist"))
+    touch(roots["tombstone"](exp))
+
+
+def test_footprint_under_reclaimed_exposure_moves_the_fingerprint(roots):
+    """A record that reaches the root with no edge — written while coverage
+    was off, then its store reclaimed — must still rerun the map."""
+    for exp in IN_SCOPE:
+        reclaim(roots, exp)
+    touch(roots["prod_exp_manifest"]("2243881", "exp_footprint"))
+    before = fingerprint(roots)
+    touch(roots["prod_exp_manifest"]("2243882", "exp_footprint"))
+    assert fingerprint(roots) != before
+
+
+def test_out_of_scope_footprint_moves_the_fingerprint(roots):
+    """A record of an exposure this tile list never names is in the glob, so
+    it is in the fingerprint."""
+    before = fingerprint(roots)
+    touch(roots["prod_exp_manifest"]("9900001", "exp_footprint"))
+    assert fingerprint(roots) != before
+
+
+def test_writing_a_declared_footprint_keeps_the_fingerprint(roots):
+    """The params are recorded at parse time, before this invocation writes
+    its records; the next parse must not see a change."""
+    before = fingerprint(roots)
+    for exp in IN_SCOPE:
+        touch(roots["prod_exp_manifest"](exp, "exp_footprint"))
+    assert fingerprint(roots) == before
+
+
+def test_reclaiming_keeps_the_fingerprint(roots):
+    """An exposure moving from edge to glob-only is the same record."""
+    for exp in IN_SCOPE:
+        touch(roots["prod_exp_manifest"](exp, "exp_footprint"))
+    before = fingerprint(roots)
+    for exp in IN_SCOPE:
+        reclaim(roots, exp)
+    assert fingerprint(roots) == before
+
+
+def test_coverage_map_params_carry_the_fingerprint():
+    rule = (REPO_ROOT / "workflow" / "rules" / "coverage.smk").read_text()
+    params = re.search(r"^rule coverage_map:.*?^    params:\n(.*?)^    \w",
+                       rule, re.M | re.S).group(1)
+    assert "unit_fingerprint(coverage_exposures())" in params, params
