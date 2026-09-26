@@ -58,23 +58,32 @@ def params_from_run_config(params, defaults):
         raise ValueError(f"run config {params['run_config']} sets neither "
                          "outputs.products_dir nor outputs.run_dir")
 
-    # The patch dir is the branch dir holding product/tiles, and -i is its
-    # parent. With the run template's layout (products_dir = <run>/product)
-    # this is the path and group the workflow's final_cat_merge writes.
+    # The group and file are named for `run:`, as the workflow's
+    # final_cat_merge names them. -P is also the directory the -I walk
+    # matches under -i, so this needs the run template's layout,
+    # products_dir = <root>/<run>/product, and -i is <root>.
+    patch = cfg["run"]
     patch_dir = os.path.dirname(os.path.normpath(products))
-    patch = os.path.basename(patch_dir)
+    if os.path.basename(patch_dir) != patch:
+        raise ValueError(
+            f"run config {params['run_config']}: products_dir {products} is "
+            f"not <root>/{patch}/product, so -c cannot locate the tiles; "
+            "pass -i and -P explicitly")
     derived = {
         "image_sims": True,
         "input_root_dir": os.path.dirname(patch_dir),
         "patch": patch,
         "merged_cat_path": os.path.join(products, f"final_cat_{patch}.hdf5"),
-        "output_summary": os.path.join(products, "n_tiles_final.txt"),
         "param_path": os.path.join(repo, "workflow", "config",
                                    "cfis_image_sims", "final_cat.param"),
     }
     for key, value in derived.items():
         if params.get(key) == defaults.get(key):
             params[key] = value
+    # The tile count is the file's n_tiles attribute; the text summary is
+    # written only when -o asks for it.
+    if params.get("output_summary") == defaults.get("output_summary"):
+        params["output_summary"] = None
     return params
 
 
@@ -153,7 +162,8 @@ def params_default():
         "param_path": "parameter file path, if not given use all columns, default={}",
         "patch": "patch number (data) or grid subdir (image_sims), default={}",
         "list_only": "print list of patches and IDs only, default={}",
-        "output_summary": "output file for numbre of tiles, default={}",
+        "output_summary": "output file for number of tiles (with -c, written"
+                          " only if given), default={}",
         "ID": "ID for single-ID operation, default={}",
         "single_op": "single ID operation, allowed are 'check', 'add', 'remove'; default={}",
         "image_sims": "image simulations mode (different dir layout and run prefix), default={}",
@@ -322,8 +332,9 @@ def print_list(params):
     if verbose:
         print(f"Total: {n_tiles} tiles")
 
-    with open(params["output_summary"], "w") as f_out:
-        print(n_tiles, file=f_out)
+    if params["output_summary"]:
+        with open(params["output_summary"], "w") as f_out:
+            print(n_tiles, file=f_out)
 
     # Write n_tiles to HDF5 file header
     with h5py.File(params["merged_cat_path"], "a") as hdf5_file:

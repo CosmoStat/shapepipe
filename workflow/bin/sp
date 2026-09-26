@@ -37,10 +37,10 @@
 #
 # Run config: -c FILE, also --config-file. Read after workflow/config.yaml and
 # merged on top; anything still unset comes from the machines: entry for
-# SP_PROFILE and input_type (scripts/run_config.py).
+# SP_PROFILE and input_type (workflow/scripts/run_config.py).
 # To check a resolved value without running:
 #
-#   python scripts/run_config.py workflow/config.yaml ~/my_run.yaml outputs.run_dir
+#   python workflow/scripts/run_config.py workflow/config.yaml ~/my_run.yaml outputs.run_dir
 #
 # -c is sp's flag, not snakemake's --cores; pass cores as --cores or -j.
 #
@@ -126,10 +126,10 @@ fi
 # Snakefile resolves it.
 cfg() { python "$SCRIPTS/run_config.py" "$HERE/config.yaml" "${SP_RUN_CONFIG:-}" "$1"; }
 RUN_DIR="$(cfg outputs.run_dir)"; INDEX_DB="$(cfg outputs.index_db)"
-# `sp container` and `sp cancel` need neither a campaign nor its state dir;
-# every other verb does. Checked here, before the state dir is created from
+# `sp container`, `sp cancel` and the help forms (bare `sp`, -h, --help) need
+# neither a campaign nor its state dir; every other verb does. Checked here, before the state dir is created from
 # RUN_DIR: with `run:` unset, RUN_DIR still holds a literal `$run`.
-case "${1:-}" in container|cancel) NEEDS_CAMPAIGN=0 ;; *) NEEDS_CAMPAIGN=1 ;; esac
+case "${1:-}" in container|cancel|""|-h|--help) NEEDS_CAMPAIGN=0 ;; *) NEEDS_CAMPAIGN=1 ;; esac
 if [ "$NEEDS_CAMPAIGN" = 1 ]; then
   if [ -z "$(cfg run)" ]; then
     echo "sp: \`run:\` is unset; the run config (-c FILE) names the campaign" >&2; exit 2
@@ -372,6 +372,10 @@ case "$cmd" in
     squeue --me --noheader --format='%i %j' \
       | awk -v r="$run" '$2 ~ r {print $1}' | xargs -r scancel
     echo "cancelled jobs matching '$run'; safe to --unlock / rerun now"
+    ;;
+  ""|-h|--help)
+    # snakemake's own usage: parsing the Snakefile would need a campaign.
+    snakemake --help
     ;;
   *)
     sm "$@"

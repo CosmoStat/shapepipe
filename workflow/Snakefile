@@ -1079,9 +1079,9 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
 
     Every line here is part of each rule's ``params.pre`` and so of the
     ``params`` rerun trigger: a line added for every rule reruns every finished
-    unit of a campaign on its next ``sp run``. The image-simulation lines are
-    therefore conditional, and a data run's prologue is byte-identical to what
-    it was before input_type existed.
+    unit of a campaign on its next ``sp run``, so lines are added only at a
+    campaign boundary. The image-simulation lines are conditional, so a data
+    prologue does not carry them.
 
     ``tile_numbers.txt`` carries the number in the form the INPUT files are
     named with, because get_images substitutes it verbatim into
