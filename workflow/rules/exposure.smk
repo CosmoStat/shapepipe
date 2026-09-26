@@ -507,7 +507,7 @@ rule defect_map_merge:
         #
         # AND IT IS THE EXPENSIVE CASE THAT SETS IT. An append reads exactly the
         # appended exposures and finishes in minutes; a REBUILD — any exposure
-        # leaving the campaign, any fragment restamped — reads all of them, ~40
+        # leaving the campaign, any fragment changed — reads all of them, ~40
         # GB at DR6 scale, and that is the ~6 h this formula sizes for at 20k
         # exposures. Capped below 12 h because the job holds no partial state
         # and Alliance policy asks anything longer to checkpoint: it cannot, so

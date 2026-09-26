@@ -96,7 +96,12 @@ beside the fragment (``<products_dir>/exp/<shard>/<exp>/manifests/``), not in
 the exposure's scratch ``manifests/`` which ``clean_exposure`` deletes wholesale
 — same placement, and same reason, as ``exp_persist``. It records the per-CCD
 healpix counts, so a reader can see which CCD contributed what without opening
-the map.
+the map, and the SHA-256 of the fragment file. The digest is what makes the
+manifest a faithful DAG edge: a re-rasterization that moves a defect while
+keeping every count changes the fragment, and without the digest it would leave
+the manifest byte-identical and untouched, so ``defect_map_merge`` would never
+learn of it. The merge reads the same digest back as its record of what went
+into the union.
 
 ORDERED BEFORE RECLAMATION. ``clean_exposure`` takes this manifest as an input,
 exactly as it takes ``exp_persist``'s: the flag splits live on /scratch and go
@@ -105,6 +110,7 @@ with the store, so the fragment must be on /project before anything is deleted.
 
 import argparse
 import filecmp
+import hashlib
 import json
 import re
 import sys
@@ -264,6 +270,13 @@ def rasterize_ccd(flag_path: Path, image_path: Path, nside: int,
     return found
 
 
+def file_digest(path: Path) -> str:
+    """SHA-256 of a file's bytes, hex: the fragment's identity in its manifest
+    and in the merge's sidecar."""
+    with open(path, "rb") as fh:
+        return hashlib.file_digest(fh, "sha256").hexdigest()
+
+
 def write_stable(tmp: Path, dest: Path) -> None:
     """Move ``tmp`` onto ``dest``, or drop it when the bytes already match."""
     if dest.exists() and filecmp.cmp(tmp, dest, shallow=False):
@@ -332,6 +345,9 @@ def main() -> None:
         "n_pixels": int(fragment.n_valid),
         "n_coverage_pixels": int(fragment.coverage_mask.sum()),
         "bytes": frag_path.stat().st_size,
+        # The fragment's CONTENT, so the manifest changes whenever the fragment
+        # does (see the module docstring).
+        "sha256": file_digest(frag_path),
     }
     args.manifest.parent.mkdir(parents=True, exist_ok=True)
     tmp = args.manifest.with_name(args.manifest.name + ".tmp")

@@ -63,21 +63,29 @@ def _load():
 @pytest.fixture(scope="module")
 def merge():
     pytest.importorskip("healsparse")
-    pytest.importorskip("h5py")      # hdf5_reconcile, where the stamp lives
+    pytest.importorskip("healpy")    # defect_map_exp, where the digest lives
+    pytest.importorskip("astropy")
     return _load()
 
 
-def _fragment(merge, root: Path, exp: str, pixels) -> Path:
-    """Write one exposure's fragment where ``fragment_path`` expects it."""
+def _fragment(merge, root: Path, exp: str, pixels, nside=NSIDE) -> Path:
+    """Write one exposure's fragment where ``fragment_path`` expects it, and
+    its manifest where ``manifest_path`` does, as ``exp_defect_map`` would."""
+    import hashlib
     import numpy as np
     import healsparse as hsp
 
     path = merge.fragment_path(root, exp)
     path.parent.mkdir(parents=True, exist_ok=True)
-    frag = hsp.HealSparseMap.make_empty(NSIDE_COV, NSIDE, np.bool_,
+    frag = hsp.HealSparseMap.make_empty(NSIDE_COV, nside, np.bool_,
                                         bit_packed=True)
     frag[np.asarray(pixels, dtype=np.int64)] = True
     frag.write(str(path), clobber=True)
+    manifest = merge.manifest_path(root, exp)
+    manifest.parent.mkdir(parents=True, exist_ok=True)
+    manifest.write_text(json.dumps(
+        {"map": str(path),
+         "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}))
     return path
 
 
@@ -90,12 +98,39 @@ def _run(merge, root: Path, have: dict, missing=()):
     """plan + apply, the way ``main`` does, returning (plan, record)."""
     output = root / "defect_map_test.hsp"
     sidecar = root / "defect_map_test.json"
-    plan = merge.reconcile_plan(output, sidecar, have)
+    digests = {exp: merge.fragment_digest(root, exp) for exp in have}
+    plan = merge.reconcile_plan(output, sidecar, digests)
     if plan.empty():
         return plan, json.loads(sidecar.read_text())
-    record = merge.apply_plan(output, sidecar, plan, have, list(missing),
-                              NSIDE_COV, NSIDE)
+    record = merge.apply_plan(output, sidecar, plan, have, digests,
+                              list(missing), NSIDE_COV, NSIDE)
     return plan, record
+
+
+def _main(merge, root: Path, exps, monkeypatch, missing=(), nside=NSIDE):
+    """Run the rule's real entry point over a one-tile campaign of ``exps``
+    (plus ``missing``, indexed but with no fragment); returns its stdout."""
+    import contextlib
+    import io
+    import sqlite3
+
+    tile_list, index_db = root / "tiles.txt", root / "index.sqlite"
+    tile_list.write_text("000.000\n")
+    index_db.unlink(missing_ok=True)
+    with sqlite3.connect(index_db) as con:
+        con.execute("CREATE TABLE tile_exposures(tile_id TEXT, exp_id TEXT)")
+        con.executemany("INSERT INTO tile_exposures VALUES ('000.000', ?)",
+                        [(e,) for e in [*exps, *missing]])
+    monkeypatch.setattr(sys, "argv", [
+        str(SCRIPT), "--products-dir", str(root),
+        "--tile-list", str(tile_list), "--index-db", str(index_db),
+        "--output", str(root / "defect_map_test.hsp"),
+        "--sidecar", str(root / "defect_map_test.json"),
+        "--nside", str(nside), "--nside-coverage", str(NSIDE_COV)])
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        merge.main()
+    return out.getvalue()
 
 
 @pytest.fixture
@@ -149,6 +184,83 @@ def test_changed_fragment_forces_a_rebuild(merge, campaign):
     assert _valid(root / "defect_map_test.hsp") == {10, 11, 12, 20, 21, 22}
 
 
+def test_changed_content_behind_an_unchanged_stamp_forces_a_rebuild(merge,
+                                                                     campaign):
+    """Same size, same mtime, a pixel moved: the DIGEST is the criterion.
+
+    A size/mtime stamp cannot see this, and it is what a re-rasterization
+    that moves a defect without changing its footprint's size produces.
+    """
+    import os
+    root, have = campaign
+    path = have["2079613p"]
+    st = path.stat()
+    _fragment(merge, root, "2079613p", [20, 22])
+    os.utime(path, ns=(st.st_atime_ns, st.st_mtime_ns))
+    assert path.stat().st_size == st.st_size, "fixture must preserve the size"
+    plan, _ = _run(merge, root, have)
+    assert plan.rebuild == ["2079612p", "2079613p"], plan.describe()
+    assert "changed on disk" in plan.reason
+    assert _valid(root / "defect_map_test.hsp") == {10, 11, 12, 20, 22}
+
+
+def test_moved_defect_changes_the_manifest_and_the_merge_sees_it(
+        merge, tmp_path, monkeypatch):
+    """End to end through both scripts' entry points: a flag that moves while
+    the per-CCD healpix counts stay put changes the fragment's MANIFEST — the
+    DAG edge the merge waits on — and the merge folds the new fragment in."""
+    import os
+    import numpy as np
+    from astropy.io import fits
+    from astropy.wcs import WCS
+
+    spec = importlib.util.spec_from_file_location(
+        "_defect_map_exp", SCRIPTS / "defect_map_exp.py")
+    raster = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(raster)
+
+    exp = "2079612p"
+    split = raster.split_dir(tmp_path / "scratch")
+    split.mkdir(parents=True)
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+    wcs.wcs.crval = [150.0, 30.0]
+    wcs.wcs.crpix = [150.0, 150.0]
+    wcs.wcs.cdelt = [-0.187 / 3600, 0.187 / 3600]
+    fits.PrimaryHDU(header=wcs.to_header()).writeto(
+        split / f"image-{exp}-0.fits")
+    flag = split / f"flag-{exp}-0.fits"
+    frag = merge.fragment_path(tmp_path, exp)
+    manifest = merge.manifest_path(tmp_path, exp)
+
+    def rasterize(row_col):
+        flags = np.zeros((300, 300), dtype=np.int16)
+        flags[row_col] = 1
+        fits.PrimaryHDU(flags).writeto(flag, overwrite=True)
+        monkeypatch.setattr(sys, "argv", [
+            "defect_map_exp.py", "--exp-dir", str(tmp_path / "scratch"),
+            "--exp", exp, "--dest", str(frag.parent),
+            "--manifest", str(manifest), "--n-ccds", "1",
+            "--nside", str(NSIDE), "--nside-coverage", str(NSIDE_COV)])
+        raster.main()
+
+    rasterize((50, 50))
+    _main(merge, tmp_path, [exp], monkeypatch)
+    before_manifest, before_pixels, st = (manifest.read_bytes(), _valid(frag),
+                                          frag.stat())
+
+    rasterize((250, 250))
+    os.utime(frag, ns=(st.st_atime_ns, st.st_mtime_ns))
+    assert _valid(frag) != before_pixels
+    assert len(_valid(frag)) == len(before_pixels), "fixture must keep counts"
+    assert frag.stat().st_size == st.st_size, "fixture must keep the size"
+    assert manifest.read_bytes() != before_manifest, (
+        "the fragment moved but its manifest — the merge's DAG edge — did not")
+
+    _main(merge, tmp_path, [exp], monkeypatch)
+    assert _valid(tmp_path / "defect_map_test.hsp") == _valid(frag)
+
+
 def test_no_op_leaves_the_map_untouched(merge, campaign):
     """UNTOUCHED, not rewritten identically: mtime is a rerun trigger."""
     root, have = campaign
@@ -175,10 +287,10 @@ def test_no_op_still_refreshes_a_stale_sidecar(merge, campaign):
     assert plan.empty()
 
     missing = ["2079999p"]
-    plan = merge.reconcile_plan(output, sidecar, have)
+    plan = merge.reconcile_plan(output, sidecar, record["exposures"])
     assert plan.empty(), "an exposure with no fragment is not in the plan"
     fresh = merge.build_record(
-        have, missing, NSIDE_COV, NSIDE,
+        record["exposures"], missing, NSIDE_COV, NSIDE,
         record["n_pixels"], record["n_coverage_pixels"])
     merge.write_sidecar(sidecar, fresh)
 
