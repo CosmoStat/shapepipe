@@ -918,21 +918,34 @@ analyses:
       psfex_candidate_vetting:
         label: PSFEx built-in candidate cuts, unpinned
         rationale: >-
-          default.psfex sets SAMPLE_AUTOSELECT N but omits
-          SAMPLE_MINSN, SAMPLE_MAXELLIP, SAMPLE_FWHMRANGE and
-          SAMPLE_VARIABILITY, so [HARDCODED] whatever PSFEx compiles
-          in for them governs, changing with the PSFEx version;
-          which of these cuts still act with SAMPLE_AUTOSELECT N is
-          unverified. BADPIXEL_FILTER N and PSF_RECENTER N accept
-          flagged star vignets unfiltered and do not recentre
-          candidates.
+          default.psfex sets SAMPLE_AUTOSELECT N (compiled default Y)
+          and omits every other SAMPLE_* key, so [HARDCODED] PSFEx's
+          compiled defaults govern them and can change with its
+          version. psfex -dd (PSFEx 3.21.1 in the develop-runtime
+          image) gives SAMPLE_FWHMRANGE 2.0,10.0, SAMPLE_VARIABILITY
+          0.2, SAMPLE_MINSN 20, SAMPLE_MAXELLIP 0.3, SAMPLE_FLAGMASK
+          0x00fe, SAMPLE_WFLAGMASK 0x0000 and SAMPLE_IMAFLAGMASK 0x0.
+          From the PSFEx source, not re-read here, MINSN, MAXELLIP,
+          FLAGMASK, FWHMRANGE and VARIABILITY still cut candidates
+          with SAMPLE_AUTOSELECT N; SETools cuts neither signal-to-noise
+          nor ellipticity, so MINSN and MAXELLIP can reject stars it
+          kept. BADPIXEL_FILTER N and PSF_RECENTER N, also the compiled
+          defaults, accept flagged star vignets unfiltered and do not
+          recentre candidates.
           Anchor: workflow/config/cfis/default.psfex#SAMPLE_AUTOSELECT = N;
           workflow/config/cfis/default.psfex#BADPIXEL_FILTER = N;
-          workflow/config/cfis/default.psfex#PSF_RECENTER = N.
+          workflow/config/cfis/default.psfex#PSF_RECENTER = N;
+          workflow/config/cfis/default.psfex#SAMPLE_FWHMRANGE = absent;
+          workflow/config/cfis/default.psfex#SAMPLE_VARIABILITY = absent;
+          workflow/config/cfis/default.psfex#SAMPLE_MINSN = absent;
+          workflow/config/cfis/default.psfex#SAMPLE_MAXELLIP = absent;
+          workflow/config/cfis/default.psfex#SAMPLE_FLAGMASK = absent;
+          workflow/config/cfis/default.psfex#SAMPLE_WFLAGMASK = absent;
+          workflow/config/cfis/default.psfex#SAMPLE_IMAFLAGMASK = absent.
         default: builtin_defaults
         options:
           builtin_defaults:
-            label: PSFEx built-in SAMPLE_* values, no bad-pixel filter
+            label: PSFEx 3.21.1 built-in SAMPLE_* values, no bad-pixel filter
           pinned_explicit:
             label: Write the SAMPLE_* values explicitly into default.psfex
       psf_modelling_software:
