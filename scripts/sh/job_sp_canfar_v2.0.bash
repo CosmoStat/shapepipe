@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Name: job_sp_canfar.bash
+# Name: job_sp_canfar_v2.0.bash
 # Description: General script to process one or more tiles
 #              with all contributing exposures.
 #              This works as job submission script for
