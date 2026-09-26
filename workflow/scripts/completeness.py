@@ -2,13 +2,12 @@
 """The count-based completeness table — the single failure policy.
 
 This is the ported ``complete_check`` count table from the v2.0 bash layer
-(``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4). Across smk-g6
-(127 exposures, 64 tiles, and 512 ngmix chunks), every non-warning runner
-produced exactly its ``expect`` count; the v2.0 layer likewise used exact counts,
-with only ``psfex_interp`` marked ``:warn``. The formerly ported lower bounds
-(and the unsupported ~0.2% setools-attrition claim) therefore have no basis:
-setools produced 80/80 in all 127 exposures. ``split_exp`` is also structurally
-all-or-nothing because it raises on an HDU-count mismatch.
+(``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4): every non-warning
+runner is expected to produce exactly its ``expect`` count. Across smk-g6
+(127 exposures, 64 tiles, and 512 ngmix chunks), setools produced 80/80 in
+all 127 exposures, so ``setools_runner`` is mandatory with no tolerance for
+attrition. ``split_exp`` is likewise structurally all-or-nothing because it
+raises on an HDU-count mismatch.
 
 A runner below ``expect`` fails its unit unless it has ``warn=True``; such a
 shortfall gives the unit status ``warn``. There is no 3-class taxonomy and no
