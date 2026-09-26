@@ -211,10 +211,12 @@ rule clean_exposure:
         # The keepers must be off /scratch before the store goes. Unlike the
         # consumer edges above, this edge does not depend on scope: it is the
         # same exposure's own rule, so it drags nothing into the DAG that this
-        # exposure's chain did not already put there. It is UNCONDITIONAL now:
-        # exp_persist always packs the star catalogue's inputs, so there is no
-        # keep list under which this rule has nothing to wait for.
-        lambda wc: [prod_exp_manifest(wc.exp, "exp_persist")]
+        # exposure's chain did not already put there. No keep list removes it:
+        # exp_persist always packs the star catalogue's inputs. Only
+        # psf_model=fake does, which has no PSF products to keep
+        # (PERSISTS_PSF, Snakefile).
+        lambda wc: ([prod_exp_manifest(wc.exp, "exp_persist")]
+                    if PERSISTS_PSF else [])
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
     params:

@@ -61,6 +61,8 @@ each overlay file to its `cfis/` original confined to input naming.
 `psf_model: fake` is the simulations' true PSF: the exposure stage runs only
 SExtractor (for the background maps the vignets read), and `tile_vignets` runs
 `fake_interp_runner`, which writes the `galaxy_psf` product from `psf_dict`.
+With no PSF model there is nothing to persist per exposure, so `exp_persist` and
+`star_cat_merge` do not run and `clean_exposure` does not wait on them.
 Simulations that contain stars can run `psfex` or `mccd` exactly as the data do.
 
 One campaign per shear branch, each with its own run config:

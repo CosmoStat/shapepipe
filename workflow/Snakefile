@@ -571,6 +571,14 @@ def clean_targets():
 # inputs and nothing else, and exp_persist still runs for every exposure.
 PERSIST_EXP = list(config.get("persist_exp") or [])
 
+# Whether exposures have PSF products to persist at all. psf_model=fake (the
+# image-simulation true PSF) fits no model: exp_psf runs SExtractor only and
+# writes no validation_psf-*.fits, so exp_persist would find nothing to pack
+# and star_cat_merge nothing to stack. Under fake both drop out of the DAG,
+# and clean_exposure stops waiting on exp_persist; final_cat_merge is
+# unaffected. psf_exposures() below is where this gate acts.
+PERSISTS_PSF = PSF_MODEL != "fake"
+
 # The keep list names PRODUCTS (`psf_model`), not globs (`*.psf`); the
 # catalogue that maps one to the other lives in persist_exp.py, which is also
 # what the rule runs, so there is one definition and not a copy here.
@@ -623,9 +631,17 @@ def persist_manifests():
     merge job's own re-parse under the slurm executor, which genuinely needs it.
     So this half carries no guard and the memo keeps either parse to one walk.
     """
-    exps = {e for t in TILES_READY for e in tile_exposures(t)}
-    return sorted(prod_exp_manifest(e, "exp_persist") for e in exps
+    return sorted(prod_exp_manifest(e, "exp_persist") for e in psf_exposures()
                   if not exp_store_reclaimed(e))
+
+
+def psf_exposures():
+    """The ready tiles' exposures that have PSF products to persist and stack:
+    all of them, or none under psf_model=fake (PERSISTS_PSF). The one set
+    exp_persist's targets and star_cat_merge's inputs are drawn from."""
+    if not PERSISTS_PSF:
+        return []
+    return sorted({e for t in TILES_READY for e in tile_exposures(t)})
 
 
 def exp_store_reclaimed(exp):
@@ -777,7 +793,7 @@ def star_cat_inputs():
     VOS recovers it; the merge reports how many exposures it found.
     """
     live, reclaimed = [], []
-    for exp in sorted({e for t in TILES_READY for e in tile_exposures(t)}):
+    for exp in psf_exposures():
         if not exp_store_reclaimed(exp):
             live.append(prod_exp_manifest(exp, "exp_persist"))
         elif Path(prod_exp_tar(exp)).exists():
@@ -797,9 +813,9 @@ def star_cat_exposures():
     is what the trigger is for. It is also what merge_star_cat.py derives on the
     job side, so the two agree on the set AND on how it is named.
     """
-    return sorted(e for e in {e for t in TILES_READY for e in tile_exposures(t)}
-                  if Path(prod_exp_manifest(e, "exp_persist")).exists()
-                  or not exp_store_reclaimed(e))
+    return [e for e in psf_exposures()
+            if Path(prod_exp_manifest(e, "exp_persist")).exists()
+            or not exp_store_reclaimed(e)]
 
 
 # --- sizing the two merges (D4) ---------------------------------------------
