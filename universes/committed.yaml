@@ -58,3 +58,4 @@ analyses:
       star_galaxy_classification: deferred_downstream
       tile_overlap_handling: no_dedup_in_pipeline
       failure_sentinels: sentinel_values
+      mask_default_cut: r_mask_bits
