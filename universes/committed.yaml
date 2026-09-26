@@ -33,6 +33,7 @@ analyses:
       object_position_columns: xwin_windowed
       stamp_positioning_and_padding: round_and_zero_pad
       epoch_flag_source: raw_flags
+      defect_map_from_flags: rasterize_conservative_os3
   star_selection_psf:
     decisions:
       star_selection_box: mode_centred_box

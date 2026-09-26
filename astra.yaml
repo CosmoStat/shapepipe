@@ -785,6 +785,15 @@ analyses:
           [astrometric_solution_source, ccd_split_extent,
            epoch_provenance_from_tile_history, object_position_columns,
            stamp_positioning_and_padding, epoch_flag_source]
+      - id: defect_map
+        type: data
+        format: hsp
+        description: >-
+          The campaign's instrument-flag defect map: a boolean healsparse
+          map, True = masked, the union of one fragment per exposure. A
+          product; nothing in the workflow reads it. Data runs only.
+        inputs: [exposure_files]
+        decisions: [defect_map_from_flags]
     decisions:
       astrometric_solution_source:
         label: Astrometry taken verbatim from delivered per-CCD headers
@@ -893,6 +902,50 @@ analyses:
           raw_flags: { label: split_exp raw flags gate epoch pixels }
           pipeline_flags:
             label: pipeline_flag (incl. bright-star masks) gates epoch pixels
+      defect_map_from_flags:
+        label: Instrument flags rasterized conservatively into a healsparse defect map
+        rationale: >-
+          [PENDING #887] The flag images epoch_flag_source reads (bad
+          columns, saturated pixels, bleed trails) otherwise never leave the
+          pixel domain, and the footprint built from CCD-corner WCS cannot
+          subtract them. exp_defect_map samples every nonzero-flag CCD pixel
+          on an oversample x oversample grid spanning its full extent,
+          corners included (defect_map.oversample 3 in workflow/config.yaml),
+          maps the samples through the CCD's image-split WCS, and masks every
+          healpix pixel they touch, at the mask ladder's convention (nside
+          131072 over coverage 128, True = masked). Any flag bit counts.
+          defect_map_merge ORs the campaign's fragments into
+          defect_map_<campaign>.hsp, with a sidecar recording which exposures
+          are in; a removed or changed fragment forces a rebuild, since a
+          union cannot be un-OR-ed. On 2079612p CCD 0, oversample 2, 3 and 5
+          miss 169, 54 and 5 of 14229 reference healpix pixels. The map is a
+          product no workflow stage consumes (config_tile_Mc.ini's
+          MASK_EXT_PATHS does not name it); image simulations get none, their
+          flag images being all zero. Anchor:
+          workflow/scripts/defect_map_exp.py::rasterize_ccd;
+          workflow/scripts/defect_map_exp.py::offsets;
+          workflow/scripts/merge_defect_map.py::accumulate;
+          workflow/rules/exposure.smk::exp_defect_map;
+          workflow/rules/exposure.smk::defect_map_merge;
+          workflow/Snakefile::defect_map_exposures;
+          workflow/config.yaml.
+        default: rasterize_conservative_os3
+        options:
+          rasterize_conservative_os3:
+            label: "Any-touch rasterization, 3x3 samples per CCD pixel"
+          centre_sampling:
+            label: Mask a healpix pixel only where its centre is flagged
+            excluded: true
+            excluded_reason: >-
+              Erases one-pixel bad columns, the thin geometry #878 exists to
+              keep.
+          none_footprint_from_wcs:
+            label: No defect map; footprint from CCD-corner WCS alone
+            excluded: true
+            excluded_reason: >-
+              The footprint silently includes defective pixels: percent-level
+              area, in exactly the thin small-scale geometry a window function
+              needs.
     prior_insights:
       guinot22_gaia_astrometry:
         claim: >-
