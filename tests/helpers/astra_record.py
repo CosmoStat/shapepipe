@@ -4,6 +4,8 @@ import argparse
 import ast
 import configparser
 from dataclasses import dataclass
+from decimal import Decimal
+from functools import lru_cache
 import json
 from pathlib import Path
 import re
@@ -83,7 +85,23 @@ def extract_anchors(document):
     return anchors
 
 
+def _split_assertion(reference):
+    """Split the reserved, whitespace-delimited `` = `` (never a cut's ==)."""
+
+    if ";" in reference:
+        raise ValueError("semicolon is reserved for separating anchor refs")
+    parts = re.split(r"\s+=\s*", reference.strip(), maxsplit=1)
+    locator = parts[0]
+    expected = parts[1].strip() if len(parts) == 2 else None
+    if not locator or re.search(r"\s|=", locator):
+        raise ValueError("expected a locator optionally followed by ' = value'")
+    if expected is not None and (not expected or expected.startswith("=")):
+        raise ValueError("expected a nonempty value after ' = '")
+    return locator, expected
+
+
 def _parse_reference(reference):
+    reference, _ = _split_assertion(reference)
     if "::" in reference:
         path, symbol = reference.split("::", 1)
         return "code", path, symbol
@@ -116,7 +134,10 @@ def _snakemake_symbol(text, symbol):
 def resolve_anchor(root, reference):
     """Return ``None`` if a reference resolves, otherwise a diagnostic."""
 
-    kind, relative, selector = _parse_reference(reference)
+    try:
+        kind, relative, selector = _parse_reference(reference)
+    except ValueError as error:
+        return str(error)
     path = Path(relative)
     if path.is_absolute() or ".." in path.parts:
         return "path must be relative to the repository root"
@@ -139,11 +160,14 @@ def resolve_anchor(root, reference):
         if target.suffix != ".py":
             return "code-symbol refs must name a .py file"
         try:
-            tree = ast.parse(text, filename=str(target))
-        except SyntaxError as error:
-            return f"cannot parse Python file: {error}"
-        if not _has_symbol(tree, selector):
-            return f"no def/class/assignment target named {selector!r}"
+            tree = _python_tree(text)
+            symbol, keys = _code_selector(selector)
+            if not _has_symbol(tree, symbol):
+                return f"no def/class/assignment target named {symbol!r}"
+            if keys:
+                _selected_python_node(tree, selector)
+        except (SyntaxError, ValueError) as error:
+            return f"cannot resolve Python selector: {error}"
         return None
 
     suffix = target.suffix.lower()
@@ -164,14 +188,11 @@ def _ini_key(text, selector):
     if "." not in selector:
         return "INI config ref needs SECTION.KEY"
     section, key = selector.rsplit(".", 1)
-    parser = configparser.ConfigParser(
-        interpolation=None, strict=False, allow_no_value=True
-    )
     try:
-        parser.read_string(text)
+        parser = _ini_parser(text, strict=False)
     except configparser.Error as error:
         return f"cannot parse INI file: {error}"
-    if not parser.has_section(section):
+    if section != parser.default_section and not parser.has_section(section):
         return f"INI section {section!r} is missing"
     if not parser.has_option(section, key):
         return f"INI key {key!r} is missing from section {section!r}"
@@ -205,8 +226,9 @@ def _target_names(target):
     return []
 
 
+@lru_cache(maxsize=128)
 def _bindings(scope):
-    """Collect declarations and assignment targets in one lexical scope."""
+    """Collect all bindings per name; value reads must not pick one silently."""
 
     result = {}
 
@@ -215,7 +237,7 @@ def _bindings(scope):
             node,
             (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef),
         ):
-            result[node.name] = node
+            result.setdefault(node.name, []).append(node)
             return
         if isinstance(node, ast.Lambda):
             return
@@ -231,9 +253,10 @@ def _bindings(scope):
             targets = []
         for target in targets:
             if target is not None:
-                result.update(dict.fromkeys(_target_names(target), node))
+                for name in _target_names(target):
+                    result.setdefault(name, []).append(node)
         if isinstance(node, ast.ExceptHandler) and node.name:
-            result[node.name] = node
+            result.setdefault(node.name, []).append(node)
         for child in ast.iter_child_nodes(node):
             visit(child)
 
@@ -246,9 +269,10 @@ def _has_symbol(tree, symbol):
     scope = tree
     parts = symbol.split(".")
     for index, part in enumerate(parts):
-        declaration = _bindings(scope).get(part)
-        if declaration is None:
+        declarations = _bindings(scope).get(part)
+        if not declarations:
             return False
+        declaration = declarations[-1]
         if index == len(parts) - 1:
             return True
         if not isinstance(
@@ -258,6 +282,247 @@ def _has_symbol(tree, symbol):
             return False
         scope = declaration
     return False
+
+
+def _ini_parser(text, *, strict=True):
+    parser = configparser.ConfigParser(
+        interpolation=None, strict=strict, allow_no_value=True
+    )
+    parser.optionxform = str
+    parser.read_string(text)
+    return parser
+
+
+@lru_cache(maxsize=16)
+def _python_tree(text):
+    # Cache by source, not path: editing a file must invalidate the read.
+    return ast.parse(text)
+
+
+def _code_selector(selector):
+    match = re.fullmatch(r"([\w.]+)(?:\[([\w.]+)\])?", selector)
+    if not match or any(not p.isidentifier() for p in match[1].split(".")):
+        raise ValueError(f"invalid Python selector {selector!r}")
+    keys = tuple(match[2].split(".")) if match[2] else ()
+    if any(not key.isidentifier() for key in keys):
+        raise ValueError("dict paths need dot-separated identifier keys")
+    return match[1], keys
+
+
+def _dict_entry(node, key):
+    """Select syntax, not a runtime value; never execute a dict() call."""
+
+    if isinstance(node, ast.Dict):
+        if any(
+            not isinstance(k, ast.Constant) or not isinstance(k.value, str)
+            for k in node.keys
+        ):
+            raise ValueError("dict selectors need literal string keys, no **")
+        items = [(k.value, v) for k, v in zip(node.keys, node.values)]
+    elif (
+        isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+        and node.func.id == "dict" and not node.args
+        and all(k.arg is not None for k in node.keywords)
+    ):
+        items = [(k.arg, k.value) for k in node.keywords]
+    else:
+        raise ValueError("dict selectors need {...} or dict(key=value) syntax")
+    names = [name for name, _ in items]
+    if len(names) != len(set(names)):
+        raise ValueError("ambiguous duplicate dict keys")
+    if key not in names:
+        raise ValueError(f"dict key {key!r} is missing")
+    return dict(items)[key]
+
+
+def _selected_python_node(tree, selector):
+    symbol, keys = _code_selector(selector)
+    scope = tree
+    parts = symbol.split(".")
+    for index, part in enumerate(parts):
+        declarations = _bindings(scope).get(part, [])
+        if len(declarations) != 1:
+            raise ValueError(
+                f"{symbol!r} needs one binding; found {len(declarations)} "
+                f"for {part!r}"
+            )
+        node = declarations[0]
+        if index < len(parts) - 1:
+            if not isinstance(
+                node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+            ):
+                raise ValueError(f"{part!r} is not a lexical scope")
+            scope = node
+    if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+        raise ValueError(f"{symbol!r} is not a literal assignment")
+    targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+    if any(not isinstance(target, ast.Name) for target in targets):
+        raise ValueError("value assertions need simple named assignment targets")
+    node = node.value
+    for key in keys:
+        node = _dict_entry(node, key)
+    return node
+
+
+def _line_value(text, selector, suffix):
+    """Read active lines; SETools repeated predicates form an ordered list."""
+
+    section = None
+    if suffix == ".setools":
+        if "." not in selector:
+            raise ValueError("SETools config ref needs SECTION.KEY")
+        section, key = selector.rsplit(".", 1)
+    else:
+        key = selector.rsplit(".", 1)[-1]
+    pattern = re.compile(rf"^{re.escape(key)}(?=$|\s|=|\(|<|>)(.*)$")
+    active = section is None
+    values = []
+    predicates = []
+    for line in text.splitlines():
+        line = line.split("#", 1)[0].strip()
+        if section is not None and line.startswith("[") and line.endswith("]"):
+            active = line[1:-1].strip() == section
+            continue
+        match = pattern.fullmatch(line) if active else None
+        if not match:
+            continue
+        value = match[1].strip()
+        predicate = suffix == ".setools" and value.startswith(
+            ("==", "!=", "<", ">")
+        )
+        if suffix == ".param" and value.startswith("(") and value.endswith(")"):
+            value = value[1:-1]
+        elif value.startswith("=") and not predicate:
+            value = value[1:].strip()
+        values.append(value)
+        predicates.append(predicate)
+    if not values or any(not value for value in values):
+        raise ValueError(f"no active value for {selector!r}")
+    if len(values) > 1 and not all(predicates):
+        raise ValueError(f"ambiguous active values for {selector!r}: {values!r}")
+    return values if len(values) > 1 else values[0]
+
+
+_NUMBER = re.compile(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\Z")
+_BOOLEANS = {
+    "y": True, "yes": True, "true": True, "on": True,
+    "n": False, "no": False, "false": False, "off": False,
+}
+
+
+def _normalise_value(value):
+    """Use tagged atoms so boolean True cannot compare equal to number 1."""
+
+    if isinstance(value, bool):
+        return "bool", value
+    if isinstance(value, (int, float)):
+        number = Decimal(str(value))
+        if not number.is_finite():
+            raise ValueError("numeric values must be finite")
+        return "number", number
+    if isinstance(value, (list, tuple)):
+        elements = tuple(_normalise_value(item) for item in value)
+        if any(kind == "list" for kind, _ in elements):
+            raise ValueError("only flat lists are supported")
+        return "list", elements
+    if not isinstance(value, str):
+        raise ValueError("expected a number, boolean, string or flat list")
+    value = value.strip()
+    if not value:
+        raise ValueError("empty values/list elements are not supported")
+    if value[0] in "[{'\"":
+        # BaseLoader keeps even 5e-4 and Y as strings, avoiding YAML 1.1's
+        # inconsistent numeric/boolean coercions. It constructs no objects.
+        parsed = yaml.load(value, Loader=yaml.BaseLoader)
+        if isinstance(parsed, list):
+            return _normalise_value(parsed)
+        if not isinstance(parsed, str):
+            raise ValueError("expected a scalar or flat list, not a mapping")
+        # Quotes protect commas/operators; their contents are a single atom.
+        value = parsed.strip()
+    elif "," in value:
+        return _normalise_value(value.split(","))
+    if _NUMBER.fullmatch(value):
+        return "number", Decimal(value)
+    if value.lower() in _BOOLEANS:
+        return "bool", _BOOLEANS[value.lower()]
+    return "text", value
+
+
+def _square_stamp(value):
+    if value[0] == "number":
+        return "list", (value, value)
+    return value
+
+
+def check_anchor_value(root, reference):
+    """Return a diagnostic for a mismatched/unreadable assertion, else None.
+
+    A reference without `` = value`` is location-only. Numbers compare
+    exactly after decimal normalization, not with a tolerance. No imported
+    code, environment expansion, function calls or expressions are evaluated.
+    """
+
+    expected = None
+    actual = "<unreadable>"
+    try:
+        _, expected = _split_assertion(reference)
+        if expected is None:
+            return None
+        kind, relative, selector = _parse_reference(reference)
+        problem = resolve_anchor(root, reference)
+        if problem:
+            raise ValueError(problem)
+        target = Path(root) / relative
+        text = target.read_text(encoding="utf-8")
+        suffix = target.suffix.lower()
+        if kind == "code" and suffix == ".py":
+            node = _selected_python_node(_python_tree(text), selector)
+            try:
+                actual = ast.literal_eval(node)
+            except (ValueError, TypeError) as error:
+                raise ValueError(
+                    "selected Python value is not a literal"
+                ) from error
+        elif kind == "config" and suffix == ".ini":
+            section, key = selector.rsplit(".", 1)
+            actual = _ini_parser(text).get(section, key)
+            if actual is None:
+                raise ValueError("no active value for INI key")
+        elif kind == "config" and suffix in {
+            ".sex", ".psfex", ".ww", ".param", ".conf", ".setools"
+        }:
+            actual = _line_value(text, selector, suffix)
+        else:
+            raise ValueError(
+                "value assertions need a config key or Python assignment"
+            )
+        want = _normalise_value(expected)
+        got = _normalise_value(actual)
+        if (suffix, selector) in {(".param", "VIGNET"), (".psfex", "PSF_SIZE")}:
+            want, got = _square_stamp(want), _square_stamp(got)
+        if want == got:
+            return None
+        return f"expected {expected!r}, actual {actual!r}"
+    except (
+        ValueError, OSError, SyntaxError, configparser.Error, yaml.YAMLError
+    ) as error:
+        return f"expected {expected!r}, actual {actual!r}: {error}"
+
+
+def value_errors(root, record):
+    """Check assertions, naming decision, ref, expected and actual in errors."""
+
+    errors = []
+    for anchor in extract_anchors(record):
+        if anchor.error:
+            errors.append(f"{anchor.location}: {anchor.error}")
+            continue
+        for reference in anchor.references:
+            problem = check_anchor_value(root, reference)
+            if problem:
+                errors.append(f"{anchor.location}: {reference}: {problem}")
+    return errors
 
 
 def universe_errors(record, universe):

@@ -1,16 +1,37 @@
 # ASTRA record of ShapePipe's scientific decisions: the choices embedded in
 # the code and the committed workflow configs (workflow/config/cfis/), why
 # they stand, and the alternatives. CLAUDE.md says when to amend it; the
-# anchor test tests/unit/test_astra_anchors.py keeps it resolvable.
+# tests/unit/test_astra_{anchors,values}.py check locations and values separately.
 #
 # Conventions:
 #   * Every rationale ends with one sentence "Anchor: <ref>; <ref>." Each ref
 #     is a path relative to the repo root: CODE `path::Symbol` (a def, class
 #     or assignment target, dotted for nesting), CONFIG `path#SECTION.KEY`
-#     (`path#KEY` for sectionless .sex/.psfex/.param files, where a
-#     commented-out key still resolves), or FILE `path`. No line numbers.
-#     Numeric values are stated once, in the rationale, next to the anchor
-#     that holds them.
+#     (`path#KEY` for sectionless .sex/.psfex/.param files; .setools uses
+#     SECTION.KEY), or FILE `path`. No line numbers. Commented-out keys may
+#     resolve as locations, but only active settings can assert values.
+#   * Value assertions: `Anchor: path#SECTION.KEY = 1.5; path::NAME = 51.`
+#     A ref without ` = value` is location-only. Attaching the expectation to
+#     its locator avoids guessing which file a prose number describes, while
+#     keeping ordinary, schema-valid prose; no extra ASTRA keys or second
+#     parameter table. The anchor is the canonical recorded expectation;
+#     rationale/labels may repeat it for readability. Option ids are stable
+#     references, never parsed for values. Code/config remains execution truth.
+#   * Values are numbers, boolean words, strings (quote expressions), or flat
+#     comma lists, optionally bracketed. Semicolons are reserved for refs.
+#     Decimal equality is exact (1 = 1.0, 5e-4 = 0.0005), without rounding;
+#     Y/yes/true/on and N/no/false/off are case-insensitive boolean aliases,
+#     distinct from 1/0. Trim outer whitespace; other strings are case-sensitive.
+#     Lists preserve order and length. Only .param VIGNET and .psfex PSF_SIZE
+#     accept square-size shorthand: 51 = 51,51 (never 51,53).
+#   * SETools predicates retain their operators as quoted text; repeated cuts
+#     on one key are an ordered list, e.g. MAG_AUTO = ["> 18.", "< 22."].
+#     Expressions compare as text, not algebra. Python selectors may append
+#     `[key.subkey]` to a named assignment (identifier-like string dict keys);
+#     only the selected literal is read, including dict(key=value) syntax.
+#     Ambiguous bindings/settings fail; no imports, calls, arithmetic, argument
+#     defaults, environment expansion or implicit tool defaults are evaluated.
+#     These limits keep the check static rather than a second pipeline runtime.
 #   * A decision's `default` is the option the committed code and configs
 #     select; universes/committed.yaml pins it.
 #   * `excluded: true` means considered and rejected. An option the code does
@@ -1232,7 +1253,7 @@ analyses:
           with PSF_NOISE 1e-5; without it the g-prior swamps the PSF
           likelihood. The recovered PSF shape and size are flat across 1e-4 to
           1e-6 on the digital twin.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::PSF_NOISE;
+          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::PSF_NOISE = 1e-5;
           src/shapepipe/modules/ngmix_package/ngmix.py::make_ngmix_observation.
         default: psf_noise_1em5
         options:
