@@ -354,15 +354,6 @@ rule clean_exposure:
         # this DAG, so the clean must be ordered after them.
         lambda wc: [tile_manifest(t, "tile_vignets")
                     for t in clean_consumers(wc.exp) if t in READY_SET],
-        # The keepers must be off /scratch before the store goes. Unlike the
-        # consumer edges above, this edge does not depend on scope: it is the
-        # same exposure's own rule, so it drags nothing into the DAG that this
-        # exposure's chain did not already put there. No keep list removes it:
-        # exp_persist always packs the star catalogue's inputs. Only
-        # psf_model=fake does, which has no PSF products to keep
-        # (PERSISTS_PSF, Snakefile).
-        lambda wc: ([prod_exp_manifest(wc.exp, "exp_persist")]
-                    if PERSISTS_PSF else []),
         # The fragment must be off /scratch before the store goes too — the flag
         # splits go with it — but this edge is CONDITIONAL, and it is exactly
         # defect_map_inputs()' split (Snakefile), for exactly its reason.
@@ -389,7 +380,11 @@ rule clean_exposure:
                     else [prod_exp_manifest(wc.exp, "exp_defect_map")]
                     if not exp_store_reclaimed(wc.exp)
                     else [prod_exp_fragment(wc.exp)]
-                    if Path(prod_exp_fragment(wc.exp)).exists() else [])
+                    if Path(prod_exp_fragment(wc.exp)).exists() else []),
+        # The keepers must be off /scratch before the store goes. Unlike the
+        # consumer edges above, this edge does not depend on scope: it is the
+        # same exposure's own rule, so it drags nothing into the DAG that this
+        # exposure's chain did not already put there. No keep list removes it:
         # exp_persist always packs the star catalogue's inputs.
         # And the footprint, for the same ordering reason one layer further out:
         # it is derived from headers-<exp>.npy, which lives in the store this job
