@@ -186,7 +186,8 @@ persist_exp:
 # <products_dir>/exp/<shard>/<exp>/defect/defect-<exp>.hsp -- its own subdir
 # beside the exposure's manifests/ and its PSF tar, not beside the tar itself --
 # and `defect_map_merge` unions the campaign's fragments into
-# <products_dir>/defect_map_<campaign>.hsp.
+# <products_dir>/defect_map_<campaign>.hsp. Data runs only: the image
+# simulations' flag images are blank (MAPS_DEFECTS, Snakefile).
 #
 # IT IS A PRODUCT, NOT AN INPUT. Nothing in the workflow reads it back; it is
 # for the footprint, downstream. In particular config_tile_Mc.ini's

@@ -329,8 +329,10 @@ rule clean_exposure:
         # nothing — and for nothing at all if it has neither, which is an
         # exposure reclaimed by a workflow predating this rule and whose flags
         # are gone either way. Blocking its tombstone would pin its scratch
-        # store forever without recovering a single flag.
-        lambda wc: ([prod_exp_manifest(wc.exp, "exp_defect_map")]
+        # store forever without recovering a single flag. Image simulations
+        # rasterize nothing (MAPS_DEFECTS, Snakefile), so they wait on nothing.
+        lambda wc: ([] if not MAPS_DEFECTS
+                    else [prod_exp_manifest(wc.exp, "exp_defect_map")]
                     if not exp_store_reclaimed(wc.exp)
                     else [prod_exp_fragment(wc.exp)]
                     if Path(prod_exp_fragment(wc.exp)).exists() else [])

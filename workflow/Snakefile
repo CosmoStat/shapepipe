@@ -617,6 +617,16 @@ for _entry in PERSIST_EXP:
 # `inputs.masks` and every entry in config_tile_Mc.ini's MASK_EXT_PATHS. It is
 # config so that a campaign against a different ladder can say so, not so that
 # this one can drift.
+#
+# DATA RUNS ONLY. The image simulations ship a flag file per exposure
+# (simu_flag-<exp>.fits, split and read by SExtractor like the survey's) but
+# every pixel in it is zero — measured on 2079614 and 2079616 across three
+# skills_out branches — so the union would be an empty map at the cost of a
+# rasterization per exposure. defect_map_exposures() is where this gate acts;
+# every defect-map target, input and sizing, and clean_exposure's edge, reads
+# through it.
+MAPS_DEFECTS = INPUT_TYPE == "data"
+
 _DEFECT = dict(config.get("defect_map") or {})
 DEFECT_NSIDE          = int(_DEFECT.get("nside", 131072))
 DEFECT_NSIDE_COVERAGE = int(_DEFECT.get("nside_coverage", 128))
@@ -688,7 +698,11 @@ def defect_map_exposures():
 
     THE IDS, NOT THE PATHS: the fingerprint on `params` must move when the SET
     moves and not when a path does.
+
+    Empty for image simulations (MAPS_DEFECTS): their flag images are blank.
     """
+    if not MAPS_DEFECTS:
+        return []
     return sorted({e for t in TILES_READY for e in tile_exposures(t)})
 
 
