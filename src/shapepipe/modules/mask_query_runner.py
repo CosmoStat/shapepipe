@@ -26,7 +26,17 @@ def mask_query_runner(
     module_config_sec,
     w_log,
 ):
-    """Define The Mask Query Runner."""
+    """Define The Mask Query Runner.
+
+    @sc [decision:masking.psf_star_mask_veto,label:scope] mask-query-carries-not-cuts
+    Without MASK_PATHS the catalogue passes through with no MASK_EXT column;
+    with it, MASK_EXT is carried for measurement and nothing here removes a
+    star. The PSF-star veto is a setools edit (``MASK_EXT == 0`` beside
+    IMAFLAGS_ISO), not a change here. The workflow/rules/exposure.smk docstring
+    calls the column FLAG_EXT and says setools cuts on it, a [LINT] the
+    decision record carries.
+
+    """
     sexcat_path = input_file_list[0]
 
     # Get file prefix (optional)

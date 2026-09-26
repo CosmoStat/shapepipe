@@ -1,0 +1,116 @@
+Scientific contracts for the committed CFIS configuration
+=======================================================
+
+Read these before changing a governed key; astra.yaml holds the decision and alternatives.
+Query sc-list with a config path (for example workflow/config/cfis/default_tile.sex) to see these contracts and the parent workflow/CONTRACTS.
+The directory contracts remain visible to sc-list even though it does not scan config comments.
+Sidecars are canonical rather than duplicated in comments, keeping native config inputs unchanged and each constraint in one place.
+
+A governs: value lists ASTRA-style locators relative to this directory, separated by semicolons without spaces; value assertions stay in astra.yaml.
+Use file#KEY for sectionless configs, file#SECTION.KEY for INI/SETools, or a bare file for a whole-file constraint, including absent keys.
+Keep each tag on one line and separate contracts with a blank line: sc-list reads the following nonblank lines as prose.
+Use plain prose for scientific constraints; only:/forbid: lines are for the separate import-boundary checker.
+The contract tests resolve every ref and decision id; they do not enforce the scientific prose or certify that a [LINT] is fixed.
+Changing a scientific choice requires updating its ASTRA decision and committed universe, not just editing this file.
+
+Detection and photometry
+------------------------
+
+@sc [decision:detection.detection_threshold_policy,governs:default_tile.sex#DETECT_THRESH;default_tile.sex#ANALYSIS_THRESH;default_tile.sex#DETECT_MINAREA;default_tile.sex#THRESH_TYPE;default_tile.sex#FILTER;default_tile.sex#FILTER_NAME;config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE;gauss_3.0_7x7.conv;default_exp.sex#DETECT_THRESH;default_exp.sex#ANALYSIS_THRESH;default_exp.sex#DETECT_MINAREA;default_exp.sex#THRESH_TYPE;default_exp.sex#FILTER;default_exp.sex#FILTER_NAME;config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE;default.conv] tile-detection-matches-megapipe
+Keep tile significance, minimum area and matched filter together as the MegaPipe detection prescription used by Gwyn's UNIONS tile catalogue, in both data and matching image simulations.
+Exposure settings serve PSF-star detection and intentionally differ; copying them onto tiles changes the galaxy sample rather than standardising an implementation detail.
+The runner's DOT_CONV_FILE overrides FILTER_NAME, so a kernel change must reach the effective command line, not just the .sex file.
+
+@sc [decision:detection.deblending_policy,governs:default_tile.sex#DEBLEND_MINCONT;default_exp.sex#DEBLEND_MINCONT;default_tile.sex#DEBLEND_NTHRESH;default_exp.sex#DEBLEND_NTHRESH] deblend-contrast-is-stage-specific
+Preserve the deliberate tile/exposure difference in DEBLEND_MINCONT: tiles follow MegaPipe, while exposures select PSF-star candidates.
+Do not harmonise the contrasts because DEBLEND_NTHRESH is shared; contrast changes object multiplicity, centroids and blend contamination.
+A change must propagate to the matching simulations and the recorded detection prescription.
+
+@sc [decision:detection.background_model,governs:default_tile.sex#BACK_TYPE;default_tile.sex#BACK_SIZE;default_tile.sex#BACK_FILTERSIZE;default_tile.sex#BACKPHOTO_TYPE;default_tile.sex#BACKPHOTO_THICK;default_exp.sex#BACK_TYPE;default_exp.sex#BACK_SIZE;default_exp.sex#BACK_FILTERSIZE;default_exp.sex#BACKPHOTO_TYPE;config_tile_Sx.ini#SEXTRACTOR_RUNNER.BKG_FROM_HEADER;config_exp_psfex.ini#SEXTRACTOR_RUNNER.BKG_FROM_HEADER;config_exp_psfex.ini#SEXTRACTOR_RUNNER.CHECKIMAGE] background-model-follows-image-role
+Keep the tile mesh, smoothing and local photometric annulus together as part of MegaPipe detection; the exposure mesh and global photometric background are a different prescription.
+Exposure BACKGROUND and BACKGROUND_RMS check images also supply ngmix's epoch subtraction and noise weights, so changing their estimator changes shapes, not just detection photometry.
+BKG_FROM_HEADER replaces the AUTO estimate with a manual background; do not enable that override while claiming the same background model.
+
+@sc [decision:detection.zero_weight_interpolation,governs:default_tile.sex#INTERP_TYPE;default_tile.sex#INTERP_MAXXLAG;default_tile.sex#INTERP_MAXYLAG;default_exp.sex#INTERP_TYPE;default_exp.sex#INTERP_MAXXLAG;default_exp.sex#INTERP_MAXYLAG] interpolated-detections-are-not-repaired-pixels
+Treat INTERP_TYPE and both maximum lags as part of the detection and photometry prescription, including in matching simulations.
+Flux invented across zero-weight pixels changes objects near defects; it does not make those pixels valid for ngmix or replace its separate defect-fill decision.
+No scientific justification for the committed interpolation choice is recorded, so do not present it as a calibrated repair.
+
+@sc [decision:detection.spurious_detection_cleaning,governs:default_tile.sex#CLEAN;default_tile.sex#CLEAN_PARAM;default_exp.sex#CLEAN;default_exp.sex#CLEAN_PARAM] cleaning-changes-the-detection-sample
+Keep CLEAN and CLEAN_PARAM together when reproducing the detection sample in data and simulations.
+Cleaning removes detections after deblending, so switching it off or changing its strength changes catalogue membership even with identical detection thresholds and deblending.
+
+@sc [decision:detection.blend_photometry_mask_type,governs:default_tile.sex#MASK_TYPE;default_exp.sex#MASK_TYPE] blend-photometry-keeps-mirror-correction
+The selected CORRECT treatment mirrors neighbour pixels across the target centre for SExtractor photometry; retain that convention when reproducing fluxes and windowed moments.
+Replacing it with blanking changes photometry and centroids, and must not be confused with ngmix's separate neighbour-weighting decision.
+
+@sc [decision:detection.saturation_level,governs:default_tile.sex#SATUR_KEY;default_exp.sex#SATUR_KEY;star_selection.setools#MASK:star_selection.FLAGS;default_tile.sex;default_exp.sex] saturation-flags-follow-image-header
+SATUR_KEY must refer to the delivered image's saturation card for the intended per-image saturation flags, which FLAGS-based PSF-star rejection consumes.
+Do not interpret a missing card as evidence of no saturation: SExtractor then uses its built-in level because no SATUR_LEVEL is pinned here.
+Header availability remains unverified; changing the key or adding a fixed level requires checking the bright-star selection, not just whether SExtractor runs.
+
+@sc [decision:detection.photometry_parameters,governs:default_tile.sex#PHOT_AUTOPARAMS;default_exp.sex#PHOT_AUTOPARAMS;default_tile.sex#PHOT_APERTURES;default_exp.sex#PHOT_APERTURES;default_tile.sex#PHOT_FLUXFRAC;default_exp.sex#PHOT_FLUXFRAC;default.psfex#PHOTFLUX_KEY;default.psfex#PHOTFLUXERR_KEY] kron-definition-links-selection-and-psf-normalisation
+Keep the AUTO flux/error definition used for PSFEx normalisation consistent with the MAG_AUTO definition used for star selection and catalogue magnitudes.
+A Kron-parameter change requires reconsidering the magnitude window and PSF normalisation together, not silently retaining their old interpretation.
+Aperture diameter and flux fraction also define reported measurements; they must match the simulated catalogue rather than be treated as output formatting.
+
+@sc [decision:detection.detection_source_mode,governs:config_tile_Sx.ini#SEXTRACTOR_RUNNER.DETECTION_IMAGE;config_tile_Sx.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE;config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_PARAM_FILE;default_tile.sex#PARAMETERS_NAME;default_noimaflags.param;final_cat.param#IMAFLAGS_ISO] tile-detection-has-no-instrument-flags
+Tile detection uses the r-band tile itself, with no separate detection coadd or instrument flag image; keep the requested columns consistent with those inputs.
+The runner's DOT_PARAM_FILE overrides PARAMETERS_NAME and deliberately selects the list without IMAFLAGS_ISO.
+[LINT] final_cat.param requests IMAFLAGS_ISO although this tile chain never produces it; resolve the export/input mismatch rather than inventing a clean mask column or assuming FLAG_IMAGE alone supplies a mask.
+
+Shared pixel data and calibration
+---------------------------------
+
+@sc [decision:masking.pixel_mask_source,governs:config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE;config_exp_psfex.ini#SEXTRACTOR_RUNNER.FILE_PATTERN;config_exp_psfex.ini#SEXTRACTOR_RUNNER.INPUT_DIR;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_PATTERN;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_EXP_RUNNERS;star_selection.setools#MASK:star_selection.IMAFLAGS_ISO] instrument-flags-share-pixel-provenance
+Exposure IMAFLAGS_ISO and the multi-epoch flag stamps must come from the same delivered instrument flag image split per CCD.
+Keep the ME_IMAGE_PATTERN and ME_IMAGE_EXP_RUNNERS lists aligned so a flag stamp cannot silently become an image, weight or sky-mask product.
+Sky-fixed healsparse masks remain object-level catalogue information; substituting or rasterising them into this pixel path changes the masking decision.
+
+@sc [decision:masking.psf_star_mask_veto,governs:star_selection.setools#MASK:star_selection.IMAFLAGS_ISO;star_selection.setools#MASK:preselect.IMAFLAGS_ISO;star_selection.setools#MASK:flag.IMAFLAGS_ISO;star_selection.setools] psf-stars-vetoed-on-instrument-flags-only
+PSF-star candidates are rejected on the instrument flags (IMAFLAGS_ISO == 0) and on no sky-fixed map: no mask block cuts on MASK_EXT.
+A MASK_EXT cut changes the PSF training sample and is a change to this decision, not a cleanup; querying maps through MASK_PATHS without the cut records MASK_EXT and changes no star.
+
+@sc [decision:photometric_zeropoint,governs:default_tile.sex#MAG_ZEROPOINT;config_tile_Sx.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER;config_tile_Ng_template.ini#NGMIX_RUNNER.MAG_ZP;config_exp_psfex.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER;config_exp_psfex.ini#SEXTRACTOR_RUNNER.ZP_KEY] tile-and-epoch-photometry-share-flux-scale
+Tile MAG_ZEROPOINT, ngmix MAG_ZP and the FSCALE-rescaled epochs must describe the same flux calibration.
+Exposure photometry intentionally reads its own header zero-point; do not copy the fixed tile convention to exposures or change a header toggle independently of the calibration.
+Equal config values do not verify that delivered MegaPipe stacks have the assumed calibration; that input assumption still needs checking.
+
+@sc [decision:postage_stamp_size,governs:default_noimaflags.param#VIGNET;default.param#VIGNET;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_1.STAMP_SIZE;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.STAMP_SIZE;default.psfex#PSF_SIZE] stamp-apertures-move-together
+Keep SExtractor VIGNET for galaxies and training stars, both vignetmaker STAMP_SIZEs and the PSFEx PSF_SIZE coupled.
+A resize must update the whole set and regenerate cutouts and models; changing only one desynchronises the pixel apertures used by the fit.
+Larger stamps also change wing truncation and the measurable galaxy-size range, so this is a scientific change rather than only an allocation change.
+
+@sc [decision:preparation.object_position_columns,governs:config_tile_Sx.ini#SEXTRACTOR_RUNNER.WORLD_POSITION;config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_1.POSITION_PARAMS;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_1.COORD;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.POSITION_PARAMS;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.COORD;config_exp_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS;default.psfex#CENTER_KEYS;default.psfex#PSFVAR_KEYS;final_cat.param#XWIN_WORLD;final_cat.param#YWIN_WORLD] windowed-positions-share-coordinate-frame
+Use the same windowed centroid through epoch membership, stamp placement, PSF interpolation and exported positions.
+Pair IMAGE columns with pixel coordinates for tile stamps and exposure validation, and WORLD columns with sky coordinates for multi-epoch placement and interpolation.
+Changing POSITION_PARAMS without its coordinate frame, or replacing windowed centroids in only one consumer, breaks the shared position underlying stamp offsets, centroid priors and position seeding.
+
+PSF modelling and diagnostics
+----------------------------
+
+@sc [decision:star_selection_psf.psf_model_complexity,governs:default.psfex#BASIS_TYPE;default.psfex#BASIS_NUMBER;default.psfex#PSF_SAMPLING;default.psfex#PSF_ACCURACY;default.psfex#PSFVAR_KEYS;default.psfex#PSFVAR_DEGREES] psf-flexibility-requires-star-support
+Treat the pixel basis, spatial polynomial, sampling and assumed pixel accuracy as a joint model choice.
+Greater flexibility must be supported by the surviving training stars on each CCD and checked on held-out residuals under the acceptance gate; successful optimisation alone does not establish a usable PSF.
+PSF_ACCURACY changes bright-star leverage in the fit weights, not merely an optimisation stopping tolerance.
+
+@sc [decision:star_selection_psf.psfex_candidate_vetting,governs:default.psfex#SAMPLE_AUTOSELECT;default.psfex#BADPIXEL_FILTER;default.psfex#PSF_RECENTER;default.psfex] psfex-vetting-is-not-fully-disabled
+Keep explicit stellar-locus selection under SETools control, but do not infer from SAMPLE_AUTOSELECT being off that every other PSFEx candidate cut is inactive.
+The omitted SAMPLE_* keys take PSFEx's compiled defaults (psfex -dd, PSFEx 3.21.1 in the develop-runtime image): FWHMRANGE 2.0,10.0, VARIABILITY 0.2, MINSN 20, MAXELLIP 0.3, FLAGMASK 0x00fe, WFLAGMASK 0x0000, IMAFLAGMASK 0x0.
+From the PSFEx source, not re-read here, MINSN, MAXELLIP, FLAGMASK, FWHMRANGE and VARIABILITY still cut candidates with SAMPLE_AUTOSELECT N; SETools applies no signal-to-noise or ellipticity cut, so these can reject stars it kept.
+A PSFEx version change can move these defaults: re-run psfex -dd and compare surviving candidates before claiming unchanged selection.
+Compiled-in values cannot be asserted from the config, only their omission from default.psfex; issue #919 pins them there.
+BADPIXEL_FILTER and PSF_RECENTER also change the candidate pixels or positions, so enabling them is a scientific change, not a harmless cleanup.
+
+@sc [decision:star_selection_psf.star_selection_box,governs:config_tile_Ng_template.ini#NGMIX_RUNNER.PIXEL_SCALE;default_exp.sex#PIXEL_SCALE;star_selection.setools#MASK:preselect.FWHM_IMAGE;star_selection.setools#MASK:star_selection.FWHM_IMAGE;star_selection.setools#PLOT:fwhm_field.SCATTER;star_selection.setools] exposure-size-conventions-agree
+Conversions of the same exposure pixels must use a consistent exposure scale for stellar-size selection, diagnostics and ngmix's one-pixel centroid prior; tile resampling is not a reason to assign a tile scale to epoch stamps.
+Diagnostic labels and statistics must describe the cut actually applied.
+[LINT] ngmix and the FWHM map use 0.186 arcsec/px while preselection uses 0.187, and the statistics report a narrower FWHM window than selection applies; reconcile these with the exposure convention rather than propagating the mismatch.
+
+Catalogue export
+----------------
+
+@sc [decision:catalogue_assembly.tile_overlap_handling,governs:config_tile_Mc.ini#MAKE_CAT_RUNNER.NUMBER_LIST;final_cat.param#TILE_ID] tile-id-is-provenance-not-deduplication
+Preserve TILE_ID when exporting the per-tile catalogues: overlapping tiles can contain separate measurements of the same sky object, and TILE_ID is the supplied provenance, not a uniqueness flag.
+NUMBER_LIST selects a tile to assemble, not a disjoint sky region; duplicate removal remains downstream.
+The documented TILE_LIST overlap flag is unimplemented, so adding that key cannot make this catalogue unique or flag its overlaps.

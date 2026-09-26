@@ -221,6 +221,12 @@ def flag_positions(paths, ra, dec, bits=None, w_log=None):
 
     Combine one or more healsparse masks into a single per-object integer flag.
 
+    @sc [decision:masking.psf_star_mask_veto,label:convention] off-coverage-is-clean
+    A position outside a map's coverage contributes 0 for boolean and integer
+    maps alike, so a map that misses an exposure never flags its stars; the
+    all-off-coverage case is logged as a warning instead. The flag is the
+    bitwise OR of the per-map contributions, 0 meaning clean.
+
     Each map contributes at each position:
 
     * boolean map: ``1`` where the map is ``True``, ``0`` elsewhere;

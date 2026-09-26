@@ -1,0 +1,62 @@
+id: committed
+description: The committed configuration on develop.
+decisions:
+  per_unit_completeness: exact_counts
+  postage_stamp_size: px_51
+  photometric_zeropoint: fixed_30_tiles_header_exposures
+analyses:
+  masking:
+    decisions:
+      pixel_mask_source: instrument_flags_only
+      psf_star_mask_veto: instrument_flags_only
+      sky_mask_application: deferred_downstream
+  detection:
+    decisions:
+      detection_threshold_policy: megapipe_tiles
+      deblending_policy: megapipe_tiles
+      background_model: auto_megapipe_tiles
+      weight_map_usage: map_weight
+      zero_weight_interpolation: interp_all
+      spurious_detection_cleaning: clean_1
+      blend_photometry_mask_type: correct
+      saturation_level: header_saturate
+      photometry_parameters: kron_25_35
+      detection_source_mode: sx_nomask_single_image
+      epoch_membership_ccd_bounds: trimmed_bounds_33_2080
+  preparation:
+    decisions:
+      astrometric_solution_source: delivered_headers
+      ccd_split_extent: all_40_hdus
+      epoch_provenance_from_tile_history: history_parse
+      object_position_columns: xwin_windowed
+      stamp_positioning_and_padding: round_and_zero_pad
+  star_selection_psf:
+    decisions:
+      star_selection_box: mode_centred_box
+      psf_train_validation_split: split_80_20_seeded
+      psfex_candidate_vetting: builtin_defaults
+      psf_modelling_software: psfex
+      psf_model_complexity: pixel_basis_deg2_per_ccd
+      psf_acceptance_thresholds: stars22_chi2_2
+  shape_measurement:
+    decisions:
+      ngmix_seed_mode: position_seed
+      galaxy_model: gauss
+      fit_initialisation: prior_guess_t025_ntry5_2
+      fit_priors: gpriorba04_flat
+      metacal_scheme: five_types_step001_fitgauss
+      centroid_source: wcs
+      epoch_flux_rescaling: fscale
+      psf_epoch_averaging: galaxy_weight_sum
+      galaxy_pixel_weights: rms_vignet_weights
+      psf_likelihood_noise: psf_noise_1em5
+      megacam_ccd_flip: megapipe_flip
+      defect_fill: noise
+      blend_handling: none
+      epoch_masked_fraction_cut: one_third
+      central_defect_veto: disabled
+  catalogue_assembly:
+    decisions:
+      star_galaxy_classification: deferred_downstream
+      tile_overlap_handling: no_dedup_in_pipeline
+      failure_sentinels: sentinel_values

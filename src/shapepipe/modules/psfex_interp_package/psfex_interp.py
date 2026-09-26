@@ -240,6 +240,12 @@ class PSFExInterpolator(object):
 
         Use PSFEx generated model to perform spatial PSF interpolation.
 
+        @sc [decision:star_selection_psf.psf_acceptance_thresholds,label:gate] psf-gate-drops-epoch
+        A model with ACCEPTED below STAR_THRESH or CHI2 above CHI2_THRESH
+        yields a failure sentinel, not PSFs, and every caller drops that CCD's
+        epoch; the gate is the same for the validation and multi-epoch passes.
+        The thresholds come from config, never from literals here.
+
         Parameters
         ----------
         dotpsfpath : str

@@ -118,4 +118,33 @@ keep in their own stores outside it. A `.felt/` directory (a markdown "fiber" no
 store used with the `felt` CLI) is **not tracked here**: it's gitignored, and where
 it exists it's a machine-local symlink into a private, separately git-synced store,
 so a fresh clone won't have one. Record durable decisions in the PR, issue, or docs
-where the change lives.
+where the change lives — and *scientific* decisions in `astra.yaml`, below.
+
+## Scientific decisions live in `astra.yaml`
+
+`astra.yaml` at the repo root is the pipeline's decision record: every
+consequential scientific choice embedded in the code and the committed configs,
+with its rationale, its alternatives, and an anchor to the code or config that
+implements it. `universes/committed.yaml` pins the option the committed
+configuration selects for every decision. The format is ASTRA;
+`uvx astra-tools@0.2.17 guide` is the briefing and `uvx astra-tools@0.2.17 spec`
+the field reference. The file's header states its conventions (anchor grammar,
+`[HARDCODED]`, `[LINT]`).
+
+Membership test: a different defensible choice would change which objects enter
+the shear catalogue, or the numbers attached to them. Detection thresholds,
+masking, star-selection cuts, PSF model degree, ngmix priors and seeding, flag
+semantics, completeness gates: in. Workflow policy (manifests, chunking,
+allocation, failure reporting, provenance) is out; it lives in the PR and in the
+PRD, CosmoStat/shapepipe#848.
+
+**A scientific change is not finished until the record is.** When a change moves
+what the pipeline measures, amend `astra.yaml` in the same PR (add the decision,
+or edit its rationale, options and anchors), pin the selected option in
+`universes/committed.yaml`, and say so in the PR description. The anchor test
+`tests/unit/test_astra_anchors.py` runs in CI; a scientific change that breaks it
+or leaves the record stale is unfinished. Before committing:
+
+```bash
+uvx astra-tools@0.2.17 validate
+```
