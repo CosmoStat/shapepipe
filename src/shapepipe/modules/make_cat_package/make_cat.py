@@ -207,7 +207,7 @@ def save_sm_data(
 
     final_cat_file.close()
 
-    return n_obj
+    return len(sm)
 
 
 def parse_mask_ext_paths(paths_str):
