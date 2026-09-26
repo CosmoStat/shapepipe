@@ -1,0 +1,58 @@
+# Snakemake profile for the ShapePipe workflow on candide (IAP). Selected by
+# `SP_PROFILE=candide workflow/bin/sp run`. Mirrors profiles/nibi/config.yaml;
+# only the cluster facts differ, and each is stated where it is set.
+executor: slurm
+# candide is a shared ~25-node cluster: cap concurrent submissions well below
+# what nibi takes.
+jobs: 150
+default-resources:
+  mem_mb: 2000
+  runtime: 120                   # minutes
+  slurm_account: cusers
+  # comp nodes have TmpDisk=0, so the tile_shape group (--tmp, see tile.smk's
+  # TILE_SLURM_EXTRA) lands on pscomp; everything else may use either.
+  slurm_partition: "comp,pscomp"
+  # n09/n17/n36: excluded in the sp_validation candide profile; n23: slurm jobs
+  # failed there (sp_validation 2b40c99).
+  slurm_extra: "'--exclude=n09,n17,n23,n36'"
+software-deployment-method: [apptainer]
+# /local/scratch is where tile.smk puts the node-local tile store (TILE_LOCAL,
+# ~5.6 GB per real-data tile). candide has no /local, and its node-local /scratch
+# is writable only per job (/scratch/$USER/$SLURM_JOB_ID, made by the prolog),
+# which this line cannot name: snakemake passes it through literally, and
+# --cleanenv drops SLURM_JOB_ID inside the container. So the node's /tmp (local
+# disk, ~29 GB free, sticky) is bound there instead. That holds ~5 concurrent
+# tile stores per node, too few for dense image-sim tiles: such a campaign sets
+# `tile_store_root:` in its run config, and bin/sp replaces this bind's source in
+# the launch snapshot (see workflow/config.yaml). The PYTHONPATH pin is rewritten by bin/sp to the
+# launch snapshot's src/; the value here only has to be a checkout's src/.
+apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/n17data/mkilbing/astro/repositories/github/shapepipe/src --bind /home,/automnt,/n17data,/n23data1,/n09data --bind /tmp:/local/scratch"
+latency-wait: 60                 # NFS: wait for outputs to appear after a job
+keep-going: true                 # a failed job poisons only its cone; siblings run on
+# Transient node-level failures are the common case on a shared cluster:
+# a fused tile_shape group died at joblib's fork_exec with BlockingIOError
+# [Errno 11] because the node was out of process slots, killing one tile of
+# 39 outright. Without this, attempt is always 1, so every
+# `mem_mb = lambda wc, attempt: N * attempt` in tile.smk is dead code and a
+# one-off OOM or EAGAIN is fatal. Safe for the fused group: a retry
+# resubmits the same member set, tile_vignets included (tile.smk's
+# "one sharp edge" note). tile_ngmix keeps its own rule-level retries: 2.
+retries: 2
+rerun-incomplete: true           # re-do jobs left incomplete by an unclean death
+show-failed-logs: true
+printshellcmds: true
+rerun-triggers: [mtime, params, code, software-env]
+# The tile_shape group (tile.smk) sets its own slurm_extra (TILE_SLURM_EXTRA,
+# the --tmp floor), which REPLACES the default above and so drops the node
+# excludes: its jobs landed on n09 and n17. Restate both, identically on all
+# four members (a group's string resources must agree). Only slurm_extra is
+# overridden; the rules keep their own threads and attempt-scaled mem_mb.
+set-resources:
+  tile_vignets:
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"
+  tile_ngmix:
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"
+  tile_merge_cats:
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"
+  tile_make_cat:
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"

@@ -80,9 +80,13 @@ rule exp_split:
         sp_shell("exp_split", "config_exp_Sp.ini")
 
 # SExtractor -> mask_query (MASK_EXT) -> setools star selection -> PSFEx model
-# -> psfex_interp, per CCD. Under SP_PSF=psfex, setools_runner is mandatory
-# (expect=80) and only psfex_interp_runner is :warn; under SP_PSF=mccd every
-# runner in the chain is :warn (see completeness.py's COMPLETENESS table).
+# -> psfex_interp, per CCD. setools_runner is mandatory; a sparse CCD may not
+# yield a PSFEx fit, so only psfex_interp_runner is :warn.
+#
+# MCCD instead fits ONE focal-plane model per exposure after the per-CCD
+# stages. Its full workflow chain was exercised on a SKiLLS star tile, so the
+# MCCD completeness counts are mandatory. The ~85-minute fit for ~2500 stars
+# (8.3 GB) was only 1.75x faster on 8 BLAS threads; this rule reserves 2 cores.
 rule exp_psf:
     input:
         rules.exp_split.output.manifest
@@ -93,7 +97,7 @@ rule exp_psf:
     params:
         pre = lambda wc: unit_pre("exp_psf", wc.exp),
         script_hash = SCRIPT_HASH
-    threads: 8
+    threads: 2 if PSF_MODEL == "mccd" else 8
     retries: 2
     benchmark:
         # BESIDE manifests/, not inside it: clean_exposure deletes manifests/
