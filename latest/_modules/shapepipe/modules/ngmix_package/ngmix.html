@@ -865,12 +865,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">segs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">jacobs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Per-epoch sub-pixel [row, col] coadd-centroid offset propagated from</span>
-        <span class="c1"># the stamp extractor, used only by the "wcs" centroid source (skipped</span>
-        <span class="c1"># for the default "hsm" path).</span>
+        <span class="c1"># the stamp extractor; the "wcs" centroid source places the Jacobian</span>
+        <span class="c1"># origin there (unused by "hsm").</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">offsets</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="c1"># Per-epoch full WCS and the object's sky position, used only by the</span>
-        <span class="c1"># "wcs" centroid source (skipped for the default "hsm" path).</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># The object's sky position, per epoch; seeds the per-object RNG (see</span>
+        <span class="c1"># :func:`position_seed`).</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ra</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dec</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># CCD number of the first epoch, used only to build the per-object</span>
@@ -1009,12 +1008,13 @@
 <span class="sd">    id_obj_max : int, optional</span>
 <span class="sd">        Last galaxy ID to process, not used if the value is set to ``-1``;</span>
 <span class="sd">        the default is ``-1``</span>
-<span class="sd">    centroid_source : {"hsm", "wcs"}, optional</span>
+<span class="sd">    centroid_source : {"wcs", "hsm"}, optional</span>
 <span class="sd">        How to place the galaxy Jacobian origin for the centroid prior. The</span>
-<span class="sd">        default ``"hsm"`` re-centers on the HSM adaptive-moment centroid</span>
-<span class="sd">        (robust for galaxies); ``"wcs"`` uses the catalog sky position</span>
-<span class="sd">        projected through the WCS (better for stars, whose HSM moments are</span>
-<span class="sd">        noisy). See :func:`make_ngmix_observation`.</span>
+<span class="sd">        default ``"wcs"`` places it at the coadd centroid: the sub-pixel</span>
+<span class="sd">        offset the stamp extractor computed when it cut the stamp,</span>
+<span class="sd">        propagated on the vignette. ``"hsm"`` re-centers on the</span>
+<span class="sd">        adaptive-moment centroid measured from the stamp pixels. See</span>
+<span class="sd">        :func:`make_ngmix_observation`.</span>
 <span class="sd">    blend_handling : {"noisefill", "uberseg"}, optional</span>
 <span class="sd">        Neighbour treatment; ``"noisefill"`` (default) is the historical</span>
 <span class="sd">        noise-fill, ``"uberseg"`` hard-masks neighbour-side pixels from the</span>
@@ -1054,7 +1054,7 @@
         <span class="n">id_obj_min</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">id_obj_max</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">bkg_sub</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">centroid_source</span><span class="o">=</span><span class="s2">"hsm"</span><span class="p">,</span>
+        <span class="n">centroid_source</span><span class="o">=</span><span class="s2">"wcs"</span><span class="p">,</span>
         <span class="n">blend_handling</span><span class="o">=</span><span class="s2">"noisefill"</span><span class="p">,</span>
         <span class="n">seg_cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -1892,8 +1892,6 @@
         <span class="n">stamp</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">vignet</span><span class="o">.</span><span class="n">gal_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)][</span><span class="n">expccd_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'OFFSET'</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="c1"># For the "wcs" centroid source (see make_ngmix_observation).</span>
-        <span class="n">stamp</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_wcs</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">i_tile</span><span class="p">])</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">i_tile</span><span class="p">])</span>
         <span class="c1"># CCD of the first surviving epoch — Fabian's coord_list[0] convention</span>
@@ -2326,7 +2324,7 @@
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">make_ngmix_observation</span><span class="p">(</span>
     <span class="n">gal</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">psf</span><span class="p">,</span> <span class="n">wcs</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span>
-    <span class="n">bkg_rms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">"hsm"</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">bkg_rms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">"wcs"</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">blend_handling</span><span class="o">=</span><span class="s2">"noisefill"</span><span class="p">,</span> <span class="n">seg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
 <span class="p">):</span>
@@ -2336,19 +2334,20 @@
 <span class="sd">    it must sit on the object. Two ways to place it, selected by</span>
 <span class="sd">    ``centroid_source``:</span>
 
-<span class="sd">    * ``"hsm"`` (default) — re-center on the HSM adaptive-moment centroid</span>
-<span class="sd">      measured from the stamp. Robust for **galaxies**: it follows the actual</span>
-<span class="sd">      light and so the centroid prior (centered at the Jacobian origin) does</span>
-<span class="sd">      not bias an object that is offset from the stamp center.</span>
-<span class="sd">    * ``"wcs"`` — the **coadd centroid** (Axel, #767): place the origin at the</span>
-<span class="sd">      object's catalog sky position as a sub-pixel offset from the stamp</span>
-<span class="sd">      center, with no shape measurement. Better for **stars**: their HSM</span>
-<span class="sd">      moments are noisy, so trusting the astrometry is more stable than</span>
-<span class="sd">      re-measuring the centroid. The offset is not recomputed here — it is the</span>
-<span class="sd">      value the stamp extractor already used to round the extraction pixel</span>
+<span class="sd">    * ``"wcs"`` (default) — the **coadd centroid**: place the origin at the</span>
+<span class="sd">      object's catalogue sky position as a sub-pixel ``offset`` from the</span>
+<span class="sd">      stamp center, with no shape measurement. The offset is not recomputed</span>
+<span class="sd">      here — it is the value the stamp extractor already used to round the</span>
+<span class="sd">      extraction pixel</span>
 <span class="sd">      (:func:`shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps`),</span>
-<span class="sd">      propagated on the vignette. One projection, one rounding: the extraction</span>
-<span class="sd">      and the centroid prior cannot disagree near a rounding tie.</span>
+<span class="sd">      propagated on the vignette. One projection, one rounding: the</span>
+<span class="sd">      extraction and the centroid prior cannot disagree near a rounding tie.</span>
+<span class="sd">      Stable for both galaxies and stars, and correct when the object sits</span>
+<span class="sd">      off the stamp center.</span>
+<span class="sd">    * ``"hsm"`` — re-center on the HSM adaptive-moment centroid measured from</span>
+<span class="sd">      the stamp pixels, following the light rather than the astrometry.</span>
+<span class="sd">      Noisier, notably for stars; the option for stamps that carry no</span>
+<span class="sd">      propagated offset.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -2363,8 +2362,8 @@
 <span class="sd">        :func:`position_seed`).</span>
 <span class="sd">    bkg_rms : numpy.ndarray, optional</span>
 <span class="sd">        Per-pixel background RMS map.</span>
-<span class="sd">    centroid_source : {"hsm", "wcs"}, optional</span>
-<span class="sd">        How to place the galaxy Jacobian origin; the default is ``"hsm"``.</span>
+<span class="sd">    centroid_source : {"wcs", "hsm"}, optional</span>
+<span class="sd">        How to place the galaxy Jacobian origin; the default is ``"wcs"``.</span>
 <span class="sd">    offset : array_like, optional</span>
 <span class="sd">        Sub-pixel ``[row, col]`` coadd-centroid offset propagated from the</span>
 <span class="sd">        stamp extractor. Required for ``centroid_source="wcs"`` (ignored for</span>
@@ -2412,9 +2411,9 @@
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">centroid_source</span> <span class="o">==</span> <span class="s2">"hsm"</span><span class="p">:</span>
-        <span class="c1"># Re-center Jacobian on HSM centroid (pixel offset from stamp center).</span>
-        <span class="c1"># Fixes: centroid prior biases fit when galaxy is offset from stamp</span>
-        <span class="c1"># center. Robust for galaxies; noisy for stars (use "wcs" there).</span>
+        <span class="c1"># Re-center the Jacobian on the HSM adaptive-moment centroid (pixel</span>
+        <span class="c1"># offset from the stamp center); fall back to the stamp center if</span>
+        <span class="c1"># HSM fails.</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">_hsm</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span>
                 <span class="n">galsim</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">gal</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span>
@@ -2428,16 +2427,16 @@
     <span class="k">elif</span> <span class="n">centroid_source</span> <span class="o">==</span> <span class="s2">"wcs"</span><span class="p">:</span>
         <span class="c1"># Coadd centroid: use the sub-pixel offset the stamp extractor already</span>
         <span class="c1"># computed and rounded against (propagated on the vignette), rather</span>
-        <span class="c1"># than re-projecting the sky position through the WCS and re-rounding.</span>
-        <span class="c1"># This is the fix for #767 — one projection, one rounding, so a</span>
-        <span class="c1"># milli-pixel WCS disagreement can no longer flip a rounding tie and</span>
-        <span class="c1"># put the prior a whole pixel off.</span>
+        <span class="c1"># than re-projecting the sky position through the WCS and re-rounding:</span>
+        <span class="c1"># one projection, one rounding, so a milli-pixel WCS disagreement</span>
+        <span class="c1"># cannot flip a rounding tie and put the prior a whole pixel off.</span>
         <span class="k">if</span> <span class="n">offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">"centroid_source='wcs' requires the coadd-centroid offset "</span>
-                <span class="o">+</span> <span class="s2">"propagated from the stamp extractor, but none was found on "</span>
-                <span class="o">+</span> <span class="s2">"the vignette (were the stamps made before in-house "</span>
-                <span class="o">+</span> <span class="s2">"extraction landed?)"</span>
+                <span class="o">+</span> <span class="s2">"propagated from the stamp extractor (the vignette's "</span>
+                <span class="o">+</span> <span class="s2">"OFFSET), but none was given: re-extract the stamps with "</span>
+                <span class="o">+</span> <span class="s2">"the current vignetmaker, or opt in to "</span>
+                <span class="o">+</span> <span class="s2">"centroid_source='hsm'"</span>
             <span class="p">)</span>
         <span class="n">cen_row</span><span class="p">,</span> <span class="n">cen_col</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">offset</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">offset</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="k">else</span><span class="p">:</span>
@@ -2646,7 +2645,7 @@
 <div class="viewcode-block" id="do_ngmix_metacal">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">do_ngmix_metacal</span><span class="p">(</span>
-    <span class="n">stamp</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">flux_guess</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">"hsm"</span><span class="p">,</span>
+    <span class="n">stamp</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">flux_guess</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">"wcs"</span><span class="p">,</span>
     <span class="n">blend_handling</span><span class="o">=</span><span class="s2">"noisefill"</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">"fitgauss"</span><span class="p">,</span>
 <span class="p">):</span>
@@ -2665,12 +2664,12 @@
 <span class="sd">        Initial flux guess.</span>
 <span class="sd">    rng : numpy.random.RandomState</span>
 <span class="sd">        Random state for guesses and priors.</span>
-<span class="sd">    centroid_source : {"hsm", "wcs"}, optional</span>
+<span class="sd">    centroid_source : {"wcs", "hsm"}, optional</span>
 <span class="sd">        How to place the galaxy Jacobian origin; passed through to</span>
-<span class="sd">        :func:`make_ngmix_observation`. The default is ``"hsm"`` (HSM</span>
-<span class="sd">        adaptive-moment centroid); ``"wcs"`` uses the catalog sky position</span>
-<span class="sd">        projected through the WCS — see that function for the star-vs-galaxy</span>
-<span class="sd">        rationale.</span>
+<span class="sd">        :func:`make_ngmix_observation`. The default is ``"wcs"`` (the</span>
+<span class="sd">        coadd-centroid offset in ``stamp.offsets``, propagated from the stamp</span>
+<span class="sd">        extractor); ``"hsm"`` uses the adaptive-moment centroid from the</span>
+<span class="sd">        stamp pixels — see that function.</span>
 <span class="sd">    blend_handling : {"noisefill", "uberseg"}, optional</span>
 <span class="sd">        Neighbour treatment passed through to</span>
 <span class="sd">        :func:`make_ngmix_observation`; the default ``"noisefill"`` is the</span>
