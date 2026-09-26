@@ -757,21 +757,30 @@ def test_weight_map_recovers_injected_inverse_variance():
 
 
 def test_background_rms_builds_per_pixel_inverse_variance():
-    """BACKGROUND_RMS supplies the variance, while weight and flag supply masks."""
+    """BACKGROUND_RMS supplies the variance, while weight and flag supply masks.
+
+    The masked set is the defects (zero weight, flag, invalid RMS) ORed with
+    their 90-degree rotations (pixel (r, c) -> (4 - c, r) on a 5x5 stamp). The
+    four defects each mask one orbit: the corners from (0, 0), the orbit of
+    (0, 1), the orbit of (1, 1), and the centre. The 12 remaining pixels
+    carry ``1 / rms**2``.
+    """
     from shapepipe.modules.ngmix_package.ngmix import prepare_ngmix_weights
 
-    gal = np.ones((3, 3))
-    weight = np.ones((3, 3))
-    flag = np.zeros((3, 3))
+    gal = np.ones((5, 5))
+    weight = np.ones((5, 5))
+    flag = np.zeros((5, 5))
     bkg_rms = np.array(
         [
-            [1.0, 2.0, 4.0],
-            [0.5, 0.0, np.nan],
-            [3.0, 2.0, 1.0],
+            [1.0, 1.0, 2.0, 4.0, 1.0],
+            [0.5, 0.0, 1.0, 1.0, 1.0],
+            [2.0, 1.0, np.nan, 0.5, 4.0],
+            [1.0, 1.0, 2.0, 1.0, 0.25],
+            [1.0, 4.0, 0.5, 1.0, 1.0],
         ]
     )
-    weight[2, 0] = 0
-    flag[2, 1] = 1
+    weight[0, 0] = 0
+    flag[0, 1] = 1
 
     _, weight_map, noise_img = prepare_ngmix_weights(
         gal, weight, flag, np.random.RandomState(0), bkg_rms=bkg_rms
@@ -779,9 +788,11 @@ def test_background_rms_builds_per_pixel_inverse_variance():
 
     expected = np.array(
         [
-            [1.0, 0.25, 0.0625],
-            [4.0, 0.0, 0.0],
-            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 0.25, 0.0625, 0.0],
+            [4.0, 0.0, 1.0, 0.0, 0.0],
+            [0.25, 1.0, 0.0, 4.0, 0.0625],
+            [0.0, 0.0, 0.25, 0.0, 16.0],
+            [0.0, 0.0625, 4.0, 0.0, 0.0],
         ]
     )
     npt.assert_allclose(weight_map, expected)
@@ -854,7 +865,11 @@ def test_spatially_varying_rms_survives_rescale_to_observation():
         centroid_source="hsm",
     )
 
-    good = (weights[0] != 0) & (flags[0] == 0)
+    # The two masked corners plus their 90-degree images: all four corners.
+    good = np.ones_like(rms, dtype=bool)
+    for rows in (slice(None, 3), slice(-3, None)):
+        for cols in (slice(None, 3), slice(-3, None)):
+            good[rows, cols] = False
     expected = np.zeros_like(rms)
     expected[good] = 1.0 / (header["FSCALE"] * rms[good]) ** 2
     npt.assert_allclose(obs.weight, expected)

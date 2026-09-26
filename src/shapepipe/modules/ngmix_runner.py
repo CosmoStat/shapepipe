@@ -125,10 +125,12 @@ def ngmix_runner(
     else:
         centroid_source = "wcs"
 
-    # Neighbour treatment: "noisefill" (default, historical) replaces a
-    # neighbour's pixels with a noise realisation; "uberseg" hard-masks
-    # (weight -> 0) every pixel closer to a neighbour than to the central
-    # object, from the segmentation map. See the ngmix module docstrings.
+    # Neighbour treatment: "noisefill" (default) leaves neighbour pixels
+    # weighted and untouched; "uberseg" zeroes the weight of every pixel
+    # closer to a neighbour than to the central object, from the segmentation
+    # map, and leaves its image raw. Defect pixels (flagged, zero-weight or
+    # invalid-RMS, ORed with their 90-degree rotations) are zero-weighted and
+    # noise-filled under both; see prepare_ngmix_weights.
     if config.has_option(module_config_sec, "BLEND_HANDLING"):
         blend_handling = config.get(module_config_sec, "BLEND_HANDLING")
     else:
