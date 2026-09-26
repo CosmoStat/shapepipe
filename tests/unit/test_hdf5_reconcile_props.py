@@ -363,3 +363,36 @@ def test_a_type_change_in_the_reader_refreshes_every_unit(tmp_path):
         for unit, path in sources.items():
             np.testing.assert_array_equal(f[GROUP][unit][...],
                                           narrow(unit, path))
+
+
+def test_a_schema_only_change_refreshes_every_unit(tmp_path):
+    """The machine's change_columns also rewrites every source, so its stamps
+    alone would refresh everything. Here no stamp moves: the sources hold the
+    wider column set throughout and only the requested columns change, so
+    schema invalidation is the only thing that can refresh a unit."""
+    wide = COLUMN_SETS[1]
+    sources = {}
+    for i, unit in enumerate(UNITS[:3]):
+        sources[unit] = tmp_path / f"{unit}.npy"
+        _write_source(sources[unit], _array(wide, 3, i), 10**18 + i)
+    units = sorted(sources.items())
+    output = tmp_path / "cat.h5"
+
+    def build(columns):
+        read = lambda unit, source: np.ascontiguousarray(
+            _read(unit, source)[list(columns)]).astype(
+            [(c, "<f8") for c in columns])
+        digest = reconcile.schema_digest(columns)
+        todo = reconcile.plan(output, GROUP, units, digest)
+        if not todo.empty():
+            reconcile.apply(output, GROUP, todo, units, read, digest,
+                            COUNT_ATTR)
+        return todo
+
+    build(COLUMN_SETS[0])
+    stamps = {u: reconcile.stamp(p) for u, p in units}
+    todo = build(wide)
+    assert {u: reconcile.stamp(p) for u, p in units} == stamps
+    assert (todo.add, sorted(todo.refresh)) == ([], sorted(sources))
+    with h5py.File(output, "r") as f:
+        assert {f[GROUP][u].dtype.names for u in f[GROUP]} == {wide}
