@@ -46,12 +46,20 @@ def _namespace(psf_model, tmp_path, *, main=True):
     assignment = re.search(r"^PERSISTS_PSF\s*=.*$", text, re.M)
     assert assignment, "Snakefile must bind PERSISTS_PSF"
     exec(assignment.group(0), ns)
+    # The defect-map gate (#887) is bound when the Snakefile carries it; fake
+    # is only legal with image sims, which rasterize nothing.
+    ns["INPUT_TYPE"] = "image_sims" if psf_model == "fake" else "data"
+    defects = re.search(r"^MAPS_DEFECTS\s*=.*$", text, re.M)
+    exec(defects.group(0) if defects else "MAPS_DEFECTS = False", ns)
     for name in ("prod_exp_dir", "prod_exp_manifest", "exp_dir", "tombstone",
                  "exp_manifest", "exp_store_reclaimed", "footprint_edge",
                  "tile_dir", "tile_manifest", "psf_exposures",
-                 "footprint_targets", "flag"):
+                 "footprint_targets", "flag", "prod_exp_tar",
+                 "prod_exp_fragment"):
         definition = re.search(
             rf"^def {name}\(.*?(?=^\S|\Z)", text, re.M | re.S)
+        if definition is None and name in ("prod_exp_fragment",):
+            continue
         assert definition, f"Snakefile must define {name}()"
         exec(definition.group(0), ns)
     return ns
@@ -101,9 +109,13 @@ def test_clean_exposure_waits_on_persist_iff_psf(psf_model, tmp_path):
     expected = [str(tmp_path / "scratch" / "tiles" / "21" / "210.282"
                     / "manifests" / "tile_vignets.json")]
     if psf_model == "psfex":
+        stages = ["exp_persist"]
+        if ns["MAPS_DEFECTS"]:
+            stages.append("exp_defect_map")
+        stages.append("exp_footprint")
         expected += [
             f"{PRODUCTS}/exp/26/2605805/manifests/{stage}.json"
-            for stage in ("exp_persist", "exp_footprint")
+            for stage in stages
         ]
     assert edges == expected
 
