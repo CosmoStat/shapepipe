@@ -49,6 +49,14 @@ for _key, _n in (("nside_coverage", NSIDE_COVERAGE), ("nside", NSIDE)):
     if COVERAGE_ENABLED and (_n <= 0 or _n & (_n - 1)):
         raise WorkflowError(f"coverage.{_key} must be a power of 2, got {_n}")
 
+# psf_model=fake fits no PSF model, so no exposure records a footprint
+# (footprint_targets, Snakefile) and coverage_map would reach its job only to
+# find no record on the products root. Refused here, before the campaign runs.
+if COVERAGE_ENABLED and not PERSISTS_PSF:
+    raise WorkflowError(
+        "coverage.enabled needs a fitted PSF model: psf_model=fake records no "
+        "exposure footprint, so there is no coverage map to build")
+
 
 def coverage_targets():
     """The campaign map, when `coverage:` asks for one.

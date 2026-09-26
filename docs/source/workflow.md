@@ -68,9 +68,9 @@ it. `sp run` is therefore two snakemake invocations over one Snakefile:
 
    | level | chain |
    | --- | --- |
-   | exposure | `exp_get_images → exp_star_cat → exp_split → exp_mask → exp_psf → exp_persist → exp_footprint → clean_exposure` |
+   | exposure | `exp_get_images → exp_split → exp_psf → exp_persist → exp_footprint → clean_exposure` |
    | tile | `tile_exp_forest → tile_merge_headers → tile_detect → tile_vignets → tile_ngmix → tile_merge_cats → tile_make_cat → clean_tile` |
-   | campaign | `star_catalogue`, `coverage_map` |
+   | campaign | `star_cat_merge`, `final_cat_merge`, `coverage_map` |
 
 `sp run` chains both and fails if either phase did. The index **accumulates**
 across invocations, so appending tiles to `tile_list` later changes which jobs
@@ -149,11 +149,17 @@ things worth keeping:
   mirroring the scratch shard structure. This file is also the *tile-finished
   marker* that lets a completed tile stop pinning its exposures, which is the
   second reason it cannot live on scratch.
-- **PSF products** — `exp_persist` packs the files named by `persist_exp:` in
-  `config.yaml` (by default the psfex_interp `validation_psf-*.fits`, the rho/tau
-  statistics input) into one uncompressed tar per exposure, plus a manifest
-  recording the members. It answers the scratch purge, not the workflow's own
-  reclamation, so it runs whether or not `clean:` is on.
+- **Merged catalogues** — `<products_dir>/final_cat_<run>.hdf5` (every tile's
+  final catalogue, one dataset per tile) and `full_starcat_<run>.hdf5` (every
+  exposure's PSF validation catalogue, the rho/tau statistics input), named by
+  the run config's `run:` and reconciled rather than rebuilt when tiles are
+  appended.
+- **PSF products** — `exp_persist` packs each exposure's psfex_interp
+  `validation_psf-*.fits` (always) and the products named by `persist_exp:` in
+  `config.yaml` (by default `psf_model`) into one uncompressed tar per exposure,
+  plus a manifest recording the members. It answers the scratch purge, not the
+  workflow's own reclamation, so it runs whether or not `clean:` is on. Under
+  `psf_model: fake` there is no PSF product and it does not run.
 - **The index and the report** — `run_index.sqlite`, `missing.json`,
   `run_report.json`.
 - **Coverage** — see below.
@@ -175,8 +181,9 @@ four sky corners of every CCD that got a PSF model. The valid-PSF CCD set comes
 off `exp_persist.json`'s tar members — exact, because `psfex_interp` returns
 *without* writing `validation_psf-*.fits` on NOT_ENOUGH_STARS, BAD_CHI2 or
 FILE_NOT_FOUND — and the WCS off the `headers-<exp>.npy` written by `exp_split`.
-That makes `validation_psf-*` in `persist_exp:` a precondition of the chain, not
-a preference.
+`exp_persist` packs those catalogues whatever `persist_exp:` says, so the chain
+has no configuration precondition. Under `psf_model: fake` there is no PSF model,
+no footprint is recorded, and `coverage.enabled` is refused at parse time.
 
 Set `coverage: {enabled: true}` and one further job, `coverage_map`, stamps every
 footprint into `<products_dir>/coverage/coverage.hsp` — a HealSparse map counting,
