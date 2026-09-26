@@ -168,8 +168,9 @@ def log_run_health(w_log, count, n_fitted, n_flagged):
     if count > 0 and n_fitted == 0:
         w_log.error(
             f'ngmix: all {count} objects failed the metacal fit'
-            ' (0 fitted) -- likely an upstream library/PSF problem,'
-            ' not a data property; writing an empty catalogue.'
+            ' (0 fitted); writing an empty catalogue. Expected only for a'
+            ' tile with no usable epochs; otherwise check the vignettes,'
+            ' PSFs and ngmix installation.'
         )
     if n_fitted > 0 and n_flagged == n_fitted:
         w_log.error(
