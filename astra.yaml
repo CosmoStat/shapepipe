@@ -124,11 +124,12 @@ decisions:
   photometric_zeropoint:
     label: Magnitude zero-point convention
     rationale: >-
-      Tiles use a fixed MAG_ZEROPOINT 30.0 (ZP_FROM_HEADER=False), and ngmix
-      repeats it in MAG_ZP; exposures read the per-image header PHOTZP. The
-      tile convention relies on MegaPipe stacks being calibrated to 30 by
-      construction. Magnitude cuts (the star-selection window, downstream
-      galaxy cuts) inherit whichever convention their stage uses.
+      Tiles use a fixed MAG_ZEROPOINT 30.0 (ZP_FROM_HEADER=False), and
+      ngmix repeats it in MAG_ZP; exposures read the per-image header
+      PHOTZP. The fixed tile value assumes the MegaPipe stacks are
+      calibrated to 30; nothing in the repo checks it. Magnitude cuts
+      (the star-selection window, downstream galaxy cuts) inherit
+      whichever convention their stage uses.
       Anchor: workflow/config/cfis/default_tile.sex#MAG_ZEROPOINT;
       workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER;
       workflow/config/cfis/config_tile_Ng_template.ini#NGMIX_RUNNER.MAG_ZP;
@@ -140,11 +141,9 @@ decisions:
         label: Tiles fixed 30.0; exposures from header PHOTZP
       header_everywhere:
         label: Per-image header zero-points on tiles too
-        excluded: true
-        excluded_reason: >-
-          MegaPipe stacks are calibrated to 30, so a header read adds a failure
-          path for no numerical change; it becomes a real fork only if tiles
-          ever carry a different PHOTZP.
+        description: >-
+          ZP_FROM_HEADER=True on tiles; changes magnitudes only where a tile's
+          header zero-point differs from 30.
 
 prior_insights:
   des_psf_blacklist:
@@ -337,14 +336,17 @@ analyses:
       detection_threshold_policy:
         label: Detection significance, minimum area, matched filter
         rationale: >-
-          Tiles: DETECT_THRESH and ANALYSIS_THRESH 1.0 sigma, DETECT_MINAREA
-          3, filtered with a 7x7 Gaussian of FWHM 3 px (gauss_3.0_7x7.conv,
-          close to the ~3.5 px CFIS seeing). These are the parameters of the
-          MegaPipe tile catalogue, so ShapePipe's galaxy sample matches the
-          catalogue UNIONS adopts. Exposures: 1.5 sigma, minarea 5, the 3x3
-          FWHM 2 px kernel (default.conv); they only feed star selection.
-          Guinot+22 Table 2 lists minarea 10 at 1.5 sigma with the FWHM 2 px
-          kernel, so the tiles differ from the paper on all three.
+          Tiles: DETECT_THRESH and ANALYSIS_THRESH 1.0 sigma,
+          DETECT_MINAREA 3, filtered with a 7x7 Gaussian of FWHM 3
+          px (gauss_3.0_7x7.conv), near the CFIS average seeing of
+          0.65 arcsec (about 3.5 px at 0.187 arcsec/px; the .sex
+          files set SEEING_FWHM 0.6). These are the parameters of
+          the MegaPipe tile catalogue, so ShapePipe's galaxy sample
+          matches the catalogue UNIONS adopts. Exposures: 1.5 sigma,
+          minarea 5, the 3x3 FWHM 2 px kernel (default.conv); they
+          only feed star selection. Guinot+22 lists 1.5 sigma,
+          minarea 10 and the default 3x3 kernel, so the tiles differ
+          from the paper on all three.
           Anchor: workflow/config/cfis/default_tile.sex#DETECT_THRESH;
           workflow/config/cfis/default_tile.sex#DETECT_MINAREA;
           workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE;
@@ -354,8 +356,10 @@ analyses:
         options:
           megapipe_tiles:
             label: MegaPipe values on tiles; stock values on exposures
+            insights: [guinot22_cfis_seeing]
           stock_tiles:
             label: Stock ShapePipe values on tiles (1.5 sigma, minarea 5, FWHM 2 px)
+            insights: [guinot22_sextractor_params]
             excluded: true
             excluded_reason: >-
               Triggers spuriously on about 10% of grid-placed Sersic galaxies
@@ -364,16 +368,17 @@ analyses:
       deblending_policy:
         label: Deblending contrast
         rationale: >-
-          DEBLEND_NTHRESH 32 on both passes; DEBLEND_MINCONT 0.002 on tiles
-          (the MegaPipe value) and 0.001 on exposures. Contrast sets object
-          count, centroids, and blend contamination in shapes. Guinot+22 Table
-          2 lists 0.001 for tile detection.
+          DEBLEND_NTHRESH 32 on both passes; DEBLEND_MINCONT 0.002
+          on tiles (the MegaPipe value) and 0.001 on exposures.
+          Contrast sets object count, centroids, and blend
+          contamination in shapes. Guinot+22 lists 0.001.
           Anchor: workflow/config/cfis/default_tile.sex#DEBLEND_MINCONT;
           workflow/config/cfis/default_exp.sex#DEBLEND_MINCONT.
         default: megapipe_tiles
         options:
           megapipe_tiles:
             label: MINCONT 0.002 tiles / 0.001 exposures
+            insights: [guinot22_sextractor_params]
           mincont_5em4_tiles:
             label: MINCONT 0.0005 on tiles
             excluded: true
@@ -410,11 +415,11 @@ analyses:
       weight_map_usage:
         label: Weight map as inverse variance for detection
         rationale: >-
-          WEIGHT_TYPE MAP_WEIGHT on both passes (SExtractor default NONE): the
-          per-pixel variance sets the effective SNR and so the detection set.
-          RESCALE_WEIGHTS and WEIGHT_GAIN are SExtractor defaults. Guinot+22
-          says all non-tabulated parameters keep their defaults, which would
-          mean no weight map.
+          WEIGHT_TYPE MAP_WEIGHT on both passes (SExtractor default
+          NONE): the per-pixel variance sets the effective SNR and
+          so the detection set. RESCALE_WEIGHTS and WEIGHT_GAIN are
+          SExtractor defaults. Guinot+22 keeps every non-tabulated
+          parameter at its default, which would mean no weight map.
           Anchor: workflow/config/cfis/default_tile.sex#WEIGHT_TYPE;
           workflow/config/cfis/default_exp.sex#WEIGHT_TYPE;
           src/shapepipe/modules/sextractor_package/sextractor_script.py::SExtractorCaller.set_input_files.
@@ -424,6 +429,7 @@ analyses:
             label: MAP_WEIGHT
           no_weight:
             label: No weight map (SExtractor default)
+            insights: [guinot22_sextractor_params]
       zero_weight_interpolation:
         label: Interpolation across zero-weight pixels
         rationale: >-
@@ -511,12 +517,13 @@ analyses:
       epoch_membership_ccd_bounds:
         label: Which exposure CCDs an object belongs to (N_EPOCH)
         rationale: >-
-          CCD_SIZE = 33,2080,1,4612 with strict inequalities:
-          positions with x at or below 33 are outside the bounds,
-          and a WCS inversion failure skips the CCD, lowering
-          N_EPOCH. This sets how many exposures enter each galaxy's
-          multi-epoch fit. The x range spans 2048 px; whether the
-          excluded strip is prescan or science pixels is unverified.
+          CCD_SIZE = 33,2080,1,4612 with strict inequalities bounds
+          each CCD's usable x range, and a WCS inversion failure
+          skips the CCD, lowering N_EPOCH. This sets how many
+          exposures enter each galaxy's multi-epoch fit. The x range
+          (33, 2080) spans exactly 2048 px and matches MegaCam's raw
+          DATASEC, so the excluded strip is likely prescan; that is
+          unverified here.
           Anchor: workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.CCD_SIZE;
           src/shapepipe/modules/sextractor_package/sextractor_script.py::make_post_process;
           src/shapepipe/modules/sextractor_package/sextractor_script.py::ccd_candidate_mask.
@@ -524,9 +531,41 @@ analyses:
         options:
           trimmed_bounds_33_2080:
             label: "x in (33,2080), y in (1,4612), strict"
-          full_ccd:
-            label: Untrimmed x-range, inclusive bounds
+          inclusive_bounds:
+            label: Same bounds, inclusive
     prior_insights:
+      guinot22_sextractor_params:
+        claim: >-
+          The published tile detection uses DETECT_THRESH 1.5, DETECT_MINAREA
+          10, the default 3x3 filter and DEBLEND_MINCONT 0.001, with every
+          other SExtractor parameter at its default.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_table2
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'Table 2. SExtractor parametrisation. All other parameters are kept to their default values.'
+            location: { page: 5 }
+          - id: ev_guinot22_mincont
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'DEBLEND_MINCONT 0.001'
+            location: { page: 5 }
+          - id: ev_guinot22_minarea
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'DETECT_MINAREA 10'
+            location: { page: 5 }
+      guinot22_cfis_seeing:
+        claim: >-
+          CFIS r-band data have an average seeing of 0.65 arcsec.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_seeing
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'is taking r-band data with an average seeing of 0.65 arcsec'
+            location: { page: 1 }
       guinot22_stacked_detection:
         claim: >-
           Source extraction in the published analysis is performed on the
@@ -582,9 +621,9 @@ analyses:
       ccd_split_extent:
         label: All 40 MegaCam HDUs split and carried as candidate epochs
         rationale: >-
-          N_HDU=40, and any other HDU count raises: every CCD including the
-          ear CCDs 36-39 is a candidate epoch wherever the WCS lands it.
-          Excluding the ear CCDs (a different optical path) is the alternative.
+          N_HDU=40, and any other HDU count raises: every one of the
+          40 CCDs is a candidate epoch wherever the WCS lands it.
+          Excluding a subset of CCDs is the alternative.
           Anchor: workflow/config/cfis/config_exp_Sp.ini#SPLIT_EXP_RUNNER.N_HDU;
           src/shapepipe/modules/split_exp_package/split_exp.py::SplitExposures.create_hdus.
         default: all_40_hdus
@@ -592,8 +631,8 @@ analyses:
           all_40_hdus:
             label: 40 HDUs, hard-fail on any other count
             insights: [guinot22_forty_chips]
-          exclude_ear_ccds:
-            label: Drop CCDs 36-39 as epochs
+          exclude_ccd_subset:
+            label: Exclude a subset of CCDs as epochs
             description: Not implemented.
       epoch_provenance_from_tile_history:
         label: Epoch sets parsed from tile FITS HISTORY cards
@@ -717,8 +756,8 @@ analyses:
           0.1 px and its plot uses 0.186 arcsec/px, while the
           applied cut is +- 0.2 px at 0.187; the _mode docstring
           puts the median fallback at 10 objects, the code at 20.
-          Anchor: workflow/config/cfis/star_selection.setools#MASK:star_selection.MAG_AUTO;
-          workflow/config/cfis/star_selection.setools#MASK:preselect.MAG_AUTO;
+          Anchor: workflow/config/cfis/star_selection.setools#MASK:star_selection.FLAGS;
+          workflow/config/cfis/star_selection.setools#MASK:preselect.FLAGS;
           workflow/config/cfis/default.psfex#SAMPLE_AUTOSELECT;
           src/shapepipe/pipeline/str_handler.py::StrInterpreter._mode.
         default: mode_centred_box
@@ -790,16 +829,19 @@ analyses:
       psf_modelling_software:
         label: PSF model, PSFEx per CCD or MCCD over the focal plane
         rationale: >-
-          workflow/config.yaml psf_model selects the exposure and tile config
-          pair; the committed value is psfex, which fits each CCD
-          independently. MCCD (Liaudat+2021) fits all 40 CCDs at once with a
-          hybrid local+global model (N_COMP_LOC 8, D_COMP_GLOB 8, MIN_N_STARS
-          20, RMSE_THRESH 1.25); the completeness table treats its counts as
-          warnings because no campaign has run it. [LINT] config_exp_mccd.ini
-          still reads pipeline_flag images from mask_runner, which no longer
-          exists, so the MCCD exposure chain cannot run as committed.
+          workflow/config.yaml psf_model selects the exposure and
+          tile config pair; the committed value is psfex, which fits
+          each CCD independently. MCCD (Liaudat+2021) fits one
+          hybrid local+global model over the focal plane
+          (FP_GEOMETRY CFIS; N_COMP_LOC 8, D_COMP_GLOB 8,
+          MIN_N_STARS 20, RMSE_THRESH 1.25); the completeness table
+          treats its counts as warnings because no campaign has run
+          it. [LINT] config_exp_mccd.ini still reads pipeline_flag
+          images from mask_runner, which no longer exists, so the
+          MCCD exposure chain cannot run as committed.
           Anchor: workflow/config.yaml;
           workflow/config/cfis/config_MCCD.ini#INSTANCE.N_COMP_LOC;
+          workflow/config/cfis/config_MCCD.ini#INSTANCE.FP_GEOMETRY;
           workflow/config/cfis/config_MCCD.ini#INPUTS.MIN_N_STARS;
           workflow/config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.INPUT_MODULE;
           src/shapepipe/modules/mccd_package.
@@ -832,15 +874,16 @@ analyses:
       psf_acceptance_thresholds:
         label: Per-CCD PSF-model quality gate
         rationale: >-
-          A CCD whose model has ACCEPTED < STAR_THRESH = 22 or CHI2 >
-          CHI2_THRESH = 2 is not interpolated, on both the validation and the
-          multi-epoch pass; 22 applies the published floor to the 80% training
-          sample. In the science path the CCD's epoch is dropped for every
-          object on it; an object left with no epoch has no shape. There is no
-          minimum-epoch floor in the pipeline: NGMIX_N_EPOCH records what
-          survived and epoch-count cuts happen downstream. Guinot+22 describes
-          excluding the CCD from PSF modelling rather than gating at
-          interpolation, and does not state the chi2 cut.
+          A CCD whose model has ACCEPTED < STAR_THRESH = 22 or CHI2
+          > CHI2_THRESH = 2 is not interpolated, on both the
+          validation and the multi-epoch pass; 22 applies the
+          published floor to the 80% training sample. In the science
+          path the CCD's epoch is dropped for every object on it; an
+          object left with no epoch has no shape. There is no
+          minimum-epoch floor in the pipeline: NGMIX_N_EPOCH records
+          what survived and epoch-count cuts happen downstream.
+          Guinot+22 describes discarding the CCD from PSF estimation
+          rather than gating at interpolation.
           Anchor: src/shapepipe/modules/psfex_interp_package/psfex_interp.py::PSFExInterpolator.interpsfex;
           workflow/config/cfis/config_exp_psfex.ini#PSFEX_INTERP_RUNNER.STAR_THRESH;
           workflow/config/cfis/config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.STAR_THRESH;
@@ -1036,6 +1079,7 @@ analyses:
             label: T guess 0.25 + catalogue flux, ntry 5 / 2
           hsm_initialisation:
             label: Guesses from HSM adaptive moments (Guinot+22)
+            insights: [guinot22_hsm_initialisation]
             description: Not implemented.
       fit_priors:
         label: ngmix joint prior
@@ -1048,8 +1092,8 @@ analyses:
           key is absent). The same joint prior also constrains the
           PSF fits: the PSF fitter is built with the galaxy prior.
           Prior width drives noise bias; no rationale recorded.
-          Guinot+22 states a flat F in [-1e4, 1e9] and a flat r50
-          prior rather than T. [LINT] the epoch stamps are exposure
+          Guinot+22 states a flat F in [-1e4, 1e9] and a flat prior
+          on the half-light radius r50 rather than on T. [LINT] the epoch stamps are exposure
           pixels, and star selection uses 0.187 arcsec/px; the
           ngmix_runner comment says pixel scale also sets a noise
           window, but get_noise is never called.
@@ -1060,6 +1104,7 @@ analyses:
         options:
           gpriorba04_flat:
             label: GPriorBA 0.4 + flat T/F with negative support
+            insights: [guinot22_ngmix_priors]
           nonneg_informative:
             label: Non-negative or informative T/F priors
             excluded: true
@@ -1402,6 +1447,39 @@ analyses:
               epochs per band; UNIONS likely cannot.
             insights: [mask_multi_epoch_drop, mask_des_defect_practice]
     prior_insights:
+      guinot22_ngmix_priors:
+        claim: >-
+          The published ngmix fit uses a Gaussian centroid prior of width one
+          pixel scale, a flat prior on the half-light radius r50 in [-10, 1e6]
+          arcsec and a flat flux prior in [-1e4, 1e9].
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_cen_prior
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'Gaussian distribution centred on 0 with σ = pixel scale'
+            location: { page: 7 }
+          - id: ev_guinot22_r50_prior
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'r50: flat distribution in'
+            location: { page: 7 }
+          - id: ev_guinot22_flux_prior
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'F: flat distribution in'
+            location: { page: 7 }
+      guinot22_hsm_initialisation:
+        claim: >-
+          The published fit is initialised from adaptive moments measured on
+          each sheared version of the object.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_hsm_init
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'We thus run first an adaptive moments algorithm to initialise the least-square operation.'
+            location: { page: 7 }
       guinot22_gaussian_model:
         claim: >-
           The published shape measurement models galaxies with a single
@@ -1774,6 +1852,7 @@ analyses:
             label: No in-pipeline classification; catalogue ships all objects
           spread_model_inline:
             label: spread_model classification in make_cat
+            insights: [guinot22_spread_model_cut]
             description: >-
               Not wired in the workflow; needs spread_model_runner after the
               PSF interpolation, its output added to make_cat's inputs, and
@@ -1781,12 +1860,13 @@ analyses:
       tile_overlap_handling:
         label: Tile-overlap duplicates neither removed nor flagged
         rationale: >-
-          Adjacent tiles overlap, and objects in the overlap are measured in
-          both. [HARDCODED] make_cat attaches only TILE_ID; there is no unique-object rule
-          and no overlap flag, and sp_validation removes duplicates by cutting
-          each tile to its non-overlapping area. [LINT] the make_cat package
-          docstring documents a TILE_LIST key that flags overlap objects;
-          nothing implements it.
+          Adjacent tiles overlap, and objects in the overlap are
+          measured in both. [HARDCODED] make_cat attaches only
+          TILE_ID; there is no unique-object rule and no overlap
+          flag, so duplicates are left to downstream selection.
+          [LINT] the make_cat package docstring documents a
+          TILE_LIST key that flags overlap objects; nothing
+          implements it.
           Anchor: src/shapepipe/modules/make_cat_package/make_cat.py::save_sextractor_data;
           src/shapepipe/modules/make_cat_package/__init__.py.
         default: no_dedup_in_pipeline
@@ -1824,3 +1904,21 @@ analyses:
             excluded: true
             excluded_reason: >-
               Loses the photometry-only population and hides attrition.
+    prior_insights:
+      guinot22_spread_model_cut:
+        claim: >-
+          The published analysis selects galaxies inside the pipeline with the
+          spread model, at s + 2 sigma_s > 0.0003 together with s > 0 and
+          20 < MAG_AUTO < 26.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_spread_model
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'We then use the spread model to make the selection presented below:'
+            location: { page: 5 }
+          - id: ev_guinot22_spread_model_cut
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 's + 2σs > 0.0003'
+            location: { page: 5 }
