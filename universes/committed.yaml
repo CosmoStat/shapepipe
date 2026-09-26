@@ -10,6 +10,7 @@ analyses:
       pixel_mask_source: instrument_flags_only
       psf_star_mask_veto: instrument_flags_only
       sky_mask_application: deferred_downstream
+      defect_map_from_flags: rasterize_conservative_os3
   detection:
     decisions:
       detection_threshold_policy: megapipe_tiles

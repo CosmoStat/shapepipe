@@ -4,6 +4,8 @@
     "all": "572122d8d1901e12ff591b30adf405f8920be8183129befececbb819f3392ed8",
     "clean_exposure": "22cb76b13a5205d20a02a9bd3b8c8bea5ea2801555e24dd2b84b11145f7e79d9",
     "clean_tile": "a5c07b0461526ed407df36a291deb866d4181524b4c8e0fbc3dd047fd9d28479",
+    "defect_map_merge": "a5f1daeecde11e22cea5e3aba2e1a46f8370899b5d113ccde254cd90cd96708b",
+    "exp_defect_map": "4a411b00a444a96b9bd133c7c8db5d36e3b0e187227d4acc08f790ba28bb5b9f",
     "exp_get_images": "a9e9eca0a99a348e43e0cd44d0c0aae0f890773d03e35007fb77f886b7d21f5f",
     "exp_persist": "302e2837542bc1102430c27c81c600b7cda32e8bddcb5fd60d33950987609fff",
     "exp_psf": "87b9fd799a54130eb3dd9c78bb5124838854c23f365df7a991a53f4c6ac4c3ff",
@@ -23,7 +25,7 @@
     "tile_vignets": "b9853b2a1830840a21d8ec1f0877e780868a07da57a29f531df47f26fe8692ac"
   },
   "schema": 1,
-  "sha256": "4235cff2328f83cc78ea73c7fd350dbdf4cd4b73c61b6b64b8db1e73e47c1aa3",
+  "sha256": "9ec94a6d3a4d1301bcb3919f840c5bbc98277df932d64630ebbffef82d0ebb98",
   "unit_pre": {
     "exp_get_images": "dac6685a207dae3ea81d296ce53e9ba75d4636cf1f81e6399f2dda452680c992",
     "exp_psf": "87fc8ea1153a709ab7ba56542cfacc041f5f8b7f6cf2f38a9bc9d8004d1cecb4",
