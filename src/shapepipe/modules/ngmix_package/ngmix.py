@@ -1200,7 +1200,7 @@ def prepare_postage_stamps(
 ):
     """Gather one object's epoch stamps, dropping epochs its defects spoil.
 
-    @sc [decision:epoch_masked_fraction_cut,decision:defect_fill] epoch-cut-on-symmetrized-mask
+    @sc [decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.defect_fill] epoch-cut-on-symmetrized-mask
     An epoch is dropped when more than ``epoch_masked_fraction_cut`` of its
     stamp lies in :func:`defect_mask`, the symmetrized set that
     :func:`prepare_ngmix_weights` zero-weights and noise-fills. Counting the
@@ -1209,7 +1209,7 @@ def prepare_postage_stamps(
     its area. The default is 1/3 (``EPOCH_MASKED_FRACTION_CUT``); 10%, the
     DES Y3 and Y6 value, is the alternative to test.
 
-    @sc [decision:central_defect_veto,decision:defect_fill] epoch-central-defect-veto
+    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.defect_fill] epoch-central-defect-veto
     An epoch is also dropped when any pixel of :func:`defect_mask` lies
     closer than ``epoch_central_defect_radius`` pixels to the stamp centre.
     A noise-filled hole in the object's light is sheared by metacal but not by
@@ -1680,7 +1680,7 @@ def symmetrize_defects(defect):
     """OR a square stamp's defect mask with its 90-, 180- and 270-degree
     rotations.
 
-    @sc [decision:defect_fill,label:physics] defect-mask-4fold-symmetrized
+    @sc [decision:shape_measurement.defect_fill,label:physics] defect-mask-4fold-symmetrized
     Defect pixels are ORed with all their 90-degree rotations about the stamp
     centre before they are zero-weighted and noise-filled, so the filled set
     is invariant under a 90-degree rotation. Metacal deconvolves, shears and
@@ -1769,7 +1769,7 @@ def prepare_ngmix_weights(
     by an independent noise realisation at their background RMS, under either
     ``blend_handling``. ``blend_handling`` decides only the neighbour side.
 
-    @sc [decision:defect_fill,decision:blend_handling] defects-filled-neighbours-raw
+    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.blend_handling] defects-filled-neighbours-raw
     Every pixel of ``defect_mask`` is zero-weighted and noise-filled whatever
     ``blend_handling`` is, and the filled set equals the zero-weight defect
     set. Metacal never reads the weights, so a raw defect value (bad column,
