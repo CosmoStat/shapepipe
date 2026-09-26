@@ -239,9 +239,9 @@ def _gal_flag_weight(npix=41, seed=7):
     return gal, flag, weight
 
 
-def test_noisefill_ignores_seg_and_dilate_kwargs():
-    """Under noisefill, passing seg / dilate_neighbour changes nothing: the
-    result matches the plain default call on the same RNG stream."""
+def test_none_ignores_seg_and_dilate_kwargs():
+    """Under BLEND_HANDLING = none, passing seg / dilate_neighbour changes
+    nothing: the result matches the plain default call on the same RNG stream."""
     gal, flag, weight = _gal_flag_weight()
     seg, _, _ = two_object_seg(npix=gal.shape[0], sep=12)
 
