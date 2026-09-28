@@ -93,6 +93,7 @@ inputs:
   exposures: /n09data/hervas/skills_out/1z2z_grid_3/images/SP_exp
 outputs:
   run_dir: /path/to/run
+  products_dir: /path/to/product
   index_db: /path/to/run/index.sqlite
 ```
 
