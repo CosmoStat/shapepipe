@@ -17,16 +17,20 @@ BASE_RULES = {
 }
 PSF_RULES = {"exp_persist", "star_cat_merge", "exp_footprint"}
 DEFECT_RULES = {"exp_defect_map", "defect_map_merge"}   # MAPS_DEFECTS: data only
+CATALOGUE_RULES = {"tile_get_catalogue"}
 # coverage_map joins only with coverage.enabled, which the fixture leaves off.
 
 
 def test_rule_set_matches_input_mode(campaign, dag):
-    """A PSF gate cannot remove real-PSF products or add them to fake PSFs."""
+    """A PSF gate cannot remove real-PSF products or add them to fake PSFs;
+    the UNIONS-catalogue detection adds its fetch rule and nothing else."""
     expected = BASE_RULES.copy()
     if campaign.psf_model != "fake":
         expected |= PSF_RULES
     if campaign.input_type == "data":
         expected |= DEFECT_RULES
+    if campaign.tile_detection == "unions_catalogue":
+        expected |= CATALOGUE_RULES
     assert dag.rule_names == expected
     assert "merge_final_cats" not in dag.declared_rule_names
 

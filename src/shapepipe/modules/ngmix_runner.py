@@ -122,10 +122,10 @@ def ngmix_runner(
         # No batch saving
         save_batch = -1
 
-    # First and last galaxy ID to process. Read via ``getexpanded`` so an
-    # orchestrator can drive the chunk bounds from environment variables
-    # (``$SP_NGMIX_ID_OBJ_MIN`` and friends); ``getexpanded`` is the only
-    # accessor in ShapePipe's config that expands ``$VAR``.
+    # First and last catalogue row (1-based) to process. Read via
+    # ``getexpanded`` so an orchestrator can drive the chunk bounds from
+    # environment variables (``$NGMIX_ROW_MIN`` and friends); ``getexpanded``
+    # is the only accessor in ShapePipe's config that expands ``$VAR``.
     id_obj_min = int(config.getexpanded(module_config_sec, "ID_OBJ_MIN"))
     id_obj_max = int(config.getexpanded(module_config_sec, "ID_OBJ_MAX"))
 

@@ -14,6 +14,7 @@ analyses:
       defect_map_from_flags: rasterize_conservative_os3
   detection:
     decisions:
+      tile_detection: unions_catalogue
       detection_threshold_policy: megapipe_tiles
       deblending_policy: megapipe_tiles
       background_model: auto_megapipe_tiles
