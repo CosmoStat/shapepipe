@@ -34,6 +34,7 @@ the manifest says "this stage succeeded", the log says "here is what happened"
 import configparser
 import fnmatch
 import functools
+import glob
 import hashlib
 import json
 import os
@@ -462,6 +463,8 @@ MERGE_FINAL_HASH = ":".join((
     path_hash(CONFIG_DIR / "final_cat.param")))
 DEFECT_HASH      = script_hash("defect_map_exp.py")
 MERGE_DEFECT_HASH = script_hash("merge_defect_map.py")
+FOOTPRINT_HASH   = script_hash("exp_footprint.py")
+NEXP_MAP_HASH    = script_hash("nexp_map.py")
 # ngmix_range.py earns a hash for a stronger reason than the others. What it
 # emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks are
 # a PARTITION of its object IDs: resume a tile across an edit to the split and
@@ -633,18 +636,42 @@ for _entry in PERSIST_EXP:
     except KeyError as _exc:
         raise WorkflowError(f"config persist_exp: {_exc.args[0]}")
 
-# --- the instrument-flag defect map (#878) ----------------------------------
-# The exposures' flag images are the campaign's one masking input that never
-# leaves the pixel domain, so the survey footprint — built from CCD corner WCS —
-# cannot subtract them. exp_defect_map rasterizes them per exposure and
-# defect_map_merge unions the fragments; both are argued in
-# workflow/scripts/defect_map_exp.py and merge_defect_map.py.
+# --- exposure-level HealSparse maps ----------------------------------------
+# Two campaign products are derived exposure by exposure and combined once per
+# campaign, both on the persistent root and both at ONE resolution:
+#
+#   exp_defect_map  -> defect_map_merge   the instrument-flag defect map (#878):
+#                                         boolean, True = masked, OR of fragments
+#   exp_footprint   -> nexp_map           the exposure-count map: per sky pixel,
+#                                         how many exposures with a valid PSF
+#                                         model cover it
 #
 # THE RESOLUTION IS THE LADDER'S, not a choice made here: nside_sparse 131072
-# over nside_coverage 128, boolean, True = masked, matching every map under
-# `inputs.masks` and every entry in config_tile_Mc.ini's MASK_EXT_PATHS. It is
-# config so that a campaign against a different ladder can say so, not so that
-# this one can drift.
+# over nside_coverage 128, matching every map under `inputs.masks` and every
+# entry in config_tile_Mc.ini's MASK_EXT_PATHS, so both maps align pixel-wise
+# with the UNIONS bit masks and with each other. A coarser map looks entirely
+# reasonable and does not align, and no consumer would notice. It is config
+# (`exposure_maps:`) so that a campaign against a different ladder can say so,
+# not so that one map can drift from the other. Checked here, at parse time:
+# healsparse requires powers of two and says so only once a job has reached a
+# node.
+_MAPS = dict(config.get("exposure_maps") or {})
+MAP_NSIDE          = int(_MAPS.get("nside", 131072))
+MAP_NSIDE_COVERAGE = int(_MAPS.get("nside_coverage", 128))
+for _key, _n in (("nside_coverage", MAP_NSIDE_COVERAGE), ("nside", MAP_NSIDE)):
+    if _n <= 0 or _n & (_n - 1):
+        raise WorkflowError(
+            f"config exposure_maps.{_key} must be a power of 2, got {_n}")
+if MAP_NSIDE_COVERAGE >= MAP_NSIDE:
+    raise WorkflowError(
+        f"config exposure_maps: nside_coverage={MAP_NSIDE_COVERAGE} must be "
+        f"below nside={MAP_NSIDE}.")
+
+# THE DEFECT MAP. The exposures' flag images are the campaign's one masking
+# input that never leaves the pixel domain, so the survey footprint — built from
+# CCD corner WCS — cannot subtract them. exp_defect_map rasterizes them per
+# exposure and defect_map_merge unions the fragments; both are argued in
+# workflow/scripts/defect_map_exp.py and merge_defect_map.py.
 #
 # DATA RUNS ONLY. The image simulations ship a flag file per exposure
 # (simu_flag-<exp>.fits, split and read by SExtractor like the survey's) but
@@ -655,20 +682,13 @@ for _entry in PERSIST_EXP:
 # through it.
 MAPS_DEFECTS = INPUT_TYPE == "data"
 
-_DEFECT = dict(config.get("defect_map") or {})
-DEFECT_NSIDE          = int(_DEFECT.get("nside", 131072))
-DEFECT_NSIDE_COVERAGE = int(_DEFECT.get("nside_coverage", 128))
-DEFECT_OVERSAMPLE     = int(_DEFECT.get("oversample", 3))
+DEFECT_OVERSAMPLE = int(dict(_MAPS.get("defect") or {}).get("oversample", 3))
 if DEFECT_OVERSAMPLE < 2:
     raise WorkflowError(
-        f"config defect_map.oversample={DEFECT_OVERSAMPLE}: 2 is the geometric "
-        f"floor (the four corners of a CCD pixel bound its footprint); 1 would "
-        f"sample pixel centres alone and lose thin defects entirely.")
-if DEFECT_NSIDE_COVERAGE >= DEFECT_NSIDE:
-    raise WorkflowError(
-        f"config defect_map: nside_coverage={DEFECT_NSIDE_COVERAGE} must be "
-        f"below nside={DEFECT_NSIDE}.")
-
+        f"config exposure_maps.defect.oversample={DEFECT_OVERSAMPLE}: 2 is the "
+        f"geometric floor (the four corners of a CCD pixel bound its "
+        f"footprint); 1 would sample pixel centres alone and lose thin defects "
+        f"entirely.")
 
 def _split_n_hdu():
     """How many CCDs exp_split writes, from ITS OWN config.
@@ -812,6 +832,140 @@ def defect_map_fragment_targets():
         return []
     return defect_map_inputs()
 
+
+# THE EXPOSURE-COUNT MAP. exp_footprint records, per exposure, the four sky
+# corners of every CCD with a valid PSF model; nexp_map stamps every record on
+# the products root into one map. There is one count and it is of EXPOSURES:
+# the CCDs of one exposure do not overlap, so stamping 1 per CCD polygon counts
+# exposures per pixel, and it is what sp_validation's `npoint >= 3` cut reads.
+#
+# exp_footprint needs no precondition on `persist_exp:`: exp_persist packs every
+# CCD's psf_validation catalogue whatever that list says (persist_exp.py's
+# ALWAYS set), so its manifest always carries the valid-PSF set the record
+# selects on.
+#
+# `nexp.enabled` is OFF by default. The map is a campaign-END product — a
+# half-finished campaign's map is a picture of how far it has got, not of the
+# survey — and it is rebuilt whole, not reconciled, so leaving it on would
+# restamp the campaign after every batch. The per-exposure records are written
+# all along whatever it says; turning it on later costs one job. flag() because
+# `--config` delivers booleans as strings.
+_NEXP = dict(_MAPS.get("nexp") or {})
+NEXP_ENABLED = flag(_NEXP.get("enabled", False))
+
+# psf_model=fake fits no PSF model, so no exposure records a footprint
+# (footprint_targets) and nexp_map would reach its job only to find no record on
+# the products root. Refused here, before the campaign runs.
+if NEXP_ENABLED and not PERSISTS_PSF:
+    raise WorkflowError(
+        "exposure_maps.nexp.enabled needs a fitted PSF model: psf_model=fake "
+        "records no exposure footprint, so there is no exposure-count map to "
+        "build")
+
+
+def nexp_map():
+    """The campaign's exposure-count map; it carries run: so it identifies its
+    campaign outside the products root."""
+    return f"{PRODUCTS_DIR}/nexp_map/nexp_map_{CAMPAIGN}.hsp"
+
+
+def nexp_map_manifest():
+    """The record of which exposures the map contains, beside it."""
+    return f"{PRODUCTS_DIR}/nexp_map/nexp_map_{CAMPAIGN}.json"
+
+
+def footprint_targets():
+    """Which exposures this invocation must record a per-CCD sky footprint for.
+
+    REQUESTED BY `rule all` DIRECTLY, AND NOT GATED ON `nexp.enabled`. The
+    record is derived from `headers-<exp>.npy`, which lives on /scratch and
+    which the 60-day purge takes whether or not this campaign ever builds a map
+    — so building it only when a map is asked for means that turning the map on
+    a month later finds the WCS gone and no way back short of re-downloading the
+    exposures. This is persist_targets' argument below, applied to the other
+    scratch-only input the map needs: milliseconds and a few KB now, against an
+    irrecoverable loss later.
+
+    Scope, and the reclaimed-store exclusion, are persist_targets' exactly;
+    footprint_edge() below argues the exclusion.
+
+    The exposures are psf_exposures(): the record is the valid-PSF CCD set,
+    read off exp_persist's manifest, so psf_model=fake (no PSF model, no
+    exp_persist) records none.
+
+    HEAD PROCESS ONLY, for the same reason as clean_targets().
+    """
+    if not workflow.is_main_process:
+        return []
+    return sorted(m for e in psf_exposures() for m in footprint_edge(e))
+
+
+def footprint_edge(exp):
+    """The footprint manifest to depend on for this exposure: itself while the
+    store is live, nothing once it is reclaimed.
+
+    The one edge `rule all` and clean_exposure both take to an exposure's
+    footprint. A live exposure is asked for its manifest — the thing to build,
+    and what orders clean_exposure after the read of headers-<exp>.npy.
+
+    A RECLAIMED exposure is asked for nothing. Its manifest is exp_footprint's
+    declared output, which hangs off exp_persist's manifest and through it off
+    exp_psf's, so naming it keeps the whole producer chain in the DAG: any
+    change upstream — a `persist_exp:` edit changes exp_persist's params —
+    reschedules exp_get_images, exp_split and exp_psf from VOS to rebuild a
+    record that is already on the persistent root. Unlike the defect fragment,
+    the record has no undeclared leaf to depend on instead; the manifest IS the
+    record. Nothing is lost by the omission: the store the edge ordered against
+    is already gone, and nexp_map reads every durable record whether or not it
+    is an edge.
+
+    exp_store_reclaimed(), not the tombstone, is the test, for the purge case
+    its docstring names: a purged store has no tombstone, and a manifest asked
+    for there is a chain rebuilt, or, with no record written, an exp_footprint
+    job that fails reading headers that are gone.
+    """
+    return ([] if exp_store_reclaimed(exp)
+            else [prod_exp_manifest(exp, "exp_footprint")])
+
+
+@functools.lru_cache(maxsize=1)
+def nexp_map_exposures():
+    """The exposure IDs nexp_map's map is built from — what its fingerprint is
+    taken over.
+
+    nexp_map.py globs EVERY footprint record on the persistent root, but its
+    declared inputs are only footprint_targets(): a record of a reclaimed or
+    out-of-scope exposure is no edge, so without this set on `params` a record
+    added while the map was off, and then reclaimed, never reruns the map. The
+    set is the records already on the root plus the ones this invocation is
+    declared to write, which is exactly what the job will glob when it runs.
+
+    IDS, NOT STAMPS, for unit_fingerprint's reason. A record written in this
+    invocation has no stamp at parse time and one at the next parse, and an
+    exposure moves from edge to glob-only when its store is reclaimed; a
+    fingerprint over mtimes or digests would move on both and rerun a
+    many-hour job over the same records. A declared record's content is
+    covered by its input edge instead, and a reclaimed exposure's record has
+    no producer left in this workflow to change it.
+    """
+    # prod_exp_manifest("*", ...) is the record's path with the shard and the
+    # exposure id both "*": the same layout exp_footprint writes, as a glob.
+    durable = {Path(m).parent.parent.name
+               for m in glob.glob(prod_exp_manifest("*", "exp_footprint"))}
+    declared = {e for e in psf_exposures() if footprint_edge(e)}
+    return sorted(durable | declared)
+
+
+def nexp_map_targets():
+    """The campaign map, when `exposure_maps.nexp.enabled` asks for one.
+
+    HEAD PROCESS ONLY, for the reason clean_targets() gives: this feeds `rule
+    all` at module level, so it is evaluated on every per-job re-parse too, none
+    of which can schedule `all`.
+    """
+    if not NEXP_ENABLED or not workflow.is_main_process:
+        return []
+    return [nexp_map(), nexp_map_manifest()]
 
 def persist_targets():
     """Which exposures this invocation must pack PSF products off scratch for.
@@ -1124,19 +1278,22 @@ STAR_CAT_PRODUCT   = _persist.ALWAYS
 STAR_CAT_PATTERN   = _persist.resolve(_persist.ALWAYS)
 TILE_BYTES_DEFAULT = 46_000_000
 
-# DEFECT SIDE. The union's footprint is what sizes it, not the exposure count:
-# the accumulator is one BIT per sparse pixel of every coverage pixel the
-# campaign touches, so a coverage pixel costs (nside/nside_coverage)^2 / 8 bytes
-# — 128 KiB at the ladder's 131072/128 — and the loop holds one fragment
-# (~2 MB) at a time. Two ways to know the count, in order: the sidecar the last
-# merge wrote, which is the campaign's own measured footprint; and before there
-# is one, the exposures times the 13 coverage pixels ONE exposure touched
-# (measured, 2079612p), capped at the survey FOOTPRINT — exposures overlap
-# almost completely, so the per-exposure sum is only honest while the campaign
-# is small, and unbounded it would ask for the whole sky
-# (defect_map_cov_bytes() carries the arithmetic).
+# THE TWO EXPOSURE-LEVEL MAPS. The campaign's footprint is what sizes each,
+# not the exposure count: a map holds one block per coverage pixel the campaign
+# touches, (nside/nside_coverage)^2 sparse pixels. The defect accumulator is one
+# BIT per sparse pixel — 128 KiB per coverage pixel at the ladder's 131072/128 —
+# and its loop holds one fragment (~2 MB) at a time; the exposure-count map is
+# uint16, 2 MiB per coverage pixel, sixteen times the defect map's. Two ways to
+# know the count, in order: the record the last build wrote beside its map,
+# which is the campaign's own measured footprint; and before there is one, the
+# exposures times the 13 coverage pixels ONE exposure touched (measured,
+# 2079612p), capped at the survey FOOTPRINT — exposures overlap almost
+# completely, so the per-exposure sum is only honest while the campaign is
+# small, and unbounded it would ask for the whole sky (map_cov_pixels() carries
+# the arithmetic).
 DEFECT_MEM_BASE_MB = 800      # interpreter + astropy + healpy + healsparse
-DEFECT_COV_PER_EXP = 13
+NEXP_MEM_BASE_MB   = 800
+MAP_COV_PER_EXP    = 13
 # The merge holds no partial state, so it must stay inside the walltime that
 # Alliance policy lets a job run without checkpointing. A campaign that needs
 # longer needs a resumable accumulator, not a bigger number here.
@@ -1156,32 +1313,44 @@ def _size(path, default):
 # exposures do. It is the ceiling on the pre-sidecar estimate below, and it is a
 # FOOTPRINT rather than a whole sky: the survey is ~5000 deg^2, an eighth of the
 # 12 * 128^2 = 196608 coverage pixels a full-sky cap would allow.
-DEFECT_COV_FOOTPRINT = 23_000
+MAP_COV_FOOTPRINT = 23_000
+
+
+def map_cov_pixels(record, n_exposures):
+    """Coverage pixels a campaign map occupies: `n_coverage_pixels` from the
+    `record` the last build wrote beside it, else an estimate from the exposures.
+
+    ONCE THERE IS A RECORD the count is the map's own, measured. Before that it
+    is a prior, and the prior must be a FOOTPRINT estimate, not a sum over
+    exposures. Exposures overlap almost completely — each tile is covered by 7-10
+    of them and they tile the same sky — so MAP_COV_PER_EXP * n_exposures
+    passes the survey footprint at ~1800 exposures and, uncapped at the full sky,
+    asks for 25.8 GB of defect accumulator (and ~52 GB of rule, doubled again on
+    a retry) for a job the merge measures at ~3 GB. Capping at the measured DR6
+    footprint keeps the first-ever build of a large campaign asking for what it
+    needs; a small campaign is still sized on its own exposures, where the
+    per-exposure figure is the honest one.
+    """
+    try:
+        return int(json.loads(Path(record).read_text())["n_coverage_pixels"])
+    except (OSError, ValueError, KeyError):
+        return min(MAP_COV_PER_EXP * n_exposures, MAP_COV_FOOTPRINT)
 
 
 def defect_map_cov_bytes():
     """Bytes the union's accumulator occupies: coverage pixels x the bit-packed
-    block size.
+    block size."""
+    block = (MAP_NSIDE // MAP_NSIDE_COVERAGE) ** 2 // 8
+    return map_cov_pixels(defect_map_sidecar(),
+                          len(defect_map_exposures())) * block
 
-    ONCE THERE IS A SIDECAR the count is the map's own, measured. Before that it
-    is a prior, and the prior must be a FOOTPRINT estimate, not a sum over
-    exposures. Exposures overlap almost completely — each tile is covered by 7-10
-    of them and they tile the same sky — so DEFECT_COV_PER_EXP * n_exposures
-    passes the survey footprint at ~1800 exposures and, uncapped at the full sky,
-    asks for 25.8 GB of accumulator (and ~52 GB of rule, doubled again on a
-    retry) for a job the merge measures at ~3 GB. Capping at the measured DR6
-    footprint keeps the first-ever merge of a large campaign asking for what it
-    needs; a small campaign is still sized on its own exposures, where the
-    per-exposure figure is the honest one.
-    """
-    block = (DEFECT_NSIDE // DEFECT_NSIDE_COVERAGE) ** 2 // 8
-    try:
-        record = json.loads(Path(defect_map_sidecar()).read_text())
-        n_cov = int(record["n_coverage_pixels"])
-    except (OSError, ValueError, KeyError):
-        n_cov = min(DEFECT_COV_PER_EXP * len(defect_map_exposures()),
-                    DEFECT_COV_FOOTPRINT)
-    return n_cov * block
+
+def nexp_map_cov_bytes():
+    """Bytes the exposure-count map occupies: coverage pixels x the uint16
+    block size — ~48 GB over the DR6 footprint."""
+    block = (MAP_NSIDE // MAP_NSIDE_COVERAGE) ** 2 * 2
+    return map_cov_pixels(nexp_map_manifest(),
+                          len(nexp_map_exposures())) * block
 
 
 def star_cat_max_bytes():
@@ -1473,18 +1642,23 @@ include: "rules/tile.smk"
 # they would be ~20k (clean_exposure) or ~23k (clean_tile) sbatch submissions at
 # DR6 scale for work shorter than the scheduling latency.
 #
-# Both are DAG LEAVES, so neither constrains a `group:` label. (A mid-chain
-# localrule would: a local job cannot be fused into a submitted group. The old
-# star-catalogue rules were exactly that, and they are gone with the internal
-# mask generation.)
+# Both clean rules are DAG LEAVES, so neither constrains a `group:` label. (A
+# mid-chain localrule would: a local job cannot be fused into a submitted group.
+# The old star-catalogue rules were exactly that, and they are gone with the
+# internal mask generation.)
 #
 # exp_persist joins them for the same arithmetic — one tar of a few MB per
 # exposure, ~20k of them at DR6 scale, each far shorter than the scheduling
-# latency that would submit it (exposure.smk argues the placement in full). It
-# sits mid-chain between exp_psf and clean_exposure, but both of those are
-# outside every group already (exp_psf is heavy, clean_exposure is local), so it
-# adds no new grouping constraint.
-localrules: all, prepare_all_tiles, clean_exposure, clean_tile, exp_persist
+# latency that would submit it (exposure.smk argues the placement in full).
+# exp_footprint sits beside it and is smaller still: one pickle load and ~160
+# pixel_to_world calls. Both sit mid-chain between exp_psf and clean_exposure,
+# but both of those are outside every group already (exp_psf is heavy,
+# clean_exposure is local), so they add no new grouping constraint.
+#
+# The two map merges are deliberately NOT local: defect_map_merge holds the
+# campaign's footprint as a bit accumulator, and nexp_map stamps ~1M polygons at
+# nside=131072 (exposure.smk).
+localrules: all, prepare_all_tiles, clean_exposure, clean_tile, exp_persist, exp_footprint
 
 
 rule all:
@@ -1492,9 +1666,11 @@ rule all:
         [final_cat(t) for t in TILES_READY],
         persist_targets(),
         defect_map_fragment_targets(),
+        footprint_targets(),
         star_cat_targets(),
         final_cat_targets(),
         defect_map_targets(),
+        nexp_map_targets(),
         clean_targets(),
         clean_tile_targets(),
 

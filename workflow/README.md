@@ -61,8 +61,10 @@ each overlay file to its `cfis/` original confined to input naming.
 `psf_model: fake` is the simulations' true PSF: the exposure stage runs only
 SExtractor (for the background maps the vignets read), and `tile_vignets` runs
 `fake_interp_runner`, which writes the `galaxy_psf` product from `psf_dict`.
-With no PSF model there is nothing to persist per exposure, so `exp_persist` and
-`star_cat_merge` do not run and `clean_exposure` does not wait on them.
+With no PSF model there is nothing to persist per exposure and no valid-PSF CCD
+set to record, so `exp_persist`, `exp_footprint` and `star_cat_merge` do not run
+and `clean_exposure` does not wait on them; there is no exposure-count map to
+build.
 Simulations that contain stars can run `psfex` or `mccd` exactly as the data do.
 
 One campaign per shear branch, each with its own run config:
@@ -230,7 +232,7 @@ workflow/
   bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
-    exposure.smk         per-exposure: get_images, split, psf, persist, defect_map (no temp()); campaign star_cat_merge, defect_map_merge
+    exposure.smk         per-exposure: get_images, split, psf, persist, footprint, defect_map (no temp()); campaign star_cat_merge, defect_map_merge, nexp_map
     tile.smk             per-tile: exp forest, merge_headers, detect, vignets, ngmix, merge, make_cat; campaign final_cat_merge
   scripts/
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
@@ -245,6 +247,8 @@ workflow/
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
     defect_map_exp.py    ONE exposure's per-CCD instrument flags -> a boolean healsparse fragment (the exp_defect_map rule)
     merge_defect_map.py  ALL exposures' fragments -> defect_map/defect_map_<campaign>.hsp (the defect_map_merge rule)
+    exp_footprint.py     ONE exposure's per-CCD sky corners, for the CCDs with a PSF (the exp_footprint rule)
+    nexp_map.py          EVERY exposure footprint on products_dir -> nexp_map/nexp_map_<campaign>.hsp (the nexp_map rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
 
@@ -295,7 +299,14 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   catalogue server, staged, or rasterized, which is why the old
   `star_catalogue` / `exp_star_cat` / `exp_mask` rules and their cache root are
   gone.
-- **The one pixel-domain mask leaves the pixel domain.** The instrument
+- **Two HealSparse maps are built from the exposures.** Both are per-exposure
+  records on the persistent root combined by one campaign job, both are
+  products nothing in the workflow reads back, and both sit at one shared
+  resolution, `config.yaml`'s `exposure_maps:` `nside`/`nside_coverage` —
+  the mask ladder's 131072 over 128, so they align pixel-wise with the UNIONS
+  bit masks and with each other.
+
+  *The defect map: the one pixel-domain mask leaves the pixel domain.* The instrument
   flag image is the exception to everything above: bad columns, saturated
   pixels and bleed trails, split per CCD by `exp_split` and read by SExtractor
   as `IMAFLAGS_ISO`, and never sky-fixed. The survey footprint is built from the
@@ -320,7 +331,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   has one and for nothing if it does not, the same split `defect_map_merge`'s
   input makes, because requiring a manifest behind a vanished split dir would
   rebuild the whole exposure chain from VOS to reclaim it. Its resolution and its
-  oversampling ride on `params`; `config.yaml`'s `defect_map:` block carries
+  oversampling ride on `params`; `config.yaml`'s `exposure_maps:` block carries
   both, the measured convergence table behind the default, and the measurement
   on one real exposure (34 s, 0.62 GB, a 2.0 MB fragment; the rasterization is
   batched, so a fully flagged chip — the worst case, and one a real exposure
@@ -338,6 +349,33 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   says what would have to change if anything ever consumed the map).
   `tests/unit/test_defect_map_reconcile.py` pins the four reconcile branches and
   the sidecar refresh.
+
+  *The exposure-count map.* `exp_footprint` writes one JSON per exposure to
+  `<products_dir>/exp/<prefix>/<base>/manifests/exp_footprint.json`, giving the
+  four sky corners of every CCD that got a PSF model. It reads the valid-PSF CCD
+  set off `exp_persist.json`'s tar members — exact, because `psfex_interp`
+  returns *without* writing `validation_psf-*.fits` on NOT_ENOUGH_STARS,
+  BAD_CHI2 or FILE_NOT_FOUND — and the WCS off `headers-<exp>.npy`, written by
+  `exp_split`. It needs nothing of `persist_exp:`: those catalogues are the
+  `psf_validation` product `exp_persist` packs for every exposure whatever the
+  keep list says. Like `exp_persist` it runs whatever `clean:` and
+  `exposure_maps.nexp.enabled` say, because its input is on /scratch and the
+  purge takes it; `clean_exposure` takes its manifest as an input.
+  Set `exposure_maps: {nexp: {enabled: true}}` and one further job, `nexp_map`,
+  stamps every footprint into `<products_dir>/nexp_map/nexp_map_<campaign>.hsp`
+  — a uint16 map counting, per sky pixel, the exposures with a valid PSF there,
+  beside a record `nexp_map_<campaign>.json` of which exposures it holds. There
+  is one count, of exposures: it is what sp_validation's `npoint >= 3` cut
+  reads (`notebooks/demo_apply_hsp_masks.py`). The job is
+  **campaign-cumulative**: its declared inputs are the in-scope footprints, but
+  the script reads *every* record on the products root, reclaimed exposures
+  included, so appending tiles grows the map instead of replacing it. It is
+  rebuilt whole rather than reconciled, which is why it is off by default: it
+  is a campaign-end product. Its memory is the map itself, sized on the
+  campaign's footprint like `defect_map_merge` (~48 GB of uint16 over the DR6
+  footprint). Plotting stays out of the DAG: run `plot_coverage_map -i
+  <products_dir>/nexp_map/nexp_map_<campaign>.hsp ...` by hand, with the sky
+  windows under `exposure_maps.nexp.plot` in `config.yaml`.
 - **External masks are wired, on the tile side only (data runs).** `inputs.masks`
   is a third input root beside tiles and exposures, set per machine in the
   `machines:` table, exported as `$SP_INPUT_MASKS` and
@@ -423,8 +461,8 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   and an unknown *name* is a parse-time error listing the valid ones. The list
   is exposure-side only; tile-side retention is #844 follow-up.
 - **The campaign ends in two merged catalogues, and the workflow makes both.**
-  (Three campaign products, counting the defect map above — but that one is a
-  map for the footprint, not a catalogue, and nothing downstream of it lives
+  (Four campaign products, counting the two maps above — but those are maps
+  for the footprint, not catalogues, and nothing downstream of them lives
   here.)
   Everything above is per unit; the two products downstream analysis actually
   opens are per *campaign*, and until these rules existed each was a manual pass

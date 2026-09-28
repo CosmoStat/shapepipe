@@ -70,8 +70,8 @@ def raster():
 def ladder():
     """``(nside, oversample)`` as the campaign config sets them."""
     yaml = pytest.importorskip("yaml")
-    block = yaml.safe_load(CONFIG.read_text())["defect_map"]
-    return int(block["nside"]), int(block["oversample"])
+    block = yaml.safe_load(CONFIG.read_text())["exposure_maps"]
+    return int(block["nside"]), int(block["defect"]["oversample"])
 
 
 def _wcs():
