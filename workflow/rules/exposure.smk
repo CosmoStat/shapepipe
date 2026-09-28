@@ -83,6 +83,13 @@ rule exp_split:
 # -> psfex_interp, per CCD. Under SP_PSF=psfex, setools_runner is mandatory
 # (expect=80) and only psfex_interp_runner is :warn; under SP_PSF=mccd every
 # runner in the chain is :warn (see completeness.py's COMPLETENESS table).
+#
+# MCCD instead fits ONE focal-plane model per exposure after the per-CCD
+# stages: ~85 min single-threaded for ~2500 stars (SKiLLS star sim, 8.3 GB),
+# and only 1.75x faster on 8 BLAS threads (which the thread caps forbid anyway).
+# With 8 cores reserved the fit would idle 7 of them for its whole length, so
+# the mccd chain takes 2: the per-CCD stages run 2 wide (minutes), the fit is
+# unchanged, and the exposure reserves a quarter of the core-hours.
 rule exp_psf:
     input:
         rules.exp_split.output.manifest
@@ -93,7 +100,7 @@ rule exp_psf:
     params:
         pre = lambda wc: unit_pre("exp_psf", wc.exp),
         script_hash = SCRIPT_HASH
-    threads: 8
+    threads: 2 if PSF_MODEL == "mccd" else 8
     retries: 2
     benchmark:
         # BESIDE manifests/, not inside it: clean_exposure deletes manifests/

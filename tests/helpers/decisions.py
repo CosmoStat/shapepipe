@@ -361,12 +361,17 @@ def _parse_file_tags(path, root):
 
 
 def scan_tags(root):
-    """Collect all supported-site tags and report malformed/duplicate tags."""
+    """Collect all supported-site tags and report malformed/duplicate tags.
+
+    Symlinked files are skipped: their tags belong to the target, which is
+    scanned at its own path (e.g. workflow/config/cfis_image_sims/ -> cfis/).
+    """
 
     root = Path(root)
     tags, errors = [], []
     for path in sorted(root.rglob("*")):
-        if not path.is_file() or any(part in _SKIP for part in path.parts):
+        if (not path.is_file() or path.is_symlink()
+                or any(part in _SKIP for part in path.parts)):
             continue
         if path.name == "CONTRACTS":
             continue

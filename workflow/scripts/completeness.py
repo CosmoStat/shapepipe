@@ -103,10 +103,12 @@ COMPLETENESS = {
             "psfex_runner":         dict(expect=80),
             "psfex_interp_runner":  dict(expect=40, warn=True),
         },
-        # MCCD counts are derived from config_exp_mccd.ini and its per-CCD
-        # runners, but this chain has not been exercised through this workflow.
-        # Keep the expected counts visible while making the unverified branch
-        # warning-only until a real campaign validates its counts.
+        # MCCD shares the chain up to setools with PSFEx, then fits one
+        # focal-plane model per exposure. Preprocessing is a serial runner that
+        # merges the 40 CCDs' split catalogues into one training and one test
+        # catalogue; fit_val writes the model (fitted_model-<exp>.npy, what the
+        # tiles interpolate) and its validation catalogue; merge_starcat and
+        # mccd_plots add per-exposure diagnostics. Every runner here is :warn.
         "mccd": {
             "sextractor_runner":          dict(expect=120, warn=True),
             "mask_query_runner":          dict(expect=40, warn=True),
@@ -122,6 +124,13 @@ COMPLETENESS = {
             # config_exp_mccd enables the ten meanshape and six histogram plots.
             "mccd_plots_runner":          dict(expect=16, warn=True),
         },
+        # Image simulations with the true PSF (psf_model: fake): no PSF fit on
+        # the exposures, only the SExtractor pass whose background/background_rms
+        # checkimages the tile vignets read (config_exp_fake.ini in
+        # config/cfis_image_sims). Same 40 CCDs x (sexcat, background, rms).
+        "fake": {
+            "sextractor_runner":   dict(expect=120),
+        },
     },
 
     # --- tile post ---
@@ -135,12 +144,19 @@ COMPLETENESS = {
             # v2.0's 4 was the canfar flavor. every vignette feeds ngmix, so the expected count is all-or-nothing.
             "vignetmaker_runner_run_2": dict(expect=5),
         },
-        # MCCD is wired but unvalidated here; retain the expected runner names
-        # and counts as warnings until a workflow campaign exercises them.
+        # As psfex: mccd_interp writes the tile's galaxy_psf store from the
+        # exposures' focal-plane models (SKiLLS star sim 1z2z_1, 233.293).
         "mccd": {
-            "mccd_interp_runner":        dict(expect=1, warn=True),
-            "vignetmaker_runner_run_1":   dict(expect=1, warn=True),
-            "vignetmaker_runner_run_2":   dict(expect=5, warn=True),
+            "mccd_interp_runner":        dict(expect=1),
+            "vignetmaker_runner_run_1":   dict(expect=1),
+            "vignetmaker_runner_run_2":   dict(expect=5),
+        },
+        # Image simulations: fake_interp_runner writes the same galaxy_psf
+        # sqlite psfex_interp_runner writes, from the simulation's PSF dictionary.
+        "fake": {
+            "fake_interp_runner":       dict(expect=1),
+            "vignetmaker_runner_run_1": dict(expect=1),
+            "vignetmaker_runner_run_2": dict(expect=5),
         },
     },
     # One check runs inside run_sp_tile_ngmix_Ng${SP_NGMIX_CHUNK}u per chunk,
@@ -192,7 +208,7 @@ def check_counts(stage, run_dir):
             table = table[psf_model]
         except KeyError as exc:
             raise ValueError(
-                f"Invalid SP_PSF={psf_model!r}; expected one of psfex, mccd."
+                f"Invalid SP_PSF={psf_model!r}; expected one of {sorted(table)}."
             ) from exc
     details, ok = [], True
     for runner, spec in table.items():
@@ -346,10 +362,20 @@ def build_manifest(stage, run_dir, unit, stage_subdir=None):
 
 
 def write_if_changed(path: Path, text: str) -> None:
-    """Write only when the bytes differ — see the module docstring on mtime."""
+    """Write only when the bytes differ (see the module docstring on mtime).
+
+    Atomic (temp file + os.replace): a reader such as run_report.py must never
+    see the file truncated mid-write.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists() or path.read_text() != text:
-        path.write_text(text)
+        tmp = path.with_name(f".{path.name}.tmp{os.getpid()}")
+        try:
+            tmp.write_text(text)
+            os.replace(tmp, path)
+        except BaseException:
+            tmp.unlink(missing_ok=True)
+            raise
 
 
 def _unit_from_run_dir(run_dir):

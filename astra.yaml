@@ -1,6 +1,10 @@
 # ASTRA record of ShapePipe's scientific decisions: the choices embedded in
 # the code and the committed workflow configs (workflow/config/cfis/), why
 # they stand, and the alternatives. CLAUDE.md says when to amend it.
+# workflow/config/cfis_image_sims/ is not yet in scope: its symlinks into
+# cfis/ are governed there; its untagged overlays change input naming, the PSF
+# model and some governed values (config_tile_Fe.ini COLNUM/EXP_PREFIX,
+# final_cat.param columns).
 #
 # Conventions (`tests/helpers/decisions.py` implements them and documents the
 # full value grammar; `tests/unit/test_decisions.py` enforces them):
@@ -910,7 +914,8 @@ analyses:
       psf_modelling_software:
         label: PSF model, PSFEx per CCD or MCCD over the focal plane
         rationale: >-
-          psf_model in workflow/config.yaml selects the exposure and tile
+          psf_model in workflow/config.yaml's machines: table (per machine and
+          input type; image sims use fake) selects the exposure and tile
           config pair; the committed value is psfex, which fits each CCD
           independently. MCCD (Liaudat+2021) fits one hybrid local+global
           model over the focal plane; the completeness table treats its
