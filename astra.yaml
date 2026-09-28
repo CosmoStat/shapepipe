@@ -2,17 +2,26 @@
 # the code and the committed workflow configs (workflow/config/cfis/), why
 # they stand, and the alternatives. CLAUDE.md says when to amend it.
 #
-# Conventions (tests/helpers/astra_record.py parses them and documents the
-# full value grammar; tests/unit/test_astra_{anchors,values}.py enforce it):
-#   * Every rationale ends with one sentence "Anchor: <ref>; <ref>." Refs are
-#     repo-relative: CODE `path::Symbol` (a def, class or assignment target,
-#     dotted for nesting, `[key]` into a dict literal), CONFIG
-#     `path#SECTION.KEY` (`path#KEY` for sectionless .sex/.psfex/.param
-#     files), or FILE `path`. No line numbers.
-#   * `ref = value` asserts the value at that location; a bare ref asserts
-#     only that it exists. `= absent` asserts a config key has no active
-#     line. The anchor is the canonical expectation; prose may repeat a value
-#     for readability, and the code and configs remain execution truth.
+# Conventions (`tests/helpers/decisions.py` implements them and documents the
+# full value grammar; `tests/unit/test_decisions.py` enforces them):
+#   * Put `@sc [decision:<id>]` at every code/config site that implements a
+#     decision. Decision citations have no id or prose; the record is the source
+#     of rationale. IDs are bare for top-level decisions and dotted for
+#     sub-analysis decisions; repeat `decision:` metadata to cite several.
+#     A local constraint adds a stable id and prose, with optional decision
+#     metadata: `@sc [decision:<id>,label:<kind>] <contract-id>`.
+#   * In Python, put tags in a def/class docstring or as a comment immediately
+#     above a module statement. In Snakemake, put a comment immediately above
+#     the rule/statement. In config, a comment tag governs the following
+#     paragraph; a section header governs the whole section, and
+#     `scope:file` governs the whole file.
+#   * A rationale may end with `Values: <ref> = <value>; ... .`. Every ref must
+#     resolve to exactly one site tagged for that decision and match its value.
+#     Use a bare key when it selects one site; qualify it with a path suffix and
+#     `#` or `::` when needed. `= absent` requires a tagged section or file scope.
+#   * The checker validates citations in both directions, unique local-contract
+#     ids, literal values and test `decision` markers. The value grammar is
+#     documented in the helper module's docstring.
 #   * A decision's `default` is the option the committed code and configs
 #     select; universes/committed.yaml pins it.
 #   * `excluded: true` means considered and rejected. An option the code

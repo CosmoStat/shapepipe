@@ -33,7 +33,9 @@ decision(*ids) ASTRA decisions protected by a test; ids checked against astra.ya
 `--strict-markers` is on, so a typo'd marker is an error, not a silent no-op.
 Science guardrails use `decision(*ids)` at module or test level; AST parsing
 checks every ID against `astra.yaml` without importing the tests.
-Use `pytest -m "not unions"` to run the survey-generic tests.
+`tests/unit/test_decisions.py` also checks that `@sc` site tags and rationale
+`Values:` refs agree with the decision record, and that test markers name real
+decisions. Use `pytest -m "not unions"` to run the survey-generic tests.
 
 A `candide`-marked test is **collected everywhere** (so `--collect-only` shows
 it exists) but **skipped off-cluster** with a clear reason. Candide is detected
