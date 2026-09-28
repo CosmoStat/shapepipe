@@ -41,28 +41,29 @@ def merge(base, over):
     return out
 
 
-# A variable's value may itself hold a variable (`base_dir: /x/$run`), so
-# expansion repeats until nothing changes; the bound stops a self-reference.
-EXPAND_PASSES = 3
-
-
-def _expand_once(value, variables):
-    if isinstance(value, str):
-        return re.sub(r"\$(\w+)",
-                      lambda m: str(variables.get(m.group(1)) or m.group(0)),
-                      value)
-    if isinstance(value, dict):
-        return {k: _expand_once(v, variables) for k, v in value.items()}
-    return value
+# $name or ${name}. The brace form is not decoration: `_` is a word character,
+# so `$shear_$grid` parses its first name as `shear_` and silently fails to
+# match a `shear` key. Anything adjacent to more word characters needs braces.
+_VAR_RE = re.compile(r"\$\{(\w+)\}|\$(\w+)")
 
 
 def _expand(value, variables):
-    """Replace $name for each set name in `variables` (base_dir, run)."""
-    for _ in range(EXPAND_PASSES):
-        expanded = _expand_once(value, variables)
-        if expanded == value:
-            break
-        value = expanded
+    """Replace $name / ${name} for each set name in `variables`.
+
+    Names come from every top-level scalar in the config plus `base_dir` from
+    the machines: entry, so a run config can name its own shorthands -- a long
+    output root written once and reused, rather than repeated per path. An
+    unknown name is left as-is, which is what makes the "unresolved" check
+    below able to see it.
+    """
+    if isinstance(value, str):
+        return _VAR_RE.sub(
+            lambda m: str(variables.get(m.group(1) or m.group(2))
+                          or m.group(0)),
+            value,
+        )
+    if isinstance(value, dict):
+        return {k: _expand(v, variables) for k, v in value.items()}
     return value
 
 
@@ -74,12 +75,32 @@ def apply_machine_defaults(config):
 
     A key already in `config` wins; for `inputs`/`outputs` the merge is per
     sub-key. In all of these, `$base_dir` expands to machines[machine].base_dir
-    and `$run` to the top-level `run:`.
+    and `$name` / `${name}` to any top-level scalar (`$run` to `run:`).
     """
     machine = config.get("machine") or os.environ.get("SP_PROFILE", "nibi")
     entry = (config.get("machines") or {}).get(machine) or {}
     defaults = entry.get(config.get("input_type", "data")) or {}
-    variables = {"base_dir": entry.get("base_dir"), "run": config.get("run")}
+    # Every top-level scalar is a variable, so a run config can define its own
+    # shorthands. They are resolved AGAINST EACH OTHER first, to a fixpoint, so
+    # one shorthand may be written in terms of another
+    # (grid: grid_2 / base: .../${grid} / run: ${shear}_${grid}). One pass is
+    # not enough: re.sub does not rescan what it substitutes, so a nested name
+    # would survive into the paths and only surface at the unresolved check.
+    # The loop is capped, so a self-reference (a: $b, b: $a) stops rather than
+    # spinning -- the leftover $ is then caught by unresolved() by design.
+    variables = {k: v for k, v in config.items()
+                 if isinstance(v, (str, int, float))}
+    variables["base_dir"] = entry.get("base_dir")
+    for _ in range(10):
+        resolved = {k: (_expand(v, variables) if isinstance(v, str) else v)
+                    for k, v in variables.items()}
+        if resolved == variables:
+            break
+        variables = resolved
+    # `run` is consumed downstream (paths, the hdf5 group name), so the
+    # resolved value has to go back into the config, not just the table.
+    if isinstance(config.get("run"), str):
+        config["run"] = variables.get("run", config["run"])
     for key in MACHINE_KEYS:
         default = defaults.get(key)
         if isinstance(default, dict):
@@ -107,11 +128,13 @@ def _dollar_keys(value, prefix):
 
 
 def unresolved(config):
-    """REQUIRED keys that are unset or the placeholder, then every MACHINE_KEYS
-    value (recursively through inputs/outputs) that still holds an unexpanded
-    $variable (e.g. `$run` with no `run:` set, or a misspelt name)."""
+    """REQUIRED keys that are unset, the placeholder, or hold an unexpanded
+    $variable, then every MACHINE_KEYS value (recursively through
+    inputs/outputs) that still holds one (e.g. `$run` with no `run:` set, or
+    a misspelt name)."""
     missing = [k for k in REQUIRED
-               if get(config, k) in (None, "", PLACEHOLDER)]
+               if get(config, k) in (None, "", PLACEHOLDER)
+               or "$" in str(get(config, k))]
     dollar = [k for key in MACHINE_KEYS for k in _dollar_keys(config.get(key), key)]
     return missing + [k for k in dollar if k not in missing]
 

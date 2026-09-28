@@ -36,7 +36,7 @@ import numpy as np
 import pytest
 
 
-pytestmark = pytest.mark.unions
+pytestmark = [pytest.mark.unions, pytest.mark.decision("masking.defect_map_from_flags")]
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS = REPO_ROOT / "workflow" / "scripts"
@@ -141,7 +141,7 @@ def _vertex_pixels(nside, flags):
 
 def test_fragment_contains_every_flagged_pixel(raster, ladder, tmp_path,
                                                monkeypatch):
-    """@sc defect-fragment-contains-flags: no flagged vertex lands unmasked."""
+    """Contract defect-fragment-contains-flags: no flagged vertex lands unmasked."""
     nside, _ = ladder
     flags = _flags()
     masked = _rasterize(raster, ladder, tmp_path, flags, monkeypatch)

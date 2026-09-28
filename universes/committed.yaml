@@ -9,7 +9,8 @@ analyses:
     decisions:
       pixel_mask_source: instrument_flags_only
       psf_star_mask_veto: instrument_flags_only
-      sky_mask_application: deferred_downstream
+      sky_mask_application: catalogue_columns
+      mask_default_cut: r_mask_bits
       defect_map_from_flags: rasterize_conservative_os3
   detection:
     decisions:
@@ -20,6 +21,7 @@ analyses:
       zero_weight_interpolation: interp_all
       spurious_detection_cleaning: clean_1
       blend_photometry_mask_type: correct
+      saturation_level: header_saturate
       photometry_parameters: kron_25_35
       detection_source_mode: sx_nomask_single_image
       epoch_membership_ccd_bounds: trimmed_bounds_33_2080
@@ -54,9 +56,9 @@ analyses:
       defect_fill: noise
       blend_handling: none
       epoch_masked_fraction_cut: one_third
+      central_defect_veto: disabled
   catalogue_assembly:
     decisions:
       star_galaxy_classification: deferred_downstream
       tile_overlap_handling: no_dedup_in_pipeline
       failure_sentinels: sentinel_values
-      mask_default_cut: r_mask_bits

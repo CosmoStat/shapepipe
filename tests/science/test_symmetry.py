@@ -22,8 +22,11 @@ loop. No artifact — the m-bias / star-response surfaces own the published
 status; this is a pure tripwire.
 """
 import numpy as np
+import pytest
 
 from tests.helpers.metacal_sim import recover
+
+pytestmark = pytest.mark.decision("shape_measurement.metacal_scheme")
 
 SEED = 42
 INJECTED = 0.02  # per-component injected shear magnitude for the arms

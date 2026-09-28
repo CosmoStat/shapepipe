@@ -213,7 +213,7 @@ def reconcile_plan(output: Path, sidecar: Path, digests: dict, nside: int,
                    nside_coverage: int) -> Plan:
     """Compare what is on disk with the campaign, WITHOUT writing anything.
 
-    @sc [decision:defect_map_from_flags,label:convention] defect-map-is-the-sidecars-union
+    @sc [decision:masking.defect_map_from_flags,label:convention] defect-map-is-the-sidecars-union
     The map is the OR of exactly the fragments its sidecar records, and never
     un-OR-ed: an exposure that left the campaign, or a fragment that changed
     on disk, is a rebuild from every fragment, because a union cannot tell

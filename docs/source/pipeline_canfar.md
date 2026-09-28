@@ -404,7 +404,7 @@ this requies a job with a large memory, e.g. with `mem=380000`
  
 
 ```bash
-[squeue] python ~/astro/repositories/github/sp_validation/notebooks/extract_info.py
+[squeue] python ~/astro/repositories/github/sp_validation/scripts/calibrate/extract_info.py
 ```
 
 This creates a patch-wise comprehensive catalogue.

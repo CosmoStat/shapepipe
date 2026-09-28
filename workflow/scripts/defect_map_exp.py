@@ -217,7 +217,7 @@ def rasterize_ccd(flag_path: Path, image_path: Path, nside: int,
                   off_x, off_y) -> np.ndarray:
     """The healpix pixel ids (NEST, ``nside``) this CCD's flags touch.
 
-    @sc [decision:defect_map_from_flags,label:convention] defect-fragment-contains-flags
+    @sc [decision:masking.defect_map_from_flags,label:convention] defect-fragment-contains-flags
     Conservative by construction: every CCD pixel with a nonzero flag, centre
     and four corners, lands in a returned healpix pixel. The corners are what
     bound a pixel's footprint, so ``offsets`` always samples them; sampling

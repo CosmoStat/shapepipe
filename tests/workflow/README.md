@@ -1,12 +1,17 @@
 # Workflow DAG checks
 
-Run these checks inside the development container:
+These checks need snakemake, which is a host tool and not in the image. Run them
+in the development container with snakemake installed on top (a writable sandbox,
+or a throwaway container), at the host pin range from `workflow/README.md`:
 
 ```bash
+uv pip install 'snakemake>=9,<10'
 python -m pytest tests/workflow -o addopts='' -q -p no:cacheprovider
 ```
 
-`testpaths = ["tests"]` includes this directory in the full suite and the image-build CI run.
+Where snakemake is absent, the root `conftest.py` leaves this directory out of
+collection, so the in-image suite stays green. The image-build CI runs it as its
+own step, `Test — workflow DAG (snakemake)`, which installs snakemake first.
 These tests check planning, not job execution, container validity, or SLURM group execution.
 They need no survey files, cluster access, or nested Apptainer process.
 
