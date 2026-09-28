@@ -574,6 +574,39 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
 
 
+<div class="viewcode-block" id="_stack">
+<a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat._stack">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">_stack</span><span class="p">(</span><span class="n">chunks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Concatenate one column's per-catalogue arrays into a single array.</span>
+
+<span class="sd">    THE COLUMN ACCUMULATORS ARE LISTS OF ARRAYS, ONE PER INPUT CATALOGUE, and</span>
+<span class="sd">    not lists of values, because these classes are the last step of a whole</span>
+<span class="sd">    campaign. ``x += list(data["X"])`` turns 4 bytes of float32 payload into a</span>
+<span class="sd">    32-byte python object plus an 8-byte pointer in a list that overallocates —</span>
+<span class="sd">    measured at ~10x the input bytes end to end, which put a full-survey merge</span>
+<span class="sd">    (~20k exposures x 40 CCDs) at ~400 GB of RAM and made it unrunnable on any</span>
+<span class="sd">    node. One array per catalogue plus one concatenate at the end holds ~1x, and</span>
+<span class="sd">    produces the identical output: np.array() over a list of numpy scalars and</span>
+<span class="sd">    np.concatenate() over the arrays they came from agree on dtype and on order.</span>
+
+<span class="sd">    IT EMPTIES THE LIST IT IS GIVEN, and that is not a side effect to tidy away</span>
+<span class="sd">    later — it is half the saving. np.concatenate holds the chunks and the</span>
+<span class="sd">    result at once, so a caller that stacks every column while all its</span>
+<span class="sd">    chunk lists are still alive peaks at twice the campaign. Released column by</span>
+<span class="sd">    column, the peak is one campaign plus one column. Callers stack once, at the</span>
+<span class="sd">    end, and do not touch the accumulators afterwards.</span>
+
+<span class="sd">    An empty input list is a merge over no catalogues, which the callers guard</span>
+<span class="sd">    against; it returns an empty array so the output column still exists.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">chunks</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">chunks</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">chunks</span><span class="p">[:]</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
 <div class="viewcode-block" id="MergeStarCatMCCD">
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MergeStarCatMCCD</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -891,66 +924,37 @@
             <span class="n">model_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_var_val</span><span class="p">)</span>
             <span class="n">model_var_size</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_var_val</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
 
+            <span class="c1"># ONE ARRAY PER CATALOGUE PER COLUMN (see _stack): the per-value</span>
+            <span class="c1"># python lists this replaces cost ~10x the input bytes.</span>
             <span class="c1"># positions</span>
-            <span class="n">x</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"GLOB_POSITION_IMG_LIST"</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">y</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"GLOB_POSITION_IMG_LIST"</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
-            <span class="p">)</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"GLOB_POSITION_IMG_LIST"</span><span class="p">]</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pos</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]))</span>
+            <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pos</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]))</span>
 
             <span class="c1"># RA and DEC positions</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">ra</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"RA_LIST"</span><span class="p">][:])</span>
-                <span class="n">dec</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"DEC_LIST"</span><span class="p">][:])</span>
+                <span class="n">ra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"RA_LIST"</span><span class="p">][:]))</span>
+                <span class="n">dec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"DEC_LIST"</span><span class="p">][:]))</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="n">ra</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
-                        <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span>
-                        <span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"GLOB_POSITION_IMG_LIST"</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
-                        <span class="o">.</span><span class="n">shape</span><span class="p">,</span>
-                        <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
-                <span class="n">dec</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
-                        <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span>
-                        <span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"GLOB_POSITION_IMG_LIST"</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
-                        <span class="o">.</span><span class="n">shape</span><span class="p">,</span>
-                        <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
+                <span class="n">ra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">pos</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
+                <span class="n">dec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">pos</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
 
             <span class="c1"># shapes (convert sigmas to T = 2 sigma^2)</span>
-            <span class="n">g1_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"PSF_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">g2_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"PSF_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">size_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_T</span><span class="p">(</span>
-                    <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"PSF_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">2</span><span class="p">]</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
-            <span class="n">g1</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"STAR_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">])</span>
-            <span class="n">g2</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"STAR_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">])</span>
-            <span class="n">size</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_T</span><span class="p">(</span>
-                    <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"STAR_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">2</span><span class="p">]</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
+            <span class="n">psf_mom</span> <span class="o">=</span> <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"PSF_MOM_LIST"</span><span class="p">]</span>
+            <span class="n">star_mom</span> <span class="o">=</span> <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"STAR_MOM_LIST"</span><span class="p">]</span>
+            <span class="n">g1_psf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">psf_mom</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]))</span>
+            <span class="n">g2_psf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">psf_mom</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]))</span>
+            <span class="n">size_psf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_T</span><span class="p">(</span><span class="n">psf_mom</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])))</span>
+            <span class="n">g1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">star_mom</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]))</span>
+            <span class="n">g2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">star_mom</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]))</span>
+            <span class="n">size</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cs_size</span><span class="o">.</span><span class="n">sigma_to_T</span><span class="p">(</span><span class="n">star_mom</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])))</span>
 
             <span class="c1"># flags</span>
-            <span class="n">flag_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"PSF_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">3</span><span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">flag_star</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"STAR_MOM_LIST"</span><span class="p">][:,</span> <span class="mi">3</span><span class="p">]</span>
-            <span class="p">)</span>
+            <span class="n">flag_psf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">psf_mom</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]))</span>
+            <span class="n">flag_star</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">star_mom</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]))</span>
 
             <span class="c1"># ccd id list</span>
-            <span class="n">ccd_nb</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"CCD_ID_LIST"</span><span class="p">])</span>
+            <span class="n">ccd_nb</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"CCD_ID_LIST"</span><span class="p">]))</span>
 
             <span class="n">starcat_j</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -1023,15 +1027,21 @@
         <span class="p">)</span>
 
         <span class="c1"># Mask and transform to numpy arrays</span>
-        <span class="n">flagmask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flag_star</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flag_psf</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-        <span class="p">)</span>
-        <span class="n">psf_e1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">g1_psf</span><span class="p">)[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
-        <span class="n">psf_e2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">g2_psf</span><span class="p">)[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
-        <span class="n">psf_r2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">size_psf</span><span class="p">)[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
-        <span class="n">star_e1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">g1</span><span class="p">)[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
-        <span class="n">star_e2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">g2</span><span class="p">)[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
-        <span class="n">star_r2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">size</span><span class="p">)[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
+        <span class="c1"># Concatenate once, here: everything below already wanted arrays and</span>
+        <span class="c1"># was calling np.array() on python lists to get them (see _stack).</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="n">_stack</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">_stack</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">_stack</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">_stack</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span>
+        <span class="n">g1_psf</span><span class="p">,</span> <span class="n">g2_psf</span><span class="p">,</span> <span class="n">size_psf</span> <span class="o">=</span> <span class="n">_stack</span><span class="p">(</span><span class="n">g1_psf</span><span class="p">),</span> <span class="n">_stack</span><span class="p">(</span><span class="n">g2_psf</span><span class="p">),</span> <span class="n">_stack</span><span class="p">(</span><span class="n">size_psf</span><span class="p">)</span>
+        <span class="n">g1</span><span class="p">,</span> <span class="n">g2</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="n">_stack</span><span class="p">(</span><span class="n">g1</span><span class="p">),</span> <span class="n">_stack</span><span class="p">(</span><span class="n">g2</span><span class="p">),</span> <span class="n">_stack</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">flag_psf</span><span class="p">,</span> <span class="n">flag_star</span> <span class="o">=</span> <span class="n">_stack</span><span class="p">(</span><span class="n">flag_psf</span><span class="p">),</span> <span class="n">_stack</span><span class="p">(</span><span class="n">flag_star</span><span class="p">)</span>
+        <span class="n">ccd_nb</span> <span class="o">=</span> <span class="n">_stack</span><span class="p">(</span><span class="n">ccd_nb</span><span class="p">)</span>
+
+        <span class="n">flagmask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">flag_star</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">flag_psf</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">psf_e1</span> <span class="o">=</span> <span class="n">g1_psf</span><span class="p">[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
+        <span class="n">psf_e2</span> <span class="o">=</span> <span class="n">g2_psf</span><span class="p">[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
+        <span class="n">psf_r2</span> <span class="o">=</span> <span class="n">size_psf</span><span class="p">[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
+        <span class="n">star_e1</span> <span class="o">=</span> <span class="n">g1</span><span class="p">[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
+        <span class="n">star_e2</span> <span class="o">=</span> <span class="n">g2</span><span class="p">[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
+        <span class="n">star_r2</span> <span class="o">=</span> <span class="n">size</span><span class="p">[</span><span class="n">flagmask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
 
         <span class="n">rmse</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std_dev</span> <span class="o">=</span> <span class="n">MSC</span><span class="o">.</span><span class="n">stats_calculator</span><span class="p">(</span><span class="n">star_e1</span><span class="p">,</span> <span class="n">psf_e1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -1131,6 +1141,33 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span> <span class="o">=</span> <span class="n">hdu_table</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_input_cat_type</span> <span class="o">=</span> <span class="n">input_cat_type</span>
 
+    <span class="c1"># The columns this class writes, and where each comes from. Kept as data</span>
+    <span class="c1"># rather than as repeated lines, because a two-pass merge would otherwise</span>
+    <span class="c1"># state every column three times: to size it, to allocate it and to fill</span>
+    <span class="c1"># it. Size columns already hold T = 2 sigma^2.</span>
+    <span class="n">_COLUMNS</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="s2">"X"</span><span class="p">,</span> <span class="s2">"X"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Y"</span><span class="p">,</span> <span class="s2">"Y"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"RA"</span><span class="p">,</span> <span class="s2">"RA"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"DEC"</span><span class="p">,</span> <span class="s2">"DEC"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"HSM_G1_PSF"</span><span class="p">,</span> <span class="s2">"HSM_G1_PSF"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"HSM_G2_PSF"</span><span class="p">,</span> <span class="s2">"HSM_G2_PSF"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"HSM_T_PSF"</span><span class="p">,</span> <span class="s2">"HSM_T_PSF"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"HSM_M4_1_PSF"</span><span class="p">,</span> <span class="s2">"HSM_M4_1_PSF"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"HSM_M4_2_PSF"</span><span class="p">,</span> <span class="s2">"HSM_M4_2_PSF"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"HSM_RHO4_PSF"</span><span class="p">,</span> <span class="s2">"HSM_RHO4_PSF"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"HSM_G1_STAR"</span><span class="p">,</span> <span class="s2">"HSM_G1_STAR"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"HSM_G2_STAR"</span><span class="p">,</span> <span class="s2">"HSM_G2_STAR"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"HSM_T_STAR"</span><span class="p">,</span> <span class="s2">"HSM_T_STAR"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"HSM_M4_1_STAR"</span><span class="p">,</span> <span class="s2">"HSM_M4_1_STAR"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"HSM_M4_2_STAR"</span><span class="p">,</span> <span class="s2">"HSM_M4_2_STAR"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"HSM_RHO4_STAR"</span><span class="p">,</span> <span class="s2">"HSM_RHO4_STAR"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"HSM_FLAG_PSF"</span><span class="p">,</span> <span class="s2">"HSM_FLAG_PSF"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"HSM_FLAG_STAR"</span><span class="p">,</span> <span class="s2">"HSM_FLAG_STAR"</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="c1"># Present in psfex_interp output, absent from pix2wcs-converted files</span>
+    <span class="c1"># (MKDEBUG); zero-filled when missing rather than failing the merge.</span>
+    <span class="n">_OPTIONAL</span> <span class="o">=</span> <span class="p">((</span><span class="s2">"MAG"</span><span class="p">,</span> <span class="s2">"MAG"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"SNR"</span><span class="p">,</span> <span class="s2">"SNR"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"ACCEPTED"</span><span class="p">,</span> <span class="s2">"ACCEPTED"</span><span class="p">))</span>
+
+<div class="viewcode-block" id="MergeStarCatPSFEX._ccd_nb">
+<a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatPSFEX._ccd_nb">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ccd_nb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""The CCD number this catalogue's rows carry, parsed from its name."""</span>
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\-([0-9]*)\-([0-9]+)\."</span><span class="p">,</span> <span class="n">path</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span></div>
+
+
 <div class="viewcode-block" id="MergeStarCatPSFEX.process">
 <a class="viewcode-back" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatPSFEX.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1138,80 +1175,116 @@
 
 <span class="sd">        Process merging.</span>
 
+<span class="sd">        TWO PASSES, AND NEITHER HOLDS THE CAMPAIGN TWICE. The first reads only</span>
+<span class="sd">        the FITS HEADER of every input — NAXIS2, the row count — and never</span>
+<span class="sd">        touches a data block; the second allocates the output columns once, at</span>
+<span class="sd">        their exact final length, and fills them slice by slice. Peak memory is</span>
+<span class="sd">        therefore ONE output plus ONE input catalogue.</span>
+
 <span class="sd">        @sc [label:schema] psfex-starcat-columns-strict</span>
 <span class="sd">        Every ``HSM_*`` column is read by name with no fallback, so the set</span>
-<span class="sd">        read here equals the set ``PSFExInterpolator._write_output_validation``</span>
-<span class="sd">        writes (``test_hsm_column_seams``).</span>
+<span class="sd">        read here (``_COLUMNS``) equals the set</span>
+<span class="sd">        ``PSFExInterpolator._write_output_validation`` writes</span>
+<span class="sd">        (``test_hsm_column_seams``).</span>
 
+<span class="sd">        What this replaces, in two steps, is instructive about the cost of the</span>
+<span class="sd">        obvious code. Accumulating each column into a python LIST OF VALUES —</span>
+<span class="sd">        ``x += list(data["X"])`` — turned 4 bytes of float32 payload into a</span>
+<span class="sd">        32-byte object plus an 8-byte pointer, measured at ~10x the input bytes</span>
+<span class="sd">        end to end and putting a full-survey merge (~20k exposures x 40 CCDs) at</span>
+<span class="sd">        ~400 GB. Accumulating one ARRAY PER CATALOGUE and concatenating once</span>
+<span class="sd">        brought that to ~5.5x. This pass structure removes what was left of the</span>
+<span class="sd">        accumulation: there are no chunks, and no concatenate that must hold its</span>
+<span class="sd">        inputs and its result at the same time.</span>
+
+<span class="sd">        ``self._input_file_list`` MUST BE ITERABLE TWICE, which the module</span>
+<span class="sd">        runner's list is. A one-shot generator is not, and would silently merge</span>
+<span class="sd">        nothing on the second pass — hence the explicit row-count check below.</span>
 <span class="sd">        """</span>
-        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="n">g1_psf</span><span class="p">,</span> <span class="n">g2_psf</span><span class="p">,</span> <span class="n">size_psf</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="n">m4_1_psf</span><span class="p">,</span> <span class="n">m4_2_psf</span><span class="p">,</span> <span class="n">rho4_psf</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="n">g1</span><span class="p">,</span> <span class="n">g2</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="n">m4_1_star</span><span class="p">,</span> <span class="n">m4_2_star</span><span class="p">,</span> <span class="n">rho4_star</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="n">flag_psf</span><span class="p">,</span> <span class="n">flag_star</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="n">mag</span><span class="p">,</span> <span class="n">snr</span><span class="p">,</span> <span class="n">psfex_acc</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="n">ccd_nb</span> <span class="o">=</span> <span class="p">[]</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"Merging </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> star catalogues"</span>
         <span class="p">)</span>
 
+        <span class="c1"># --- pass 1: row counts and dtypes, from headers alone --------------</span>
+        <span class="c1"># THE OPTIONAL COLUMNS ARE A PER-FILE QUESTION, NOT A PER-MERGE ONE.</span>
+        <span class="c1"># A pix2wcs-converted catalogue has no MAG/SNR/ACCEPTED while an</span>
+        <span class="c1"># ordinary one does, and a merge can be handed both. Deciding from the</span>
+        <span class="c1"># first file alone got it wrong in both directions: converted-first</span>
+        <span class="c1"># zero-filled the real values of every ordinary file behind it, and</span>
+        <span class="c1"># ordinary-first raised KeyError on the first converted one. So the</span>
+        <span class="c1"># dtype comes from ANY file that carries the column, and pass 2 asks</span>
+        <span class="c1"># each file for itself.</span>
+        <span class="n">names</span><span class="p">,</span> <span class="n">dtypes</span><span class="p">,</span> <span class="n">opt_dtypes</span><span class="p">,</span> <span class="n">n_total</span> <span class="o">=</span> <span class="p">[],</span> <span class="kc">None</span><span class="p">,</span> <span class="p">{},</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">starcat_j</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ignore_missing_simple</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                               <span class="n">ignore_missing_simple</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">starcat_j</span><span class="p">:</span>
+                    <span class="n">hdu</span> <span class="o">=</span> <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span>
+                    <span class="n">n_rows</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">"NAXIS2"</span><span class="p">]</span>
+                    <span class="c1"># ColDefs.dtype describes the table without reading it.</span>
+                    <span class="c1"># NOTE: it is the RAW storage dtype and ignores TSCAL/TZERO,</span>
+                    <span class="c1"># so a scaled column would be allocated narrower than the</span>
+                    <span class="c1"># values .data returns. Latent, not live: no validation_psf</span>
+                    <span class="c1"># column is scaled. Read the dtype off .data if one ever is.</span>
+                    <span class="n">cols</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">dtype</span>
+                    <span class="k">if</span> <span class="n">dtypes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">dtypes</span> <span class="o">=</span> <span class="n">cols</span>
+                    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_OPTIONAL</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">opt_dtypes</span> <span class="ow">and</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cols</span><span class="o">.</span><span class="n">names</span> <span class="ow">or</span> <span class="p">()):</span>
+                            <span class="n">opt_dtypes</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">cols</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error while opening file '</span><span class="si">{</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
                 <span class="c1">#raise</span>
                 <span class="k">continue</span>
+            <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">n_total</span> <span class="o">+=</span> <span class="n">n_rows</span>
 
+        <span class="k">if</span> <span class="n">dtypes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"merge_starcat: no readable input catalogue"</span><span class="p">)</span>
+
+        <span class="c1"># --- allocate once, at the exact final length -----------------------</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">out</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_total</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtypes</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">out</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_COLUMNS</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">out</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_OPTIONAL</span><span class="p">:</span>
+            <span class="c1"># A column no file carries still gets a column, zero-filled, in the</span>
+            <span class="c1"># positional dtype the old code used for it.</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">out</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_total</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">opt_dtypes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">dtypes</span><span class="p">[</span><span class="s2">"X"</span><span class="p">]))</span>
+        <span class="c1"># CCD_NB is one string per catalogue, repeated over its rows; its width</span>
+        <span class="c1"># is the widest CCD number in the campaign, which pass 1 already knows.</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ccd_nb</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">"CCD_NB"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_total</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="sa">f</span><span class="s2">"U</span><span class="si">{</span><span class="n">width</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+        <span class="c1"># --- pass 2: fill ---------------------------------------------------</span>
+        <span class="n">at</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">starcat_j</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                      <span class="n">ignore_missing_simple</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                <span class="k">continue</span>
             <span class="n">data_j</span> <span class="o">=</span> <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">n_rows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_j</span><span class="p">)</span>
+            <span class="n">sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">at</span><span class="p">,</span> <span class="n">at</span> <span class="o">+</span> <span class="n">n_rows</span><span class="p">)</span>
 
-            <span class="c1"># positions</span>
-            <span class="n">x</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"X"</span><span class="p">])</span>
-            <span class="n">y</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"Y"</span><span class="p">])</span>
-            <span class="n">ra</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"RA"</span><span class="p">])</span>
-            <span class="n">dec</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"DEC"</span><span class="p">])</span>
+            <span class="n">have</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">data_j</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span> <span class="ow">or</span> <span class="p">())</span>
+            <span class="k">for</span> <span class="n">out</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_COLUMNS</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">out</span><span class="p">][</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_j</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">out</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_OPTIONAL</span><span class="p">:</span>
+                <span class="c1"># THIS file's schema, not the merge's: zero-fill only the files</span>
+                <span class="c1"># that actually lack the column.</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">out</span><span class="p">][</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_j</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">have</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">"CCD_NB"</span><span class="p">][</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ccd_nb</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
-            <span class="c1"># shapes (size column already holds T = 2 sigma^2)</span>
-            <span class="n">g1_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G1_PSF"</span><span class="p">])</span>
-            <span class="n">g2_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G2_PSF"</span><span class="p">])</span>
-            <span class="n">size_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_T_PSF"</span><span class="p">])</span>
-            <span class="n">m4_1_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_M4_1_PSF"</span><span class="p">])</span>
-            <span class="n">m4_2_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_M4_2_PSF"</span><span class="p">])</span>
-            <span class="n">rho4_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_RHO4_PSF"</span><span class="p">])</span>
-            <span class="n">g1</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G1_STAR"</span><span class="p">])</span>
-            <span class="n">g2</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G2_STAR"</span><span class="p">])</span>
-            <span class="n">size</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_T_STAR"</span><span class="p">])</span>
-            <span class="n">m4_1_star</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_M4_1_STAR"</span><span class="p">])</span>
-            <span class="n">m4_2_star</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_M4_2_STAR"</span><span class="p">])</span>
-            <span class="n">rho4_star</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_RHO4_STAR"</span><span class="p">])</span>
+            <span class="n">at</span> <span class="o">+=</span> <span class="n">n_rows</span>
+            <span class="n">starcat_j</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-            <span class="c1"># flags</span>
-            <span class="n">flag_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_FLAG_PSF"</span><span class="p">])</span>
-            <span class="n">flag_star</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_FLAG_STAR"</span><span class="p">])</span>
-
-            <span class="c1"># misc</span>
-
-            <span class="c1"># MKDEBUG: The following columns do not exist (yet)</span>
-            <span class="c1"># for psf converted (pix2wcs) files.</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">mag</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"MAG"</span><span class="p">])</span>
-            <span class="k">except</span><span class="p">:</span>
-                <span class="n">mag</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"X"</span><span class="p">]))</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">snr</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"SNR"</span><span class="p">])</span>
-            <span class="k">except</span><span class="p">:</span>
-                <span class="n">snr</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"X"</span><span class="p">]))</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">psfex_acc</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"ACCEPTED"</span><span class="p">])</span>
-            <span class="k">except</span><span class="p">:</span>
-                <span class="n">psfex_acc</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"X"</span><span class="p">]))</span>
-
-            <span class="c1"># CCD number</span>
-            <span class="n">ccd_nb</span> <span class="o">+=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\-([0-9]*)\-([0-9]+)\."</span><span class="p">,</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="o">-</span><span class="mi">2</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span>
-                <span class="n">data_j</span><span class="p">[</span><span class="s2">"RA"</span><span class="p">]</span>
-            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">at</span> <span class="o">!=</span> <span class="n">n_total</span><span class="p">:</span>
+            <span class="c1"># The two passes disagreed: an input changed under us, or the list</span>
+            <span class="c1"># was a one-shot iterable. Either way the output would be padded</span>
+            <span class="c1"># with uninitialised memory, so say so rather than write it.</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"merge_starcat: pass 1 counted </span><span class="si">{</span><span class="n">n_total</span><span class="si">}</span><span class="s2"> rows, pass 2 filled "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">at</span><span class="si">}</span><span class="s2"> — is the input list iterable more than once?"</span><span class="p">)</span>
 
         <span class="c1"># Prepare output FITS catalogue</span>
         <span class="c1"># MKDEBUG: SEx_cat=True -&gt; False</span>
@@ -1222,31 +1295,8 @@
             <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="c1"># Collect columns (size stored as T = 2 sigma^2)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">"X"</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
-            <span class="s2">"Y"</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span>
-            <span class="s2">"RA"</span><span class="p">:</span> <span class="n">ra</span><span class="p">,</span>
-            <span class="s2">"DEC"</span><span class="p">:</span> <span class="n">dec</span><span class="p">,</span>
-            <span class="s2">"HSM_G1_PSF"</span><span class="p">:</span> <span class="n">g1_psf</span><span class="p">,</span>
-            <span class="s2">"HSM_G2_PSF"</span><span class="p">:</span> <span class="n">g2_psf</span><span class="p">,</span>
-            <span class="s2">"HSM_T_PSF"</span><span class="p">:</span> <span class="n">size_psf</span><span class="p">,</span>
-            <span class="s2">"HSM_M4_1_PSF"</span><span class="p">:</span> <span class="n">m4_1_psf</span><span class="p">,</span>
-            <span class="s2">"HSM_M4_2_PSF"</span><span class="p">:</span> <span class="n">m4_2_psf</span><span class="p">,</span>
-            <span class="s2">"HSM_RHO4_PSF"</span><span class="p">:</span> <span class="n">rho4_psf</span><span class="p">,</span>
-            <span class="s2">"HSM_G1_STAR"</span><span class="p">:</span> <span class="n">g1</span><span class="p">,</span>
-            <span class="s2">"HSM_G2_STAR"</span><span class="p">:</span> <span class="n">g2</span><span class="p">,</span>
-            <span class="s2">"HSM_T_STAR"</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
-            <span class="s2">"HSM_M4_1_STAR"</span><span class="p">:</span> <span class="n">m4_1_star</span><span class="p">,</span>
-            <span class="s2">"HSM_M4_2_STAR"</span><span class="p">:</span> <span class="n">m4_2_star</span><span class="p">,</span>
-            <span class="s2">"HSM_RHO4_STAR"</span><span class="p">:</span> <span class="n">rho4_star</span><span class="p">,</span>
-            <span class="s2">"HSM_FLAG_PSF"</span><span class="p">:</span> <span class="n">flag_psf</span><span class="p">,</span>
-            <span class="s2">"HSM_FLAG_STAR"</span><span class="p">:</span> <span class="n">flag_star</span><span class="p">,</span>
-            <span class="s2">"MAG"</span><span class="p">:</span> <span class="n">mag</span><span class="p">,</span>
-            <span class="s2">"SNR"</span><span class="p">:</span> <span class="n">snr</span><span class="p">,</span>
-            <span class="s2">"ACCEPTED"</span><span class="p">:</span> <span class="n">psfex_acc</span><span class="p">,</span>
-            <span class="s2">"CCD_NB"</span><span class="p">:</span> <span class="n">ccd_nb</span><span class="p">,</span>
-        <span class="p">}</span>
+        <span class="c1"># `data` was built by the two passes above (size stored as T = 2</span>
+        <span class="c1"># sigma^2); every column is already an array of its final length.</span>
 
         <span class="c1"># Write file</span>
         <span class="c1"># MKDEBUG for psf conv (pix2WCS) files do not write as SExtractorCat;</span>
@@ -1404,29 +1454,36 @@
             <span class="n">data_j</span> <span class="o">=</span> <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
 
             <span class="c1"># positions</span>
-            <span class="n">x</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"XWIN_IMAGE"</span><span class="p">])</span>
-            <span class="n">y</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"YWIN_IMAGE"</span><span class="p">])</span>
-            <span class="n">ra</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"XWIN_WORLD"</span><span class="p">])</span>
-            <span class="n">dec</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"YWIN_WORLD"</span><span class="p">])</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"XWIN_IMAGE"</span><span class="p">]))</span>
+            <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"YWIN_IMAGE"</span><span class="p">]))</span>
+            <span class="n">ra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"XWIN_WORLD"</span><span class="p">]))</span>
+            <span class="n">dec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"YWIN_WORLD"</span><span class="p">]))</span>
 
+            <span class="c1"># PRE-EXISTING BUG, LEFT ALONE DELIBERATELY: these four REBIND the</span>
+            <span class="c1"># accumulators initialised above rather than appending to them, so</span>
+            <span class="c1"># only the LAST input file's ellipticities reach the output while</span>
+            <span class="c1"># every other column carries the whole merge. Setools is not wired</span>
+            <span class="c1"># to any workflow path today; fixing it is its own change with its</span>
+            <span class="c1"># own verification, and doing it silently inside a memory rewrite</span>
+            <span class="c1"># would bury it.</span>
             <span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_moments</span><span class="p">(</span><span class="n">data_j</span><span class="p">)</span>
             <span class="n">eps1</span><span class="p">,</span> <span class="n">eps2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ellipticity</span><span class="p">(</span><span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span><span class="p">,</span> <span class="s2">"epsilon"</span><span class="p">)</span>
             <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ellipticity</span><span class="p">(</span><span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span><span class="p">,</span> <span class="s2">"chi"</span><span class="p">)</span>
 
-            <span class="n">size</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"FLUX_RADIUS"</span><span class="p">])</span>
+            <span class="n">size</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"FLUX_RADIUS"</span><span class="p">]))</span>
 
             <span class="c1"># flags</span>
-            <span class="n">flags</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"FLAGS_WIN"</span><span class="p">])</span>
-            <span class="n">flags_ext</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"IMAFLAGS_ISO"</span><span class="p">])</span>
+            <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"FLAGS_WIN"</span><span class="p">]))</span>
+            <span class="n">flags_ext</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"IMAFLAGS_ISO"</span><span class="p">]))</span>
 
             <span class="c1"># misc</span>
-            <span class="n">mag</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"MAG_WIN"</span><span class="p">])</span>
-            <span class="n">snr</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"SNR_WIN"</span><span class="p">])</span>
+            <span class="n">mag</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"MAG_WIN"</span><span class="p">]))</span>
+            <span class="n">snr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"SNR_WIN"</span><span class="p">]))</span>
 
             <span class="c1"># CCD number</span>
-            <span class="n">ccd_nb</span> <span class="o">+=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\-([0-9]*)\-([0-9]+)\."</span><span class="p">,</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="o">-</span><span class="mi">2</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span>
-                <span class="n">data_j</span><span class="p">[</span><span class="s2">"XWIN_IMAGE"</span><span class="p">]</span>
-            <span class="p">)</span>
+            <span class="n">ccd_nb</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"XWIN_IMAGE"</span><span class="p">]),</span>
+                <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\-([0-9]*)\-([0-9]+)\."</span><span class="p">,</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span>
 
         <span class="c1"># Prepare output FITS catalogue</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
@@ -1438,20 +1495,20 @@
         <span class="c1"># Collect columns</span>
         <span class="c1"># convert back to sigma for consistency</span>
         <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">"X"</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
-            <span class="s2">"Y"</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span>
-            <span class="s2">"RA"</span><span class="p">:</span> <span class="n">ra</span><span class="p">,</span>
-            <span class="s2">"DEC"</span><span class="p">:</span> <span class="n">dec</span><span class="p">,</span>
+            <span class="s2">"X"</span><span class="p">:</span> <span class="n">_stack</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+            <span class="s2">"Y"</span><span class="p">:</span> <span class="n">_stack</span><span class="p">(</span><span class="n">y</span><span class="p">),</span>
+            <span class="s2">"RA"</span><span class="p">:</span> <span class="n">_stack</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span>
+            <span class="s2">"DEC"</span><span class="p">:</span> <span class="n">_stack</span><span class="p">(</span><span class="n">dec</span><span class="p">),</span>
             <span class="s2">"EPS1"</span><span class="p">:</span> <span class="n">eps1</span><span class="p">,</span>
             <span class="s2">"EPS2"</span><span class="p">:</span> <span class="n">eps2</span><span class="p">,</span>
             <span class="s2">"CHI1"</span><span class="p">:</span> <span class="n">chi1</span><span class="p">,</span>
             <span class="s2">"CHI2"</span><span class="p">:</span> <span class="n">chi2</span><span class="p">,</span>
-            <span class="s2">"SIZE"</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
-            <span class="s2">"FLAGS"</span><span class="p">:</span> <span class="n">flags</span><span class="p">,</span>
-            <span class="s2">"FLAGS_EXT"</span><span class="p">:</span> <span class="n">flags_ext</span><span class="p">,</span>
-            <span class="s2">"MAG"</span><span class="p">:</span> <span class="n">mag</span><span class="p">,</span>
-            <span class="s2">"SNR"</span><span class="p">:</span> <span class="n">snr</span><span class="p">,</span>
-            <span class="s2">"CCD_NB"</span><span class="p">:</span> <span class="n">ccd_nb</span><span class="p">,</span>
+            <span class="s2">"SIZE"</span><span class="p">:</span> <span class="n">_stack</span><span class="p">(</span><span class="n">size</span><span class="p">),</span>
+            <span class="s2">"FLAGS"</span><span class="p">:</span> <span class="n">_stack</span><span class="p">(</span><span class="n">flags</span><span class="p">),</span>
+            <span class="s2">"FLAGS_EXT"</span><span class="p">:</span> <span class="n">_stack</span><span class="p">(</span><span class="n">flags_ext</span><span class="p">),</span>
+            <span class="s2">"MAG"</span><span class="p">:</span> <span class="n">_stack</span><span class="p">(</span><span class="n">mag</span><span class="p">),</span>
+            <span class="s2">"SNR"</span><span class="p">:</span> <span class="n">_stack</span><span class="p">(</span><span class="n">snr</span><span class="p">),</span>
+            <span class="s2">"CCD_NB"</span><span class="p">:</span> <span class="n">_stack</span><span class="p">(</span><span class="n">ccd_nb</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"U1"</span><span class="p">),</span>
         <span class="p">}</span>
 
         <span class="c1"># Write file</span>
