@@ -11,17 +11,13 @@ PARAMETERS_NAME  default.param
 #------------------------------- Extraction ----------------------------------
  
 DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)
-
 # @sc [decision:detection.detection_threshold_policy]
 DETECT_MINAREA   3               # min. # of pixels above threshold
 
 DETECT_MAXAREA   0              # max. # of pixels above threshold (0=unlimited)
-
 # @sc [decision:detection.detection_threshold_policy]
 THRESH_TYPE      RELATIVE       # threshold type: RELATIVE (in sigmas)
-
                                 # or ABSOLUTE (in ADUs)
-
 # @sc [decision:detection.detection_threshold_policy]
 DETECT_THRESH    1.0            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ANALYSIS_THRESH  1.0            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
@@ -30,7 +26,6 @@ ANALYSIS_THRESH  1.0            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 FILTER           Y              # apply filter for detection (Y or N)?
 
 FILTER_NAME      gauss_3.0_7x7.conv
-
 FILTER_THRESH                   # Threshold[s] for retina filtering
  
 # @sc [decision:detection.deblending_policy]
@@ -43,7 +38,6 @@ CLEAN_PARAM      1.0            # Cleaning efficiency
  
 # @sc [decision:detection.blend_photometry_mask_type]
 MASK_TYPE        CORRECT        # type of detection MASKing: can be one of
-
                                 # NONE, BLANK or CORRECT
  
 #-------------------------------- WEIGHTing ----------------------------------
@@ -54,7 +48,6 @@ WEIGHT_TYPE      MAP_WEIGHT     # type of WEIGHTing: NONE, BACKGROUND,
 RESCALE_WEIGHTS  Y              # Rescale input weights/variances (Y/N)?
 
 WEIGHT_IMAGE     weight.fits    # weight-map filename
-
 # @sc [decision:detection.weight_map_usage]
 WEIGHT_GAIN      Y              # modulate gain (E/ADU) with weights? (Y/N)
 
@@ -76,7 +69,6 @@ PHOT_PETROPARAMS 2.0, 3.5       # MAG_PETRO parameters: <Petrosian_fact>,
                                 # <min_radius>
 PHOT_AUTOAPERS   0.0,0.0        # <estimation>,<measurement> minimum apertures
                                 # for MAG_AUTO and MAG_PETRO
-
 # @sc [decision:detection.photometry_parameters]
 PHOT_FLUXFRAC    0.5            # flux fraction[s] used for FLUX_RADIUS
  
@@ -94,7 +86,6 @@ PIXEL_SCALE      0.            # size of pixel in arcsec (0=use FITS WCS info)
 #------------------------- Star/Galaxy Separation ----------------------------
  
 SEEING_FWHM      0.6            # stellar FWHM in arcsec
-
 STARNNW_NAME     default.nnw
  
 #------------------------------ Background -----------------------------------
@@ -103,7 +94,6 @@ STARNNW_NAME     default.nnw
 BACK_TYPE        AUTO         # AUTO or MANUAL
 
 BACK_VALUE       0.0            # Default background value in MANUAL mode
-
 # @sc [decision:detection.background_model]
 BACK_SIZE        512             # Background mesh: <size> or <width>,<height>
 BACK_FILTERSIZE  9              # Background filter: <size> or <width>,<height>
@@ -154,7 +144,6 @@ WRITE_XML        N              # Write XML file (Y/N)?
 NTHREADS         1              # 1 single thread
 
 FITS_UNSIGNED    N              # Treat FITS integer values as unsigned (Y/N)?
-
 # @sc [decision:detection.zero_weight_interpolation]
 INTERP_MAXXLAG   16             # Max. lag along X for 0-weight interpolation
 INTERP_MAXYLAG   16             # Max. lag along Y for 0-weight interpolation

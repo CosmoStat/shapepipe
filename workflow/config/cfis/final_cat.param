@@ -1,18 +1,15 @@
 # coordinates
-
 # @sc [decision:preparation.object_position_columns]
 XWIN_WORLD
 YWIN_WORLD
 
 # tile ID, for plot of tile-dependent additive bias.
 # Can maybe be removed.
-
 # @sc [decision:catalogue_assembly.tile_overlap_handling]
 TILE_ID
 
 # flags
 FLAGS
-
 # @sc [decision:detection.detection_source_mode]
 IMAFLAGS_ISO
 

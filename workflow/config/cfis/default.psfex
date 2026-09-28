@@ -13,21 +13,16 @@ BASIS_SCALE     1.0             # Gauss-Laguerre beta parameter
 NEWBASIS_TYPE   NONE            # Create new basis: NONE, PCA_INDEPENDENT
                                 # or PCA_COMMON
 NEWBASIS_NUMBER 8               # Number of new basis vectors
-
 # @sc [decision:star_selection_psf.psf_model_complexity]
 PSF_SAMPLING    1.              # Sampling step in pixel units (0.0 = auto)
 
 PSF_PIXELSIZE   1.0             # Effective pixel size in pixel step units
-
 # @sc [decision:star_selection_psf.psf_model_complexity]
 PSF_ACCURACY    0.01            # Accuracy to expect from PSF "pixel" values
-
 # @sc [decision:postage_stamp_size]
 PSF_SIZE        51,51           # Image size of the PSF model
-
 # @sc [decision:star_selection_psf.psfex_candidate_vetting]
 PSF_RECENTER    N               # Allow recentering of PSF-candidates Y/N ?
-
 # @sc [decision:star_selection_psf.psf_model_complexity]
 MEF_TYPE        INDEPENDENT     # INDEPENDENT or COMMON
 
@@ -35,10 +30,8 @@ MEF_TYPE        INDEPENDENT     # INDEPENDENT or COMMON
 
 # @sc [decision:preparation.object_position_columns]
 CENTER_KEYS     XWIN_IMAGE,YWIN_IMAGE # Catalogue parameters for source pre-centering
-
 # @sc [decision:detection.photometry_parameters]
 PHOTFLUX_KEY    FLUX_AUTO    # Catalogue parameter for photometric norm.
-
 # @sc [decision:detection.photometry_parameters]
 PHOTFLUXERR_KEY FLUXERR_AUTO # Catalogue parameter for photometric error
 
@@ -46,10 +39,8 @@ PHOTFLUXERR_KEY FLUXERR_AUTO # Catalogue parameter for photometric error
 
 # @sc [decision:preparation.object_position_columns,decision:star_selection_psf.psf_model_complexity]
 PSFVAR_KEYS     XWIN_IMAGE,YWIN_IMAGE # Catalogue or FITS (preceded by :) params
-
 # @sc [decision:star_selection_psf.psf_model_complexity]
 PSFVAR_GROUPS   1,1             # Group tag for each context key
-
 # @sc [decision:star_selection_psf.psf_model_complexity]
 PSFVAR_DEGREES  2               # Polynom degree for each group
 
