@@ -352,10 +352,6 @@
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
-</ul>
-</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
 </ul>
@@ -919,8 +915,7 @@ several runs.</p>
 <p>is the selection of galaxies as extended objects compared to the PSF.
 First, the PSF model is interpolated to galaxy positions, according to the PSF model
 with <code class="docutils literal notranslate"><span class="pre">psfex_interp</span></code> or <code class="docutils literal notranslate"><span class="pre">mccd_interp</span></code>. Next, postage stamps around galaxies
-of the weights maps are created via <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code>. Then, the spread model
-is computed by the <code class="docutils literal notranslate"><span class="pre">spread_model</span></code> module. Finally, postage stamps
+of the weights maps are created via <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code>. Finally, postage stamps
 around galaxies of single-exposure data is extracted with another call
 to <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code>.</p>
 <p>The output directory is</p>
@@ -928,8 +923,8 @@ to <code class="docutils literal notranslate"><span class="pre">vignetmaker</spa
 <li><p><code class="docutils literal notranslate"><span class="pre">run_sp_MiViSmVi</span></code> if the PSF model is <code class="docutils literal notranslate"><span class="pre">mccd</span></code>;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">run_sp_tile_PsViSmVi</span></code> for the <code class="docutils literal notranslate"><span class="pre">PSFEx</span></code> PSF model.</p></li>
 </ul>
-<p>This corresponds to the MCCD/PSFex interpolation (<code class="docutils literal notranslate"><span class="pre">Mi</span></code>/<code class="docutils literal notranslate"><span class="pre">Pi</span></code>), <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code> (<code class="docutils literal notranslate"><span class="pre">Vi</span></code>), <code class="docutils literal notranslate"><span class="pre">spread_model</span></code> (<code class="docutils literal notranslate"><span class="pre">Sm</span></code>), and the
-second call to <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code> (<code class="docutils literal notranslate"><span class="pre">Vi</span></code>).</p>
+<p>This corresponds to the MCCD/PSFex interpolation (<code class="docutils literal notranslate"><span class="pre">Mi</span></code>/<code class="docutils literal notranslate"><span class="pre">Pi</span></code>), <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code> (<code class="docutils literal notranslate"><span class="pre">Vi</span></code>),
+and the second call to <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code> (<code class="docutils literal notranslate"><span class="pre">Vi</span></code>).</p>
 </section>
 <section id="shape-measurement">
 <h2>Shape measurement<a class="headerlink" href="#shape-measurement" title="Link to this heading">#</a></h2>
@@ -952,7 +947,7 @@ with <code class="docutils literal notranslate"><span class="pre">X</span></code
 <p>This task first merges the <code class="docutils literal notranslate"><span class="pre">NJOB</span></code> parallel <code class="docutils literal notranslate"><span class="pre">ngmix</span></code> output files from the previous step into
 one output file. Then, previously obtained information are pasted into a <em>final</em> shape catalogue via <code class="docutils literal notranslate"><span class="pre">make_cat</span></code>.
 Included are galaxy detection and basic measurement parameters, the PSF model at
-galaxy positions, the spread-model classification, and the shape measurement.</p>
+galaxy positions, and the shape measurement.</p>
 <p>Two output directories are created.
 The first one is <code class="docutils literal notranslate"><span class="pre">run_sp_tile_Ms</span></code> for the <code class="docutils literal notranslate"><span class="pre">merge_sep</span></code> run.
 The second is <code class="docutils literal notranslate"><span class="pre">run_sp_tile_Mc</span></code> for the <code class="docutils literal notranslate"><span class="pre">make_cat</span></code> task; the name is the same for both the <code class="docutils literal notranslate"><span class="pre">MCCD</span></code> and <code class="docutils literal notranslate"><span class="pre">PSFEx</span></code> PSF model.</p>

@@ -347,10 +347,6 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
-</ul>
-</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
 </ul>
@@ -711,81 +707,6 @@
     <span class="n">sexcat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">cat_size</span></div>
-
-
-
-<div class="viewcode-block" id="save_sm_data">
-<a class="viewcode-back" href="../../../../shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.save_sm_data">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">save_sm_data</span><span class="p">(</span>
-    <span class="n">final_cat_file</span><span class="p">,</span>
-    <span class="n">sexcat_sm_path</span><span class="p">,</span>
-    <span class="n">do_classif</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">star_thresh</span><span class="o">=</span><span class="mf">0.003</span><span class="p">,</span>
-    <span class="n">gal_thresh</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
-    <span class="n">n_obj</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">"""Save Spread-Model Data.</span>
-
-<span class="sd">    Save the spread-model data into the final catalogue.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    final_cat_file : file_io.FITSCatalogue</span>
-<span class="sd">        Final catalogue</span>
-<span class="sd">    sexcat_sm_path : str</span>
-<span class="sd">        Path to spread-model catalogue to save. If ``None``, spread_model is</span>
-<span class="sd">        set to 99</span>
-<span class="sd">    do_classif : bool</span>
-<span class="sd">        If ``True`` objects will be classified into stars, galaxies, and other,</span>
-<span class="sd">        using the classifier</span>
-<span class="sd">        :math:`{\rm class} = {\rm sm} + 2 * {\rm sm}_{\rm err}`</span>
-<span class="sd">    star_thresh : float</span>
-<span class="sd">        Threshold for star selection; object is classified as star if</span>
-<span class="sd">        :math:`|{\rm class}| &lt;` ``star_thresh``</span>
-<span class="sd">    gal_thresh : float</span>
-<span class="sd">        Threshold for galaxy selection; object is classified as galaxy if</span>
-<span class="sd">        :math:`{\rm class} &gt;` ``gal_thresh``</span>
-<span class="sd">    nobj : int, optional</span>
-<span class="sd">        Number of objects, only used if sexcat_sm_path is ``-1``</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    int</span>
-<span class="sd">        Number of objects saved</span>
-<span class="sd">    @sc [decision:catalogue_assembly.star_galaxy_classification]</span>
-<span class="sd">    """</span>
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-
-    <span class="k">if</span> <span class="n">sexcat_sm_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">sexcat_sm_file</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
-            <span class="n">sexcat_sm_path</span><span class="p">,</span>
-            <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">sexcat_sm_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-
-        <span class="n">sm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sexcat_sm_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"SPREAD_MODEL"</span><span class="p">])</span>
-        <span class="n">sm_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sexcat_sm_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"SPREADERR_MODEL"</span><span class="p">])</span>
-
-        <span class="n">sexcat_sm_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">sm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_obj</span><span class="p">)</span> <span class="o">*</span> <span class="mi">99</span>
-        <span class="n">sm_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_obj</span><span class="p">)</span> <span class="o">*</span> <span class="mi">99</span>
-
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"SPREAD_MODEL"</span><span class="p">,</span> <span class="n">sm</span><span class="p">)</span>
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"SPREADERR_MODEL"</span><span class="p">,</span> <span class="n">sm_err</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">do_classif</span><span class="p">:</span>
-        <span class="n">obj_flag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">sm</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int16"</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
-        <span class="n">classif</span> <span class="o">=</span> <span class="n">sm</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">sm_err</span>
-        <span class="n">obj_flag</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">classif</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">star_thresh</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">obj_flag</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">classif</span> <span class="o">&gt;</span> <span class="n">gal_thresh</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
-
-        <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"SPREAD_CLASS"</span><span class="p">,</span> <span class="n">obj_flag</span><span class="p">)</span>
-
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-    <span class="k">return</span> <span class="n">n_obj</span></div>
 
 
 

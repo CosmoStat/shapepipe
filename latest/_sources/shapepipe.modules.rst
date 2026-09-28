@@ -32,7 +32,6 @@ Subpackages
    shapepipe.modules.setools_package
    shapepipe.modules.sextractor_package
    shapepipe.modules.split_exp_package
-   shapepipe.modules.spread_model_package
    shapepipe.modules.uncompress_fits_package
    shapepipe.modules.vignetmaker_package
 

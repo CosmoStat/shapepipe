@@ -43,7 +43,6 @@
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'shapepipe.modules.make_cat_package.make_cat';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
@@ -353,10 +352,6 @@
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
-</ul>
-</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
 </ul>
@@ -579,7 +574,6 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.prepare_final_cat_file"><code class="docutils literal notranslate"><span class="pre">prepare_final_cat_file()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.remove_field_name"><code class="docutils literal notranslate"><span class="pre">remove_field_name()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_sextractor_data"><code class="docutils literal notranslate"><span class="pre">save_sextractor_data()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_sm_data"><code class="docutils literal notranslate"><span class="pre">save_sm_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.parse_mask_ext_paths"><code class="docutils literal notranslate"><span class="pre">parse_mask_ext_paths()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data"><code class="docutils literal notranslate"><span class="pre">save_mask_ext_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue</span></code></a><ul class="nav section-nav flex-column">
@@ -690,37 +684,6 @@
 <dd class="field-even"><p><ul class="simple">
 <li><p><em>int</em> – Number of objects saved</p></li>
 <li><p><strong>&#64;sc [decision</strong> (<em>catalogue_assembly.tile_overlap_handling]</em>)</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.save_sm_data">
-<span class="sig-name descname"><span class="pre">save_sm_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">final_cat_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sexcat_sm_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_classif</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">star_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.003</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gal_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#save_sm_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.save_sm_data" title="Link to this definition">#</a></dt>
-<dd><p>Save Spread-Model Data.</p>
-<p>Save the spread-model data into the final catalogue.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>final_cat_file</strong> (<a class="reference internal" href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue" title="shapepipe.pipeline.file_io.FITSCatalogue"><em>file_io.FITSCatalogue</em></a>) – Final catalogue</p></li>
-<li><p><strong>sexcat_sm_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to spread-model catalogue to save. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, spread_model is
-set to 99</p></li>
-<li><p><strong>do_classif</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code> objects will be classified into stars, galaxies, and other,
-using the classifier
-<span class="math notranslate nohighlight">\({\rm class} = {\rm sm} + 2 * {\rm sm}_{\rm err}\)</span></p></li>
-<li><p><strong>star_thresh</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Threshold for star selection; object is classified as star if
-<span class="math notranslate nohighlight">\(|{\rm class}| &lt;\)</span> <code class="docutils literal notranslate"><span class="pre">star_thresh</span></code></p></li>
-<li><p><strong>gal_thresh</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Threshold for galaxy selection; object is classified as galaxy if
-<span class="math notranslate nohighlight">\({\rm class} &gt;\)</span> <code class="docutils literal notranslate"><span class="pre">gal_thresh</span></code></p></li>
-<li><p><strong>nobj</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Number of objects, only used if sexcat_sm_path is <code class="docutils literal notranslate"><span class="pre">-1</span></code></p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>int</em> – Number of objects saved</p></li>
-<li><p><strong>&#64;sc [decision</strong> (<em>catalogue_assembly.star_galaxy_classification]</em>)</p></li>
 </ul>
 </p>
 </dd>
@@ -977,7 +940,6 @@ be a subset of what <code class="docutils literal notranslate"><span class="pre"
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.prepare_final_cat_file"><code class="docutils literal notranslate"><span class="pre">prepare_final_cat_file()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.remove_field_name"><code class="docutils literal notranslate"><span class="pre">remove_field_name()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_sextractor_data"><code class="docutils literal notranslate"><span class="pre">save_sextractor_data()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_sm_data"><code class="docutils literal notranslate"><span class="pre">save_sm_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.parse_mask_ext_paths"><code class="docutils literal notranslate"><span class="pre">parse_mask_ext_paths()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data"><code class="docutils literal notranslate"><span class="pre">save_mask_ext_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue</span></code></a><ul class="nav section-nav flex-column">
