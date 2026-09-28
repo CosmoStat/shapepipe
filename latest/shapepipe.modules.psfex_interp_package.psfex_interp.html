@@ -575,6 +575,9 @@
             <nav aria-label="Page">
                 <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.local_wcs_list"><code class="docutils literal notranslate"><span class="pre">local_wcs_list()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp._fourth_moments"><code class="docutils literal notranslate"><span class="pre">_fourth_moments()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp._hsm_row"><code class="docutils literal notranslate"><span class="pre">_hsm_row()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp._hsm_columns"><code class="docutils literal notranslate"><span class="pre">_hsm_columns()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator.process()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_position_parameters"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._get_position_parameters()</span></code></a></li>
@@ -610,7 +613,7 @@
 <p>This module computes the PSFs from a PSFEx model at several galaxy positions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Authors<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Morgan Schmitz, Axel Guinot, Martin Kilbinger</p>
+<dd class="field-odd"><p>Morgan Schmitz, Axel Guinot, Martin Kilbinger, Sacha Guerrini</p>
 </dd>
 </dl>
 <dl class="py function">
@@ -635,6 +638,105 @@ position in the original image</em>, not at the stamp centre.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)">list</a> of galsim.JacobianWCS</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.psfex_interp_package.psfex_interp._fourth_moments">
+<span class="sig-name descname"><span class="pre">_fourth_moments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#_fourth_moments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp._fourth_moments" title="Link to this definition">#</a></dt>
+<dd><p>Fourth-Order Moments.</p>
+<p>&#64;sc [label:frame] fourth-moments-single-frame
+<code class="docutils literal notranslate"><span class="pre">moms</span></code> and the pixel-grid mapping must live in one frame. With <code class="docutils literal notranslate"><span class="pre">wcs</span></code>,
+<code class="docutils literal notranslate"><span class="pre">moms</span></code> comes from <code class="docutils literal notranslate"><span class="pre">FindAdaptiveMom(use_sky_coords=True)</span></code> on an image
+carrying that same local WCS, and the whitening matrix is built from those
+world-frame moments; mixing frames silently breaks the CCD-orientation
+invariance that <code class="docutils literal notranslate"><span class="pre">test_psf_fourth_moments_frame_invariant</span></code> enforces.</p>
+<p>Compute the spin-2 fourth-moment combinations and galsim’s spin-0
+<code class="docutils literal notranslate"><span class="pre">moments_rho4</span></code> for a single object, given its HSM adaptive-moment result.</p>
+<p>The spin-2 combinations follow the PSFHOME convention: whiten the pixel grid
+with the object’s own second-moment matrix <code class="docutils literal notranslate"><span class="pre">M</span></code> (so a matched elliptical
+Gaussian becomes a unit circle), Gaussian-weight it, form the centred
+<code class="docutils literal notranslate"><span class="pre">p</span> <span class="pre">+</span> <span class="pre">q</span> <span class="pre">=</span> <span class="pre">4</span></code> moments <code class="docutils literal notranslate"><span class="pre">M_pq</span></code> over the whitened coordinates <code class="docutils literal notranslate"><span class="pre">(u,</span> <span class="pre">v)</span></code>, and
+return</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">fourth_moment_1</span> <span class="o">=</span> <span class="n">M_40</span> <span class="o">-</span> <span class="n">M_04</span>
+<span class="n">fourth_moment_2</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">M_13</span> <span class="o">+</span> <span class="n">M_31</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Frame handling.</strong> Whitening with the <em>symmetric</em> matrix square root
+<code class="docutils literal notranslate"><span class="pre">sqrt(inv(M))</span></code> leaves the whitened axes aligned with the coordinate frame
+in which <code class="docutils literal notranslate"><span class="pre">M</span></code> and the grid are built (it rescales along the object’s
+principal axes but does not rotate the frame). The spin-2 combinations are
+therefore measured relative to <em>those</em> axes. To make them a property of the
+sky and not of the CCD orientation, everything must live in one frame — the
+world frame:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">moms</span></code> comes from <code class="docutils literal notranslate"><span class="pre">FindAdaptiveMom(use_sky_coords=True)</span></code>, so
+<code class="docutils literal notranslate"><span class="pre">observed_shape</span></code>, <code class="docutils literal notranslate"><span class="pre">moments_sigma</span></code> (arcsec) and <code class="docutils literal notranslate"><span class="pre">moments_centroid</span></code>
+are already in world <code class="docutils literal notranslate"><span class="pre">(u,</span> <span class="pre">v)</span></code> coordinates. <code class="docutils literal notranslate"><span class="pre">M</span></code> built from them is the
+world-frame second-moment matrix.</p></li>
+<li><p>The pixel grid is mapped to world offsets about the centroid with the local
+WCS Jacobian <code class="docutils literal notranslate"><span class="pre">J</span></code>: <code class="docutils literal notranslate"><span class="pre">world</span> <span class="pre">=</span> <span class="pre">J</span> <span class="pre">&#64;</span> <span class="pre">(pixel</span> <span class="pre">-</span> <span class="pre">true_center)</span></code>. galsim reports
+<code class="docutils literal notranslate"><span class="pre">moments_centroid</span></code> relative to the stamp <code class="docutils literal notranslate"><span class="pre">true_center</span></code>, so subtracting
+it gives <code class="docutils literal notranslate"><span class="pre">J</span> <span class="pre">&#64;</span> <span class="pre">(pixel</span> <span class="pre">-</span> <span class="pre">pixel_centroid)</span></code> — the world offset from the
+centroid, in the same arcsec units as <code class="docutils literal notranslate"><span class="pre">M</span></code>.</p></li>
+</ul>
+<p>The result is invariant under a re-orientation of the pixel frame (a
+different WCS rotation viewing the same sky object) — the science guarantee
+that motivates the sky-coordinate measurement. When <code class="docutils literal notranslate"><span class="pre">wcs</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> the
+computation is done consistently in the pixel frame instead (the axes are
+then the CCD axes and the result is <em>not</em> frame-invariant); this path exists
+only for the legacy pixel-frame branch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Object postage stamp (PSF or star vignet), masked pixels already zeroed.</p></li>
+<li><p><strong>moms</strong> (<em>galsim.hsm.ShapeData</em>) – Adaptive-moment result for <code class="docutils literal notranslate"><span class="pre">image</span></code>. Measured with
+<code class="docutils literal notranslate"><span class="pre">use_sky_coords=True</span></code> when <code class="docutils literal notranslate"><span class="pre">wcs</span></code> is provided.</p></li>
+<li><p><strong>wcs</strong> (<em>galsim.JacobianWCS</em><em>, </em><em>optional</em>) – Local WCS at the object position, matching the one attached to the image
+for the <code class="docutils literal notranslate"><span class="pre">use_sky_coords</span></code> measurement. <code class="docutils literal notranslate"><span class="pre">None</span></code> selects the pixel frame.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(fourth_moment_1,</span> <span class="pre">fourth_moment_2,</span> <span class="pre">moments_rho4)</span></code>. On an HSM failure
+(<code class="docutils literal notranslate"><span class="pre">moms.error_message</span></code> set) the spin-2 terms are filled with <code class="docutils literal notranslate"><span class="pre">0.0</span></code> and
+<code class="docutils literal notranslate"><span class="pre">moments_rho4</span></code> is passed through (<code class="docutils literal notranslate"><span class="pre">-1</span></code> on failure); the accompanying
+<code class="docutils literal notranslate"><span class="pre">FLAG</span></code> column is the source of truth for validity.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a> of <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.psfex_interp_package.psfex_interp._hsm_row">
+<span class="sig-name descname"><span class="pre">_hsm_row</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#_hsm_row"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp._hsm_row" title="Link to this definition">#</a></dt>
+<dd><p>HSM shape row for one object, ordered as <code class="docutils literal notranslate"><span class="pre">_HSM_ROW</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.psfex_interp_package.psfex_interp._hsm_columns">
+<span class="sig-name descname"><span class="pre">_hsm_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shapes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#_hsm_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp._hsm_columns" title="Link to this definition">#</a></dt>
+<dd><p>Named <code class="docutils literal notranslate"><span class="pre">HSM_*_&lt;obj&gt;</span></code> columns from HSM shape rows.</p>
+<p>&#64;sc [label:schema] hsm-column-grammar
+The only place the <code class="docutils literal notranslate"><span class="pre">_HSM_ROW</span></code> slot order meets the column grammar:
+sigma is stored as <code class="docutils literal notranslate"><span class="pre">T</span></code> (<code class="docutils literal notranslate"><span class="pre">cs_util.size.sigma_to_T</span></code>), <code class="docutils literal notranslate"><span class="pre">FLAG</span></code> as int,
+the fourth moments under <code class="docutils literal notranslate"><span class="pre">M4_1</span></code>/<code class="docutils literal notranslate"><span class="pre">M4_2</span></code>/<code class="docutils literal notranslate"><span class="pre">RHO4</span></code>. Every writer in this
+module (single-epoch, validation, multi-epoch) goes through here.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shapes</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Shape rows, <code class="docutils literal notranslate"><span class="pre">(n_obj,</span> <span class="pre">len(_HSM_ROW))</span></code> or a single <code class="docutils literal notranslate"><span class="pre">(len(_HSM_ROW),)</span></code>
+row; a single row yields Python scalars.</p></li>
+<li><p><strong>obj</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Object token, <code class="docutils literal notranslate"><span class="pre">&quot;PSF&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;STAR&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Column name -&gt; values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -728,6 +830,12 @@ returned are already in sky coordinates and need no post-hoc
 rotation. When <code class="docutils literal notranslate"><span class="pre">None</span></code>, moments are measured in the pixel frame.</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>In addition to the second-moment shape, the spin-2 fourth-moment
+combinations and galsim’s spin-0 <code class="docutils literal notranslate"><span class="pre">moments_rho4</span></code> are stored (the
+<code class="docutils literal notranslate"><span class="pre">M4_1</span></code>, <code class="docutils literal notranslate"><span class="pre">M4_2</span></code>, <code class="docutils literal notranslate"><span class="pre">RHO4</span></code> slots of <code class="docutils literal notranslate"><span class="pre">_HSM_ROW</span></code>). With a <code class="docutils literal notranslate"><span class="pre">wcs_list</span></code> these are computed in the
+world frame so they are invariant to the CCD orientation; see
+<a class="reference internal" href="#shapepipe.modules.psfex_interp_package.psfex_interp._fourth_moments" title="shapepipe.modules.psfex_interp_package.psfex_interp._fourth_moments"><code class="xref py py-func docutils literal notranslate"><span class="pre">_fourth_moments()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -764,6 +872,12 @@ provided, moments are measured in world coordinates
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>As in <a class="reference internal" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfshapes" title="shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfshapes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_get_psfshapes()</span></code></a>, the spin-2 fourth-moment combinations and
+galsim’s <code class="docutils literal notranslate"><span class="pre">moments_rho4</span></code> are stored (the <code class="docutils literal notranslate"><span class="pre">M4_1</span></code>, <code class="docutils literal notranslate"><span class="pre">M4_2</span></code>, <code class="docutils literal notranslate"><span class="pre">RHO4</span></code>
+slots of <code class="docutils literal notranslate"><span class="pre">_HSM_ROW</span></code>),
+world-frame when a <code class="docutils literal notranslate"><span class="pre">wcs_list</span></code> is given. Masked pixels are zeroed before
+the fourth-moment sum so they do not contribute.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -807,6 +921,10 @@ conversion reconstructed to rotate shapes.</p>
 <span class="sig-name descname"><span class="pre">_write_output_validation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">star_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psfex_cat_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#PSFExInterpolator._write_output_validation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._write_output_validation" title="Link to this definition">#</a></dt>
 <dd><p>Write Output Validation.</p>
 <p>Save computed PSFs and stars to fits file.</p>
+<p>&#64;sc [label:schema] psfex-validation-hsm-columns
+Writes <code class="docutils literal notranslate"><span class="pre">_hsm_columns</span></code> for both <code class="docutils literal notranslate"><span class="pre">PSF</span></code> and <code class="docutils literal notranslate"><span class="pre">STAR</span></code> — the exact
+<code class="docutils literal notranslate"><span class="pre">HSM_*</span></code> set <code class="docutils literal notranslate"><span class="pre">MergeStarCatPSFEX.process</span></code> reads without fallback;
+add or rename on both sides together (<code class="docutils literal notranslate"><span class="pre">test_hsm_column_seams</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -838,6 +956,10 @@ conversion reconstructed to rotate shapes.</p>
 <span class="sig-name descname"><span class="pre">_interpolate_me</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#PSFExInterpolator._interpolate_me"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._interpolate_me" title="Link to this definition">#</a></dt>
 <dd><p>Interpolate Multi-Epoch.</p>
 <p>Interpolate PSFs for multi-epoch run.</p>
+<p>&#64;sc [label:schema] psfex-me-shapes-columns
+The per-epoch <code class="docutils literal notranslate"><span class="pre">SHAPES</span></code> dict is <code class="docutils literal notranslate"><span class="pre">_hsm_columns(row,</span> <span class="pre">&quot;PSF&quot;)</span></code> and
+must carry every column <code class="docutils literal notranslate"><span class="pre">make_cat._save_psf_data</span></code> copies into
+<code class="docutils literal notranslate"><span class="pre">HSM_*_PSF_n</span></code> (<code class="docutils literal notranslate"><span class="pre">test_hsm_column_seams</span></code> checks the superset).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#KeyError" title="(in Python v3.14)"><strong>KeyError</strong></a> – If ‘N_EPOCH’ key not in input catalogue</p>
@@ -916,6 +1038,9 @@ conversion reconstructed to rotate shapes.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.local_wcs_list"><code class="docutils literal notranslate"><span class="pre">local_wcs_list()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp._fourth_moments"><code class="docutils literal notranslate"><span class="pre">_fourth_moments()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp._hsm_row"><code class="docutils literal notranslate"><span class="pre">_hsm_row()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp._hsm_columns"><code class="docutils literal notranslate"><span class="pre">_hsm_columns()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator.process()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_position_parameters"><code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._get_position_parameters()</span></code></a></li>

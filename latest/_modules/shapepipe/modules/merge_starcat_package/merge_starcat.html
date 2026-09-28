@@ -1138,10 +1138,17 @@
 
 <span class="sd">        Process merging.</span>
 
+<span class="sd">        @sc [label:schema] psfex-starcat-columns-strict</span>
+<span class="sd">        Every ``HSM_*`` column is read by name with no fallback, so the set</span>
+<span class="sd">        read here equals the set ``PSFExInterpolator._write_output_validation``</span>
+<span class="sd">        writes (``test_hsm_column_seams``).</span>
+
 <span class="sd">        """</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">g1_psf</span><span class="p">,</span> <span class="n">g2_psf</span><span class="p">,</span> <span class="n">size_psf</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="n">m4_1_psf</span><span class="p">,</span> <span class="n">m4_2_psf</span><span class="p">,</span> <span class="n">rho4_psf</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">g1</span><span class="p">,</span> <span class="n">g2</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="n">m4_1_star</span><span class="p">,</span> <span class="n">m4_2_star</span><span class="p">,</span> <span class="n">rho4_star</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">flag_psf</span><span class="p">,</span> <span class="n">flag_star</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">mag</span><span class="p">,</span> <span class="n">snr</span><span class="p">,</span> <span class="n">psfex_acc</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">ccd_nb</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1170,9 +1177,15 @@
             <span class="n">g1_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G1_PSF"</span><span class="p">])</span>
             <span class="n">g2_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G2_PSF"</span><span class="p">])</span>
             <span class="n">size_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_T_PSF"</span><span class="p">])</span>
+            <span class="n">m4_1_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_M4_1_PSF"</span><span class="p">])</span>
+            <span class="n">m4_2_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_M4_2_PSF"</span><span class="p">])</span>
+            <span class="n">rho4_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_RHO4_PSF"</span><span class="p">])</span>
             <span class="n">g1</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G1_STAR"</span><span class="p">])</span>
             <span class="n">g2</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_G2_STAR"</span><span class="p">])</span>
             <span class="n">size</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_T_STAR"</span><span class="p">])</span>
+            <span class="n">m4_1_star</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_M4_1_STAR"</span><span class="p">])</span>
+            <span class="n">m4_2_star</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_M4_2_STAR"</span><span class="p">])</span>
+            <span class="n">rho4_star</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_RHO4_STAR"</span><span class="p">])</span>
 
             <span class="c1"># flags</span>
             <span class="n">flag_psf</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"HSM_FLAG_PSF"</span><span class="p">])</span>
@@ -1218,9 +1231,15 @@
             <span class="s2">"HSM_G1_PSF"</span><span class="p">:</span> <span class="n">g1_psf</span><span class="p">,</span>
             <span class="s2">"HSM_G2_PSF"</span><span class="p">:</span> <span class="n">g2_psf</span><span class="p">,</span>
             <span class="s2">"HSM_T_PSF"</span><span class="p">:</span> <span class="n">size_psf</span><span class="p">,</span>
+            <span class="s2">"HSM_M4_1_PSF"</span><span class="p">:</span> <span class="n">m4_1_psf</span><span class="p">,</span>
+            <span class="s2">"HSM_M4_2_PSF"</span><span class="p">:</span> <span class="n">m4_2_psf</span><span class="p">,</span>
+            <span class="s2">"HSM_RHO4_PSF"</span><span class="p">:</span> <span class="n">rho4_psf</span><span class="p">,</span>
             <span class="s2">"HSM_G1_STAR"</span><span class="p">:</span> <span class="n">g1</span><span class="p">,</span>
             <span class="s2">"HSM_G2_STAR"</span><span class="p">:</span> <span class="n">g2</span><span class="p">,</span>
             <span class="s2">"HSM_T_STAR"</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
+            <span class="s2">"HSM_M4_1_STAR"</span><span class="p">:</span> <span class="n">m4_1_star</span><span class="p">,</span>
+            <span class="s2">"HSM_M4_2_STAR"</span><span class="p">:</span> <span class="n">m4_2_star</span><span class="p">,</span>
+            <span class="s2">"HSM_RHO4_STAR"</span><span class="p">:</span> <span class="n">rho4_star</span><span class="p">,</span>
             <span class="s2">"HSM_FLAG_PSF"</span><span class="p">:</span> <span class="n">flag_psf</span><span class="p">,</span>
             <span class="s2">"HSM_FLAG_STAR"</span><span class="p">:</span> <span class="n">flag_star</span><span class="p">,</span>
             <span class="s2">"MAG"</span><span class="p">:</span> <span class="n">mag</span><span class="p">,</span>
