@@ -182,10 +182,12 @@ GRAMMAR_RE = re.compile(
 )
 
 # The shipped final-catalogue param files, two levels up from tests/module/.
-# Both are consumer contracts updated to the new grammar, so both are checked.
+# All are consumer contracts updated to the new grammar, so all are checked;
+# final_cat_merge reads the cfis_image_sims one for image-sims campaigns.
 _ROOT = Path(__file__).resolve().parents[2]
 PARAM_PATHS = [
     _ROOT / "workflow" / "config" / "cfis" / "final_cat.param",
+    _ROOT / "workflow" / "config" / "cfis_image_sims" / "final_cat.param",
     _ROOT / "example" / "unions_800" / "cat_matched.param",
 ]
 
@@ -357,11 +359,12 @@ def test_emitted_column_names_match_grammar(obj_ids, tmp_path_factory):
 def test_param_file_ngmix_tokens_are_producible(param_path, obj_ids):
     """Every NGMIX_* token the param file names is a column the writer produces.
 
-    Each shipped final-catalogue param file (``workflow/config/cfis/final_cat.param``
-    and ``example/unions_800/cat_matched.param``) is a consumer contract for the
+    Each shipped final-catalogue param file (``final_cat.param`` under
+    ``workflow/config/cfis/`` and ``cfis_image_sims/``, and
+    ``example/unions_800/cat_matched.param``) is a consumer contract for the
     final catalogue; ``create_final_cat`` keeps only the listed columns, so a
     token it names that the writer cannot emit is a silent, empty column
-    downstream. Both files are checked so a future divergence in either (a
+    downstream. Every file is checked so a future divergence in any (a
     typo'd or stale NGMIX token) cannot escape the consistency check. The one
     known exception — ``NGMIX_MOM_FAIL``, the moments-failure flag set by a
     different path — is excluded BY NAME, and we assert it is genuinely outside

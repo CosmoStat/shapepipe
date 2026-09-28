@@ -23,7 +23,10 @@ import yaml
 PLACEHOLDER = "TBD"
 # The tables themselves: read here, never defaults or $-expanded.
 TABLES = ("input_types", "machines")
-REQUIRED = ("tile_list", "inputs.tiles", "inputs.exposures",
+# `run` is required in its own right, not only through `$run` in the paths:
+# it names the campaign's merged catalogues, so a run config whose paths
+# never mention `$run` must still set it.
+REQUIRED = ("run", "tile_list", "inputs.tiles", "inputs.exposures",
             "outputs.run_dir", "outputs.index_db")
 
 
@@ -74,9 +77,9 @@ def apply_defaults(config):
     where things are on that machine, and wins where the two overlap.
 
     A key already in `config` wins; for dict values (`inputs`, `outputs`) the
-    merge is per sub-key. Every resolved key then has `$name` expanded:
-    `$base_dir` is machines[machine].base_dir, and any top-level scalar is a
-    variable too (`$run` is the top-level `run:`).
+    merge is per sub-key. Every resolved key then has `$name` / `${name}`
+    expanded: `$base_dir` is machines[machine].base_dir, and any top-level
+    scalar is a variable too (`$run` is the top-level `run:`).
     """
     input_type = config.get("input_type", "data")
     machine = config.get("machine") or os.environ.get("SP_PROFILE", "nibi")
@@ -118,11 +121,25 @@ def get(config, dotted):
     return value
 
 
+def _dollar_keys(value, prefix):
+    """Dotted keys under `value` whose string still holds a `$`."""
+    if isinstance(value, dict):
+        return [k for key, sub in value.items()
+                for k in _dollar_keys(sub, f"{prefix}.{key}")]
+    return [prefix] if isinstance(value, str) and "$" in value else []
+
+
 def unresolved(config):
     """REQUIRED keys that are unset, the placeholder, or hold an unexpanded
-    $variable (e.g. `$run` with no `run:` set)."""
-    return [k for k in REQUIRED
-            if get(config, k) in (None, "", PLACEHOLDER) or "$" in str(get(config, k))]
+    $variable, then every other resolved value (recursively through
+    inputs/outputs; the tables themselves excluded) that still holds one
+    (e.g. `$run` with no `run:` set, or a misspelt name)."""
+    missing = [k for k in REQUIRED
+               if get(config, k) in (None, "", PLACEHOLDER)
+               or "$" in str(get(config, k))]
+    dollar = [k for key in config if key not in TABLES
+              for k in _dollar_keys(config[key], key)]
+    return missing + [k for k in dollar if k not in missing]
 
 
 def catalogue_source(config):

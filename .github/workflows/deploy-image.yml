@@ -115,6 +115,17 @@ jobs:
           IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
           docker run --rm -e HYPOTHESIS_PROFILE=ci -e SHAPEPIPE_ON_CANDIDE=0 "$IMAGE" pytest -rX
 
+      # tests/workflow drives the Snakefile through snakemake's API. Snakemake
+      # is a host tool and stays out of the image (it wraps each job in the
+      # container), so the suite above leaves that directory out
+      # (the root conftest.py); here it is installed into this throwaway container
+      # at the host pin range (workflow/README.md) and the directory runs alone.
+      - name: Test — workflow DAG (snakemake)
+        run: |
+          IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          docker run --rm -e SHAPEPIPE_ON_CANDIDE=0 "$IMAGE" bash -c \
+            "uv pip install 'snakemake>=9,<10' && pytest -rX --no-cov tests/workflow"
+
       # ----------------------------------------------------------------
       # Publish (push events only — never on pull_request, incl. forks).
       # Fires on any branch; the image is tagged with the branch name.

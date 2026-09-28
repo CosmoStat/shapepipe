@@ -15,6 +15,11 @@ from astropy import units as u
 from astropy.wcs import WCS
 from sqlitedict import SqliteDict
 
+from shapepipe.modules.ngmix_package.ngmix import (
+    get_mcal_flags,
+    get_mcal_types_fail,
+    get_type_flags,
+)
 from shapepipe.pipeline import file_io
 from shapepipe.utilities import cfis, mask_query
 
@@ -139,78 +144,6 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     sexcat_file.close()
 
     return cat_size
-
-
-def save_sm_data(
-    final_cat_file,
-    sexcat_sm_path,
-    do_classif=True,
-    star_thresh=0.003,
-    gal_thresh=0.01,
-    n_obj=-1,
-):
-    r"""Save Spread-Model Data.
-
-    Save the spread-model data into the final catalogue.
-
-    Parameters
-    ----------
-    final_cat_file : file_io.FITSCatalogue
-        Final catalogue
-    sexcat_sm_path : str
-        Path to spread-model catalogue to save. If ``None``, spread_model is
-        set to 99
-    do_classif : bool
-        If ``True`` objects will be classified into stars, galaxies, and other,
-        using the classifier
-        :math:`{\rm class} = {\rm sm} + 2 * {\rm sm}_{\rm err}`
-    star_thresh : float
-        Threshold for star selection; object is classified as star if
-        :math:`|{\rm class}| <` ``star_thresh``
-    gal_thresh : float
-        Threshold for galaxy selection; object is classified as galaxy if
-        :math:`{\rm class} >` ``gal_thresh``
-    nobj : int, optional
-        Number of objects, only used if sexcat_sm_path is ``-1``
-
-    Returns
-    -------
-    int
-        Number of objects saved
-    @sc [decision:catalogue_assembly.star_galaxy_classification]
-    """
-    final_cat_file.open()
-
-    if sexcat_sm_path is not None:
-        sexcat_sm_file = file_io.FITSCatalogue(
-            sexcat_sm_path,
-            SEx_catalogue=True,
-        )
-        sexcat_sm_file.open()
-
-        sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
-        sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
-
-        sexcat_sm_file.close()
-
-    else:
-        sm = np.ones(n_obj) * 99
-        sm_err = np.ones(n_obj) * 99
-
-    final_cat_file.add_col("SPREAD_MODEL", sm)
-    final_cat_file.add_col("SPREADERR_MODEL", sm_err)
-
-    if do_classif:
-        obj_flag = np.ones_like(sm, dtype="int16") * 2
-        classif = sm + 2.0 * sm_err
-        obj_flag[np.where(np.abs(classif) < star_thresh)] = 0
-        obj_flag[np.where(classif > gal_thresh)] = 1
-
-        final_cat_file.add_col("SPREAD_CLASS", obj_flag)
-
-    final_cat_file.close()
-
-    return n_obj
 
 
 def parse_mask_ext_paths(paths_str):
@@ -424,11 +357,16 @@ class SaveCatalogue:
             If True, write the parallel ``NGMIXm_*`` (moments-branch) columns.
 
         @sc [decision:catalogue_assembly.failure_sentinels,label:coupling] failure-sentinel-cut-semantics
-        Missing-row ``T``, ``SNR``, flux, magnitude, PSF-size and flag values
-        initialize to 0, which is in range and cannot identify failure. Use
-        ``NGMIX_N_EPOCH == 0`` for that cut; the -10 ellipticity, -1
-        flux/magnitude-error and 1e30 size-error sentinels are out of range and
-        can also identify missing fits.
+        An object absent from the ngmix catalogue was never fit (no usable
+        epoch, or its fit raised). Its flag columns take what
+        :func:`ngmix.get_type_flags` derives for an empty metacal result:
+        ``LM_FUNC_NOTFINITE`` in ``FLAGS_<SHEAR>`` and ``MCAL_FLAGS``, and
+        ``MCAL_TYPES_FAIL`` 5, never 0, so sp_validation's ``MCAL_FLAGS == 0``
+        and ``MCAL_TYPES_FAIL == 0`` cut rejects it. Its ``T``, ``SNR``, flux,
+        magnitude and PSF-size values initialize to 0, which is in range and
+        cannot identify failure; ``NGMIX_N_EPOCH == 0`` identifies a
+        never-fit row, and the -10 ellipticity, -1 flux/magnitude-error and
+        1e30 size-error sentinels are out of range.
 
         """
         self._key_ends = ["1M", "1P", "2M", "2P", "NOSHEAR"]
@@ -463,13 +401,19 @@ class SaveCatalogue:
         n_obj = len(self._obj_id)
         self._w_log.info(f"writing ngmix info for {n_obj} objects")
 
+        # An object ngmix never fit has no metacal result at all.
+        never_fit = {}
+
         if moments:
             m = "m"
         else:
             m = ""
 
             self._add2dict("NGMIX_N_EPOCH", np.zeros(n_obj))
-            self._add2dict("NGMIX_MCAL_TYPES_FAIL", np.zeros(n_obj))
+            self._add2dict(
+                "NGMIX_MCAL_TYPES_FAIL",
+                np.full(n_obj, get_mcal_types_fail(never_fit), dtype=float),
+            )
             self._add2dict("NGMIX_NEIGHBOUR_FLAG", np.zeros(n_obj))
 
         prefix = f"NGMIX{m}"
@@ -478,18 +422,22 @@ class SaveCatalogue:
         # reconvolution kernel (PSF_RECONV); see ngmix.average_original_psf /
         # average_multiepoch_psf for what each PSF family is. G1/G2 are scalar
         # reduced-shear components, not a 2-vector. Sentinels:
-        # sizes/fluxes/mags/flags 0, *_ERR fluxes/mags -1, ellipticities -10,
-        # *_ERR sizes 1e30.
+        # sizes/fluxes/mags 0, *_ERR fluxes/mags -1, ellipticities -10,
+        # *_ERR sizes 1e30; flags as ngmix derives for an empty metacal result
+        # (never_fit).
         for key_str in (
             f"{prefix}_T_",
             f"{prefix}_SNR_",
             f"{prefix}_FLUX_",
             f"{prefix}_MAG_",
-            f"{prefix}_FLAGS_",
             f"{prefix}_T_PSF_ORIG_",
             f"{prefix}_T_PSF_RECONV_",
         ):
             self._update_dict(key_str, np.zeros(n_obj))
+        self._update_dict(
+            f"{prefix}_FLAGS_",
+            np.full(n_obj, get_type_flags(never_fit), dtype=float),
+        )
         for key_str in (
             f"{prefix}_FLUX_ERR_",
             f"{prefix}_MAG_ERR_",
@@ -516,7 +464,10 @@ class SaveCatalogue:
             f"{prefix}_T_ERR_PSF_RECONV_",
         ):
             self._update_dict(key_str, np.ones(n_obj) * 1e30)
-        self._add2dict(f"{prefix}_MCAL_FLAGS", np.zeros(n_obj))
+        self._add2dict(
+            f"{prefix}_MCAL_FLAGS",
+            np.full(n_obj, get_mcal_flags(never_fit), dtype=float),
+        )
 
         for idx, id_tmp in enumerate(self._obj_id):
             ind = np.where(id_tmp == ngmix_id)[0]
