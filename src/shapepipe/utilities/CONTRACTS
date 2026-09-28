@@ -1,0 +1,6 @@
+@cc utilities-do-not-import-modules
+forbid: shapepipe.utilities.* -> shapepipe.modules.*
+Utilities are the primitives module runners share (mask_query is one lookup
+with two consumers, the mask_query and make_cat modules). A utility that
+imports a module inverts that layering and makes one module's internals a
+dependency of every other caller.

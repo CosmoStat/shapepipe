@@ -147,6 +147,7 @@ def rungs():
     return ladder
 
 
+@pytest.mark.decision("shape_measurement.metacal_scheme")
 def test_estimator_has_power(rungs):
     """Every resolved rung's σ_m is small enough that its assert has teeth.
 
@@ -168,6 +169,7 @@ def test_estimator_has_power(rungs):
     )
 
 
+@pytest.mark.decision("shape_measurement.metacal_scheme")
 def test_resolved_rungs_unbiased(rungs):
     """On resolved rungs (ratio >= 0.5), ``|m|`` stays below a few x 1e-3.
 
@@ -189,6 +191,7 @@ def test_resolved_rungs_unbiased(rungs):
     )
 
 
+@pytest.mark.decision("shape_measurement.metacal_scheme")
 def test_response_positive_all_rungs(rungs):
     """Every rung has a non-degenerate positive response ``R11 > 0.1``.
 

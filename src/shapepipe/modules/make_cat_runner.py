@@ -37,7 +37,12 @@ def make_cat_runner(
     module_config_sec,
     w_log,
 ):
-    """Define The Make Catalogue Runner."""
+    """Define The Make Catalogue Runner.
+
+    @sc [decision:catalogue_assembly.star_galaxy_classification]
+
+    @sc [decision:masking.sky_mask_application]
+    """
     # Set input file paths
     if len(input_file_list) == 3:
         # No spread model input
@@ -94,6 +99,10 @@ def make_cat_runner(
         save_psf = config.getboolean(module_config_sec, "SAVE_PSF_DATA")
     else:
         save_psf = False
+    if config.has_option(module_config_sec, "N_EPOCH_SLOTS"):
+        n_epoch_slots = config.getint(module_config_sec, "N_EPOCH_SLOTS")
+    else:
+        n_epoch_slots = None
 
     # Set final output file
     final_cat_file = make_cat.prepare_final_cat_file(
@@ -150,7 +159,9 @@ def make_cat_runner(
             w_log.info(err_msg)
 
     if save_psf:
-        err_msg = sc_inst.process("psf", galaxy_psf_path)
+        err_msg = sc_inst.process(
+            "psf", galaxy_psf_path, n_epoch_slots=n_epoch_slots
+        )
 
     # Optional per-band external healsparse mask lookup (UNIONS-WL/spherex#38):
     # add one MASK_<BAND> column per band, queried at each object's world
