@@ -20,8 +20,10 @@ import pytest
 from astropy.io import fits
 from sqlitedict import SqliteDict
 
+from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.make_cat_package.make_cat import SaveCatalogue
 from shapepipe.modules.ngmix_package.ngmix import Ngmix
+from shapepipe.utilities import cfis
 
 
 class _NullLogger:
@@ -670,3 +672,62 @@ def test_save_psf_data_carries_fourth_moments_per_epoch(tmp_path):
         npt.assert_allclose(out[f"HSM_M4_2_PSF_{n}"], [-10.0])
         npt.assert_allclose(out[f"HSM_RHO4_PSF_{n}"], [-1.0])
     npt.assert_allclose(out["HSM_G1_PSF_2"], [0.03])
+
+
+def _write_sexcat(path, number):
+    """Write a minimal FITS-LDAC tile catalogue (``LDAC_OBJECTS`` at HDU 2)."""
+    n_obj = len(number)
+    cols = [
+        fits.Column(name="NUMBER", format="J", array=np.asarray(number)),
+        fits.Column(name="XWIN_WORLD", format="D", array=np.zeros(n_obj)),
+        fits.Column(
+            name="VIGNET", format="4E", dim="(2,2)",
+            array=np.zeros((n_obj, 2, 2), dtype=np.float32),
+        ),
+    ]
+    fits.HDUList([
+        fits.PrimaryHDU(),
+        fits.BinTableHDU.from_columns(
+            [fits.Column(name="Field Header Card", format="80A",
+                         array=np.array([""]))],
+            name="LDAC_IMHEAD",
+        ),
+        fits.BinTableHDU.from_columns(cols, name="LDAC_OBJECTS"),
+    ]).writeto(path, overwrite=True)
+
+
+def test_save_sextractor_data_writes_tile_unique_id(tmp_path):
+    """SExtractor-mode final catalogue carries tile_id * 10**6 + NUMBER.
+
+    ``NUMBER`` is deliberately gapped and unsorted: the ID is built from the
+    value each row carries, not from its position.
+    """
+    number = np.array([7, 3, 12, 999999])
+    sexcat = tmp_path / "sexcat-301-279.fits"
+    _write_sexcat(sexcat, number)
+
+    final_cat = make_cat.prepare_final_cat_file(str(tmp_path), "-301-279")
+    n_obj = make_cat.save_sextractor_data(final_cat, str(sexcat))
+    final_cat.close()
+
+    assert n_obj == len(number)
+    with fits.open(tmp_path / "final_cat-301-279.fits") as hdul:
+        data = hdul["RESULTS"].data
+        assert "VIGNET" not in data.names
+        npt.assert_array_equal(data["NUMBER"], number)
+        assert data["TILE_UNIQUE_ID"].dtype.newbyteorder("=") == np.int64
+        npt.assert_array_equal(
+            data["TILE_UNIQUE_ID"], 301279 * 10**6 + number
+        )
+        npt.assert_allclose(data["TILE_ID"], 301.279)
+
+
+def test_save_sextractor_data_refuses_number_beyond_id_range(tmp_path):
+    """A NUMBER that would overflow into the tile digits raises, writes nothing."""
+    sexcat = tmp_path / "sexcat-301-279.fits"
+    _write_sexcat(sexcat, np.array([1, 10**6]))
+
+    final_cat = make_cat.prepare_final_cat_file(str(tmp_path), "-301-279")
+    with pytest.raises(cfis.CfisError):
+        make_cat.save_sextractor_data(final_cat, str(sexcat))
+    assert not (tmp_path / "final_cat-301-279.fits").exists()
