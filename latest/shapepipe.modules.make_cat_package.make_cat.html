@@ -869,20 +869,29 @@ single aliased value of the pre-fix code (shapepipe#749).</p>
 <li><p><strong>ngmix_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to NGMIX catalogue</p></li>
 <li><p><strong>moments</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, write the parallel <code class="docutils literal notranslate"><span class="pre">NGMIXm_*</span></code> (moments-branch) columns.</p></li>
 <li><p><strong>[</strong><strong>decision</strong> (<em>&#64;sc</em>)</p></li>
-<li><p><strong>T</strong> (<em>Missing-row</em>)</p></li>
-<li><p><strong>SNR</strong></p></li>
-<li><p><strong>flux</strong></p></li>
-<li><p><strong>magnitude</strong></p></li>
-<li><p><strong>values</strong> (<em>PSF-size and flag</em>)</p></li>
-<li><p><strong>0</strong> (<em>initialize to</em>)</p></li>
-<li><p><strong>Use</strong> (<em>which is in range and cannot identify failure.</em>)</p></li>
-<li><p><strong>ellipticity</strong> (<em>NGMIX_N_EPOCH == 0 for that cut; the -10</em>)</p></li>
-<li><p><strong>-1</strong></p></li>
-<li><p><strong>and</strong> (<em>flux/magnitude-error and 1e30 size-error sentinels are out</em><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#range" title="(in Python v3.14)"><em>range</em></a>)</p></li>
-<li><p><strong>fits.</strong> (<em>can also identify missing</em>)</p></li>
+<li><p><strong>usable</strong> (<em>An object absent from the ngmix catalogue was never fit</em><em> (</em><em>no</em>)</p></li>
+<li><p><strong>epoch</strong></p></li>
+<li><p><strong>what</strong> (<em>or its fit raised</em><em>)</em><em>. Its flag columns take</em>)</p></li>
 </ul>
 </dd>
 </dl>
+<p>:param <code class="xref py py-func docutils literal notranslate"><span class="pre">ngmix.get_type_flags()</span></code> derives for an empty metacal result:
+:param <code class="docutils literal notranslate"><span class="pre">LM_FUNC_NOTFINITE</span></code> in <code class="docutils literal notranslate"><span class="pre">FLAGS_&lt;SHEAR&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">MCAL_FLAGS</span></code>:
+:param and:
+:param <code class="docutils literal notranslate"><span class="pre">MCAL_TYPES_FAIL</span></code> 5:
+:param never 0:
+:param so sp_validation’s <code class="docutils literal notranslate"><span class="pre">MCAL_FLAGS</span> <span class="pre">==</span> <span class="pre">0</span></code>:
+:param and <code class="docutils literal notranslate"><span class="pre">MCAL_TYPES_FAIL</span> <span class="pre">==</span> <span class="pre">0</span></code> cut rejects it. Its <code class="docutils literal notranslate"><span class="pre">T</span></code>:
+:param <code class="docutils literal notranslate"><span class="pre">SNR</span></code>:
+:param flux:
+:param :
+:param magnitude and PSF-size values initialize to 0:
+:param which is in range and:
+:param cannot identify failure; <code class="docutils literal notranslate"><span class="pre">NGMIX_N_EPOCH</span> <span class="pre">==</span> <span class="pre">0</span></code> identifies a:
+:param never-fit row:
+:param and the -10 ellipticity:
+:param -1 flux/magnitude-error and:
+:param 1e30 size-error sentinels are out of range.:</p>
 </dd></dl>
 
 <dl class="py method">

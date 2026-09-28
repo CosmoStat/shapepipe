@@ -625,14 +625,62 @@
 
 
 
+<div class="viewcode-block" id="get_type_flags">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_type_flags">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_type_flags</span><span class="p">(</span><span class="n">fit</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Get Type Flags.</span>
+
+<span class="sd">    Fit flags of one metacal type, reading absence of evidence of success</span>
+<span class="sd">    as failure.</span>
+
+<span class="sd">    @sc [label:convention] mcal-flags-zero-means-measured</span>
+<span class="sd">    A flag of 0 means the fit ran, reported success and returned a finite</span>
+<span class="sd">    shear; no default or fallback may produce 0. FLAGS_&lt;SHEAR&gt;, MCAL_FLAGS</span>
+<span class="sd">    (OR) and MCAL_TYPES_FAIL (count) all derive from this function, and</span>
+<span class="sd">    sp_validation selects galaxies on MCAL_FLAGS == 0 and</span>
+<span class="sd">    MCAL_TYPES_FAIL == 0 as "measured". Every failure carries one of</span>
+<span class="sd">    ngmix's own bits (``ngmix.flags``); ShapePipe adds none:</span>
+
+<span class="sd">    - the fitter reported failure: its own ``flags``, unchanged;</span>
+<span class="sd">    - the fitter reported success (``flags == 0``) without a finite shear</span>
+<span class="sd">      ``g``, or the result has no ``flags``, or the type is absent:</span>
+<span class="sd">      ``LM_FUNC_NOTFINITE`` (2**12). The shear the catalogue holds for</span>
+<span class="sd">      such a type is NaN or a sentinel, never a finite measurement.</span>
+
+<span class="sd">    An object ngmix never fit (no usable epoch, or its fit raised) has no</span>
+<span class="sd">    metacal result at all; make_cat evaluates it as ``{}`` for every type,</span>
+<span class="sd">    so it carries ``LM_FUNC_NOTFINITE`` in every flag column and fails all</span>
+<span class="sd">    five types. ``NGMIX_N_EPOCH == 0`` tells it apart from a fitted object</span>
+<span class="sd">    whose LM fit set the same bit.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fit : dict</span>
+<span class="sd">        One metacal type's fit result; ``{}`` when the type is absent.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        The fit's own ``flags``, or ``ngmix.flags.LM_FUNC_NOTFINITE`` when</span>
+<span class="sd">        the result is absent, lacks ``flags``, or claims success</span>
+<span class="sd">        (``flags == 0``) without a finite shear ``g``.</span>
+<span class="sd">    """</span>
+    <span class="n">notfinite</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">LM_FUNC_NOTFINITE</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'flags'</span><span class="p">,</span> <span class="n">notfinite</span><span class="p">))</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'g'</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">flags</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">g</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">notfinite</span>
+    <span class="k">return</span> <span class="n">flags</span></div>
+
+
+
 <div class="viewcode-block" id="get_mcal_flags">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_mcal_flags">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_mcal_flags</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Get Metacal Flags.</span>
 
-<span class="sd">    Bitwise OR of the per-type metacal fit flags, the v1 contract for the</span>
-<span class="sd">    downstream NGMIX_MCAL_FLAGS column: nonzero whenever any metacal</span>
-<span class="sd">    type's galaxy fit failed.</span>
+<span class="sd">    Object-level metacal flags: the bitwise OR of :func:`get_type_flags`</span>
+<span class="sd">    over :data:`METACAL_TYPES` (the NGMIX_MCAL_FLAGS column).</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -642,11 +690,275 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    int</span>
-<span class="sd">        OR of all per-type ``flags``.</span>
+<span class="sd">        OR of all per-type flags; 0 only if every type was measured.</span>
 <span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bitwise_or</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span>
-        <span class="p">[</span><span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'flags'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">METACAL_TYPES</span><span class="p">]</span>
+        <span class="p">[</span><span class="n">get_type_flags</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{}))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">METACAL_TYPES</span><span class="p">]</span>
     <span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="get_mcal_types_fail">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_mcal_types_fail">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_mcal_types_fail</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Get Metacal Types Fail.</span>
+
+<span class="sd">    Number of metacal types (0-5) with nonzero :func:`get_type_flags` (the</span>
+<span class="sd">    NGMIX_MCAL_TYPES_FAIL column).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    res : dict</span>
+<span class="sd">        MetacalBootstrapper result dict with one entry per metacal type.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        Count of failed metacal types.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="n">get_type_flags</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{}))</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">METACAL_TYPES</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="log_run_health">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.log_run_health">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_run_health</span><span class="p">(</span><span class="n">w_log</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">n_fitted</span><span class="p">,</span> <span class="n">n_flagged</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Log Run Health.</span>
+
+<span class="sd">    Log an error when a run's metacal fits failed wholesale: either no</span>
+<span class="sd">    object fitted at all, or every fitted object carries nonzero</span>
+<span class="sd">    ``mcal_flags``.</span>
+
+<span class="sd">    @sc [label:operations] run-health-logs-not-raises</span>
+<span class="sd">    Wholesale metacal failure is logged at error level, never raised: one</span>
+<span class="sd">    empty edge tile or broken input must not abort a multi-tile campaign</span>
+<span class="sd">    job, and the error line is the signal to catch in review.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    w_log : logging.Logger</span>
+<span class="sd">        Logging instance</span>
+<span class="sd">    count : int</span>
+<span class="sd">        Number of objects considered for fitting</span>
+<span class="sd">    n_fitted : int</span>
+<span class="sd">        Number of objects that were fitted (present in the results list)</span>
+<span class="sd">    n_flagged : int</span>
+<span class="sd">        Number of fitted objects whose ``mcal_flags`` ended up nonzero</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">n_fitted</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">'ngmix: all </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s1"> objects failed the metacal fit'</span>
+            <span class="s1">' (0 fitted); writing an empty catalogue. Expected only for a'</span>
+            <span class="s1">' tile with no usable epochs; otherwise check the vignettes,'</span>
+            <span class="s1">' PSFs and ngmix installation.'</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_fitted</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">n_flagged</span> <span class="o">==</span> <span class="n">n_fitted</span><span class="p">:</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">'ngmix: 100% of </span><span class="si">{</span><span class="n">n_fitted</span><span class="si">}</span><span class="s1"> fitted objects carry nonzero'</span>
+            <span class="s1">' mcal_flags -- the metacal fit failed wholesale; outputs'</span>
+            <span class="s1">' are unusable.'</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="empty_metacal_output">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.empty_metacal_output">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">empty_metacal_output</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""Empty Metacal Output.</span>
+
+<span class="sd">    The five-HDU-shaped output dict :meth:`Ngmix.compile_results` returns</span>
+<span class="sd">    for zero fitted objects: one empty list per column, per metacal type.</span>
+<span class="sd">    Factored out so a tile with no measurable objects gets the identical</span>
+<span class="sd">    catalogue shape whether it is discovered by :meth:`Ngmix.process`</span>
+<span class="sd">    (partly-empty tile, one skipped object at a time) or by one of</span>
+<span class="sd">    ``ngmix_runner``'s all-empty-store guards (wholesale-empty tile, before</span>
+<span class="sd">    any object is read).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        ``{metacal_type: {column: []}}``, matching an empty</span>
+<span class="sd">        :meth:`Ngmix.compile_results` call.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the hardcoded HDU name list drifts out of sync with</span>
+<span class="sd">        :data:`METACAL_TYPES`.</span>
+<span class="sd">    """</span>
+    <span class="c1"># Output HDU order. Same set as METACAL_TYPES, but kept in this</span>
+    <span class="c1"># fixed order so output catalogues stay byte-reproducible; the check</span>
+    <span class="c1"># below guards against the two lists silently diverging.</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"1m"</span><span class="p">,</span> <span class="s2">"1p"</span><span class="p">,</span> <span class="s2">"2m"</span><span class="p">,</span> <span class="s2">"2p"</span><span class="p">,</span> <span class="s2">"noshear"</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">METACAL_TYPES</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"compile_results metacal type list is out of sync with"</span>
+            <span class="o">+</span> <span class="s2">" METACAL_TYPES"</span>
+        <span class="p">)</span>
+    <span class="n">names2</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">'id'</span><span class="p">,</span>
+        <span class="s1">'n_epoch_model'</span><span class="p">,</span>
+        <span class="s1">'mcal_types_fail'</span><span class="p">,</span>
+        <span class="s1">'neighbour_flag'</span><span class="p">,</span>
+        <span class="s1">'nfev_fit'</span><span class="p">,</span>
+        <span class="c1"># galaxy</span>
+        <span class="s1">'g1'</span><span class="p">,</span>
+        <span class="s1">'g1_err'</span><span class="p">,</span>
+        <span class="s1">'g2'</span><span class="p">,</span>
+        <span class="s1">'g2_err'</span><span class="p">,</span>
+        <span class="s1">'T'</span><span class="p">,</span>
+        <span class="s1">'T_err'</span><span class="p">,</span>
+        <span class="s1">'flux'</span><span class="p">,</span>
+        <span class="s1">'flux_err'</span><span class="p">,</span>
+        <span class="s1">'s2n'</span><span class="p">,</span>
+        <span class="s1">'mag'</span><span class="p">,</span>
+        <span class="s1">'mag_err'</span><span class="p">,</span>
+        <span class="s1">'flags'</span><span class="p">,</span>
+        <span class="s1">'mcal_flags'</span><span class="p">,</span>
+        <span class="c1"># original image PSF (psfex/mccd), fit by average_original_psf</span>
+        <span class="s1">'g1_psf_orig'</span><span class="p">,</span>
+        <span class="s1">'g2_psf_orig'</span><span class="p">,</span>
+        <span class="s1">'g1_err_psf_orig'</span><span class="p">,</span>
+        <span class="s1">'g2_err_psf_orig'</span><span class="p">,</span>
+        <span class="s1">'T_psf_orig'</span><span class="p">,</span>
+        <span class="s1">'T_err_psf_orig'</span><span class="p">,</span>
+        <span class="c1"># metacal reconvolution kernel, fit by average_multiepoch_psf</span>
+        <span class="s1">'g1_psf_reconv'</span><span class="p">,</span>
+        <span class="s1">'g2_psf_reconv'</span><span class="p">,</span>
+        <span class="s1">'g1_err_psf_reconv'</span><span class="p">,</span>
+        <span class="s1">'g2_err_psf_reconv'</span><span class="p">,</span>
+        <span class="s1">'T_psf_reconv'</span><span class="p">,</span>
+        <span class="s1">'T_err_psf_reconv'</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">{</span><span class="n">kk</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="n">names2</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">names</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="write_ngmix_fits">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.write_ngmix_fits">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_ngmix_fits</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">output_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Write Ngmix Fits.</span>
+
+<span class="sd">    Write a compiled ngmix results dict to a fresh output FITS file, one</span>
+<span class="sd">    HDU per metacal type. The file must not already exist; an existing</span>
+<span class="sd">    output is appended to by :meth:`Ngmix.save_results`, not this function.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    output_path : str</span>
+<span class="sd">        Path of the FITS file to create</span>
+<span class="sd">    output_dict : dict</span>
+<span class="sd">        Compiled results, as returned by :meth:`Ngmix.compile_results` or</span>
+<span class="sd">        :func:`empty_metacal_output`</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    IndexError</span>
+<span class="sd">        If ``output_dict`` does not have exactly five HDUs</span>
+<span class="sd">    """</span>
+    <span class="n">n_hdu</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">n_hdu</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"FITS output file data has </span><span class="si">{</span><span class="n">n_hdu</span><span class="si">}</span><span class="s2"> HDUs,"</span>
+            <span class="o">+</span> <span class="s2">" expected are 5"</span>
+        <span class="p">)</span>
+    <span class="n">f_out</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
+        <span class="n">output_path</span><span class="p">,</span> <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">output_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">f_out</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">ext_name</span><span class="o">=</span><span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="write_empty_tile_output">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.write_empty_tile_output">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_empty_tile_output</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">file_number_string</span><span class="p">,</span> <span class="n">w_log</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Write Empty Tile Output.</span>
+
+<span class="sd">    Write ngmix's empty-tile product for a guard that fires before any</span>
+<span class="sd">    stamp is read: the same five-HDU empty catalogue and run-health error</span>
+<span class="sd">    line that :meth:`Ngmix.process` writes once every object in a tile has</span>
+<span class="sd">    been skipped, without constructing an ``Ngmix`` instance (which would</span>
+<span class="sd">    open the galaxy vignette store) or reading any vignette.</span>
+
+<span class="sd">    Used by ``ngmix_runner``'s all-empty-store guards, which must return</span>
+<span class="sd">    before the galaxy vignette store is opened at all -- reading its</span>
+<span class="sd">    many-epoch, many-object arrays is what triggers a C-level malloc crash</span>
+<span class="sd">    when the store is large (see the PSF-empty guard's own comment).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    output_dir : str</span>
+<span class="sd">        Output directory</span>
+<span class="sd">    file_number_string : str</span>
+<span class="sd">        File numbering scheme</span>
+<span class="sd">    w_log : logging.Logger</span>
+<span class="sd">        Logging instance</span>
+<span class="sd">    count : int</span>
+<span class="sd">        Number of objects considered for fitting (see :func:`log_run_health`);</span>
+<span class="sd">        for these guards, the number of entries in the empty store.</span>
+<span class="sd">    """</span>
+    <span class="n">log_run_health</span><span class="p">(</span><span class="n">w_log</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">n_fitted</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_flagged</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">output_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">/ngmix</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2">.fits"</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_path</span><span class="p">):</span>
+        <span class="n">write_ngmix_fits</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">empty_metacal_output</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="check_wcs_centroid_offset">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.check_wcs_centroid_offset">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_wcs_centroid_offset</span><span class="p">(</span><span class="n">centroid_source</span><span class="p">,</span> <span class="n">tile_cat</span><span class="p">,</span> <span class="n">gal_vign_cat</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Check WCS Centroid Offset.</span>
+
+<span class="sd">    Fail once, up front, when ``centroid_source="wcs"`` would have no</span>
+<span class="sd">    coadd-centroid offset to place the galaxy Jacobian at.</span>
+
+<span class="sd">    @sc [label:coupling] wcs-centroid-needs-offset</span>
+<span class="sd">    ``centroid_source="wcs"`` reads the ``OFFSET`` the stamp extractor</span>
+<span class="sd">    (:func:`shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps`)</span>
+<span class="sd">    writes into every vignette epoch entry; vignettes cut before that</span>
+<span class="sd">    extractor carry none. Left unchecked, :func:`make_ngmix_observation`</span>
+<span class="sd">    raises for every object in turn and :meth:`Ngmix.process`'s per-object</span>
+<span class="sd">    exception handling turns the whole tile into a silently empty</span>
+<span class="sd">    catalogue. OFFSET is a property of the extraction run, not of any one</span>
+<span class="sd">    object, so the first object with epochs speaks for the whole vignette</span>
+<span class="sd">    file: checking it is enough, and scanning every object would only cost</span>
+<span class="sd">    more sqlitedict unpickling for the same answer.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    centroid_source : {"wcs", "hsm"}</span>
+<span class="sd">        The configured centroid source; a no-op unless it is ``"wcs"``.</span>
+<span class="sd">    tile_cat : Tile_cat</span>
+<span class="sd">        Tile catalogue, read for its object ID order.</span>
+<span class="sd">    gal_vign_cat : Mapping</span>
+<span class="sd">        Galaxy vignette store, keyed by ``str(obj_id)``.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``centroid_source == "wcs"`` and the first object with epochs</span>
+<span class="sd">        has an epoch entry with no ``OFFSET``.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">centroid_source</span> <span class="o">!=</span> <span class="s2">"wcs"</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">for</span> <span class="n">obj_id</span> <span class="ow">in</span> <span class="n">tile_cat</span><span class="o">.</span><span class="n">obj_id</span><span class="p">:</span>
+        <span class="n">gal_obj</span> <span class="o">=</span> <span class="n">gal_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">gal_obj</span> <span class="o">==</span> <span class="s1">'empty'</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">gal_obj</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">first_epoch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">gal_obj</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="s1">'OFFSET'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">first_epoch</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"centroid_source='wcs' requires the coadd-centroid OFFSET"</span>
+                <span class="s2">" the stamp extractor writes into every vignette epoch,"</span>
+                <span class="s2">" but this tile's vignettes carry none: re-extract the"</span>
+                <span class="s2">" stamps with the current vignetmaker, or set"</span>
+                <span class="s2">" centroid_source='hsm'."</span>
+            <span class="p">)</span>
+        <span class="k">return</span></div>
 
 
 
@@ -1225,60 +1537,26 @@
 <span class="sd">            If SNR key not found</span>
 
 <span class="sd">        """</span>
-        <span class="c1"># Output HDU order. Same set as METACAL_TYPES, but kept in this</span>
-        <span class="c1"># fixed order so output catalogues stay byte-reproducible; the check</span>
-        <span class="c1"># below guards against the two lists silently diverging.</span>
-        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"1m"</span><span class="p">,</span> <span class="s2">"1p"</span><span class="p">,</span> <span class="s2">"2m"</span><span class="p">,</span> <span class="s2">"2p"</span><span class="p">,</span> <span class="s2">"noshear"</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">METACAL_TYPES</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"compile_results metacal type list is out of sync with"</span>
-                <span class="o">+</span> <span class="s2">" METACAL_TYPES"</span>
-            <span class="p">)</span>
-        <span class="n">names2</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s1">'id'</span><span class="p">,</span>
-            <span class="s1">'n_epoch_model'</span><span class="p">,</span>
-            <span class="s1">'mcal_types_fail'</span><span class="p">,</span>
-            <span class="s1">'neighbour_flag'</span><span class="p">,</span>
-            <span class="s1">'nfev_fit'</span><span class="p">,</span>
-            <span class="c1"># galaxy</span>
-            <span class="s1">'g1'</span><span class="p">,</span>
-            <span class="s1">'g1_err'</span><span class="p">,</span>
-            <span class="s1">'g2'</span><span class="p">,</span>
-            <span class="s1">'g2_err'</span><span class="p">,</span>
-            <span class="s1">'T'</span><span class="p">,</span>
-            <span class="s1">'T_err'</span><span class="p">,</span>
-            <span class="s1">'flux'</span><span class="p">,</span>
-            <span class="s1">'flux_err'</span><span class="p">,</span>
-            <span class="s1">'s2n'</span><span class="p">,</span>
-            <span class="s1">'mag'</span><span class="p">,</span>
-            <span class="s1">'mag_err'</span><span class="p">,</span>
-            <span class="s1">'flags'</span><span class="p">,</span>
-            <span class="s1">'mcal_flags'</span><span class="p">,</span>
-            <span class="c1"># original image PSF (psfex/mccd), fit by average_original_psf</span>
-            <span class="s1">'g1_psf_orig'</span><span class="p">,</span>
-            <span class="s1">'g2_psf_orig'</span><span class="p">,</span>
-            <span class="s1">'g1_err_psf_orig'</span><span class="p">,</span>
-            <span class="s1">'g2_err_psf_orig'</span><span class="p">,</span>
-            <span class="s1">'T_psf_orig'</span><span class="p">,</span>
-            <span class="s1">'T_err_psf_orig'</span><span class="p">,</span>
-            <span class="c1"># metacal reconvolution kernel, fit by average_multiepoch_psf</span>
-            <span class="s1">'g1_psf_reconv'</span><span class="p">,</span>
-            <span class="s1">'g2_psf_reconv'</span><span class="p">,</span>
-            <span class="s1">'g1_err_psf_reconv'</span><span class="p">,</span>
-            <span class="s1">'g2_err_psf_reconv'</span><span class="p">,</span>
-            <span class="s1">'T_psf_reconv'</span><span class="p">,</span>
-            <span class="s1">'T_err_psf_reconv'</span><span class="p">,</span>
-        <span class="p">]</span>
-        <span class="n">output_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">{</span><span class="n">kk</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="n">names2</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">names</span><span class="p">}</span>
+        <span class="c1"># Column layout (HDU names and per-type columns) lives in</span>
+        <span class="c1"># empty_metacal_output, shared with the runner's all-empty-store</span>
+        <span class="c1"># guards so every zero-object catalogue has the identical shape.</span>
+        <span class="n">output_dict</span> <span class="o">=</span> <span class="n">empty_metacal_output</span><span class="p">()</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">output_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)):</span>
+            <span class="c1"># Object-level quality columns, derived from the same per-type</span>
+            <span class="c1"># flags as the ``flags`` column below (see get_type_flags).</span>
+            <span class="n">mcal_flags</span> <span class="o">=</span> <span class="n">get_mcal_flags</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+            <span class="n">mcal_types_fail</span> <span class="o">=</span> <span class="n">get_mcal_types_fail</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
             <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
-                <span class="n">fit</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">]</span>
+                <span class="n">fit</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{})</span>
+                <span class="n">flags</span> <span class="o">=</span> <span class="n">get_type_flags</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
 
                 <span class="c1"># ngmix 2.x does not raise on fit failure: after ntry the</span>
                 <span class="c1"># result keeps flags != 0 and carries none of the</span>
                 <span class="c1"># measurement keys (g, g_cov, T, T_err, flux, flux_err,</span>
-                <span class="c1"># s2n).  NaN-fill those so failed types are recorded with</span>
-                <span class="c1"># their flags instead of crashing the tile on a KeyError.</span>
+                <span class="c1"># s2n). NaN-fill those (and an absent type) so failed types</span>
+                <span class="c1"># are recorded with their flags instead of crashing the tile</span>
+                <span class="c1"># on a KeyError.</span>
                 <span class="n">flux</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"flux"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
                 <span class="n">flux_err</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"flux_err"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
                 <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"g"</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)))</span>
@@ -1295,9 +1573,7 @@
                 <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"n_epoch_model"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">"n_epoch_model"</span><span class="p">]</span>
                 <span class="p">)</span>
-                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"mcal_types_fail"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">"mcal_types_fail"</span><span class="p">]</span>
-                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"mcal_types_fail"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mcal_types_fail</span><span class="p">)</span>
                 <span class="c1"># Per-object blend flag (see process()); replicated across all</span>
                 <span class="c1"># shear types like id / n_epoch_model / mcal_types_fail.</span>
                 <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"neighbour_flag"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -1344,15 +1620,13 @@
                     <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"s2n"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit</span><span class="p">[</span><span class="s2">"s2n"</span><span class="p">])</span>
                 <span class="k">elif</span> <span class="s2">"s2n_r"</span> <span class="ow">in</span> <span class="n">fit</span><span class="p">:</span>
                     <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"s2n"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit</span><span class="p">[</span><span class="s2">"s2n_r"</span><span class="p">])</span>
-                <span class="k">elif</span> <span class="n">fit</span><span class="p">[</span><span class="s2">"flags"</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">elif</span> <span class="n">flags</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"s2n"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">"No SNR key (s2n, s2n_r) found in results"</span><span class="p">)</span>
 
-                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"flags"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit</span><span class="p">[</span><span class="s2">"flags"</span><span class="p">])</span>
-                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"mcal_flags"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"mcal_flags"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"flags"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flags</span><span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"mcal_flags"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mcal_flags</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">output_dict</span></div>
 
@@ -1401,11 +1675,7 @@
 
         <span class="n">output_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_output_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_name</span><span class="p">):</span>
-            <span class="n">f_out</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
-                <span class="n">output_name</span><span class="p">,</span> <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span>
-            <span class="p">)</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">output_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">f_out</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">ext_name</span><span class="o">=</span><span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+            <span class="n">write_ngmix_fits</span><span class="p">(</span><span class="n">output_name</span><span class="p">,</span> <span class="n">output_dict</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">output_name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">'update'</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
@@ -1590,10 +1860,21 @@
 <span class="sd">        dict</span>
 <span class="sd">            Dictionary containing the NGMIX metacal results</span>
 
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If ``centroid_source == "wcs"`` and the vignette catalogue</span>
+<span class="sd">            carries no coadd-centroid OFFSET (see</span>
+<span class="sd">            :func:`check_wcs_centroid_offset`).</span>
+
 <span class="sd">        @sc [decision:shape_measurement.fit_initialisation,decision:shape_measurement.ngmix_seed_mode]</span>
 <span class="sd">        """</span>
         <span class="n">tile_cat</span> <span class="o">=</span> <span class="n">Tile_cat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seg_cat_path</span><span class="p">)</span>
         <span class="n">vignet_cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vignet_cat</span>
+
+        <span class="n">check_wcs_centroid_offset</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_centroid_source</span><span class="p">,</span> <span class="n">tile_cat</span><span class="p">,</span> <span class="n">vignet_cat</span><span class="o">.</span><span class="n">gal_vign_cat</span>
+        <span class="p">)</span>
 
         <span class="n">final_res</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -1602,6 +1883,7 @@
         <span class="n">n_no_epoch</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">n_ngmix_fail</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">n_fitted</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n_flagged</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">id_first</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="n">id_last</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="n">count_batch</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1621,8 +1903,12 @@
             <span class="c1"># Read each store once here and pass the dicts down: every</span>
             <span class="c1"># sqlitedict access unpickles the object's whole all-epoch dict.</span>
             <span class="n">psf_obj</span> <span class="o">=</span> <span class="n">vignet_cat</span><span class="o">.</span><span class="n">psf_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span>
+            <span class="c1"># Avoid allocating galaxy stamp arrays when there is no PSF coverage.</span>
+            <span class="k">if</span> <span class="n">psf_obj</span> <span class="o">==</span> <span class="s1">'empty'</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">psf_obj</span><span class="p">:</span>
+                <span class="n">n_empty_cat</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
             <span class="n">gal_obj</span> <span class="o">=</span> <span class="n">vignet_cat</span><span class="o">.</span><span class="n">gal_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)]</span>
-            <span class="k">if</span> <span class="n">psf_obj</span> <span class="o">==</span> <span class="s1">'empty'</span> <span class="ow">or</span> <span class="n">gal_obj</span> <span class="o">==</span> <span class="s1">'empty'</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">gal_obj</span> <span class="o">==</span> <span class="s1">'empty'</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">gal_obj</span><span class="p">:</span>
                 <span class="n">n_empty_cat</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">continue</span>
 
@@ -1698,15 +1984,10 @@
             <span class="c1"># epochs that survived the PSF fit and entered the model,</span>
             <span class="c1"># not the number of epochs submitted (v1 contract)</span>
             <span class="n">res</span><span class="p">[</span><span class="s1">'n_epoch_model'</span><span class="p">]</span> <span class="o">=</span> <span class="n">psf_res</span><span class="p">[</span><span class="s1">'n_epoch'</span><span class="p">]</span>
-            <span class="c1"># Count of metacal fit types (0-5) with nonzero fit flags.</span>
-            <span class="c1"># (In ngmix v1 the same-named column counted moments-initial-guess</span>
-            <span class="c1"># failures from get_guess, which no longer exists — hence the</span>
-            <span class="c1"># rename to mcal_types_fail / NGMIX_MCAL_TYPES_FAIL.)</span>
-            <span class="n">res</span><span class="p">[</span><span class="s1">'mcal_types_fail'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
-                <span class="mi">1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">METACAL_TYPES</span>
-                <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'flags'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
-            <span class="p">)</span>
-            <span class="n">res</span><span class="p">[</span><span class="s1">'mcal_flags'</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_mcal_flags</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+            <span class="c1"># The mcal flag columns are derived from the per-type results in</span>
+            <span class="c1"># compile_results; here they only feed the run-health count.</span>
+            <span class="k">if</span> <span class="n">get_mcal_flags</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">n_flagged</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="c1"># Two distinct PSF families (shapepipe#749), each carrying its own</span>
             <span class="c1"># ellipticity AND size: the metacal reconvolution kernel (psf_res)</span>
             <span class="c1"># and the original image PSF (psf_orig_res). Tag both into res from</span>
@@ -1750,6 +2031,8 @@
             <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">n_ngmix_fail</span><span class="si">}</span><span class="s2"> fit failed,"</span>
             <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">n_fitted</span><span class="si">}</span><span class="s2"> fitted"</span>
         <span class="p">)</span>
+
+        <span class="n">log_run_health</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">n_fitted</span><span class="p">,</span> <span class="n">n_flagged</span><span class="p">)</span>
 
         <span class="n">vignet_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 

@@ -588,7 +588,14 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._replace"><code class="docutils literal notranslate"><span class="pre">MetacalResult._replace()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_type_flags"><code class="docutils literal notranslate"><span class="pre">get_type_flags()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_mcal_flags"><code class="docutils literal notranslate"><span class="pre">get_mcal_flags()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_mcal_types_fail"><code class="docutils literal notranslate"><span class="pre">get_mcal_types_fail()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.log_run_health"><code class="docutils literal notranslate"><span class="pre">log_run_health()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.empty_metacal_output"><code class="docutils literal notranslate"><span class="pre">empty_metacal_output()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.write_ngmix_fits"><code class="docutils literal notranslate"><span class="pre">write_ngmix_fits()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.write_empty_tile_output"><code class="docutils literal notranslate"><span class="pre">write_empty_tile_output()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.check_wcs_centroid_offset"><code class="docutils literal notranslate"><span class="pre">check_wcs_centroid_offset()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">get_prior()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="docutils literal notranslate"><span class="pre">position_seed()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat"><code class="docutils literal notranslate"><span class="pre">Tile_cat</span></code></a><ul class="nav section-nav flex-column">
@@ -739,21 +746,207 @@ against a reconv/orig transposition at call sites. Still a plain tuple, so
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.get_type_flags">
+<span class="sig-name descname"><span class="pre">get_type_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#get_type_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.get_type_flags" title="Link to this definition">#</a></dt>
+<dd><p>Get Type Flags.</p>
+<p>Fit flags of one metacal type, reading absence of evidence of success
+as failure.</p>
+<p>&#64;sc [label:convention] mcal-flags-zero-means-measured
+A flag of 0 means the fit ran, reported success and returned a finite
+shear; no default or fallback may produce 0. FLAGS_&lt;SHEAR&gt;, MCAL_FLAGS
+(OR) and MCAL_TYPES_FAIL (count) all derive from this function, and
+sp_validation selects galaxies on MCAL_FLAGS == 0 and
+MCAL_TYPES_FAIL == 0 as “measured”. Every failure carries one of
+ngmix’s own bits (<code class="docutils literal notranslate"><span class="pre">ngmix.flags</span></code>); ShapePipe adds none:</p>
+<ul class="simple">
+<li><p>the fitter reported failure: its own <code class="docutils literal notranslate"><span class="pre">flags</span></code>, unchanged;</p></li>
+<li><p>the fitter reported success (<code class="docutils literal notranslate"><span class="pre">flags</span> <span class="pre">==</span> <span class="pre">0</span></code>) without a finite shear
+<code class="docutils literal notranslate"><span class="pre">g</span></code>, or the result has no <code class="docutils literal notranslate"><span class="pre">flags</span></code>, or the type is absent:
+<code class="docutils literal notranslate"><span class="pre">LM_FUNC_NOTFINITE</span></code> (2**12). The shear the catalogue holds for
+such a type is NaN or a sentinel, never a finite measurement.</p></li>
+</ul>
+<p>An object ngmix never fit (no usable epoch, or its fit raised) has no
+metacal result at all; make_cat evaluates it as <code class="docutils literal notranslate"><span class="pre">{}</span></code> for every type,
+so it carries <code class="docutils literal notranslate"><span class="pre">LM_FUNC_NOTFINITE</span></code> in every flag column and fails all
+five types. <code class="docutils literal notranslate"><span class="pre">NGMIX_N_EPOCH</span> <span class="pre">==</span> <span class="pre">0</span></code> tells it apart from a fitted object
+whose LM fit set the same bit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fit</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – One metacal type’s fit result; <code class="docutils literal notranslate"><span class="pre">{}</span></code> when the type is absent.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The fit’s own <code class="docutils literal notranslate"><span class="pre">flags</span></code>, or <code class="docutils literal notranslate"><span class="pre">ngmix.flags.LM_FUNC_NOTFINITE</span></code> when
+the result is absent, lacks <code class="docutils literal notranslate"><span class="pre">flags</span></code>, or claims success
+(<code class="docutils literal notranslate"><span class="pre">flags</span> <span class="pre">==</span> <span class="pre">0</span></code>) without a finite shear <code class="docutils literal notranslate"><span class="pre">g</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.get_mcal_flags">
 <span class="sig-name descname"><span class="pre">get_mcal_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#get_mcal_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.get_mcal_flags" title="Link to this definition">#</a></dt>
 <dd><p>Get Metacal Flags.</p>
-<p>Bitwise OR of the per-type metacal fit flags, the v1 contract for the
-downstream NGMIX_MCAL_FLAGS column: nonzero whenever any metacal
-type’s galaxy fit failed.</p>
+<p>Object-level metacal flags: the bitwise OR of <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.get_type_flags" title="shapepipe.modules.ngmix_package.ngmix.get_type_flags"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_type_flags()</span></code></a>
+over <code class="xref py py-data docutils literal notranslate"><span class="pre">METACAL_TYPES</span></code> (the NGMIX_MCAL_FLAGS column).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>res</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – MetacalBootstrapper result dict with one entry per metacal type.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>OR of all per-type <code class="docutils literal notranslate"><span class="pre">flags</span></code>.</p>
+<dd class="field-even"><p>OR of all per-type flags; 0 only if every type was measured.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.get_mcal_types_fail">
+<span class="sig-name descname"><span class="pre">get_mcal_types_fail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#get_mcal_types_fail"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.get_mcal_types_fail" title="Link to this definition">#</a></dt>
+<dd><p>Get Metacal Types Fail.</p>
+<p>Number of metacal types (0-5) with nonzero <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.get_type_flags" title="shapepipe.modules.ngmix_package.ngmix.get_type_flags"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_type_flags()</span></code></a> (the
+NGMIX_MCAL_TYPES_FAIL column).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>res</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – MetacalBootstrapper result dict with one entry per metacal type.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Count of failed metacal types.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.log_run_health">
+<span class="sig-name descname"><span class="pre">log_run_health</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_fitted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_flagged</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#log_run_health"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.log_run_health" title="Link to this definition">#</a></dt>
+<dd><p>Log Run Health.</p>
+<p>Log an error when a run’s metacal fits failed wholesale: either no
+object fitted at all, or every fitted object carries nonzero
+<code class="docutils literal notranslate"><span class="pre">mcal_flags</span></code>.</p>
+<p>&#64;sc [label:operations] run-health-logs-not-raises
+Wholesale metacal failure is logged at error level, never raised: one
+empty edge tile or broken input must not abort a multi-tile campaign
+job, and the error line is the signal to catch in review.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a>) – Logging instance</p></li>
+<li><p><strong>count</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of objects considered for fitting</p></li>
+<li><p><strong>n_fitted</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of objects that were fitted (present in the results list)</p></li>
+<li><p><strong>n_flagged</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of fitted objects whose <code class="docutils literal notranslate"><span class="pre">mcal_flags</span></code> ended up nonzero</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.empty_metacal_output">
+<span class="sig-name descname"><span class="pre">empty_metacal_output</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#empty_metacal_output"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.empty_metacal_output" title="Link to this definition">#</a></dt>
+<dd><p>Empty Metacal Output.</p>
+<p>The five-HDU-shaped output dict <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results" title="shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Ngmix.compile_results()</span></code></a> returns
+for zero fitted objects: one empty list per column, per metacal type.
+Factored out so a tile with no measurable objects gets the identical
+catalogue shape whether it is discovered by <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.process" title="shapepipe.modules.ngmix_package.ngmix.Ngmix.process"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Ngmix.process()</span></code></a>
+(partly-empty tile, one skipped object at a time) or by one of
+<code class="docutils literal notranslate"><span class="pre">ngmix_runner</span></code>’s all-empty-store guards (wholesale-empty tile, before
+any object is read).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">{metacal_type:</span> <span class="pre">{column:</span> <span class="pre">[]}}</span></code>, matching an empty
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results" title="shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Ngmix.compile_results()</span></code></a> call.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the hardcoded HDU name list drifts out of sync with
+<code class="xref py py-data docutils literal notranslate"><span class="pre">METACAL_TYPES</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.write_ngmix_fits">
+<span class="sig-name descname"><span class="pre">write_ngmix_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#write_ngmix_fits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.write_ngmix_fits" title="Link to this definition">#</a></dt>
+<dd><p>Write Ngmix Fits.</p>
+<p>Write a compiled ngmix results dict to a fresh output FITS file, one
+HDU per metacal type. The file must not already exist; an existing
+output is appended to by <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.save_results" title="shapepipe.modules.ngmix_package.ngmix.Ngmix.save_results"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Ngmix.save_results()</span></code></a>, not this function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path of the FITS file to create</p></li>
+<li><p><strong>output_dict</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Compiled results, as returned by <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results" title="shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Ngmix.compile_results()</span></code></a> or
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.empty_metacal_output" title="shapepipe.modules.ngmix_package.ngmix.empty_metacal_output"><code class="xref py py-func docutils literal notranslate"><span class="pre">empty_metacal_output()</span></code></a></p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#IndexError" title="(in Python v3.14)"><strong>IndexError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">output_dict</span></code> does not have exactly five HDUs</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.write_empty_tile_output">
+<span class="sig-name descname"><span class="pre">write_empty_tile_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#write_empty_tile_output"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.write_empty_tile_output" title="Link to this definition">#</a></dt>
+<dd><p>Write Empty Tile Output.</p>
+<p>Write ngmix’s empty-tile product for a guard that fires before any
+stamp is read: the same five-HDU empty catalogue and run-health error
+line that <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.process" title="shapepipe.modules.ngmix_package.ngmix.Ngmix.process"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Ngmix.process()</span></code></a> writes once every object in a tile has
+been skipped, without constructing an <code class="docutils literal notranslate"><span class="pre">Ngmix</span></code> instance (which would
+open the galaxy vignette store) or reading any vignette.</p>
+<p>Used by <code class="docutils literal notranslate"><span class="pre">ngmix_runner</span></code>’s all-empty-store guards, which must return
+before the galaxy vignette store is opened at all – reading its
+many-epoch, many-object arrays is what triggers a C-level malloc crash
+when the store is large (see the PSF-empty guard’s own comment).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Output directory</p></li>
+<li><p><strong>file_number_string</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – File numbering scheme</p></li>
+<li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a>) – Logging instance</p></li>
+<li><p><strong>count</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of objects considered for fitting (see <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.log_run_health" title="shapepipe.modules.ngmix_package.ngmix.log_run_health"><code class="xref py py-func docutils literal notranslate"><span class="pre">log_run_health()</span></code></a>);
+for these guards, the number of entries in the empty store.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.check_wcs_centroid_offset">
+<span class="sig-name descname"><span class="pre">check_wcs_centroid_offset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_cat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gal_vign_cat</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#check_wcs_centroid_offset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.check_wcs_centroid_offset" title="Link to this definition">#</a></dt>
+<dd><p>Check WCS Centroid Offset.</p>
+<p>Fail once, up front, when <code class="docutils literal notranslate"><span class="pre">centroid_source=&quot;wcs&quot;</span></code> would have no
+coadd-centroid offset to place the galaxy Jacobian at.</p>
+<p>&#64;sc [label:coupling] wcs-centroid-needs-offset
+<code class="docutils literal notranslate"><span class="pre">centroid_source=&quot;wcs&quot;</span></code> reads the <code class="docutils literal notranslate"><span class="pre">OFFSET</span></code> the stamp extractor
+(<a class="reference internal" href="shapepipe.modules.vignetmaker_package.vignetmaker.html#shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps" title="shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps"><code class="xref py py-func docutils literal notranslate"><span class="pre">shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps()</span></code></a>)
+writes into every vignette epoch entry; vignettes cut before that
+extractor carry none. Left unchecked, <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a>
+raises for every object in turn and <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix.process" title="shapepipe.modules.ngmix_package.ngmix.Ngmix.process"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Ngmix.process()</span></code></a>’s per-object
+exception handling turns the whole tile into a silently empty
+catalogue. OFFSET is a property of the extraction run, not of any one
+object, so the first object with epochs speaks for the whole vignette
+file: checking it is enough, and scanning every object would only cost
+more sqlitedict unpickling for the same answer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>centroid_source</strong> (<em>{&quot;wcs&quot;</em><em>, </em><em>&quot;hsm&quot;}</em>) – The configured centroid source; a no-op unless it is <code class="docutils literal notranslate"><span class="pre">&quot;wcs&quot;</span></code>.</p></li>
+<li><p><strong>tile_cat</strong> (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat" title="shapepipe.modules.ngmix_package.ngmix.Tile_cat"><em>Tile_cat</em></a>) – Tile catalogue, read for its object ID order.</p></li>
+<li><p><strong>gal_vign_cat</strong> (<em>Mapping</em>) – Galaxy vignette store, keyed by <code class="docutils literal notranslate"><span class="pre">str(obj_id)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">centroid_source</span> <span class="pre">==</span> <span class="pre">&quot;wcs&quot;</span></code> and the first object with epochs
+has an epoch entry with no <code class="docutils literal notranslate"><span class="pre">OFFSET</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1116,11 +1309,18 @@ runs metacal convolutions and ngmix fitting</p>
 </div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><em>dict</em> – Dictionary containing the NGMIX metacal results</p></li>
-<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.fit_initialisation,decision:shape_measurement.ngmix_seed_mode]</em>)</p></li>
+<dd class="field-odd"><p>Dictionary containing the NGMIX metacal results</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">centroid_source</span> <span class="pre">==</span> <span class="pre">&quot;wcs&quot;</span></code> and the vignette catalogue
+carries no coadd-centroid OFFSET (see
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.check_wcs_centroid_offset" title="shapepipe.modules.ngmix_package.ngmix.check_wcs_centroid_offset"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_wcs_centroid_offset()</span></code></a>).</p></li>
+<li><p><strong>&#64;sc</strong><strong> [</strong><strong>decision:shape_measurement.fit_initialisation</strong><strong>,</strong><strong>decision:shape_measurement.ngmix_seed_mode</strong><strong>]</strong> – </p></li>
 </ul>
-</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1693,7 +1893,14 @@ them. Unpacks positionally as <code class="docutils literal notranslate"><span c
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult._replace"><code class="docutils literal notranslate"><span class="pre">MetacalResult._replace()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_type_flags"><code class="docutils literal notranslate"><span class="pre">get_type_flags()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_mcal_flags"><code class="docutils literal notranslate"><span class="pre">get_mcal_flags()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_mcal_types_fail"><code class="docutils literal notranslate"><span class="pre">get_mcal_types_fail()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.log_run_health"><code class="docutils literal notranslate"><span class="pre">log_run_health()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.empty_metacal_output"><code class="docutils literal notranslate"><span class="pre">empty_metacal_output()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.write_ngmix_fits"><code class="docutils literal notranslate"><span class="pre">write_ngmix_fits()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.write_empty_tile_output"><code class="docutils literal notranslate"><span class="pre">write_empty_tile_output()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.check_wcs_centroid_offset"><code class="docutils literal notranslate"><span class="pre">check_wcs_centroid_offset()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">get_prior()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="docutils literal notranslate"><span class="pre">position_seed()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat"><code class="docutils literal notranslate"><span class="pre">Tile_cat</span></code></a><ul class="nav section-nav flex-column">

@@ -572,6 +572,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.wcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">WCS</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlitedict</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteDict</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.modules.ngmix_package.ngmix</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">get_mcal_flags</span><span class="p">,</span>
+    <span class="n">get_mcal_types_fail</span><span class="p">,</span>
+    <span class="n">get_type_flags</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">mask_query</span>
 
@@ -1014,11 +1019,16 @@
 <span class="sd">            If True, write the parallel ``NGMIXm_*`` (moments-branch) columns.</span>
 
 <span class="sd">        @sc [decision:catalogue_assembly.failure_sentinels,label:coupling] failure-sentinel-cut-semantics</span>
-<span class="sd">        Missing-row ``T``, ``SNR``, flux, magnitude, PSF-size and flag values</span>
-<span class="sd">        initialize to 0, which is in range and cannot identify failure. Use</span>
-<span class="sd">        ``NGMIX_N_EPOCH == 0`` for that cut; the -10 ellipticity, -1</span>
-<span class="sd">        flux/magnitude-error and 1e30 size-error sentinels are out of range and</span>
-<span class="sd">        can also identify missing fits.</span>
+<span class="sd">        An object absent from the ngmix catalogue was never fit (no usable</span>
+<span class="sd">        epoch, or its fit raised). Its flag columns take what</span>
+<span class="sd">        :func:`ngmix.get_type_flags` derives for an empty metacal result:</span>
+<span class="sd">        ``LM_FUNC_NOTFINITE`` in ``FLAGS_&lt;SHEAR&gt;`` and ``MCAL_FLAGS``, and</span>
+<span class="sd">        ``MCAL_TYPES_FAIL`` 5, never 0, so sp_validation's ``MCAL_FLAGS == 0``</span>
+<span class="sd">        and ``MCAL_TYPES_FAIL == 0`` cut rejects it. Its ``T``, ``SNR``, flux,</span>
+<span class="sd">        magnitude and PSF-size values initialize to 0, which is in range and</span>
+<span class="sd">        cannot identify failure; ``NGMIX_N_EPOCH == 0`` identifies a</span>
+<span class="sd">        never-fit row, and the -10 ellipticity, -1 flux/magnitude-error and</span>
+<span class="sd">        1e30 size-error sentinels are out of range.</span>
 
 <span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_key_ends</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"1M"</span><span class="p">,</span> <span class="s2">"1P"</span><span class="p">,</span> <span class="s2">"2M"</span><span class="p">,</span> <span class="s2">"2P"</span><span class="p">,</span> <span class="s2">"NOSHEAR"</span><span class="p">]</span>
@@ -1053,13 +1063,19 @@
         <span class="n">n_obj</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"writing ngmix info for </span><span class="si">{</span><span class="n">n_obj</span><span class="si">}</span><span class="s2"> objects"</span><span class="p">)</span>
 
+        <span class="c1"># An object ngmix never fit has no metacal result at all.</span>
+        <span class="n">never_fit</span> <span class="o">=</span> <span class="p">{}</span>
+
         <span class="k">if</span> <span class="n">moments</span><span class="p">:</span>
             <span class="n">m</span> <span class="o">=</span> <span class="s2">"m"</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">m</span> <span class="o">=</span> <span class="s2">""</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_N_EPOCH"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_MCAL_TYPES_FAIL"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
+                <span class="s2">"NGMIX_MCAL_TYPES_FAIL"</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_obj</span><span class="p">,</span> <span class="n">get_mcal_types_fail</span><span class="p">(</span><span class="n">never_fit</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_NEIGHBOUR_FLAG"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
 
         <span class="n">prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"NGMIX</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">"</span>
@@ -1068,18 +1084,22 @@
         <span class="c1"># reconvolution kernel (PSF_RECONV); see ngmix.average_original_psf /</span>
         <span class="c1"># average_multiepoch_psf for what each PSF family is. G1/G2 are scalar</span>
         <span class="c1"># reduced-shear components, not a 2-vector. Sentinels:</span>
-        <span class="c1"># sizes/fluxes/mags/flags 0, *_ERR fluxes/mags -1, ellipticities -10,</span>
-        <span class="c1"># *_ERR sizes 1e30.</span>
+        <span class="c1"># sizes/fluxes/mags 0, *_ERR fluxes/mags -1, ellipticities -10,</span>
+        <span class="c1"># *_ERR sizes 1e30; flags as ngmix derives for an empty metacal result</span>
+        <span class="c1"># (never_fit).</span>
         <span class="k">for</span> <span class="n">key_str</span> <span class="ow">in</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_"</span><span class="p">,</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_SNR_"</span><span class="p">,</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLUX_"</span><span class="p">,</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MAG_"</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLAGS_"</span><span class="p">,</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_PSF_ORIG_"</span><span class="p">,</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_PSF_RECONV_"</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_dict</span><span class="p">(</span><span class="n">key_str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_dict</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLAGS_"</span><span class="p">,</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_obj</span><span class="p">,</span> <span class="n">get_type_flags</span><span class="p">(</span><span class="n">never_fit</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
+        <span class="p">)</span>
         <span class="k">for</span> <span class="n">key_str</span> <span class="ow">in</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_FLUX_ERR_"</span><span class="p">,</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MAG_ERR_"</span><span class="p">,</span>
@@ -1106,7 +1126,10 @@
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_T_ERR_PSF_RECONV_"</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_dict</span><span class="p">(</span><span class="n">key_str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_obj</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e30</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MCAL_FLAGS"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_MCAL_FLAGS"</span><span class="p">,</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_obj</span><span class="p">,</span> <span class="n">get_mcal_flags</span><span class="p">(</span><span class="n">never_fit</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
+        <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">id_tmp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj_id</span><span class="p">):</span>
             <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">id_tmp</span> <span class="o">==</span> <span class="n">ngmix_id</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
