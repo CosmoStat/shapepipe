@@ -1,4 +1,33 @@
-"""Reusable parsing and resolution helpers for ShapePipe's ASTRA record."""
+"""Parse and resolve the anchors in ShapePipe's ASTRA record (astra.yaml).
+
+The record's header states the anchor grammar. This module is the reference
+for the value grammar behind ``ref = value``:
+
+* Values are numbers, boolean words, strings (quote expressions), or flat
+  comma lists, optionally bracketed. Semicolons separate refs. Decimal
+  equality is exact (1 = 1.0, 5e-4 = 0.0005), without rounding.
+* Boolean words follow the file's reader, case-insensitively: INI as
+  ConfigParser.getboolean (yes/true/on/1, no/false/off/0; Y/N are text),
+  .sex/.psfex also Y/N, Python True/False; elsewhere words are text and
+  1/0 are numbers. Outer whitespace is trimmed; other strings are
+  case-sensitive. Lists preserve order and length. Only .param VIGNET and
+  .psfex PSF_SIZE accept square-size shorthand: 51 = 51,51.
+* ``= absent`` asserts a config key has no active line (its file and any
+  section must exist); quote it ("absent") to mean the text. Commented-out
+  keys resolve as locations but never assert values.
+* .setools refs use ``SECTION.KEY``. Predicates keep their operators as
+  quoted text; repeated cuts on one key are an ordered list, e.g.
+  ``MAG_AUTO = ["> 18.", "< 22."]``. Expressions compare as text.
+* Python selectors may append ``[key.subkey]`` to a named assignment
+  (identifier-like string dict keys); only the selected literal is read,
+  including ``dict(key=value)`` syntax. Ambiguous bindings fail, including
+  ``NAME[...] =`` or ``NAME.attr =`` in the same scope; ``.update()`` calls
+  and mutation from other scopes are not seen. No imports, calls,
+  arithmetic, argument defaults, environment expansion or implicit tool
+  defaults are evaluated: the check stays static rather than becoming a
+  second pipeline runtime.
+* Option ids are stable references and are never parsed for values.
+"""
 
 import argparse
 import ast
