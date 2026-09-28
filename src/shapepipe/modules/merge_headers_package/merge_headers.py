@@ -35,6 +35,7 @@ def merge_headers(input_file_list, output_dir, tile_number=None):
     TypeError
         For invalid ``output_dir`` type
 
+    @sc [decision:preparation.astrometric_solution_source]
     """
     if not isinstance(output_dir, str):
         raise TypeError(

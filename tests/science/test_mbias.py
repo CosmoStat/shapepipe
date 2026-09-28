@@ -26,6 +26,8 @@ import pytest
 
 from tests.helpers.artifacts import emit_mbias_artifacts
 
+pytestmark = pytest.mark.decision("shape_measurement.metacal_scheme")
+
 # The GitHub Pages publish seam (see tests/_artifacts/README.md).
 _ARTIFACTS_DIR = Path(__file__).resolve().parents[1] / "_artifacts"
 
