@@ -1,0 +1,1986 @@
+# ASTRA record of ShapePipe's scientific decisions: the choices embedded in
+# the code and the committed workflow configs (workflow/config/cfis/), why
+# they stand, and the alternatives. CLAUDE.md says when to amend it.
+# workflow/config/cfis_image_sims/ is not yet in scope: its symlinks into
+# cfis/ are governed there; its untagged overlays change input naming, the PSF
+# model and some governed values (config_tile_Fe.ini COLNUM/EXP_PREFIX,
+# final_cat.param columns).
+#
+# Conventions (`tests/helpers/decisions.py` implements them and documents the
+# full value grammar; `tests/unit/test_decisions.py` enforces them):
+#   * Put `@sc [decision:<id>]` at every code/config site that implements a
+#     decision. Decision citations have no id or prose; the record is the source
+#     of rationale. IDs are bare for top-level decisions and dotted for
+#     sub-analysis decisions; repeat `decision:` metadata to cite several.
+#     A local constraint adds a stable id and prose, with optional decision
+#     metadata: `@sc [decision:<id>,label:<kind>] <contract-id>`.
+#   * In Python, put tags in a def/class docstring or as a comment immediately
+#     above a module statement. In Snakemake, put a comment immediately above
+#     the rule/statement. In config, a tag governs the active settings in the
+#     following paragraph, which ends at the next blank line or `@sc` line.
+#     Every active key before that boundary is governed. A blank line between a
+#     tag and its key is an error. To govern a whole section, put the tag
+#     directly above its `[SECTION]` header; it governs active keys through the
+#     next section header. A description comment may sit above the tag, and
+#     `scope:file` governs the whole file.
+#   * A rationale may end with `Values: <ref> = <value>; ... .`. Every ref must
+#     resolve to exactly one site tagged for that decision and match its value.
+#     Use a bare key when it selects one site; qualify it with a path suffix and
+#     `#` or `::` when needed. `= absent` requires a same-decision tag somewhere
+#     in the file (in that section or file-wide for INI/SETools) and asserts that
+#     no active setting exists anywhere in the target scope. INI absence checks
+#     include keys inherited from `[DEFAULT]`.
+#   * The checker validates citations in both directions, unique local-contract
+#     ids, literal values and test `decision` markers. The value grammar is
+#     documented in the helper module's docstring.
+#   * A decision's `default` is the option the committed code and configs
+#     select; universes/committed.yaml pins it.
+#   * `excluded: true` means considered and rejected. An option the code
+#     does not implement says so in its description and is not excluded.
+#   * [HARDCODED]: the committed choice is fixed in code, with no config key.
+#     [LINT]: the code disagrees with itself or its own documentation.
+#   * A prior insight repeated inside a sub-analysis carries a `_local`
+#     suffix, because insight ids are scoped.
+
+version: "0.0.14"
+name: ShapePipe scientific decisions
+description: >-
+  Codebase-level decision record for the ShapePipe weak-lensing pipeline
+  (UNIONS/CFIS) as orchestrated by workflow/Snakefile. Membership test: a
+  different defensible choice would change which objects enter the shear
+  catalogue, or the numbers attached to them.
+tags: [shapepipe, weak-lensing, unions, codebase-record]
+container: ghcr.io/cosmostat/shapepipe:develop
+
+inputs:
+  - id: tile_images
+    type: data
+    source: CFIS/UNIONS r-band MegaPipe tile stacks and single-exposure image/weight/flag triplets (workflow/config.yaml)
+    description: >-
+      Tiles and the exposures that built them; each exposure carries its
+      instrument flag image.
+  - id: healsparse_masks
+    type: data
+    source: UNIONS healsparse mask products (e.g. mask_ugriz_nside131072_n4.hsp)
+    description: >-
+      Sky-fixed mask maps, built outside ShapePipe and queried at object
+      positions; how they are used is the masking sub-analysis.
+
+outputs:
+  - id: final_cat
+    type: data
+    format: fits
+    description: >-
+      Per-tile shear catalogue family, the terminal science product
+      (make_cat_runner).
+    inputs: [tile_images, healsparse_masks]
+    decisions: [per_unit_completeness, postage_stamp_size, photometric_zeropoint]
+
+decisions:
+
+  # ── cross-cutting ────────────────────────────────────────────────────────
+
+  per_unit_completeness:
+    label: Per-unit completeness gate
+    rationale: >-
+      Every shapepipe_run rule checks its products against a nominal
+      per-runner count (per chunk for tile_ngmix). A runner short of its count
+      fails the unit (exposure or tile), so a partial unit never enters the
+      catalogue and a failed unit's objects are absent. The one tolerated
+      shortfall is the exposure-side psfex_interp VALIDATION output: a CCD
+      whose model fails the acceptance gate
+      (star_selection_psf.psf_acceptance_thresholds) produces nothing and the
+      unit only warns. The MCCD chain, never run in a campaign, warns on every
+      runner; its counts follow config_exp_mccd.ini (one mask_query catalogue
+      per CCD; preprocessing merges an exposure's stars into one train and one
+      test catalogue). Science-path PSF rejection bypasses this table:
+      psfex_interp drops the epoch per object inside the tile run.
+      Values:
+      COMPLETENESS[exp_psf.psfex.psfex_interp_runner.warn] = True;
+      COMPLETENESS[exp_psf.mccd.mask_query_runner.expect] = 40;
+      COMPLETENESS[exp_psf.mccd.mccd_preprocessing_runner.expect] = 2.
+    default: exact_counts
+    options:
+      exact_counts:
+        label: Nominal count per runner; psfex_interp validation shortfall warns
+        insights: [des_psf_blacklist, guinot22_star_floor_22]
+      count_floor:
+        label: Tolerate recorded attrition down to a per-runner floor
+        excluded: true
+        excluded_reason: >-
+          The floors had no basis: across a 127-exposure, 64-tile campaign
+          every non-warning runner produced exactly its nominal count, so a
+          floor below it only admits failed units unremarked.
+      no_gate:
+        label: Accept whatever is produced
+        excluded: true
+        excluded_reason: >-
+          A stage producing 2 of 40 CCDs would flow into the catalogue
+          unremarked.
+
+  postage_stamp_size:
+    label: Postage-stamp size shared by vignets, ngmix stamps and PSF models
+    rationale: >-
+      One size pins three coupled apertures: the SExtractor VIGNET around each
+      detection, the vignetmaker stamps ngmix fits, and the PSFEx model
+      stamp. The stamp bounds the measurable galaxy size and truncates the
+      wings of large galaxies. No rationale for 51 px (about 9.5 arcsec) is
+      recorded.
+      Values:
+      default_noimaflags.param#VIGNET = 51;
+      default.param#VIGNET = 51;
+      VIGNETMAKER_RUNNER_RUN_1.STAMP_SIZE = 51;
+      VIGNETMAKER_RUNNER_RUN_2.STAMP_SIZE = 51;
+      PSF_SIZE = 51.
+    default: px_51
+    options:
+      px_51:
+        label: 51x51 px everywhere
+      larger_adaptive:
+        label: Larger or size-adaptive stamps
+        description: >-
+          Not implemented; the vignet, stamp and PSF sizes must change
+          together.
+
+  photometric_zeropoint:
+    label: Magnitude zero-point convention
+    rationale: >-
+      Tiles use a fixed zero-point of 30 (ZP_FROM_HEADER=False), repeated in
+      ngmix's MAG_ZP; exposures read the per-image header PHOTZP. The fixed
+      value assumes the MegaPipe stacks are calibrated to 30; nothing in the
+      repo checks it, but on a sampled exposure (2114045p) FSCALE equals
+      10^(-0.4 (PHOTZP - 30)) to 0.02%. Exposure epochs are rescaled by FSCALE, which must agree
+      with header PHOTZP as well as tile MAG_ZEROPOINT and ngmix MAG_ZP.
+      Magnitude cuts (the star-selection window, downstream galaxy cuts)
+      inherit their stage's convention.
+      Values:
+      MAG_ZEROPOINT = 30.0;
+      config_tile_Sx.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER = False;
+      NGMIX_RUNNER.MAG_ZP = 30.0;
+      config_exp_psfex.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER = True;
+      SEXTRACTOR_RUNNER.ZP_KEY = PHOTZP.
+    default: fixed_30_tiles_header_exposures
+    options:
+      fixed_30_tiles_header_exposures:
+        label: Tiles fixed 30.0; exposures from header PHOTZP
+      header_everywhere:
+        label: Per-image header zero-points on tiles too
+        description: >-
+          ZP_FROM_HEADER=True on tiles; changes magnitudes only where a tile's
+          header zero-point differs from 30.
+
+prior_insights:
+  des_psf_blacklist:
+    claim: >-
+      DES blacklists a CCD's PSF model rather than failing the exposure: in
+      Y3, a CCD with fewer than 25 stars surviving outlier rejection is
+      excluded downstream (~2% of data removed) and processing proceeds.
+    created_at: "2026-07-16T00:00:00Z"
+    evidence:
+      - id: ev_jarvis_y3
+        doi: "10.48550/arXiv.2011.03409"
+        quote:
+          exact: "we enter it into a"
+          suffix: " “blacklist” and exclude this CCD"
+        location: { page: 10 }
+  guinot22_star_floor_22:
+    claim: >-
+      The published ShapePipe/UNIONS analysis applies a per-CCD quality floor
+      rather than failing whole exposures: a CCD with fewer than 22 selected
+      stars is discarded for PSF estimation and contributes no epoch to the
+      shape measurement, while processing continues.
+    created_at: "2022-04-01T00:00:00Z"
+    evidence:
+      - id: ev_guinot22_star_floor
+        doi: "10.48550/arXiv.2204.04798"
+        quote:
+          exact: 'The dashed line represents the cut at 22 stars/CCD below which the CCD is discarded for the PSF estimation.'
+        location: { page: 4 }
+
+analyses:
+
+  # ═════════════════════════════════════════════════════════════════════════
+  masking:
+    description: >-
+      Which masks reach the measurement, and where. ShapePipe generates no
+      masks; the instrument flag image delivered with each exposure is the
+      only one that reaches pixels. Sky-fixed masks (star halos and bodies,
+      manual regions, missing bands) are healsparse maps built and designed
+      outside ShapePipe, which only queries them at object positions into
+      catalogue columns that no stage cuts on.
+    inputs:
+      - id: exposure_flags
+        type: data
+        source: per-CCD instrument flag images split from each exposure (exp_split family)
+      - id: sky_masks
+        type: data
+        source: UNIONS healsparse mask maps
+    outputs:
+      - id: masked_measurement_inputs
+        type: data
+        format: fits
+        description: >-
+          Exposure detection catalogues carrying IMAFLAGS_ISO (and MASK_EXT when
+          maps are configured), the flag stamps ngmix reads, and the final
+          catalogue's optional MASK_<band> columns.
+        inputs: [exposure_flags, sky_masks]
+        decisions: [pixel_mask_source, psf_star_mask_veto, sky_mask_application]
+    decisions:
+      pixel_mask_source:
+        label: Only the instrument flag image reaches pixels
+        rationale: >-
+          On exposures SExtractor reads the split flag image, producing
+          IMAFLAGS_ISO, which the PSF star selection requires to be zero. The
+          multi-epoch vignet run cuts flag stamps from the same image; ngmix
+          gives flagged pixels weight 0 and drops mostly-flagged epochs
+          (shape_measurement.defect_fill,
+          shape_measurement.epoch_masked_fraction_cut). Tiles have no flag
+          image, so tile detection runs unflagged
+          (detection.detection_source_mode). Sky-fixed masks never touch
+          pixels: an object inside a star halo is measured from the same
+          unmodified pixels as one outside it.
+          Values:
+          config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = True;
+          VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_PATTERN = flag, image, weight,
+          background, background_rms.
+        default: instrument_flags_only
+        options:
+          instrument_flags_only:
+            label: Instrument flags gate pixels; sky masks stay at catalogue level
+          rasterised_sky_masks:
+            label: Rasterise healsparse masks into the pixel flags
+            insights: [farrens22_pipeline_masks]
+            excluded: true
+            excluded_reason: >-
+              Sky-fixed masks say where an object sits, not that its pixels are
+              corrupted, so acting on them is an analysis decision.
+              Rasterising would bake one mask version into every shape.
+      psf_star_mask_veto:
+        label: PSF-star candidates rejected on instrument flags only
+        rationale: >-
+          Of the masks, star selection cuts only on IMAFLAGS_ISO. mask_query sits
+          between SExtractor and setools in the exposure chain; when
+          MASK_PATHS names maps it writes MASK_EXT (0 clean, nonzero flagged,
+          off-coverage clean) onto each CCD's catalogue. MASK_PATHS ships
+          commented out, so the module passes catalogues through without
+          MASK_EXT. The intended map is the UNIONS star-body product (bit 2);
+          halo bits 0 and 1 are left out because halos say nothing about
+          whether a star is a good PSF sample.
+          Values:
+          MASK:star_selection.IMAFLAGS_ISO = "== 0";
+          MASK:preselect.IMAFLAGS_ISO = "== 0";
+          MASK:flag.IMAFLAGS_ISO = "== 0";
+          MASK:star_selection.MASK_EXT = absent;
+          MASK:preselect.MASK_EXT = absent;
+          MASK:flag.MASK_EXT = absent.
+        default: instrument_flags_only
+        options:
+          instrument_flags_only:
+            label: IMAFLAGS_ISO == 0; no sky map queried
+          star_body_veto:
+            label: Also reject candidates on the star-body map (MASK_EXT == 0)
+            description: >-
+              Set MASK_PATHS to the star-body map and add MASK_EXT == 0 beside
+              each IMAFLAGS_ISO cut in star_selection.setools (one line per
+              mask block). Querying without the cut records MASK_EXT and
+              changes no star.
+          star_body_and_halo_veto:
+            label: Also reject candidates inside star halos
+            excluded: true
+            excluded_reason: >-
+              Halos flag objects for the final catalogue; a star inside another
+              star's halo is not thereby a bad PSF sample.
+      sky_mask_application:
+        label: Object-level sky masking deferred downstream
+        rationale: >-
+          The final catalogue ships every detected object. When MASK_EXT_PATHS
+          lists band:path pairs, make_cat queries each healsparse map at the
+          object's windowed position and writes the map value verbatim into a
+          MASK_<band> column; an object off coverage gets the map's sentinel
+          (False for boolean maps, reading as unmasked; typically -1 for
+          integer maps). The committed config sets no MASK_EXT_PATHS, so no
+          mask column is written and all mask cuts happen downstream.
+        default: deferred_downstream
+        options:
+          deferred_downstream:
+            label: No mask columns; all objects shipped
+          catalogue_columns:
+            label: Per-band MASK_<band> columns from MASK_EXT_PATHS, no cut
+          pipeline_cut:
+            label: Drop masked objects inside the pipeline
+            excluded: true
+            excluded_reason: >-
+              Location flags are analysis decisions; a pipeline cut would fix
+              one mask version into the catalogue.
+    prior_insights:
+      farrens22_pipeline_masks:
+        claim: >-
+          The published ShapePipe pipeline generated its own masks, including
+          Messier objects and CCD borders, and applied them to the images; the
+          current pipeline generates none.
+        created_at: "2022-06-01T00:00:00Z"
+        evidence:
+          - id: ev_farrens22_masks
+            doi: "10.48550/arXiv.2206.14689"
+            quote:
+              exact: 'Messier objects, and border regions.'
+            location: { page: 2 }
+
+  # ═════════════════════════════════════════════════════════════════════════
+  detection:
+    description: >-
+      Object detection with SExtractor on r-band tiles (the galaxy sample) and
+      on single-exposure CCDs (PSF-star candidates). Tiles follow the MegaPipe
+      parameters of Gwyn's UNIONS tile catalogue; exposures keep ShapePipe's
+      stock values.
+    inputs:
+      - id: tile_stack
+        type: data
+        source: MegaPipe r-band tile stack + weight (uncompressed, merged headers)
+    outputs:
+      - id: tile_sexcat
+        type: data
+        format: fits
+        description: Per-tile SExtractor LDAC catalogue with per-epoch CCD membership.
+        inputs: [tile_stack]
+        decisions:
+          [detection_threshold_policy, deblending_policy, background_model,
+           weight_map_usage, zero_weight_interpolation, detection_source_mode,
+           epoch_membership_ccd_bounds, photometry_parameters,
+           spurious_detection_cleaning, blend_photometry_mask_type,
+           saturation_level]
+    decisions:
+      detection_threshold_policy:
+        label: Detection significance, minimum area, matched filter
+        rationale: >-
+          Tiles use the MegaPipe tile-catalogue threshold, minimum area and
+          filter, so ShapePipe's galaxy sample matches the catalogue UNIONS
+          adopts; the 7x7 Gaussian of FWHM 3 px is near the CFIS average seeing
+          of 0.65 arcsec (about 3.5 px at 0.187 arcsec/px). Exposures only feed
+          star selection and keep stock values with the 3x3 FWHM 2 px kernel.
+          The tiles differ from Guinot+22 in all three. Matching image
+          simulations must use the same prescription.
+          Values:
+          default_tile.sex#DETECT_THRESH = 1.0;
+          default_tile.sex#ANALYSIS_THRESH = 1.0;
+          default_tile.sex#DETECT_MINAREA = 3;
+          default_tile.sex#FILTER = Y;
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE =
+          $SP_CONFIG/gauss_3.0_7x7.conv;
+          default_exp.sex#DETECT_THRESH = 1.5;
+          default_exp.sex#ANALYSIS_THRESH = 1.5;
+          default_exp.sex#DETECT_MINAREA = 5;
+          default_exp.sex#FILTER = Y;
+          config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE =
+          $SP_CONFIG/default.conv.
+        default: megapipe_tiles
+        options:
+          megapipe_tiles:
+            label: MegaPipe values on tiles; stock values on exposures
+            insights: [guinot22_cfis_seeing]
+          stock_tiles:
+            label: Stock ShapePipe values on tiles (1.5 sigma, minarea 5, FWHM 2 px)
+            insights: [guinot22_sextractor_params]
+            excluded: true
+            excluded_reason: >-
+              Triggers spuriously on about 10% of grid-placed Sersic galaxies
+              in image simulations, and does not match the MegaPipe tile
+              catalogue.
+      deblending_policy:
+        label: Deblending contrast
+        rationale: >-
+          Tiles use the MegaPipe DEBLEND_MINCONT; exposures use a lower one,
+          the value Guinot+22 lists. Both share DEBLEND_NTHRESH. Contrast sets
+          object count, centroids, and blend contamination in shapes;
+          matching image simulations must preserve the stage-specific settings.
+          Values:
+          default_tile.sex#DEBLEND_MINCONT = 0.002;
+          default_exp.sex#DEBLEND_MINCONT = 0.001;
+          default_tile.sex#DEBLEND_NTHRESH = 32;
+          default_exp.sex#DEBLEND_NTHRESH = 32.
+        default: megapipe_tiles
+        options:
+          megapipe_tiles:
+            label: MINCONT 0.002 tiles / 0.001 exposures
+            insights: [guinot22_sextractor_params]
+          mincont_5em4_tiles:
+            label: MINCONT 0.0005 on tiles
+            excluded: true
+            excluded_reason: >-
+              Part of the stock tile parameter set rejected in favour of the
+              MegaPipe values (see detection_threshold_policy).
+      background_model:
+        label: Background estimation and photometric background
+        rationale: >-
+          Both passes use SExtractor AUTO backgrounds: tiles with the MegaPipe
+          mesh and filter sizes and a LOCAL photometric background, exposures
+          with a finer mesh and a GLOBAL one. ngmix subtracts the exposure
+          BACKGROUND map from each epoch and weights its pixels by
+          BACKGROUND_RMS (shape_measurement.galaxy_pixel_weights). The header
+          background path is off. Residual sky offsets propagate into
+          thresholds, fluxes, completeness and shapes.
+          Values:
+          default_tile.sex#BACK_TYPE = AUTO;
+          default_tile.sex#BACK_SIZE = 512;
+          default_tile.sex#BACK_FILTERSIZE = 9;
+          default_tile.sex#BACKPHOTO_TYPE = LOCAL;
+          BACKPHOTO_THICK = 30;
+          default_exp.sex#BACK_TYPE = AUTO;
+          default_exp.sex#BACK_SIZE = 64;
+          default_exp.sex#BACK_FILTERSIZE = 3;
+          default_exp.sex#BACKPHOTO_TYPE = GLOBAL;
+          config_exp_psfex.ini#SEXTRACTOR_RUNNER.BKG_FROM_HEADER = False;
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.BKG_FROM_HEADER = False.
+        default: auto_megapipe_tiles
+        options:
+          auto_megapipe_tiles:
+            label: AUTO everywhere; MegaPipe mesh and LOCAL photometry on tiles
+          manual_zero_tiles:
+            label: Tile background fixed to 0, trusting the stack subtraction
+            excluded: true
+            excluded_reason: >-
+              Part of the stock tile parameter set rejected in favour of the
+              MegaPipe values (see detection_threshold_policy).
+      weight_map_usage:
+        label: Weight map as inverse variance for detection
+        rationale: >-
+          MAP_WEIGHT on both passes (SExtractor default NONE): the per-pixel
+          variance sets the effective SNR and so the detection set.
+          RESCALE_WEIGHTS and WEIGHT_GAIN keep their SExtractor defaults.
+          Guinot+22 keeps every non-tabulated parameter at its default, which
+          would mean no weight map.
+          Values:
+          default_tile.sex#WEIGHT_TYPE = MAP_WEIGHT;
+          default_exp.sex#WEIGHT_TYPE = MAP_WEIGHT;
+          default_tile.sex#RESCALE_WEIGHTS = Y;
+          default_exp.sex#RESCALE_WEIGHTS = Y;
+          default_tile.sex#WEIGHT_GAIN = Y;
+          default_exp.sex#WEIGHT_GAIN = Y;
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.WEIGHT_IMAGE = True;
+          config_exp_psfex.ini#SEXTRACTOR_RUNNER.WEIGHT_IMAGE = True.
+        default: map_weight
+        options:
+          map_weight:
+            label: MAP_WEIGHT
+          no_weight:
+            label: No weight map (SExtractor default)
+            insights: [guinot22_sextractor_params]
+      zero_weight_interpolation:
+        label: Interpolation across zero-weight pixels
+        rationale: >-
+          INTERP_TYPE ALL on both passes (SExtractor default NONE): SExtractor
+          invents flux across zero-weight pixels, changing detections and
+          photometry near masked regions. Matching image simulations must use
+          the same interpolation operator; this is not a calibrated pixel repair.
+          Values:
+          default_tile.sex#INTERP_TYPE = ALL;
+          default_exp.sex#INTERP_TYPE = ALL;
+          default_tile.sex#INTERP_MAXXLAG = 16;
+          default_tile.sex#INTERP_MAXYLAG = 16;
+          default_exp.sex#INTERP_MAXXLAG = 16;
+          default_exp.sex#INTERP_MAXYLAG = 16.
+        default: interp_all
+        options:
+          interp_all:
+            label: INTERP_TYPE ALL
+          no_interpolation:
+            label: INTERP_TYPE NONE
+      spurious_detection_cleaning:
+        label: Cleaning of spurious detections
+        rationale: >-
+          CLEAN on both passes deletes detections
+          consistent with being wings of a brighter neighbour, a post-deblend
+          change to the object list. Keep the same cleaning prescription in
+          matching image simulations.
+          Values:
+          default_tile.sex#CLEAN_PARAM = 1.0;
+          default_exp.sex#CLEAN_PARAM = 1.0;
+          default_tile.sex#CLEAN = Y;
+          default_exp.sex#CLEAN = Y.
+        default: clean_1
+        options:
+          clean_1:
+            label: CLEAN Y, CLEAN_PARAM 1.0
+      blend_photometry_mask_type:
+        label: Neighbour pixels in blend photometry
+        rationale: >-
+          MASK_TYPE CORRECT on both passes replaces neighbour pixels by their
+          mirror across the object centre during photometry, changing blend
+          fluxes and windowed moments. This SExtractor photometry choice is
+          separate from ngmix's neighbour-pixel weighting decision.
+          Values:
+          default_tile.sex#MASK_TYPE = CORRECT;
+          default_exp.sex#MASK_TYPE = CORRECT.
+        default: correct
+        options:
+          correct:
+            label: MASK_TYPE CORRECT
+          blank:
+            label: MASK_TYPE BLANK
+      saturation_level:
+        label: Saturation level read from each image's header
+        rationale: >-
+          Both passes take each image's saturation level from its SATURATE
+          header card and set FLAGS bit 4 on objects with saturated pixels.
+          Star selection requires FLAGS == 0 at every step, so the level decides
+          which bright stars leave the PSF sample; tile FLAGS reach the
+          catalogue for downstream cuts. Where the card is absent, SExtractor
+          falls back to its built-in SATUR_LEVEL (50000 ADU per its
+          documentation), since neither .sex file sets one. Delivered data
+          carry the card: a sampled tile (CFIS.186.307) has SATURATE 9558.7
+          and every CCD of a sampled exposure (2114045p) 65535, and split_exp
+          keeps each CCD's header. Changing the card or pinning a fixed level requires
+          checking the resulting bright-star selection.
+          Values:
+          default_exp.sex#SATUR_KEY = SATURATE;
+          default_tile.sex#SATUR_KEY = SATURATE;
+          MASK:star_selection.FLAGS = "== 0";
+          MASK:preselect.FLAGS = "== 0";
+          MASK:flag.FLAGS = "== 0";
+          default_tile.sex#SATUR_LEVEL = absent;
+          default_exp.sex#SATUR_LEVEL = absent.
+        default: header_saturate
+        options:
+          header_saturate:
+            label: SATURATE header card; SExtractor default level where absent
+          fixed_level:
+            label: Fixed SATUR_LEVEL set in the .sex files
+      photometry_parameters:
+        label: Kron and aperture photometry definitions
+        rationale: >-
+          Stock Kron, aperture and flux-fraction settings on both passes; no
+          rationale recorded. MAG_AUTO is the axis of the star-selection
+          magnitude window and the catalogue magnitude; FLUX_AUTO is PSFEx's
+          photometric normalisation. A different Kron factor shifts magnitudes
+          and so every magnitude-based cut. The reported apertures and flux-
+          fraction measurements must also match the simulated catalogue.
+          Values:
+          default_tile.sex#PHOT_AUTOPARAMS = 2.5,3.5;
+          default_exp.sex#PHOT_AUTOPARAMS = 2.5,3.5;
+          default_tile.sex#PHOT_APERTURES = 5;
+          default_exp.sex#PHOT_APERTURES = 5;
+          default_tile.sex#PHOT_FLUXFRAC = 0.5;
+          default_exp.sex#PHOT_FLUXFRAC = 0.5;
+          PHOTFLUX_KEY = FLUX_AUTO.
+        default: kron_25_35
+        options:
+          kron_25_35:
+            label: Kron 2.5/3.5, aperture 5 px, FLUXFRAC 0.5
+      detection_source_mode:
+        label: Single-image, unflagged detection on the r-band tile
+        rationale: >-
+          No detection image, no flag image, and the default_noimaflags.param
+          column list: tiles have no instrument flag image and no detection
+          coadd exists, so detection sees every tile pixel and the tile
+          catalogue carries no IMAFLAGS_ISO. [LINT]
+          final_cat.param, read by the post-processing merge, requests
+          IMAFLAGS_ISO, which the tile chain never produces (issue #912).
+          Values:
+          SEXTRACTOR_RUNNER.DETECTION_IMAGE = False;
+          SEXTRACTOR_RUNNER.FLAG_IMAGE = False.
+        default: sx_nomask_single_image
+        options:
+          sx_nomask_single_image:
+            label: Unflagged single-image r-band detection
+            insights: [guinot22_stacked_detection]
+          masked_tile:
+            label: Detection on a tile masked by rasterised sky masks
+            description: >-
+              Not implemented; no tile pixel mask exists (see
+              masking.pixel_mask_source).
+          dual_image_coadd:
+            label: Dual-image mode with a detection coadd
+            description: Not implemented; no UNIONS detection coadd exists.
+      epoch_membership_ccd_bounds:
+        label: Which exposure CCDs an object belongs to (N_EPOCH)
+        rationale: >-
+          `all_world2pix(..., 0)` returns 0-based pixels, and the strict test
+          accepts `33 < x < 2080`. In 1-based FITS coordinates this is x=35
+          through x=2080 inclusive: it trims DATASEC columns 33 and 34 but
+          admits its upper endpoint, column 2080. A WCS inversion failure skips
+          that CCD, lowering N_EPOCH; this sets how many exposures enter each
+          galaxy's multi-epoch fit.
+          Values:
+          SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
+          SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True.
+        default: trimmed_bounds_33_2080
+        options:
+          trimmed_bounds_33_2080:
+            label: "x in (33,2080), y in (1,4612), strict"
+          inclusive_bounds:
+            label: Same bounds, inclusive
+    prior_insights:
+      guinot22_sextractor_params:
+        claim: >-
+          The published tile detection uses DETECT_THRESH 1.5, DETECT_MINAREA
+          10, the default 3x3 filter and DEBLEND_MINCONT 0.001, with every
+          other SExtractor parameter at its default.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_table2
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'Table 2. SExtractor parametrisation. All other parameters are kept to their default values.'
+            location: { page: 5 }
+          - id: ev_guinot22_mincont
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'DEBLEND_MINCONT 0.001'
+            location: { page: 5 }
+          - id: ev_guinot22_minarea
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'DETECT_MINAREA 10'
+            location: { page: 5 }
+      guinot22_cfis_seeing:
+        claim: >-
+          CFIS r-band data have an average seeing of 0.65 arcsec.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_seeing
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'is taking r-band data with an average seeing of 0.65 arcsec'
+            location: { page: 1 }
+      guinot22_stacked_detection:
+        claim: >-
+          Source extraction in the published analysis is performed on the
+          stacked tile images, for signal-to-noise and because artefacts are
+          suppressed relative to single exposures.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_stacked_detection
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'We do the extraction on stacked images which provide a better signal-to-noise ratio, and most artifacts have a reduced amplitude with respect to single exposures'
+            location: { page: 5 }
+
+  # ═════════════════════════════════════════════════════════════════════════
+  preparation:
+    description: >-
+      How exposures, astrometry, epoch lists and stamps are prepared before
+      anything is measured.
+    inputs:
+      - id: exposure_files
+        type: data
+        source: delivered CFIS exposure triplets (image/weight/flag MEF) + tile stacks
+    outputs:
+      - id: epoch_stamps
+        type: data
+        format: sqlite
+        description: Per-object multi-epoch vignets + per-CCD WCS log feeding ngmix.
+        inputs: [exposure_files]
+        decisions:
+          [astrometric_solution_source, ccd_split_extent,
+           epoch_provenance_from_tile_history, object_position_columns,
+           stamp_positioning_and_padding]
+    decisions:
+      astrometric_solution_source:
+        label: Astrometry taken verbatim from delivered per-CCD headers
+        rationale: >-
+          split_exp builds WCS(header) from each raw CCD header and
+          merge_headers stores them; every downstream world-to-pixel transform
+          (stamp placement, epoch membership, position seeding) uses that
+          solution. [HARDCODED] no astrometric re-derivation or refinement
+          exists; a joint re-fit would move every stamp centre and position seed.
+        default: delivered_headers
+        options:
+          delivered_headers:
+            label: WCS(header) verbatim, stored at split time
+            insights: [guinot22_gaia_astrometry]
+          astrometric_refit:
+            label: Joint astrometric re-solution
+            description: Not implemented.
+      ccd_split_extent:
+        label: All 40 MegaCam HDUs split and carried as candidate epochs
+        rationale: >-
+          Any HDU count other than N_HDU raises; every CCD is a candidate
+          epoch wherever the WCS lands it.
+          Values:
+          SPLIT_EXP_RUNNER.N_HDU = 40.
+        default: all_40_hdus
+        options:
+          all_40_hdus:
+            label: 40 HDUs, hard-fail on any other count
+            insights: [guinot22_forty_chips]
+          exclude_ccd_subset:
+            label: Exclude a subset of CCDs as epochs
+            description: Not implemented.
+      epoch_provenance_from_tile_history:
+        label: Epoch sets parsed from tile FITS HISTORY cards
+        rationale: >-
+          The coadd's own provenance is the epoch list: the file names in
+          column COLNUM of each HISTORY line, stripped of their full extension
+          and deduplicated. A tile whose header cannot be read fails rather
+          than yielding an empty list. Names keep their trailing p (2243881p),
+          an epoch letter rather than a prefix, so EXP_PREFIX is blank;
+          downstream code drops the p when it needs the bare exposure ID. A
+          mis-parse changes N_EPOCH and which exposures are fit.
+          Values:
+          FIND_EXPOSURES_RUNNER.COLNUM = 3.
+        default: history_parse
+        options:
+          history_parse:
+            label: HISTORY column 3, no prefix stripped, deduplicated
+      object_position_columns:
+        label: Windowed centroids (XWIN/YWIN) define every position
+        rationale: >-
+          PSF interpolation sites, tile and multi-epoch stamp centres, and the
+          catalogue position all use SExtractor's windowed centroid: in pixels
+          for tile stamps and exposure-side PSF validation, in world
+          coordinates for tile-side PSF interpolation and multi-epoch stamps.
+          Windowed, isophotal and model centroids differ systematically for
+          blends and asymmetric galaxies, and the centroid feeds the position
+          seed and the centroid prior.
+          Values:
+          VIGNETMAKER_RUNNER_RUN_1.POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE;
+          VIGNETMAKER_RUNNER_RUN_1.COORD = PIX;
+          config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS =
+          XWIN_WORLD,YWIN_WORLD;
+          VIGNETMAKER_RUNNER_RUN_2.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD;
+          VIGNETMAKER_RUNNER_RUN_2.COORD = SPHE;
+          config_exp_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS =
+          XWIN_IMAGE,YWIN_IMAGE.
+        default: xwin_windowed
+        options:
+          xwin_windowed:
+            label: Windowed centroids everywhere
+      stamp_positioning_and_padding:
+        label: Nearest-pixel stamp extraction with zero padding
+        rationale: >-
+          [HARDCODED] stamps are cut around the pixel nearest the object's
+          position, with no sub-pixel interpolation; the sub-pixel remainder
+          is stored as the stamp's OFFSET, which ngmix uses as the Jacobian
+          origin (shape_measurement.centroid_source), so extraction and
+          centroid prior share one rounding. Multi-epoch stamps map the tile
+          world coordinate through the stored per-CCD WCS. Stamps overrunning
+          an image edge are kept, zero-filled outside the image; a stamp
+          centre that rounds outside the image raises and fails the vignet
+          run for the whole tile.
+        default: round_and_zero_pad
+        options:
+          round_and_zero_pad:
+            label: Nearest-pixel extraction, zero padding, no edge rejection
+    prior_insights:
+      guinot22_gaia_astrometry:
+        claim: >-
+          The astrometric solution the analysis relies on is the upstream
+          MegaPipe/Gaia DR2 calibration, accurate to within 20 mas; no
+          astrometric re-fit inside the pipeline is described.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_astrometry
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'An astrometric calibration within 20 mas was achieved using the Gaia DR2 observations'
+            location: { page: 2 }
+      guinot22_forty_chips:
+        claim: >-
+          Star selection and PSF modelling are carried out independently on
+          each of the 40 MegaCam chips, with no chip excluded.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_forty_chips
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'is performed independently on each of the 40 chips that constitute the MegaCAM'
+            location: { page: 3 }
+
+  # ═════════════════════════════════════════════════════════════════════════
+  star_selection_psf:
+    description: >-
+      Which objects constrain the PSF, the PSF model itself, and which CCD
+      models are good enough to use.
+    inputs:
+      - id: exposure_sexcat
+        type: data
+        source: per-CCD exposure SExtractor catalogues (default_exp.sex run)
+    outputs:
+      - id: psf_model
+        type: data
+        format: psf
+        description: >-
+          Per-CCD PSF models and the PSFs interpolated at object positions,
+          with HSM shape diagnostics.
+        inputs: [exposure_sexcat]
+        decisions:
+          [star_selection_box, psf_train_validation_split,
+           psfex_candidate_vetting, psf_modelling_software,
+           psf_model_complexity, psf_acceptance_thresholds]
+    decisions:
+      star_selection_box:
+        label: Stellar-locus selection, magnitude window and FWHM window around the mode
+        rationale: >-
+          Stars are flag-free objects in a MAG_AUTO window whose FWHM lies
+          within 0.2 px of the mode of a looser, size-limited preselection
+          (FWHM 0.3-1.5 arcsec at 0.187 arcsec/px). The mode estimator is an
+          iterative histogram zoom that falls back to the median below 20
+          objects, so small-N behaviour changes selection on sparse CCDs.
+          PSFEx's own selection is off; see psfex_candidate_vetting for what
+          PSFEx may still apply.
+          Values:
+          MASK:star_selection.FLAGS = "== 0";
+          MASK:preselect.FLAGS = "== 0";
+          MASK:star_selection.IMAFLAGS_ISO = "== 0";
+          MASK:preselect.IMAFLAGS_ISO = "== 0";
+          MASK:star_selection.MAG_AUTO = ["> 18.", "< 22."];
+          MASK:star_selection.FWHM_IMAGE = ["<= mode(FWHM_IMAGE{preselect})
+          + 0.2", ">= mode(FWHM_IMAGE{preselect}) - 0.2"];
+          MASK:preselect.MAG_AUTO = ["> 0", "< 21"];
+          MASK:preselect.FWHM_IMAGE = ["> 0.3 / 0.187", "< 1.5 / 0.187"];
+          PLOT:fwhm_field.SCATTER = "FWHM_IMAGE{star_selection}*0.187";
+          SAMPLE_AUTOSELECT = N.
+        default: mode_centred_box
+        options:
+          mode_centred_box:
+            label: FWHM-mode-centred box, +-0.2 px, mag 18-22
+            insights: [guinot22_star_box]
+          size_mag_locus_fit:
+            label: Fitted size-magnitude stellar locus
+            description: Not implemented.
+          psfex_autoselect:
+            label: PSFEx SAMPLE_AUTOSELECT vetting on top
+            insights: [guinot22_psfex_preselection_off]
+            excluded: true
+            excluded_reason: >-
+              Disabled so that the pipeline's own star selection is the only
+              one.
+      psf_train_validation_split:
+        label: Seeded 80/20 star split, model fit vs held-out validation
+        rationale: >-
+          The 80% sample fits the PSFEx model and feeds the tile multi-epoch
+          interpolation; the 20% sample is the independent residual
+          diagnostic (psfex_interp VALIDATION mode). The split trades
+          training stars per CCD, which interacts with the acceptance gate,
+          against an independent residual test. The permutation is seeded
+          from the digits of the unit's file number, so a CCD gets the same
+          split on every run.
+          Values:
+          RAND_SPLIT:star_split.RATIO = 20;
+          PSFEX_RUNNER.FILE_PATTERN = star_split_ratio_80;
+          PSFEX_INTERP_RUNNER.FILE_PATTERN =
+          star_split_ratio_80,star_split_ratio_20,psfex_cat;
+          PSFEX_INTERP_RUNNER.ME_DOT_PSF_PATTERN = star_split_ratio_80.
+        default: split_80_20_seeded
+        options:
+          split_80_20_seeded:
+            label: 80% train / 20% validation, seeded from the file number
+            insights: [guinot22_star_split]
+          split_80_20_unseeded:
+            label: Same split from an unseeded random draw
+            excluded: true
+            excluded_reason: >-
+              Makes the PSF star sample, and every shape downstream of it,
+              irreproducible run-to-run.
+          no_holdout:
+            label: All stars in the model, no held-out diagnostic
+            excluded: true
+            excluded_reason: Loses the independent residual and rho-statistic input.
+      psfex_candidate_vetting:
+        label: PSFEx built-in candidate cuts, unpinned
+        rationale: >-
+          default.psfex sets SAMPLE_AUTOSELECT N (compiled default Y) and
+          omits every other SAMPLE_* key, so [HARDCODED] PSFEx's compiled
+          defaults govern them and can change with its version. psfex -dd
+          (PSFEx 3.21.1, develop-runtime image) gives SAMPLE_FWHMRANGE
+          2.0,10.0, SAMPLE_VARIABILITY 0.2, SAMPLE_MINSN 20, SAMPLE_MAXELLIP
+          0.3, SAMPLE_FLAGMASK 0x00fe, SAMPLE_WFLAGMASK 0x0000 and
+          SAMPLE_IMAFLAGMASK 0x0. Per the PSFEx source (not re-read here),
+          MINSN, MAXELLIP, FLAGMASK, FWHMRANGE and VARIABILITY still cut
+          candidates with autoselect off; SETools cuts neither S/N nor
+          ellipticity, so MINSN and MAXELLIP can reject stars it kept.
+          BADPIXEL_FILTER N and PSF_RECENTER N, also compiled defaults, leave
+          flagged star vignets unfiltered and candidates unrecentred.
+          Compiled-in values admit no `= value` assertion, so the anchors
+          assert only that each SAMPLE_* key is absent; open issue #919 would
+          pin them in default.psfex.
+          Values:
+          SAMPLE_AUTOSELECT = N;
+          BADPIXEL_FILTER = N;
+          PSF_RECENTER = N;
+          SAMPLE_FWHMRANGE = absent;
+          SAMPLE_VARIABILITY = absent;
+          SAMPLE_MINSN = absent;
+          SAMPLE_MAXELLIP = absent;
+          SAMPLE_FLAGMASK = absent;
+          SAMPLE_WFLAGMASK = absent;
+          SAMPLE_IMAFLAGMASK = absent.
+        default: builtin_defaults
+        options:
+          builtin_defaults:
+            label: PSFEx 3.21.1 built-in SAMPLE_* values, no bad-pixel filter
+          pinned_explicit:
+            label: Write the SAMPLE_* values explicitly into default.psfex
+      psf_modelling_software:
+        label: PSF model, PSFEx per CCD or MCCD over the focal plane
+        rationale: >-
+          psf_model in workflow/config.yaml's machines: table (per machine and
+          input type; image sims use fake) selects the exposure and tile
+          config pair; the committed value is psfex, which fits each CCD
+          independently. MCCD (Liaudat+2021) fits one hybrid local+global
+          model over the focal plane; the completeness table treats its
+          counts as warnings because no campaign has run it. Up to the model,
+          its exposure chain matches PSFEx's: SExtractor reads the split
+          image, weight and instrument flag directly, and mask_query sits
+          between SExtractor and setools. The selected model name also flows
+          through SP_PSF in downstream inputs, so producer and consumer choices
+          must move together.
+          Values:
+          INSTANCE.N_COMP_LOC = 8;
+          INSTANCE.D_COMP_GLOB = 8;
+          INSTANCE.FP_GEOMETRY = CFIS;
+          INSTANCE.RMSE_THRESH = 1.25;
+          INPUTS.MIN_N_STARS = 20;
+          FIT.LOC_MODEL = hybrid;
+          config_exp_mccd.ini#EXECUTION.MODULE =
+          sextractor_runner,mask_query_runner,setools_runner,mccd_preprocessing_runner,mccd_fit_val_runner,merge_starcat_runner,mccd_plots_runner;
+          SEXTRACTOR_RUNNER.INPUT_DIR =
+          $SP_RUN/output/run_sp_exp_Sp/split_exp_runner/output;
+          SEXTRACTOR_RUNNER.FILE_PATTERN = image,weight,flag;
+          SEXTRACTOR_RUNNER.FLAG_IMAGE = True.
+        default: psfex
+        options:
+          psfex:
+            label: PSFEx, independent per-CCD models
+            insights: [guinot22_psfex_software, farrens22_two_psf_methods]
+          mccd_focal_plane:
+            label: MCCD hybrid local+global focal-plane model
+            insights: [farrens22_two_psf_methods]
+      psf_model_complexity:
+        label: PSFEx pixel basis with degree-2 spatial variation per CCD
+        rationale: >-
+          A pixel basis with polynomial variation in XWIN/YWIN, fit per CCD
+          at native sampling. PSF_ACCURACY is the fractional accuracy PSFEx
+          assumes for PSF pixel values; per the PSFEx documentation it enters
+          the fit weights, and so how closely the model follows bright stars.
+          Model flexibility trades overfitting against PSF leakage, the
+          dominant additive systematic in cosmic shear. A more flexible model
+          must be supported by the surviving training stars and checked on
+          held-out residuals under the acceptance gate; successful optimisation
+          alone does not establish a usable PSF.
+          Stock values; no rationale recorded.
+          Values:
+          BASIS_TYPE = PIXEL;
+          PSF_ACCURACY = 0.01;
+          BASIS_NUMBER = 20;
+          PSFVAR_DEGREES = 2;
+          PSF_SAMPLING = 1;
+          PSFVAR_KEYS = XWIN_IMAGE,YWIN_IMAGE;
+          PSFVAR_GROUPS = 1,1;
+          MEF_TYPE = INDEPENDENT.
+        default: pixel_basis_deg2_per_ccd
+        options:
+          pixel_basis_deg2_per_ccd:
+            label: PIXEL basis, degree 2, per CCD
+            insights: [guinot22_psf_no_oversampling]
+          deg3:
+            label: Degree-3 spatial variation
+            description: Needs more stars per CCD than the acceptance gate guarantees.
+      psf_acceptance_thresholds:
+        label: Per-CCD PSF-model quality gate
+        rationale: >-
+          A CCD whose model has ACCEPTED < STAR_THRESH or CHI2 > CHI2_THRESH
+          is not interpolated on either the validation or multi-epoch pass.
+          ACCEPTED counts stars that survive PSFEx's own sample cuts; PSFEx
+          fits the 80% training split, so STAR_THRESH applies the published
+          22-star floor to that accepted count. In the science path the CCD's
+          epoch is dropped for every object on it, and an object left with no
+          epoch has no shape.
+          The pipeline has no minimum-epoch floor: NGMIX_N_EPOCH records what
+          survived and epoch-count cuts happen downstream. Guinot+22 discards
+          the CCD from PSF estimation rather than gating at interpolation.
+          Values:
+          config_exp_psfex.ini#PSFEX_INTERP_RUNNER.STAR_THRESH = 22;
+          config_exp_psfex.ini#PSFEX_INTERP_RUNNER.CHI2_THRESH = 2;
+          config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.STAR_THRESH = 22;
+          config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.CHI2_THRESH = 2.
+        default: stars22_chi2_2
+        options:
+          stars22_chi2_2:
+            label: ">= 22 stars and chi2 <= 2 on both passes"
+            insights: [des_psf_blacklist_local, guinot22_star_floor_22_local]
+          stars20_science_path:
+            label: ">= 20 stars on the science path"
+            excluded: true
+            excluded_reason: >-
+              A 20-star science-path threshold would pass models with 20 or 21
+              PSFEx-accepted training stars, below the 22-star floor retained
+              on the validation path.
+          des_25:
+            label: DES Y3 threshold (25 stars)
+            excluded: true
+            excluded_reason: >-
+              CFIS CCDs are smaller than DECam's; the floor is survey-specific.
+    prior_insights:
+      des_psf_blacklist_local:
+        claim: >-
+          DES Y3 blacklists any CCD with fewer than 25 stars surviving
+          outlier rejection in the PSF fit.
+        created_at: "2026-07-16T00:00:00Z"
+        evidence:
+          - id: ev_jarvis_y3_local
+            doi: "10.48550/arXiv.2011.03409"
+            quote:
+              exact: "fewer than 25 stars survived the outlier rejection"
+            location: { page: 10 }
+      guinot22_star_floor_22_local:
+        claim: >-
+          The published ShapePipe/UNIONS analysis discards a CCD from the PSF
+          estimation when fewer than 22 stars are selected on it.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_star_floor_local
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'The dashed line represents the cut at 22 stars/CCD below which the CCD is discarded for the PSF estimation.'
+            location: { page: 4 }
+      guinot22_star_box:
+        claim: >-
+          The published star selection keeps objects whose FWHM lies within
+          0.04 arcsec of the mode of a size preselection, restricted to the
+          magnitude range 18 < r < 22.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_star_box
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'From this pre-selection we keep objects for which the FWHM is within 0.04 arcsec of the mode. In addition to these size cuts, we only use star candidates in the magnitude range 18 < r < 22.'
+            location: { page: 4 }
+      guinot22_star_split:
+        claim: >-
+          The published analysis randomly splits the star sample in two, 80%
+          building the PSF model and 20% held out for the validation tests.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_star_split
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'To be able to perform these tests properly, our star sample has been randomly divided in two:'
+            location: { page: 7 }
+      guinot22_psfex_preselection_off:
+        claim: >-
+          PSFEx's internal pre-selection is disabled because the pipeline
+          does its own star selection; the PSF is fit on the entire star
+          sample.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_preselection_off
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'Since we carry out our own star selection (see Sect. 4.1), we disable the internal PSFEx pre-selection, and the PSF is thus obtained using the entire star sample.'
+            location: { page: 4 }
+      guinot22_psfex_software:
+        claim: >-
+          The published UNIONS shear catalogue uses PSFEx for PSF modelling,
+          with MCCD named as upcoming rather than current work.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_psfex_software
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'We make use of the PSFEx software package'
+            location: { page: 4 }
+      farrens22_two_psf_methods:
+        claim: >-
+          ShapePipe ships two PSF modelling methods, PSFEx and MCCD, either or
+          both of which may be run and used for the galaxy shape measurement.
+        created_at: "2022-06-01T00:00:00Z"
+        evidence:
+          - id: ev_farrens22_two_psf
+            doi: "10.48550/arXiv.2206.14689"
+            quote:
+              exact: 'ShapePipe allows either or both methods to be run and subsequently used for the galaxy shape measurement.'
+            location: { page: 3 }
+      guinot22_psf_no_oversampling:
+        claim: >-
+          The PSFEx parametrisation is tabulated in the paper (pixel basis,
+          degree-2 spatial variation), with the deliberate choice not to
+          over-sample the PSF models.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_psf_complexity
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'The PSFEx parameters we used are presented in Table 1. We have chosen not to over-sample the PSF models.'
+            location: { page: 5 }
+
+  # ═════════════════════════════════════════════════════════════════════════
+  shape_measurement:
+    description: >-
+      Joint multi-epoch ngmix Gaussian fits with metacalibration. Most
+      choices are fixed in code, so silent defaults concentrate here.
+    inputs:
+      - id: vignets
+        type: data
+        source: multi-epoch galaxy, weight, flag, background and background-RMS vignets + interpolated PSFs
+    outputs:
+      - id: ngmix_cat
+        type: data
+        format: fits
+        description: Per-tile metacal shear catalogue chunks (ngmix_runner family).
+        inputs: [vignets]
+        decisions:
+          [ngmix_seed_mode, galaxy_model, fit_initialisation, fit_priors,
+           metacal_scheme, centroid_source, epoch_flux_rescaling,
+           psf_epoch_averaging, galaxy_pixel_weights, psf_likelihood_noise,
+           megacam_ccd_flip, defect_fill, blend_handling,
+           epoch_masked_fraction_cut, central_defect_veto]
+    decisions:
+      ngmix_seed_mode:
+        label: Per-object RNG seeded from sky position
+        rationale: >-
+          Each object's RNG (noise realisations, guesses, priors) is seeded
+          from its position: [HARDCODED] 3-arcsec sky boxes offset by the
+          first epoch's CCD number, folded and Cantor-paired mod 2^32. Results
+          therefore do not depend on how a tile is chunked, and metacal's
+          fixnoise counter-noise cancels across image-simulation branches that
+          share an object's box.
+        default: position_seed
+        options:
+          position_seed:
+            label: Per-object seed from (ra, dec, ccd), 3-arcsec boxes
+          tile_seed:
+            label: One tile-wide RandomState consumed in object order
+            excluded: true
+            excluded_reason: >-
+              Makes every noise stream depend on chunk boundaries and object
+              order.
+      galaxy_model:
+        label: Single-Gaussian galaxy and PSF models
+        rationale: >-
+          [HARDCODED] ngmix Fitter(model='gauss') for galaxy and PSF. The
+          standard defence, that model bias largely cancels in the metacal
+          response, is not stated in the code.
+        default: gauss
+        options:
+          gauss:
+            label: Single Gaussian
+            insights: [guinot22_gaussian_model]
+          exp_or_bdf:
+            label: exp / bdf galaxy models
+            description: Not exposed; make_runners fixes the model.
+      fit_initialisation:
+        label: Fit guesses and retries
+        rationale: >-
+          [HARDCODED] the galaxy guesser (TPSFFluxAndPriorGuesser) starts
+          from T = 0.25 and a PSF-flux fit; the PSF guesser (TFluxGuesser)
+          from T = 0.25 and the catalogue flux. The galaxy runner tries 5
+          times, the PSF runner twice. With a non-convex likelihood, guess and
+          retries decide which objects converge. A failed fit is flagged; an
+          exception during an object's fit drops it with no ngmix row, leaving
+          it to the catalogue sentinels (catalogue_assembly.failure_sentinels).
+        default: prior_guess_t025_ntry5_2
+        options:
+          prior_guess_t025_ntry5_2:
+            label: T guess 0.25; PSF-flux (galaxy) / catalogue flux (PSF); ntry 5 / 2
+          hsm_initialisation:
+            label: Guesses from HSM adaptive moments (Guinot+22)
+            insights: [guinot22_hsm_initialisation]
+            description: Not implemented.
+      fit_priors:
+        label: ngmix joint prior
+        rationale: >-
+          [HARDCODED] ellipticity GPriorBA with sigma 0.4; flat T and F
+          priors with negative support (the bounds decide which noisy fits
+          survive and which rail); a centroid prior one pixel scale wide
+          (PIXEL_SCALE). The PSF fitter is built with the same joint prior.
+          Prior width drives noise bias; no rationale recorded. Guinot+22 used
+          a wider flux prior and a flat prior on r50 rather than T. [LINT] star
+          selection uses 0.187 arcsec/px, while NGMIX_RUNNER.PIXEL_SCALE pins
+          0.186. If the key is absent, pixel_scale_from_wcs raises
+          AttributeError: it calls `.values()` on the first merged-header
+          value, but merge_headers inserts TILE_ID as a string before the
+          exposure entries, which split_exp stores as object ndarrays. The
+          fallback expects nested mappings; its docstring says it reads the
+          tile WCS. The key cannot be dropped until that fallback is fixed.
+          The ngmix_runner comment's noise-window claim is stale: get_noise is
+          never called.
+          Values:
+          get_prior.T_range = -1,1e3;
+          get_prior.F_range = -100,1e9;
+          NGMIX_RUNNER.PIXEL_SCALE = 0.186.
+        default: gpriorba04_flat
+        options:
+          gpriorba04_flat:
+            label: GPriorBA 0.4 + flat T/F with negative support
+            insights: [guinot22_ngmix_priors]
+          nonneg_informative:
+            label: Non-negative or informative T/F priors
+            excluded: true
+            excluded_reason: >-
+              Truncating negative support biases the noshear ensemble mean;
+              metacal wants a symmetric noise response.
+      metacal_scheme:
+        label: Metacalibration protocol
+        rationale: >-
+          [HARDCODED] the five metacal types and step, fixnoise with the noise
+          image, and ignore_failed_psf (an epoch whose PSF fit fails is
+          dropped). The reconvolution kernel, METACAL_PSF, defaults to
+          fitgauss and is unset in the committed config; it moves the response
+          directly. No sheared-PSF types run, so the catalogue has no PSF
+          response term.
+          Values:
+          METACAL_TYPES = noshear,1p,1m,2p,2m;
+          do_ngmix_metacal.metacal_pars[types] = noshear,1p,1m,2p,2m;
+          do_ngmix_metacal.metacal_pars[step] = 0.01;
+          do_ngmix_metacal.metacal_pars[fixnoise] = True;
+          do_ngmix_metacal.metacal_pars[use_noise_image] = True.
+        default: five_types_step001_fitgauss
+        options:
+          five_types_step001_fitgauss:
+            label: noshear+1p/1m/2p/2m, step 0.01, fitgauss, fixnoise
+            insights: [guinot22_metacal_five_images]
+          with_psf_response:
+            label: Add sheared-PSF types for R_psf
+            description: Not implemented.
+      centroid_source:
+        label: Jacobian origin at the coadd centroid
+        rationale: >-
+          The Jacobian origin, where the centroid prior centres, is the
+          sub-pixel offset the stamp extractor stored when cutting the stamp
+          ("wcs", the default at every level; the committed config sets no
+          CENTROID_SOURCE). Extraction and prior share one projection and one
+          rounding, so they cannot disagree near a rounding tie.
+          "hsm" re-centres on adaptive moments measured from the stamp.
+        default: wcs
+        options:
+          wcs:
+            label: Coadd-centroid offset from the stamp extractor
+          hsm:
+            label: HSM adaptive-moment centroid
+            excluded: true
+            excluded_reason: >-
+              Noisy, notably for stars, and follows the light rather than the
+              astrometry that placed the stamp.
+      epoch_flux_rescaling:
+        label: Epochs put on a common flux scale by header FSCALE
+        rationale: >-
+          [HARDCODED] each epoch's image is multiplied by its header FSCALE and
+          its weight divided by FSCALE squared (background RMS scaled with the
+          image) before the joint fit, so the epochs share the tile's
+          zero-point.
+        default: fscale
+        options:
+          fscale:
+            label: Rescale by header FSCALE
+      psf_epoch_averaging:
+        label: Catalogue PSF quantities averaged over epochs by galaxy weight
+        rationale: >-
+          [HARDCODED] the catalogue PSF shape and size (original image PSF
+          and metacal reconvolution kernel) are epoch averages weighted by each
+          epoch's summed galaxy inverse variance; epochs whose PSF fit failed
+          are left out. These columns feed downstream PSF-leakage estimates.
+        default: galaxy_weight_sum
+        options:
+          galaxy_weight_sum:
+            label: Weighted by summed galaxy inverse variance
+      galaxy_pixel_weights:
+        label: Per-pixel inverse variance from background-RMS vignets
+        rationale: >-
+          With BKG_RMS_VIGNET_PATH set, each pixel's weight is 1/rms^2 from the
+          SExtractor background-RMS map (all or nothing; a missing file
+          raises), and the noise realisations use the same per-pixel RMS; the
+          fallback is a scalar 1/sigma_mad^2. Each epoch is
+          background-subtracted with the SExtractor background vignet
+          (BKG_SUB, on unless set False).
+          Values:
+          NGMIX_RUNNER.BKG_RMS_VIGNET_PATH =
+          $NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output/background_rms_vignet{file_number_string}.sqlite.
+        default: rms_vignet_weights
+        options:
+          rms_vignet_weights:
+            label: Per-pixel background-RMS weights
+          scalar_sigma_mad:
+            label: Scalar sigma_mad per epoch
+            excluded: true
+            excluded_reason: Mis-reports errors wherever the RMS map varies.
+      psf_likelihood_noise:
+        label: Flat PSF-observation weight
+        rationale: >-
+          [HARDCODED] the PSF observation carries a flat weight 1/PSF_NOISE^2;
+          without it the g-prior swamps the PSF likelihood. The recovered PSF
+          shape and size are flat for PSF_NOISE from 1e-4 to 1e-6 on the
+          digital twin.
+          Values:
+          PSF_NOISE = 1e-5.
+        default: psf_noise_1em5
+        options:
+          psf_noise_1em5:
+            label: PSF_NOISE 1e-5
+      megacam_ccd_flip:
+        label: 180-degree rotation of tile vignets for CCDs below 18 and 36-37
+        rationale: >-
+          [HARDCODED] "MegaPipe has CCDs that are upside down": the tile vignet
+          and segmentation stamp are rotated to register with the epoch stamp.
+          A wrong flip mis-registers the tile coverage flag against the epoch,
+          changing flagged pixels and the masked-fraction cut. The docstring
+          warns it is wrong for THELI CCDs.
+        default: megapipe_flip
+        options:
+          megapipe_flip:
+            label: Flip CCDs < 18 and 36/37 (MegaPipe orientation)
+      defect_fill:
+        label: Image content of defect pixels before metacal
+        rationale: >-
+          A defect pixel (nonzero instrument flag, zero exposure weight or
+          invalid background RMS) gets weight 0 in prepare_ngmix_weights. Its
+          image value still matters: ngmix's metacal deconvolves, shears and
+          reconvolves an InterpolatedImage of the whole image and copies the
+          weights through, so a zero-weight pixel's content spreads into the
+          weighted pixels within about a PSF width. DES's ngmixer fills for
+          that reason: "it may be important for codes that take moments or use
+          FFTs". Under every BLEND_HANDLING, defect pixels are replaced with
+          independent noise at the per-pixel background RMS when supplied, or
+          the stamp's robust noise scale otherwise; `BLEND_HANDLING = uberseg`
+          additionally zeroes the weight of neighbour-side pixels and leaves
+          their image values untouched. The committed fill
+          uses the unsymmetrized defect set: DES symmetrized its masks, but
+          four-fold symmetrization quadruples m and still leaves an additive c1
+          (symmetrized_4fold_noise). The cost of not symmetrizing, a hole in
+          the galaxy light, is bounded by central_defect_veto. Noise stays the
+          default until a survey A/B against interpolation.
+          Values:
+          VIGNETMAKER_RUNNER_RUN_1.MASKING = False;
+          VIGNETMAKER_RUNNER_RUN_2.MASKING = False.
+        default: noise
+        options:
+          noise:
+            label: Independent noise on the unsymmetrized defect set
+            description: >-
+              Masked pixels get independent noise using the per-pixel
+              background RMS when supplied, or the stamp's robust noise scale
+              otherwise; their inverse-variance weights stay zero. Metacal's
+              fixnoise noise image covers every pixel.
+            insights: [mask_metacal_acts_on_whole_stamp, mask_bad_column_symmetrize]
+          interpolate:
+            label: Interpolate short bounded runs; noise-fill the rest
+            description: >-
+              Not implemented. PR #916 measures c1 = -1.3e-3 for a column
+              8 px from a 0.5 arcsec galaxy and +2e-6 when the weight is also
+              zeroed on its quarter-turn orbit. For a 3-px bleed 6 px from that
+              galaxy, PR #916 measures m11 = +0.89% when the fill is
+              symmetrized, against +0.19% otherwise.
+            insights: [mask_interpolate_with_noise, mask_sharp_edges_ring]
+          symmetrized_4fold_noise:
+            label: Four-fold-symmetrized defect set (M | rot90 | rot180 | rot270), then noise fill
+            description: Not implemented.
+            excluded: true
+            excluded_reason: >-
+              PR #915 measures m11 = -2.7% with four-fold symmetrization
+              against -0.64% without it for a 3-px bleed 10 px from a galaxy
+              with 0.5 arcsec half-light radius and a 0.7 arcsec PSF. Through
+              a PSF with ellipticity (0.05, 0.02), it measures c1 = 7.3e-4
+              with symmetrization against 0.7e-4 without it.
+            insights: [mask_bad_column_symmetrize, mask_des_defect_practice, mask_fixed_orientation]
+          raw:
+            label: "No fill: raw defect values"
+            description: >-
+              Defect pixels keep weight 0 but their image values stay
+              untouched in the image that metacal deconvolves, shears and
+              reconvolves.
+            excluded: true
+            excluded_reason: >-
+              Metacal acts on every pixel regardless of weight, so raw defects
+              leak into the weighted pixels. No published metacal pipeline does
+              this: DES dropped, model-filled or interpolated defects.
+            insights: [mask_metacal_acts_on_whole_stamp, mask_des_defect_practice]
+      blend_handling:
+        label: Neighbour treatment before metacal
+        rationale: >-
+          Covers only pixels shared with a neighbour; defect_fill does not
+          depend on it: defects are noise-filled under every BLEND_HANDLING.
+          none (the default; the committed config
+          sets no key) leaves neighbours fully weighted and untouched.
+          uberseg zeroes the weight of pixels nearer a neighbour's coadd
+          segmentation footprint than the target's (DILATE_NEIGHBOUR, default 1)
+          and leaves the image untouched, as official uberseg does:
+          esheldon/meds get_uberseg returns a weight map (a
+          nearest-segment-pixel Voronoi split). DES Y1's fiducial metacal and
+          the last Y3 config ran on uberseg-weighted stamps with raw neighbour
+          light (an earlier Y3 config subtracted MOF neighbours first); Y6 masks
+          no neighbours before the shear step, using uberseg only as the fit
+          weight after metacal. No DES or Rubin metacal/metadetect pipeline
+          noise-fills the neighbour side. Raw neighbour light is consistent with
+          metacal: it is real sky, and the artificial shear shears it with the
+          target, as the real shear does; the reconvolution spreads it slightly
+          further across the Voronoi boundary than the PSF already had. Known
+          residuals: about +2% m for uberseg-only relative to MOF subtraction in DES Y1
+          simulations, and a blending bias dominated by shear-dependent
+          detection, which no pixel treatment fixes and which DES Y3 calibrated
+          with simulations (mask_des_y1_uberseg_only,
+          mask_blend_bias_detection). Noise-filling the neighbour side would
+          instead cut the target's own light along an unsheared boundary, a
+          sharp edge that rings in the FFTs. The recommended comparison arm is
+          uberseg (weight-only), with defect_fill held equal across arms.
+        default: none
+        options:
+          none:
+            label: No neighbour treatment (BLEND_HANDLING = none)
+            description: >-
+              Neighbour pixels keep their full weight and image values, so the
+              fit sees all neighbour light, which biases shapes toward
+              neighbours (Jarvis et al. 2016); this masks less than even their
+              plain segmentation map. A candidate cause of the FLAGS=2 B-modes
+              investigated in #814.
+            insights: [mask_uberseg_neighbour_bias]
+          uberseg:
+            label: UberSeg, weight-only
+            description: >-
+              As in DES Y1/Y3. Needs the coadd segmentation stamp
+              (SEG_VIGNET_PATH). DILATE_NEIGHBOUR absorbs the coadd-vs-epoch
+              overlay offset: ShapePipe reuses one coadd seg stamp for every
+              epoch where MEDS reprojects it.
+            insights: [mask_uberseg_weight_only, mask_uberseg_neighbour_bias, mask_des_y1_uberseg_only, mask_blend_bias_detection]
+          uberseg_fill:
+            label: UberSeg plus noise fill of neighbour-side pixels
+            description: >-
+              Not implemented. Also replace neighbour-side pixels with noise,
+              removing neighbour light from metacal at the cost of a sharp,
+              unsheared edge through the target's wings (FFT ringing). No
+              published pipeline does this; useful only as a diagnostic arm,
+              where a smooth (apodized) taper would do less damage.
+            insights: [mask_sharp_edges_ring, mask_blend_bias_detection]
+          mof_subtract:
+            label: Subtract neighbour models, then UberSeg (DES Y1 alternative)
+            description: >-
+              Not implemented. Subtract multi-object-fit models of the
+              neighbours before metacal and keep uberseg weights. This removed
+              the ~2% uberseg-only bias in DES Y1 simulations, although Sheldon
+              et al. 2020 found similar blend biases with and without MOF.
+            insights: [mask_des_y1_uberseg_only, mask_blend_bias_detection]
+      central_defect_veto:
+        label: Per-epoch veto on a defect near the stamp centre
+        rationale: >-
+          An epoch is dropped when a defect pixel lies strictly closer to the
+          stamp centre than its fill's radius, beside the masked-fraction cut
+          in the epoch loop; EPOCH_CENTRAL_DEFECT_RADIUS = 0 disables it. The
+          veto reads only the
+          defect mask, so it selects on nothing shear-responsive; for the same
+          reason the radii are fixed rather than scaled by galaxy size: 10 px
+          for noise-filled pixels (EPOCH_CENTRAL_DEFECT_RADIUS) and 7 px for
+          interpolated ones (EPOCH_INTERPOLATED_DEFECT_RADIUS,
+          feat/defect-interpolation). Calibrated on 51-px stamps at known RMS
+          and high S/N, through a round and a (0.05, 0.02) elliptical 0.7
+          arcsec PSF, on galaxies of half-light radius 0.3 and 0.5 arcsec, and
+          for interpolation also 0.7 and 0.9 arcsec. Known limits: at 10 px,
+          wide defects through the elliptical PSF sit at the 1% bound (m11 =
+          -0.98%; -0.24% at 11 px), and noise fill needs 14 px for 0.7 and 0.9
+          arcsec galaxies. Measured on feat/defect-fill-veto and
+          feat/defect-interpolation. The 7 px interpolated radius arrives with
+          defect_fill's interpolate option (feat/defect-interpolation); until
+          then every defect is noise-filled and the 10 px radius applies.
+          Values:
+          EPOCH_CENTRAL_DEFECT_RADIUS = 10.
+        default: fixed_radii
+        options:
+          disabled:
+            label: No central veto (EPOCH_CENTRAL_DEFECT_RADIUS = 0)
+          fixed_radii:
+            label: Fixed radii, 10 px for noise-filled and 7 px for interpolated defects
+          size_scaled_radius:
+            label: Veto radius scaled by galaxy size
+            excluded: true
+            excluded_reason: >-
+              Galaxy size responds to shear, so a size-scaled veto selects on
+              a shear-responsive quantity.
+      epoch_masked_fraction_cut:
+        label: Per-epoch masked-fraction cut
+        rationale: >-
+          An epoch whose stamp has more than EPOCH_MASKED_FRACTION_CUT
+          (default 1/3) of its pixels in the raw, unsymmetrized defect set is
+          dropped from the multi-epoch fit: flagged pixels (any nonzero flag
+          bit, including the tile-coverage bit 2**10 set where the tile vignet
+          is off-image), zero-weight pixels and invalid-RMS pixels, the set
+          defect_fill noise-fills. An object with no surviving epoch has no
+          shape. Before the cut, an epoch is
+          dropped silently if its galaxy stamp is all zeros or its
+          background-subtracted sigma_mad is not positive. DES was stricter:
+          Y1 rejected any epoch with a masked or zero-weight pixel, or with
+          its central 4-pixel region masked; Y3 cut at 10% raw zero-weight
+          pixels; Y6 drops images more than 10% missing and keeps objects at
+          mfrac < 0.1 (mask_multi_epoch_drop). UNIONS has fewer epochs than
+          DES, so the cost in effective number density has to be measured,
+          not assumed. A defect near the centre is handled separately
+          (central_defect_veto).
+        default: one_third
+        options:
+          one_third:
+            label: 1/3 of the stamp in the defect set
+            description: >-
+              Drop an epoch only if more than 1/3 of the stamp pixels are
+              defects.
+          ten_percent:
+            label: 10% (DES Y3 / Y6)
+            description: >-
+              Not a default; EPOCH_MASKED_FRACTION_CUT = 0.1. Matches DES Y3
+              max_zero_weight_frac and
+              Y6 max_masked_fraction.
+            insights: [mask_multi_epoch_drop]
+          any_masked:
+            label: Any masked pixel (DES Y1)
+            description: >-
+              Not implemented. Drop an epoch with any masked stamp pixel, so no
+              fill is ever needed. DES could afford this with about 10 epochs
+              per band; UNIONS likely cannot.
+            insights: [mask_multi_epoch_drop, mask_des_defect_practice]
+    prior_insights:
+      guinot22_ngmix_priors:
+        claim: >-
+          The published ngmix fit uses a Gaussian centroid prior of width one
+          pixel scale, a flat prior on the half-light radius r50 in [-10, 1e6]
+          arcsec and a flat flux prior in [-1e4, 1e9].
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_cen_prior
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'Gaussian distribution centred on 0 with σ = pixel scale'
+            location: { page: 7 }
+          - id: ev_guinot22_r50_prior
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'r50: flat distribution in'
+            location: { page: 7 }
+          - id: ev_guinot22_flux_prior
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'F: flat distribution in'
+            location: { page: 7 }
+      guinot22_hsm_initialisation:
+        claim: >-
+          The published fit is initialised from adaptive moments measured on
+          each sheared version of the object.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_hsm_init
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'We thus run first an adaptive moments algorithm to initialise the least-square operation.'
+            location: { page: 7 }
+      guinot22_gaussian_model:
+        claim: >-
+          The published shape measurement models galaxies with a single
+          Gaussian profile, arguing the resulting model bias is small and
+          largely absorbed by metacalibration.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_gaussian
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'Despite being very simple, the model bias (Kacprzak et al.'
+              suffix: ' 2014) is small.'
+            location: { page: 7 }
+      guinot22_metacal_five_images:
+        claim: >-
+          Metacalibration in the published analysis creates four sheared
+          images for calibration plus one for measurement, with a shear step
+          of 0.01 and a 90-degree-rotated noise image to cancel noise
+          correlations.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_metacal
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'This method creates four images used for the calibration, and one for the measurement.'
+            location: { page: 6 }
+      mask_uberseg_weight_only:
+        label: UberSeg is a weight-map operation (Jarvis 2016)
+        claim: >-
+          UberSeg (DES SV) zeroes the WEIGHT of pixels in another object's
+          coadd segmentation footprint or closer to another object than to the
+          target; MEDS weights are also zeroed wherever a mask flag is set.
+          The image is not modified: in the forward-model fits it was designed
+          for, a zero-weight pixel drops out of the likelihood exactly.
+          esheldon/meds get_uberseg, which returns a weight map, matches.
+        created_at: "2026-09-26T00:00:00Z"
+        derived: true
+        evidence:
+          - id: ev1
+            doi: 10.48550/arXiv.1507.05603
+            version: 3
+            quote:
+              exact: We then set pixels in the weight map to zero if they were either associated with other objects in the segmentation map or were closer to any other object than to the object of interest.
+          - id: ev2
+            doi: 10.48550/arXiv.1507.05603
+            version: 3
+            quote:
+              exact: are both of the model-fitting variety
+      mask_uberseg_neighbour_bias:
+        label: Neighbour light biases shapes toward neighbours (Jarvis 2016)
+        claim: >-
+          With a plain segmentation-map mask, light from a bright neighbour
+          just outside its footprint biased the shape toward the neighbour;
+          UberSeg made that bias undetectable in end-to-end simulations.
+          ShapePipe's default (no neighbour treatment) masks less than even
+          the plain segmentation map.
+        created_at: "2026-09-26T00:00:00Z"
+        derived: false
+        evidence:
+          - id: ev1
+            doi: 10.48550/arXiv.1507.05603
+            version: 3
+            quote:
+              exact: when using ordinary segmentation maps we found a significant bias of the galaxy shape in the direction toward neighbors.
+          - id: ev2
+            doi: 10.48550/arXiv.1507.05603
+            version: 3
+            quote:
+              exact: we no longer detected any systematic bias in the shape estimates due to unmasked flux from neighboring objects
+      mask_metacal_acts_on_whole_stamp:
+        label: Metacal transforms every stamp pixel, weights unseen
+        claim: >-
+          Metacal builds an interpolated image of the whole postage stamp,
+          then deconvolves, shears and reconvolves it; its Fourier transforms
+          cannot accommodate missing data, so zero-weight pixels' image values
+          feed the sheared images. The method papers leave masking
+          unaddressed. ngmix does exactly this: an InterpolatedImage of
+          obs.image, weights copied through.
+        created_at: "2026-09-26T00:00:00Z"
+        derived: true
+        evidence:
+          - id: ev1
+            doi: 10.48550/arXiv.1702.02600
+            version: 1
+            quote:
+              exact: For each galaxy and PSF postage stamp, we first create an
+          - id: ev2
+            doi: 10.48550/arXiv.1702.02600
+            version: 1
+            quote:
+              exact: We have made no attempt to deal with the effects of masked pixels or blending
+          - id: ev3
+            doi: 10.48550/arXiv.1702.02601
+            version: 2
+            quote:
+              exact: convolutions cannot accommodate missing data
+      mask_bad_column_symmetrize:
+        label: Filled bad columns give additive e1; symmetrize the mask
+        claim: >-
+          Sheldon & Huff 2017 found that filling bad columns (with the
+          best-fit model, not even noise) gave a large additive e1 bias and a
+          few-per-mille multiplicative bias, both removed by adding a
+          compensating column rotated 90 degrees about the stamp centre.
+          Sheldon et al. 2020 recommend the same compensating mask; DES Y6,
+          like previous DES pipelines, OR-s each bad-pixel mask with its
+          90-degree rotation to cancel additive biases.
+        created_at: "2026-09-26T00:00:00Z"
+        derived: true
+        evidence:
+          - id: ev1
+            doi: 10.48550/arXiv.1702.02601
+            version: 2
+            quote:
+              exact: as well as a multiplicative bias of a few parts in a thousand
+          - id: ev2
+            doi: 10.48550/arXiv.1702.02601
+            version: 2
+            quote:
+              exact: at 90 degree rotation about the center of the image, restoring symmetry to the image
+          - id: ev3
+            doi: 10.48550/arXiv.1911.02505
+            version: 2
+            quote:
+              exact: An additional compensating mask, rotated at right angles to the real mask, can be used to restore symmetry to the image
+          - id: ev4
+            doi: 10.48550/arXiv.2501.05665
+            version: 2
+            quote:
+              exact: we rotate the bad pixel mask by 90 degrees and apply it via a logical
+          - id: ev5
+            doi: 10.48550/arXiv.2501.05665
+            version: 2
+            quote:
+              exact: This process helps to cancel additive biases in the final shape measurement.
+      mask_des_defect_practice:
+        label: DES never passed raw defects through metacal
+        claim: >-
+          Every DES metacal generation removed defects from the image before
+          metacal: Y1 dropped any epoch with a masked pixel, Y3 filled
+          symmetrized defects with the best-fit central model (ngmix-y1-config
+          / ngmix-y3-config), and Y6
+          interpolated symmetrized defects following "previous DES shear
+          measurement pipelines". None left raw defect values in a zero-weight
+          pixel, as ShapePipe's uberseg path does.
+        created_at: "2026-09-26T00:00:00Z"
+        derived: true
+        evidence:
+          - id: ev1
+            doi: 10.48550/arXiv.2501.05665
+            version: 2
+            quote:
+              exact: Following previous DES shear measurement pipelines
+          - id: ev2
+            doi: 10.48550/arXiv.2501.05665
+            version: 2
+            quote:
+              exact: Then, we apply a two-dimensional Clough-Tocher interpolation
+      mask_interpolate_with_noise:
+        label: Interpolate defects, and the noise image identically
+        claim: >-
+          The metadetect papers interpolate masked regions (bad columns,
+          cosmic rays, saturation) before the shear step, taking care not to
+          create a spurious shear, and pass the noise image used for metacal's
+          correlated-noise correction through the same interpolation.
+        created_at: "2026-09-26T00:00:00Z"
+        derived: true
+        evidence:
+          - id: ev1
+            doi: 10.48550/arXiv.1911.02505
+            version: 2
+            quote:
+              exact: The FFT does not permit missing data, so the masked regions must be interpolated in some way.
+          - id: ev2
+            doi: 10.48550/arXiv.1911.02505
+            version: 2
+            quote:
+              exact: so the noise field used for correcting correlated noise effects must also be propagated through the same coadding and interpolation
+          - id: ev3
+            doi: 10.48550/arXiv.2303.03947
+            version: 2
+            quote:
+              exact: Before warping, we interpolated the simulated artifacts in each image such as cosmic rays, bad columns, and saturated pixels.
+          - id: ev4
+            doi: 10.48550/arXiv.2303.03947
+            version: 2
+            quote:
+              exact: we must also run the noise image through the same procedures
+      mask_sharp_edges_ring:
+        label: Sharp mask edges ring through metacal; apodize large masks
+        claim: >-
+          Sharp mask edges ring in the metacal FFTs, so bright-star regions
+          are zeroed with an apodized (smoothly tapered) edge, and the noise
+          image gets the same masking. The same reasoning argues against a
+          hard noise fill cut along a neighbour's Voronoi boundary.
+        created_at: "2026-09-26T00:00:00Z"
+        derived: true
+        evidence:
+          - id: ev1
+            doi: 10.48550/arXiv.2303.03947
+            version: 2
+            quote:
+              exact: Masks with sharp features can cause ringing in the FFTs used by the
+          - id: ev2
+            doi: 10.48550/arXiv.2501.05665
+            version: 2
+            quote:
+              exact: we further mask bright stars with apodization to avoid FFT artifacts during the deconvolution, shearing, and reconvolution processes
+          - id: ev3
+            doi: 10.48550/arXiv.2501.05665
+            version: 2
+            quote:
+              exact: we also applied the same masking and apodization to the
+      mask_multi_epoch_drop:
+        label: Drop heavily masked epochs (10% in DES)
+        claim: >-
+          With many dithered epochs, problematic data can simply be dropped
+          (Sheldon & Huff 2017). DES Y6 drops input images more than 10%
+          missing and cuts objects at masked fraction mfrac < 0.1, which its
+          image simulations show avoids shear calibration bias. ShapePipe's
+          cut is 1/3.
+        created_at: "2026-09-26T00:00:00Z"
+        derived: true
+        evidence:
+          - id: ev1
+            doi: 10.48550/arXiv.1702.02601
+            version: 2
+            quote:
+              exact: data deemed problematic can simply be left out of the fit
+          - id: ev2
+            doi: 10.48550/arXiv.2501.05665
+            version: 2
+            quote:
+              exact: Images with a missing pixel fraction higher than 10
+          - id: ev3
+            doi: 10.48550/arXiv.2501.05665
+            version: 2
+            quote:
+              exact: is sufficient not to introduce shear calibration biases
+      mask_des_y1_uberseg_only:
+        label: 'DES Y1 metacal: uberseg-only fiducial, ~2% m residual'
+        claim: >-
+          DES Y1 metacal's fiducial catalogue handled neighbours with uberseg
+          only (raw neighbour light in the image). In dense deblending
+          simulations it carried m = 2.18 +/- 0.16 per cent at S/N > 10,
+          removed by subtracting MOF models of the neighbours; in data the
+          relative uberseg-vs-MOF m was 0.023 +/- 0.009.
+        created_at: "2026-09-26T00:00:00Z"
+        derived: false
+        evidence:
+          - id: ev1
+            doi: 10.48550/arXiv.1708.01533
+            version: 2
+            quote:
+              exact: masks pixels close to neighbours rather than assigning a fraction of the light in each pixel to them
+          - id: ev2
+            doi: 10.48550/arXiv.1708.01533
+            version: 2
+            quote:
+              exact: We detect no bias when subtracting the light from neighbours.
+      mask_blend_bias_detection:
+        label: Stamp-metacal blend bias is mostly shear-dependent detection
+        claim: >-
+          Sheldon et al. 2020 find that per-stamp metacal's few-percent
+          blending bias comes from shear-dependent detection, not blended
+          light: it is similar with and without neighbour subtraction, and
+          metacal shears the space between objects coherently. DES Y3 kept Y1's
+          approach (Gatti et al. list no change to neighbour or mask handling)
+          and calibrated the resulting 2-3% with image simulations.
+        created_at: "2026-09-26T00:00:00Z"
+        derived: true
+        evidence:
+          - id: ev1
+            doi: 10.48550/arXiv.1911.02505
+            version: 2
+            quote:
+              exact: We show that this bias is not due to blending itself, but rather to shear-dependent object detection.
+          - id: ev2
+            doi: 10.48550/arXiv.1911.02505
+            version: 2
+            quote:
+              exact: we see similar biases when no deblending is performed
+          - id: ev3
+            doi: 10.48550/arXiv.1911.02505
+            version: 2
+            quote:
+              exact: the space between objects is sheared coherently
+          - id: ev4
+            doi: 10.48550/arXiv.2011.03408
+            version: 3
+            quote:
+              exact: shape catalogue differs from DES Y1 in the following ways
+          - id: ev5
+            doi: 10.48550/arXiv.2011.03408
+            version: 3
+            quote:
+              exact: which affects the shear estimates when objects are blended
+      mask_fixed_orientation:
+        label: Fixed-orientation cameras make mask anisotropy coherent
+        claim: >-
+          Masks have a preferred direction (columns, bleeds, spikes). On a
+          camera with a fixed sky orientation (DECam, and CFHT/MegaCam on its
+          equatorial mount), mask-induced shape errors add up coherently;
+          with Rubin's camera rotation, unmasked trails averaged away. DES Y3 has
+          an unexplained mean e1 of 3.5e-4 that its simulations, which include
+          the real bad-pixel masks, do not reproduce; whether masks cause it is
+          not established.
+        created_at: "2026-09-26T00:00:00Z"
+        derived: true
+        evidence:
+          - id: ev1
+            doi: 10.48550/arXiv.1708.01533
+            version: 2
+            quote:
+              exact: The DES focal plane does not rotate, so these effects always correspond to the same orientation in sky coordinates.
+          - id: ev2
+            doi: 10.48550/arXiv.2303.03947
+            version: 2
+            quote:
+              exact: We find that these unmasked trails do not cause a shear bias, which we attribute to the camera rotations that randomize the direction of the trail on the sky.
+          - id: ev3
+            doi: 10.48550/arXiv.2011.03408
+            version: 3
+            quote:
+              exact: Our shear catalogue is characterized by a non-null mean shear in one of the two components, whose origin is unknown.
+
+  # ═════════════════════════════════════════════════════════════════════════
+  catalogue_assembly:
+    description: >-
+      The per-tile science catalogue: shape chunks merged and joined to the
+      detection catalogue and PSF quantities.
+    inputs:
+      - id: ngmix_chunks
+        type: data
+        source: per-tile ngmix catalogue chunks + tile sexcat + PSF diagnostics
+    outputs:
+      - id: tile_final_cat
+        type: data
+        format: fits
+        description: The assembled per-tile science catalogue (final_cat family).
+        inputs: [ngmix_chunks]
+        decisions:
+          [star_galaxy_classification, tile_overlap_handling,
+           failure_sentinels]
+    decisions:
+      star_galaxy_classification:
+        label: Star/galaxy separation deferred out of the pipeline
+        rationale: >-
+          Classification is off and no spread-model input is wired, so the
+          catalogue ships every object and separation happens downstream. The
+          dormant make_cat classifier computes class = sm + 2 sm_err, with
+          stars at |class| < SM_STAR_THRESH and galaxies at class >
+          SM_GAL_THRESH, both read from config (the function defaults, 0.003
+          and 0.01, are bypassed); the committed config sets neither key, so
+          enabling classification alone raises. Unlike Guinot+22
+          (guinot22_spread_model_cut), it applies no s > 0 or magnitude cut.
+          Values:
+          MAKE_CAT_RUNNER.SM_DO_CLASSIFICATION = False.
+        default: deferred_downstream
+        options:
+          deferred_downstream:
+            label: No in-pipeline classification; catalogue ships all objects
+          spread_model_inline:
+            label: spread_model classification in make_cat
+            insights: [guinot22_spread_model_cut]
+            description: >-
+              Not wired; needs spread_model_runner after the PSF
+              interpolation, its output added to make_cat's inputs, and both
+              thresholds set.
+      tile_overlap_handling:
+        label: Tile-overlap duplicates neither removed nor flagged
+        rationale: >-
+          Adjacent tiles overlap, and objects in the overlap are measured in
+          both. [HARDCODED] make_cat attaches only TILE_ID; with no
+          unique-object rule or overlap flag, duplicates are left to
+          downstream selection. NUMBER_LIST selects input tiles; it does not
+          carve disjoint sky regions, and no config key makes these catalogues
+          unique or flags their overlap rows.
+        default: no_dedup_in_pipeline
+        options:
+          no_dedup_in_pipeline:
+            label: Ship duplicates; TILE_ID is the only handle
+          overlap_flagging:
+            label: Flag overlap objects in the catalogue
+            description: Not implemented.
+          nearest_tile_centre:
+            label: Keep each object only in its nearest tile
+            excluded: true
+            excluded_reason: >-
+              Requires cross-tile coordination at assembly time, which the
+              per-tile DAG deliberately avoids.
+      failure_sentinels:
+        label: Objects without shape measurements kept, with sentinel values
+        rationale: >-
+          [HARDCODED] detections with no ngmix row (no surviving epoch, or an
+          exception during the fit) stay in the catalogue with sentinels:
+          sizes, fluxes, magnitudes and flags 0, flux and magnitude errors -1,
+          ellipticities and their errors -10, size errors 1e30,
+          NGMIX_N_EPOCH 0. A failed object's NGMIX_MCAL_FLAGS reads 0, the
+          success value, so a cut on flags alone keeps it; NGMIX_N_EPOCH > 0
+          removes it.
+        default: sentinel_values
+        options:
+          sentinel_values:
+            label: Keep with sentinels (flags 0, e -10, T_ERR 1e30)
+          drop_unmatched:
+            label: Drop objects without shapes
+            excluded: true
+            excluded_reason: >-
+              Loses the photometry-only population and hides attrition.
+    prior_insights:
+      guinot22_spread_model_cut:
+        claim: >-
+          The published analysis selects galaxies inside the pipeline with the
+          spread model, at s + 2 sigma_s > 0.0003 together with s > 0 and
+          20 < MAG_AUTO < 26.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_spread_model
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'We then use the spread model to make the selection presented below:'
+            location: { page: 5 }
+          - id: ev_guinot22_spread_model_cut
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 's + 2σs > 0.0003'
+            location: { page: 5 }

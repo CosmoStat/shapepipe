@@ -36,8 +36,10 @@ EPOCH_MASKED_FRACTION_CUT = 1 / 3
 # Default of the EPOCH_CENTRAL_DEFECT_RADIUS option (pixels): an epoch is
 # dropped when a pixel of :func:`defect_mask` lies closer than this to the
 # stamp centre (see :func:`has_central_defect`).
+# @sc [decision:shape_measurement.central_defect_veto]
 EPOCH_CENTRAL_DEFECT_RADIUS = 10
 
+# @sc [decision:shape_measurement.metacal_scheme]
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
 
 # Noise budget for the PSF observation's flat weight map (psf_wt =
@@ -47,6 +49,7 @@ METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
 # value is non-critical once it is finite (validated on the digital twin: the
 # recovered PSF shape/size are flat across 1e-4..1e-6). See
 # make_ngmix_observation.
+# @sc [decision:shape_measurement.psf_likelihood_noise]
 PSF_NOISE = 1e-5
 
 
@@ -113,6 +116,8 @@ def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     Returns
     -------
     ngmix.joint_prior.PriorSimpleSep
+
+    @sc [decision:shape_measurement.fit_priors]
     """
     if T_range is None:
         T_range = [-1.0, 1.0e3]
@@ -176,6 +181,8 @@ def position_seed(ra, dec, ccd):
     -------
     int
         Seed in ``[0, 2**32)`` for ``numpy.random.RandomState``.
+
+    @sc [decision:shape_measurement.ngmix_seed_mode]
     """
     box_x = int(np.floor((ra * 3600) / 3) + (ccd + 1))
     box_y = int(np.floor((dec * 3600) / 3) + (ccd + 2))
@@ -614,6 +621,7 @@ class Ngmix(object):
         numpy.ndarray
             The flipped postage stamp
 
+        @sc [decision:shape_measurement.megacam_ccd_flip]
         """
         if ccd_nb < 18 or ccd_nb in [36, 37]:
             # swap x axis so origin is on top-right
@@ -999,6 +1007,7 @@ class Ngmix(object):
         dict
             Dictionary containing the NGMIX metacal results
 
+        @sc [decision:shape_measurement.fit_initialisation,decision:shape_measurement.ngmix_seed_mode]
         """
         tile_cat = Tile_cat(self._tile_cat_path, self._seg_cat_path)
         vignet_cat = self._vignet_cat
@@ -1196,7 +1205,7 @@ def prepare_postage_stamps(
 ):
     """Gather one object's epoch stamps, dropping epochs its defects spoil.
 
-    @sc [decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.defect_fill] epoch-cut-on-defect-mask
+    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.defect_fill] epoch-cut-on-defect-mask
     An epoch is dropped when more than ``epoch_masked_fraction_cut`` of its
     stamp lies in :func:`defect_mask`: flagged, zero-weight and invalid-RMS
     pixels, the set that :func:`prepare_ngmix_weights` zero-weights and
@@ -1384,6 +1393,7 @@ def background_subtract(gal,bkg):
     -------
     numpy.ndarray
         background subtracted galaxy
+    @sc [decision:shape_measurement.galaxy_pixel_weights]
     """
 
     # background subtraction
@@ -1413,6 +1423,7 @@ def rescale_epoch_fluxes(gal, weight, header, bkg_rms=None):
         rescaled weight image
     numpy.ndarray or None
         rescaled background RMS image
+    @sc [decision:shape_measurement.epoch_flux_rescaling]
     """
     Fscale = header['FSCALE']
 
@@ -1617,6 +1628,7 @@ def uberseg_weight(weight, seg, object_number, dilate_neighbour=0):
     -------
     numpy.ndarray
         Copy of ``weight`` with neighbour-side pixels zeroed.
+    @sc [decision:shape_measurement.blend_handling]
     """
     weight = np.copy(weight)
 
@@ -1832,6 +1844,7 @@ def prepare_ngmix_weights(
     ValueError
         If ``blend_handling`` is unknown, or ``"uberseg"`` lacks ``seg`` or
         ``object_number``.
+    @sc [decision:masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights]
     """
     if blend_handling not in BLEND_HANDLINGS:
         raise ValueError(
@@ -1955,6 +1968,7 @@ def make_ngmix_observation(
     Returns
     -------
     ngmix.observation.Observation
+    @sc [decision:shape_measurement.centroid_source,decision:shape_measurement.psf_likelihood_noise]
     """
     psf_jacob = ngmix.Jacobian(
         row=(psf.shape[0] - 1) / 2,
@@ -2051,6 +2065,7 @@ def _average_psf_fits(results_and_weights):
     dict
         Keys ``g_psf``, ``g_psf_err``, ``T_psf``, ``T_psf_err`` (weighted
         averages over the surviving epochs) and ``n_epoch`` (their count).
+    @sc [decision:shape_measurement.psf_epoch_averaging]
     """
     n_epoch_used = 0
     wsum = 0
@@ -2102,6 +2117,8 @@ def average_multiepoch_psf(obsdict):
         Keys: 'g_psf', 'g_psf_err', 'T_psf', 'T_psf_err' (weighted
         averages over the epochs whose PSF fit succeeded) and 'n_epoch'
         (the number of those surviving epochs).
+
+    @sc [decision:shape_measurement.psf_epoch_averaging]
     """
     # ignore_failed_psf=True drops failed-PSF epochs from the galaxy fit but
     # keeps them in obsdict; _average_psf_fits skips them on flags != 0.
@@ -2156,6 +2173,7 @@ def average_original_psf(gal_obs_list, psf_runner):
     -------
     dict
         Same keys as :func:`average_multiepoch_psf`.
+    @sc [decision:shape_measurement.psf_epoch_averaging]
     """
     def fit(gal_obs):
         # Fit a COPY so gal_obs.psf stays pristine for metacal — see docstring.
@@ -2188,6 +2206,7 @@ def make_runners(prior, flux_guess, rng):
     -------
     tuple
         (runner, psf_runner) : ngmix.runners.Runner, ngmix.runners.PSFRunner
+    @sc [decision:shape_measurement.fit_initialisation,decision:shape_measurement.fit_priors,decision:shape_measurement.galaxy_model]
     """
     fitter = ngmix.fitting.Fitter(model='gauss', prior=prior)
     guesser = ngmix.guessers.TPSFFluxAndPriorGuesser(rng=rng, T=0.25, prior=prior)
@@ -2261,6 +2280,7 @@ def do_ngmix_metacal(
         dict (:func:`average_original_psf`). The two PSF dicts share keys but
         describe different PSFs; the named fields guard against transposing
         them. Unpacks positionally as ``resdict, psf_res, psf_orig_res``.
+    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]
     """
     n_epoch = len(stamp.gals)
     if n_epoch == 0:

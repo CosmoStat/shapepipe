@@ -70,6 +70,19 @@ class SplitExposures(object):
 
         Split a single exposures CCDs into separate files.
 
+        @sc [decision:preparation.ccd_split_extent,label:convention] split-all-hdus-or-raise
+        Every one of the N_HDU (40) CCDs, the ear CCDs 36-39 included, is
+        written and becomes a candidate epoch; any other HDU count raises
+        rather than splitting a partial exposure. The file suffix ``-<idx-1>``
+        and the header list index are the same 0-based CCD number that becomes
+        CCD_N downstream.
+
+        @sc [decision:preparation.astrometric_solution_source,label:convention] wcs-from-delivered-header
+        The stored WCS is ``WCS(header)`` of the delivered CCD header,
+        unmodified. Every downstream world-to-pixel transform (epoch
+        membership, stamp placement, position seeding) uses it, so a refit or
+        header edit here moves every stamp centre and epoch assignment.
+
         Parameters
         ----------
         exp_path : str

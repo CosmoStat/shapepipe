@@ -27,10 +27,15 @@ policy — it applies everywhere.
 ```
 slow      heavy compute (minutes); excluded from the fast inner loop
 candide   needs the candide cluster and/or its real data; auto-skipped elsewhere
+decision(*ids) ASTRA decisions protected by a test; ids checked against astra.yaml
 ```
 
 `--strict-markers` is on, so a typo'd marker is an error, not a silent no-op.
-Use `pytest -m "not unions"` to run the survey-generic tests.
+Science guardrails use `decision(*ids)` at module or test level; AST parsing
+checks every ID against `astra.yaml` without importing the tests.
+`tests/unit/test_decisions.py` also checks that `@sc` site tags and rationale
+`Values:` refs agree with the decision record, and that test markers name real
+decisions. Use `pytest -m "not unions"` to run the survey-generic tests.
 
 A `candide`-marked test is **collected everywhere** (so `--collect-only` shows
 it exists) but **skipped off-cluster** with a clear reason. Candide is detected

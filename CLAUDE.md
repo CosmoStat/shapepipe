@@ -118,4 +118,40 @@ keep in their own stores outside it. A `.felt/` directory (a markdown "fiber" no
 store used with the `felt` CLI) is **not tracked here**: it's gitignored, and where
 it exists it's a machine-local symlink into a private, separately git-synced store,
 so a fresh clone won't have one. Record durable decisions in the PR, issue, or docs
-where the change lives.
+where the change lives — and *scientific* decisions in `astra.yaml`, below.
+
+## Scientific decisions live in `astra.yaml`
+
+`astra.yaml` at the repo root is the pipeline's decision record: every
+consequential scientific choice embedded in the code and committed configs,
+with its rationale, alternatives and selected default. `universes/committed.yaml`
+pins the option the committed configuration selects for every decision.
+`@sc [decision:<id>]` tags live at implementing code/config sites; optional
+`Values:` sentences assert committed values within those tagged sites. The
+rationale stays in ASTRA, while local `@sc` contracts hold site-specific
+constraints. `tests/unit/test_decisions.py` checks tag syntax, bidirectional
+decision/site coverage, values, and test `decision` markers. To inspect tags at
+an implementation site, run `python -m tests.helpers.decisions <path>[:<line>]`;
+`--decision <id>` lists its sites. The format is ASTRA.
+
+`uvx astra-tools@0.2.17 guide` is the briefing and
+`uvx astra-tools@0.2.17 spec` the field reference. The file's header states
+its conventions, including `[HARDCODED]` and `[LINT]`.
+
+Membership test: a different defensible choice would change which objects enter
+the shear catalogue, or the numbers attached to them. Detection thresholds,
+masking, star-selection cuts, PSF model degree, ngmix priors and seeding, flag
+semantics, completeness gates: in. Workflow policy (manifests, chunking,
+allocation, failure reporting, provenance) is out; it lives in the PR and in the
+PRD, CosmoStat/shapepipe#848.
+
+**A scientific change is not finished until the record is.** When a change moves
+what the pipeline measures, amend `astra.yaml` in the same PR (add the decision,
+or edit its rationale, options, Values and site tags), pin the selected option
+in `universes/committed.yaml`, and say so in the PR description.
+`tests/unit/test_decisions.py` runs in CI; a scientific change that breaks its
+site/value checks or leaves the record stale is unfinished. Before committing:
+
+```bash
+uvx astra-tools@0.2.17 validate
+```
