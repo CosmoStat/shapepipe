@@ -41,6 +41,11 @@ PRODUCT_HELPERS = {
     "prod_exp_tar": (("2605805",), False),
 }
 PRODUCT_TEMPLATES = ("PROD_TILE_DIR", "PROD_EXP_DIR")
+COVERAGE_TEMPLATES = {
+    "COVERAGE_DIR": f"{PRODUCTS}/coverage",
+    "COVERAGE_HSP": f"{PRODUCTS}/coverage/coverage_{CAMPAIGN}.hsp",
+    "COVERAGE_MANIFEST": f"{PRODUCTS}/coverage/manifests/coverage_map.json",
+}
 
 
 def _code_lines(path):
@@ -58,9 +63,10 @@ def _snakefile_def(name):
     return m.group(0)
 
 
-def _snakefile_assignment(name):
-    m = re.search(rf"^{name}\s*=\s*(.+)$", SNAKEFILE.read_text(), re.M)
-    assert m, f"Snakefile no longer assigns {name}; update PRODUCT_TEMPLATES"
+def _assignment(path, name):
+    """The expression bound to a top-level workflow constant."""
+    m = re.search(rf"^{name}\s*=\s*(.+)$", path.read_text(), re.M)
+    assert m, f"{path.name} must assign {name}"
     return m.group(1)
 
 
@@ -72,7 +78,10 @@ def helpers():
     for name in PRODUCT_HELPERS:
         exec(_snakefile_def(name), ns)
     for name in PRODUCT_TEMPLATES:
-        ns[name] = eval(_snakefile_assignment(name), ns)
+        ns[name] = eval(_assignment(SNAKEFILE, name), ns)
+    for name in COVERAGE_TEMPLATES:
+        ns[name] = eval(_assignment(WORKFLOW / "rules" / "coverage.smk",
+                                    name), ns)
     return ns
 
 
@@ -126,6 +135,12 @@ def test_product_paths_are_rooted_in_products_dir(helpers, name):
 @pytest.mark.parametrize("name", PRODUCT_TEMPLATES)
 def test_product_templates_are_rooted_in_products_dir(helpers, name):
     assert str(helpers[name]).startswith(PRODUCTS + "/"), helpers[name]
+
+
+@pytest.mark.parametrize("name,expected", COVERAGE_TEMPLATES.items())
+def test_coverage_paths_use_products_dir_and_run(helpers, name, expected):
+    """The portable map carries the run name; its manifest stays beside it."""
+    assert str(helpers[name]) == expected
 
 
 def _machine_outputs():

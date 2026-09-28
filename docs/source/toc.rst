@@ -34,14 +34,7 @@
   :caption: Running on a cluster
 
   clusters
-  pipeline_canfar
-
-.. toctree::
-  :hidden:
-  :titlesonly:
-  :caption: Miscellaneous
-
-  post_processing
+  workflow
 
 .. toctree::
    :hidden:
