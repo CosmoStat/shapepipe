@@ -648,6 +648,12 @@ retained as the extension point for a future estimator family)</p>
 </dd>
 <dt>SAVE_PSF_DATA<span class="classifier">bool, optional</span></dt><dd><p>Save PSF information if <code class="docutils literal notranslate"><span class="pre">True</span></code>; default value is <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
+<dt>N_EPOCH_SLOTS<span class="classifier">int, optional</span></dt><dd><p>Number of slots written for each per-epoch PSF column family
+(<code class="docutils literal notranslate"><span class="pre">HSM_*_PSF_n</span></code>, <code class="docutils literal notranslate"><span class="pre">EXP_ID_n</span></code>, <code class="docutils literal notranslate"><span class="pre">CCD_n</span></code>) when <code class="docutils literal notranslate"><span class="pre">SAVE_PSF_DATA</span></code> is
+<code class="docutils literal notranslate"><span class="pre">True</span></code>; unfilled slots hold the family’s sentinel, and an object with
+more epochs than slots raises an error. A fixed count gives every tile
+the same schema. Default is the tile’s maximum <code class="docutils literal notranslate"><span class="pre">N_EPOCH</span></code> plus one</p>
+</dd>
 </dl>
 </section>
 <section id="submodules">
