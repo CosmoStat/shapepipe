@@ -12,8 +12,12 @@
 #     metadata: `@sc [decision:<id>,label:<kind>] <contract-id>`.
 #   * In Python, put tags in a def/class docstring or as a comment immediately
 #     above a module statement. In Snakemake, put a comment immediately above
-#     the rule/statement. In config, a comment tag governs the following
-#     paragraph; a section header governs the whole section, and
+#     the rule/statement. In config, a tag governs the active settings in the
+#     following paragraph, which ends at the next blank line or `@sc` line.
+#     Every active key before that boundary is governed. A blank line between a
+#     tag and its key is an error. To govern a whole section, put the tag
+#     directly above its `[SECTION]` header; it governs active keys through the
+#     next section header. A description comment may sit above the tag, and
 #     `scope:file` governs the whole file.
 #   * A rationale may end with `Values: <ref> = <value>; ... .`. Every ref must
 #     resolve to exactly one site tagged for that decision and match its value.
@@ -586,12 +590,12 @@ analyses:
       epoch_membership_ccd_bounds:
         label: Which exposure CCDs an object belongs to (N_EPOCH)
         rationale: >-
-          CCD_SIZE bounds each CCD's usable x range with strict inequalities,
-          and a WCS inversion failure skips the CCD, lowering N_EPOCH; this
-          sets how many exposures enter each galaxy's multi-epoch fit. The x
-          endpoints match MegaCam's raw DATASEC (2048 pixel indices
-          inclusively), but the strict cut excludes both. The excluded strip is
-          likely prescan (unverified).
+          `all_world2pix(..., 0)` returns 0-based pixels, and the strict test
+          accepts `33 < x < 2080`. In 1-based FITS coordinates this is x=35
+          through x=2080 inclusive: it trims DATASEC columns 33 and 34 but
+          admits its upper endpoint, column 2080. A WCS inversion failure skips
+          that CCD, lowering N_EPOCH; this sets how many exposures enter each
+          galaxy's multi-epoch fit.
           Values:
           SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
           SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True.
@@ -971,10 +975,12 @@ analyses:
         label: Per-CCD PSF-model quality gate
         rationale: >-
           A CCD whose model has ACCEPTED < STAR_THRESH or CHI2 > CHI2_THRESH
-          is not interpolated, on both the validation and the multi-epoch
-          pass; STAR_THRESH applies the published 22-star floor to the 80%
-          training sample. In the science path the CCD's epoch is dropped for
-          every object on it, and an object left with no epoch has no shape.
+          is not interpolated on either the validation or multi-epoch pass.
+          ACCEPTED counts stars that survive PSFEx's own sample cuts; PSFEx
+          fits the 80% training split, so STAR_THRESH applies the published
+          22-star floor to that accepted count. In the science path the CCD's
+          epoch is dropped for every object on it, and an object left with no
+          epoch has no shape.
           The pipeline has no minimum-epoch floor: NGMIX_N_EPOCH records what
           survived and epoch-count cuts happen downstream. Guinot+22 discards
           the CCD from PSF estimation rather than gating at interpolation.
@@ -992,8 +998,9 @@ analyses:
             label: ">= 20 stars on the science path"
             excluded: true
             excluded_reason: >-
-              20 is the pre-split floor; with 80% of stars in the model it gates
-              below both the published floor and the validation pass.
+              A 20-star science-path threshold would pass models with 20 or 21
+              PSFEx-accepted training stars, below the 22-star floor retained
+              on the validation path.
           des_25:
             label: DES Y3 threshold (25 stars)
             excluded: true
@@ -1171,17 +1178,18 @@ analyses:
           [HARDCODED] ellipticity GPriorBA with sigma 0.4; flat T and F
           priors with negative support (the bounds decide which noisy fits
           survive and which rail); a centroid prior one pixel scale wide
-          (PIXEL_SCALE, derived from the WCS when the key is absent). The PSF
-          fitter is built with the same joint prior. Prior width drives noise
-          bias; no rationale recorded. Guinot+22 used a wider flux prior and a
-          flat prior on r50 rather than T. [LINT] the epoch stamps are
-          exposure pixels and star selection uses 0.187 arcsec/px (MegaCam
-          native), but NGMIX_RUNNER.PIXEL_SCALE pins 0.186 (near the coadd
-          scale), overriding the WCS-derived value #858 made the default;
-          without the key, pixel_scale_from_wcs reads the first exposure
-          CCD's WCS (its docstring says the tile's). The ngmix_runner
-          comment's noise-window claim is stale: get_noise is never
-          called.
+          (PIXEL_SCALE). The PSF fitter is built with the same joint prior.
+          Prior width drives noise bias; no rationale recorded. Guinot+22 used
+          a wider flux prior and a flat prior on r50 rather than T. [LINT] star
+          selection uses 0.187 arcsec/px, while NGMIX_RUNNER.PIXEL_SCALE pins
+          0.186. If the key is absent, pixel_scale_from_wcs raises
+          AttributeError: it calls `.values()` on the first merged-header
+          value, but merge_headers inserts TILE_ID as a string before the
+          exposure entries, which split_exp stores as object ndarrays. The
+          fallback expects nested mappings; its docstring says it reads the
+          tile WCS. The key cannot be dropped until that fallback is fixed.
+          The ngmix_runner comment's noise-window claim is stale: get_noise is
+          never called.
           Values:
           get_prior.T_range = -1,1e3;
           get_prior.F_range = -100,1e9;
@@ -1316,18 +1324,17 @@ analyses:
           weights through, so a zero-weight pixel's content spreads into the
           weighted pixels within about a PSF width. DES's ngmixer fills for
           that reason: "it may be important for codes that take moments or use
-          FFTs". On develop the fill rides on BLEND_HANDLING, which the
-          committed config leaves at noisefill: defect pixels get independent
-          noise at the per-pixel RMS; under uberseg the fill is skipped and raw
-          defects enter metacal. [LINT] the prepare_ngmix_weights docstring
-          says noisefill keeps the weight of filled pixels (the code zeroes
-          it), and the ngmix_runner comment says noisefill fills neighbour
-          pixels (it fills flagged pixels and leaves neighbours untouched). On
-          feat/defect-fill-veto every defect pixel is zero-weighted and filled
-          before metacal under every BLEND_HANDLING; uberseg only removes
-          weight from neighbour-side pixels. The fill uses the unsymmetrized
-          defect set: DES symmetrized its masks, but four-fold symmetrization
-          quadruples m and still leaves an additive c1
+          FFTs". In the committed default (`BLEND_HANDLING = noisefill`),
+          masked pixels are replaced with independent noise at the per-pixel
+          background RMS when supplied, or the stamp's robust noise scale
+          otherwise. With `BLEND_HANDLING = uberseg`, the image is left
+          untouched and weights are zeroed on defects and neighbour-side
+          pixels. [LINT] the prepare_ngmix_weights docstring says noisefill
+          keeps the weight of filled pixels (the code zeroes it), and the
+          ngmix_runner comment says noisefill fills neighbour pixels (it fills
+          flagged pixels and leaves neighbours untouched). The committed fill
+          uses the unsymmetrized defect set: DES symmetrized its masks, but
+          four-fold symmetrization quadruples m and still leaves an additive c1
           (symmetrized_4fold_noise). The cost of not symmetrizing, a hole in
           the galaxy light, is bounded by central_defect_veto. Noise stays the
           default until a survey A/B against interpolation.
@@ -1339,41 +1346,37 @@ analyses:
           noise:
             label: Independent noise on the unsymmetrized defect set
             description: >-
-              Defect pixels get independent noise at the per-pixel background
-              RMS and keep weight 0, consistent with metacal's fixnoise noise
-              image, which covers every pixel. On the fill branches this is
-              DEFECT_FILL = noise.
+              Masked pixels get independent noise using the per-pixel
+              background RMS when supplied, or the stamp's robust noise scale
+              otherwise; their inverse-variance weights stay zero. Metacal's
+              fixnoise noise image covers every pixel.
             insights: [mask_metacal_acts_on_whole_stamp, mask_bad_column_symmetrize]
           interpolate:
             label: Interpolate short bounded runs; noise-fill the rest
             description: >-
-              On feat/defect-interpolation (a stacked draft), not develop;
-              DEFECT_FILL = interpolate. Only short bounded runs (at most 3 px
-              across, clean on both sides) are interpolated, Clough-Tocher from
-              clean pixels within 4 px, averaged over the four quarter turns
-              and shared with the fixnoise image; everything else is
-              noise-filled. Weights are also zeroed on the quarter-turn orbit
-              of each interpolated pixel while those pixels keep their light,
-              which cancels the weight term: c1 goes from -1.3e-3 to 2e-6 for a
-              column 8 px from a 0.5 arcsec galaxy. The fill itself is never
-              symmetrized: that gives m = +0.89% against +0.19% for a 3-px
-              bleed at 6 px. Measured on feat/defect-interpolation.
+              Not implemented. PR #916 measures c1 = -1.3e-3 for a column
+              8 px from a 0.5 arcsec galaxy and +2e-6 when the weight is also
+              zeroed on its quarter-turn orbit. For a 3-px bleed 6 px from that
+              galaxy, PR #916 measures m11 = +0.89% when the fill is
+              symmetrized, against +0.19% otherwise.
             insights: [mask_interpolate_with_noise, mask_sharp_edges_ring]
           symmetrized_4fold_noise:
             label: Four-fold-symmetrized defect set (M | rot90 | rot180 | rot270), then noise fill
+            description: Not implemented.
             excluded: true
             excluded_reason: >-
-              Measured on feat/defect-fill-veto, it quadruples m (-2.7% against
-              -0.64% for a 3-px bleed at 10 px, half-light radius 0.5 arcsec,
-              PSF 0.7 arcsec) and still leaves c1 = 7.3e-4 through an
-              elliptical PSF.
+              PR #915 measures m11 = -2.7% with four-fold symmetrization
+              against -0.64% without it for a 3-px bleed 10 px from a galaxy
+              with 0.5 arcsec half-light radius and a 0.7 arcsec PSF. Through
+              a PSF with ellipticity (0.05, 0.02), it measures c1 = 7.3e-4
+              with symmetrization against 0.7e-4 without it.
             insights: [mask_bad_column_symmetrize, mask_des_defect_practice, mask_fixed_orientation]
           raw:
-            label: "No fill: raw defect values (develop under BLEND_HANDLING = uberseg)"
+            label: "No fill: raw defect values (BLEND_HANDLING = uberseg)"
             description: >-
-              Defect pixels keep weight 0, but their raw values (bad columns,
-              saturation, bleeds, cosmic rays, bright-star light) stay in the
-              image that metacal deconvolves, shears and reconvolves.
+              With BLEND_HANDLING = uberseg, defect pixels keep weight 0 but
+              their image values stay untouched in the image that metacal
+              deconvolves, shears and reconvolves.
             excluded: true
             excluded_reason: >-
               Metacal acts on every pixel regardless of weight, so raw defects
