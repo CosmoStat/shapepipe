@@ -2,13 +2,12 @@
 """The count-based completeness table — the single failure policy.
 
 This is the ported ``complete_check`` count table from the v2.0 bash layer
-(``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4). Across smk-g6
-(127 exposures, 64 tiles, and 512 ngmix chunks), every non-warning runner
-produced exactly its ``expect`` count; the v2.0 layer likewise used exact counts,
-with only ``psfex_interp`` marked ``:warn``. The formerly ported lower bounds
-(and the unsupported ~0.2% setools-attrition claim) therefore have no basis:
-setools produced 80/80 in all 127 exposures. ``split_exp`` is also structurally
-all-or-nothing because it raises on an HDU-count mismatch.
+(``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4): every non-warning
+runner is expected to produce exactly its ``expect`` count. Across smk-g6
+(127 exposures, 64 tiles, and 512 ngmix chunks), setools produced 80/80 in
+all 127 exposures, so ``setools_runner`` is mandatory with no tolerance for
+attrition. ``split_exp`` is likewise structurally all-or-nothing because it
+raises on an HDU-count mismatch.
 
 A runner below ``expect`` fails its unit unless it has ``warn=True``; such a
 shortfall gives the unit status ``warn``. There is no 3-class taxonomy and no
@@ -57,7 +56,8 @@ UNMOVED mtime, or the mtime rerun-trigger churns the cone on every unrelated
 Per-runner fields:
     expect   nominal file count for a fully complete unit; below it fails
     warn     if True a shortfall warns instead of failing the unit (bash
-             ``:warn`` — e.g. psfex_interp on tiles missing some epochs)
+             ``:warn`` — e.g. ``exp_psf``'s ``psfex_interp_runner``; the
+             ``tile_vignets`` ``psfex_interp_runner`` is mandatory)
     subpath  count files in ``<runner>/output/<subpath>/`` instead of
              ``<runner>/output/`` (bash ``:rand_split`` — setools split cats)
 
@@ -116,21 +116,33 @@ COMPLETENESS = {
             "psfex_runner":         dict(expect=80),
             "psfex_interp_runner":  dict(expect=40, warn=True),
         },
-        # MCCD counts are derived from config_exp_mccd.ini and its per-CCD
-        # runners, but this chain has not been exercised through this workflow.
-        # Keep the expected counts visible while making the unverified branch
-        # warning-only until a real campaign validates its counts.
+        # MCCD shares the chain up to setools with PSFEx, then fits one
+        # focal-plane model per exposure. Preprocessing is a serial runner that
+        # merges the 40 CCDs' split catalogues into one training and one test
+        # catalogue; fit_val writes the model (fitted_model-<exp>.npy, what the
+        # tiles interpolate) and its validation catalogue; merge_starcat and
+        # mccd_plots add per-exposure diagnostics. Every runner here is :warn.
         "mccd": {
             "sextractor_runner":          dict(expect=120, warn=True),
+            "mask_query_runner":          dict(expect=40, warn=True),
             "setools_runner":             dict(expect=80, warn=True,
                                                 subpath="rand_split"),
-            "mccd_preprocessing_runner":  dict(expect=80, warn=True),
+            # mccd_preprocessing merges the exposure's per-CCD star catalogues
+            # into one train and one test catalogue, not one output per CCD.
+            "mccd_preprocessing_runner":  dict(expect=2, warn=True),
             # Fit/validation is exposure-wide: one model and one validation
-            # catalogue, unlike the per-CCD preprocessing outputs.
+            # catalogue.
             "mccd_fit_val_runner":        dict(expect=2, warn=True),
             "merge_starcat_runner":       dict(expect=1, warn=True),
             # config_exp_mccd enables the ten meanshape and six histogram plots.
             "mccd_plots_runner":          dict(expect=16, warn=True),
+        },
+        # Image simulations with the true PSF (psf_model: fake): no PSF fit on
+        # the exposures, only the SExtractor pass whose background/background_rms
+        # checkimages the tile vignets read (config_exp_fake.ini in
+        # config/cfis_image_sims). Same 40 CCDs x (sexcat, background, rms).
+        "fake": {
+            "sextractor_runner":   dict(expect=120),
         },
     },
 
@@ -154,12 +166,19 @@ COMPLETENESS = {
             # v2.0's 4 was the canfar flavor. every vignette feeds ngmix, so the expected count is all-or-nothing.
             "vignetmaker_runner_run_2": dict(expect=5),
         },
-        # MCCD is wired but unvalidated here; retain the expected runner names
-        # and counts as warnings until a workflow campaign exercises them.
+        # As psfex: mccd_interp writes the tile's galaxy_psf store from the
+        # exposures' focal-plane models (SKiLLS star sim 1z2z_1, 233.293).
         "mccd": {
-            "mccd_interp_runner":        dict(expect=1, warn=True),
-            "vignetmaker_runner_run_1":   dict(expect=1, warn=True),
-            "vignetmaker_runner_run_2":   dict(expect=5, warn=True),
+            "mccd_interp_runner":        dict(expect=1),
+            "vignetmaker_runner_run_1":   dict(expect=1),
+            "vignetmaker_runner_run_2":   dict(expect=5),
+        },
+        # Image simulations: fake_interp_runner writes the same galaxy_psf
+        # sqlite psfex_interp_runner writes, from the simulation's PSF dictionary.
+        "fake": {
+            "fake_interp_runner":       dict(expect=1),
+            "vignetmaker_runner_run_1": dict(expect=1),
+            "vignetmaker_runner_run_2": dict(expect=5),
         },
     },
     # One check runs inside run_sp_tile_ngmix_Ng${SP_NGMIX_CHUNK}u per chunk,
@@ -211,7 +230,7 @@ def check_counts(stage, run_dir):
             table = table[psf_model]
         except KeyError as exc:
             raise ValueError(
-                f"Invalid SP_PSF={psf_model!r}; expected one of psfex, mccd."
+                f"Invalid SP_PSF={psf_model!r}; expected one of {sorted(table)}."
             ) from exc
     elif stage == "tile_detect":
         detection = os.environ.get("SP_TILE_DETECTION", TILE_DETECTIONS[0])
@@ -376,10 +395,20 @@ def build_manifest(stage, run_dir, unit, stage_subdir=None):
 
 
 def write_if_changed(path: Path, text: str) -> None:
-    """Write only when the bytes differ — see the module docstring on mtime."""
+    """Write only when the bytes differ (see the module docstring on mtime).
+
+    Atomic (temp file + os.replace): a reader such as run_report.py must never
+    see the file truncated mid-write.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists() or path.read_text() != text:
-        path.write_text(text)
+        tmp = path.with_name(f".{path.name}.tmp{os.getpid()}")
+        try:
+            tmp.write_text(text)
+            os.replace(tmp, path)
+        except BaseException:
+            tmp.unlink(missing_ok=True)
+            raise
 
 
 def _unit_from_run_dir(run_dir):

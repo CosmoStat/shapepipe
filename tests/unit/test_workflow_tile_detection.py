@@ -183,19 +183,26 @@ def test_report_lists_the_segmentation_stage_only_for_the_pair(
             "tile_detect") + 1
 
 
-def test_run_config_defaults_to_the_catalogue_and_declares_its_source():
-    """The committed run config must parse under its own defaults.
+@pytest.mark.parametrize("machine", ["nibi", "candide"])
+@pytest.mark.parametrize("input_type", ["data", "image_sims"])
+def test_machine_defaults_pair_the_catalogue_with_its_source(
+        machine, input_type, monkeypatch, tmp_path):
+    """Real data defaults to the catalogue and declares where it lives.
 
     `tile_detection: unions_catalogue` is refused by the Snakefile without
-    `inputs.catalogues`, so the two settings travel together.
+    `inputs.catalogues`, so the two settings travel together in the machines
+    table. Image sims have no UNIONS catalogue and fall back to SExtractor.
     """
-    text = (REPO_ROOT / "workflow" / "config.yaml").read_text()
-    config = {}
-    for line in text.splitlines():
-        if line.startswith("tile_detection:") or line.startswith(
-                "blend_handling:"):
-            key, _, value = line.partition(":")
-            config[key] = value.strip()
-    assert config["tile_detection"] == "unions_catalogue"
+    pytest.importorskip("yaml")
+    run_config = _load("run_config")
+    monkeypatch.setenv("SP_PROFILE", machine)
+    over = tmp_path / "run.yaml"
+    over.write_text(f"input_type: {input_type}\n")
+    config = run_config.load(
+        str(REPO_ROOT / "workflow" / "config.yaml"), str(over))
     assert config["blend_handling"] in completeness.BLEND_HANDLINGS
-    assert re.search(r"^  catalogues: \S+", text, re.M)
+    if input_type == "data":
+        assert config["tile_detection"] == "unions_catalogue"
+        assert config["inputs"]["catalogues"]
+    else:
+        assert config.get("tile_detection", "sextractor") == "sextractor"

@@ -17,7 +17,7 @@
   "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": { "automerge": true, "labels": ["security"] },
   "packageRules": [
-    { "matchUpdateTypes": ["minor", "patch", "pin", "digest"], "automerge": true },
+    { "matchUpdateTypes": ["minor", "patch", "pin", "pinDigest", "digest"], "automerge": true },
     { "matchUpdateTypes": ["major"], "dependencyDashboardApproval": true },
     { "matchPackageNames": ["python"], "groupName": "python", "automerge": false, "dependencyDashboardApproval": true },
     { "matchDepNames": ["ngmix"], "enabled": false }

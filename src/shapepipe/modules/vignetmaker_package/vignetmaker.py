@@ -11,10 +11,78 @@ import os
 
 import numpy as np
 from astropy.wcs import WCS
-from sf_tools.image.stamp import FetchStamps
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
+
+
+def get_stamps(image, positions, rad):
+    """Get Stamps.
+
+    Extract postage stamps and record their sub-pixel centring.
+
+    The image is zero-padded by ``rad`` on every side and a
+    ``(2 * rad + 1, 2 * rad + 1)`` stamp is sliced around the integer pixel
+    nearest each position (``numpy.round``). The stamp values are
+    bit-identical to the ``sf_tools.image.stamp.FetchStamps`` this replaces
+    for in-bounds positions; unlike ``FetchStamps``, an out-of-bounds centre
+    raises rather than being silently wrapped modulo the image shape.
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        2D image array to extract from
+    positions : numpy.ndarray
+        ``(N, 2)`` array of 0-indexed ``[row, col]`` float positions
+    rad : int
+        Stamp radius; stamps are ``2 * rad + 1`` pixels on a side
+
+    Returns
+    -------
+    stamps : numpy.ndarray
+        ``(N, 2 * rad + 1, 2 * rad + 1)`` array of extracted stamps
+    int_pos : numpy.ndarray
+        ``(N, 2)`` integer array of the rounded ``[row, col]`` pixel each
+        stamp is centred on
+    offsets : numpy.ndarray
+        ``(N, 2)`` float array of the sub-pixel ``[row, col]`` offset
+        (``positions - int_pos``), in ``[-0.5, 0.5]``. This is the centroid
+        prior consumed downstream by the ngmix ``"wcs"`` (coadd) centroid
+        source, so the stamp and the prior share a single rounding and cannot
+        disagree.
+
+    Raises
+    ------
+    ValueError
+        If ``positions`` is not ``(N, 2)`` or any stamp centre rounds to a
+        pixel outside the image.
+
+    """
+    rad = int(rad)
+    positions = np.asarray(positions, dtype=float)
+    if positions.ndim != 2 or positions.shape[1] != 2:
+        raise ValueError("positions must have shape (N, 2)")
+
+    shape = np.array(image.shape)
+    int_pos = np.round(positions).astype(int)
+    offsets = positions - int_pos
+
+    out_of_bounds = np.any((int_pos < 0) | (int_pos >= shape), axis=1)
+    if np.any(out_of_bounds):
+        raise ValueError(
+            f"Stamp centre(s) fall outside the image (shape {tuple(shape)}): "
+            + f"{positions[out_of_bounds].tolist()}"
+        )
+
+    padded = np.pad(image, ((rad, rad), (rad, rad)), mode="constant")
+    stamps = np.array(
+        [
+            padded[row : row + 2 * rad + 1, col : col + 2 * rad + 1]
+            for row, col in int_pos
+        ]
+    )
+
+    return stamps, int_pos, offsets
 
 
 class VignetMaker(object):
@@ -91,7 +159,10 @@ class VignetMaker(object):
                     + "'SPHE' (spherical world coordinates))"
                 )
 
-            vign = self._get_stamp(image_path, pos - 1, rad)
+            # Single-epoch (tile) path: the coadd-centroid offset is not
+            # consumed here (only the multi-epoch path feeds the ngmix
+            # centroid prior), so the extraction bookkeeping is discarded.
+            vign, _, _ = self._get_stamp(image_path, pos - 1, rad)
 
             save_vignet(
                 vign,
@@ -186,8 +257,13 @@ class VignetMaker(object):
 
         Returns
         -------
-        numpy.ndarray
+        stamps : numpy.ndarray
             Array containing the vignets
+        int_pos : numpy.ndarray
+            ``(N, 2)`` rounded ``[row, col]`` extraction pixels
+        offsets : numpy.ndarray
+            ``(N, 2)`` sub-pixel ``[row, col]`` offsets (see
+            :func:`get_stamps`)
 
         """
         try:
@@ -211,12 +287,7 @@ class VignetMaker(object):
             raise
         img_file.close()
 
-        fs = FetchStamps(img, int(rad))
-        fs.get_pixels(np.round(pos).astype(int))
-
-        vign = fs.scan()
-
-        return vign
+        return get_stamps(img, pos, int(rad))
 
     def _get_stamp_me(self, image_dirs, image_pattern):
         """Get Stamp Multi-Epoch.
@@ -266,6 +337,8 @@ class VignetMaker(object):
             array_vign = None
             array_id = None
             array_exp_name = None
+            array_offset = None
+            array_int_pos = None
 
             for ccd in ccd_list:
 
@@ -298,12 +371,28 @@ class VignetMaker(object):
                 ).T
                 pos[:, [0, 1]] = pos[:, [1, 0]]
 
-                tmp_vign = self._get_stamp(img_path, pos - 1, self._rad)
+                tmp_vign, tmp_int_pos, tmp_offset = self._get_stamp(
+                    img_path, pos - 1, self._rad
+                )
 
                 if array_vign is None:
                     array_vign = np.copy(tmp_vign)
                 else:
                     array_vign = np.concatenate((array_vign, np.copy(tmp_vign)))
+
+                if array_offset is None:
+                    array_offset = np.copy(tmp_offset)
+                else:
+                    array_offset = np.concatenate(
+                        (array_offset, np.copy(tmp_offset))
+                    )
+
+                if array_int_pos is None:
+                    array_int_pos = np.copy(tmp_int_pos)
+                else:
+                    array_int_pos = np.concatenate(
+                        (array_int_pos, np.copy(tmp_int_pos))
+                    )
 
                 if array_id is None:
                     array_id = np.copy(obj_id)
@@ -319,7 +408,15 @@ class VignetMaker(object):
                     array_exp_name = np.concatenate((array_exp_name, exp_name_tmp))
 
             if array_id is not None:
-                final_list.append([array_id, array_vign, array_exp_name])
+                final_list.append(
+                    [
+                        array_id,
+                        array_vign,
+                        array_exp_name,
+                        array_offset,
+                        array_int_pos,
+                    ]
+                )
             else:
                 self._w_log.info(
                     f"All CCDs skipped for exposure {exp_name} "
@@ -343,6 +440,20 @@ class VignetMaker(object):
                     index = final_list[j][2][where_res[0]]
                     output_dict[id_tmp][index] = {}
                     output_dict[id_tmp][index]["VIGNET"] = final_list[j][1][
+                        where_res[0]
+                    ]
+                    # Sub-pixel [row, col] offset of the coadd centroid from
+                    # the integer pixel this stamp was extracted around, plus
+                    # that integer pixel itself. Both ride with the vignette
+                    # (no sidecar file); OFFSET is consumed by the ngmix "wcs"
+                    # (coadd) centroid source so the extraction and the
+                    # centroid prior share one rounding (see #767), and
+                    # INT_POS + OFFSET reconstruct the absolute exposure
+                    # centroid for diagnostics.
+                    output_dict[id_tmp][index]["OFFSET"] = final_list[j][3][
+                        where_res[0]
+                    ]
+                    output_dict[id_tmp][index]["INT_POS"] = final_list[j][4][
                         where_res[0]
                     ]
                     counter += 1

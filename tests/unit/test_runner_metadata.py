@@ -43,7 +43,8 @@ def test_runner_module_exposes_decorated_run_function(runner_path):
     except ModuleNotFoundError as err:
         if err.name == "fitsio":
             pytest.skip(
-                "fitsio is available in the dev image, not the test extra"
+                "fitsio ships in the image (the `fitsio` extra), not the "
+                "`test` extra"
             )
         raise
 
