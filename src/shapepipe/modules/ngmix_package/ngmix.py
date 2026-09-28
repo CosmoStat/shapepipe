@@ -1900,6 +1900,8 @@ def average_multiepoch_psf(obsdict):
         Keys: 'g_psf', 'g_psf_err', 'T_psf', 'T_psf_err' (weighted
         averages over the epochs whose PSF fit succeeded) and 'n_epoch'
         (the number of those surviving epochs).
+
+    @sc [decision:shape_measurement.psf_epoch_averaging]
     """
     # ignore_failed_psf=True drops failed-PSF epochs from the galaxy fit but
     # keeps them in obsdict; _average_psf_fits skips them on flags != 0.

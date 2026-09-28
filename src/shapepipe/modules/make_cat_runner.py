@@ -39,11 +39,7 @@ def make_cat_runner(
 ):
     """Define The Make Catalogue Runner.
 
-    @sc [decision:catalogue_assembly.star_galaxy_classification,label:scope] classification-deferred-downstream
-    The final catalogue carries every detection: no star/galaxy cut is made
-    here, and separation happens downstream. With SM_DO_CLASSIFICATION on, the
-    thresholds must come from SM_STAR_THRESH and SM_GAL_THRESH; the function
-    defaults of :func:`make_cat.save_sm_data` are never used.
+    @sc [decision:catalogue_assembly.star_galaxy_classification]
 
     @sc [decision:masking.sky_mask_application]
     """

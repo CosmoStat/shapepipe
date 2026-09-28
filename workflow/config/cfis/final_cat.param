@@ -7,8 +7,7 @@ YWIN_WORLD
 # tile ID, for plot of tile-dependent additive bias.
 # Can maybe be removed.
 
-# @sc [decision:catalogue_assembly.tile_overlap_handling,label:provenance] tile-id-is-not-unique-object-id
-# TILE_ID is tile provenance, not an object-uniqueness or overlap flag; duplicate removal or overlap flagging requires explicit downstream code.
+# @sc [decision:catalogue_assembly.tile_overlap_handling]
 TILE_ID
 
 # flags

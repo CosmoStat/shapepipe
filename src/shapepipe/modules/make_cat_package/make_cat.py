@@ -253,10 +253,8 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
     shared with the ``mask_query`` module: one primitive, two consumers.
 
     @sc [decision:masking.sky_mask_application,label:scope] mask-columns-verbatim
-    Each ``MASK_<BAND>`` holds the map value at the object's windowed position
-    verbatim, off-coverage sentinel included; nothing here thresholds,
-    interprets or removes an object. Without MASK_EXT_PATHS no column is
-    written and every mask cut happens downstream.
+    Query ``XWIN_WORLD`` and ``YWIN_WORLD`` in catalogue order and pass the
+    ``query_map`` result to ``MASK_<BAND>`` unchanged.
 
     Parameters
     ----------
@@ -420,13 +418,12 @@ class SaveCatalogue:
         moments : bool, optional
             If True, write the parallel ``NGMIXm_*`` (moments-branch) columns.
 
-        @sc [decision:catalogue_assembly.failure_sentinels,label:coupling] never-fit-sentinels-out-of-range
-        A detection with no ngmix row keeps NGMIX_N_EPOCH 0 and shape sentinels
-        outside any measured range: ellipticities and their errors -10, flux
-        and magnitude errors -1, size errors 1e30. A cut on NGMIX_N_EPOCH > 0
-        or on these values removes such a row independently of the flag
-        columns; the size and flux sentinels (0) lie inside the physical range
-        and do not. Keep every sentinel out of range when changing one.
+        @sc [decision:catalogue_assembly.failure_sentinels,label:coupling] failure-sentinel-cut-semantics
+        Missing-row ``T``, ``SNR``, flux, magnitude, PSF-size and flag values
+        initialize to 0, which is in range and cannot identify failure. Use
+        ``NGMIX_N_EPOCH == 0`` for that cut; the -10 ellipticity, -1
+        flux/magnitude-error and 1e30 size-error sentinels are out of range and
+        can also identify missing fits.
 
         """
         self._key_ends = ["1M", "1P", "2M", "2P", "NOSHEAR"]

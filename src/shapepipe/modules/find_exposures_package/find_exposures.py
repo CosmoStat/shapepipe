@@ -65,11 +65,8 @@ class FindExposures:
         FITS header.
 
         @sc [decision:preparation.epoch_provenance_from_tile_history,label:convention] epochs-from-tile-history
-        The epoch list is the deduplicated file names in HISTORY column COLNUM
-        with the extension stripped and the trailing ``p`` kept; a tile whose
-        header cannot be read must fail, never yield an empty or partial list.
-        EXP_PREFIX strips only a leading prefix; CFIS names carry none, so the
-        CFIS config leaves it blank and must not set it to the ``p`` suffix.
+        Apply ``EXP_PREFIX`` only at the start of the parsed name; do not strip
+        matching text from the middle or remove the trailing ``p`` here.
 
         Returns
         -------

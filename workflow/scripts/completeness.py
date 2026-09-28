@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 """The count-based completeness table — the single failure policy.
 
-@sc [label:policy] exact-counts-fail-the-unit
-A mandatory runner below its ``expect`` count fails its whole unit (an
-exposure, a tile or an ngmix chunk), so a partial unit never reaches the
-catalogue. On the psfex path only exposure-side psfex_interp may fall short (a
-CCD rejected by the acceptance gate writes nothing); the never-run MCCD chain
-warns throughout.
-
 This is the ported ``complete_check`` count table from the v2.0 bash layer
 (``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4): every non-warning
 runner is expected to produce exactly its ``expect`` count. Across smk-g6
@@ -371,6 +364,12 @@ def _unit_from_run_dir(run_dir):
 
 
 def main(argv=None) -> int:
+    """Run the CLI and persist the per-unit verdict.
+
+    @sc [label:policy] exact-counts-fail-the-unit
+    ``--job-rc`` can fail a stage even when product counts pass; the log records
+    every verdict, while the manifest is emitted only for success.
+    """
     p = argparse.ArgumentParser(description="ShapePipe per-unit completeness check")
     sub = p.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="count products, write the manifest")
