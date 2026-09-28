@@ -210,6 +210,7 @@ def query_map(path, ra, dec):
         Map value at each position; positions outside the map's coverage carry
         the map's sentinel value
 
+    @sc [decision:masking.sky_mask_application]
     """
     values, _ = query_map_coverage(path, ra, dec)
 
@@ -220,6 +221,12 @@ def flag_positions(paths, ra, dec, bits=None, w_log=None):
     """Flag Positions.
 
     Combine one or more healsparse masks into a single per-object integer flag.
+
+    @sc [decision:masking.psf_star_mask_veto,label:convention] off-coverage-is-clean
+    A position outside a map's coverage contributes 0 for boolean and integer
+    maps alike, so a map that misses an exposure never flags its stars; the
+    all-off-coverage case is logged as a warning instead. The flag is the
+    bitwise OR of the per-map contributions, 0 meaning clean.
 
     Each map contributes at each position:
 

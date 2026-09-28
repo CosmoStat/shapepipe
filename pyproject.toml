@@ -57,7 +57,6 @@ doc = [
 jupyter = [
     "ipython>=9.14.1",
     "jupyterlab>=4.5.9",
-    "snakemake>=9.22.0",
 ]
 lint = [
     "ruff",
@@ -141,4 +140,5 @@ markers = [
     "slow: heavy compute (minutes); excluded from the fast inner loop.",
     "candide: needs the candide cluster and/or its real data; auto-skipped elsewhere.",
     "unions: uses UNIONS-specific survey layout or data.",
+    "decision(*ids): the astra.yaml decisions this test protects.",
 ]

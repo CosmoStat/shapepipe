@@ -15,6 +15,11 @@ from astropy import units as u
 from astropy.wcs import WCS
 from sqlitedict import SqliteDict
 
+from shapepipe.modules.ngmix_package.ngmix import (
+    get_mcal_flags,
+    get_mcal_types_fail,
+    get_type_flags,
+)
 from shapepipe.pipeline import file_io
 from shapepipe.utilities import mask_query
 
@@ -111,6 +116,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     int
         Number of objects saved
 
+    @sc [decision:catalogue_assembly.tile_overlap_handling]
     """
     sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
     sexcat_file.open()
@@ -137,77 +143,6 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     sexcat_file.close()
 
     return cat_size
-
-
-def save_sm_data(
-    final_cat_file,
-    sexcat_sm_path,
-    do_classif=True,
-    star_thresh=0.003,
-    gal_thresh=0.01,
-    n_obj=-1,
-):
-    r"""Save Spread-Model Data.
-
-    Save the spread-model data into the final catalogue.
-
-    Parameters
-    ----------
-    final_cat_file : file_io.FITSCatalogue
-        Final catalogue
-    sexcat_sm_path : str
-        Path to spread-model catalogue to save. If ``None``, spread_model is
-        set to 99
-    do_classif : bool
-        If ``True`` objects will be classified into stars, galaxies, and other,
-        using the classifier
-        :math:`{\rm class} = {\rm sm} + 2 * {\rm sm}_{\rm err}`
-    star_thresh : float
-        Threshold for star selection; object is classified as star if
-        :math:`|{\rm class}| <` ``star_thresh``
-    gal_thresh : float
-        Threshold for galaxy selection; object is classified as galaxy if
-        :math:`{\rm class} >` ``gal_thresh``
-    nobj : int, optional
-        Number of objects, only used if sexcat_sm_path is ``-1``
-
-    Returns
-    -------
-    int
-        Number of objects saved
-    """
-    final_cat_file.open()
-
-    if sexcat_sm_path is not None:
-        sexcat_sm_file = file_io.FITSCatalogue(
-            sexcat_sm_path,
-            SEx_catalogue=True,
-        )
-        sexcat_sm_file.open()
-
-        sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
-        sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
-
-        sexcat_sm_file.close()
-
-    else:
-        sm = np.ones(n_obj) * 99
-        sm_err = np.ones(n_obj) * 99
-
-    final_cat_file.add_col("SPREAD_MODEL", sm)
-    final_cat_file.add_col("SPREADERR_MODEL", sm_err)
-
-    if do_classif:
-        obj_flag = np.ones_like(sm, dtype="int16") * 2
-        classif = sm + 2.0 * sm_err
-        obj_flag[np.where(np.abs(classif) < star_thresh)] = 0
-        obj_flag[np.where(classif > gal_thresh)] = 1
-
-        final_cat_file.add_col("SPREAD_CLASS", obj_flag)
-
-    final_cat_file.close()
-
-    return n_obj
 
 
 def parse_mask_ext_paths(paths_str):
@@ -249,6 +184,10 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
 
     The lookup itself is ``shapepipe.utilities.mask_query.query_map``,
     shared with the ``mask_query`` module: one primitive, two consumers.
+
+    @sc [decision:masking.sky_mask_application,label:scope] mask-columns-verbatim
+    Query ``XWIN_WORLD`` and ``YWIN_WORLD`` in catalogue order and pass the
+    ``query_map`` result to ``MASK_<BAND>`` unchanged.
 
     Parameters
     ----------
@@ -416,6 +355,18 @@ class SaveCatalogue:
         moments : bool, optional
             If True, write the parallel ``NGMIXm_*`` (moments-branch) columns.
 
+        @sc [decision:catalogue_assembly.failure_sentinels,label:coupling] failure-sentinel-cut-semantics
+        An object absent from the ngmix catalogue was never fit (no usable
+        epoch, or its fit raised). Its flag columns take what
+        :func:`ngmix.get_type_flags` derives for an empty metacal result:
+        ``LM_FUNC_NOTFINITE`` in ``FLAGS_<SHEAR>`` and ``MCAL_FLAGS``, and
+        ``MCAL_TYPES_FAIL`` 5, never 0, so sp_validation's ``MCAL_FLAGS == 0``
+        and ``MCAL_TYPES_FAIL == 0`` cut rejects it. Its ``T``, ``SNR``, flux,
+        magnitude and PSF-size values initialize to 0, which is in range and
+        cannot identify failure; ``NGMIX_N_EPOCH == 0`` identifies a
+        never-fit row, and the -10 ellipticity, -1 flux/magnitude-error and
+        1e30 size-error sentinels are out of range.
+
         """
         self._key_ends = ["1M", "1P", "2M", "2P", "NOSHEAR"]
 
@@ -449,13 +400,19 @@ class SaveCatalogue:
         n_obj = len(self._obj_id)
         self._w_log.info(f"writing ngmix info for {n_obj} objects")
 
+        # An object ngmix never fit has no metacal result at all.
+        never_fit = {}
+
         if moments:
             m = "m"
         else:
             m = ""
 
             self._add2dict("NGMIX_N_EPOCH", np.zeros(n_obj))
-            self._add2dict("NGMIX_MCAL_TYPES_FAIL", np.zeros(n_obj))
+            self._add2dict(
+                "NGMIX_MCAL_TYPES_FAIL",
+                np.full(n_obj, get_mcal_types_fail(never_fit), dtype=float),
+            )
             self._add2dict("NGMIX_NEIGHBOUR_FLAG", np.zeros(n_obj))
 
         prefix = f"NGMIX{m}"
@@ -464,18 +421,22 @@ class SaveCatalogue:
         # reconvolution kernel (PSF_RECONV); see ngmix.average_original_psf /
         # average_multiepoch_psf for what each PSF family is. G1/G2 are scalar
         # reduced-shear components, not a 2-vector. Sentinels:
-        # sizes/fluxes/mags/flags 0, *_ERR fluxes/mags -1, ellipticities -10,
-        # *_ERR sizes 1e30.
+        # sizes/fluxes/mags 0, *_ERR fluxes/mags -1, ellipticities -10,
+        # *_ERR sizes 1e30; flags as ngmix derives for an empty metacal result
+        # (never_fit).
         for key_str in (
             f"{prefix}_T_",
             f"{prefix}_SNR_",
             f"{prefix}_FLUX_",
             f"{prefix}_MAG_",
-            f"{prefix}_FLAGS_",
             f"{prefix}_T_PSF_ORIG_",
             f"{prefix}_T_PSF_RECONV_",
         ):
             self._update_dict(key_str, np.zeros(n_obj))
+        self._update_dict(
+            f"{prefix}_FLAGS_",
+            np.full(n_obj, get_type_flags(never_fit), dtype=float),
+        )
         for key_str in (
             f"{prefix}_FLUX_ERR_",
             f"{prefix}_MAG_ERR_",
@@ -502,7 +463,10 @@ class SaveCatalogue:
             f"{prefix}_T_ERR_PSF_RECONV_",
         ):
             self._update_dict(key_str, np.ones(n_obj) * 1e30)
-        self._add2dict(f"{prefix}_MCAL_FLAGS", np.zeros(n_obj))
+        self._add2dict(
+            f"{prefix}_MCAL_FLAGS",
+            np.full(n_obj, get_mcal_flags(never_fit), dtype=float),
+        )
 
         for idx, id_tmp in enumerate(self._obj_id):
             ind = np.where(id_tmp == ngmix_id)[0]
@@ -622,10 +586,16 @@ class SaveCatalogue:
         """Save PSF data.
 
         Save the PSF catalogue into the final one, as per-epoch column
-        families ``HSM_G1_PSF_n``, ``HSM_G2_PSF_n``, ``HSM_T_PSF_n``,
-        ``HSM_FLAG_PSF_n``, ``EXP_ID_n`` and ``CCD_n``. Slot ``n`` of every
+        families ``HSM_*_PSF_n`` (``psf_shape_cols``), ``EXP_ID_n`` and
+        ``CCD_n``. Slot ``n`` of every
         family refers to the same epoch; slots no epoch fills keep the
         family's sentinel.
+
+        @sc [label:schema] psf-epoch-slot-columns
+        The per-epoch families are ``psf_shape_cols`` plus ``EXP_ID``/``CCD``,
+        all slot-aligned by the producer's epoch enumeration; the names must
+        be a subset of what ``PSFExInterpolator._interpolate_me`` writes into
+        ``SHAPES`` (``test_hsm_column_seams``).
 
         Parameters
         ----------
@@ -648,23 +618,30 @@ class SaveCatalogue:
             n_slots = np.max(n_epoch) + 1
         else:
             n_slots = n_epoch_slots
+        n_obj = len(self._obj_id)
 
-        # Empty-slot sentinel and dtype per family. EXP_ID/CCD reuse the
-        # CCD_N convention: -1 is no exposure ID or CCD number.
-        slot_families = {
-            "HSM_G1_PSF": (-10.0, "float64"),
-            "HSM_G2_PSF": (-10.0, "float64"),
-            "HSM_T_PSF": (0.0, "float64"),
-            "HSM_FLAG_PSF": (1, "int16"),
-            "EXP_ID": (-1, "int32"),
-            "CCD": (-1, "int32"),
-        }
+        # Per-epoch PSF shape columns copied from the producer's SHAPES dict:
+        # (column, empty-slot fill, dtype). Fills are out of physical range
+        # so an unmeasured slot cannot pass for a measurement. HSM_T_PSF
+        # already holds T (sigma_to_T applied at the producer's
+        # _interpolate_me).
+        psf_shape_cols = [
+            ("HSM_G1_PSF", -10.0, float),
+            ("HSM_G2_PSF", -10.0, float),
+            ("HSM_T_PSF", 0.0, float),
+            ("HSM_FLAG_PSF", 1, "int16"),
+            ("HSM_M4_1_PSF", -10.0, float),
+            ("HSM_M4_2_PSF", -10.0, float),
+            ("HSM_RHO4_PSF", -1.0, float),
+        ]
+        # Per-epoch exposure ID and CCD number, slot-aligned with HSM_*_PSF_n;
+        # -1 marks an empty slot (the CCD_N sentinel convention).
+        epoch_id_cols = [("EXP_ID", -1, "int32"), ("CCD", -1, "int32")]
+
         self._output_dict = {
-            f"{family}_{slot + 1}": np.full(
-                len(self._obj_id), sentinel, dtype=dtype
-            )
-            for family, (sentinel, dtype) in slot_families.items()
-            for slot in range(n_slots)
+            f"{name}_{idx + 1}": np.full(n_obj, fill, dtype=dtype)
+            for name, fill, dtype in psf_shape_cols + epoch_id_cols
+            for idx in range(n_slots)
         }
 
         for idx, id_tmp in enumerate(self._obj_id):
@@ -683,6 +660,8 @@ class SaveCatalogue:
 
             for epoch, (key, gpc_data) in enumerate(obj_epochs.items()):
 
+                shapes = gpc_data["SHAPES"]
+
                 # `key` is "<exp>-<ccd>"; reading it in the enumeration that
                 # assigns `epoch` aligns EXP_ID_n/CCD_n with HSM_*_PSF_n by
                 # construction. Recorded before the HSM_FLAG_PSF check so a
@@ -691,28 +670,15 @@ class SaveCatalogue:
                 self._add2dict(f"EXP_ID_{epoch + 1}", int(exp_name), idx)
                 self._add2dict(f"CCD_{epoch + 1}", int(ccd_n), idx)
 
-                if gpc_data["SHAPES"]["HSM_FLAG_PSF"] != 0:
+                if shapes["HSM_FLAG_PSF"] != 0:
                     continue
 
-                self._add2dict(
-                    f"HSM_G1_PSF_{epoch + 1}",
-                    gpc_data["SHAPES"]["HSM_G1_PSF"], idx
-                )
-                self._add2dict(
-                    f"HSM_G2_PSF_{epoch + 1}",
-                    gpc_data["SHAPES"]["HSM_G2_PSF"], idx
-                )
-
-                # HSM_T_PSF already holds T (sigma_to_T applied at the
-                # producer's _interpolate_me); read straight through.
-                self._add2dict(
-                    f"HSM_T_PSF_{epoch + 1}",
-                    gpc_data["SHAPES"]["HSM_T_PSF"], idx
-                )
-
-                self._add2dict(
-                    f"HSM_FLAG_PSF_{epoch + 1}",
-                    gpc_data["SHAPES"]["HSM_FLAG_PSF"], idx
-                )
+                for name, fill, _ in psf_shape_cols:
+                    # A SHAPES dict without the fourth-moment keys (MCCD, or
+                    # a producer predating them) leaves those slots at their
+                    # out-of-range fill while FLAG still reports the fit.
+                    self._add2dict(
+                        f"{name}_{epoch + 1}", shapes.get(name, fill), idx
+                    )
 
         galaxy_psf_cat.close()

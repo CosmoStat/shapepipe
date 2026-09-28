@@ -21,6 +21,8 @@ def get_stamps(image, positions, rad):
 
     Extract postage stamps and record their sub-pixel centring.
 
+    @sc [decision:preparation.stamp_positioning_and_padding]
+
     The image is zero-padded by ``rad`` on every side and a
     ``(2 * rad + 1, 2 * rad + 1)`` stamp is sliced around the integer pixel
     nearest each position (``numpy.round``). The stamp values are
@@ -306,6 +308,7 @@ class VignetMaker(object):
         dict
             Dictionary containing object id and vignets for each epoch
 
+        @sc [decision:preparation.stamp_positioning_and_padding]
         """
         cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()

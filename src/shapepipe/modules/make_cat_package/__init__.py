@@ -7,7 +7,6 @@ This package contains the module for ``make_cat``.
 :Parent modules:
 
 - ``sextractor_runner``
-- ``spread_model_runner``
 - ``psfex_interp_runner`` or ``mccd_interp_runner``
 - ``ngmix_runner``
 
@@ -21,27 +20,16 @@ Description
 This module creates a *final* catalogue combining the output of various
 previous module runs. This gathers all relevant information on the measured
 galaxies for weak-lensing post-processing. This includes galaxy detection and
-basic measurement parameters, the PSF model at galaxy positions, the
-spread-model classification, and the shape measurement.
+basic measurement parameters, the PSF model at galaxy positions, and the
+shape measurement. Every detected object is kept: the catalogue carries no
+star/galaxy classification, which is done downstream. Each object is
+tagged with its source tile via the ``TILE_ID`` column; objects duplicated
+across overlapping tiles are not deduplicated here, and are left to
+downstream selection.
 
 Module-specific config file entries
 ===================================
 
-SM_DO_CLASSIFICATION : bool, optional
-    Adds spread-model star/galaxy classification flag as the column
-    ``SPREAD_CLASS`` to the output if ``True``
-SM_STAR_THRESH : float, optional
-    Threshold :math:`s_{\rm star, thresh}` for star selection; object is
-    classified as a star if
-    :math:`|x s + 2 \sigma_s | < s_{\textrm{star, thresh}}`
-    where :math:`s` is the spread model and :math:`\sigma_s` is the spread
-    model error; default value is ``0.003``
-SM_GAL_THRESH : float, optional
-    Threshold :math:`s_{\rm gal, thresh}` for galaxy selection; object is
-    classified as a galaxy if
-    :math:`s + 2 \sigma_s  > s_{\textrm{gal, thresh}}` where :math:`s` is the
-    spread model and :math:`\sigma_s` is the spread model error; default value
-    is ``0.01``
 SHAPE_MEASUREMENT_TYPE : list
     Shape measurement method; the only valid option is ``ngmix`` (the knob is
     retained as the extension point for a future estimator family)
@@ -53,9 +41,6 @@ N_EPOCH_SLOTS : int, optional
     ``True``; unfilled slots hold the family's sentinel, and an object with
     more epochs than slots raises an error. A fixed count gives every tile
     the same schema. Default is the tile's maximum ``N_EPOCH`` plus one
-TILE_LIST : str, optional
-    Path to list of all tile IDs, used to flag objects in areas of overlap
-    between tiles
 
 """
 

@@ -140,13 +140,20 @@ where the change lives — and *scientific* decisions in `astra.yaml`, below.
 ## Scientific decisions live in `astra.yaml`
 
 `astra.yaml` at the repo root is the pipeline's decision record: every
-consequential scientific choice embedded in the code and the committed configs,
-with its rationale, its alternatives, and an anchor to the code or config that
-implements it. `universes/committed.yaml` pins the option the committed
-configuration selects for every decision. The format is ASTRA;
-`uvx astra-tools@0.2.17 guide` is the briefing and `uvx astra-tools@0.2.17 spec`
-the field reference. The file's header states its conventions (anchor grammar,
-`[HARDCODED]`, `[LINT]`).
+consequential scientific choice embedded in the code and committed configs,
+with its rationale, alternatives and selected default. `universes/committed.yaml`
+pins the option the committed configuration selects for every decision.
+`@sc [decision:<id>]` tags live at implementing code/config sites; optional
+`Values:` sentences assert committed values within those tagged sites. The
+rationale stays in ASTRA, while local `@sc` contracts hold site-specific
+constraints. `tests/unit/test_decisions.py` checks tag syntax, bidirectional
+decision/site coverage, values, and test `decision` markers. To inspect tags at
+an implementation site, run `python -m tests.helpers.decisions <path>[:<line>]`;
+`--decision <id>` lists its sites. The format is ASTRA.
+
+`uvx astra-tools@0.2.17 guide` is the briefing and
+`uvx astra-tools@0.2.17 spec` the field reference. The file's header states
+its conventions, including `[HARDCODED]` and `[LINT]`.
 
 Membership test: a different defensible choice would change which objects enter
 the shear catalogue, or the numbers attached to them. Detection thresholds,
@@ -157,10 +164,10 @@ PRD, CosmoStat/shapepipe#848.
 
 **A scientific change is not finished until the record is.** When a change moves
 what the pipeline measures, amend `astra.yaml` in the same PR (add the decision,
-or edit its rationale, options and anchors), pin the selected option in
-`universes/committed.yaml`, and say so in the PR description. The anchor test
-`tests/unit/test_astra_anchors.py` runs in CI; a scientific change that breaks it
-or leaves the record stale is unfinished. Before committing:
+or edit its rationale, options, Values and site tags), pin the selected option
+in `universes/committed.yaml`, and say so in the PR description.
+`tests/unit/test_decisions.py` runs in CI; a scientific change that breaks its
+site/value checks or leaves the record stale is unfinished. Before committing:
 
 ```bash
 uvx astra-tools@0.2.17 validate

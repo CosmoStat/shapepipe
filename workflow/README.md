@@ -94,7 +94,9 @@ the jobs read.) `SP_PROFILE` (default `nibi`, or `machine:` in the run config, w
 agree with it) and `input_type:` then select an entry of the `machines:` table, which supplies
 `tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
 `container` for any of these the run config leaves unset (`$base_dir` expands
-to that machine's `base_dir`, `$run` to the run config's `run:`). `run:` is
+to that machine's `base_dir`, and `$name` or `${name}` to any top-level scalar
+of the run config, e.g. `$run` to `run:`; write `${name}` when word characters
+follow). `run:` is
 required: it also names the campaign's merged catalogues, and config.yaml leaves
 it unset. An unset required key, or a value of `TBD`, stops the run at parse time
 until it is set. A run config therefore only needs what differs, e.g. for one
@@ -162,9 +164,9 @@ sp container resolve                     # just the path the workflow will run
 in-sync / behind / ahead / diverged, or unknown when the image carries no label
 or the commit was never fetched here.
 
-**`pull` needs the network.** Compute nodes on Alliance clusters generally have
-none, so run it on a login node or inside an `salloc` allocation — never from a
-batch job. `pull` and `sandbox` both stage to a sibling path and swap it in, so
+**`pull` needs the network.** Candide and nibi compute nodes both have it, so
+`pull` runs from a login node, an `salloc` allocation or a batch job alike.
+`pull` and `sandbox` both stage to a sibling path and swap it in, so
 an in-flight job never sees a half-written image and a failed rebuild leaves the
 one you had intact.
 
@@ -403,7 +405,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   **Two writers, one schema.** The module runner still emits the flat FITS
   table through `MergeStarCatPSFEX`, and this rule emits the hdf5; they are
   separate implementations on purpose, because only one of them reads tars,
-  keeps native dtypes and reconciles. Their 16 COLUMN NAMES must not drift
+  keeps native dtypes and reconciles. Their 22 COLUMN NAMES must not drift
   apart, and nothing else would notice if they did — a column added to one
   writer would just be missing from the other's product. `tests/unit/`
   `test_star_cat_columns.py` is what holds them together.

@@ -318,10 +318,9 @@ several runs.
 `tile_vignets` selects galaxies as extended objects compared to the PSF.
 First, the PSF model is interpolated to galaxy positions with `psfex_interp`.
 Next, postage stamps around galaxies of the weight maps are created via
-`vignetmaker`. Then the spread model is computed by the `spread_model` module.
-Finally, postage stamps around galaxies of single-exposure data are extracted
-with another call to `vignetmaker` — `Pi`, `Vi`, `Sm`, `Vi`, hence the config
-name `config_tile_PiViVi.ini`.
+`vignetmaker`. Finally, postage stamps around galaxies of single-exposure data
+are extracted with another call to `vignetmaker` — `Pi`, `Vi`, `Vi`, hence the
+config name `config_tile_PiViVi_psfex.ini`.
 
 `tile_vignets` reads the exposure products through the symlink forest that
 `tile_exp_forest` built for this tile, and is the last stage that touches them:
@@ -347,8 +346,8 @@ step into one file with `merge_sep`, in `run_sp_Ms`.
 
 `tile_make_cat` then pastes the previously obtained information into a _final_
 shape catalogue via `make_cat`, in `run_sp_Mc`. Included are galaxy detection
-and basic measurement parameters, the PSF model at galaxy positions, the
-spread-model classification, and the shape measurement. The rule publishes that
+and basic measurement parameters, the PSF model at galaxy positions, and the
+shape measurement. The rule publishes that
 catalogue onto the persistent root as
 `<products_dir>/tiles/<prefix>/<ID>/final_cat-<ID>.fits` — the campaign's
 product, and also the marker that says this tile is finished.

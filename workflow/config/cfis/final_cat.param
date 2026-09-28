@@ -1,9 +1,11 @@
 # coordinates
+# @sc [decision:preparation.object_position_columns]
 XWIN_WORLD
 YWIN_WORLD
 
 # tile ID, for plot of tile-dependent additive bias.
 # Can maybe be removed.
+# @sc [decision:catalogue_assembly.tile_overlap_handling]
 TILE_ID
 
 # SExtractor object number within the tile: sp_validation's extraction joins
@@ -38,21 +40,14 @@ NGMIX_MCAL_FLAGS
 NGMIX_G1_PSF_ORIG_NOSHEAR
 NGMIX_G2_PSF_ORIG_NOSHEAR
 
-# spread class
-#SPREAD_CLASS
-
-# spread model flag and error
-#SPREAD_MODEL
-#SPREADERR_MODEL
-
 # Number of epochs (exposures)
 N_EPOCH
 NGMIX_N_EPOCH
 
 # Per-epoch identity and PSF shape, slot n = 1..12 (config_tile_Mc.ini's
 # N_EPOCH_SLOTS): EXP_ID_n/CCD_n name the exposure and CCD of epoch n, aligned
-# with HSM_*_PSF_n; empty slots carry -1 (ids), -10 (g), 0 (T), 1 (flag). The
-# count is fixed at the source so every tile shares this schema.
+# with HSM_*_PSF_n; empty slots carry -1 (ids), -10 (g, M4), 0 (T), 1 (flag),
+# -1 (RHO4). The count is fixed at the source so every tile shares this schema.
 EXP_ID_1
 EXP_ID_2
 EXP_ID_3
@@ -125,6 +120,42 @@ HSM_FLAG_PSF_9
 HSM_FLAG_PSF_10
 HSM_FLAG_PSF_11
 HSM_FLAG_PSF_12
+HSM_M4_1_PSF_1
+HSM_M4_1_PSF_2
+HSM_M4_1_PSF_3
+HSM_M4_1_PSF_4
+HSM_M4_1_PSF_5
+HSM_M4_1_PSF_6
+HSM_M4_1_PSF_7
+HSM_M4_1_PSF_8
+HSM_M4_1_PSF_9
+HSM_M4_1_PSF_10
+HSM_M4_1_PSF_11
+HSM_M4_1_PSF_12
+HSM_M4_2_PSF_1
+HSM_M4_2_PSF_2
+HSM_M4_2_PSF_3
+HSM_M4_2_PSF_4
+HSM_M4_2_PSF_5
+HSM_M4_2_PSF_6
+HSM_M4_2_PSF_7
+HSM_M4_2_PSF_8
+HSM_M4_2_PSF_9
+HSM_M4_2_PSF_10
+HSM_M4_2_PSF_11
+HSM_M4_2_PSF_12
+HSM_RHO4_PSF_1
+HSM_RHO4_PSF_2
+HSM_RHO4_PSF_3
+HSM_RHO4_PSF_4
+HSM_RHO4_PSF_5
+HSM_RHO4_PSF_6
+HSM_RHO4_PSF_7
+HSM_RHO4_PSF_8
+HSM_RHO4_PSF_9
+HSM_RHO4_PSF_10
+HSM_RHO4_PSF_11
+HSM_RHO4_PSF_12
 
 # Blend flag: coadd seg stamp held a non-central footprint (shapepipe#776)
 NGMIX_NEIGHBOUR_FLAG
