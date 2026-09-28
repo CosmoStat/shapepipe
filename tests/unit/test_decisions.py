@@ -331,6 +331,22 @@ def test_config_boolean_semantics_and_setools_predicates(tmp_path):
     assert value_errors(tmp_path, cuts, tags)
 
 
+def test_config_ref_ignores_unrelated_python_tagged_site(tmp_path):
+    _write(
+        tmp_path / "stars.setools",
+        '# @sc [decision:choice]\n[MASK:stars]\nFLAGS == 0\n',
+    )
+    _write(
+        tmp_path / "other.py",
+        "# @sc [decision:choice]\nOTHER = 1\n",
+    )
+    record = _record('Star flags. Values: MASK:stars.FLAGS = "== 0".')
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    assert value_errors(tmp_path, record, tags) == []
+
+
 def test_python_value_reassignment_fails_closed(tmp_path):
     _write(
         tmp_path / "constants.py",

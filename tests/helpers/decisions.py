@@ -920,7 +920,10 @@ def _absent_scope_matches(root, site, selector):
 def _python_value_in_site(root, site, selector):
     source = (Path(root) / site.path).read_text(encoding="utf-8")
     tree = _python_tree(source)
-    symbol, _ = _code_selector(selector)
+    try:
+        symbol, _ = _code_selector(selector)
+    except ValueError:
+        return None
     direct = bool(
         site.symbol
         and (symbol == site.symbol or symbol.startswith(site.symbol + "."))
