@@ -120,13 +120,15 @@ def test_report_lists_the_fetch_stage_only_for_catalogue_runs(monkeypatch, mode,
 
 @pytest.mark.parametrize("machine", ["nibi", "candide"])
 @pytest.mark.parametrize("input_type", ["data", "image_sims"])
-def test_machine_defaults_pair_the_catalogue_with_its_source(
+def test_defaults_pair_the_catalogue_with_its_source(
         machine, input_type, monkeypatch, tmp_path):
-    """Real data defaults to the catalogue and declares where it lives.
+    """Real data defaults to the catalogue, and every machine says where it is.
 
+    tile_detection follows from the input type (the input_types: table), but
     `tile_detection: unions_catalogue` is refused by the Snakefile without
-    `inputs.catalogues`, so the two settings travel together in the machines
-    table. Image sims have no UNIONS catalogue and fall back to SExtractor.
+    `inputs.catalogues`, which is a per-machine path: every machine with a
+    data entry has to declare one. Image sims have no UNIONS catalogue and
+    use SExtractor.
     """
     pytest.importorskip("yaml")
     run_config = _load("run_config")
@@ -139,4 +141,4 @@ def test_machine_defaults_pair_the_catalogue_with_its_source(
         assert config["tile_detection"] == "unions_catalogue"
         assert config["inputs"]["catalogues"]
     else:
-        assert config.get("tile_detection", "sextractor") == "sextractor"
+        assert config["tile_detection"] == "sextractor"

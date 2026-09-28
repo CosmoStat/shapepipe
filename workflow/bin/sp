@@ -38,7 +38,7 @@
 #
 # Run config: -c FILE, also --config-file. Read after workflow/config.yaml and
 # merged on top; anything still unset comes from the machines: entry for
-# SP_PROFILE and input_type (scripts/run_config.py).
+# SP_PROFILE and input_type, then the input_types: entry (scripts/run_config.py).
 # To check a resolved value without running:
 #
 #   python scripts/run_config.py workflow/config.yaml ~/my_run.yaml outputs.run_dir

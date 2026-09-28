@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
-"""Resolve a run config: config.yaml, then SP_RUN_CONFIG merged on top, then
-the `machines:` entry for (machine, input_type) filling whatever is still
-unset. One definition shared by the Snakefile, bin/sp and container.py.
+"""Resolve a run config: config.yaml with SP_RUN_CONFIG merged on top, then
+two tables of defaults filling whatever is still unset -- `input_types:`
+entry for input_type, overridden by the `machines:` entry for
+(machine, input_type). One definition shared by the Snakefile, bin/sp and
+container.py.
+
+Precedence, lowest first: config.yaml's top level < input_types[input_type]
+< machines[machine][input_type] < the run config. config.yaml's top level
+sits beneath both tables only because it sets none of the keys they carry;
+tests/unit/test_run_config.py holds it to that.
 
 CLI (used by bin/sp): run_config.py CONFIG_YAML RUN_CONFIG KEY[.SUBKEY]
 prints the resolved value, or an empty line if unset. RUN_CONFIG may be "".
@@ -14,16 +21,8 @@ import sys
 import yaml
 
 PLACEHOLDER = "TBD"
-# Keys the machines: table may default, per (machine, input_type).
-# psf_model/psf_dict/tile_detection belong here because they are
-# per-input_type facts (image sims have no UNIONS catalogue),
-# not per-run ones: psf_model=fake is only legal with
-# input_type=image_sims, and psf_dict is the sim PSF it reads. A key
-# also present at the TOP level of config.yaml shadows the table (the
-# setdefault below only fires when the key is absent), so a key listed
-# here must not carry a top-level default as well.
-MACHINE_KEYS = ("tile_list", "retrieve", "container", "inputs", "outputs",
-                "psf_model", "psf_dict", "tile_detection")
+# The tables themselves: read here, never defaults or $-expanded.
+TABLES = ("input_types", "machines")
 REQUIRED = ("tile_list", "inputs.tiles", "inputs.exposures",
             "outputs.run_dir", "outputs.index_db")
 
@@ -65,19 +64,25 @@ def _expand(value, variables):
     return value
 
 
-def apply_machine_defaults(config):
-    """Fill unset MACHINE_KEYS from machines[machine][input_type], in place.
+def apply_defaults(config):
+    """Fill unset keys from the input_types: and machines: tables, in place.
 
     The machine is `machine:` when the run config states one, else SP_PROFILE
     (default nibi) -- the same value bin/sp picks the SLURM profile with.
+    input_types[input_type] holds what follows from the kind of input alone
+    (the PSF model, the tile detection); machines[machine][input_type] holds
+    where things are on that machine, and wins where the two overlap.
 
-    A key already in `config` wins; for `inputs`/`outputs` the merge is per
-    sub-key. In all of these, `$base_dir` expands to machines[machine].base_dir
-    and `$run` to the top-level `run:`.
+    A key already in `config` wins; for dict values (`inputs`, `outputs`) the
+    merge is per sub-key. Every resolved key then has `$name` expanded:
+    `$base_dir` is machines[machine].base_dir, and any top-level scalar is a
+    variable too (`$run` is the top-level `run:`).
     """
+    input_type = config.get("input_type", "data")
     machine = config.get("machine") or os.environ.get("SP_PROFILE", "nibi")
     entry = (config.get("machines") or {}).get(machine) or {}
-    defaults = entry.get(config.get("input_type", "data")) or {}
+    defaults = merge((config.get("input_types") or {}).get(input_type) or {},
+                     entry.get(input_type) or {})
     # Every top-level scalar is a variable, so a run config can define its own
     # shorthands. They are resolved AGAINST EACH OTHER first, to a fixpoint, so
     # one shorthand may be written in terms of another
@@ -95,17 +100,13 @@ def apply_machine_defaults(config):
         if resolved == variables:
             break
         variables = resolved
-    # `run` is consumed downstream (paths, the hdf5 group name), so the
-    # resolved value has to go back into the config, not just the table.
-    if isinstance(config.get("run"), str):
-        config["run"] = variables.get("run", config["run"])
-    for key in MACHINE_KEYS:
-        default = defaults.get(key)
+    for key, default in defaults.items():
         if isinstance(default, dict):
             config[key] = merge(default, config.get(key) or {})
-        elif default is not None:
+        else:
             config.setdefault(key, default)
-        if key in config:
+    for key in config:
+        if key not in TABLES:
             config[key] = _expand(config[key], variables)
     return config
 
@@ -130,7 +131,7 @@ def load(config_yaml, run_config=None):
     if run_config:
         with open(run_config) as f:
             config = merge(config, yaml.safe_load(f) or {})
-    return apply_machine_defaults(config)
+    return apply_defaults(config)
 
 
 if __name__ == "__main__":

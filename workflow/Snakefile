@@ -45,7 +45,8 @@ from snakemake.exceptions import WorkflowError
 # --directory on /scratch (bin/sp) so .snakemake/ state never lands on /project.
 #
 # config.yaml is always loaded; SP_RUN_CONFIG (bin/sp) is merged on top, then
-# the `machines:` entry for (machine, input_type) fills whatever is still unset
+# the `input_types:` entry for input_type and the `machines:` entry for
+# (machine, input_type) fill whatever is still unset, the machine entry winning
 # (scripts/run_config.py, shared with bin/sp and container.py).
 sys.path.insert(0, str(Path(workflow.snakefile).parent / "scripts"))
 import run_config                                      # noqa: E402
@@ -76,7 +77,7 @@ if config.get("machine") is not None and config["machine"] != SP_PROFILE:
         f"SP_PROFILE={SP_PROFILE!r}. Set SP_PROFILE={MACHINE}, or fix "
         f"`machine:`.")
 
-run_config.apply_machine_defaults(config)
+run_config.apply_defaults(config)
 _unresolved = run_config.unresolved(config)
 if _unresolved:
     raise WorkflowError(

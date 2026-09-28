@@ -914,9 +914,8 @@ analyses:
       psf_modelling_software:
         label: PSF model, PSFEx per CCD or MCCD over the focal plane
         rationale: >-
-          psf_model in workflow/config.yaml's machines: table (per machine and
-          input type; image sims use fake) selects the exposure and tile
-          config pair; the committed value is psfex, which fits each CCD
+          psf_model in workflow/config.yaml's input_types: table (image sims
+          use fake) selects the exposure and tile config pair; the committed value is psfex, which fits each CCD
           independently. MCCD (Liaudat+2021) fits one hybrid local+global
           model over the focal plane; the completeness table treats its
           counts as warnings because no campaign has run it. Up to the model,

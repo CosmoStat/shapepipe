@@ -27,10 +27,10 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 
 # `psf_model` is `psfex` or `mccd`. psfex is exercised by smk-g4 through smk-g6; mccd has run the full chain on
 # an image-sim star tile (one focal-plane model per exposure, ~1.5 CPU-hours each).
-# `tile_detection` is `unions_catalogue` (the machines-table default for
-# input_type data: the UNIONS per-tile catalogue at `inputs.catalogues` is
-# fetched and converted in place, keeping its NUMBER) or `sextractor` (the tile
-# is detected with SExtractor; the default for image sims). Either way make_cat
+# `tile_detection` is `unions_catalogue` (the input_types default for data:
+# the UNIONS per-tile catalogue at `inputs.catalogues` is fetched and
+# converted in place, keeping its NUMBER) or `sextractor` (the tile is
+# detected with SExtractor; the default for image sims). Either way make_cat
 # writes TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
@@ -80,9 +80,11 @@ A run config passed with `-c/--config-file` is merged on top of
 `workflow/config.yaml` and snapshotted with the code. (`-c` is `sp`'s own flag;
 pass snakemake's cores as `--cores`/`-j`. `SP_RUN_CONFIG` still works and is what
 the jobs read.) `SP_PROFILE` (default `nibi`, or `machine:` in the run config, which must
-agree with it) and `input_type:` then select an entry of the `machines:` table, which supplies
-`tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
-`container` for any of these the run config leaves unset (`$base_dir` expands
+agree with it) and `input_type:` then select defaults for whatever the run
+config leaves unset: first the `input_types:` entry, which supplies what follows
+from the kind of input (`tile_detection`, `psf_model`), then, overriding it,
+the `machines:` entry, which supplies `tile_list`, `retrieve` (`symlink` or
+`vos`), `inputs`, `outputs`, `container` and `psf_dict` (`$base_dir` expands
 to that machine's `base_dir`, `$run` to the run config's `run:`). A value of `TBD` stops the run at parse time
 until it is set. A run config therefore only needs what differs, e.g. for one
 SKiLLS shear branch on candide:
@@ -90,8 +92,6 @@ SKiLLS shear branch on candide:
 ```yaml
 machine: candide
 input_type: image_sims
-psf_model: fake
-psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle
 tile_list: /path/to/tiles.txt
 inputs:
   tiles: /n09data/hervas/skills_out/1z2z_grid_3/images/SP_tiles
