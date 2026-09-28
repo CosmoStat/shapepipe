@@ -44,6 +44,8 @@ def ngmix_runner(
 ):
     """Define The Ngmix Runner.
 
+    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.centroid_source,decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]
+
     @sc [label:operations] empty-tile-product
     A tile whose PSF or galaxy vignette store is entirely empty never
     reaches ``Ngmix``: an early guard in this runner writes the empty

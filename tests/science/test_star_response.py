@@ -33,7 +33,9 @@ Fast + local: marked neither ``slow`` nor ``candide``; part of the inner loop.
 """
 
 import numpy as np
+import pytest
 
+pytestmark = pytest.mark.decision("shape_measurement.metacal_scheme")
 
 PSF_E1 = 0.05  # true PSF ellipticity the deconvolution must remove
 METACAL_STEP = 0.01  # ngmix MetacalBootstrapper default shear step

@@ -326,16 +326,21 @@ def test_save_ngmix_data_matches_module_serialised_catalogue(tmp_path):
 # --- _save_psf_data: EXP_ID_n / CCD_n alignment with HSM_*_PSF_n (#890) ---
 
 
-def _psf_epoch(g1, g2, t, flag=0):
-    """One epoch's interpolated-PSF HSM shape entry (psfex_interp's SHAPES dict)."""
-    return {
-        "SHAPES": {
-            "HSM_G1_PSF": g1,
-            "HSM_G2_PSF": g2,
-            "HSM_T_PSF": t,
-            "HSM_FLAG_PSF": flag,
-        },
+def _psf_epoch(g1, g2, t, flag=0, m4=None):
+    """One epoch's interpolated-PSF HSM shape entry (psfex_interp's SHAPES dict).
+
+    ``m4`` is an optional ``(M4_1, M4_2, RHO4)`` triple; omitted, the entry
+    mimics a producer that predates the fourth-moment columns.
+    """
+    shapes = {
+        "HSM_G1_PSF": g1,
+        "HSM_G2_PSF": g2,
+        "HSM_T_PSF": t,
+        "HSM_FLAG_PSF": flag,
     }
+    if m4 is not None:
+        shapes.update(zip(("HSM_M4_1_PSF", "HSM_M4_2_PSF", "HSM_RHO4_PSF"), m4))
+    return {"SHAPES": shapes}
 
 
 def _write_galaxy_psf_cat(path, per_obj):
@@ -362,14 +367,14 @@ class _FinalCatStub:
         return {"N_EPOCH": self._n_epoch}
 
 
-def _run_save_psf(galaxy_psf_path, obj_id, n_epoch):
+def _run_save_psf(galaxy_psf_path, obj_id, n_epoch, n_epoch_slots=None):
     """Drive ``_save_psf_data`` and return its populated output dict."""
     inst = object.__new__(SaveCatalogue)
     inst._obj_id = np.asarray(obj_id)
     inst._output_dict = {}
     inst._final_cat_file = _FinalCatStub(n_epoch)
 
-    inst._save_psf_data(str(galaxy_psf_path))
+    inst._save_psf_data(str(galaxy_psf_path), n_epoch_slots=n_epoch_slots)
     return inst._output_dict
 
 
@@ -527,3 +532,219 @@ def test_galaxy_cut_admits_only_measured_objects(tmp_path):
     ).astype(np.int64)
     npt.assert_array_equal(mcal_flags, np.bitwise_or.reduce(type_flags))
     npt.assert_array_equal(types_fail, np.count_nonzero(type_flags, axis=0))
+
+
+# --- _save_psf_data: fixed per-epoch slot count (N_EPOCH_SLOTS) ---
+
+# Per-family empty-slot sentinel: what a slot holds when no epoch fills it.
+_PSF_SLOT_SENTINELS = {
+    "HSM_G1_PSF": -10.0,
+    "HSM_G2_PSF": -10.0,
+    "HSM_T_PSF": 0.0,
+    "HSM_FLAG_PSF": 1,
+    "HSM_M4_1_PSF": -10.0,
+    "HSM_M4_2_PSF": -10.0,
+    "HSM_RHO4_PSF": -1.0,
+    "EXP_ID": -1,
+    "CCD": -1,
+}
+
+
+class _ProcessCatStub(_FinalCatStub):
+    """FITSCatalogue stand-in for ``SaveCatalogue.process``; records add_col."""
+
+    def __init__(self, obj_id, n_epoch):
+        super().__init__(n_epoch)
+        self._number = np.asarray(obj_id)
+        self.cols = {}
+
+    def open(self):
+        pass
+
+    def close(self):
+        pass
+
+    def get_data(self):
+        return {"NUMBER": self._number, "N_EPOCH": self._n_epoch}
+
+    def add_col(self, name, data):
+        self.cols[name] = data
+
+
+def _slot_numbers(out, family):
+    """The slot numbers ``n`` present in ``out`` for ``<family>_n`` columns."""
+    prefix = f"{family}_"
+    return sorted(
+        int(col[len(prefix):])
+        for col in out
+        if col.startswith(prefix) and col[len(prefix):].isdigit()
+    )
+
+
+def test_save_psf_data_fixed_slots_pad_every_family(tmp_path):
+    """N_EPOCH_SLOTS fixes the slot count for every family, sentinel-padded.
+
+    The campaign merge needs one schema across tiles, so a tile whose
+    objects all have far fewer epochs than N_EPOCH_SLOTS still writes
+    exactly slots 1..N_EPOCH_SLOTS for each per-epoch family, and every
+    slot no epoch fills holds that family's own sentinel.
+    """
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    per_obj = {
+        101: {"2113864-7": _psf_epoch(0.01, 0.02, 0.5)},
+        202: {
+            "2113864-9": _psf_epoch(0.05, 0.06, 0.7),
+            "2358123-21": _psf_epoch(0.07, 0.08, 0.9),
+        },
+        303: "empty",
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    # Driven through ``process``, the entry point the runner calls.
+    n_slots = 7
+    cat = _ProcessCatStub([101, 202, 303], n_epoch=[1, 2, 0])
+    sc = SaveCatalogue(cat, 3, _NullLogger())
+    assert sc.process("psf", str(galaxy_psf_path), n_epoch_slots=n_slots) is None
+    out = cat.cols
+
+    n_filled = [1, 2, 0]
+    for family, sentinel in _PSF_SLOT_SENTINELS.items():
+        assert _slot_numbers(out, family) == list(range(1, n_slots + 1)), family
+        for row, filled in enumerate(n_filled):
+            for n in range(filled + 1, n_slots + 1):
+                assert out[f"{family}_{n}"][row] == sentinel, (family, row, n)
+
+
+def test_save_psf_data_more_epochs_than_slots_raises(tmp_path):
+    """An object with more epochs than N_EPOCH_SLOTS raises, never truncates.
+
+    Dropping the extra epochs would silently lose per-epoch PSF data; the
+    error names the object, its N_EPOCH and the slot count so the config
+    can be fixed.
+    """
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    per_obj = {
+        101: {"2113864-7": _psf_epoch(0.01, 0.02, 0.5)},
+        404: {
+            "2113864-7": _psf_epoch(0.01, 0.02, 0.5),
+            "2229900-13": _psf_epoch(0.03, 0.04, 0.6),
+            "2358123-21": _psf_epoch(0.07, 0.08, 0.9),
+        },
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    with pytest.raises(ValueError) as excinfo:
+        _run_save_psf(
+            galaxy_psf_path, [101, 404], n_epoch=[1, 3], n_epoch_slots=2
+        )
+    msg = str(excinfo.value)
+    assert "404" in msg
+    assert "N_EPOCH=3" in msg
+    assert "N_EPOCH_SLOTS=2" in msg
+
+
+def test_save_psf_data_exactly_slots_epochs_fits(tmp_path):
+    """An object whose epochs exactly fill N_EPOCH_SLOTS is written, not raised."""
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    per_obj = {
+        404: {
+            "2113864-7": _psf_epoch(0.01, 0.02, 0.5),
+            "2229900-13": _psf_epoch(0.03, 0.04, 0.6),
+        },
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    out = _run_save_psf(galaxy_psf_path, [404], n_epoch=[2], n_epoch_slots=2)
+
+    assert _slot_numbers(out, "EXP_ID") == [1, 2]
+    assert out["EXP_ID_2"][0] == 2229900
+    npt.assert_allclose(out["HSM_G1_PSF_2"], [0.03])
+
+
+def test_save_psf_data_unset_slots_uses_tile_max_n_epoch_plus_one(tmp_path):
+    """Without N_EPOCH_SLOTS the slot count is the tile's max(N_EPOCH) + 1."""
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    per_obj = {
+        101: {"2113864-7": _psf_epoch(0.01, 0.02, 0.5)},
+        202: {
+            "2113864-9": _psf_epoch(0.05, 0.06, 0.7),
+            "2229900-13": _psf_epoch(0.03, 0.04, 0.6),
+            "2358123-21": _psf_epoch(0.07, 0.08, 0.9),
+        },
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    out = _run_save_psf(galaxy_psf_path, [101, 202], n_epoch=[1, 3])
+
+    for family in _PSF_SLOT_SENTINELS:
+        assert _slot_numbers(out, family) == [1, 2, 3, 4], family
+
+
+def test_save_psf_data_fixed_slots_keep_epoch_alignment(tmp_path):
+    """Under padding, slot n of every family still names the same epoch.
+
+    Epochs fill slots 1..k in the galaxy_psf key order and padding sits
+    only in slots k+1..N_EPOCH_SLOTS, for every family alike; a flagged
+    epoch keeps its identity in its own slot while its HSM columns stay
+    at the sentinel.
+    """
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    epochs = [
+        # (key, g1, g2, t, flag) in deliberately unsorted key order
+        ("2358123-21", 0.07, 0.08, 0.9, 0),
+        ("2113864-9", -10.0, -10.0, 0.0, 5),
+        ("2229900-13", 0.03, 0.04, 0.6, 0),
+    ]
+    per_obj = {
+        505: {key: _psf_epoch(g1, g2, t, flag) for key, g1, g2, t, flag in epochs},
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    n_slots = 6
+    out = _run_save_psf(
+        galaxy_psf_path, [505], n_epoch=[3], n_epoch_slots=n_slots
+    )
+
+    for n, (key, g1, g2, t, flag) in enumerate(epochs, start=1):
+        exp_id, ccd = (int(part) for part in key.split("-"))
+        assert out[f"EXP_ID_{n}"][0] == exp_id, n
+        assert out[f"CCD_{n}"][0] == ccd, n
+        if flag == 0:
+            npt.assert_allclose(out[f"HSM_G1_PSF_{n}"], [g1])
+            npt.assert_allclose(out[f"HSM_G2_PSF_{n}"], [g2])
+            npt.assert_allclose(out[f"HSM_T_PSF_{n}"], [t])
+            assert out[f"HSM_FLAG_PSF_{n}"][0] == 0, n
+        else:
+            npt.assert_allclose(out[f"HSM_G1_PSF_{n}"], [-10.0])
+            assert out[f"HSM_FLAG_PSF_{n}"][0] == 1, n
+    for n in range(len(epochs) + 1, n_slots + 1):
+        for family, sentinel in _PSF_SLOT_SENTINELS.items():
+            assert out[f"{family}_{n}"][0] == sentinel, (family, n)
+
+
+def test_save_psf_data_carries_fourth_moments_per_epoch(tmp_path):
+    """HSM_M4_1/M4_2/RHO4_PSF_n ride the same slots as HSM_G1_PSF_n.
+
+    The fourth-moment columns psfex_interp writes into SHAPES (shapepipe#697)
+    land per epoch; a SHAPES dict without them (MCCD, or an older producer)
+    leaves the slot at its out-of-range fill, as does an unused slot.
+    """
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    per_obj = {
+        101: {
+            "2113864-7": _psf_epoch(0.01, 0.02, 0.5, m4=(0.11, -0.22, 2.05)),
+            "2113865-3": _psf_epoch(0.03, 0.04, 0.6),
+        },
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    out = _run_save_psf(galaxy_psf_path, [101], n_epoch=[2])
+
+    npt.assert_allclose(out["HSM_M4_1_PSF_1"], [0.11])
+    npt.assert_allclose(out["HSM_M4_2_PSF_1"], [-0.22])
+    npt.assert_allclose(out["HSM_RHO4_PSF_1"], [2.05])
+    for n in (2, 3):
+        npt.assert_allclose(out[f"HSM_M4_1_PSF_{n}"], [-10.0])
+        npt.assert_allclose(out[f"HSM_M4_2_PSF_{n}"], [-10.0])
+        npt.assert_allclose(out[f"HSM_RHO4_PSF_{n}"], [-1.0])
+    npt.assert_allclose(out["HSM_G1_PSF_2"], [0.03])
