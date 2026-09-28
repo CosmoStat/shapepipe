@@ -321,6 +321,48 @@ def test_ini_duplicate_active_setting_outside_governed_paragraph_fails(tmp_path)
     assert "duplicate active setting outside the governed paragraph" in problem
 
 
+def test_ini_value_key_matching_is_case_insensitive(tmp_path):
+    _write(
+        tmp_path / "settings.ini",
+        "[SCIENCE]\n# @sc [decision:choice]\nmask_paths = stars.hsp\n",
+    )
+    record = _record("Mask map. Values: SCIENCE.MASK_PATHS = stars.hsp.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    assert value_errors(tmp_path, record, tags) == []
+
+
+def test_ini_absence_detects_lowercase_pipeline_key(tmp_path):
+    _write(
+        tmp_path / "settings.ini",
+        "# @sc [decision:choice]\n[SCIENCE]\nmask_paths = stars.hsp\n",
+    )
+    record = _record("No map. Values: SCIENCE.MASK_PATHS = absent.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    problem, = value_errors(tmp_path, record, tags)
+    assert "choice" in problem
+    assert "MASK_PATHS" in problem
+    assert "active setting" in problem
+
+
+def test_ini_duplicate_matching_is_case_insensitive(tmp_path):
+    _write(
+        tmp_path / "settings.ini",
+        "[SCIENCE]\n# @sc [decision:choice]\nMASK_PATHS = stars.hsp\n"
+        "OTHER = 2\n\nmask_paths = other.hsp\n",
+    )
+    record = _record("Mask map. Values: SCIENCE.MASK_PATHS = stars.hsp.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    problem, = value_errors(tmp_path, record, tags)
+    assert "choice" in problem
+    assert "duplicate active setting outside the governed paragraph" in problem
+
+
 def test_absent_assertion_fails_when_its_scope_is_removed(tmp_path):
     config = _write(
         tmp_path / "settings.ini",
@@ -473,7 +515,7 @@ def test_config_ref_ignores_unrelated_python_tagged_site(tmp_path):
     assert value_errors(tmp_path, record, tags) == []
 
 
-def test_python_value_reassignment_fails_closed(tmp_path):
+def test_relative_python_reassignment_reports_ambiguous_binding(tmp_path):
     _write(
         tmp_path / "constants.py",
         'def fit():\n    """Fit.\n\n    @sc [decision:choice]\n    """\n'
@@ -483,7 +525,10 @@ def test_python_value_reassignment_fails_closed(tmp_path):
     tags, errors = scan_tags(tmp_path)
     assert errors == []
     problem, = value_errors(tmp_path, record, tags)
-    assert "exactly one tagged site" in problem
+    assert "choice" in problem
+    assert "ambiguous binding" in problem
+    assert "found 2" in problem
+    assert "found 0" not in problem
 
 
 def test_reassigned_module_binding_reports_ambiguity_not_zero_sites(tmp_path):
@@ -567,37 +612,47 @@ def test_repository_decisions_have_sites_and_all_values_match():
 
 
 @pytest.mark.parametrize(
-    "path, pattern, replacement",
+    "path, pattern, replacement, decision, ref_fragment",
     [
         (
             "workflow/config/cfis/config_tile_Sx.ini",
             "WEIGHT_IMAGE = True",
             "WEIGHT_IMAGE = False",
+            "detection.weight_map_usage",
+            "WEIGHT_IMAGE",
         ),
         (
             "workflow/config/cfis/config_tile_Sx.ini",
             "MAKE_POST_PROCESS = True",
             "MAKE_POST_PROCESS = False",
+            "detection.epoch_membership_ccd_bounds",
+            "MAKE_POST_PROCESS",
         ),
         (
             "workflow/config/cfis/star_selection.setools",
             "[MASK:star_selection]\n",
             "[MASK:star_selection]\nMASK_EXT == 0\n",
+            "masking.psf_star_mask_veto",
+            "MASK_EXT",
         ),
         (
             "workflow/config/cfis/default_tile.sex",
             "SATUR_KEY",
             "SATUR_LEVEL      50000\nSATUR_KEY",
+            "detection.saturation_level",
+            "SATUR_LEVEL",
         ),
         (
             "src/shapepipe/modules/ngmix_package/ngmix.py",
             "\n    boot = ngmix.metacal.",
             "\n    metacal_pars['step'] = 0.02\n    boot = ngmix.metacal.",
+            "shape_measurement.metacal_scheme",
+            "metacal_pars[step]",
         ),
     ],
 )
 def test_real_record_catches_gate_and_absence_drift(
-    tmp_path, path, pattern, replacement
+    tmp_path, path, pattern, replacement, decision, ref_fragment
 ):
     """Real-record mutations of gates and absences must break Values checks."""
 
@@ -614,7 +669,11 @@ def test_real_record_catches_gate_and_absence_drift(
     text = target.read_text(encoding="utf-8")
     assert text.count(pattern) == 1
     target.write_text(text.replace(pattern, replacement), encoding="utf-8")
-    assert value_errors(tmp_path, record)
+    problems = value_errors(tmp_path, record)
+    assert any(
+        decision in problem and ref_fragment in problem
+        for problem in problems
+    ), problems
 
 
 def test_preserved_utilities_import_rule(tmp_path):

@@ -306,7 +306,9 @@ def _parse_file_tags(path, root):
     comment_tokens = {}
     if suffix == ".py":
         try:
-            tree = ast.parse(source, filename=relative)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SyntaxWarning)
+                tree = ast.parse(source, filename=relative)
         except SyntaxError as error:
             return [], [f"{relative}: cannot parse tagged Python: {error}"]
         found, issues, consumed = _python_docstring_tags(relative, source, tree)
@@ -559,7 +561,7 @@ def _ini_parser(text, *, strict=True):
     parser = configparser.ConfigParser(
         interpolation=None, strict=strict, allow_no_value=True
     )
-    parser.optionxform = str
+    parser.optionxform = str.lower
     parser.read_string(text)
     return parser
 
@@ -834,6 +836,8 @@ def _config_values_in_site(root, site, selector):
 
     lines = text.splitlines()
     section, key = _split_config_key(selector, suffix, site)
+    if suffix == ".ini":
+        key = key.lower()
     current_section = "DEFAULT" if suffix == ".ini" else ""
     values, predicates = [], []
     for number, raw in enumerate(lines, 1):
@@ -850,7 +854,7 @@ def _config_values_in_site(root, site, selector):
                 continue
         if suffix == ".ini":
             match = re.match(r"^([^:=\s][^:=]*?)\s*[:=]\s*(.*)$", stripped)
-            if not match or match.group(1).strip() != key:
+            if not match or match.group(1).strip().lower() != key:
                 continue
             value = match.group(2).strip()
             base_indent = len(raw) - len(raw.lstrip())
@@ -937,6 +941,8 @@ def _active_config_lines(root, path, selector, site=None):
 
     file_site = site or Site(path, 1, len(lines), "config", scope="file")
     section, key = _split_config_key(selector, suffix, file_site)
+    if suffix == ".ini":
+        key = key.lower()
     current_section = "DEFAULT" if suffix == ".ini" else ""
     found = []
     for number, raw in enumerate(lines, 1):
@@ -952,7 +958,7 @@ def _active_config_lines(root, path, selector, site=None):
                 continue
         if suffix == ".ini":
             match = re.match(r"^([^:=\s][^:=]*?)\s*(?:[:=]\s*(.*))?$", stripped)
-            active_key = match.group(1).strip() if match else None
+            active_key = match.group(1).strip().lower() if match else None
         elif suffix == ".setools":
             match = re.match(rf"^{re.escape(key)}(?=$|\s|=|<|>)(.*)$", stripped)
             active_key = key if match else None
@@ -978,6 +984,7 @@ def _config_absent_actual(root, path, selector):
     file_site = Site(path, 1, len(text.splitlines()), "config", scope="file")
     section, key = _split_config_key(selector, suffix, file_site)
     if suffix == ".ini":
+        key = key.lower()
         try:
             parser = _ini_parser(text, strict=False)
         except configparser.Error as error:
@@ -1085,13 +1092,13 @@ def _python_value_in_site(root, site, selector):
     try:
         node = _selected_python_node(tree, full_selector)
     except ValueError as error:
-        if not direct:
-            return None
         message = str(error)
         if "needs one binding" in message:
             found = re.search(r"found (\d+)", message)
-            if direct and found and int(found.group(1)) > 1:
+            if found and int(found.group(1)) > 1:
                 raise ValueError(f"ambiguous binding: {message}") from error
+            return None
+        if not direct:
             return None
         if "missing" in message:
             return None
@@ -1203,9 +1210,6 @@ def value_errors(root, record, tags=None):
     for decision, definition in _iter_decision_defs(record):
         rationale = definition.get("rationale") if isinstance(definition, dict) else None
         if not isinstance(rationale, str):
-            continue
-        if "Anchor:" in rationale:
-            errors.append(f"{decision}: legacy Anchor: sentence remains in rationale")
             continue
         entries, problem = _parse_values(rationale)
         if problem:

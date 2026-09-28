@@ -104,6 +104,7 @@ def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     Returns
     -------
     ngmix.joint_prior.PriorSimpleSep
+
     @sc [decision:shape_measurement.fit_priors]
     """
     if T_range is None:
@@ -168,6 +169,7 @@ def position_seed(ra, dec, ccd):
     -------
     int
         Seed in ``[0, 2**32)`` for ``numpy.random.RandomState``.
+
     @sc [decision:shape_measurement.ngmix_seed_mode]
     """
     box_x = int(np.floor((ra * 3600) / 3) + (ccd + 1))
@@ -1157,8 +1159,10 @@ def prepare_postage_stamps(
     psf_obj=None,
     gal_obj=None,
 ):
-    # define per-object lists of individual exposures to go into ngmix
-    """@sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut]"""
+    """Prepare the per-object lists of exposures passed to ngmix.
+
+    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut]
+    """
     stamp = Postage_stamp(bkg_sub=bkg_sub)
     # Read each store's per-object dict ONCE: every sqlitedict access
     # unpickles the object's whole all-epoch dict, so keeping these out of
