@@ -1,4 +1,4 @@
-"""The star catalogue's 16 columns are defined twice, and must not drift.
+"""The star catalogue's 22 columns are defined twice, and must not drift.
 
 Two writers emit a full_starcat, for two consumers that have to agree about it:
 
@@ -81,11 +81,11 @@ def test_column_names_and_order_agree(writers):
     assert workflow_columns == module_columns
 
 
-def test_sixteen_columns(writers):
-    """The count is itself the documented contract (README, config.yaml)."""
+def test_twenty_two_columns(writers):
+    """The count is itself the documented contract (README)."""
     module_columns, workflow_columns = writers
-    assert len(module_columns) == 16
-    assert len(workflow_columns) == 16
+    assert len(module_columns) == 22
+    assert len(workflow_columns) == 22
 
 
 def test_ccd_nb_is_last(writers):
