@@ -42,7 +42,9 @@ def ngmix_runner(
     module_config_sec,
     w_log,
 ):
-    """Define The Ngmix Runner."""
+    """Define The Ngmix Runner.
+    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.centroid_source,decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]
+    """
     # Read config file entries
 
     # Photometric zero point

@@ -74,6 +74,7 @@ from pathlib import Path
 
 # stage -> {runner_subdir: {expect, [warn], [subpath]}}
 # exp_psf and tile_vignets are selected by $SP_PSF at check time.
+# @sc [decision:per_unit_completeness]
 COMPLETENESS = {
     # --- tile prepare (phase A) ---
     # get_images counts are CONFIG-FLAVOR-DEPENDENT: the v2.0 bash table said 4/6
@@ -389,6 +390,12 @@ def _unit_from_run_dir(run_dir):
 
 
 def main(argv=None) -> int:
+    """Run the CLI and persist the per-unit verdict.
+
+    @sc [label:policy] exact-counts-fail-the-unit
+    ``--job-rc`` can fail a stage even when product counts pass; the log records
+    every verdict, while the manifest is emitted only for success.
+    """
     p = argparse.ArgumentParser(description="ShapePipe per-unit completeness check")
     sub = p.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="count products, write the manifest")
