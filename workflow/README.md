@@ -150,9 +150,9 @@ sp container resolve                     # just the path the workflow will run
 in-sync / behind / ahead / diverged, or unknown when the image carries no label
 or the commit was never fetched here.
 
-**`pull` needs the network.** Compute nodes on Alliance clusters generally have
-none, so run it on a login node or inside an `salloc` allocation — never from a
-batch job. `pull` and `sandbox` both stage to a sibling path and swap it in, so
+**`pull` needs the network.** Candide and nibi compute nodes both have it, so
+`pull` runs from a login node, an `salloc` allocation or a batch job alike.
+`pull` and `sandbox` both stage to a sibling path and swap it in, so
 an in-flight job never sees a half-written image and a failed rebuild leaves the
 one you had intact.
 
