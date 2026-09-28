@@ -154,10 +154,6 @@ plane according to ``X_GRID`` and ``Y_GRID``.
 
 Another series of plots are a histogram of the ellipticity errors.
 
-A third series are the rho statistics plot, which are correlation functions of
-various combinations of PSF ellipticity, size, and their residuals,
-see :cite:`rowe:10` and :cite:`jarvis:16`.
-
 Module-specific config file entries
 -----------------------------------
 

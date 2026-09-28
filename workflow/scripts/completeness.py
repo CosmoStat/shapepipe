@@ -10,13 +10,12 @@ warns throughout. The ``warn`` field note below cites tile psfex_interp as its
 example, but that runner is mandatory, a [LINT] the decision record carries.
 
 This is the ported ``complete_check`` count table from the v2.0 bash layer
-(``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4). Across smk-g6
-(127 exposures, 64 tiles, and 512 ngmix chunks), every non-warning runner
-produced exactly its ``expect`` count; the v2.0 layer likewise used exact counts,
-with only ``psfex_interp`` marked ``:warn``. The formerly ported lower bounds
-(and the unsupported ~0.2% setools-attrition claim) therefore have no basis:
-setools produced 80/80 in all 127 exposures. ``split_exp`` is also structurally
-all-or-nothing because it raises on an HDU-count mismatch.
+(``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4): every non-warning
+runner is expected to produce exactly its ``expect`` count. Across smk-g6
+(127 exposures, 64 tiles, and 512 ngmix chunks), setools produced 80/80 in
+all 127 exposures, so ``setools_runner`` is mandatory with no tolerance for
+attrition. ``split_exp`` is likewise structurally all-or-nothing because it
+raises on an HDU-count mismatch.
 
 A runner below ``expect`` fails its unit unless it has ``warn=True``; such a
 shortfall gives the unit status ``warn``. There is no 3-class taxonomy and no
@@ -65,7 +64,8 @@ UNMOVED mtime, or the mtime rerun-trigger churns the cone on every unrelated
 Per-runner fields:
     expect   nominal file count for a fully complete unit; below it fails
     warn     if True a shortfall warns instead of failing the unit (bash
-             ``:warn`` — e.g. psfex_interp on tiles missing some epochs)
+             ``:warn`` — e.g. ``exp_psf``'s ``psfex_interp_runner``; the
+             ``tile_vignets`` ``psfex_interp_runner`` is mandatory)
     subpath  count files in ``<runner>/output/<subpath>/`` instead of
              ``<runner>/output/`` (bash ``:rand_split`` — setools split cats)
 
@@ -116,11 +116,14 @@ COMPLETENESS = {
         # warning-only until a real campaign validates its counts.
         "mccd": {
             "sextractor_runner":          dict(expect=120, warn=True),
+            "mask_query_runner":          dict(expect=40, warn=True),
             "setools_runner":             dict(expect=80, warn=True,
                                                 subpath="rand_split"),
-            "mccd_preprocessing_runner":  dict(expect=80, warn=True),
+            # mccd_preprocessing merges the exposure's per-CCD star catalogues
+            # into one train and one test catalogue, not one output per CCD.
+            "mccd_preprocessing_runner":  dict(expect=2, warn=True),
             # Fit/validation is exposure-wide: one model and one validation
-            # catalogue, unlike the per-CCD preprocessing outputs.
+            # catalogue.
             "mccd_fit_val_runner":        dict(expect=2, warn=True),
             "merge_starcat_runner":       dict(expect=1, warn=True),
             # config_exp_mccd enables the ten meanshape and six histogram plots.
