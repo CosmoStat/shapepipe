@@ -174,7 +174,7 @@ def _python_docstring_tags(path, source, tree):
             continue
         doc_node = body[0].value
         for offset, doc_line in enumerate(doc_node.value.splitlines()):
-            if "@sc" not in doc_line:
+            if not doc_line.strip().startswith("@sc"):
                 continue
             line_no = doc_node.lineno + offset
             consumed.add(line_no)
@@ -258,12 +258,14 @@ def _comment_site(path, lines, index, meta, tree=None, *, snakemake=False):
         if header:
             end = len(lines)
             for j in range(n + 1, len(lines)):
-                comment = _comment_body(lines[j])
-                if comment is not None and comment.startswith("@sc"):
-                    end = j
-                    break
                 if re.match(r"^\s*\[[^]]+\]\s*(?:[#;].*)?$", lines[j]):
                     end = j
+                    k = j - 1
+                    while k > n and _comment_body(lines[k]) is not None:
+                        if _comment_body(lines[k]).startswith("@sc"):
+                            end = k
+                            break
+                        k -= 1
                     break
             return Site(path, start, end, "config", section=header.group(1).strip(), scope="section")
         end = len(lines)
@@ -310,13 +312,13 @@ def _parse_file_tags(path, root):
             tag_comments = [
                 (line_no, column, comment[1:].lstrip())
                 for line_no, (column, comment) in comment_tokens.items()
-                if "@sc" in comment
+                if comment[1:].lstrip().startswith("@sc")
             ]
         else:
             tag_comments = [
                 (index + 1, len(line) - len(line.lstrip()), body)
                 for index, line in enumerate(lines)
-                if (body := _comment_body(line)) is not None and "@sc" in body
+                if (body := _comment_body(line)) is not None and body.startswith("@sc")
             ]
         for line_no, column, body in tag_comments:
             index = line_no - 1

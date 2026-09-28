@@ -53,6 +53,34 @@ def test_config_tags_govern_paragraph_and_section(tmp_path):
     assert output.site.scope == "section"
 
 
+def test_section_tag_covers_the_entire_section_across_nested_key_tags(tmp_path):
+    _write(
+        tmp_path / "settings.ini",
+        "# @sc [decision:section_choice]\n[S]\nA = 1\n"
+        "# @sc [decision:key_choice]\nB = 2\n\n"
+        "# @sc [decision:next_choice]\n[N]\nC = 3\n",
+    )
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    section_tag = next(tag for tag in tags if tag.decisions == ("section_choice",))
+    assert section_tag.site.section == "S"
+    assert section_tag.site.start <= 6 <= section_tag.site.end
+
+
+def test_prose_mentions_of_sc_are_not_tags(tmp_path):
+    _write(
+        tmp_path / "mod.py",
+        '"""An @sc citation points to a decision.\n\n'
+        "A paragraph that explains the @sc syntax.\n\n"
+        "@sc [decision:choice]\n\n\"\"\"\n",
+    )
+    tags, errors = scan_tags(tmp_path)
+    assert errors == []
+    assert len(tags) == 1
+    assert tags[0].decisions == ("choice",)
+
+
 def test_python_declaration_statement_and_snakemake_tags(tmp_path):
     _write(
         tmp_path / "src" / "mod.py",
