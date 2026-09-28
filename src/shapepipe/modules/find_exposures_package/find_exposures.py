@@ -64,6 +64,10 @@ class FindExposures:
         Return list of exposure file used for the tile in process, from tiles
         FITS header.
 
+        @sc [decision:preparation.epoch_provenance_from_tile_history,label:convention] epochs-from-tile-history
+        Apply ``EXP_PREFIX`` only at the start of the parsed name; do not strip
+        matching text from the middle or remove the trailing ``p`` here.
+
         Returns
         -------
         list
