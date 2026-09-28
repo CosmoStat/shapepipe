@@ -1907,16 +1907,11 @@ analyses:
       star_galaxy_classification:
         label: Star/galaxy separation deferred out of the pipeline
         rationale: >-
-          Classification is off and no spread-model input is wired, so the
-          catalogue ships every object and separation happens downstream. The
-          dormant make_cat classifier computes class = sm + 2 sm_err, with
-          stars at |class| < SM_STAR_THRESH and galaxies at class >
-          SM_GAL_THRESH, both read from config (the function defaults, 0.003
-          and 0.01, are bypassed); the committed config sets neither key, so
-          enabling classification alone raises. Unlike Guinot+22
-          (guinot22_spread_model_cut), it applies no s > 0 or magnitude cut.
-          Values:
-          MAKE_CAT_RUNNER.SM_DO_CLASSIFICATION = False.
+          [HARDCODED] ShapePipe does no star/galaxy classification: make_cat
+          keeps every detection, and the catalogue carries no classification
+          column. Separation happens downstream, in sp_validation's size-based
+          selection. The spread-model classifier Guinot+22 used
+          (guinot22_spread_model_cut) is removed from the pipeline.
         default: deferred_downstream
         options:
           deferred_downstream:
@@ -1924,10 +1919,10 @@ analyses:
           spread_model_inline:
             label: spread_model classification in make_cat
             insights: [guinot22_spread_model_cut]
-            description: >-
-              Not wired; needs spread_model_runner after the PSF
-              interpolation, its output added to make_cat's inputs, and both
-              thresholds set.
+            excluded: true
+            excluded_reason: >-
+              It did not work reliably when last run, and it separates stars
+              from galaxies worse than the downstream classification.
       tile_overlap_handling:
         label: Tile-overlap duplicates neither removed nor flagged
         rationale: >-

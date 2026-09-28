@@ -16,17 +16,15 @@ from shapepipe.modules.module_decorator import module_runner
     version="1.1",
     input_module=[
         "sextractor_runner",
-        "spread_model_runner",
         "psfex_interp_runner",
         "ngmix_runner",
     ],
     file_pattern=[
         "tile_sexcat",
-        "sexcat_sm",
         "galaxy_psf",
         "ngmix",
     ],
-    file_ext=[".fits", ".fits", ".sqlite", ".fits"],
+    file_ext=[".fits", ".sqlite", ".fits"],
     depends=["numpy", "sqlitedict"],
 )
 def make_cat_runner(
@@ -43,47 +41,7 @@ def make_cat_runner(
 
     @sc [decision:masking.sky_mask_application]
     """
-    # Set input file paths
-    if len(input_file_list) == 3:
-        # No spread model input
-        (
-            tile_sexcat_path,
-            galaxy_psf_path,
-            shape1_cat_path,
-        ) = input_file_list
-        sexcat_sm_path = None
-    else:
-        # With spread model input
-        (
-            tile_sexcat_path,
-            sexcat_sm_path,
-            galaxy_psf_path,
-            shape1_cat_path,
-        ) = input_file_list[0:4]
-
-    # Fetch classification options
-    do_classif = config.getboolean(
-        module_config_sec,
-        "SM_DO_CLASSIFICATION",
-    )
-    if do_classif:
-        if sexcat_sm_path is None:
-            raise ValueError(
-                "SM_DO_CLASSIFICATION is True but no spread-model "
-                "catalogue input was provided; star/galaxy classification "
-                "requires a spread-model input to classify on"
-            )
-        for key in ("SM_STAR_THRESH", "SM_GAL_THRESH"):
-            if not config.has_option(module_config_sec, key):
-                raise ValueError(
-                    f"SM_DO_CLASSIFICATION is True but {key} is not set "
-                    "in the config"
-                )
-        star_thresh = config.getfloat(module_config_sec, "SM_STAR_THRESH")
-        gal_thresh = config.getfloat(module_config_sec, "SM_GAL_THRESH")
-    else:
-        star_thresh = None
-        gal_thresh = None
+    tile_sexcat_path, galaxy_psf_path, shape1_cat_path = input_file_list
 
     # Fetch shape measurement type
     shape_type_list = config.getlist(
@@ -112,32 +70,9 @@ def make_cat_runner(
 
     # Save SExtractor data
     w_log.info("Save SExtractor data")
-    n_obj = make_cat.save_sextractor_data(final_cat_file, tile_sexcat_path)
-    cat_size_sextractor = n_obj
-
-    # Save spread-model data
-    if sexcat_sm_path is None:
-        w_log.info(
-            "No sm cat input, spread model will not be written to the "
-            "final catalogue"
-        )
-    else:
-        w_log.info("Save spread-model data")
-        cat_size_sm = make_cat.save_sm_data(
-            final_cat_file,
-            sexcat_sm_path,
-            do_classif,
-            star_thresh,
-            gal_thresh,
-            n_obj=n_obj
-        )
-
-        if cat_size_sextractor != cat_size_sm:
-            w_log.warning(
-                f"SExtractor catalogue {tile_sexcat_path} has different"
-                f" size ({cat_size_sextractor}) than spread_model"
-                f" catalogue {sexcat_sm_path} ({cat_size_sm})"
-            )
+    cat_size_sextractor = make_cat.save_sextractor_data(
+        final_cat_file, tile_sexcat_path
+    )
 
     # Save shape data
     sc_inst = make_cat.SaveCatalogue(final_cat_file, cat_size_sextractor, w_log)
