@@ -36,6 +36,20 @@ def _config_tag(path, decision="choice", content="THRESH 1\n"):
     return _write(path, f"# @sc [decision:{decision}]\n{content}")
 
 
+def test_file_scope_tag_can_follow_a_required_config_header(tmp_path):
+    config = _write(
+        tmp_path / "filter.conv",
+        "CONV NORM\n# @sc [decision:choice,scope:file]\n1\n",
+    )
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    assert len(tags) == 1
+    assert tags[0].site.path == "filter.conv"
+    assert tags[0].site.scope == "file"
+    assert (tags[0].site.start, tags[0].site.end) == (1, 3)
+
+
 def test_config_tags_govern_paragraph_and_section(tmp_path):
     config = _write(
         tmp_path / "settings.ini",
