@@ -840,6 +840,16 @@ def _config_values_in_site(root, site, selector):
             if not match or match.group(1).strip() != key:
                 continue
             value = match.group(2).strip()
+            base_indent = len(raw) - len(raw.lstrip())
+            for continuation in lines[number:site.end]:
+                if not continuation.strip():
+                    break
+                if continuation.lstrip().startswith(("#", ";")):
+                    continue
+                indent = len(continuation) - len(continuation.lstrip())
+                if indent <= base_indent:
+                    break
+                value += " " + continuation.strip()
             predicate = False
         elif suffix == ".setools":
             match = re.match(rf"^{re.escape(key)}(?=$|\s|=|<|>)(.*)$", stripped)

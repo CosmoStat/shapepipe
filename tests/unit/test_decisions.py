@@ -288,6 +288,19 @@ def test_numeric_lists_and_astromatic_boolean_words_keep_reader_semantics(tmp_pa
     assert value_errors(tmp_path, record, tags) == []
 
 
+def test_ini_multiline_value_keeps_continuation_lines(tmp_path):
+    _write(
+        tmp_path / "config.ini",
+        "# @sc [decision:choice]\n[SCIENCE]\nMODULE = alpha, beta,\n"
+        "         gamma, delta\n",
+    )
+    record = _record("Runner chain. Values: SCIENCE.MODULE = alpha,beta,gamma,delta.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    assert value_errors(tmp_path, record, tags) == []
+
+
 def test_config_boolean_semantics_and_setools_predicates(tmp_path):
     ini = _write(tmp_path / "config.ini", "# @sc [decision:choice]\n[SCIENCE]\nENABLED = 1\n")
     record = _record("Toggle. Values: SCIENCE.ENABLED = True.")
