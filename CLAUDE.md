@@ -126,7 +126,10 @@ where the change lives — and *scientific* decisions in `astra.yaml`, below.
 consequential scientific choice embedded in the code and the committed configs,
 with its rationale, its alternatives, and an anchor to the code or config that
 implements it. `universes/committed.yaml` pins the option the committed
-configuration selects for every decision. The format is ASTRA;
+configuration selects for every decision. The format is ASTRA.
+The `decision` pytest marker links each `tests/science/` guardrail to the
+ASTRA decisions it protects, and `tests/unit/test_contracts.py` validates
+those IDs alongside `@sc` references.
 `uvx astra-tools@0.2.17 guide` is the briefing and `uvx astra-tools@0.2.17 spec`
 the field reference. The file's header states its conventions (anchor grammar,
 `[HARDCODED]`, `[LINT]`).

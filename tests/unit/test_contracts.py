@@ -1,17 +1,20 @@
 """Keep the @sc contracts well-formed and tied to the ASTRA decision record."""
 
+import textwrap
 from functools import cache
 from pathlib import Path
-import textwrap
 
 import pytest
 
 from tests.helpers.astra_record import load_yaml
 from tests.helpers.contracts import (
+    DecisionMarker,
     collect,
     coverage_report,
     decision_errors,
     decision_ids,
+    decision_marker_errors,
+    decision_markers,
     forbid_rules,
     governed_refs,
     governs_errors,
@@ -30,7 +33,8 @@ RECORD = {
 def _repository():
     record = load_yaml(REPO_ROOT / "astra.yaml")
     contracts, errors = collect(REPO_ROOT)
-    return record, contracts, errors
+    markers, marker_errors = decision_markers(REPO_ROOT)
+    return record, contracts, markers, errors + marker_errors
 
 
 def _write(root, relative, text):
@@ -158,6 +162,47 @@ def test_unknown_decision_is_an_error(tmp_path):
     assert "'inner_choice'" in problems[0]
     assert "'no_such_choice'" in problems[1]
     assert decision_ids(RECORD) == {"top_choice", "stage.inner_choice"}
+
+
+def test_parser_reads_decision_markers_from_decorators_and_pytestmark(
+    tmp_path,
+):
+    """Find IDs in decorators and module-level pytestmark lists."""
+    _write(tmp_path, "tests/test_markers.py", '''
+        import pytest
+
+        pytestmark = [pytest.mark.decision("top_choice")]
+
+        @pytest.mark.decision("stage.inner_choice", "top_choice")
+        def test_it():
+            pass
+        ''')
+
+    markers, errors = decision_markers(tmp_path)
+
+    assert errors == []
+    assert [(m.decision, m.path, m.line) for m in markers] == [
+        ("top_choice", "tests/test_markers.py", 4),
+        ("stage.inner_choice", "tests/test_markers.py", 6),
+        ("top_choice", "tests/test_markers.py", 6),
+    ]
+    assert decision_marker_errors(markers, RECORD) == []
+
+
+def test_unknown_decision_marker_is_an_error(tmp_path):
+    """Reject decision IDs missing from the ASTRA record."""
+    _write(tmp_path, "tests/test_bad_marker.py", '''
+        import pytest
+        pytestmark = [pytest.mark.decision("missing_choice")]
+        ''')
+
+    markers, errors = decision_markers(tmp_path)
+
+    assert errors == []
+    assert decision_marker_errors(markers, RECORD) == [
+        "tests/test_bad_marker.py:3: decision marker cites unknown decision "
+        "'missing_choice'"
+    ]
 
 
 def test_governs_resolves_all_refs_relative_to_the_contract_file(tmp_path):
@@ -298,17 +343,24 @@ def test_config_coverage_uses_governed_refs_not_the_sidecar_path(
 
     contracts, errors = collect(tmp_path)
     uncovered, unanchored = coverage_report(contracts, record)
+    covered, _ = coverage_report(
+        contracts,
+        record,
+        [DecisionMarker("uncovered", "tests/science/test_x.py", 1)],
+    )
 
     assert errors == []
     assert uncovered == ["uncovered"]
+    assert covered == []
     assert [c.id for c in unanchored] == ["off-record-key"]
 
 
 def test_repository_contracts_are_valid_and_cite_real_decisions():
-    record, contracts, errors = _repository()
+    record, contracts, markers, errors = _repository()
     errors = (
         errors
         + decision_errors(contracts, record)
+        + decision_marker_errors(markers, record)
         + governs_errors(contracts, REPO_ROOT)
     )
 
@@ -317,13 +369,14 @@ def test_repository_contracts_are_valid_and_cite_real_decisions():
 
 
 def test_contract_coverage_report():
-    """Report-only: print record decisions and contracts that lack a partner."""
+    """Report ASTRA decision gaps and unanchored contracts."""
+    record, contracts, markers, _ = _repository()
+    uncovered, unanchored = coverage_report(contracts, record, markers)
 
-    record, contracts, _ = _repository()
-    uncovered, unanchored = coverage_report(contracts, record)
-
-    print(f"\n{len(contracts)} contracts; "
-          f"{len(uncovered)} decisions cited by no contract:")
+    print(
+        f"\n{len(contracts)} contracts; {len(markers)} test decision markers; "
+        f"{len(uncovered)} decisions cited by neither:"
+    )
     for decision in uncovered:
         print(f"  {decision}")
     print(f"{len(unanchored)} @sc contracts off the record's anchors:")

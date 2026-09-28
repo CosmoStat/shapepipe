@@ -27,10 +27,10 @@ are errors, not last-value-wins overrides. Resolution checks existence, not
 whether a key is enabled or its value satisfies the contract's prose.
 """
 
-from dataclasses import dataclass, field
 import ast
 import fnmatch
 import io
+from dataclasses import dataclass, field
 from pathlib import Path
 import re
 import tokenize
@@ -63,6 +63,15 @@ class Contract:
     path: str = ""
     line: int = 0
     scope: str = ""
+
+
+@dataclass(frozen=True)
+class DecisionMarker:
+    """One pytest marker linking a test to an ASTRA decision."""
+
+    decision: str
+    path: str
+    line: int
 
 
 def parse_block(text, path, offset=0, scope=""):
@@ -255,6 +264,89 @@ def decision_errors(contracts, record):
     ]
 
 
+def _is_decision_marker_call(node):
+    """Whether ``node`` calls ``pytest.mark.decision(...)``."""
+
+    function = node.func
+    return (
+        isinstance(function, ast.Attribute)
+        and function.attr == "decision"
+        and isinstance(function.value, ast.Attribute)
+        and function.value.attr == "mark"
+        and isinstance(function.value.value, ast.Name)
+        and function.value.value.id == "pytest"
+    )
+
+
+def decision_markers(root):
+    """Parse literal ``pytest.mark.decision`` ids from Python files in tests/.
+
+    The AST scan includes decorators and module-level ``pytestmark`` values
+    (including lists) without importing test modules. Non-literal ids are
+    errors so dynamic expressions cannot evade record validation.
+    """
+
+    root = Path(root)
+    tests_root = root / "tests"
+    markers, errors = [], []
+    if not tests_root.is_dir():
+        return markers, errors
+    for path in sorted(tests_root.rglob("*.py")):
+        if any(part in SKIP for part in path.parts):
+            continue
+        relative = path.relative_to(root)
+        try:
+            source = path.read_text(encoding="utf-8")
+            tree = ast.parse(source, filename=str(relative))
+        except (OSError, SyntaxError) as error:
+            errors.append(
+                f"{relative}: cannot parse decision markers: {error}"
+            )
+            continue
+        calls = sorted(
+            (node for node in ast.walk(tree)
+             if isinstance(node, ast.Call) and _is_decision_marker_call(node)),
+            key=lambda node: (node.lineno, node.col_offset),
+        )
+        for call in calls:
+            where = f"{relative}:{call.lineno}"
+            if not call.args:
+                errors.append(
+                    f"{where}: decision marker needs literal string ids"
+                )
+            if call.keywords:
+                errors.append(
+                    f"{where}: decision markers accept positional ids only"
+                )
+            for argument in call.args:
+                if (
+                    isinstance(argument, ast.Constant)
+                    and isinstance(argument.value, str)
+                ):
+                    markers.append(
+                        DecisionMarker(
+                            argument.value, relative.as_posix(), call.lineno
+                        )
+                    )
+                else:
+                    errors.append(
+                        f"{where}: decision marker ids must be literal strings"
+                    )
+    return markers, errors
+
+
+def decision_marker_errors(markers, record):
+    """Markers whose decision id is absent from the ASTRA record."""
+
+    known = decision_ids(record)
+    return [
+        f"{marker.path}:{marker.line}: decision marker cites unknown decision "
+        f"{marker.decision!r}"
+        for marker in markers
+        if marker.decision not in known
+    ]
+
+
 def governed_refs(contract):
     """Repo-relative anchor refs named by a contract's ``governs:`` meta.
 
@@ -319,20 +411,22 @@ def anchored_refs(record):
     return symbols, paths
 
 
-def coverage_report(contracts, record):
+def coverage_report(contracts, record, decision_markers=()):
     """Report-only gaps between the contracts and the record.
 
-    Returns ``(uncovered, unanchored)``: decision ids no contract cites, and
-    ``@sc`` contracts whose declaration or governed refs are not anchored.
-    A module-docstring contract counts as anchored when an anchor names its
-    file or a symbol in it. A ``governs:`` contract counts when at least one
-    locator appears in the record after rebasing to the repo root and
+    Returns ``(uncovered, unanchored)``: decision ids cited by neither a
+    contract nor a test marker, and ``@sc`` contracts whose declaration or
+    governed refs are not anchored. A module-docstring contract counts as
+    anchored when an anchor names its file or a symbol in it. A ``governs:``
+    contract counts when at least one locator appears in the record after
+    rebasing to the repo root and
     removing any value assertion from the record's ref; another key in the
     same file is not a match. These are report-only links, not proof that
     the prose holds or every coupled key is anchored.
     """
 
     cited = {c.meta["decision"] for c in contracts if "decision" in c.meta}
+    cited.update(marker.decision for marker in decision_markers)
     uncovered = sorted(decision_ids(record) - cited)
     references = _anchor_locators(record)
     symbols, paths = anchored_refs(record)
