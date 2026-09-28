@@ -11,8 +11,11 @@ The value grammar behind ``Values: ref = value`` is:
   1/0 are numbers. Outer whitespace is trimmed; other strings are
   case-sensitive. Lists preserve order and length. Only .param VIGNET and
   .psfex PSF_SIZE accept square-size shorthand: 51 = 51,51.
-* ``= absent`` asserts a config key has no active line; its tagged file or
-  section scope must still exist. Quote it ("absent") to mean the text.
+* ``= absent`` asserts that a config key has no active line anywhere in the
+  file or named section. The same decision must tag at least one site in that
+  file (and, for INI/SETools, in the named section or at file scope). INI
+  absence checks include values inherited from ``[DEFAULT]``. Quote it
+  ("absent") to mean the text.
 * .setools refs use ``SECTION.KEY``. Predicates keep their operators as
   quoted text; repeated cuts on one key are an ordered list, e.g.
   ``MAG_AUTO = ["> 18.", "< 22."]``. Expressions compare as text.
@@ -277,7 +280,17 @@ def _comment_site(path, lines, index, meta, tree=None, *, snakemake=False):
             if comment is not None and comment.startswith("@sc"):
                 end = j
                 break
-        return Site(path, start, end, "config", scope="paragraph")
+        suffix = Path(path).suffix.lower()
+        section = ""
+        if suffix in {".ini", ".setools"}:
+            for prior in lines[:index]:
+                header = re.match(r"^\s*\[([^]]+)\]\s*(?:[#;].*)?$", prior)
+                if header:
+                    section = header.group(1).strip()
+            if suffix == ".ini" and not section:
+                section = "DEFAULT"
+        return Site(path, start, end, "config", section=section,
+                    scope="paragraph")
     return None
 
 
@@ -785,7 +798,7 @@ def _path_matches(site_path, qualifier):
 def _split_config_key(selector, suffix, site):
     if suffix in {".ini", ".setools"} and "." in selector:
         return selector.rsplit(".", 1)
-    section = site.section if site.scope == "section" else ""
+    section = site.section if suffix in {".ini", ".setools"} else ""
     return section, selector.rsplit(".", 1)[-1]
 
 
@@ -891,30 +904,167 @@ def _section_exists(text, suffix, section):
         except configparser.Error as error:
             raise ValueError(f"cannot parse INI file: {error}") from error
         return section == parser.default_section or parser.has_section(section)
-    return any(
-        line.strip() == f"[{section}]" for line in text.splitlines()
-    )
+    return any(line.strip() == f"[{section}]" for line in text.splitlines())
 
 
-def _absent_scope_matches(root, site, selector):
-    target = Path(root) / site.path
+def _yaml_key_lines(lines, selector):
+    """Return lines for a simple nested YAML mapping selector."""
+
+    wanted = selector.split(".")
+    stack, found = [], []
+    for number, raw in enumerate(lines, 1):
+        match = re.match(r"^(\s*)([^:#][^:]*?)\s*:\s*(?:.*)?$", raw)
+        if not match:
+            continue
+        indent = len(match.group(1))
+        while stack and stack[-1][0] >= indent:
+            stack.pop()
+        key = match.group(2).strip().strip("'\"")
+        stack.append((indent, key))
+        if [part for _, part in stack] == wanted:
+            found.append(number)
+    return found
+
+
+def _active_config_lines(root, path, selector, site=None):
+    """Find active line settings for a key throughout one config file."""
+
+    target = Path(root) / path
     suffix = target.suffix.lower()
-    if site.scope not in {"file", "section"}:
-        return None
+    lines = target.read_text(encoding="utf-8").splitlines()
+    if suffix in {".yaml", ".yml"}:
+        return _yaml_key_lines(lines, selector)
+
+    file_site = site or Site(path, 1, len(lines), "config", scope="file")
+    section, key = _split_config_key(selector, suffix, file_site)
+    current_section = "DEFAULT" if suffix == ".ini" else ""
+    found = []
+    for number, raw in enumerate(lines, 1):
+        stripped = _strip_config_comment(raw, suffix)
+        if not stripped:
+            continue
+        header = re.match(r"^\[([^]]+)\]$", stripped)
+        if header:
+            current_section = header.group(1).strip()
+            continue
+        if suffix in {".ini", ".setools"} and section:
+            if current_section != section:
+                continue
+        if suffix == ".ini":
+            match = re.match(r"^([^:=\s][^:=]*?)\s*(?:[:=]\s*(.*))?$", stripped)
+            active_key = match.group(1).strip() if match else None
+        elif suffix == ".setools":
+            match = re.match(rf"^{re.escape(key)}(?=$|\s|=|<|>)(.*)$", stripped)
+            active_key = key if match else None
+        elif suffix == ".param":
+            match = re.match(
+                rf"^{re.escape(key)}(?:\s*\(([^)]*)\)|\s+(.*))?$", stripped
+            )
+            active_key = key if match else None
+        else:
+            match = re.match(rf"^{re.escape(key)}(?=$|\s|=|\()(.*)$", stripped)
+            active_key = key if match else None
+        if active_key == key:
+            found.append(number)
+    return found
+
+
+def _config_absent_actual(root, path, selector):
+    """Return whether a config setting is active anywhere in its target scope."""
+
+    target = Path(root) / path
+    suffix = target.suffix.lower()
     text = target.read_text(encoding="utf-8")
-    section = selector.rsplit(".", 1)[0] if suffix in {".ini", ".setools"} and "." in selector else ""
-    if site.scope == "section":
-        if section and section != site.section:
+    file_site = Site(path, 1, len(text.splitlines()), "config", scope="file")
+    section, key = _split_config_key(selector, suffix, file_site)
+    if suffix == ".ini":
+        try:
+            parser = _ini_parser(text, strict=False)
+        except configparser.Error as error:
+            raise ValueError(f"cannot parse INI file: {error}") from error
+        if section and not _section_exists(text, suffix, section):
             return None
-        section = site.section
-    if section and not _section_exists(text, suffix, section):
+        sections = [section] if section else [parser.default_section, *parser.sections()]
+        active_sections = [
+            name for name in sections if parser.has_option(name, key)
+        ]
+        if section and section != parser.default_section:
+            explicit = parser._sections.get(section, {})
+            if key not in explicit and parser.has_option(parser.default_section, key):
+                return f"active setting inherited from [{parser.default_section}]"
+        return (
+            f"active setting in section(s) {active_sections!r}"
+            if active_sections else _NO_SETTING
+        )
+    if suffix == ".setools" and section and not _section_exists(
+        text, suffix, section
+    ):
         return None
+    active = _active_config_lines(root, path, selector)
+    return f"active setting on line(s) {active!r}" if active else _NO_SETTING
+
+
+def _check_absent_entry(root, decision, ref, kind, qualifier, selector, tags):
+    """Check absence against a same-decision tag in the file or section."""
+
+    if kind == "python":
+        return (
+            f"{decision}: ref {ref!r}: expected no active setting, actual "
+            "<unreadable> (absence refs apply only to config files)"
+        )
+    matching_paths = set()
+    for tag in tags:
+        if decision not in tag.decisions or tag.site is None:
+            continue
+        site = tag.site
+        if qualifier and not _path_matches(site.path, qualifier):
+            continue
+        suffix = Path(site.path).suffix.lower()
+        if suffix not in _CONFIG_SUFFIXES:
+            continue
+        section, _ = _split_config_key(selector, suffix, site)
+        if suffix in {".ini", ".setools"} and section:
+            if site.scope != "file" and site.section != section:
+                continue
+            try:
+                text = (Path(root) / site.path).read_text(encoding="utf-8")
+            except OSError:
+                continue
+            if not _section_exists(text, suffix, section):
+                continue
+        matching_paths.add(site.path)
+
+    if len(matching_paths) != 1:
+        actual = (
+            "<unreadable>" if not matching_paths
+            else f"<ambiguous: {len(matching_paths)} tagged files>"
+        )
+        return (
+            f"{decision}: ref {ref!r}: expected no active setting, actual "
+            f"{actual} (absence requires a same-decision tag in the file or "
+            f"named section; found {len(matching_paths)})"
+        )
+
+    path, = matching_paths
     try:
-        actual = _config_values_in_site(root, site, selector)
-    except ValueError as error:
-        # A no-value option is still an active setting for an absence check.
-        return str(error)
-    return _NO_SETTING if actual is None else actual
+        actual = _config_absent_actual(root, path, selector)
+    except (ValueError, OSError, configparser.Error, yaml.YAMLError) as error:
+        return (
+            f"{decision}: ref {ref!r}: expected no active setting, "
+            f"actual <unreadable>: {error}"
+        )
+    if actual is None:
+        section, _ = _split_config_key(
+            selector, Path(path).suffix.lower(),
+            Site(path, 1, 1, "config", scope="file"),
+        )
+        return (
+            f"{decision}: ref {ref!r}: expected no active setting, actual "
+            f"<unreadable> (section {section!r} does not exist)"
+        )
+    if actual is _NO_SETTING:
+        return None
+    return f"{decision}: ref {ref!r}: expected no active setting, actual {actual}"
 
 
 def _python_value_in_site(root, site, selector):
@@ -937,7 +1087,13 @@ def _python_value_in_site(root, site, selector):
     except ValueError as error:
         if not direct:
             return None
-        if "needs one binding" in str(error) or "missing" in str(error):
+        message = str(error)
+        if "needs one binding" in message:
+            found = re.search(r"found (\d+)", message)
+            if direct and found and int(found.group(1)) > 1:
+                raise ValueError(f"ambiguous binding: {message}") from error
+            return None
+        if "missing" in message:
             return None
         raise
     try:
@@ -982,6 +1138,11 @@ def _check_value_entry(root, decision, reference, tags):
     except ValueError as error:
         return f"{decision}: ref {reference!r}: expected <valid ref>, actual <unreadable>: {error}"
 
+    if expected == ABSENT:
+        return _check_absent_entry(
+            root, decision, ref, kind, qualifier, selector, tags
+        )
+
     candidates = []
     for site in _sites_for(tags, decision):
         suffix = Path(site.path).suffix.lower()
@@ -991,13 +1152,27 @@ def _check_value_entry(root, decision, reference, tags):
         if qualifier and not _path_matches(site.path, qualifier):
             continue
         try:
-            if expected == ABSENT:
-                actual = _absent_scope_matches(root, site, selector)
-            else:
-                actual = _site_actual(root, site, expected_kind, selector)
+            actual = _site_actual(root, site, expected_kind, selector)
         except (ValueError, OSError, SyntaxError, configparser.Error, yaml.YAMLError) as error:
             return f"{decision}: ref {ref!r}: expected {expected!r}, actual <unreadable>: {error}"
         if actual is not None:
+            if expected_kind == "config":
+                try:
+                    active_lines = _active_config_lines(
+                        root, site.path, selector, site
+                    )
+                except (ValueError, OSError, configparser.Error, yaml.YAMLError) as error:
+                    return f"{decision}: ref {ref!r}: expected {expected!r}, actual <unreadable>: {error}"
+                outside = [
+                    number for number in active_lines
+                    if not site.start <= number <= site.end
+                ]
+                if outside:
+                    return (
+                        f"{decision}: ref {ref!r}: expected {expected!r}, "
+                        f"actual {actual!r}; duplicate active setting outside "
+                        f"the governed paragraph on line(s) {outside!r}"
+                    )
             candidates.append((site, actual))
 
     if len(candidates) != 1:

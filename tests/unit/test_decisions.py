@@ -13,8 +13,6 @@ from tests.helpers.decisions import (
     load_yaml,
     main,
     repository_errors,
-    _iter_decision_defs,
-    _parse_values,
     scan_tags,
     tag_errors,
     value_errors,
@@ -236,10 +234,10 @@ def test_deleting_one_of_two_vignet_tagged_sites_fails_its_assertion(tmp_path):
     assert one.exists()
 
 
-def test_absent_key_requires_tagged_scope_and_detects_added_key(tmp_path):
+def test_absent_key_needs_only_a_same_decision_tag_in_the_file(tmp_path):
     config = _write(
         tmp_path / "settings.sex",
-        "# @sc [decision:choice,scope:file]\nOTHER 2\n",
+        "# @sc [decision:choice]\nOTHER 2\n\nUNRELATED 3\n",
     )
     record = _record("No fixed threshold. Values: settings.sex#THRESH = absent.")
     tags, errors = scan_tags(tmp_path)
@@ -248,12 +246,65 @@ def test_absent_key_requires_tagged_scope_and_detects_added_key(tmp_path):
     assert value_errors(tmp_path, record, tags) == []
 
     config.write_text(
-        "# @sc [decision:choice,scope:file]\nOTHER 2\nTHRESH 1\n",
+        "# @sc [decision:choice]\nOTHER 2\n\nTHRESH 1\n",
         encoding="utf-8",
     )
     tags, errors = scan_tags(tmp_path)
     assert errors == []
     assert "expected no active setting" in value_errors(tmp_path, record, tags)[0]
+
+
+def test_absent_key_fails_without_a_same_decision_tag_in_the_file(tmp_path):
+    _write(tmp_path / "settings.sex", "# @sc [decision:other]\nOTHER 2\n")
+    record = _record("No fixed threshold. Values: settings.sex#THRESH = absent.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    problem, = value_errors(tmp_path, record, tags)
+    assert "same-decision tag" in problem
+    assert "found 0" in problem
+
+
+def test_ini_absence_sees_a_key_inherited_from_default(tmp_path):
+    _write(
+        tmp_path / "settings.ini",
+        "[DEFAULT]\nTHRESH = 1\n"
+        "# @sc [decision:choice]\n[SCIENCE]\nOTHER = 2\n",
+    )
+    record = _record("No fixed threshold. Values: SCIENCE.THRESH = absent.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    problem, = value_errors(tmp_path, record, tags)
+    assert "expected no active setting" in problem
+    assert "DEFAULT" in problem
+
+
+def test_duplicate_active_setting_outside_governed_paragraph_fails(tmp_path):
+    _write(
+        tmp_path / "settings.sex",
+        "# @sc [decision:choice]\nTHRESH 1\n\nTHRESH 1\n",
+    )
+    record = _record("Threshold. Values: settings.sex#THRESH = 1.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    problem, = value_errors(tmp_path, record, tags)
+    assert "duplicate active setting outside the governed paragraph" in problem
+
+
+def test_ini_duplicate_active_setting_outside_governed_paragraph_fails(tmp_path):
+    _write(
+        tmp_path / "settings.ini",
+        "[SCIENCE]\n# @sc [decision:choice]\nTHRESH = 1\n\n"
+        "OTHER = 2\nTHRESH = 1\n",
+    )
+    record = _record("Threshold. Values: SCIENCE.THRESH = 1.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    problem, = value_errors(tmp_path, record, tags)
+    assert "duplicate active setting outside the governed paragraph" in problem
 
 
 def test_absent_assertion_fails_when_its_scope_is_removed(tmp_path):
@@ -289,6 +340,64 @@ def test_numeric_lists_and_astromatic_boolean_words_keep_reader_semantics(tmp_pa
 
     assert errors == []
     assert value_errors(tmp_path, record, tags) == []
+
+
+@pytest.mark.parametrize(
+    "actual, expected",
+    [
+        ("1.000001", "1"),
+        ("1", "True"),
+        ("0", "False"),
+        ("51,51", "51"),
+        ("51,52", "51,51"),
+        ("1,2", "2,1"),
+        ("1,1,1", "1,1"),
+        ("1", "[1]"),
+        ("map_weight", "MAP_WEIGHT"),
+    ],
+)
+def test_normalization_does_not_hide_drift(tmp_path, actual, expected):
+    _config_tag(tmp_path / "config.sex", content=f"KEY {actual}\n")
+    record = _record(f"Value. Values: KEY = {expected}.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    problem, = value_errors(tmp_path, record, tags)
+    assert "expected" in problem and "actual" in problem
+
+
+@pytest.mark.parametrize(
+    "contents, selector",
+    [
+        ("X = get_value()", "X"),
+        ("X = 1 / 3", "X"),
+        ("X = 1\nX = 2", "X"),
+        ("X = 1\nX += 1", "X"),
+        ("X, Y = 1, 2", "X"),
+        ("def X():\n    return 1", "X"),
+        ("X = {'a': 1, 'a': 2}", "X[a]"),
+        ("X = dict(**other)", "X[a]"),
+        ("X = {'a': 1, **other}", "X[a]"),
+        ("X = {variable: 1}", "X[a]"),
+        ("X = {'a': 1}\nX['a'] = 2", "X[a]"),
+        ("X = {'a': 1}\nX['b']['c'] = 2", "X[a]"),
+        ("X = {'a': 1}\nX['a'] += 1", "X[a]"),
+        ("X = {'a': 1}\ndel X['a']", "X[a]"),
+        ("X = 1\nX.attr = 2", "X"),
+        ("def f():\n    X = {'a': 1}\n    X['a'] = 2", "f.X[a]"),
+    ],
+)
+def test_python_nonliteral_or_ambiguous_values_fail_closed(
+    tmp_path, contents, selector
+):
+    _write(
+        tmp_path / "constants.py", f"# @sc [decision:choice]\n{contents}\n"
+    )
+    record = _record(f"Static value. Values: {selector} = 1.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    assert value_errors(tmp_path, record, tags)
 
 
 def test_ini_multiline_value_keeps_continuation_lines(tmp_path):
@@ -363,6 +472,21 @@ def test_python_value_reassignment_fails_closed(tmp_path):
     assert "exactly one tagged site" in problem
 
 
+def test_reassigned_module_binding_reports_ambiguity_not_zero_sites(tmp_path):
+    _write(
+        tmp_path / "constants.py",
+        "# @sc [decision:choice]\nWIDTH = 51\nWIDTH = 53\n",
+    )
+    record = _record("Stamp. Values: WIDTH = 51.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    problem, = value_errors(tmp_path, record, tags)
+    assert "ambiguous binding" in problem
+    assert "found 2" in problem
+    assert "found 0" not in problem
+
+
 def test_python_qualified_selector_ignores_other_tagged_scopes(tmp_path):
     _write(
         tmp_path / "constants.py",
@@ -427,12 +551,56 @@ def test_repository_decisions_have_sites_and_all_values_match():
     errors = repository_errors(REPO_ROOT)
     assert not errors, errors
 
+
+@pytest.mark.parametrize(
+    "path, pattern, replacement",
+    [
+        (
+            "workflow/config/cfis/config_tile_Sx.ini",
+            "WEIGHT_IMAGE = True",
+            "WEIGHT_IMAGE = False",
+        ),
+        (
+            "workflow/config/cfis/config_tile_Sx.ini",
+            "MAKE_POST_PROCESS = True",
+            "MAKE_POST_PROCESS = False",
+        ),
+        (
+            "workflow/config/cfis/star_selection.setools",
+            "[MASK:star_selection]\n",
+            "[MASK:star_selection]\nMASK_EXT == 0\n",
+        ),
+        (
+            "workflow/config/cfis/default_tile.sex",
+            "SATUR_KEY",
+            "SATUR_LEVEL      50000\nSATUR_KEY",
+        ),
+        (
+            "src/shapepipe/modules/ngmix_package/ngmix.py",
+            "\n    boot = ngmix.metacal.",
+            "\n    metacal_pars['step'] = 0.02\n    boot = ngmix.metacal.",
+        ),
+    ],
+)
+def test_real_record_catches_gate_and_absence_drift(
+    tmp_path, path, pattern, replacement
+):
+    """Real-record mutations of gates and absences must break Values checks."""
+
     record = load_yaml(REPO_ROOT / "astra.yaml")
-    values_count = sum(
-        len(_parse_values(definition.get("rationale", ""))[0])
-        for _, definition in _iter_decision_defs(record)
-    )
-    assert values_count == 151
+    tags, parse_errors = scan_tags(REPO_ROOT)
+    assert parse_errors == []
+    for relative in {tag.path for tag in tags}:
+        source = REPO_ROOT / relative
+        if source.is_file():
+            _write(tmp_path / relative, source.read_text(encoding="utf-8"))
+    assert value_errors(tmp_path, record) == []
+
+    target = tmp_path / path
+    text = target.read_text(encoding="utf-8")
+    assert text.count(pattern) == 1
+    target.write_text(text.replace(pattern, replacement), encoding="utf-8")
+    assert value_errors(tmp_path, record)
 
 
 def test_preserved_utilities_import_rule(tmp_path):

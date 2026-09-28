@@ -18,7 +18,10 @@
 #   * A rationale may end with `Values: <ref> = <value>; ... .`. Every ref must
 #     resolve to exactly one site tagged for that decision and match its value.
 #     Use a bare key when it selects one site; qualify it with a path suffix and
-#     `#` or `::` when needed. `= absent` requires a tagged section or file scope.
+#     `#` or `::` when needed. `= absent` requires a same-decision tag somewhere
+#     in the file (in that section or file-wide for INI/SETools) and asserts that
+#     no active setting exists anywhere in the target scope. INI absence checks
+#     include keys inherited from `[DEFAULT]`.
 #   * The checker validates citations in both directions, unique local-contract
 #     ids, literal values and test `decision` markers. The value grammar is
 #     documented in the helper module's docstring.
