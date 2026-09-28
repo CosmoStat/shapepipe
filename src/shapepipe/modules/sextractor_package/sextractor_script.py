@@ -125,7 +125,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
     pos_params: list
         World coordinates to use to match the objects.
     ccd_size: list
-        Size of a CCD ``[nx, ny]``
+        CCD pixel bounds to inverse-project onto, ``[xmin, xmax, ymin, ymax]``
     w_log: logging.Logger, optional
         Pipeline logger
 

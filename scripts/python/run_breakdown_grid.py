@@ -29,12 +29,13 @@ by pairing signed arms that share an identical noise realisation:
 **Production-parity knobs (S4).** Three CLI knobs turn the clean-room grid into
 production-settings ablations, each defaulting to the clean baseline:
 
-* ``--centroid-source {hsm,wcs}`` — "wcs" is the production default since
-  ``31ae736c``: the ngmix jacobian centre comes from the catalogue sky position
-  projected through the epoch WCS instead of HSM re-centering. The harness
-  fabricates the astrometry truth (a TAN WCS whose CD is the drawing jacobian;
-  ra/dec evaluated through that same WCS at the object's true pixel position) —
-  the toy analogue of coadd (x,y) -> (ra,dec) -> epoch pixel.
+* ``--centroid-source {wcs,hsm}`` — "wcs" (default, as in production): the
+  ngmix jacobian centre is the coadd centroid, the sub-pixel offset the stamp
+  extractor propagates on each vignette. The harness supplies that offset as
+  truth: each epoch's drawn sub-pixel shift from the stamp centre, which is
+  what the extractor's one projection and one rounding yield for a stamp cut
+  on the object's nearest pixel. "hsm" re-centres on the adaptive-moment
+  centroid instead.
 * ``--wcs-g1/--wcs-g2/--wcs-theta-deg`` — shear/rotate the drawing WCS jacobian
   away from a pure pixel scale (the esheldon/ngmix#72 sensitivity axis, where a
   mishandled jacobian produced m ~ -0.2 at wcs_g1=0.1).
@@ -71,7 +72,6 @@ import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
 
-import astropy.wcs
 import galsim
 import ngmix
 import numpy as np
@@ -127,41 +127,22 @@ def build_wcs(g1, g2, theta_deg):
     return galsim.JacobianWCS(m[0, 0], m[0, 1], m[1, 0], m[1, 1])
 
 
-def fabricate_astrometry(stamp, centers, jacob, img_size):
-    """Populate stamp.wcs/ra/dec -- the truth the "wcs" centroid path consumes.
+def true_offsets(centers, img_size):
+    """Per-epoch ``[row, col]`` coadd-centroid offsets -- the "wcs" path's truth.
 
-    Production reads the catalogue sky position and projects it through the
-    epoch WCS; the toy analogue is a TAN WCS whose CD matrix IS the drawing
-    jacobian (deg/pixel), with ra/dec evaluated through that same WCS at the
-    object's true pixel position. The round trip toWorld -> toImage is then
-    self-cancelling (TAN nonlinearity over half a stamp ~ 5e-9 px), so the
-    centroid the estimator recovers is the truth -- modulo the same
-    round-to-nearest-pixel logic production applies. Epochs
-    get independent sub-pixel shifts, so per-epoch ra/dec differ; the estimator
-    reads each epoch independently, making this equivalent to one sky position
-    seen through slightly different epoch WCSs, as in production."""
-    # Even stamps put the galsim centre on a half-integer, so np.round() in the
-    # consumer (ngmix.py "wcs" path) lands one pixel off for EVERY object -- a
-    # systematic half-pixel origin error that would read as a production
-    # pathology. Production VIGNETs are odd; hold the harness to it.
-    assert img_size % 2 == 1, "--centroid-source wcs requires odd --img-size"
-    w = astropy.wcs.WCS(naxis=2)
-    w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
-    w.wcs.crpix = [(img_size + 1) / 2, (img_size + 1) / 2]
-    w.wcs.crval = [150.0, 0.0]
-    w.wcs.cd = np.array(
-        [[jacob.dudx, jacob.dudy], [jacob.dvdx, jacob.dvdy]]
-    ) / 3600.0
-    g_wcs = galsim.fitswcs.AstropyWCS(wcs=w)
-    for cen in centers:
-        world = g_wcs.toWorld(cen)
-        stamp.wcs.append(w)
-        stamp.ra.append(world.ra / galsim.degrees)
-        stamp.dec.append(world.dec / galsim.degrees)
+    Production's stamp extractor projects the catalogue sky position into the
+    epoch once, cuts the stamp on the nearest pixel, and propagates the
+    sub-pixel remainder on the vignette (``stamp.offsets``). ``make_data`` draws
+    each epoch at a known shift of at most half a pixel from the stamp centre,
+    so that shift is exactly the remainder the extractor would propagate.
+    ``centers`` are galsim (x, y) positions (1-based, stamp centre at
+    ``(img_size + 1) / 2``); x is the column and y the row."""
+    c = (img_size + 1) / 2
+    return [np.array([cen.y - c, cen.x - c]) for cen in centers]
 
 
 def one_stamp(noise, gal_hlr, psf_fwhm, img_size, n_epochs, shear, psf_shear,
-              seed, true_noise, wcs=None, centroid_source="hsm"):
+              seed, true_noise, wcs=None, centroid_source="wcs"):
     """One injected-truth realisation -> per-arm record dict.
 
     Uses ``RandomState(seed)`` for the fit rng and ``RandomState(seed+1000)`` for
@@ -182,7 +163,7 @@ def one_stamp(noise, gal_hlr, psf_fwhm, img_size, n_epochs, shear, psf_shear,
         gals, psfs, weights, flags, jacobs,
     )
     if centroid_source == "wcs":
-        fabricate_astrometry(stamp, centers, jacobs[0], img_size)
+        stamp.offsets = true_offsets(centers, img_size)
     if true_noise:
         # True per-pixel sigma into bkg_rms -> prepare_ngmix_weights takes the
         # inverse-variance path and metacal fixnoise gets the true sigma.
@@ -378,10 +359,10 @@ def main():
                    help="subset of resolution-grid indices to run (default all).")
     p.add_argument("--true-noise", action="store_true",
                    help="route the per-pixel true-inverse-variance weight path.")
-    p.add_argument("--centroid-source", choices=["hsm", "wcs"], default="hsm",
-                   help='ngmix jacobian centre: "hsm" (legacy re-centering) or '
-                        '"wcs" (production default since 31ae736c; the harness '
-                        "fabricates the astrometry truth).")
+    p.add_argument("--centroid-source", choices=["wcs", "hsm"], default="wcs",
+                   help='ngmix jacobian centre: "wcs" (coadd-centroid offset; the '
+                        'harness supplies the true sub-pixel shift) or '
+                        '"hsm" (adaptive-moment centroid from the stamp).')
     p.add_argument("--wcs-g1", type=float, default=0.0,
                    help="drawing-WCS jacobian shear g1 (ngmix#72 axis).")
     p.add_argument("--wcs-g2", type=float, default=0.0,

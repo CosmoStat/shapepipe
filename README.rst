@@ -30,16 +30,15 @@ anything:
 .. code-block:: bash
 
     # Apptainer (HPC, no root needed):
-    apptainer exec docker://ghcr.io/cosmostat/shapepipe:develop-runtime shapepipe_run_example
+    apptainer exec docker://ghcr.io/cosmostat/shapepipe:develop shapepipe_run_example
 
     # ...or Docker:
-    docker run --rm ghcr.io/cosmostat/shapepipe:develop-runtime shapepipe_run_example
+    docker run --rm ghcr.io/cosmostat/shapepipe:develop shapepipe_run_example
 
-The image is published on every push to the `GitHub Container Registry
-<https://github.com/CosmoStat/shapepipe/pkgs/container/shapepipe>`_:
+The image is built, tested, and published on every push to the `GitHub
+Container Registry <https://github.com/CosmoStat/shapepipe/pkgs/container/shapepipe>`_:
 ``:develop`` tracks the integration branch, release tags (e.g. ``:v1.1.0``) a
-stable cut, and the ``-runtime`` suffix selects the slim batch image over the
-full interactive one.
+stable cut.
 
 Documentation
 -------------
@@ -49,7 +48,7 @@ to start:
 
 - `Installation <https://cosmostat.github.io/shapepipe/installation.html>`_ — getting ShapePipe onto your machine or cluster.
 - `Basic execution <https://cosmostat.github.io/shapepipe/basic_execution.html>`_ and `configuration <https://cosmostat.github.io/shapepipe/configuration.html>`_ — running ``shapepipe_run`` and writing pipeline configs.
-- `Container workflow <https://cosmostat.github.io/shapepipe/container.html>`_ — the two image targets and the ``pyproject.toml`` / ``uv.lock`` / ``Dockerfile`` layers.
+- `Container workflow <https://cosmostat.github.io/shapepipe/container.html>`_ — what's in the image and the ``pyproject.toml`` / ``uv.lock`` / ``Dockerfile`` layers.
 - `Running on a cluster <https://cosmostat.github.io/shapepipe/clusters.html>`_ — pulling the image and submitting jobs, with worked candide (SLURM) and CANFAR examples.
 
 If you use ShapePipe in academic work, please cite Guinot et al. (2022) and

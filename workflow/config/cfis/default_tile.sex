@@ -11,19 +11,19 @@ PARAMETERS_NAME  default.param
 #------------------------------- Extraction ----------------------------------
  
 DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)
-DETECT_MINAREA   5               # min. # of pixels above threshold
+DETECT_MINAREA   3               # min. # of pixels above threshold
 DETECT_MAXAREA   0              # max. # of pixels above threshold (0=unlimited)
 THRESH_TYPE      RELATIVE       # threshold type: RELATIVE (in sigmas)
                                 # or ABSOLUTE (in ADUs)
-DETECT_THRESH    1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+DETECT_THRESH    1.0            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+ANALYSIS_THRESH  1.0            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
  
 FILTER           Y              # apply filter for detection (Y or N)?
-FILTER_NAME      default.conv
+FILTER_NAME      gauss_3.0_7x7.conv
 FILTER_THRESH                   # Threshold[s] for retina filtering
  
 DEBLEND_NTHRESH  32             # Number of deblending sub-thresholds
-DEBLEND_MINCONT  0.0005         # Minimum contrast parameter for deblending
+DEBLEND_MINCONT  0.002         # Minimum contrast parameter for deblending
  
 CLEAN            Y              # Clean spurious detections? (Y or N)?
 CLEAN_PARAM      1.0            # Cleaning efficiency
@@ -71,13 +71,13 @@ STARNNW_NAME     default.nnw
  
 #------------------------------ Background -----------------------------------
  
-BACK_TYPE        MANUAL         # AUTO or MANUAL
+BACK_TYPE        AUTO         # AUTO or MANUAL
 BACK_VALUE       0.0            # Default background value in MANUAL mode
-BACK_SIZE        64             # Background mesh: <size> or <width>,<height>
-BACK_FILTERSIZE  3              # Background filter: <size> or <width>,<height>
+BACK_SIZE        512             # Background mesh: <size> or <width>,<height>
+BACK_FILTERSIZE  9              # Background filter: <size> or <width>,<height>
  
-BACKPHOTO_TYPE   GLOBAL         # can be GLOBAL or LOCAL
-BACKPHOTO_THICK  24             # thickness of the background LOCAL annulus
+BACKPHOTO_TYPE   LOCAL         # can be GLOBAL or LOCAL
+BACKPHOTO_THICK  30             # thickness of the background LOCAL annulus
 BACK_FILTTHRESH  0.0            # Threshold above which the background-
                                 # map filter operates
  

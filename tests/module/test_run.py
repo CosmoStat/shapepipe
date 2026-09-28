@@ -52,10 +52,10 @@ def test_mpirun_launch_imports_mpi():
     """An mpirun-style env (OMPI_COMM_WORLD_SIZE) must import MPI."""
     # mpi4py the package may import while the MPI runtime library
     # (libmpi.so) is absent — that is the case on a bare runner, where the
-    # dev-image-provided MPI is missing. Importing mpi4py.MPI actually loads
+    # image-provided MPI is missing. Importing mpi4py.MPI actually loads
     # libmpi, so skip on its failure (not just a plain ImportError).
     try:
         from mpi4py import MPI  # noqa: F401
     except Exception:
-        pytest.skip("MPI runtime not available (provided by the dev image)")
+        pytest.skip("MPI runtime not available (provided by the image)")
     assert _import_mpi_flag({"OMPI_COMM_WORLD_SIZE": "1"}) == "True"

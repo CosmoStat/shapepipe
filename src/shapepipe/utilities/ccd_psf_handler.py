@@ -79,8 +79,9 @@ class CcdPsfHandler(object):
         )
         self._params = options
 
-        # Save calling command
-        logging.log_command(args)
+        # Save calling command to log_get_ccds_with_psf; args excludes the program
+        # name, which log_command takes from argv[0]
+        logging.log_command(["get_ccds_with_psf", *args])
 
     def update_params(self):
         """Update parameters.

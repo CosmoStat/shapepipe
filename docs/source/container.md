@@ -1,28 +1,22 @@
 # Container Workflow
 
-ShapePipe ships as a container image. This page covers the two image
-targets and the three configuration files (`pyproject.toml`, `uv.lock`,
-`Dockerfile`) that determine what's inside. For running the image on a batch
-cluster (candide, CANFAR), see [Running on a cluster](clusters.md).
+ShapePipe ships as a single container image. This page covers what's in it
+and the three configuration files (`pyproject.toml`, `uv.lock`, `Dockerfile`)
+that determine that. For running the image on a batch cluster (candide,
+CANFAR), see [Running on a cluster](clusters.md).
 
-## Two image targets
+## One image
 
-The Dockerfile builds two flavours of the image from a shared base:
-
-| Tag | Target | Use case |
-|-----|--------|----------|
-| `:<branch>` (e.g. `:develop`, `:latest`) | `dev` | Interactive work, sandboxed apptainers, CI test runs. Includes everyday CLI tools (`vim`, `tmux`, `htop`, `rg`, `fd`, `jq`, `bat`, `less`, `git-lfs`, …) and **all** Python extras (test, lint, doc, jupyter, fitsio, release). |
-| `:<branch>-runtime` | `runtime` | Canfar batch jobs, downstream `FROM` clauses. Slim — no interactive tools, only the `jupyter` and `fitsio` Python extras on top of core deps. |
-
-Both share the `base` stage (system libraries + uv + lockfile copy), so
-the heavy work happens once during the build.
+Every tag (`:develop`, a feature branch, `:v1.1.0`, …) is the same build:
+everyday CLI tools (`vim`, `tmux`, `htop`, `rg`, `fd`, `jq`, `bat`, `less`,
+`git-lfs`, …) and **all** Python extras (test, lint, doc, jupyter, fitsio,
+release) on top of core deps. CI runs the test suite inside it before
+publishing, so the image a canfar batch job pulls, a downstream `FROM`
+clause builds on, and CI tested are the same bytes.
 
 ```bash
-# Default = dev (everyday image)
 apptainer build --sandbox shapepipe docker://ghcr.io/cosmostat/shapepipe:develop
-
-# Slim runtime image for batch jobs
-docker run --rm ghcr.io/cosmostat/shapepipe:develop-runtime shapepipe_run -c /app/example/config.ini
+docker run --rm ghcr.io/cosmostat/shapepipe:develop shapepipe_run -c /app/example/config.ini
 ```
 
 ## Two ways to use the image
@@ -70,7 +64,7 @@ uv pip install foo         # throwaway install, doesn't touch pyproject
 # uv.lock back to the host repo, commit, and rebuild the image.
 ```
 
-The dev image's `/app` filesystem is `chmod -R go+rwX` so non-root users
+The image's `/app` filesystem is `chmod -R go+rwX` so non-root users
 in a writable sandbox can mutate the venv freely. The default
 `UV_NO_SYNC=1` still prevents `uv run` from auto-syncing, which keeps
 the venv stable until you explicitly call `uv sync` or `uv add`. Run
@@ -179,6 +173,6 @@ versioning). Don't `apt install` something that has a Python wheel; don't
   instead of source builds — Debian carries the
   GCC-compatibility patches that the previous Dockerfile had to apply
   inline with `sed`.
-- **Two targets** so canfar batch deployments stay slim while interactive
-  users get a working environment with `vim`, `pytest`, etc. on the
-  default tag.
+- **One image** so a canfar batch job, a downstream `FROM` clause, and CI's
+  test run are never three different environments — `vim`, `pytest`, and
+  everything else ship on every tag.

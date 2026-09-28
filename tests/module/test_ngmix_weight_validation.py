@@ -124,6 +124,7 @@ def fit_direct(gal, psf_im, bkg_rms, seed):
         WCS.jacobian(),
         rng,
         bkg_rms=bkg_rms,
+        centroid_source="hsm",
     )
     prior = get_prior(PIX_SCALE, rng)
     runner, psf_runner = make_runners(prior, GAL_FLUX, rng)
@@ -147,7 +148,7 @@ def fit_metacal(gal, psf_im, bkg_rms, seed):
     if bkg_rms is not None:
         stamp.bkg_rms = [bkg_rms]
     res, _, _ = do_ngmix_metacal(
-        stamp, get_prior(PIX_SCALE, rng), GAL_FLUX, rng
+        stamp, get_prior(PIX_SCALE, rng), GAL_FLUX, rng, centroid_source="hsm",
     )
     return res["noshear"]
 
@@ -366,7 +367,7 @@ def _psf_orig_via_metacal(psf_noise, psf_shear=PSF_SHEAR, seed=7):
             gals, psfs, weights, flags, jacobs,
         )
         resdict, _psf_reconv, psf_orig = do_ngmix_metacal(
-            stamp, prior, 1.0, rng,
+            stamp, prior, 1.0, rng, centroid_source="hsm",
         )
         return g_truth, psf_orig, resdict
     finally:
@@ -387,7 +388,7 @@ def test_make_ngmix_observation_psf_obs_is_weighted():
     )
     obs = make_ngmix_observation(
         gals[0], weights[0], flags[0], psfs[0], jacobs[0],
-        np.random.RandomState(0),
+        np.random.RandomState(0), centroid_source="hsm",
     )
     npt.assert_allclose(obs.psf.weight, 1.0 / PSF_NOISE ** 2)
     assert (obs.psf.weight > 1.0).all(), "PSF obs fell back to unit weight"
