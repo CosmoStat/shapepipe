@@ -12,6 +12,7 @@ analyses:
       sky_mask_application: deferred_downstream
   detection:
     decisions:
+      tile_detection: unions_catalogue
       detection_threshold_policy: megapipe_tiles
       deblending_policy: megapipe_tiles
       background_model: auto_megapipe_tiles

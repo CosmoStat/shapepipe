@@ -29,6 +29,7 @@ run: smk-g6
 #   PSF, read from psf_dict)
 input_types:
   data:
+    # @sc [decision:detection.tile_detection]
     tile_detection: unions_catalogue
     # @sc [decision:star_selection_psf.psf_modelling_software]
     psf_model: psfex

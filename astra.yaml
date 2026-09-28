@@ -329,10 +329,11 @@ analyses:
   # ═════════════════════════════════════════════════════════════════════════
   detection:
     description: >-
-      Object detection with SExtractor on r-band tiles (the galaxy sample) and
-      on single-exposure CCDs (PSF-star candidates). Tiles follow the MegaPipe
-      parameters of Gwyn's UNIONS tile catalogue; exposures keep ShapePipe's
-      stock values.
+      Object detection on r-band tiles (the galaxy sample) and on
+      single-exposure CCDs (PSF-star candidates, always SExtractor). The tile
+      sample is Gwyn's UNIONS tile catalogue or ShapePipe's own SExtractor run
+      (tile_detection); the latter follows the MegaPipe parameters of that
+      catalogue, while exposures keep ShapePipe's stock values.
     inputs:
       - id: tile_stack
         type: data
@@ -344,12 +345,33 @@ analyses:
         description: Per-tile SExtractor LDAC catalogue with per-epoch CCD membership.
         inputs: [tile_stack]
         decisions:
-          [detection_threshold_policy, deblending_policy, background_model,
+          [tile_detection, detection_threshold_policy, deblending_policy,
+           background_model,
            weight_map_usage, zero_weight_interpolation, detection_source_mode,
            epoch_membership_ccd_bounds, photometry_parameters,
            spurious_detection_cleaning, blend_photometry_mask_type,
            saturation_level]
     decisions:
+      tile_detection:
+        label: Source of the tile galaxy sample
+        rationale: >-
+          Real data takes its tile sample from Gwyn's UNIONS per-tile
+          catalogue, converted to the sexcat the chain reads with its own
+          NUMBER kept, so shape, photometry and photo-z catalogues share one
+          object list and one ID (TILE_UNIQUE_ID). PSF stars still come from
+          ShapePipe's exposure-level SExtractor run, because external star
+          catalogues are too shallow. detection_source_mode and the tile
+          SExtractor settings of the other decisions here govern only the
+          sextractor option; epoch_membership_ccd_bounds applies to both.
+          Image simulations, which have no UNIONS catalogue, use sextractor.
+          Values:
+          input_types.data.tile_detection = unions_catalogue.
+        default: unions_catalogue
+        options:
+          unions_catalogue:
+            label: Gwyn's UNIONS per-tile catalogue, converted in place
+          sextractor:
+            label: SExtractor on the tile image
       detection_threshold_policy:
         label: Detection significance, minimum area, matched filter
         rationale: >-
@@ -600,9 +622,12 @@ analyses:
           admits its upper endpoint, column 2080. A WCS inversion failure skips
           that CCD, lowering N_EPOCH; this sets how many exposures enter each
           galaxy's multi-epoch fit.
+          Both tile_detection options run this post-processing.
           Values:
           SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
-          SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True.
+          SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True;
+          READ_EXT_SEXCAT_RUNNER.CCD_SIZE = 33,2080,1,4612;
+          READ_EXT_SEXCAT_RUNNER.MAKE_POST_PROCESS = True.
         default: trimmed_bounds_33_2080
         options:
           trimmed_bounds_33_2080:
