@@ -697,13 +697,13 @@ def defect_map():
     this workflow opens it, and config_tile_Mc.ini deliberately does not name
     it (that file's header carries the recipe for adding it after a campaign
     has produced one)."""
-    return f"{PRODUCTS_DIR}/defect_map_{CAMPAIGN}.hsp"
+    return f"{PRODUCTS_DIR}/defect_map/defect_map_{CAMPAIGN}.hsp"
 
 
 def defect_map_sidecar():
     """The record of which exposures are already in the map — what makes an
     append cheap and a removal correct (merge_defect_map.py argues it)."""
-    return f"{PRODUCTS_DIR}/defect_map_{CAMPAIGN}.json"
+    return f"{PRODUCTS_DIR}/defect_map/defect_map_{CAMPAIGN}.json"
 
 
 def prod_exp_fragment(exp):

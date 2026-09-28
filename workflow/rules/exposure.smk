@@ -449,7 +449,7 @@ rule star_cat_merge:
 
 # --- the campaign's defect map (#878) ---------------------------------------
 # ONE job per campaign: every exposure's fragment, OR-ed into
-# `<products_dir>/defect_map_<campaign>.hsp`. It is the exposure side's third
+# `<products_dir>/defect_map/defect_map_<campaign>.hsp`. It is the exposure side's third
 # campaign product, and the only one nothing downstream in this workflow opens:
 # it exists so the survey footprint can subtract the pixel-domain masking the
 # CCD corner WCS cannot see. merge_defect_map.py argues the reconcile, the
