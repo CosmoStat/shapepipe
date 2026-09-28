@@ -115,7 +115,7 @@ decisions:
       stamp. The stamp bounds the measurable galaxy size and truncates the
       wings of large galaxies. No rationale for 51 px (about 9.5 arcsec) is
       recorded.
-      Values: workflow/config/cfis/default_noimaflags.param#VIGNET = 51; workflow/config/cfis/default.param#VIGNET = 51; VIGNETMAKER_RUNNER_RUN_1.STAMP_SIZE = 51; VIGNETMAKER_RUNNER_RUN_2.STAMP_SIZE = 51; VIGNETMAKER_RUNNER_RUN_1.MASKING = False; VIGNETMAKER_RUNNER_RUN_2.MASKING = False; PSF_SIZE = 51.
+      Values: workflow/config/cfis/default_noimaflags.param#VIGNET = 51; workflow/config/cfis/default.param#VIGNET = 51; VIGNETMAKER_RUNNER_RUN_1.STAMP_SIZE = 51; VIGNETMAKER_RUNNER_RUN_2.STAMP_SIZE = 51; PSF_SIZE = 51.
     default: px_51
     options:
       px_51:
@@ -329,7 +329,7 @@ analyses:
           star selection and keep stock values with the 3x3 FWHM 2 px kernel.
           The tiles differ from Guinot+22 in all three. Matching image
           simulations must use the same prescription.
-          Values: workflow/config/cfis/default_tile.sex#DETECT_THRESH = 1.0; workflow/config/cfis/default_tile.sex#ANALYSIS_THRESH = 1.0; workflow/config/cfis/default_tile.sex#DETECT_MINAREA = 3; workflow/config/cfis/default_tile.sex#FILTER = Y; workflow/config/cfis/default_tile.sex#SEEING_FWHM = 0.6; workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE = $SP_CONFIG/gauss_3.0_7x7.conv; workflow/config/cfis/default_exp.sex#DETECT_THRESH = 1.5; workflow/config/cfis/default_exp.sex#ANALYSIS_THRESH = 1.5; workflow/config/cfis/default_exp.sex#DETECT_MINAREA = 5; workflow/config/cfis/default_exp.sex#FILTER = Y; workflow/config/cfis/default_exp.sex#SEEING_FWHM = 0.6; workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE = $SP_CONFIG/default.conv.
+          Values: workflow/config/cfis/default_tile.sex#DETECT_THRESH = 1.0; workflow/config/cfis/default_tile.sex#ANALYSIS_THRESH = 1.0; workflow/config/cfis/default_tile.sex#DETECT_MINAREA = 3; workflow/config/cfis/default_tile.sex#FILTER = Y; workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE = $SP_CONFIG/gauss_3.0_7x7.conv; workflow/config/cfis/default_exp.sex#DETECT_THRESH = 1.5; workflow/config/cfis/default_exp.sex#ANALYSIS_THRESH = 1.5; workflow/config/cfis/default_exp.sex#DETECT_MINAREA = 5; workflow/config/cfis/default_exp.sex#FILTER = Y; workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE = $SP_CONFIG/default.conv.
         default: megapipe_tiles
         options:
           megapipe_tiles:
@@ -791,7 +791,7 @@ analyses:
           between SExtractor and setools. The selected model name also flows
           through SP_PSF in downstream inputs, so producer and consumer choices
           must move together.
-          Values: INSTANCE.N_COMP_LOC = 8; INSTANCE.D_COMP_GLOB = 8; INSTANCE.FP_GEOMETRY = CFIS; INSTANCE.RMSE_THRESH = 1.25; INPUTS.MIN_N_STARS = 20; workflow/config/cfis/config_exp_mccd.ini#EXECUTION.MODULE = sextractor_runner,mask_query_runner,setools_runner,mccd_preprocessing_runner,mccd_fit_val_runner,merge_starcat_runner,mccd_plots_runner; SEXTRACTOR_RUNNER.INPUT_DIR = $SP_RUN/output/run_sp_exp_Sp/split_exp_runner/output; SEXTRACTOR_RUNNER.FILE_PATTERN = image,weight,flag; SEXTRACTOR_RUNNER.FLAG_IMAGE = True.
+          Values: INSTANCE.N_COMP_LOC = 8; INSTANCE.D_COMP_GLOB = 8; INSTANCE.FP_GEOMETRY = CFIS; INSTANCE.RMSE_THRESH = 1.25; INPUTS.MIN_N_STARS = 20; config_MCCD.ini#FIT.LOC_MODEL = hybrid; workflow/config/cfis/config_exp_mccd.ini#EXECUTION.MODULE = sextractor_runner,mask_query_runner,setools_runner,mccd_preprocessing_runner,mccd_fit_val_runner,merge_starcat_runner,mccd_plots_runner; SEXTRACTOR_RUNNER.INPUT_DIR = $SP_RUN/output/run_sp_exp_Sp/split_exp_runner/output; SEXTRACTOR_RUNNER.FILE_PATTERN = image,weight,flag; SEXTRACTOR_RUNNER.FLAG_IMAGE = True.
         default: psfex
         options:
           psfex:
@@ -813,7 +813,7 @@ analyses:
           held-out residuals under the acceptance gate; successful optimisation
           alone does not establish a usable PSF.
           Stock values; no rationale recorded.
-          Values: BASIS_TYPE = PIXEL; PSF_ACCURACY = 0.01; BASIS_NUMBER = 20; PSFVAR_DEGREES = 2; PSF_SAMPLING = 1; PSFVAR_KEYS = XWIN_IMAGE,YWIN_IMAGE; MEF_TYPE = INDEPENDENT.
+          Values: BASIS_TYPE = PIXEL; PSF_ACCURACY = 0.01; BASIS_NUMBER = 20; PSFVAR_DEGREES = 2; PSF_SAMPLING = 1; PSFVAR_KEYS = XWIN_IMAGE,YWIN_IMAGE; PSFVAR_GROUPS = 1,1; MEF_TYPE = INDEPENDENT.
         default: pixel_basis_deg2_per_ccd
         options:
           pixel_basis_deg2_per_ccd:
@@ -1168,6 +1168,8 @@ analyses:
           (symmetrized_4fold_noise). The cost of not symmetrizing, a hole in
           the galaxy light, is bounded by central_defect_veto. Noise stays the
           default until a survey A/B against interpolation.
+          Values: VIGNETMAKER_RUNNER_RUN_1.MASKING = False;
+          VIGNETMAKER_RUNNER_RUN_2.MASKING = False.
         default: noise
         options:
           noise:

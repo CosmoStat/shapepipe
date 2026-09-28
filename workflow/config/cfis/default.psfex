@@ -1,4 +1,3 @@
-# @sc [decision:star_selection_psf.psfex_candidate_vetting,scope:file]
 # Default configuration file for PSFEx 3.17.1
 # EB 2017-11-30
 #
@@ -26,6 +25,7 @@ PSF_ACCURACY    0.01            # Accuracy to expect from PSF "pixel" values
 # @sc [decision:postage_stamp_size]
 PSF_SIZE        51,51           # Image size of the PSF model
 
+# @sc [decision:star_selection_psf.psfex_candidate_vetting]
 PSF_RECENTER    N               # Allow recentering of PSF-candidates Y/N ?
 
 # @sc [decision:star_selection_psf.psf_model_complexity]
@@ -47,6 +47,7 @@ PHOTFLUXERR_KEY FLUXERR_AUTO # Catalogue parameter for photometric error
 # @sc [decision:preparation.object_position_columns,decision:star_selection_psf.psf_model_complexity]
 PSFVAR_KEYS     XWIN_IMAGE,YWIN_IMAGE # Catalogue or FITS (preceded by :) params
 
+# @sc [decision:star_selection_psf.psf_model_complexity]
 PSFVAR_GROUPS   1,1             # Group tag for each context key
 
 # @sc [decision:star_selection_psf.psf_model_complexity]
@@ -58,10 +59,12 @@ STABILITY_TYPE  EXPOSURE        # EXPOSURE or SEQUENCE
 
 #----------------------------- Sample selection ------------------------------
 
-# @sc [decision:star_selection_psf.star_selection_box]
+# @sc [decision:star_selection_psf.star_selection_box,decision:star_selection_psf.psfex_candidate_vetting]
 SAMPLE_AUTOSELECT  N            # Automatically select the FWHM (Y/N) ?
 
+# @sc [decision:star_selection_psf.psfex_candidate_vetting]
 BADPIXEL_FILTER    N            # Filter bad-pixels in samples (Y/N) ?
+
 BADPIXEL_NMAX      0            # Maximum number of bad pixels allowed
 
 #----------------------- PSF homogeneisation kernel --------------------------

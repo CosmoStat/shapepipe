@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The count-based completeness table — the single failure policy.
 
-@sc [decision:per_unit_completeness,label:policy] exact-counts-fail-the-unit
+@sc [label:policy] exact-counts-fail-the-unit
 A mandatory runner below its ``expect`` count fails its whole unit (an
 exposure, a tile or an ngmix chunk), so a partial unit never reaches the
 catalogue. On the psfex path only exposure-side psfex_interp may fall short (a
@@ -81,6 +81,7 @@ from pathlib import Path
 
 # stage -> {runner_subdir: {expect, [warn], [subpath]}}
 # exp_psf and tile_vignets are selected by $SP_PSF at check time.
+# @sc [decision:per_unit_completeness]
 COMPLETENESS = {
     # --- tile prepare (phase A) ---
     # get_images counts are CONFIG-FLAVOR-DEPENDENT: the v2.0 bash table said 4/6

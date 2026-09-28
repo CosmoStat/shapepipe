@@ -1,4 +1,3 @@
-# @sc [decision:masking.psf_star_mask_veto,decision:star_selection_psf.star_selection_box,scope:file]
 ## SETools configuration file for star/galaxy separation based on size/mag properties
 ##
 ## ONE mask cut, and it is the instrument flags:
@@ -29,6 +28,7 @@
 ## config, which ships commented out; SETools has no bitwise operators, so the
 ## bit selection happens there and this file only ever tests for zero.
 
+# @sc [decision:masking.psf_star_mask_veto,decision:star_selection_psf.star_selection_box]
 [MASK:preselect]
 
 MAG_AUTO > 0
@@ -43,6 +43,7 @@ IMAFLAGS_ISO == 0
 
 NO_SAVE
 
+# @sc [decision:masking.psf_star_mask_veto]
 [MASK:flag]
 
 # @sc [decision:detection.saturation_level]
@@ -52,6 +53,7 @@ IMAFLAGS_ISO == 0
 NO_SAVE
 
 
+# @sc [decision:masking.psf_star_mask_veto,decision:star_selection_psf.star_selection_box]
 [MASK:star_selection]
 # Star selection using the FWHM mode
 
@@ -118,7 +120,7 @@ FORMAT = png
 X = X_IMAGE{star_selection}
 Y = Y_IMAGE{star_selection}
 
-# @sc [label:diagnostic] stellar-diagnostic-matches-cut
+# @sc [decision:star_selection_psf.star_selection_box,label:diagnostic] stellar-diagnostic-matches-cut
 # FWHM_FIELD plot labels and summary statistics must describe the size cut actually applied.
 SCATTER = FWHM_IMAGE{star_selection}*0.187
 

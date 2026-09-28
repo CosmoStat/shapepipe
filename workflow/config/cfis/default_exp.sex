@@ -1,4 +1,3 @@
-# @sc [decision:detection.saturation_level,scope:file]
 # Default configuration file for SExtractor 2.19.5
 # EB 2017-11-30
 #
@@ -30,7 +29,6 @@ ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 # @sc [decision:detection.detection_threshold_policy]
 FILTER           Y              # apply filter for detection (Y or N)?
 
-# @sc [decision:detection.detection_threshold_policy]
 FILTER_NAME      default.conv
 
 FILTER_THRESH                   # Threshold[s] for retina filtering
@@ -82,6 +80,7 @@ PHOT_AUTOAPERS   0.0,0.0        # <estimation>,<measurement> minimum apertures
 # @sc [decision:detection.photometry_parameters]
 PHOT_FLUXFRAC    0.5            # flux fraction[s] used for FLUX_RADIUS
  
+# @sc [decision:detection.saturation_level]
 SATUR_KEY        SATURATE       # keyword for saturation level (in ADUs)
  
 MAG_ZEROPOINT    30.0            # magnitude zero-point
@@ -89,12 +88,10 @@ MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)
 
 GAIN_KEY         GAIN           # keyword for detector gain in e-/ADU
 
-# @sc [decision:star_selection_psf.star_selection_box]
 PIXEL_SCALE      0.            # size of pixel in arcsec (0=use FITS WCS info)
  
 #------------------------- Star/Galaxy Separation ----------------------------
  
-# @sc [decision:detection.detection_threshold_policy]
 SEEING_FWHM      0.6            # stellar FWHM in arcsec
 
 STARNNW_NAME     default.nnw
