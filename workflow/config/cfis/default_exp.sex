@@ -17,7 +17,10 @@ DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)
 DETECT_MINAREA   5               # min. # of pixels above threshold
 
 DETECT_MAXAREA   0              # max. # of pixels above threshold (0=unlimited)
+
+# @sc [decision:detection.detection_threshold_policy]
 THRESH_TYPE      RELATIVE       # threshold type: RELATIVE (in sigmas)
+
                                 # or ABSOLUTE (in ADUs)
 
 # @sc [decision:detection.detection_threshold_policy]
@@ -27,7 +30,9 @@ ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 # @sc [decision:detection.detection_threshold_policy]
 FILTER           Y              # apply filter for detection (Y or N)?
 
+# @sc [decision:detection.detection_threshold_policy]
 FILTER_NAME      default.conv
+
 FILTER_THRESH                   # Threshold[s] for retina filtering
  
 # @sc [decision:detection.deblending_policy]
@@ -83,6 +88,8 @@ MAG_ZEROPOINT    30.0            # magnitude zero-point
 MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)
 
 GAIN_KEY         GAIN           # keyword for detector gain in e-/ADU
+
+# @sc [decision:star_selection_psf.star_selection_box]
 PIXEL_SCALE      0.            # size of pixel in arcsec (0=use FITS WCS info)
  
 #------------------------- Star/Galaxy Separation ----------------------------

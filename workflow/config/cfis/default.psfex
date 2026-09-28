@@ -33,16 +33,18 @@ MEF_TYPE        INDEPENDENT     # INDEPENDENT or COMMON
 
 #------------------------- Point source measurements -------------------------
 
+# @sc [decision:preparation.object_position_columns]
 CENTER_KEYS     XWIN_IMAGE,YWIN_IMAGE # Catalogue parameters for source pre-centering
 
 # @sc [decision:detection.photometry_parameters]
 PHOTFLUX_KEY    FLUX_AUTO    # Catalogue parameter for photometric norm.
 
+# @sc [decision:detection.photometry_parameters]
 PHOTFLUXERR_KEY FLUXERR_AUTO # Catalogue parameter for photometric error
 
 #----------------------------- PSF variability -------------------------------
 
-# @sc [decision:star_selection_psf.psf_model_complexity]
+# @sc [decision:preparation.object_position_columns,decision:star_selection_psf.psf_model_complexity]
 PSFVAR_KEYS     XWIN_IMAGE,YWIN_IMAGE # Catalogue or FITS (preceded by :) params
 
 PSFVAR_GROUPS   1,1             # Group tag for each context key

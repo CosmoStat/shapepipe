@@ -7,6 +7,7 @@
  
 CATALOG_TYPE     FITS_LDAC     
 
+# @sc [decision:detection.detection_source_mode]
 PARAMETERS_NAME  default.param
  
 #------------------------------- Extraction ----------------------------------
@@ -17,7 +18,10 @@ DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)
 DETECT_MINAREA   3               # min. # of pixels above threshold
 
 DETECT_MAXAREA   0              # max. # of pixels above threshold (0=unlimited)
+
+# @sc [decision:detection.detection_threshold_policy]
 THRESH_TYPE      RELATIVE       # threshold type: RELATIVE (in sigmas)
+
                                 # or ABSOLUTE (in ADUs)
 
 # @sc [decision:detection.detection_threshold_policy]
@@ -27,7 +31,9 @@ ANALYSIS_THRESH  1.0            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 # @sc [decision:detection.detection_threshold_policy]
 FILTER           Y              # apply filter for detection (Y or N)?
 
+# @sc [decision:detection.detection_threshold_policy]
 FILTER_NAME      gauss_3.0_7x7.conv
+
 FILTER_THRESH                   # Threshold[s] for retina filtering
  
 # @sc [decision:detection.deblending_policy]

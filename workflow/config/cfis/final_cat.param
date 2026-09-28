@@ -1,10 +1,15 @@
 # @sc [decision:catalogue_assembly.star_galaxy_classification,scope:file]
 # coordinates
+
+# @sc [decision:preparation.object_position_columns]
 XWIN_WORLD
 YWIN_WORLD
 
 # tile ID, for plot of tile-dependent additive bias.
 # Can maybe be removed.
+
+# @sc [decision:catalogue_assembly.tile_overlap_handling,label:provenance] tile-id-is-not-unique-object-id
+# TILE_ID is tile provenance, not an object-uniqueness or overlap flag; duplicate removal or overlap flagging requires explicit downstream code.
 TILE_ID
 
 # flags

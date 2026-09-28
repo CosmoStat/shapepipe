@@ -120,8 +120,10 @@ decisions:
       Tiles use a fixed zero-point of 30 (ZP_FROM_HEADER=False), repeated in
       ngmix's MAG_ZP; exposures read the per-image header PHOTZP. The fixed
       value assumes the MegaPipe stacks are calibrated to 30; nothing in the
-      repo checks it. Magnitude cuts (the star-selection window, downstream
-      galaxy cuts) inherit their stage's convention.
+      repo checks it. Exposure epochs are rescaled by FSCALE, which must agree
+      with header PHOTZP as well as tile MAG_ZEROPOINT and ngmix MAG_ZP.
+      Magnitude cuts (the star-selection window, downstream galaxy cuts)
+      inherit their stage's convention.
       Values: MAG_ZEROPOINT = 30.0; workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER = False; NGMIX_RUNNER.MAG_ZP = 30.0; workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER = True; SEXTRACTOR_RUNNER.ZP_KEY = PHOTZP.
     default: fixed_30_tiles_header_exposures
     options:
@@ -203,7 +205,7 @@ analyses:
           (detection.detection_source_mode). Sky-fixed masks never touch
           pixels: an object inside a star halo is measured from the same
           unmodified pixels as one outside it.
-          Values: SEXTRACTOR_RUNNER.FLAG_IMAGE = True; VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_PATTERN = flag, image, weight, background, background_rms.
+          Values: workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = True; VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_PATTERN = flag, image, weight, background, background_rms.
         default: instrument_flags_only
         options:
           instrument_flags_only:
@@ -313,7 +315,8 @@ analyses:
           adopts; the 7x7 Gaussian of FWHM 3 px is near the CFIS average seeing
           of 0.65 arcsec (about 3.5 px at 0.187 arcsec/px). Exposures only feed
           star selection and keep stock values with the 3x3 FWHM 2 px kernel.
-          The tiles differ from Guinot+22 in all three.
+          The tiles differ from Guinot+22 in all three. Matching image
+          simulations must use the same prescription.
           Values: workflow/config/cfis/default_tile.sex#DETECT_THRESH = 1.0; workflow/config/cfis/default_tile.sex#ANALYSIS_THRESH = 1.0; workflow/config/cfis/default_tile.sex#DETECT_MINAREA = 3; workflow/config/cfis/default_tile.sex#FILTER = Y; workflow/config/cfis/default_tile.sex#SEEING_FWHM = 0.6; workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE = $SP_CONFIG/gauss_3.0_7x7.conv; workflow/config/cfis/default_exp.sex#DETECT_THRESH = 1.5; workflow/config/cfis/default_exp.sex#ANALYSIS_THRESH = 1.5; workflow/config/cfis/default_exp.sex#DETECT_MINAREA = 5; workflow/config/cfis/default_exp.sex#FILTER = Y; workflow/config/cfis/default_exp.sex#SEEING_FWHM = 0.6; workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE = $SP_CONFIG/default.conv.
         default: megapipe_tiles
         options:
@@ -333,7 +336,8 @@ analyses:
         rationale: >-
           Tiles use the MegaPipe DEBLEND_MINCONT; exposures use a lower one,
           the value Guinot+22 lists. Both share DEBLEND_NTHRESH. Contrast sets
-          object count, centroids, and blend contamination in shapes.
+          object count, centroids, and blend contamination in shapes;
+          matching image simulations must preserve the stage-specific settings.
           Values: workflow/config/cfis/default_tile.sex#DEBLEND_MINCONT = 0.002; workflow/config/cfis/default_exp.sex#DEBLEND_MINCONT = 0.001; workflow/config/cfis/default_tile.sex#DEBLEND_NTHRESH = 32; workflow/config/cfis/default_exp.sex#DEBLEND_NTHRESH = 32.
         default: megapipe_tiles
         options:
@@ -388,7 +392,8 @@ analyses:
         rationale: >-
           INTERP_TYPE ALL on both passes (SExtractor default NONE): SExtractor
           invents flux across zero-weight pixels, changing detections and
-          photometry near masked regions. No rationale recorded.
+          photometry near masked regions. Matching image simulations must use
+          the same interpolation operator; this is not a calibrated pixel repair.
           Values: workflow/config/cfis/default_tile.sex#INTERP_TYPE = ALL; workflow/config/cfis/default_exp.sex#INTERP_TYPE = ALL; workflow/config/cfis/default_tile.sex#INTERP_MAXXLAG = 16; workflow/config/cfis/default_tile.sex#INTERP_MAXYLAG = 16; workflow/config/cfis/default_exp.sex#INTERP_MAXXLAG = 16; workflow/config/cfis/default_exp.sex#INTERP_MAXYLAG = 16.
         default: interp_all
         options:
@@ -401,7 +406,8 @@ analyses:
         rationale: >-
           CLEAN on both passes deletes detections
           consistent with being wings of a brighter neighbour, a post-deblend
-          change to the object list. Stock value; no rationale recorded.
+          change to the object list. Keep the same cleaning prescription in
+          matching image simulations.
           Values: workflow/config/cfis/default_tile.sex#CLEAN_PARAM = 1.0; workflow/config/cfis/default_exp.sex#CLEAN_PARAM = 1.0; workflow/config/cfis/default_tile.sex#CLEAN = Y; workflow/config/cfis/default_exp.sex#CLEAN = Y.
         default: clean_1
         options:
@@ -412,7 +418,8 @@ analyses:
         rationale: >-
           MASK_TYPE CORRECT on both passes replaces neighbour pixels by their
           mirror across the object centre during photometry, changing blend
-          fluxes and windowed moments. Stock value; no rationale recorded.
+          fluxes and windowed moments. This SExtractor photometry choice is
+          separate from ngmix's neighbour-pixel weighting decision.
           Values: workflow/config/cfis/default_tile.sex#MASK_TYPE = CORRECT; workflow/config/cfis/default_exp.sex#MASK_TYPE = CORRECT.
         default: correct
         options:
@@ -431,7 +438,8 @@ analyses:
           falls back to its built-in SATUR_LEVEL (50000 ADU per its
           documentation), since neither .sex file sets one. Whether the
           delivered exposure CCDs and MegaPipe tiles carry SATURATE is
-          unverified.
+          unverified. Changing the card or pinning a fixed level requires
+          checking the resulting bright-star selection.
           Values: workflow/config/cfis/default_exp.sex#SATUR_KEY = SATURATE; workflow/config/cfis/default_tile.sex#SATUR_KEY = SATURATE; MASK:star_selection.FLAGS = "== 0"; MASK:preselect.FLAGS = "== 0"; MASK:flag.FLAGS = "== 0"; workflow/config/cfis/default_tile.sex#SATUR_LEVEL = absent; workflow/config/cfis/default_exp.sex#SATUR_LEVEL = absent.
         default: header_saturate
         options:
@@ -446,7 +454,8 @@ analyses:
           rationale recorded. MAG_AUTO is the axis of the star-selection
           magnitude window and the catalogue magnitude; FLUX_AUTO is PSFEx's
           photometric normalisation. A different Kron factor shifts magnitudes
-          and so every magnitude-based cut.
+          and so every magnitude-based cut. The reported apertures and flux-
+          fraction measurements must also match the simulated catalogue.
           Values: workflow/config/cfis/default_tile.sex#PHOT_AUTOPARAMS = 2.5,3.5; workflow/config/cfis/default_exp.sex#PHOT_AUTOPARAMS = 2.5,3.5; workflow/config/cfis/default_tile.sex#PHOT_APERTURES = 5; workflow/config/cfis/default_exp.sex#PHOT_APERTURES = 5; workflow/config/cfis/default_tile.sex#PHOT_FLUXFRAC = 0.5; workflow/config/cfis/default_exp.sex#PHOT_FLUXFRAC = 0.5; PHOTFLUX_KEY = FLUX_AUTO.
         default: kron_25_35
         options:
@@ -767,8 +776,10 @@ analyses:
           counts as warnings because no campaign has run it. Up to the model,
           its exposure chain matches PSFEx's: SExtractor reads the split
           image, weight and instrument flag directly, and mask_query sits
-          between SExtractor and setools.
-          Values: INSTANCE.N_COMP_LOC = 8; INSTANCE.D_COMP_GLOB = 8; INSTANCE.FP_GEOMETRY = CFIS; INSTANCE.RMSE_THRESH = 1.25; INPUTS.MIN_N_STARS = 20; EXECUTION.MODULE = sextractor_runner,mask_query_runner,setools_runner,mccd_preprocessing_runner,mccd_fit_val_runner,merge_starcat_runner,mccd_plots_runner; SEXTRACTOR_RUNNER.INPUT_DIR = $SP_RUN/output/run_sp_exp_Sp/split_exp_runner/output; SEXTRACTOR_RUNNER.FILE_PATTERN = image,weight,flag; SEXTRACTOR_RUNNER.FLAG_IMAGE = True.
+          between SExtractor and setools. The selected model name also flows
+          through SP_PSF in downstream inputs, so producer and consumer choices
+          must move together.
+          Values: INSTANCE.N_COMP_LOC = 8; INSTANCE.D_COMP_GLOB = 8; INSTANCE.FP_GEOMETRY = CFIS; INSTANCE.RMSE_THRESH = 1.25; INPUTS.MIN_N_STARS = 20; workflow/config/cfis/config_exp_mccd.ini#EXECUTION.MODULE = sextractor_runner,mask_query_runner,setools_runner,mccd_preprocessing_runner,mccd_fit_val_runner,merge_starcat_runner,mccd_plots_runner; SEXTRACTOR_RUNNER.INPUT_DIR = $SP_RUN/output/run_sp_exp_Sp/split_exp_runner/output; SEXTRACTOR_RUNNER.FILE_PATTERN = image,weight,flag; SEXTRACTOR_RUNNER.FLAG_IMAGE = True.
         default: psfex
         options:
           psfex:
@@ -785,7 +796,10 @@ analyses:
           assumes for PSF pixel values; per the PSFEx documentation it enters
           the fit weights, and so how closely the model follows bright stars.
           Model flexibility trades overfitting against PSF leakage, the
-          dominant additive systematic in cosmic shear.
+          dominant additive systematic in cosmic shear. A more flexible model
+          must be supported by the surviving training stars and checked on
+          held-out residuals under the acceptance gate; successful optimisation
+          alone does not establish a usable PSF.
           Stock values; no rationale recorded.
           Values: BASIS_TYPE = PIXEL; PSF_ACCURACY = 0.01; BASIS_NUMBER = 20; PSFVAR_DEGREES = 2; PSF_SAMPLING = 1; PSFVAR_KEYS = XWIN_IMAGE,YWIN_IMAGE; MEF_TYPE = INDEPENDENT.
         default: pixel_basis_deg2_per_ccd
@@ -1000,9 +1014,10 @@ analyses:
           fitter is built with the same joint prior. Prior width drives noise
           bias; no rationale recorded. Guinot+22 used a wider flux prior and a
           flat prior on r50 rather than T. [LINT] the epoch stamps are
-          exposure pixels, and star selection uses 0.187 arcsec/px; the
-          ngmix_runner comment says pixel scale also sets a noise window, but
-          get_noise is never called.
+          exposure pixels; star-selection cuts and diagnostics use 0.187
+          arcsec/px while NGMIX_RUNNER.PIXEL_SCALE is 0.186. Reconcile these
+          exposure-pixel conversions; the ngmix_runner comment's noise-window
+          claim is stale because get_noise is never called.
           Values: get_prior.T_range = -1,1e3; get_prior.F_range = -100,1e9; NGMIX_RUNNER.PIXEL_SCALE = 0.186.
         default: gpriorba04_flat
         options:
@@ -1732,7 +1747,9 @@ analyses:
           Adjacent tiles overlap, and objects in the overlap are measured in
           both. [HARDCODED] make_cat attaches only TILE_ID; with no
           unique-object rule or overlap flag, duplicates are left to
-          downstream selection.
+          downstream selection. NUMBER_LIST selects input tiles; it does not
+          carve disjoint sky regions, and no config key makes these catalogues
+          unique or flags their overlap rows.
         default: no_dedup_in_pipeline
         options:
           no_dedup_in_pipeline:
