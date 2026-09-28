@@ -267,7 +267,7 @@ workflow/
     merge_final_cat.py   ALL tiles' final_cat -> final_cat_<run>.hdf5 (the final_cat_merge rule)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
     defect_map_exp.py    ONE exposure's per-CCD instrument flags -> a boolean healsparse fragment (the exp_defect_map rule)
-    merge_defect_map.py  ALL exposures' fragments -> defect_map_<campaign>.hsp (the defect_map_merge rule)
+    merge_defect_map.py  ALL exposures' fragments -> defect_map/defect_map_<campaign>.hsp (the defect_map_merge rule)
     clean_tile.py        ONE finished tile's store -> tombstone (the clean_tile rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
@@ -332,7 +332,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   window function needs ([#878](https://github.com/CosmoStat/shapepipe/issues/878)).
   So `exp_defect_map` rasterizes each exposure's flags into a boolean healsparse
   fragment on the persistent root, and `defect_map_merge` unions the campaign's
-  fragments into `<products_dir>/defect_map_<campaign>.hsp`. Same form as every
+  fragments into `<products_dir>/defect_map/defect_map_<campaign>.hsp`. Same form as every
   other map here — nside 131072 over coverage 128, `True` = masked — so it drops
   into the ladder unchanged. **It is a product, not an input:** nothing in the
   workflow reads it back, and `config_tile_Mc.ini` deliberately does not name it
@@ -355,7 +355,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   RECONCILES like `final_cat_merge` — a new exposure is OR-ed in on the spot, an
   exposure that left the campaign or a fragment that changed forces a rebuild
   (a union cannot be un-OR-ed), and a no-op leaves the file untouched — against
-  a sidecar `defect_map_<campaign>.json` that records which exposures are
+  a sidecar `defect_map/defect_map_<campaign>.json` that records which exposures are
   already in it. Memory is flat in the exposure count: fragments are read one at
   a time and reduced to their pixel ids, so the job holds one accumulator (the
   campaign's footprint, ~3 GB at DR6 scale) and one 2 MB fragment. What the map

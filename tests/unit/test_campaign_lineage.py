@@ -39,12 +39,18 @@ PRODUCT_HELPERS = {
     "prod_exp_dir": (("2605805",), False),
     "prod_exp_manifest": (("2605805", "exp_persist"), False),
     "prod_exp_tar": (("2605805",), False),
+    "defect_map": ((), True),
+    "defect_map_sidecar": ((), True),
 }
 PRODUCT_TEMPLATES = ("PROD_TILE_DIR", "PROD_EXP_DIR")
 COVERAGE_TEMPLATES = {
     "COVERAGE_DIR": f"{PRODUCTS}/coverage",
     "COVERAGE_HSP": f"{PRODUCTS}/coverage/coverage_{CAMPAIGN}.hsp",
     "COVERAGE_MANIFEST": f"{PRODUCTS}/coverage/manifests/coverage_map.json",
+}
+DEFECT_MAP_PATHS = {
+    "defect_map": f"{PRODUCTS}/defect_map/defect_map_{CAMPAIGN}.hsp",
+    "defect_map_sidecar": f"{PRODUCTS}/defect_map/defect_map_{CAMPAIGN}.json",
 }
 
 
@@ -141,6 +147,12 @@ def test_product_templates_are_rooted_in_products_dir(helpers, name):
 def test_coverage_paths_use_products_dir_and_run(helpers, name, expected):
     """The portable map carries the run name; its manifest stays beside it."""
     assert str(helpers[name]) == expected
+
+
+@pytest.mark.parametrize("name,expected", DEFECT_MAP_PATHS.items())
+def test_defect_map_paths_use_products_dir_and_run(helpers, name, expected):
+    """The defect map carries the run name; its sidecar stays beside it."""
+    assert str(helpers[name]()) == expected
 
 
 def _machine_outputs():

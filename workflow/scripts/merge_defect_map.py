@@ -3,7 +3,8 @@
 
 Run as the shell of the campaign-level ``defect_map_merge`` rule, never by hand.
 
-WHAT IT PRODUCES, AND FOR WHOM. ``<products_dir>/defect_map_<campaign>.hsp``:
+WHAT IT PRODUCES, AND FOR WHOM.
+``<products_dir>/defect_map/defect_map_<campaign>.hsp``:
 a boolean ``HealSparseMap``, ``True`` where any exposure of the campaign flagged
 the sky, at the mask ladder's own resolution (nside_sparse 131072 over
 nside_coverage 128, ``bit_packed``). It is the pixel-domain half of the masking

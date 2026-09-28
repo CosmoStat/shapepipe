@@ -248,7 +248,7 @@ analyses:
           healpix pixel they touch, at the mask ladder's convention (nside
           131072 over coverage 128, True = masked). Any flag bit counts.
           defect_map_merge ORs the campaign's fragments into
-          defect_map_<campaign>.hsp, with a sidecar recording which exposures
+          defect_map/defect_map_<campaign>.hsp, with a sidecar recording which exposures
           are in; a removed or changed fragment forces a rebuild, since a
           union cannot be un-OR-ed. On 2079612p CCD 0, oversample 2, 3 and 5
           miss 169, 54 and 5 of 14229 reference healpix pixels. The map is a
