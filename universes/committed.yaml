@@ -11,6 +11,7 @@ analyses:
       psf_star_mask_veto: instrument_flags_only
       sky_mask_application: catalogue_columns
       mask_default_cut: r_mask_bits
+      defect_map_from_flags: rasterize_conservative_os3
   detection:
     decisions:
       detection_threshold_policy: megapipe_tiles

@@ -151,6 +151,11 @@ class Campaign:
         return (self.products_dir / "exp" / exp[:2] / exp
                 / "manifests" / "exp_persist.json")
 
+    def exp_manifest(self, exp, stage):
+        """Return one exposure's persistent manifest for a named stage."""
+        return (self.products_dir / "exp" / exp[:2] / exp
+                / "manifests" / f"{stage}.json")
+
 
 @dataclass
 class ResolvedDAG:
