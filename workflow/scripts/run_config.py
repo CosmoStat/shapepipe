@@ -23,7 +23,10 @@ PLACEHOLDER = "TBD"
 # here must not carry a top-level default as well.
 MACHINE_KEYS = ("tile_list", "retrieve", "container", "inputs", "outputs",
                 "psf_model", "psf_dict")
-REQUIRED = ("tile_list", "inputs.tiles", "inputs.exposures",
+# `run` is required in its own right, not only through `$run` in the paths:
+# it names the campaign's merged catalogues, so a run config whose paths
+# never mention `$run` must still set it.
+REQUIRED = ("run", "tile_list", "inputs.tiles", "inputs.exposures",
             "outputs.run_dir", "outputs.index_db")
 
 
@@ -72,7 +75,7 @@ def apply_machine_defaults(config):
 
     A key already in `config` wins; for `inputs`/`outputs` the merge is per
     sub-key. In all of these, `$base_dir` expands to machines[machine].base_dir
-    and `$run` to the top-level `run:`.
+    and `$name` / `${name}` to any top-level scalar (`$run` to `run:`).
     """
     machine = config.get("machine") or os.environ.get("SP_PROFILE", "nibi")
     entry = (config.get("machines") or {}).get(machine) or {}
@@ -116,11 +119,24 @@ def get(config, dotted):
     return value
 
 
+def _dollar_keys(value, prefix):
+    """Dotted keys under `value` whose string still holds a `$`."""
+    if isinstance(value, dict):
+        return [k for key, sub in value.items()
+                for k in _dollar_keys(sub, f"{prefix}.{key}")]
+    return [prefix] if isinstance(value, str) and "$" in value else []
+
+
 def unresolved(config):
     """REQUIRED keys that are unset, the placeholder, or hold an unexpanded
-    $variable (e.g. `$run` with no `run:` set)."""
-    return [k for k in REQUIRED
-            if get(config, k) in (None, "", PLACEHOLDER) or "$" in str(get(config, k))]
+    $variable, then every MACHINE_KEYS value (recursively through
+    inputs/outputs) that still holds one (e.g. `$run` with no `run:` set, or
+    a misspelt name)."""
+    missing = [k for k in REQUIRED
+               if get(config, k) in (None, "", PLACEHOLDER)
+               or "$" in str(get(config, k))]
+    dollar = [k for key in MACHINE_KEYS for k in _dollar_keys(config.get(key), key)]
+    return missing + [k for k in dollar if k not in missing]
 
 
 def load(config_yaml, run_config=None):

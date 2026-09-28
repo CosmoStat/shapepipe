@@ -572,9 +572,8 @@ analyses:
           No detection image, no flag image, and the default_noimaflags.param
           column list: tiles have no instrument flag image and no detection
           coadd exists, so detection sees every tile pixel and the tile
-          catalogue carries no IMAFLAGS_ISO. [LINT]
-          final_cat.param, read by the post-processing merge, requests
-          IMAFLAGS_ISO, which the tile chain never produces (issue #912).
+          catalogue carries no IMAFLAGS_ISO; final_cat.param, the merge's
+          exact allow-list, does not request it.
           Values:
           SEXTRACTOR_RUNNER.DETECTION_IMAGE = False;
           SEXTRACTOR_RUNNER.FLAG_IMAGE = False.

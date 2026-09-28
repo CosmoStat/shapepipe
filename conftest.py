@@ -28,6 +28,16 @@ settings.register_profile("dev", max_examples=200)
 settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "ci"))
 
 
+# ``tests/workflow/`` drives the Snakefile through snakemake's API. Snakemake is
+# a host tool, not part of the image (it wraps each job in the container), so
+# where it is absent the directory is left out of collection; CI runs it in its
+# own step after installing snakemake (deploy-image.yml).
+try:
+    import snakemake  # noqa: F401
+except ModuleNotFoundError:
+    collect_ignore = ["tests/workflow"]
+
+
 # --------------------------------------------------------------------------- #
 # Candide detection
 # --------------------------------------------------------------------------- #
@@ -36,7 +46,7 @@ settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "ci"))
 # host this suite is most often driven from is ``c03``. We match the candide
 # node-name families rather than a fixed list so new nodes are covered, and
 # allow an explicit override for CI or odd hostnames.
-_CANDIDE_HOST_RE = re.compile(r"^(c\d|n\d{2})", re.IGNORECASE)
+_CANDIDE_HOST_RE = re.compile(r"^(c\d{2}|n\d{2})$", re.IGNORECASE)
 
 
 def on_candide():
@@ -44,7 +54,8 @@ def on_candide():
 
     The check is, in order: an explicit ``SHAPEPIPE_ON_CANDIDE`` override
     (``1``/``0``), then the hostname against the candide node-name families
-    (``c0x`` login, ``nXX`` compute). Cheap, import-safe, no cluster calls.
+    (``c0x`` login, ``nXX`` compute; whole bare hostname, so ``c6.nibi.sharcnet``
+    does not match). Cheap, import-safe, no cluster calls.
     """
     override = os.environ.get("SHAPEPIPE_ON_CANDIDE")
     if override is not None:
