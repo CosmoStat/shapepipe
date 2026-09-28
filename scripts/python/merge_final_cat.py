@@ -247,42 +247,6 @@ def read_param_file(path, verbose=False):
     return param_list
 
 
-def filter_available_columns(param_list, available_columns):
-    """Filter Available Columns.
-
-    Return the subset of ``param_list`` present in ``available_columns``,
-    printing one line for each requested column that is missing (e.g.
-    ``TILE_UNIQUE_ID``, absent from final catalogues made before make_cat
-    wrote it) so the merge still proceeds for such catalogues.
-
-    Parameters
-    ----------
-    param_list: list of str
-        requested column names
-    available_columns: iterable of str
-        column names present in the catalogue
-
-    Returns
-    -------
-    list of str
-        subset of ``param_list`` present in ``available_columns``
-
-    """
-    if not param_list:
-        return param_list
-
-    available_columns = set(available_columns)
-    missing = [p for p in param_list if p not in available_columns]
-
-    for p in missing:
-        print(
-            f"Column '{p}' not found in input catalogue, skipping in "
-            "merged catalogue"
-        )
-
-    return [p for p in param_list if p in available_columns]
-
-
 def get_data(path, hdu_num, param_list):
     """Get Data.
 
@@ -380,14 +344,6 @@ def main(argv=None):
 
     if param.verbose:
         print(f"{len(lpath)} files files to merge found")
-
-    # Drop requested columns absent from the catalogues (e.g. TILE_UNIQUE_ID
-    # in older final catalogues) so the merge still proceeds.
-    with fits.open(lpath[0]) as hdu_list:
-        available_columns = hdu_list[param.hdu_num].columns.names
-    param.param_list = filter_available_columns(
-        param.param_list, available_columns
-    )
 
     count = 0
 
