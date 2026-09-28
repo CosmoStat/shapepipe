@@ -164,16 +164,10 @@ if TILE_DETECTION not in TILE_DETECTIONS:
     raise WorkflowError(
         f"Invalid tile_detection={TILE_DETECTION!r}; expected one of "
         f"{sorted(TILE_DETECTIONS)}.")
-# The catalogue source: a local directory (symlinked in) or a vos: URL
-# (downloaded); the retrieve mode follows from the prefix.
-CATALOGUES = INPUTS.get("catalogues") or ""
-if CATALOGUES == run_config.PLACEHOLDER:
-    CATALOGUES = ""
-if TILE_DETECTION == "unions_catalogue" and not CATALOGUES:
-    raise WorkflowError(
-        "tile_detection=unions_catalogue needs `inputs.catalogues:` (a local "
-        "directory or vos: URL holding the per-tile CFIS.<tile>.r.cat files).")
-CATALOGUE_RETRIEVE = "vos" if CATALOGUES.startswith("vos:") else "symlink"
+try:
+    CATALOGUES, CATALOGUE_RETRIEVE = run_config.catalogue_source(config)
+except ValueError as err:
+    raise WorkflowError(str(err)) from None
 
 # SP_PHASE is set by bin/sp and NOWHERE else: `prepare`/`compute` on the two
 # invocations of `sp run`, `passthrough` on direct commands (`sp --unlock`, `sp

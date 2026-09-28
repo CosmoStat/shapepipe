@@ -139,6 +139,28 @@ def test_defaults_pair_the_catalogue_with_its_source(
         str(REPO_ROOT / "workflow" / "config.yaml"), str(over))
     if input_type == "data":
         assert config["tile_detection"] == "unions_catalogue"
-        assert config["inputs"]["catalogues"]
+        assert run_config.catalogue_source(config)[0]
     else:
         assert config["tile_detection"] == "sextractor"
+
+
+@pytest.mark.parametrize("catalogues", [None, "", "TBD"])
+def test_catalogue_run_without_a_source_fails_at_parse(catalogues):
+    """An unset or placeholder `inputs.catalogues` is refused before any job runs."""
+    run_config = _load("run_config")
+    config = {"tile_detection": "unions_catalogue",
+              "inputs": {} if catalogues is None else {"catalogues": catalogues}}
+    with pytest.raises(ValueError, match="inputs.catalogues"):
+        run_config.catalogue_source(config)
+    config["tile_detection"] = "sextractor"
+    assert run_config.catalogue_source(config) == ("", "symlink")
+
+
+@pytest.mark.parametrize("source, retrieve", [
+    ("vos:cfis/tiles_DR6", "vos"), ("/data/tiles_DR6", "symlink"),
+])
+def test_catalogue_retrieve_follows_the_prefix(source, retrieve):
+    run_config = _load("run_config")
+    config = {"tile_detection": "unions_catalogue",
+              "inputs": {"catalogues": source}}
+    assert run_config.catalogue_source(config) == (source, retrieve)

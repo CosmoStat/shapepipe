@@ -125,6 +125,23 @@ def unresolved(config):
             if get(config, k) in (None, "", PLACEHOLDER) or "$" in str(get(config, k))]
 
 
+def catalogue_source(config):
+    """`inputs.catalogues` and the retrieve mode its prefix implies.
+
+    The source is a local directory (symlinked in) or a vos: URL (downloaded).
+    Returns ("", "symlink") when unset or the placeholder; raises ValueError
+    if `tile_detection: unions_catalogue` then has nothing to fetch.
+    """
+    source = get(config, "inputs.catalogues") or ""
+    if source == PLACEHOLDER:
+        source = ""
+    if config.get("tile_detection") == "unions_catalogue" and not source:
+        raise ValueError(
+            "tile_detection=unions_catalogue needs `inputs.catalogues:` (a local "
+            "directory or vos: URL holding the per-tile CFIS.<tile>.r.cat files).")
+    return source, "vos" if source.startswith("vos:") else "symlink"
+
+
 def load(config_yaml, run_config=None):
     with open(config_yaml) as f:
         config = yaml.safe_load(f) or {}

@@ -62,9 +62,9 @@ machines:
       inputs:
         tiles: $base_dir/unions-wl/tiles
         exposures: $base_dir/unions-wl/exposures
-        # UNIONS per-tile catalogues (CFIS.<tile>.r.cat): a local directory
-        # or a vos: URL (e.g. vos:cfis/tiles_DR6).
-        catalogues: TBD
+        # UNIONS per-tile catalogues (CFIS.<tile>.r.cat), fetched by vcp in
+        # the job: needs network from compute nodes and ~/.ssl/cadcproxy.pem.
+        catalogues: vos:cfis/tiles_DR6
       outputs:
         run_dir: /scratch/cdaley/shapepipe-output/$run
         products_dir: $base_dir/cdaley/sp-products/$run
@@ -76,7 +76,7 @@ machines:
     data:
       retrieve: vos
       inputs:
-        catalogues: TBD
+        catalogues: vos:cfis/tiles_DR6
       container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
     image_sims:
       retrieve: symlink
