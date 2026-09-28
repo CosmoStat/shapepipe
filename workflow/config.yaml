@@ -42,6 +42,7 @@ machines:
   nibi:
     base_dir: /project/def-mjhudson
     data:
+      # @sc [decision:star_selection_psf.psf_modelling_software]
       psf_model: psfex
       tile_list: $base_dir/cdaley/sp-products/$run/tiles.txt
       retrieve: symlink
@@ -57,6 +58,7 @@ machines:
   candide:
     base_dir: /n17data/UNIONS/WL
     data:
+      # @sc [decision:star_selection_psf.psf_modelling_software]
       psf_model: psfex
       retrieve: vos
       container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
@@ -64,6 +66,7 @@ machines:
       retrieve: symlink
       # True simulation PSF: no exposure PSF fit; fake_interp_runner
       # reads psf_dict below.
+      # @sc [decision:star_selection_psf.psf_modelling_software]
       psf_model: fake
       inputs:
         # $run is the branch dir (e.g. 1p2z_grid_1), so a run config

@@ -37,7 +37,12 @@ def make_cat_runner(
     module_config_sec,
     w_log,
 ):
-    """Define The Make Catalogue Runner."""
+    """Define The Make Catalogue Runner.
+
+    @sc [decision:catalogue_assembly.star_galaxy_classification]
+
+    @sc [decision:masking.sky_mask_application]
+    """
     # Set input file paths
     if len(input_file_list) == 3:
         # No spread model input

@@ -147,4 +147,5 @@ markers = [
     "slow: heavy compute (minutes); excluded from the fast inner loop.",
     "candide: needs the candide cluster and/or its real data; auto-skipped elsewhere.",
     "unions: uses UNIONS-specific survey layout or data.",
+    "decision(*ids): the astra.yaml decisions this test protects.",
 ]

@@ -111,6 +111,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     int
         Number of objects saved
 
+    @sc [decision:catalogue_assembly.tile_overlap_handling]
     """
     sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
     sexcat_file.open()
@@ -175,6 +176,7 @@ def save_sm_data(
     -------
     int
         Number of objects saved
+    @sc [decision:catalogue_assembly.star_galaxy_classification]
     """
     final_cat_file.open()
 
@@ -249,6 +251,10 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
 
     The lookup itself is ``shapepipe.utilities.mask_query.query_map``,
     shared with the ``mask_query`` module: one primitive, two consumers.
+
+    @sc [decision:masking.sky_mask_application,label:scope] mask-columns-verbatim
+    Query ``XWIN_WORLD`` and ``YWIN_WORLD`` in catalogue order and pass the
+    ``query_map`` result to ``MASK_<BAND>`` unchanged.
 
     Parameters
     ----------
@@ -415,6 +421,13 @@ class SaveCatalogue:
             Path to NGMIX catalogue
         moments : bool, optional
             If True, write the parallel ``NGMIXm_*`` (moments-branch) columns.
+
+        @sc [decision:catalogue_assembly.failure_sentinels,label:coupling] failure-sentinel-cut-semantics
+        Missing-row ``T``, ``SNR``, flux, magnitude, PSF-size and flag values
+        initialize to 0, which is in range and cannot identify failure. Use
+        ``NGMIX_N_EPOCH == 0`` for that cut; the -10 ellipticity, -1
+        flux/magnitude-error and 1e30 size-error sentinels are out of range and
+        can also identify missing fits.
 
         """
         self._key_ends = ["1M", "1P", "2M", "2P", "NOSHEAR"]

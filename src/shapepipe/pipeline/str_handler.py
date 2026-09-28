@@ -258,6 +258,8 @@ class StrInterpreter(object):
 
         Compute the mode, the most frequent value of a continuous distribution.
 
+        @sc [decision:star_selection_psf.star_selection_box]
+
         Parameters
         ----------
         input : numpy.ndarray
