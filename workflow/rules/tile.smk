@@ -91,7 +91,9 @@ is what downstream selections cut on.
 #
 # HOW THE PATH GETS IN HERE. Not through the environment: profiles/nibi passes
 # --bind /local and tile_local() below DERIVES the path from the tile wildcard.
-# Why nothing can be communicated instead is on that profile line.
+# Why nothing can be communicated instead is on that profile line. A campaign
+# that needs the store elsewhere (candide's 31 GB /tmp) moves the BIND, via the
+# run config's `tile_store_root` (bin/sp), never the path here -- see below.
 #
 # THE COST WE ACCEPT: a failure anywhere in the tile re-runs the WHOLE tile,
 # not one chunk, because the store dies with the job. At ~1 h per fused tile
@@ -130,6 +132,11 @@ is what downstream selections cut on.
 # `--rerun-triggers mtime code software-env`, accepting that clean_exposure's
 # consumer-set staleness detection (which rides on params) is off for that
 # invocation.
+# Per-campaign prefix of the node-local store name; see tile_local().
+LOCAL_TAG = (hashlib.sha1(str(RUN_DIR).encode()).hexdigest()[:8] + "-"
+             if INPUT_TYPE == "image_sims" else "")
+
+
 def tile_local(tile):
     """The node-local prologue, as bash, for one tile.
 
@@ -144,7 +151,15 @@ def tile_local(tile):
     the container (probe job 20798618) -- and the tile id is a wildcard
     snakemake substitutes at DAG time, so the shell string carries a concrete
     path with no `$` left for anything to escape. One group job per tile means
-    the name cannot collide; the sticky bit means nobody else can remove it.
+    the name cannot collide within a campaign; the sticky bit means nobody else
+    can remove it. Across campaigns it can: the image-simulation shear branches
+    are concurrent campaigns over the SAME tile IDs, and on candide
+    `/local/scratch` is the node's shared `/tmp`. Two branches' fused jobs on one
+    node then share one store -- a second `tile_vignets` wipes and rewrites it
+    under the first branch's ngmix, and the first `tile_make_cat`'s EXIT trap
+    deletes it under the second (seen on candide n09). So image_sims prefixes
+    the name with LOCAL_TAG, a hash of the run dir. Data campaigns keep the
+    bare tile name, so their shell commands -- a rerun trigger -- are unchanged.
 
     What we give up is Slurm's own cleanup of `$SLURM_TMPDIR`. TILE_VIGNET_FRESH
     reclaims a stale directory on the next attempt for the same tile, the trap
@@ -201,7 +216,7 @@ if [ ! -d /local/scratch ]; then
   echo "  profiles/nibi/config.yaml apptainer-args must carry --bind /local" >&2
   exit 1
 fi
-export SP_LOCAL="/local/scratch/sp-{tile}"
+export SP_LOCAL="/local/scratch/sp-{LOCAL_TAG}{tile}"
 export SP_VIGNET_OUT="$SP_LOCAL/output"
 export NGMIX_VIGNET_DIR="$SP_LOCAL/output/run_sp_tile_PiViVi"
 export SP_WCS_DIR="$SP_LOCAL/wcs"

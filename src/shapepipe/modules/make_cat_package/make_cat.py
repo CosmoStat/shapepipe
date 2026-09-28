@@ -622,10 +622,16 @@ class SaveCatalogue:
         """Save PSF data.
 
         Save the PSF catalogue into the final one, as per-epoch column
-        families ``HSM_G1_PSF_n``, ``HSM_G2_PSF_n``, ``HSM_T_PSF_n``,
-        ``HSM_FLAG_PSF_n``, ``EXP_ID_n`` and ``CCD_n``. Slot ``n`` of every
+        families ``HSM_*_PSF_n`` (``psf_shape_cols``), ``EXP_ID_n`` and
+        ``CCD_n``. Slot ``n`` of every
         family refers to the same epoch; slots no epoch fills keep the
         family's sentinel.
+
+        @sc [label:schema] psf-epoch-slot-columns
+        The per-epoch families are ``psf_shape_cols`` plus ``EXP_ID``/``CCD``,
+        all slot-aligned by the producer's epoch enumeration; the names must
+        be a subset of what ``PSFExInterpolator._interpolate_me`` writes into
+        ``SHAPES`` (``test_hsm_column_seams``).
 
         Parameters
         ----------
@@ -648,23 +654,30 @@ class SaveCatalogue:
             n_slots = np.max(n_epoch) + 1
         else:
             n_slots = n_epoch_slots
+        n_obj = len(self._obj_id)
 
-        # Empty-slot sentinel and dtype per family. EXP_ID/CCD reuse the
-        # CCD_N convention: -1 is no exposure ID or CCD number.
-        slot_families = {
-            "HSM_G1_PSF": (-10.0, "float64"),
-            "HSM_G2_PSF": (-10.0, "float64"),
-            "HSM_T_PSF": (0.0, "float64"),
-            "HSM_FLAG_PSF": (1, "int16"),
-            "EXP_ID": (-1, "int32"),
-            "CCD": (-1, "int32"),
-        }
+        # Per-epoch PSF shape columns copied from the producer's SHAPES dict:
+        # (column, empty-slot fill, dtype). Fills are out of physical range
+        # so an unmeasured slot cannot pass for a measurement. HSM_T_PSF
+        # already holds T (sigma_to_T applied at the producer's
+        # _interpolate_me).
+        psf_shape_cols = [
+            ("HSM_G1_PSF", -10.0, float),
+            ("HSM_G2_PSF", -10.0, float),
+            ("HSM_T_PSF", 0.0, float),
+            ("HSM_FLAG_PSF", 1, "int16"),
+            ("HSM_M4_1_PSF", -10.0, float),
+            ("HSM_M4_2_PSF", -10.0, float),
+            ("HSM_RHO4_PSF", -1.0, float),
+        ]
+        # Per-epoch exposure ID and CCD number, slot-aligned with HSM_*_PSF_n;
+        # -1 marks an empty slot (the CCD_N sentinel convention).
+        epoch_id_cols = [("EXP_ID", -1, "int32"), ("CCD", -1, "int32")]
+
         self._output_dict = {
-            f"{family}_{slot + 1}": np.full(
-                len(self._obj_id), sentinel, dtype=dtype
-            )
-            for family, (sentinel, dtype) in slot_families.items()
-            for slot in range(n_slots)
+            f"{name}_{idx + 1}": np.full(n_obj, fill, dtype=dtype)
+            for name, fill, dtype in psf_shape_cols + epoch_id_cols
+            for idx in range(n_slots)
         }
 
         for idx, id_tmp in enumerate(self._obj_id):
@@ -683,6 +696,8 @@ class SaveCatalogue:
 
             for epoch, (key, gpc_data) in enumerate(obj_epochs.items()):
 
+                shapes = gpc_data["SHAPES"]
+
                 # `key` is "<exp>-<ccd>"; reading it in the enumeration that
                 # assigns `epoch` aligns EXP_ID_n/CCD_n with HSM_*_PSF_n by
                 # construction. Recorded before the HSM_FLAG_PSF check so a
@@ -691,28 +706,15 @@ class SaveCatalogue:
                 self._add2dict(f"EXP_ID_{epoch + 1}", int(exp_name), idx)
                 self._add2dict(f"CCD_{epoch + 1}", int(ccd_n), idx)
 
-                if gpc_data["SHAPES"]["HSM_FLAG_PSF"] != 0:
+                if shapes["HSM_FLAG_PSF"] != 0:
                     continue
 
-                self._add2dict(
-                    f"HSM_G1_PSF_{epoch + 1}",
-                    gpc_data["SHAPES"]["HSM_G1_PSF"], idx
-                )
-                self._add2dict(
-                    f"HSM_G2_PSF_{epoch + 1}",
-                    gpc_data["SHAPES"]["HSM_G2_PSF"], idx
-                )
-
-                # HSM_T_PSF already holds T (sigma_to_T applied at the
-                # producer's _interpolate_me); read straight through.
-                self._add2dict(
-                    f"HSM_T_PSF_{epoch + 1}",
-                    gpc_data["SHAPES"]["HSM_T_PSF"], idx
-                )
-
-                self._add2dict(
-                    f"HSM_FLAG_PSF_{epoch + 1}",
-                    gpc_data["SHAPES"]["HSM_FLAG_PSF"], idx
-                )
+                for name, fill, _ in psf_shape_cols:
+                    # A SHAPES dict without the fourth-moment keys (MCCD, or
+                    # a producer predating them) leaves those slots at their
+                    # out-of-range fill while FLAG still reports the fit.
+                    self._add2dict(
+                        f"{name}_{epoch + 1}", shapes.get(name, fill), idx
+                    )
 
         galaxy_psf_cat.close()

@@ -56,17 +56,19 @@ class ContainerError(Exception):
 # same image CI tested.
 CONTAINER_URI = "docker://ghcr.io/cosmostat/shapepipe:develop"
 
-# The single source of truth for the fallback image: the workflow's own
-# `container:` key, which is also what the Snakefile reads. Written down once,
-# here, so the CLI and the workflow cannot disagree about the default.
-CONFIG_FILE = Path(__file__).resolve().parents[1] / "config.yaml"
+# The fallback image is the run config's resolved `container:` (config.yaml,
+# SP_RUN_CONFIG on top, then the machine default; see run_config.py).
+BASE_CONFIG = Path(__file__).resolve().parents[1] / "config.yaml"
+CONFIG_FILE = Path(os.environ.get("SP_RUN_CONFIG") or BASE_CONFIG)
 CONFIG_KEY = "container"
 
 # The profile whose `apptainer-args:` every workflow job runs under. `exec` reads
 # it at runtime rather than restating it, so a one-off `sp container exec` and a
 # job see the same environment (the PYTHONPATH pin above all: a divergence there
 # means the one-off imports a different src/ than the workflow does).
-PROFILE_FILE = Path(__file__).resolve().parents[2] / "profiles" / "nibi" / "config.yaml"
+# SP_PROFILE names it (profiles/<name>/, default nibi), as it does for bin/sp.
+PROFILE_FILE = (Path(__file__).resolve().parents[2] / "profiles"
+                / os.environ.get("SP_PROFILE", "nibi") / "config.yaml")
 
 # ~/.cache/shapepipe by default; SP_CACHE_DIR moves the whole cache (e.g. onto
 # a filesystem with room), XDG_CACHE_HOME moves it with everything else.
@@ -88,17 +90,22 @@ DEFAULT_BINDS = "/project,/scratch,/home"
 
 
 def configured_default():
-    """Return the ``container:`` path from workflow/config.yaml, or ``None``.
+    """Return the resolved ``container:`` of the run config, or ``None``.
 
-    A deliberately minimal scalar read (the same one bin/sp does in sed): this
-    module is stdlib-only, so there is no yaml to import.
+    Via run_config.py when PyYAML is available; on a bare host without it,
+    a top-level ``container:`` line in the run config file is still read.
     """
     try:
-        text = CONFIG_FILE.read_text()
-    except OSError:
-        return None
-    match = re.search(rf"^{CONFIG_KEY}:[ \t]*(\S+)", text, re.MULTILINE)
-    return match.group(1) if match else None
+        import run_config
+    except ImportError:
+        try:
+            text = CONFIG_FILE.read_text()
+        except OSError:
+            return None
+        match = re.search(rf"^{CONFIG_KEY}:[ \t]*(\S+)", text, re.MULTILINE)
+        return match.group(1) if match else None
+    run = os.environ.get("SP_RUN_CONFIG")
+    return run_config.load(BASE_CONFIG, run).get(CONFIG_KEY) or None
 
 
 def profile_apptainer_args():
@@ -127,8 +134,11 @@ def local_sandbox():
     return (Path(override) if override else DEFAULT_SANDBOX).expanduser()
 
 
-def resolve_image():
+def resolve_image(configured=None):
     """Return ``(path, kind)`` for the image everything should run.
+
+    ``configured`` is the run config's resolved ``container:`` when the
+    caller already has it (the Snakefile); otherwise it is looked up.
 
     ``kind`` is ``"sandbox"``, ``"sif"``, ``"configured"`` (the shared
     /project image named in config.yaml -- the default when the cache is
@@ -148,7 +158,7 @@ def resolve_image():
             f"SP_CONTAINER={os.environ['SP_CONTAINER']} does not exist "
             f"(resolved to {sif}). Unset it, or point it at an image that does."
         )
-    default = configured_default()
+    default = configured or configured_default()
     if default:
         return default, "configured"
     return "", "none"
