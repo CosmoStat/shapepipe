@@ -535,7 +535,7 @@ rule tile_vignets:
                  check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}')
 
 # ngmix shape measurement — N chunks per tile (D4). Each chunk LOOKS UP its own
-# CLOSED object-ID range in the file tile_vignets materialised at the top of this
+# CLOSED catalogue-row range in the file tile_vignets materialised at the top of this
 # group job (TILE_NGMIX_RANGES); the ranges are knowable only at EXECUTION time,
 # from this tile's own sexcat, which is why a params function cannot supply them.
 # Closed, not open-ended: `ID_OBJ_MAX = -1` on the last chunk was the 13-hour

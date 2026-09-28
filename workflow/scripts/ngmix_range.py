@@ -11,7 +11,7 @@ own row::
 
     # each chunk, at its own start
     eval "$(ngmix_range.py --read $SP_LOCAL/ngmix_ranges.json --chunk 3)"
-    # -> export NGMIX_ID_MIN=751; export NGMIX_ID_MAX=1125
+    # -> export NGMIX_ROW_MIN=751; export NGMIX_ROW_MAX=1125
 
 The file is group-internal plumbing, NOT DAG currency: it lives on $SP_LOCAL and
 dies with the group job, exactly like the vignette store. It is deliberately not
@@ -24,10 +24,12 @@ DETERMINISM, below).
 The range is still only knowable at EXECUTION time (PRD D4) — a params function
 cannot compute it, because params evaluate before the sexcat exists.
 
-SExtractor's NUMBER column (ngmix's obj_id) runs 1..N contiguous, so covering
-[1, N] processes every object exactly once. The bounds are CLOSED, never
-ID_OBJ_MAX = -1 — ngmix treats ``id_obj_max <= 0`` as unbounded
-(``ngmix_package/ngmix.py:804-806``), so an open-ended last chunk silently
+The ranges are 1-based ROW positions in the sexcat, not NUMBER values: ngmix
+selects its chunk by row (``ngmix_package.ngmix.chunk_rows``), so covering
+[1, N] processes every object exactly once however NUMBER is ordered or
+spaced (an external detection catalogue keeps its own NUMBER). The bounds are
+CLOSED, never ID_OBJ_MAX = -1 — ngmix treats ``id_obj_max <= 0`` as
+unbounded, so an open-ended last chunk silently
 re-measures the whole tile instead of its share; rule tile_ngmix carries the
 straggler that taught this.
 
@@ -51,7 +53,7 @@ from its sky position, so which chunk an object falls in cannot change its
 measurement (see ``ngmix_package.ngmix.position_seed``).
 
 DETERMINISM HERE IS CORRECTNESS, NOT TIDINESS. A tile's chunk ranges are a
-PARTITION of its object IDs: if two chunks disagree about the boundaries,
+PARTITION of its catalogue rows: if two chunks disagree about the boundaries,
 objects are silently measured twice or silently dropped and nothing downstream
 notices — merge_sep_cats concatenates whatever it is given.
 
@@ -103,11 +105,11 @@ MILLI_EPOCH = 1000
 ALPHA_MILLI_EPOCHS = 184
 
 
-def id_ranges(epochs, n_chunks: int) -> list[tuple[int, int]]:
-    """Split object IDs ``1..len(epochs)`` into ``n_chunks`` closed ranges.
+def row_ranges(epochs, n_chunks: int) -> list[tuple[int, int]]:
+    """Split catalogue rows ``1..len(epochs)`` into ``n_chunks`` closed ranges.
 
-    ``epochs[i]`` is object ``i + 1``'s geometric epoch count. The ranges are
-    CONTIGUOUS — ``NGMIX_ID_MIN``/``NGMIX_ID_MAX`` is an interval, not a set —
+    ``epochs[i]`` is row ``i + 1``'s geometric epoch count. The ranges are
+    CONTIGUOUS — ``NGMIX_ROW_MIN``/``NGMIX_ROW_MAX`` is an interval, not a set —
     and tile ``[1, n_obj]`` exactly, so every object is measured once.
 
     The objective is the slowest chunk, not the average one, because the
@@ -188,8 +190,9 @@ def object_epochs(run_dir: Path):
     tile_detect's SExtractor post-process (``MAKE_POST_PROCESS`` in
     ``config_tile_Sx.ini``) writes one ``EPOCH_<k>`` extension per exposure
     overlapping the tile — so the extension COUNT is tile-specific and is
-    discovered by name, never assumed — each with ``n_obj`` rows in NUMBER
-    order and ``CCD_N < 0`` where the object misses that exposure. Summing
+    discovered by name, never assumed — each with ``n_obj`` rows in
+    ``LDAC_OBJECTS`` row order and ``CCD_N < 0`` where the object misses that
+    exposure. Summing
     ``CCD_N >= 0`` across them reproduces the final catalogue's ``N_EPOCH``
     column exactly — checked row by row against 186.307's
     ``run_sp_tile_Mc/.../final_cat-186-307.fits``, all 35,298 of them, 7 extensions,
@@ -234,19 +237,20 @@ def object_epochs(run_dir: Path):
                 f"[ngmix_range] FATAL: no LDAC_OBJECTS in {cats[0]}"
             )
         n_obj = int(hdul["LDAC_OBJECTS"].header["NAXIS2"])
-        expected = np.arange(1, n_obj + 1, dtype=np.int64)
         counts = np.zeros(n_obj, dtype=np.int64)
+        number = None
         for hdu in epoch_hdus:
             data = hdu.data
-            # NUMBER is asserted, not assumed: the whole scheme is an ID
-            # INTERVAL, so a permuted or gappy NUMBER column would make the
-            # weights describe different objects than the bounds select.
-            if len(data) != n_obj or not np.array_equal(
-                np.asarray(data["NUMBER"], dtype=np.int64), expected
-            ):
+            # Row alignment is asserted, not assumed: the weights are indexed
+            # by row, so every EPOCH extension must carry the same NUMBER
+            # sequence, row for row, as the first one.
+            this_number = np.asarray(data["NUMBER"], dtype=np.int64)
+            if number is None:
+                number = this_number
+            if len(data) != n_obj or not np.array_equal(this_number, number):
                 raise SystemExit(
                     f"[ngmix_range] FATAL: {cats[0]}[{hdu.name}] is not "
-                    f"{n_obj} rows of NUMBER = 1..{n_obj} in order"
+                    f"{n_obj} rows aligned with {epoch_hdus[0].name}"
                 )
             counts += np.asarray(data["CCD_N"]) >= 0
     return counts
@@ -261,12 +265,12 @@ def partition(epochs, n_chunks: int) -> dict:
     against what was actually written, not against what the caller believes).
     ``chunk`` is 1-based, matching SP_NGMIX_CHUNK and the run-directory suffix.
     """
-    ranges = id_ranges(epochs, n_chunks)
+    ranges = row_ranges(epochs, n_chunks)
     return {
         "n_obj": len(epochs),
         "n_chunks": n_chunks,
         "chunks": [
-            {"chunk": k, "id_min": lo, "id_max": hi}
+            {"chunk": k, "row_min": lo, "row_max": hi}
             for k, (lo, hi) in enumerate(ranges, start=1)
         ],
     }
@@ -289,7 +293,7 @@ def chunk_range(doc: dict, chunk: int) -> tuple[int, int]:
             f"[ngmix_range] FATAL: ranges file row {chunk - 1} is chunk "
             f"{row['chunk']}, not {chunk}"
         )
-    return int(row["id_min"]), int(row["id_max"])
+    return int(row["row_min"]), int(row["row_max"])
 
 
 def read_ranges(path: Path) -> dict:
@@ -342,7 +346,7 @@ def main() -> None:
     if a.chunk is None:
         raise SystemExit("[ngmix_range] FATAL: --read needs --chunk")
     lo, hi = chunk_range(read_ranges(a.read), a.chunk)
-    print(f"export NGMIX_ID_MIN={lo}; export NGMIX_ID_MAX={hi}")
+    print(f"export NGMIX_ROW_MIN={lo}; export NGMIX_ROW_MAX={hi}")
 
 
 if __name__ == "__main__":

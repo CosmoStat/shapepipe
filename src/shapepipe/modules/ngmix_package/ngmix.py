@@ -125,13 +125,40 @@ def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     )
 
 
+def chunk_rows(n_obj, row_min, row_max):
+    """Catalogue rows of one ngmix chunk.
+
+    A chunk is a closed range of 1-based row positions in the tile
+    catalogue, independent of the ``NUMBER`` values those rows carry, so a
+    partition of ``1..n_obj`` covers every object once however ``NUMBER``
+    is ordered or spaced. A bound ``<= 0`` is unbounded on that side.
+
+    Parameters
+    ----------
+    n_obj : int
+        Number of rows in the tile catalogue
+    row_min, row_max : int
+        First and last row of the chunk (1-based, inclusive)
+
+    Returns
+    -------
+    range
+        0-based row indices of the chunk
+
+    """
+    start = row_min - 1 if row_min > 0 else 0
+    stop = min(row_max, n_obj) if row_max > 0 else n_obj
+    return range(start, max(start, stop))
+
+
 def position_seed(ra, dec, ccd):
     """Deterministic RNG seed from an object's sky position (ngmix#796).
 
     Position seeding gives the same object the same RNG stream in each image
     branch, provided its sky position falls in the same seed box. It also makes
     the result independent of how the tile is split into
-    ``ID_OBJ_MIN``/``ID_OBJ_MAX`` chunks, which is why it is now the only mode.
+    ``ID_OBJ_MIN``/``ID_OBJ_MAX`` row chunks, which is why it is now the only
+    mode.
 
     Box math (kept exactly as Fabian's issue #796)::
 
@@ -414,11 +441,11 @@ class Ngmix(object):
         Save output catalogue in batches of this size; detaul is ``-1`` (no
         batch save)
     id_obj_min : int, optional
-        First galaxy ID to process, not used if the value is set to ``-1``;
-        the default is ``-1``
+        First catalogue row to process (1-based, see :func:`chunk_rows`),
+        not used if the value is set to ``-1``; the default is ``-1``
     id_obj_max : int, optional
-        Last galaxy ID to process, not used if the value is set to ``-1``;
-        the default is ``-1``
+        Last catalogue row to process (1-based, inclusive), not used if the
+        value is set to ``-1``; the default is ``-1``
     centroid_source : {"wcs", "hsm"}, optional
         How to place the galaxy Jacobian origin for the centroid prior. The
         default ``"wcs"`` places it at the coadd centroid: the sub-pixel
@@ -987,11 +1014,11 @@ class Ngmix(object):
         count_batch = 0
         saved_batch_cumul = 0
 
-        for i_tile, obj_id in enumerate(tile_cat.obj_id):
-            if self._id_obj_min > 0 and obj_id < self._id_obj_min:
-                continue
-            if self._id_obj_max > 0 and obj_id > self._id_obj_max:
-                continue
+        rows = chunk_rows(
+            len(tile_cat.obj_id), self._id_obj_min, self._id_obj_max
+        )
+        for i_tile in rows:
+            obj_id = tile_cat.obj_id[i_tile]
             if id_first == -1:
                 id_first = obj_id
             id_last = obj_id
