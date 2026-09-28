@@ -921,18 +921,19 @@ def _python_value_in_site(root, site, selector):
     source = (Path(root) / site.path).read_text(encoding="utf-8")
     tree = _python_tree(source)
     symbol, _ = _code_selector(selector)
-    if site.symbol and (symbol == site.symbol or symbol.startswith(site.symbol + ".")):
-        full_selector = selector
-    elif site.symbol:
-        full_selector = f"{site.symbol}.{selector}"
-    else:
-        full_selector = selector
-    full_symbol, _ = _code_selector(full_selector)
-    if site.symbol and full_symbol != site.symbol and not full_symbol.startswith(site.symbol + "."):
-        return None
+    direct = bool(
+        site.symbol
+        and (symbol == site.symbol or symbol.startswith(site.symbol + "."))
+    )
+    full_selector = (
+        selector if direct else f"{site.symbol}.{selector}"
+        if site.symbol else selector
+    )
     try:
         node = _selected_python_node(tree, full_selector)
     except ValueError as error:
+        if not direct:
+            return None
         if "needs one binding" in str(error) or "missing" in str(error):
             return None
         raise

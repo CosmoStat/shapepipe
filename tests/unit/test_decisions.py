@@ -344,6 +344,20 @@ def test_python_value_reassignment_fails_closed(tmp_path):
     assert "exactly one tagged site" in problem
 
 
+def test_python_qualified_selector_ignores_other_tagged_scopes(tmp_path):
+    _write(
+        tmp_path / "constants.py",
+        "# @sc [decision:choice]\nOTHER = 5\n\n"
+        'def fit():\n    """Fit.\n\n    @sc [decision:choice]\n    """\n'
+        "    PARAMS = {'limits': {'T': 1}}\n",
+    )
+    record = _record("Prior. Values: fit.PARAMS[limits.T] = 1.")
+    tags, errors = scan_tags(tmp_path)
+
+    assert errors == []
+    assert value_errors(tmp_path, record, tags) == []
+
+
 def test_python_literal_and_dict_selector_is_static(tmp_path):
     _write(
         tmp_path / "constants.py",
