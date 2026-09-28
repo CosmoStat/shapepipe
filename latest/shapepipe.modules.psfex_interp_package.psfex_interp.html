@@ -791,6 +791,10 @@ they are read directly from the <code class="docutils literal notranslate"><span
 <span class="sig-name descname"><span class="pre">interpsfex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dotpsfpath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html#PSFExInterpolator.interpsfex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.interpsfex" title="Link to this definition">#</a></dt>
 <dd><p>Interpolate PSFEx.</p>
 <p>Use PSFEx generated model to perform spatial PSF interpolation.</p>
+<p>&#64;sc [decision:star_selection_psf.psf_acceptance_thresholds,label:gate] psf-gate-path-specific-output
+Validation logs a rejected gate and skips writing validation output;
+the multi-epoch science path logs the same sentinel and skips that CCD
+so affected objects lose its epoch.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

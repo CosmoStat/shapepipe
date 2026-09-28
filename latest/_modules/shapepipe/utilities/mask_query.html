@@ -778,6 +778,7 @@
 <span class="sd">        Map value at each position; positions outside the map's coverage carry</span>
 <span class="sd">        the map's sentinel value</span>
 
+<span class="sd">    @sc [decision:masking.sky_mask_application]</span>
 <span class="sd">    """</span>
     <span class="n">values</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">query_map_coverage</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">)</span>
 
@@ -791,6 +792,12 @@
 <span class="w">    </span><span class="sd">"""Flag Positions.</span>
 
 <span class="sd">    Combine one or more healsparse masks into a single per-object integer flag.</span>
+
+<span class="sd">    @sc [decision:masking.psf_star_mask_veto,label:convention] off-coverage-is-clean</span>
+<span class="sd">    A position outside a map's coverage contributes 0 for boolean and integer</span>
+<span class="sd">    maps alike, so a map that misses an exposure never flags its stars; the</span>
+<span class="sd">    all-off-coverage case is logged as a warning instead. The flag is the</span>
+<span class="sd">    bitwise OR of the per-map contributions, 0 meaning clean.</span>
 
 <span class="sd">    Each map contributes at each position:</span>
 

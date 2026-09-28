@@ -584,6 +584,7 @@
 <span class="c1"># Neighbour treatments selectable with the BLEND_HANDLING option.</span>
 <span class="n">BLEND_HANDLINGS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"noisefill"</span><span class="p">,</span> <span class="s2">"uberseg"</span><span class="p">)</span>
 
+<span class="c1"># @sc [decision:shape_measurement.metacal_scheme]</span>
 <span class="n">METACAL_TYPES</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'noshear'</span><span class="p">,</span> <span class="s1">'1p'</span><span class="p">,</span> <span class="s1">'1m'</span><span class="p">,</span> <span class="s1">'2p'</span><span class="p">,</span> <span class="s1">'2m'</span><span class="p">)</span>
 
 <span class="c1"># Noise budget for the PSF observation's flat weight map (psf_wt =</span>
@@ -593,6 +594,7 @@
 <span class="c1"># value is non-critical once it is finite (validated on the digital twin: the</span>
 <span class="c1"># recovered PSF shape/size are flat across 1e-4..1e-6). See</span>
 <span class="c1"># make_ngmix_observation.</span>
+<span class="c1"># @sc [decision:shape_measurement.psf_likelihood_noise]</span>
 <span class="n">PSF_NOISE</span> <span class="o">=</span> <span class="mf">1e-5</span>
 
 
@@ -667,6 +669,8 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    ngmix.joint_prior.PriorSimpleSep</span>
+
+<span class="sd">    @sc [decision:shape_measurement.fit_priors]</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">T_range</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">T_range</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0e3</span><span class="p">]</span>
@@ -733,6 +737,8 @@
 <span class="sd">    -------</span>
 <span class="sd">    int</span>
 <span class="sd">        Seed in ``[0, 2**32)`` for ``numpy.random.RandomState``.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.ngmix_seed_mode]</span>
 <span class="sd">    """</span>
     <span class="n">box_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">ra</span> <span class="o">*</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ccd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
     <span class="n">box_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">dec</span> <span class="o">*</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ccd</span> <span class="o">+</span> <span class="mi">2</span><span class="p">))</span>
@@ -1177,6 +1183,7 @@
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            The flipped postage stamp</span>
 
+<span class="sd">        @sc [decision:shape_measurement.megacam_ccd_flip]</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">ccd_nb</span> <span class="o">&lt;</span> <span class="mi">18</span> <span class="ow">or</span> <span class="n">ccd_nb</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">36</span><span class="p">,</span> <span class="mi">37</span><span class="p">]:</span>
             <span class="c1"># swap x axis so origin is on top-right</span>
@@ -1583,6 +1590,7 @@
 <span class="sd">        dict</span>
 <span class="sd">            Dictionary containing the NGMIX metacal results</span>
 
+<span class="sd">        @sc [decision:shape_measurement.fit_initialisation,decision:shape_measurement.ngmix_seed_mode]</span>
 <span class="sd">        """</span>
         <span class="n">tile_cat</span> <span class="o">=</span> <span class="n">Tile_cat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seg_cat_path</span><span class="p">)</span>
         <span class="n">vignet_cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vignet_cat</span>
@@ -1767,7 +1775,10 @@
     <span class="n">psf_obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">gal_obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-    <span class="c1"># define per-object lists of individual exposures to go into ngmix</span>
+<span class="w">    </span><span class="sd">"""Prepare the per-object lists of exposures passed to ngmix.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut]</span>
+<span class="sd">    """</span>
     <span class="n">stamp</span> <span class="o">=</span> <span class="n">Postage_stamp</span><span class="p">(</span><span class="n">bkg_sub</span><span class="o">=</span><span class="n">bkg_sub</span><span class="p">)</span>
     <span class="c1"># Read each store's per-object dict ONCE: every sqlitedict access</span>
     <span class="c1"># unpickles the object's whole all-epoch dict, so keeping these out of</span>
@@ -1919,6 +1930,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    numpy.ndarray</span>
 <span class="sd">        background subtracted galaxy</span>
+<span class="sd">    @sc [decision:shape_measurement.galaxy_pixel_weights]</span>
 <span class="sd">    """</span>
 
     <span class="c1"># background subtraction</span>
@@ -1951,6 +1963,7 @@
 <span class="sd">        rescaled weight image</span>
 <span class="sd">    numpy.ndarray or None</span>
 <span class="sd">        rescaled background RMS image</span>
+<span class="sd">    @sc [decision:shape_measurement.epoch_flux_rescaling]</span>
 <span class="sd">    """</span>
     <span class="n">Fscale</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="s1">'FSCALE'</span><span class="p">]</span>
 
@@ -2170,6 +2183,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    numpy.ndarray</span>
 <span class="sd">        Copy of ``weight`` with neighbour-side pixels zeroed.</span>
+<span class="sd">    @sc [decision:shape_measurement.blend_handling]</span>
 <span class="sd">    """</span>
     <span class="n">weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">weight</span><span class="p">)</span>
 
@@ -2252,6 +2266,7 @@
 <span class="sd">        Variance map for NGMIX.</span>
 <span class="sd">    numpy.ndarray</span>
 <span class="sd">        Noise image.</span>
+<span class="sd">    @sc [decision:masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights]</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">blend_handling</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">BLEND_HANDLINGS</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -2384,6 +2399,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    ngmix.observation.Observation</span>
+<span class="sd">    @sc [decision:shape_measurement.centroid_source,decision:shape_measurement.psf_likelihood_noise]</span>
 <span class="sd">    """</span>
     <span class="n">psf_jacob</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">Jacobian</span><span class="p">(</span>
         <span class="n">row</span><span class="o">=</span><span class="p">(</span><span class="n">psf</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
@@ -2482,6 +2498,7 @@
 <span class="sd">    dict</span>
 <span class="sd">        Keys ``g_psf``, ``g_psf_err``, ``T_psf``, ``T_psf_err`` (weighted</span>
 <span class="sd">        averages over the surviving epochs) and ``n_epoch`` (their count).</span>
+<span class="sd">    @sc [decision:shape_measurement.psf_epoch_averaging]</span>
 <span class="sd">    """</span>
     <span class="n">n_epoch_used</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">wsum</span> <span class="o">=</span> <span class="mi">0</span>
@@ -2536,6 +2553,8 @@
 <span class="sd">        Keys: 'g_psf', 'g_psf_err', 'T_psf', 'T_psf_err' (weighted</span>
 <span class="sd">        averages over the epochs whose PSF fit succeeded) and 'n_epoch'</span>
 <span class="sd">        (the number of those surviving epochs).</span>
+
+<span class="sd">    @sc [decision:shape_measurement.psf_epoch_averaging]</span>
 <span class="sd">    """</span>
     <span class="c1"># ignore_failed_psf=True drops failed-PSF epochs from the galaxy fit but</span>
     <span class="c1"># keeps them in obsdict; _average_psf_fits skips them on flags != 0.</span>
@@ -2593,6 +2612,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    dict</span>
 <span class="sd">        Same keys as :func:`average_multiepoch_psf`.</span>
+<span class="sd">    @sc [decision:shape_measurement.psf_epoch_averaging]</span>
 <span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="n">gal_obs</span><span class="p">):</span>
         <span class="c1"># Fit a COPY so gal_obs.psf stays pristine for metacal — see docstring.</span>
@@ -2628,6 +2648,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    tuple</span>
 <span class="sd">        (runner, psf_runner) : ngmix.runners.Runner, ngmix.runners.PSFRunner</span>
+<span class="sd">    @sc [decision:shape_measurement.fit_initialisation,decision:shape_measurement.fit_priors,decision:shape_measurement.galaxy_model]</span>
 <span class="sd">    """</span>
     <span class="n">fitter</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">fitting</span><span class="o">.</span><span class="n">Fitter</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">'gauss'</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior</span><span class="p">)</span>
     <span class="n">guesser</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">guessers</span><span class="o">.</span><span class="n">TPSFFluxAndPriorGuesser</span><span class="p">(</span><span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior</span><span class="p">)</span>
@@ -2704,6 +2725,7 @@
 <span class="sd">        dict (:func:`average_original_psf`). The two PSF dicts share keys but</span>
 <span class="sd">        describe different PSFs; the named fields guard against transposing</span>
 <span class="sd">        them. Unpacks positionally as ``resdict, psf_res, psf_orig_res``.</span>
+<span class="sd">    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]</span>
 <span class="sd">    """</span>
     <span class="n">n_epoch</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">gals</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">n_epoch</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>

@@ -1209,6 +1209,14 @@
 <span class="sd">        This function creates mask with random indices corresponding to the</span>
 <span class="sd">        specfied ratio.</span>
 
+<span class="sd">        @sc [decision:star_selection_psf.psf_train_validation_split,label:reproducibility] split-seeded-by-file-number</span>
+<span class="sd">        The permutation is seeded from the digits of the unit's file number, so</span>
+<span class="sd">        a CCD gets the same PSF training and validation stars on every run;</span>
+<span class="sd">        never draw from a global or unseeded generator here. The</span>
+<span class="sd">        ``ratio_&lt;RATIO&gt;`` subset (20 % under RATIO = 20) is the validation</span>
+<span class="sd">        sample and its complement trains PSFEx (``star_split_ratio_80``);</span>
+<span class="sd">        swapping them starves the model of stars below the acceptance gate.</span>
+
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>

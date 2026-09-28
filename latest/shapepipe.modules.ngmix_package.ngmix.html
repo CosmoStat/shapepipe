@@ -771,8 +771,12 @@ type’s galaxy fit failed.</p>
 <li><p><strong>F_range</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – (min, max) for flat flux prior; default (-100, 1e9).</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>ngmix.joint_prior.PriorSimpleSep</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>ngmix.joint_prior.PriorSimpleSep</em></p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.fit_priors]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -814,10 +818,11 @@ one object share them).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Seed in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">2**32)</span></code> for <code class="docutils literal notranslate"><span class="pre">numpy.random.RandomState</span></code>.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)">int</a></p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>int</em> – Seed in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">2**32)</span></code> for <code class="docutils literal notranslate"><span class="pre">numpy.random.RandomState</span></code>.</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.ngmix_seed_mode]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -984,10 +989,11 @@ when used with THELI ccds.  Fix this.</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The flipped postage stamp</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray</em> – The flipped postage stamp</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.megacam_ccd_flip]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1110,10 +1116,11 @@ runs metacal convolutions and ngmix fitting</p>
 </div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dictionary containing the NGMIX metacal results</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><em>dict</em> – Dictionary containing the NGMIX metacal results</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.fit_initialisation,decision:shape_measurement.ngmix_seed_mode]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1123,7 +1130,9 @@ runs metacal convolutions and ngmix fitting</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps">
 <span class="sig-name descname"><span class="pre">prepare_postage_stamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vignet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_tile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_cat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_sub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gal_obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#prepare_postage_stamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Prepare the per-object lists of exposures passed to ngmix.</p>
+<p>&#64;sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut]</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.background_subtract">
@@ -1137,10 +1146,11 @@ runs metacal convolutions and ngmix fitting</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>background subtracted galaxy</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray</em> – background subtracted galaxy</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.galaxy_pixel_weights]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1163,6 +1173,7 @@ runs metacal convolutions and ngmix fitting</p>
 <li><p><em>numpy.ndarray</em> – rescaled galaxy image</p></li>
 <li><p><em>numpy.ndarray</em> – rescaled weight image</p></li>
 <li><p><em>numpy.ndarray or None</em> – rescaled background RMS image</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.epoch_flux_rescaling]</em>)</p></li>
 </ul>
 </p>
 </dd>
@@ -1325,10 +1336,11 @@ little central-object S/N but never leaks neighbour flux into the fit.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Copy of <code class="docutils literal notranslate"><span class="pre">weight</span></code> with neighbour-side pixels zeroed.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray</em> – Copy of <code class="docutils literal notranslate"><span class="pre">weight</span></code> with neighbour-side pixels zeroed.</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.blend_handling]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1371,6 +1383,7 @@ under <code class="docutils literal notranslate"><span class="pre">blend_handlin
 for <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> the image is returned untouched.</p></li>
 <li><p><em>numpy.ndarray</em> – Variance map for NGMIX.</p></li>
 <li><p><em>numpy.ndarray</em> – Noise image.</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights]</em>)</p></li>
 </ul>
 </p>
 </dd>
@@ -1425,8 +1438,12 @@ the default <code class="docutils literal notranslate"><span class="pre">&quot;n
 <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a> under <code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code>.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>ngmix.observation.Observation</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>ngmix.observation.Observation</em></p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.centroid_source,decision:shape_measurement.psf_likelihood_noise]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1446,11 +1463,12 @@ Fitter result with keys <code class="docutils literal notranslate"><span class="
 <code class="docutils literal notranslate"><span class="pre">T_err</span></code> and <code class="docutils literal notranslate"><span class="pre">weight</span></code> is the epoch’s averaging weight.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Keys <code class="docutils literal notranslate"><span class="pre">g_psf</span></code>, <code class="docutils literal notranslate"><span class="pre">g_psf_err</span></code>, <code class="docutils literal notranslate"><span class="pre">T_psf</span></code>, <code class="docutils literal notranslate"><span class="pre">T_psf_err</span></code> (weighted
-averages over the surviving epochs) and <code class="docutils literal notranslate"><span class="pre">n_epoch</span></code> (their count).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>dict</em> – Keys <code class="docutils literal notranslate"><span class="pre">g_psf</span></code>, <code class="docutils literal notranslate"><span class="pre">g_psf_err</span></code>, <code class="docutils literal notranslate"><span class="pre">T_psf</span></code>, <code class="docutils literal notranslate"><span class="pre">T_psf_err</span></code> (weighted
+averages over the surviving epochs) and <code class="docutils literal notranslate"><span class="pre">n_epoch</span></code> (their count).</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.psf_epoch_averaging]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1471,12 +1489,13 @@ of the <em>original</em> image PSF is <a class="reference internal" href="#shape
 <dd class="field-odd"><p><strong>obsdict</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Observation dict returned by MetacalBootstrapper.go().</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Keys: ‘g_psf’, ‘g_psf_err’, ‘T_psf’, ‘T_psf_err’ (weighted
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>dict</em> – Keys: ‘g_psf’, ‘g_psf_err’, ‘T_psf’, ‘T_psf_err’ (weighted
 averages over the epochs whose PSF fit succeeded) and ‘n_epoch’
-(the number of those surviving epochs).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+(the number of those surviving epochs).</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.psf_epoch_averaging]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1521,10 +1540,11 @@ shared <code class="docutils literal notranslate"><span class="pre">prior</span>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Same keys as <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a>.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>dict</em> – Same keys as <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a>.</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.psf_epoch_averaging]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1546,10 +1566,11 @@ observations directly.</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>(runner, psf_runner) : ngmix.runners.Runner, ngmix.runners.PSFRunner</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>tuple</em> – (runner, psf_runner) : ngmix.runners.Runner, ngmix.runners.PSFRunner</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.fit_initialisation,decision:shape_measurement.fit_priors,decision:shape_measurement.galaxy_model]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1595,15 +1616,16 @@ the deconvolution, which is by the PSF image.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Named 3-tuple <code class="docutils literal notranslate"><span class="pre">(resdict,</span> <span class="pre">reconv,</span> <span class="pre">orig)</span></code>: the MetacalBootstrapper
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>MetacalResult</em> – Named 3-tuple <code class="docutils literal notranslate"><span class="pre">(resdict,</span> <span class="pre">reconv,</span> <span class="pre">orig)</span></code>: the MetacalBootstrapper
 result dict, the averaged metacal <em>reconvolution</em>-kernel PSF dict
 (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a>), and the averaged <em>original</em> image-PSF
 dict (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_original_psf" title="shapepipe.modules.ngmix_package.ngmix.average_original_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_original_psf()</span></code></a>). The two PSF dicts share keys but
 describe different PSFs; the named fields guard against transposing
-them. Unpacks positionally as <code class="docutils literal notranslate"><span class="pre">resdict,</span> <span class="pre">psf_res,</span> <span class="pre">psf_orig_res</span></code>.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult" title="shapepipe.modules.ngmix_package.ngmix.MetacalResult">MetacalResult</a></p>
+them. Unpacks positionally as <code class="docutils literal notranslate"><span class="pre">resdict,</span> <span class="pre">psf_res,</span> <span class="pre">psf_orig_res</span></code>.</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>

@@ -822,6 +822,13 @@ catalogue.</p>
 <dd><p>Make Random Split.</p>
 <p>This function creates mask with random indices corresponding to the
 specfied ratio.</p>
+<p>&#64;sc [decision:star_selection_psf.psf_train_validation_split,label:reproducibility] split-seeded-by-file-number
+The permutation is seeded from the digits of the unit’s file number, so
+a CCD gets the same PSF training and validation stars on every run;
+never draw from a global or unseeded generator here. The
+<code class="docutils literal notranslate"><span class="pre">ratio_&lt;RATIO&gt;</span></code> subset (20 % under RATIO = 20) is the validation
+sample and its complement trains PSFEx (<code class="docutils literal notranslate"><span class="pre">star_split_ratio_80</span></code>);
+swapping them starves the model of stars below the acceptance gate.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

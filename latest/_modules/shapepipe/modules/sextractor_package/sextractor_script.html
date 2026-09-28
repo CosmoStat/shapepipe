@@ -615,6 +615,12 @@
 
 <span class="sd">    Flag catalogue positions that lie near a CCD's sky footprint.</span>
 
+<span class="sd">    @sc [decision:detection.epoch_membership_ccd_bounds,label:invariant] candidate-mask-is-superset</span>
+<span class="sd">    The mask only prefilters the strict CCD_SIZE test in</span>
+<span class="sd">    :func:`make_post_process`; it must keep every position that test could</span>
+<span class="sd">    accept. Tightening it (margin, radius) silently drops epochs and lowers</span>
+<span class="sd">    N_EPOCH instead of just skipping divergent WCS inversions.</span>
+
 <span class="sd">    The footprint is obtained by forward-projecting (pixel to world) the</span>
 <span class="sd">    CCD centre and corners, which is always well defined.  The returned</span>
 <span class="sd">    mask selects positions within the corner radius plus a fractional</span>
@@ -674,6 +680,13 @@
 
 <span class="sd">    This function will add one HDU for each epoch to the SExtractor catalogue.</span>
 <span class="sd">    Note that this only works for tiles.</span>
+
+<span class="sd">    @sc [decision:detection.epoch_membership_ccd_bounds,label:convention] epoch-bounds-strict-per-ccd</span>
+<span class="sd">    An object is on a CCD when its inverse-projected pixel lies strictly inside</span>
+<span class="sd">    CCD_SIZE (33, 2080, 1, 4612 committed), and each such CCD adds one to</span>
+<span class="sd">    N_EPOCH. A WCS inversion that fails drops that one CCD's epoch for the</span>
+<span class="sd">    objects near it, never the tile. CCD_N is the 0-based index that split_exp</span>
+<span class="sd">    gives the CCD file and its header entry.</span>
 
 <span class="sd">    The columns will be:</span>
 
@@ -936,6 +949,15 @@
 
 <span class="sd">        Set up all of the input image files.</span>
 
+<span class="sd">        @sc [decision:detection.weight_map_usage,label:convention] weight-map-on-both-images</span>
+<span class="sd">        With a weight file, the same map weights detection and measurement (a</span>
+<span class="sd">        separate detection weight only when DETECTION_WEIGHT is set); without</span>
+<span class="sd">        one, the command line forces ``-WEIGHT_TYPE None`` over the config's</span>
+<span class="sd">        MAP_WEIGHT, which changes the detection set. Extra inputs are</span>
+<span class="sd">        positional (image, weight, flag, psf, detection image, detection</span>
+<span class="sd">        weight): a reordering that keeps the count mis-assigns files without</span>
+<span class="sd">        raising.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        use_weight: bool</span>
@@ -1032,6 +1054,7 @@
 <span class="sd">        zp_key: str</span>
 <span class="sd">            Header key corresponding to the zero point</span>
 
+<span class="sd">        @sc [decision:photometric_zeropoint]</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">use_zp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">zp_key</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
             <span class="n">zp_value</span> <span class="o">=</span> <span class="n">get_header_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meas_img_path</span><span class="p">,</span> <span class="n">zp_key</span><span class="p">)</span>
@@ -1052,6 +1075,7 @@
 <span class="sd">        bkg_key: str</span>
 <span class="sd">            Header key corresponding to the background value</span>
 
+<span class="sd">        @sc [decision:detection.background_model]</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">use_bkg</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bkg_key</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
             <span class="n">bkg_value</span> <span class="o">=</span> <span class="n">get_header_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meas_img_path</span><span class="p">,</span> <span class="n">bkg_key</span><span class="p">)</span>

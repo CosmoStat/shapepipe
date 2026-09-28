@@ -633,6 +633,9 @@ the exposure name and is not affected by this parameter)</p></li>
 <dd><p>Get Exposure List.</p>
 <p>Return list of exposure file used for the tile in process, from tiles
 FITS header.</p>
+<p>&#64;sc [decision:preparation.epoch_provenance_from_tile_history,label:convention] epochs-from-tile-history
+Apply <code class="docutils literal notranslate"><span class="pre">EXP_PREFIX</span></code> only at the start of the parsed name; do not strip
+matching text from the middle or remove the trailing <code class="docutils literal notranslate"><span class="pre">p</span></code> here.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>List of exposure basenames</p>

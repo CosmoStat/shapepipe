@@ -580,6 +580,8 @@
 
 <span class="sd">    Extract postage stamps and record their sub-pixel centring.</span>
 
+<span class="sd">    @sc [decision:preparation.stamp_positioning_and_padding]</span>
+
 <span class="sd">    The image is zero-padded by ``rad`` on every side and a</span>
 <span class="sd">    ``(2 * rad + 1, 2 * rad + 1)`` stamp is sliced around the integer pixel</span>
 <span class="sd">    nearest each position (``numpy.round``). The stamp values are</span>
@@ -882,6 +884,7 @@
 <span class="sd">        dict</span>
 <span class="sd">            Dictionary containing object id and vignets for each epoch</span>
 
+<span class="sd">        @sc [decision:preparation.stamp_positioning_and_padding]</span>
 <span class="sd">        """</span>
         <span class="n">cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_galcat_path</span><span class="p">,</span> <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>

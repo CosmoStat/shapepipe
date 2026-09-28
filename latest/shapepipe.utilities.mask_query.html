@@ -740,11 +740,12 @@ coverage pixels those positions touch.</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Map value at each position; positions outside the map’s coverage carry
-the map’s sentinel value</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray</em> – Map value at each position; positions outside the map’s coverage carry
+the map’s sentinel value</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>masking.sky_mask_application]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -754,6 +755,11 @@ the map’s sentinel value</p>
 <span class="sig-name descname"><span class="pre">flag_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/utilities/mask_query.html#flag_positions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.utilities.mask_query.flag_positions" title="Link to this definition">#</a></dt>
 <dd><p>Flag Positions.</p>
 <p>Combine one or more healsparse masks into a single per-object integer flag.</p>
+<p>&#64;sc [decision:masking.psf_star_mask_veto,label:convention] off-coverage-is-clean
+A position outside a map’s coverage contributes 0 for boolean and integer
+maps alike, so a map that misses an exposure never flags its stars; the
+all-off-coverage case is logged as a warning instead. The flag is the
+bitwise OR of the per-map contributions, 0 meaning clean.</p>
 <p>Each map contributes at each position:</p>
 <ul class="simple">
 <li><p>boolean map: <code class="docutils literal notranslate"><span class="pre">1</span></code> where the map is <code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">0</span></code> elsewhere;</p></li>
