@@ -30,10 +30,6 @@ BLEND_HANDLINGS = ("noisefill", "uberseg")
 # @sc [decision:shape_measurement.metacal_scheme]
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
 
-# Flag bit for a metacal type with no evidence of a successful fit (see
-# get_type_flags). Above every ngmix fitter bit (ngmix.flags stops at 2**15).
-FLAG_NO_RESULT = 2**30
-
 # Noise budget for the PSF observation's flat weight map (psf_wt =
 # 1/PSF_NOISE**2). Mirrors the esheldon/aguinot pattern (sigma ~ 1e-5/1e-6);
 # 1e-5 is the value Axel Guinot's #749 reproduction used. The fit is driven
@@ -80,7 +76,20 @@ def get_type_flags(fit):
     shear; no default or fallback may produce 0. FLAGS_<SHEAR>, MCAL_FLAGS
     (OR) and MCAL_TYPES_FAIL (count) all derive from this function, and
     sp_validation selects galaxies on MCAL_FLAGS == 0 and
-    MCAL_TYPES_FAIL == 0 as "measured".
+    MCAL_TYPES_FAIL == 0 as "measured". Every failure carries one of
+    ngmix's own bits (``ngmix.flags``); ShapePipe adds none:
+
+    - the fitter reported failure: its own ``flags``, unchanged;
+    - the fitter reported success (``flags == 0``) without a finite shear
+      ``g``, or the result has no ``flags``, or the type is absent:
+      ``LM_FUNC_NOTFINITE`` (2**12). The shear the catalogue holds for
+      such a type is NaN or a sentinel, never a finite measurement.
+
+    An object ngmix never fit (no usable epoch, or its fit raised) has no
+    metacal result at all; make_cat evaluates it as ``{}`` for every type,
+    so it carries ``LM_FUNC_NOTFINITE`` in every flag column and fails all
+    five types. ``NGMIX_N_EPOCH == 0`` tells it apart from a fitted object
+    whose LM fit set the same bit.
 
     Parameters
     ----------
@@ -90,14 +99,15 @@ def get_type_flags(fit):
     Returns
     -------
     int
-        The fit's own ``flags``, or :data:`FLAG_NO_RESULT` when the result
-        is absent, lacks ``flags``, or claims success (``flags == 0``)
-        without a finite shear ``g``.
+        The fit's own ``flags``, or ``ngmix.flags.LM_FUNC_NOTFINITE`` when
+        the result is absent, lacks ``flags``, or claims success
+        (``flags == 0``) without a finite shear ``g``.
     """
-    flags = int(fit.get('flags', FLAG_NO_RESULT))
+    notfinite = ngmix.flags.LM_FUNC_NOTFINITE
+    flags = int(fit.get('flags', notfinite))
     g = np.asarray(fit.get('g', (np.nan, np.nan)), dtype=float)
     if flags == 0 and not np.all(np.isfinite(g)):
-        return FLAG_NO_RESULT
+        return notfinite
     return flags
 
 

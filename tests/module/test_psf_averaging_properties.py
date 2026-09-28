@@ -24,10 +24,10 @@ import pytest
 from astropy.io import fits
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from ngmix.flags import LM_FUNC_NOTFINITE
 
 from shapepipe.modules.make_cat_package.make_cat import SaveCatalogue
 from shapepipe.modules.ngmix_package.ngmix import (
-    FLAG_NO_RESULT,
     METACAL_TYPES,
     _average_psf_fits,
 )
@@ -239,7 +239,7 @@ def test_all_epochs_failed_raises_zero_division(flagged_specs):
 _SENTINELS = {
     "NGMIX_T_NOSHEAR": 0.0,
     "NGMIX_SNR_NOSHEAR": 0.0,
-    "NGMIX_FLAGS_NOSHEAR": FLAG_NO_RESULT,
+    "NGMIX_FLAGS_NOSHEAR": LM_FUNC_NOTFINITE,
     "NGMIX_T_PSF_ORIG_NOSHEAR": 0.0,
     "NGMIX_T_PSF_RECONV_NOSHEAR": 0.0,
     "NGMIX_FLUX_ERR_NOSHEAR": -1.0,
@@ -253,8 +253,9 @@ _SENTINELS = {
     "NGMIX_T_ERR_PSF_RECONV_NOSHEAR": 1e30,
     "NGMIX_N_EPOCH": 0.0,
     # Never fit reads as an empty metacal result, not a clean fit
-    # (contract never-fit-is-not-clean): FLAG_NO_RESULT, all types failed.
-    "NGMIX_MCAL_FLAGS": FLAG_NO_RESULT,
+    # (contract failure-sentinel-cut-semantics): LM_FUNC_NOTFINITE, all types
+    # failed.
+    "NGMIX_MCAL_FLAGS": LM_FUNC_NOTFINITE,
     "NGMIX_MCAL_TYPES_FAIL": len(METACAL_TYPES),
     "NGMIX_NEIGHBOUR_FLAG": 0.0,
 }

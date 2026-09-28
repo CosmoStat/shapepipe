@@ -420,14 +420,6 @@ class SaveCatalogue:
         ``PSF_RECONV`` are independent fits of different PSFs, no longer the
         single aliased value of the pre-fix code (shapepipe#749).
 
-        @sc [label:coupling] never-fit-is-not-clean
-        An object absent from the ngmix catalogue was never fit (e.g. "0
-        epoch to process", or an exception caught and skipped). Its flag
-        columns take what ngmix derives for an empty metacal result
-        (FLAG_NO_RESULT, every type failed), never 0: sp_validation's
-        MCAL_FLAGS == 0 and MCAL_TYPES_FAIL == 0 cut is what keeps the
-        -10 / 0 sentinel shapes of such rows out of the shear sample.
-
         Parameters
         ----------
         ngmix_cat_path : str
@@ -436,11 +428,16 @@ class SaveCatalogue:
             If True, write the parallel ``NGMIXm_*`` (moments-branch) columns.
 
         @sc [decision:catalogue_assembly.failure_sentinels,label:coupling] failure-sentinel-cut-semantics
-        Missing-row ``T``, ``SNR``, flux, magnitude, PSF-size and flag values
-        initialize to 0, which is in range and cannot identify failure. Use
-        ``NGMIX_N_EPOCH == 0`` for that cut; the -10 ellipticity, -1
-        flux/magnitude-error and 1e30 size-error sentinels are out of range and
-        can also identify missing fits.
+        An object absent from the ngmix catalogue was never fit (no usable
+        epoch, or its fit raised). Its flag columns take what
+        :func:`ngmix.get_type_flags` derives for an empty metacal result:
+        ``LM_FUNC_NOTFINITE`` in ``FLAGS_<SHEAR>`` and ``MCAL_FLAGS``, and
+        ``MCAL_TYPES_FAIL`` 5, never 0, so sp_validation's ``MCAL_FLAGS == 0``
+        and ``MCAL_TYPES_FAIL == 0`` cut rejects it. Its ``T``, ``SNR``, flux,
+        magnitude and PSF-size values initialize to 0, which is in range and
+        cannot identify failure; ``NGMIX_N_EPOCH == 0`` identifies a
+        never-fit row, and the -10 ellipticity, -1 flux/magnitude-error and
+        1e30 size-error sentinels are out of range.
 
         """
         self._key_ends = ["1M", "1P", "2M", "2P", "NOSHEAR"]
@@ -497,7 +494,8 @@ class SaveCatalogue:
         # average_multiepoch_psf for what each PSF family is. G1/G2 are scalar
         # reduced-shear components, not a 2-vector. Sentinels:
         # sizes/fluxes/mags 0, *_ERR fluxes/mags -1, ellipticities -10,
-        # *_ERR sizes 1e30; flags as for an empty metacal result (never_fit).
+        # *_ERR sizes 1e30; flags as ngmix derives for an empty metacal result
+        # (never_fit).
         for key_str in (
             f"{prefix}_T_",
             f"{prefix}_SNR_",

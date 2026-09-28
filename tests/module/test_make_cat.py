@@ -14,10 +14,14 @@ independent fits of *different* PSFs, no longer the single aliased value of
 the pre-#749 code.
 """
 
+import functools
+import operator
+
 import numpy as np
 import numpy.testing as npt
 import pytest
 from astropy.io import fits
+from ngmix.flags import LM_FUNC_NOTFINITE, NAME_MAP
 from sqlitedict import SqliteDict
 
 from shapepipe.modules.make_cat_package.make_cat import SaveCatalogue
@@ -480,13 +484,13 @@ def test_galaxy_cut_rejects_each_nonfinite_shear_component(
     result[shear.lower()]["g"][component] = nonfinite
     out = _serialise_then_merge(tmp_path, [result], np.array([1]))
 
-    assert out["NGMIX_MCAL_FLAGS"][0] != 0
+    assert out["NGMIX_MCAL_FLAGS"][0] == LM_FUNC_NOTFINITE
     assert out["NGMIX_MCAL_TYPES_FAIL"][0] == 1
-    assert out[f"NGMIX_FLAGS_{shear}"][0] != 0
+    assert out[f"NGMIX_FLAGS_{shear}"][0] == LM_FUNC_NOTFINITE
 
 
 def test_galaxy_cut_admits_only_measured_objects(tmp_path):
-    """Contracts mcal-flags-zero-means-measured and never-fit-is-not-clean.
+    """Contracts mcal-flags-zero-means-measured and failure-sentinel-cut-semantics.
 
     Consumer-side invariant through the real write path: synthetic metacal
     results -> ``compile_results`` / ``save_results`` -> ``_save_ngmix_data``
@@ -514,7 +518,7 @@ def test_galaxy_cut_admits_only_measured_objects(tmp_path):
     passed = (mcal_flags == 0) & (types_fail == 0)
 
     assert set(cat_ids[passed]) == {1, 8}, (
-        "mcal-flags-zero-means-measured / never-fit-is-not-clean: the cut"
+        "mcal-flags-zero-means-measured / failure-sentinel-cut-semantics: the cut"
         f" admitted {sorted(set(cat_ids[passed]) - {1, 8})}"
     )
     assert np.all(np.asarray(out["NGMIX_N_EPOCH"])[passed] > 0)
@@ -532,6 +536,15 @@ def test_galaxy_cut_admits_only_measured_objects(tmp_path):
     ).astype(np.int64)
     npt.assert_array_equal(mcal_flags, np.bitwise_or.reduce(type_flags))
     npt.assert_array_equal(types_fail, np.count_nonzero(type_flags, axis=0))
+
+    # Failures carry ngmix's own bits: the fitter's flags pass through, and
+    # every no-finite-shear case, never-fit objects included, reads
+    # LM_FUNC_NOTFINITE. No bit outside ngmix.flags is ever set.
+    expected = {oid: LM_FUNC_NOTFINITE for oid in (3, 4, 5, 6, 7, 101, 102)}
+    expected.update({1: 0, 8: 0, 2: 0x8})
+    npt.assert_array_equal(mcal_flags, [expected[oid] for oid in cat_ids])
+    ngmix_bits = functools.reduce(operator.or_, NAME_MAP)
+    assert not np.any(type_flags & ~ngmix_bits)
 
 
 # --- _save_psf_data: fixed per-epoch slot count (N_EPOCH_SLOTS) ---
