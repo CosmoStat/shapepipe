@@ -111,6 +111,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     int
         Number of objects saved
 
+    @sc [decision:catalogue_assembly.tile_overlap_handling]
     """
     sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
     sexcat_file.open()
@@ -175,6 +176,7 @@ def save_sm_data(
     -------
     int
         Number of objects saved
+    @sc [decision:catalogue_assembly.star_galaxy_classification]
     """
     final_cat_file.open()
 

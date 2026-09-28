@@ -75,10 +75,7 @@ decisions:
       per CCD; preprocessing merges an exposure's stars into one train and one
       test catalogue). Science-path PSF rejection bypasses this table:
       psfex_interp drops the epoch per object inside the tile run.
-      Anchor: workflow/scripts/completeness.py::COMPLETENESS;
-      workflow/scripts/completeness.py::COMPLETENESS[exp_psf.psfex.psfex_interp_runner.warn] = True;
-      workflow/scripts/completeness.py::COMPLETENESS[exp_psf.mccd.mask_query_runner.expect] = 40;
-      workflow/scripts/completeness.py::COMPLETENESS[exp_psf.mccd.mccd_preprocessing_runner.expect] = 2.
+      Values: COMPLETENESS[exp_psf.psfex.psfex_interp_runner.warn] = True; COMPLETENESS[exp_psf.mccd.mask_query_runner.expect] = 40; COMPLETENESS[exp_psf.mccd.mccd_preprocessing_runner.expect] = 2.
     default: exact_counts
     options:
       exact_counts:
@@ -106,13 +103,7 @@ decisions:
       stamp. The stamp bounds the measurable galaxy size and truncates the
       wings of large galaxies. No rationale for 51 px (about 9.5 arcsec) is
       recorded.
-      Anchor: workflow/config/cfis/default_noimaflags.param#VIGNET = 51;
-      workflow/config/cfis/default.param#VIGNET = 51;
-      workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_1.STAMP_SIZE = 51;
-      workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.STAMP_SIZE = 51;
-      workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_1.MASKING = False;
-      workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.MASKING = False;
-      workflow/config/cfis/default.psfex#PSF_SIZE = 51.
+      Values: workflow/config/cfis/default_noimaflags.param#VIGNET = 51; workflow/config/cfis/default.param#VIGNET = 51; VIGNETMAKER_RUNNER_RUN_1.STAMP_SIZE = 51; VIGNETMAKER_RUNNER_RUN_2.STAMP_SIZE = 51; VIGNETMAKER_RUNNER_RUN_1.MASKING = False; VIGNETMAKER_RUNNER_RUN_2.MASKING = False; PSF_SIZE = 51.
     default: px_51
     options:
       px_51:
@@ -131,12 +122,7 @@ decisions:
       value assumes the MegaPipe stacks are calibrated to 30; nothing in the
       repo checks it. Magnitude cuts (the star-selection window, downstream
       galaxy cuts) inherit their stage's convention.
-      Anchor: workflow/config/cfis/default_tile.sex#MAG_ZEROPOINT = 30.0;
-      workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER = False;
-      workflow/config/cfis/config_tile_Ng_template.ini#NGMIX_RUNNER.MAG_ZP = 30.0;
-      workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER = True;
-      workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.ZP_KEY = PHOTZP;
-      src/shapepipe/modules/sextractor_package/sextractor_script.py::SExtractorCaller.get_zero_point.
+      Values: MAG_ZEROPOINT = 30.0; workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER = False; NGMIX_RUNNER.MAG_ZP = 30.0; workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER = True; SEXTRACTOR_RUNNER.ZP_KEY = PHOTZP.
     default: fixed_30_tiles_header_exposures
     options:
       fixed_30_tiles_header_exposures:
@@ -217,9 +203,7 @@ analyses:
           (detection.detection_source_mode). Sky-fixed masks never touch
           pixels: an object inside a star halo is measured from the same
           unmodified pixels as one outside it.
-          Anchor: workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = True;
-          workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_PATTERN = flag, image, weight, background, background_rms;
-          src/shapepipe/modules/ngmix_package/ngmix.py::prepare_ngmix_weights.
+          Values: SEXTRACTOR_RUNNER.FLAG_IMAGE = True; VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_PATTERN = flag, image, weight, background, background_rms.
         default: instrument_flags_only
         options:
           instrument_flags_only:
@@ -243,15 +227,7 @@ analyses:
           MASK_EXT. The intended map is the UNIONS star-body product (bit 2);
           halo bits 0 and 1 are left out because halos say nothing about
           whether a star is a good PSF sample.
-          Anchor: workflow/config/cfis/config_exp_psfex.ini;
-          workflow/config/cfis/star_selection.setools#MASK:star_selection.IMAFLAGS_ISO = "== 0";
-          workflow/config/cfis/star_selection.setools#MASK:preselect.IMAFLAGS_ISO = "== 0";
-          workflow/config/cfis/star_selection.setools#MASK:flag.IMAFLAGS_ISO = "== 0";
-          workflow/config/cfis/star_selection.setools#MASK:star_selection.MASK_EXT = absent;
-          workflow/config/cfis/star_selection.setools#MASK:preselect.MASK_EXT = absent;
-          workflow/config/cfis/star_selection.setools#MASK:flag.MASK_EXT = absent;
-          src/shapepipe/modules/mask_query_runner.py::mask_query_runner;
-          src/shapepipe/utilities/mask_query.py::flag_positions.
+          Values: MASK:star_selection.IMAFLAGS_ISO = "== 0"; MASK:preselect.IMAFLAGS_ISO = "== 0"; MASK:flag.IMAFLAGS_ISO = "== 0"; MASK:star_selection.MASK_EXT = absent; MASK:preselect.MASK_EXT = absent; MASK:flag.MASK_EXT = absent.
         default: instrument_flags_only
         options:
           instrument_flags_only:
@@ -279,9 +255,6 @@ analyses:
           (False for boolean maps, reading as unmasked; typically -1 for
           integer maps). The committed config sets no MASK_EXT_PATHS, so no
           mask column is written and all mask cuts happen downstream.
-          Anchor: src/shapepipe/modules/make_cat_runner.py::make_cat_runner;
-          src/shapepipe/modules/make_cat_package/make_cat.py::save_mask_ext_data;
-          src/shapepipe/utilities/mask_query.py::query_map.
         default: deferred_downstream
         options:
           deferred_downstream:
@@ -341,20 +314,7 @@ analyses:
           of 0.65 arcsec (about 3.5 px at 0.187 arcsec/px). Exposures only feed
           star selection and keep stock values with the 3x3 FWHM 2 px kernel.
           The tiles differ from Guinot+22 in all three.
-          Anchor: workflow/config/cfis/default_tile.sex#DETECT_THRESH = 1.0;
-          workflow/config/cfis/default_tile.sex#ANALYSIS_THRESH = 1.0;
-          workflow/config/cfis/default_tile.sex#DETECT_MINAREA = 3;
-          workflow/config/cfis/default_tile.sex#FILTER = Y;
-          workflow/config/cfis/default_tile.sex#SEEING_FWHM = 0.6;
-          workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE = $SP_CONFIG/gauss_3.0_7x7.conv;
-          workflow/config/cfis/gauss_3.0_7x7.conv;
-          workflow/config/cfis/default_exp.sex#DETECT_THRESH = 1.5;
-          workflow/config/cfis/default_exp.sex#ANALYSIS_THRESH = 1.5;
-          workflow/config/cfis/default_exp.sex#DETECT_MINAREA = 5;
-          workflow/config/cfis/default_exp.sex#FILTER = Y;
-          workflow/config/cfis/default_exp.sex#SEEING_FWHM = 0.6;
-          workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE = $SP_CONFIG/default.conv;
-          workflow/config/cfis/default.conv.
+          Values: workflow/config/cfis/default_tile.sex#DETECT_THRESH = 1.0; workflow/config/cfis/default_tile.sex#ANALYSIS_THRESH = 1.0; workflow/config/cfis/default_tile.sex#DETECT_MINAREA = 3; workflow/config/cfis/default_tile.sex#FILTER = Y; workflow/config/cfis/default_tile.sex#SEEING_FWHM = 0.6; workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE = $SP_CONFIG/gauss_3.0_7x7.conv; workflow/config/cfis/default_exp.sex#DETECT_THRESH = 1.5; workflow/config/cfis/default_exp.sex#ANALYSIS_THRESH = 1.5; workflow/config/cfis/default_exp.sex#DETECT_MINAREA = 5; workflow/config/cfis/default_exp.sex#FILTER = Y; workflow/config/cfis/default_exp.sex#SEEING_FWHM = 0.6; workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE = $SP_CONFIG/default.conv.
         default: megapipe_tiles
         options:
           megapipe_tiles:
@@ -374,10 +334,7 @@ analyses:
           Tiles use the MegaPipe DEBLEND_MINCONT; exposures use a lower one,
           the value Guinot+22 lists. Both share DEBLEND_NTHRESH. Contrast sets
           object count, centroids, and blend contamination in shapes.
-          Anchor: workflow/config/cfis/default_tile.sex#DEBLEND_MINCONT = 0.002;
-          workflow/config/cfis/default_exp.sex#DEBLEND_MINCONT = 0.001;
-          workflow/config/cfis/default_tile.sex#DEBLEND_NTHRESH = 32;
-          workflow/config/cfis/default_exp.sex#DEBLEND_NTHRESH = 32.
+          Values: workflow/config/cfis/default_tile.sex#DEBLEND_MINCONT = 0.002; workflow/config/cfis/default_exp.sex#DEBLEND_MINCONT = 0.001; workflow/config/cfis/default_tile.sex#DEBLEND_NTHRESH = 32; workflow/config/cfis/default_exp.sex#DEBLEND_NTHRESH = 32.
         default: megapipe_tiles
         options:
           megapipe_tiles:
@@ -399,18 +356,7 @@ analyses:
           BACKGROUND_RMS (shape_measurement.galaxy_pixel_weights). The header
           background path is off. Residual sky offsets propagate into
           thresholds, fluxes, completeness and shapes.
-          Anchor: workflow/config/cfis/default_tile.sex#BACK_TYPE = AUTO;
-          workflow/config/cfis/default_tile.sex#BACK_SIZE = 512;
-          workflow/config/cfis/default_tile.sex#BACK_FILTERSIZE = 9;
-          workflow/config/cfis/default_tile.sex#BACKPHOTO_TYPE = LOCAL;
-          workflow/config/cfis/default_tile.sex#BACKPHOTO_THICK = 30;
-          workflow/config/cfis/default_exp.sex#BACK_TYPE = AUTO;
-          workflow/config/cfis/default_exp.sex#BACK_SIZE = 64;
-          workflow/config/cfis/default_exp.sex#BACK_FILTERSIZE = 3;
-          workflow/config/cfis/default_exp.sex#BACKPHOTO_TYPE = GLOBAL;
-          workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.BKG_FROM_HEADER = False;
-          workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.BKG_FROM_HEADER = False;
-          src/shapepipe/modules/sextractor_package/sextractor_script.py::SExtractorCaller.get_background.
+          Values: workflow/config/cfis/default_tile.sex#BACK_TYPE = AUTO; workflow/config/cfis/default_tile.sex#BACK_SIZE = 512; workflow/config/cfis/default_tile.sex#BACK_FILTERSIZE = 9; workflow/config/cfis/default_tile.sex#BACKPHOTO_TYPE = LOCAL; BACKPHOTO_THICK = 30; workflow/config/cfis/default_exp.sex#BACK_TYPE = AUTO; workflow/config/cfis/default_exp.sex#BACK_SIZE = 64; workflow/config/cfis/default_exp.sex#BACK_FILTERSIZE = 3; workflow/config/cfis/default_exp.sex#BACKPHOTO_TYPE = GLOBAL; workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.BKG_FROM_HEADER = False; workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.BKG_FROM_HEADER = False.
         default: auto_megapipe_tiles
         options:
           auto_megapipe_tiles:
@@ -429,15 +375,7 @@ analyses:
           RESCALE_WEIGHTS and WEIGHT_GAIN keep their SExtractor defaults.
           Guinot+22 keeps every non-tabulated parameter at its default, which
           would mean no weight map.
-          Anchor: workflow/config/cfis/default_tile.sex#WEIGHT_TYPE = MAP_WEIGHT;
-          workflow/config/cfis/default_exp.sex#WEIGHT_TYPE = MAP_WEIGHT;
-          workflow/config/cfis/default_tile.sex#RESCALE_WEIGHTS = Y;
-          workflow/config/cfis/default_exp.sex#RESCALE_WEIGHTS = Y;
-          workflow/config/cfis/default_tile.sex#WEIGHT_GAIN = Y;
-          workflow/config/cfis/default_exp.sex#WEIGHT_GAIN = Y;
-          workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.WEIGHT_IMAGE = True;
-          workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.WEIGHT_IMAGE = True;
-          src/shapepipe/modules/sextractor_package/sextractor_script.py::SExtractorCaller.set_input_files.
+          Values: workflow/config/cfis/default_tile.sex#WEIGHT_TYPE = MAP_WEIGHT; workflow/config/cfis/default_exp.sex#WEIGHT_TYPE = MAP_WEIGHT; workflow/config/cfis/default_tile.sex#RESCALE_WEIGHTS = Y; workflow/config/cfis/default_exp.sex#RESCALE_WEIGHTS = Y; workflow/config/cfis/default_tile.sex#WEIGHT_GAIN = Y; workflow/config/cfis/default_exp.sex#WEIGHT_GAIN = Y; workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.WEIGHT_IMAGE = True; workflow/config/cfis/config_exp_psfex.ini#SEXTRACTOR_RUNNER.WEIGHT_IMAGE = True.
         default: map_weight
         options:
           map_weight:
@@ -451,12 +389,7 @@ analyses:
           INTERP_TYPE ALL on both passes (SExtractor default NONE): SExtractor
           invents flux across zero-weight pixels, changing detections and
           photometry near masked regions. No rationale recorded.
-          Anchor: workflow/config/cfis/default_tile.sex#INTERP_TYPE = ALL;
-          workflow/config/cfis/default_exp.sex#INTERP_TYPE = ALL;
-          workflow/config/cfis/default_tile.sex#INTERP_MAXXLAG = 16;
-          workflow/config/cfis/default_tile.sex#INTERP_MAXYLAG = 16;
-          workflow/config/cfis/default_exp.sex#INTERP_MAXXLAG = 16;
-          workflow/config/cfis/default_exp.sex#INTERP_MAXYLAG = 16.
+          Values: workflow/config/cfis/default_tile.sex#INTERP_TYPE = ALL; workflow/config/cfis/default_exp.sex#INTERP_TYPE = ALL; workflow/config/cfis/default_tile.sex#INTERP_MAXXLAG = 16; workflow/config/cfis/default_tile.sex#INTERP_MAXYLAG = 16; workflow/config/cfis/default_exp.sex#INTERP_MAXXLAG = 16; workflow/config/cfis/default_exp.sex#INTERP_MAXYLAG = 16.
         default: interp_all
         options:
           interp_all:
@@ -469,10 +402,7 @@ analyses:
           CLEAN on both passes deletes detections
           consistent with being wings of a brighter neighbour, a post-deblend
           change to the object list. Stock value; no rationale recorded.
-          Anchor: workflow/config/cfis/default_tile.sex#CLEAN_PARAM = 1.0;
-          workflow/config/cfis/default_exp.sex#CLEAN_PARAM = 1.0;
-          workflow/config/cfis/default_tile.sex#CLEAN = Y;
-          workflow/config/cfis/default_exp.sex#CLEAN = Y.
+          Values: workflow/config/cfis/default_tile.sex#CLEAN_PARAM = 1.0; workflow/config/cfis/default_exp.sex#CLEAN_PARAM = 1.0; workflow/config/cfis/default_tile.sex#CLEAN = Y; workflow/config/cfis/default_exp.sex#CLEAN = Y.
         default: clean_1
         options:
           clean_1:
@@ -483,8 +413,7 @@ analyses:
           MASK_TYPE CORRECT on both passes replaces neighbour pixels by their
           mirror across the object centre during photometry, changing blend
           fluxes and windowed moments. Stock value; no rationale recorded.
-          Anchor: workflow/config/cfis/default_tile.sex#MASK_TYPE = CORRECT;
-          workflow/config/cfis/default_exp.sex#MASK_TYPE = CORRECT.
+          Values: workflow/config/cfis/default_tile.sex#MASK_TYPE = CORRECT; workflow/config/cfis/default_exp.sex#MASK_TYPE = CORRECT.
         default: correct
         options:
           correct:
@@ -503,13 +432,7 @@ analyses:
           documentation), since neither .sex file sets one. Whether the
           delivered exposure CCDs and MegaPipe tiles carry SATURATE is
           unverified.
-          Anchor: workflow/config/cfis/default_exp.sex#SATUR_KEY = SATURATE;
-          workflow/config/cfis/default_tile.sex#SATUR_KEY = SATURATE;
-          workflow/config/cfis/star_selection.setools#MASK:star_selection.FLAGS = "== 0";
-          workflow/config/cfis/star_selection.setools#MASK:preselect.FLAGS = "== 0";
-          workflow/config/cfis/star_selection.setools#MASK:flag.FLAGS = "== 0";
-          workflow/config/cfis/default_tile.sex#SATUR_LEVEL = absent;
-          workflow/config/cfis/default_exp.sex#SATUR_LEVEL = absent.
+          Values: workflow/config/cfis/default_exp.sex#SATUR_KEY = SATURATE; workflow/config/cfis/default_tile.sex#SATUR_KEY = SATURATE; MASK:star_selection.FLAGS = "== 0"; MASK:preselect.FLAGS = "== 0"; MASK:flag.FLAGS = "== 0"; workflow/config/cfis/default_tile.sex#SATUR_LEVEL = absent; workflow/config/cfis/default_exp.sex#SATUR_LEVEL = absent.
         default: header_saturate
         options:
           header_saturate:
@@ -524,13 +447,7 @@ analyses:
           magnitude window and the catalogue magnitude; FLUX_AUTO is PSFEx's
           photometric normalisation. A different Kron factor shifts magnitudes
           and so every magnitude-based cut.
-          Anchor: workflow/config/cfis/default_tile.sex#PHOT_AUTOPARAMS = 2.5,3.5;
-          workflow/config/cfis/default_exp.sex#PHOT_AUTOPARAMS = 2.5,3.5;
-          workflow/config/cfis/default_tile.sex#PHOT_APERTURES = 5;
-          workflow/config/cfis/default_exp.sex#PHOT_APERTURES = 5;
-          workflow/config/cfis/default_tile.sex#PHOT_FLUXFRAC = 0.5;
-          workflow/config/cfis/default_exp.sex#PHOT_FLUXFRAC = 0.5;
-          workflow/config/cfis/default.psfex#PHOTFLUX_KEY = FLUX_AUTO.
+          Values: workflow/config/cfis/default_tile.sex#PHOT_AUTOPARAMS = 2.5,3.5; workflow/config/cfis/default_exp.sex#PHOT_AUTOPARAMS = 2.5,3.5; workflow/config/cfis/default_tile.sex#PHOT_APERTURES = 5; workflow/config/cfis/default_exp.sex#PHOT_APERTURES = 5; workflow/config/cfis/default_tile.sex#PHOT_FLUXFRAC = 0.5; workflow/config/cfis/default_exp.sex#PHOT_FLUXFRAC = 0.5; PHOTFLUX_KEY = FLUX_AUTO.
         default: kron_25_35
         options:
           kron_25_35:
@@ -544,10 +461,7 @@ analyses:
           catalogue carries no IMAFLAGS_ISO. [LINT]
           final_cat.param, read by the post-processing merge, requests
           IMAFLAGS_ISO, which the tile chain never produces (issue #912).
-          Anchor: workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.DETECTION_IMAGE = False;
-          workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = False;
-          workflow/config/cfis/default_noimaflags.param;
-          workflow/config/cfis/final_cat.param#IMAFLAGS_ISO.
+          Values: SEXTRACTOR_RUNNER.DETECTION_IMAGE = False; SEXTRACTOR_RUNNER.FLAG_IMAGE = False.
         default: sx_nomask_single_image
         options:
           sx_nomask_single_image:
@@ -570,10 +484,7 @@ analyses:
           endpoints match MegaCam's raw DATASEC (2048 pixel indices
           inclusively), but the strict cut excludes both. The excluded strip is
           likely prescan (unverified).
-          Anchor: workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
-          workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True;
-          src/shapepipe/modules/sextractor_package/sextractor_script.py::make_post_process;
-          src/shapepipe/modules/sextractor_package/sextractor_script.py::ccd_candidate_mask.
+          Values: SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612; SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True.
         default: trimmed_bounds_33_2080
         options:
           trimmed_bounds_33_2080:
@@ -654,8 +565,6 @@ analyses:
           (stamp placement, epoch membership, position seeding) uses that
           solution. [HARDCODED] no astrometric re-derivation or refinement
           exists; a joint re-fit would move every stamp centre and position seed.
-          Anchor: src/shapepipe/modules/split_exp_package/split_exp.py::SplitExposures.create_hdus;
-          src/shapepipe/modules/merge_headers_package/merge_headers.py::merge_headers.
         default: delivered_headers
         options:
           delivered_headers:
@@ -669,8 +578,7 @@ analyses:
         rationale: >-
           Any HDU count other than N_HDU raises; every CCD is a candidate
           epoch wherever the WCS lands it.
-          Anchor: workflow/config/cfis/config_exp_Sp.ini#SPLIT_EXP_RUNNER.N_HDU = 40;
-          src/shapepipe/modules/split_exp_package/split_exp.py::SplitExposures.create_hdus.
+          Values: SPLIT_EXP_RUNNER.N_HDU = 40.
         default: all_40_hdus
         options:
           all_40_hdus:
@@ -689,9 +597,7 @@ analyses:
           an epoch letter rather than a prefix, so EXP_PREFIX is blank;
           downstream code drops the p when it needs the bare exposure ID. A
           mis-parse changes N_EPOCH and which exposures are fit.
-          Anchor: workflow/config/cfis/config_tile_Fe.ini#FIND_EXPOSURES_RUNNER.COLNUM = 3;
-          workflow/config/cfis/config_tile_Fe.ini#FIND_EXPOSURES_RUNNER.EXP_PREFIX;
-          src/shapepipe/modules/find_exposures_package/find_exposures.py::FindExposures.get_exposure_list.
+          Values: FIND_EXPOSURES_RUNNER.COLNUM = 3.
         default: history_parse
         options:
           history_parse:
@@ -706,12 +612,7 @@ analyses:
           Windowed, isophotal and model centroids differ systematically for
           blends and asymmetric galaxies, and the centroid feeds the position
           seed and the centroid prior.
-          Anchor: workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_1.POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE;
-          workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_1.COORD = PIX;
-          workflow/config/cfis/config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD;
-          workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD;
-          workflow/config/cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.COORD = SPHE;
-          workflow/config/cfis/config_exp_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE.
+          Values: VIGNETMAKER_RUNNER_RUN_1.POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE; VIGNETMAKER_RUNNER_RUN_1.COORD = PIX; workflow/config/cfis/config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD; VIGNETMAKER_RUNNER_RUN_2.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD; VIGNETMAKER_RUNNER_RUN_2.COORD = SPHE; workflow/config/cfis/config_exp_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE.
         default: xwin_windowed
         options:
           xwin_windowed:
@@ -728,8 +629,6 @@ analyses:
           an image edge are kept, zero-filled outside the image; a stamp
           centre that rounds outside the image raises and fails the vignet
           run for the whole tile.
-          Anchor: src/shapepipe/modules/vignetmaker_package/vignetmaker.py::get_stamps;
-          src/shapepipe/modules/vignetmaker_package/vignetmaker.py::VignetMaker._get_stamp_me.
         default: round_and_zero_pad
         options:
           round_and_zero_pad:
@@ -791,17 +690,7 @@ analyses:
           objects, so small-N behaviour changes selection on sparse CCDs.
           PSFEx's own selection is off; see psfex_candidate_vetting for what
           PSFEx may still apply.
-          Anchor: workflow/config/cfis/star_selection.setools#MASK:star_selection.FLAGS = "== 0";
-          workflow/config/cfis/star_selection.setools#MASK:preselect.FLAGS = "== 0";
-          workflow/config/cfis/star_selection.setools#MASK:star_selection.IMAFLAGS_ISO = "== 0";
-          workflow/config/cfis/star_selection.setools#MASK:preselect.IMAFLAGS_ISO = "== 0";
-          workflow/config/cfis/star_selection.setools#MASK:star_selection.MAG_AUTO = ["> 18.", "< 22."];
-          workflow/config/cfis/star_selection.setools#MASK:star_selection.FWHM_IMAGE = ["<= mode(FWHM_IMAGE{preselect}) + 0.2", ">= mode(FWHM_IMAGE{preselect}) - 0.2"];
-          workflow/config/cfis/star_selection.setools#MASK:preselect.MAG_AUTO = ["> 0", "< 21"];
-          workflow/config/cfis/star_selection.setools#MASK:preselect.FWHM_IMAGE = ["> 0.3 / 0.187", "< 1.5 / 0.187"];
-          workflow/config/cfis/star_selection.setools#PLOT:fwhm_field.SCATTER = "FWHM_IMAGE{star_selection}*0.187";
-          workflow/config/cfis/default.psfex#SAMPLE_AUTOSELECT = N;
-          src/shapepipe/pipeline/str_handler.py::StrInterpreter._mode.
+          Values: MASK:star_selection.FLAGS = "== 0"; MASK:preselect.FLAGS = "== 0"; MASK:star_selection.IMAFLAGS_ISO = "== 0"; MASK:preselect.IMAFLAGS_ISO = "== 0"; MASK:star_selection.MAG_AUTO = ["> 18.", "< 22."]; MASK:star_selection.FWHM_IMAGE = ["<= mode(FWHM_IMAGE{preselect}) + 0.2", ">= mode(FWHM_IMAGE{preselect}) - 0.2"]; MASK:preselect.MAG_AUTO = ["> 0", "< 21"]; MASK:preselect.FWHM_IMAGE = ["> 0.3 / 0.187", "< 1.5 / 0.187"]; PLOT:fwhm_field.SCATTER = "FWHM_IMAGE{star_selection}*0.187"; SAMPLE_AUTOSELECT = N.
         default: mode_centred_box
         options:
           mode_centred_box:
@@ -827,11 +716,7 @@ analyses:
           against an independent residual test. The permutation is seeded
           from the digits of the unit's file number, so a CCD gets the same
           split on every run.
-          Anchor: workflow/config/cfis/star_selection.setools#RAND_SPLIT:star_split.RATIO = 20;
-          src/shapepipe/modules/setools_package/setools.py::SETools._make_rand_split;
-          workflow/config/cfis/config_exp_psfex.ini#PSFEX_RUNNER.FILE_PATTERN = star_split_ratio_80;
-          workflow/config/cfis/config_exp_psfex.ini#PSFEX_INTERP_RUNNER.FILE_PATTERN = star_split_ratio_80,star_split_ratio_20,psfex_cat;
-          workflow/config/cfis/config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.ME_DOT_PSF_PATTERN = star_split_ratio_80.
+          Values: RAND_SPLIT:star_split.RATIO = 20; PSFEX_RUNNER.FILE_PATTERN = star_split_ratio_80; PSFEX_INTERP_RUNNER.FILE_PATTERN = star_split_ratio_80,star_split_ratio_20,psfex_cat; PSFEX_INTERP_RUNNER.ME_DOT_PSF_PATTERN = star_split_ratio_80.
         default: split_80_20_seeded
         options:
           split_80_20_seeded:
@@ -865,16 +750,7 @@ analyses:
           Compiled-in values admit no `= value` assertion, so the anchors
           assert only that each SAMPLE_* key is absent; open issue #919 would
           pin them in default.psfex.
-          Anchor: workflow/config/cfis/default.psfex#SAMPLE_AUTOSELECT = N;
-          workflow/config/cfis/default.psfex#BADPIXEL_FILTER = N;
-          workflow/config/cfis/default.psfex#PSF_RECENTER = N;
-          workflow/config/cfis/default.psfex#SAMPLE_FWHMRANGE = absent;
-          workflow/config/cfis/default.psfex#SAMPLE_VARIABILITY = absent;
-          workflow/config/cfis/default.psfex#SAMPLE_MINSN = absent;
-          workflow/config/cfis/default.psfex#SAMPLE_MAXELLIP = absent;
-          workflow/config/cfis/default.psfex#SAMPLE_FLAGMASK = absent;
-          workflow/config/cfis/default.psfex#SAMPLE_WFLAGMASK = absent;
-          workflow/config/cfis/default.psfex#SAMPLE_IMAFLAGMASK = absent.
+          Values: SAMPLE_AUTOSELECT = N; BADPIXEL_FILTER = N; PSF_RECENTER = N; SAMPLE_FWHMRANGE = absent; SAMPLE_VARIABILITY = absent; SAMPLE_MINSN = absent; SAMPLE_MAXELLIP = absent; SAMPLE_FLAGMASK = absent; SAMPLE_WFLAGMASK = absent; SAMPLE_IMAFLAGMASK = absent.
         default: builtin_defaults
         options:
           builtin_defaults:
@@ -892,17 +768,7 @@ analyses:
           its exposure chain matches PSFEx's: SExtractor reads the split
           image, weight and instrument flag directly, and mask_query sits
           between SExtractor and setools.
-          Anchor: workflow/config.yaml;
-          workflow/config/cfis/config_MCCD.ini#INSTANCE.N_COMP_LOC = 8;
-          workflow/config/cfis/config_MCCD.ini#INSTANCE.D_COMP_GLOB = 8;
-          workflow/config/cfis/config_MCCD.ini#INSTANCE.FP_GEOMETRY = CFIS;
-          workflow/config/cfis/config_MCCD.ini#INSTANCE.RMSE_THRESH = 1.25;
-          workflow/config/cfis/config_MCCD.ini#INPUTS.MIN_N_STARS = 20;
-          workflow/config/cfis/config_exp_mccd.ini#EXECUTION.MODULE = sextractor_runner,mask_query_runner,setools_runner,mccd_preprocessing_runner,mccd_fit_val_runner,merge_starcat_runner,mccd_plots_runner;
-          workflow/config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.INPUT_DIR = $SP_RUN/output/run_sp_exp_Sp/split_exp_runner/output;
-          workflow/config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.FILE_PATTERN = image,weight,flag;
-          workflow/config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = True;
-          src/shapepipe/modules/mccd_package.
+          Values: INSTANCE.N_COMP_LOC = 8; INSTANCE.D_COMP_GLOB = 8; INSTANCE.FP_GEOMETRY = CFIS; INSTANCE.RMSE_THRESH = 1.25; INPUTS.MIN_N_STARS = 20; EXECUTION.MODULE = sextractor_runner,mask_query_runner,setools_runner,mccd_preprocessing_runner,mccd_fit_val_runner,merge_starcat_runner,mccd_plots_runner; SEXTRACTOR_RUNNER.INPUT_DIR = $SP_RUN/output/run_sp_exp_Sp/split_exp_runner/output; SEXTRACTOR_RUNNER.FILE_PATTERN = image,weight,flag; SEXTRACTOR_RUNNER.FLAG_IMAGE = True.
         default: psfex
         options:
           psfex:
@@ -921,13 +787,7 @@ analyses:
           Model flexibility trades overfitting against PSF leakage, the
           dominant additive systematic in cosmic shear.
           Stock values; no rationale recorded.
-          Anchor: workflow/config/cfis/default.psfex#BASIS_TYPE = PIXEL;
-          workflow/config/cfis/default.psfex#PSF_ACCURACY = 0.01;
-          workflow/config/cfis/default.psfex#BASIS_NUMBER = 20;
-          workflow/config/cfis/default.psfex#PSFVAR_DEGREES = 2;
-          workflow/config/cfis/default.psfex#PSF_SAMPLING = 1;
-          workflow/config/cfis/default.psfex#PSFVAR_KEYS = XWIN_IMAGE,YWIN_IMAGE;
-          workflow/config/cfis/default.psfex#MEF_TYPE = INDEPENDENT.
+          Values: BASIS_TYPE = PIXEL; PSF_ACCURACY = 0.01; BASIS_NUMBER = 20; PSFVAR_DEGREES = 2; PSF_SAMPLING = 1; PSFVAR_KEYS = XWIN_IMAGE,YWIN_IMAGE; MEF_TYPE = INDEPENDENT.
         default: pixel_basis_deg2_per_ccd
         options:
           pixel_basis_deg2_per_ccd:
@@ -947,11 +807,7 @@ analyses:
           The pipeline has no minimum-epoch floor: NGMIX_N_EPOCH records what
           survived and epoch-count cuts happen downstream. Guinot+22 discards
           the CCD from PSF estimation rather than gating at interpolation.
-          Anchor: src/shapepipe/modules/psfex_interp_package/psfex_interp.py::PSFExInterpolator.interpsfex;
-          workflow/config/cfis/config_exp_psfex.ini#PSFEX_INTERP_RUNNER.STAR_THRESH = 22;
-          workflow/config/cfis/config_exp_psfex.ini#PSFEX_INTERP_RUNNER.CHI2_THRESH = 2;
-          workflow/config/cfis/config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.STAR_THRESH = 22;
-          workflow/config/cfis/config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.CHI2_THRESH = 2.
+          Values: workflow/config/cfis/config_exp_psfex.ini#PSFEX_INTERP_RUNNER.STAR_THRESH = 22; workflow/config/cfis/config_exp_psfex.ini#PSFEX_INTERP_RUNNER.CHI2_THRESH = 2; workflow/config/cfis/config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.STAR_THRESH = 22; workflow/config/cfis/config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.CHI2_THRESH = 2.
         default: stars22_chi2_2
         options:
           stars22_chi2_2:
@@ -1092,8 +948,6 @@ analyses:
           therefore do not depend on how a tile is chunked, and metacal's
           fixnoise counter-noise cancels across image-simulation branches that
           share an object's box.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::position_seed;
-          src/shapepipe/modules/ngmix_package/ngmix.py::Ngmix.process.
         default: position_seed
         options:
           position_seed:
@@ -1110,7 +964,6 @@ analyses:
           [HARDCODED] ngmix Fitter(model='gauss') for galaxy and PSF. The
           standard defence, that model bias largely cancels in the metacal
           response, is not stated in the code.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::make_runners.
         default: gauss
         options:
           gauss:
@@ -1129,8 +982,6 @@ analyses:
           retries decide which objects converge. A failed fit is flagged; an
           exception during an object's fit drops it with no ngmix row, leaving
           it to the catalogue sentinels (catalogue_assembly.failure_sentinels).
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::make_runners;
-          src/shapepipe/modules/ngmix_package/ngmix.py::Ngmix.process.
         default: prior_guess_t025_ntry5_2
         options:
           prior_guess_t025_ntry5_2:
@@ -1152,11 +1003,7 @@ analyses:
           exposure pixels, and star selection uses 0.187 arcsec/px; the
           ngmix_runner comment says pixel scale also sets a noise window, but
           get_noise is never called.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::get_prior;
-          src/shapepipe/modules/ngmix_package/ngmix.py::get_prior.T_range = -1,1e3;
-          src/shapepipe/modules/ngmix_package/ngmix.py::get_prior.F_range = -100,1e9;
-          src/shapepipe/modules/ngmix_package/ngmix.py::make_runners;
-          workflow/config/cfis/config_tile_Ng_template.ini#NGMIX_RUNNER.PIXEL_SCALE = 0.186.
+          Values: get_prior.T_range = -1,1e3; get_prior.F_range = -100,1e9; NGMIX_RUNNER.PIXEL_SCALE = 0.186.
         default: gpriorba04_flat
         options:
           gpriorba04_flat:
@@ -1177,13 +1024,7 @@ analyses:
           fitgauss and is unset in the committed config; it moves the response
           directly. No sheared-PSF types run, so the catalogue has no PSF
           response term.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::do_ngmix_metacal;
-          src/shapepipe/modules/ngmix_package/ngmix.py::METACAL_TYPES = noshear,1p,1m,2p,2m;
-          src/shapepipe/modules/ngmix_package/ngmix.py::do_ngmix_metacal.metacal_pars[types] = noshear,1p,1m,2p,2m;
-          src/shapepipe/modules/ngmix_package/ngmix.py::do_ngmix_metacal.metacal_pars[step] = 0.01;
-          src/shapepipe/modules/ngmix_package/ngmix.py::do_ngmix_metacal.metacal_pars[fixnoise] = True;
-          src/shapepipe/modules/ngmix_package/ngmix.py::do_ngmix_metacal.metacal_pars[use_noise_image] = True;
-          src/shapepipe/modules/ngmix_runner.py::ngmix_runner.
+          Values: METACAL_TYPES = noshear,1p,1m,2p,2m; do_ngmix_metacal.metacal_pars[types] = noshear,1p,1m,2p,2m; do_ngmix_metacal.metacal_pars[step] = 0.01; do_ngmix_metacal.metacal_pars[fixnoise] = True; do_ngmix_metacal.metacal_pars[use_noise_image] = True.
         default: five_types_step001_fitgauss
         options:
           five_types_step001_fitgauss:
@@ -1201,8 +1042,6 @@ analyses:
           CENTROID_SOURCE). Extraction and prior share one projection and one
           rounding, so they cannot disagree near a rounding tie.
           "hsm" re-centres on adaptive moments measured from the stamp.
-          Anchor: src/shapepipe/modules/ngmix_runner.py::ngmix_runner;
-          src/shapepipe/modules/ngmix_package/ngmix.py::make_ngmix_observation.
         default: wcs
         options:
           wcs:
@@ -1220,7 +1059,6 @@ analyses:
           its weight divided by FSCALE squared (background RMS scaled with the
           image) before the joint fit, so the epochs share the tile's
           zero-point.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::rescale_epoch_fluxes.
         default: fscale
         options:
           fscale:
@@ -1232,8 +1070,6 @@ analyses:
           and metacal reconvolution kernel) are epoch averages weighted by each
           epoch's summed galaxy inverse variance; epochs whose PSF fit failed
           are left out. These columns feed downstream PSF-leakage estimates.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::_average_psf_fits;
-          src/shapepipe/modules/ngmix_package/ngmix.py::average_original_psf.
         default: galaxy_weight_sum
         options:
           galaxy_weight_sum:
@@ -1247,9 +1083,7 @@ analyses:
           fallback is a scalar 1/sigma_mad^2. Each epoch is
           background-subtracted with the SExtractor background vignet
           (BKG_SUB, on unless set False).
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::prepare_ngmix_weights;
-          src/shapepipe/modules/ngmix_package/ngmix.py::background_subtract;
-          workflow/config/cfis/config_tile_Ng_template.ini#NGMIX_RUNNER.BKG_RMS_VIGNET_PATH = $NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output/background_rms_vignet{file_number_string}.sqlite.
+          Values: NGMIX_RUNNER.BKG_RMS_VIGNET_PATH = $NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output/background_rms_vignet{file_number_string}.sqlite.
         default: rms_vignet_weights
         options:
           rms_vignet_weights:
@@ -1265,8 +1099,7 @@ analyses:
           without it the g-prior swamps the PSF likelihood. The recovered PSF
           shape and size are flat for PSF_NOISE from 1e-4 to 1e-6 on the
           digital twin.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::PSF_NOISE = 1e-5;
-          src/shapepipe/modules/ngmix_package/ngmix.py::make_ngmix_observation.
+          Values: PSF_NOISE = 1e-5.
         default: psf_noise_1em5
         options:
           psf_noise_1em5:
@@ -1279,7 +1112,6 @@ analyses:
           A wrong flip mis-registers the tile coverage flag against the epoch,
           changing flagged pixels and the masked-fraction cut. The docstring
           warns it is wrong for THELI CCDs.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::Ngmix.MegaCamFlip.
         default: megapipe_flip
         options:
           megapipe_flip:
@@ -1309,9 +1141,6 @@ analyses:
           (symmetrized_4fold_noise). The cost of not symmetrizing, a hole in
           the galaxy light, is bounded by central_defect_veto. Noise stays the
           default until a survey A/B against interpolation.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::prepare_ngmix_weights;
-          src/shapepipe/modules/ngmix_package/ngmix.py::do_ngmix_metacal;
-          src/shapepipe/modules/ngmix_runner.py::ngmix_runner.
         default: noise
         options:
           noise:
@@ -1385,9 +1214,6 @@ analyses:
           instead cut the target's own light along an unsheared boundary, a
           sharp edge that rings in the FFTs. The recommended comparison arm is
           uberseg (weight-only), with defect_fill held equal across arms.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::uberseg_weight;
-          src/shapepipe/modules/ngmix_package/ngmix.py::prepare_ngmix_weights;
-          src/shapepipe/modules/ngmix_runner.py::ngmix_runner.
         default: none
         options:
           none:
@@ -1443,7 +1269,6 @@ analyses:
           -0.98%; -0.24% at 11 px), and noise fill needs 14 px for 0.7 and 0.9
           arcsec galaxies. Measured on feat/defect-fill-veto and
           feat/defect-interpolation.
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::prepare_postage_stamps.
         default: disabled
         options:
           disabled:
@@ -1479,7 +1304,6 @@ analyses:
           DES, so the cost in effective number density has to be measured,
           not assumed. A defect near the centre is handled separately
           (central_defect_veto).
-          Anchor: src/shapepipe/modules/ngmix_package/ngmix.py::prepare_postage_stamps.
         default: one_third
         options:
           one_third:
@@ -1890,10 +1714,7 @@ analyses:
           and 0.01, are bypassed); the committed config sets neither key, so
           enabling classification alone raises. Unlike Guinot+22
           (guinot22_spread_model_cut), it applies no s > 0 or magnitude cut.
-          Anchor: workflow/config/cfis/config_tile_Mc.ini#MAKE_CAT_RUNNER.SM_DO_CLASSIFICATION = False;
-          src/shapepipe/modules/make_cat_runner.py::make_cat_runner;
-          src/shapepipe/modules/make_cat_package/make_cat.py::save_sm_data;
-          workflow/config/cfis/final_cat.param#SPREAD_CLASS.
+          Values: MAKE_CAT_RUNNER.SM_DO_CLASSIFICATION = False.
         default: deferred_downstream
         options:
           deferred_downstream:
@@ -1912,8 +1733,6 @@ analyses:
           both. [HARDCODED] make_cat attaches only TILE_ID; with no
           unique-object rule or overlap flag, duplicates are left to
           downstream selection.
-          Anchor: src/shapepipe/modules/make_cat_package/make_cat.py::save_sextractor_data;
-          src/shapepipe/modules/make_cat_package/__init__.py.
         default: no_dedup_in_pipeline
         options:
           no_dedup_in_pipeline:
@@ -1937,7 +1756,6 @@ analyses:
           NGMIX_N_EPOCH 0. A failed object's NGMIX_MCAL_FLAGS reads 0, the
           success value, so a cut on flags alone keeps it; NGMIX_N_EPOCH > 0
           removes it.
-          Anchor: src/shapepipe/modules/make_cat_package/make_cat.py::SaveCatalogue._save_ngmix_data.
         default: sentinel_values
         options:
           sentinel_values:

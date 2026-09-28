@@ -1,3 +1,4 @@
+# @sc [decision:detection.detection_threshold_policy,scope:file]
 CONV NORM
 # 7x7 convolution mask of a gaussian PSF with FWHM = 3.0 pixels.
 0.004963 0.021388 0.051328 0.068707 0.051328 0.021388 0.004963

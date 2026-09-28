@@ -1,3 +1,4 @@
+# @sc [decision:star_selection_psf.psf_modelling_software,scope:file]
 # Run configuration for the ShapePipe Snakemake workflow.
 #
 # A "run" is declared by a tile list plus the paths below. Everything here is

@@ -1,3 +1,4 @@
+# @sc [decision:catalogue_assembly.star_galaxy_classification,scope:file]
 # coordinates
 XWIN_WORLD
 YWIN_WORLD
@@ -8,7 +9,10 @@ TILE_ID
 
 # flags
 FLAGS
+
+# @sc [decision:detection.detection_source_mode]
 IMAFLAGS_ISO
+
 NGMIX_MCAL_FLAGS
 
 # PSF ellipticity (original image PSF)

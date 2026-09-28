@@ -45,6 +45,7 @@ def make_cat_runner(
     thresholds must come from SM_STAR_THRESH and SM_GAL_THRESH; the function
     defaults of :func:`make_cat.save_sm_data` are never used.
 
+    @sc [decision:masking.sky_mask_application]
     """
     # Set input file paths
     if len(input_file_list) == 3:

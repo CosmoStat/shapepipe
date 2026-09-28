@@ -12,6 +12,9 @@ from tests.helpers.decisions import (
     import_violations,
     load_yaml,
     main,
+    repository_errors,
+    _iter_decision_defs,
+    _parse_values,
     scan_tags,
     tag_errors,
     value_errors,
@@ -418,6 +421,18 @@ def test_cli_reports_decision_and_local_contract_for_a_location(tmp_path, capsys
     assert "Values: THRESH = 1." in output
     assert "threshold-coupling" in output
     assert "The threshold must remain coupled." in output
+
+
+def test_repository_decisions_have_sites_and_all_values_match():
+    errors = repository_errors(REPO_ROOT)
+    assert not errors, errors
+
+    record = load_yaml(REPO_ROOT / "astra.yaml")
+    values_count = sum(
+        len(_parse_values(definition.get("rationale", ""))[0])
+        for _, definition in _iter_decision_defs(record)
+    )
+    assert values_count == 151
 
 
 def test_preserved_utilities_import_rule(tmp_path):

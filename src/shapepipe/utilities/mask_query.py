@@ -210,6 +210,7 @@ def query_map(path, ra, dec):
         Map value at each position; positions outside the map's coverage carry
         the map's sentinel value
 
+    @sc [decision:masking.sky_mask_application]
     """
     values, _ = query_map_coverage(path, ra, dec)
 

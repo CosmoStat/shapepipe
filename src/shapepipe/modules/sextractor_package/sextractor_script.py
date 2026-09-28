@@ -478,6 +478,7 @@ class SExtractorCaller:
         zp_key: str
             Header key corresponding to the zero point
 
+        @sc [decision:photometric_zeropoint]
         """
         if use_zp and not isinstance(zp_key, type(None)):
             zp_value = get_header_value(self._meas_img_path, zp_key)
@@ -495,6 +496,7 @@ class SExtractorCaller:
         bkg_key: str
             Header key corresponding to the background value
 
+        @sc [decision:detection.background_model]
         """
         if use_bkg and not isinstance(bkg_key, type(None)):
             bkg_value = get_header_value(self._meas_img_path, bkg_key)

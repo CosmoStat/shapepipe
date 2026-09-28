@@ -313,6 +313,7 @@ class VignetMaker(object):
         dict
             Dictionary containing object id and vignets for each epoch
 
+        @sc [decision:preparation.stamp_positioning_and_padding]
         """
         cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()

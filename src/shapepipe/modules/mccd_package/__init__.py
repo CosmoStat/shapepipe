@@ -175,6 +175,7 @@ REMOVE_OUTLIERS: bool
     Option to remove validated stars that are outliers in terms of shape
     before drawing the plots
 
+@sc [decision:star_selection_psf.psf_modelling_software]
 """
 
 __all__ = [
