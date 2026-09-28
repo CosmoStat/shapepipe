@@ -13,12 +13,15 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from snakemake.exceptions import WorkflowError
 
 WORKFLOW = Path(__file__).resolve().parents[2] / "workflow"
 SNAKEFILE = WORKFLOW / "Snakefile"
 PRODUCTS = "/sentinel/products"
 EXPOSURES = ["2605805", "2700001"]
+
+
+class WorkflowError(Exception):
+    """Stand-in for snakemake.exceptions.WorkflowError, which the image lacks."""
 
 
 def _namespace(psf_model, tmp_path, *, main=True):
