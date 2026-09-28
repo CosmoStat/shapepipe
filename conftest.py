@@ -28,6 +28,16 @@ settings.register_profile("dev", max_examples=200)
 settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "ci"))
 
 
+# ``tests/workflow/`` drives the Snakefile through snakemake's API. Snakemake is
+# a host tool, not part of the image (it wraps each job in the container), so
+# where it is absent the directory is left out of collection; CI runs it in its
+# own step after installing snakemake (deploy-image.yml).
+try:
+    import snakemake  # noqa: F401
+except ModuleNotFoundError:
+    collect_ignore = ["tests/workflow"]
+
+
 # --------------------------------------------------------------------------- #
 # Candide detection
 # --------------------------------------------------------------------------- #
