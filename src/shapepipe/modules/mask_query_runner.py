@@ -32,9 +32,7 @@ def mask_query_runner(
     Without MASK_PATHS the catalogue passes through with no MASK_EXT column;
     with it, MASK_EXT is carried for measurement and nothing here removes a
     star. The PSF-star veto is a setools edit (``MASK_EXT == 0`` beside
-    IMAFLAGS_ISO), not a change here. The workflow/rules/exposure.smk docstring
-    calls the column FLAG_EXT and says setools cuts on it, a [LINT] the
-    decision record carries.
+    IMAFLAGS_ISO), not a change here.
 
     """
     sexcat_path = input_file_list[0]

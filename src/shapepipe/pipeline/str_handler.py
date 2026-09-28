@@ -262,8 +262,7 @@ class StrInterpreter(object):
         Below 20 objects the result is the median; from 20 up it is the
         iterative histogram-zoom mode. The star-selection FWHM box is centred
         on this value, so moving the threshold or the binning changes which
-        stars train the PSF on sparse CCDs. The Returns section below puts the
-        fallback at 10, a [LINT] the decision record carries.
+        stars train the PSF on sparse CCDs.
 
         Parameters
         ----------

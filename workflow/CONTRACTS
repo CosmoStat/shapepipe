@@ -6,8 +6,7 @@ sc-list includes this file when queried for config.yaml or any config below work
 Refs in governs: are relative to this directory and use the shared ASTRA anchor resolver; config.yaml is a whole-file ref because the resolver has no YAML-key selector.
 CFIS key-level contracts live in config/cfis/CONTRACTS.
 
-@sc [decision:star_selection_psf.psf_modelling_software,governs:config.yaml;config/cfis/config_exp_psfex.ini#EXECUTION.MODULE;config/cfis/config_tile_PiViVi_psfex.ini#EXECUTION.MODULE;config/cfis/config_exp_mccd.ini#EXECUTION.MODULE;config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.INPUT_MODULE;config/cfis/config_tile_PiViVi_mccd.ini#EXECUTION.MODULE;config/cfis/config_MCCD.ini#INSTANCE.FP_GEOMETRY] psf-model-selects-a-matched-chain
+@sc [decision:star_selection_psf.psf_modelling_software,governs:config.yaml;config/cfis/config_exp_psfex.ini#EXECUTION.MODULE;config/cfis/config_tile_PiViVi_psfex.ini#EXECUTION.MODULE;config/cfis/config_exp_mccd.ini#EXECUTION.MODULE;config/cfis/config_tile_PiViVi_mccd.ini#EXECUTION.MODULE;config/cfis/config_MCCD.ini#INSTANCE.FP_GEOMETRY] psf-model-selects-a-matched-chain
 The psf_model selector must choose a matching exposure-model producer and tile-interpolation consumer, including the model selected through SP_PSF in downstream inputs.
 PSFEx models each CCD independently; MCCD couples the focal plane, so switching software changes the scientific model, not just the executable name.
-[LINT] the committed MCCD exposure config still requests the removed mask_runner; repair that input chain and validate the focal-plane model before treating MCCD as a runnable alternative.
-Warning-only completeness counts for the untested MCCD chain do not establish scientific equivalence to the PSFEx chain.
+The MCCD exposure chain shares PSFEx's detection inputs, mask_query and star selection, but no campaign has validated its focal-plane model; its warning-only completeness counts do not establish scientific equivalence to the PSFEx chain.

@@ -6,8 +6,7 @@ A mandatory runner below its ``expect`` count fails its whole unit (an
 exposure, a tile or an ngmix chunk), so a partial unit never reaches the
 catalogue. On the psfex path only exposure-side psfex_interp may fall short (a
 CCD rejected by the acceptance gate writes nothing); the never-run MCCD chain
-warns throughout. The ``warn`` field note below cites tile psfex_interp as its
-example, but that runner is mandatory, a [LINT] the decision record carries.
+warns throughout.
 
 This is the ported ``complete_check`` count table from the v2.0 bash layer
 (``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4): every non-warning

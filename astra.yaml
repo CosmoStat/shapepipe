@@ -97,15 +97,17 @@ decisions:
       appear at all. The one tolerated shortfall is the exposure-side
       psfex_interp VALIDATION output, where a CCD whose model fails the
       acceptance gate (star_selection_psf.psf_acceptance_thresholds)
-      produces nothing and the unit only warns; the MCCD chain, never
-      run in a campaign, warns on every runner. Science-path PSF
-      rejection does not go through this table: psfex_interp drops the
-      epoch per object inside the tile run. [LINT] the completeness.py
-      docstring gives tile psfex_interp as its warn example, but that
-      runner is mandatory, and a workflow/rules/exposure.smk comment
-      says a floor's :warn tolerates setools rejecting a sparse CCD, but
-      setools has a mandatory count and no floor exists.
-      Anchor: workflow/scripts/completeness.py::COMPLETENESS.
+      produces nothing and the unit only warns. The MCCD chain, never
+      run in a campaign, warns on every runner; its counts follow
+      config_exp_mccd.ini, with one mask_query catalogue per CCD and
+      preprocessing merging an exposure's stars into one train and one
+      test catalogue. Science-path PSF rejection does not go through
+      this table: psfex_interp drops the epoch per object inside the
+      tile run.
+      Anchor: workflow/scripts/completeness.py::COMPLETENESS;
+      workflow/scripts/completeness.py::COMPLETENESS[exp_psf.psfex.psfex_interp_runner.warn] = True;
+      workflow/scripts/completeness.py::COMPLETENESS[exp_psf.mccd.mask_query_runner.expect] = 40;
+      workflow/scripts/completeness.py::COMPLETENESS[exp_psf.mccd.mccd_preprocessing_runner.expect] = 2.
     default: exact_counts
     options:
       exact_counts:
@@ -278,9 +280,7 @@ analyses:
           bits 0 and 1 are excluded because halos say nothing about
           whether a star is a good PSF sample. Imposing the veto is
           one line per mask block in star_selection.setools
-          (MASK_EXT == 0). [LINT] the workflow/rules/exposure.smk
-          docstring names the column FLAG_EXT and says setools cuts
-          on it; the code writes MASK_EXT and nothing cuts on it.
+          (MASK_EXT == 0).
           Anchor: workflow/config/cfis/config_exp_psfex.ini;
           workflow/config/cfis/star_selection.setools#MASK:star_selection.IMAFLAGS_ISO = "== 0";
           workflow/config/cfis/star_selection.setools#MASK:preselect.IMAFLAGS_ISO = "== 0";
@@ -593,7 +593,7 @@ analyses:
           image and no detection coadd exists, so detection sees every tile
           pixel and the tile catalogue carries no IMAFLAGS_ISO. [LINT]
           final_cat.param, read by the post-processing merge, requests
-          IMAFLAGS_ISO, which the tile chain never produces.
+          IMAFLAGS_ISO, which the tile chain never produces (issue #912).
           Anchor: workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.DETECTION_IMAGE = False;
           workflow/config/cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = False;
           workflow/config/cfis/default_noimaflags.param;
@@ -738,20 +738,20 @@ analyses:
         rationale: >-
           A tile's contributing exposures are the file names in
           column 3 (COLNUM) of each HISTORY line, stripped of their
-          extension and deduplicated: the coadd's own provenance is
-          trusted as the epoch list. Names keep their trailing p
-          (2243881p); downstream code drops it when it needs the
-          bare exposure ID. A mis-parse changes N_EPOCH and which
-          exposures are fit. [LINT] EXP_PREFIX = p is passed to
-          removeprefix, which does nothing to names where p is a
-          suffix, so the key has no effect.
+          full extension and deduplicated: the coadd's own provenance
+          is trusted as the epoch list, and a tile whose header cannot
+          be read fails rather than yielding an empty list. Names keep
+          their trailing p (2243881p), an epoch letter rather than a
+          prefix, so EXP_PREFIX is blank in the CFIS config;
+          downstream code drops the p when it needs the bare exposure
+          ID. A mis-parse changes N_EPOCH and which exposures are fit.
           Anchor: workflow/config/cfis/config_tile_Fe.ini#FIND_EXPOSURES_RUNNER.COLNUM = 3;
-          workflow/config/cfis/config_tile_Fe.ini#FIND_EXPOSURES_RUNNER.EXP_PREFIX = p;
+          workflow/config/cfis/config_tile_Fe.ini#FIND_EXPOSURES_RUNNER.EXP_PREFIX;
           src/shapepipe/modules/find_exposures_package/find_exposures.py::FindExposures.get_exposure_list.
         default: history_parse
         options:
           history_parse:
-            label: HISTORY column 3, prefix p, deduplicated
+            label: HISTORY column 3, no prefix stripped, deduplicated
       object_position_columns:
         label: Windowed centroids (XWIN/YWIN) define every position
         rationale: >-
@@ -853,10 +853,6 @@ analyses:
           behaviour changes selection on sparse CCDs. PSFEx's own
           selection is off (SAMPLE_AUTOSELECT N); see
           psfex_candidate_vetting for what PSFEx may still apply.
-          [LINT] the file's statistics log the FWHM cut as mode +-
-          0.1 px and its plot uses 0.186 arcsec/px, while the
-          applied cut is +- 0.2 px at 0.187; the _mode docstring
-          puts the median fallback at 10 objects, the code at 20.
           Anchor: workflow/config/cfis/star_selection.setools#MASK:star_selection.FLAGS = "== 0";
           workflow/config/cfis/star_selection.setools#MASK:preselect.FLAGS = "== 0";
           workflow/config/cfis/star_selection.setools#MASK:star_selection.IMAFLAGS_ISO = "== 0";
@@ -865,7 +861,7 @@ analyses:
           workflow/config/cfis/star_selection.setools#MASK:star_selection.FWHM_IMAGE = ["<= mode(FWHM_IMAGE{preselect}) + 0.2", ">= mode(FWHM_IMAGE{preselect}) - 0.2"];
           workflow/config/cfis/star_selection.setools#MASK:preselect.MAG_AUTO = ["> 0", "< 21"];
           workflow/config/cfis/star_selection.setools#MASK:preselect.FWHM_IMAGE = ["> 0.3 / 0.187", "< 1.5 / 0.187"];
-          workflow/config/cfis/star_selection.setools#PLOT:fwhm_field.SCATTER = "FWHM_IMAGE{star_selection}*0.186";
+          workflow/config/cfis/star_selection.setools#PLOT:fwhm_field.SCATTER = "FWHM_IMAGE{star_selection}*0.187";
           workflow/config/cfis/default.psfex#SAMPLE_AUTOSELECT = N;
           src/shapepipe/pipeline/str_handler.py::StrInterpreter._mode.
         default: mode_centred_box
@@ -960,17 +956,20 @@ analyses:
           (FP_GEOMETRY CFIS; N_COMP_LOC 8, D_COMP_GLOB 8,
           MIN_N_STARS 20, RMSE_THRESH 1.25); the completeness table
           treats its counts as warnings because no campaign has run
-          it. [LINT] config_exp_mccd.ini still reads pipeline_flag
-          images from mask_runner, which no longer exists, so the
-          MCCD exposure chain cannot run as committed.
+          it. Up to the model, its exposure chain matches PSFEx's:
+          SExtractor reads the split image, weight and instrument
+          flag directly, and mask_query sits between SExtractor and
+          setools.
           Anchor: workflow/config.yaml;
           workflow/config/cfis/config_MCCD.ini#INSTANCE.N_COMP_LOC = 8;
           workflow/config/cfis/config_MCCD.ini#INSTANCE.D_COMP_GLOB = 8;
           workflow/config/cfis/config_MCCD.ini#INSTANCE.FP_GEOMETRY = CFIS;
           workflow/config/cfis/config_MCCD.ini#INSTANCE.RMSE_THRESH = 1.25;
           workflow/config/cfis/config_MCCD.ini#INPUTS.MIN_N_STARS = 20;
-          workflow/config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.INPUT_MODULE = split_exp_runner,mask_runner;
-          workflow/config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.FILE_PATTERN = image,weight,pipeline_flag;
+          workflow/config/cfis/config_exp_mccd.ini#EXECUTION.MODULE = sextractor_runner,mask_query_runner,setools_runner,mccd_preprocessing_runner,mccd_fit_val_runner,merge_starcat_runner,mccd_plots_runner;
+          workflow/config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.INPUT_DIR = $SP_RUN/output/run_sp_exp_Sp/split_exp_runner/output;
+          workflow/config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.FILE_PATTERN = image,weight,flag;
+          workflow/config/cfis/config_exp_mccd.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = True;
           src/shapepipe/modules/mccd_package.
         default: psfex
         options:
@@ -2025,9 +2024,6 @@ analyses:
           measured in both. [HARDCODED] make_cat attaches only
           TILE_ID; there is no unique-object rule and no overlap
           flag, so duplicates are left to downstream selection.
-          [LINT] the make_cat package docstring documents a
-          TILE_LIST key that flags overlap objects; nothing
-          implements it.
           Anchor: src/shapepipe/modules/make_cat_package/make_cat.py::save_sextractor_data;
           src/shapepipe/modules/make_cat_package/__init__.py.
         default: no_dedup_in_pipeline

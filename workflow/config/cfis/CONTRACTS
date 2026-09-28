@@ -57,13 +57,13 @@ Aperture diameter and flux fraction also define reported measurements; they must
 @sc [decision:detection.detection_source_mode,governs:config_tile_Sx.ini#SEXTRACTOR_RUNNER.DETECTION_IMAGE;config_tile_Sx.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE;config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_PARAM_FILE;default_tile.sex#PARAMETERS_NAME;default_noimaflags.param;final_cat.param#IMAFLAGS_ISO] tile-detection-has-no-instrument-flags
 Tile detection uses the r-band tile itself, with no separate detection coadd or instrument flag image; keep the requested columns consistent with those inputs.
 The runner's DOT_PARAM_FILE overrides PARAMETERS_NAME and deliberately selects the list without IMAFLAGS_ISO.
-[LINT] final_cat.param requests IMAFLAGS_ISO although this tile chain never produces it; resolve the export/input mismatch rather than inventing a clean mask column or assuming FLAG_IMAGE alone supplies a mask.
+[LINT] final_cat.param requests IMAFLAGS_ISO although this tile chain never produces it (issue #912); resolve the export/input mismatch rather than inventing a clean mask column or assuming FLAG_IMAGE alone supplies a mask.
 
 Shared pixel data and calibration
 ---------------------------------
 
-@sc [decision:masking.pixel_mask_source,governs:config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE;config_exp_psfex.ini#SEXTRACTOR_RUNNER.FILE_PATTERN;config_exp_psfex.ini#SEXTRACTOR_RUNNER.INPUT_DIR;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_PATTERN;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_EXP_RUNNERS;star_selection.setools#MASK:star_selection.IMAFLAGS_ISO] instrument-flags-share-pixel-provenance
-Exposure IMAFLAGS_ISO and the multi-epoch flag stamps must come from the same delivered instrument flag image split per CCD.
+@sc [decision:masking.pixel_mask_source,governs:config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE;config_exp_psfex.ini#SEXTRACTOR_RUNNER.FILE_PATTERN;config_exp_psfex.ini#SEXTRACTOR_RUNNER.INPUT_DIR;config_exp_mccd.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE;config_exp_mccd.ini#SEXTRACTOR_RUNNER.FILE_PATTERN;config_exp_mccd.ini#SEXTRACTOR_RUNNER.INPUT_DIR;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_PATTERN;config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_EXP_RUNNERS;star_selection.setools#MASK:star_selection.IMAFLAGS_ISO] instrument-flags-share-pixel-provenance
+Exposure IMAFLAGS_ISO, under either PSF chain, and the multi-epoch flag stamps must come from the same delivered instrument flag image split per CCD.
 Keep the ME_IMAGE_PATTERN and ME_IMAGE_EXP_RUNNERS lists aligned so a flag stamp cannot silently become an image, weight or sky-mask product.
 Sky-fixed healsparse masks remain object-level catalogue information; substituting or rasterising them into this pixel path changes the masking decision.
 
@@ -105,7 +105,7 @@ BADPIXEL_FILTER and PSF_RECENTER also change the candidate pixels or positions, 
 @sc [decision:star_selection_psf.star_selection_box,governs:config_tile_Ng_template.ini#NGMIX_RUNNER.PIXEL_SCALE;default_exp.sex#PIXEL_SCALE;star_selection.setools#MASK:preselect.FWHM_IMAGE;star_selection.setools#MASK:star_selection.FWHM_IMAGE;star_selection.setools#PLOT:fwhm_field.SCATTER;star_selection.setools] exposure-size-conventions-agree
 Conversions of the same exposure pixels must use a consistent exposure scale for stellar-size selection, diagnostics and ngmix's one-pixel centroid prior; tile resampling is not a reason to assign a tile scale to epoch stamps.
 Diagnostic labels and statistics must describe the cut actually applied.
-[LINT] ngmix and the FWHM map use 0.186 arcsec/px while preselection uses 0.187, and the statistics report a narrower FWHM window than selection applies; reconcile these with the exposure convention rather than propagating the mismatch.
+[LINT] ngmix's PIXEL_SCALE is 0.186 arcsec/px while star selection's cuts, plot and statistics use 0.187; reconcile ngmix with the exposure convention rather than propagating the mismatch.
 
 Catalogue export
 ----------------
@@ -113,4 +113,4 @@ Catalogue export
 @sc [decision:catalogue_assembly.tile_overlap_handling,governs:config_tile_Mc.ini#MAKE_CAT_RUNNER.NUMBER_LIST;final_cat.param#TILE_ID] tile-id-is-provenance-not-deduplication
 Preserve TILE_ID when exporting the per-tile catalogues: overlapping tiles can contain separate measurements of the same sky object, and TILE_ID is the supplied provenance, not a uniqueness flag.
 NUMBER_LIST selects a tile to assemble, not a disjoint sky region; duplicate removal remains downstream.
-The documented TILE_LIST overlap flag is unimplemented, so adding that key cannot make this catalogue unique or flag its overlaps.
+No key flags or removes overlap objects, so making this catalogue unique or flagging its overlaps needs new code, not a config change.
