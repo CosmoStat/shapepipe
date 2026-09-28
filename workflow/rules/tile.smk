@@ -46,10 +46,9 @@ with two rules: tile_get_catalogue fetches the UNIONS per-tile catalogue
 (get_images_runner, config_tile_Gic.ini) and tile_detect converts it to the
 FITS-LDAC sexcat SExtractor would have written (read_ext_sexcat_runner,
 config_tile_Uc.ini), with the tile image's header, VIGNET stamps cut from the
-tile image, the multi-epoch post-processing, and the catalogue's per-tile
-unique object ID as ``TILE_UNIQUE_ID`` -- a column make_cat carries into the
-final catalogue with every other sexcat column. The converter writes
-run_sp_tile_Sx/read_ext_sexcat_runner, and the rule links it as
+tile image, and the multi-epoch post-processing. It keeps the catalogue's own
+NUMBER, from which make_cat builds ``TILE_UNIQUE_ID`` exactly as in SExtractor
+mode. The converter writes run_sp_tile_Sx/read_ext_sexcat_runner, and the rule links it as
 sextractor_runner, the one path every downstream config reads; the manifest is
 tile_detect.json in both modes, so tile_vignets onwards is the same DAG. What
 Steven's catalogue does not carry is a segmentation map, and ngmix's
@@ -680,7 +679,7 @@ rule tile_vignets:
                  check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}')
 
 # ngmix shape measurement — N chunks per tile (D4). Each chunk LOOKS UP its own
-# CLOSED object-ID range in the file tile_vignets materialised at the top of this
+# CLOSED catalogue-row range in the file tile_vignets materialised at the top of this
 # group job (TILE_NGMIX_RANGES); the ranges are knowable only at EXECUTION time,
 # from this tile's own sexcat, which is why a params function cannot supply them.
 # Closed, not open-ended: `ID_OBJ_MAX = -1` on the last chunk was the 13-hour

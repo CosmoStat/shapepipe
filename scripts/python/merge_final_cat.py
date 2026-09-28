@@ -252,9 +252,8 @@ def filter_available_columns(param_list, available_columns):
 
     Return the subset of ``param_list`` present in ``available_columns``,
     printing one line for each requested column that is missing (e.g.
-    ``TILE_UNIQUE_ID``, present only in catalogues produced with
-    ``tile_detection: unions_catalogue``) so the merge still proceeds for
-    catalogues produced with other tile-detection settings.
+    ``TILE_UNIQUE_ID``, absent from final catalogues made before make_cat
+    wrote it) so the merge still proceeds for such catalogues.
 
     Parameters
     ----------
@@ -383,7 +382,7 @@ def main(argv=None):
         print(f"{len(lpath)} files files to merge found")
 
     # Drop requested columns absent from the catalogues (e.g. TILE_UNIQUE_ID
-    # for tile_detection: sextractor runs) so the merge still proceeds.
+    # in older final catalogues) so the merge still proceeds.
     with fits.open(lpath[0]) as hdu_list:
         available_columns = hdu_list[param.hdu_num].columns.names
     param.param_list = filter_available_columns(

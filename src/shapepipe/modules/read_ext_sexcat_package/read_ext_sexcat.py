@@ -94,15 +94,13 @@ def _extract_vignets(image_data, x_pos, y_pos, stamp_size):
     return vignets
 
 
-def _build_ldac_objects(cat_data, unique_id, vignets):
+def _build_ldac_objects(cat_data, vignets):
     """Build LDAC_OBJECTS extension from an astropy table.
 
     Parameters
     ----------
     cat_data : astropy.table.Table
         Catalogue data read from the ASCII SExtractor file
-    unique_id : numpy.ndarray
-        1-D int64 array of per-object unique IDs across all tiles
     vignets : numpy.ndarray
         Array of shape ``(n_obj, stamp_size, stamp_size)``
 
@@ -126,10 +124,6 @@ def _build_ldac_objects(cat_data, unique_id, vignets):
         else:
             fmt = f"{arr.dtype.itemsize}A"
         fits_cols.append(fits.Column(name=colname, format=fmt, array=arr))
-
-    fits_cols.append(
-        fits.Column(name="TILE_UNIQUE_ID", format="K", array=unique_id)
-    )
 
     _aliases = {
         "XWIN_IMAGE": "X_IMAGE",
@@ -162,46 +156,10 @@ def _build_ldac_objects(cat_data, unique_id, vignets):
     return hdu
 
 
-def _tile_id_from_file_number_string(file_number_string):
-    """Decode file-number string into a collision-free tile ID.
-
-    CFIS tile file-number strings are of the form ``'-RRR-DDD'`` where
-    ``RRR`` is the RA grid index and ``DDD`` the dec grid index (both
-    3-digit).  The encoded tile_id is ``RRR * 1000 + DDD``; the 3-digit
-    assumption is an invariant of the CFIS grid, not a data assumption,
-    so we assert it rather than silently overflowing.
-
-    Parameters
-    ----------
-    file_number_string : str
-        Pipeline file-number string, e.g. ``'-301-279'``
-
-    Returns
-    -------
-    int
-        Collision-free tile_id (e.g. ``301279``)
-
-    Raises
-    ------
-    ValueError
-        If either grid component exceeds three digits.
-
-    """
-    parts = file_number_string.lstrip("-").split("-")
-    ra_idx, dec_idx = int(parts[0]), int(parts[1])
-    if not (0 <= ra_idx < 1000 and 0 <= dec_idx < 1000):
-        raise ValueError(
-            f"file_number_string {file_number_string!r}: both grid "
-            f"components must be in [0, 1000); got ra={ra_idx}, dec={dec_idx}"
-        )
-    return ra_idx * 1000 + dec_idx
-
-
 def make_ldac_from_ascii(
     input_cat_path,
     image_path,
     output_cat_path,
-    file_number_string,
     stamp_size=51,
     w_log=None,
 ):
@@ -214,18 +172,9 @@ def make_ldac_from_ascii(
     writes a standard FITS-LDAC file compatible with all downstream ShapePipe
     modules.
 
-    A ``TILE_UNIQUE_ID`` column and a ``VIGNET`` column (postage stamps
-    extracted from the tile image) are added to ``LDAC_OBJECTS``.
-
-    The unique ID is computed as ``tile_id * 10**6 + NUMBER`` where
-    ``tile_id`` is derived from the tile RA/Dec grid coordinates encoded in
-    ``file_number_string`` (e.g. ``'-301-279'`` → ``tile_id = 301279``) and
-    ``NUMBER`` is the input catalogue's original object number, so
-    ``TILE_UNIQUE_ID`` preserves the identity assigned upstream. The
-    ``NUMBER`` column written to ``LDAC_OBJECTS`` is then overwritten with a
-    running index ``1..n_obj`` in output row order: downstream ShapePipe
-    (e.g. ``ngmix_range``) assumes a contiguous, in-order ``NUMBER``, which
-    the input catalogue is not guaranteed to have.
+    The input columns, ``NUMBER`` included, are copied unchanged; a
+    ``VIGNET`` column (postage stamps extracted from the tile image) is
+    added to ``LDAC_OBJECTS``.
 
     Parameters
     ----------
@@ -235,8 +184,6 @@ def make_ldac_from_ascii(
         Path to tile image FITS file
     output_cat_path : str
         Path to the output FITS-LDAC catalogue
-    file_number_string : str
-        Pipeline file-number string, e.g. ``'-301-279'``
     stamp_size : int, optional
         Side length of the square postage stamp in pixels, default 51
     w_log : logging.Logger, optional
@@ -247,16 +194,6 @@ def make_ldac_from_ascii(
     n_obj = len(cat_data)
     if w_log:
         w_log.info(f"Read {n_obj} objects from {input_cat_path}")
-
-    tile_id = _tile_id_from_file_number_string(file_number_string)
-    unique_id = (
-        tile_id * 10**6 + np.array(cat_data["NUMBER"], dtype=np.int64)
-    )
-
-    # NUMBER is not guaranteed to be a contiguous, in-order running index in
-    # the input catalogue; downstream code (ngmix_range) requires exactly
-    # that, and the original identity is preserved above in TILE_UNIQUE_ID.
-    cat_data["NUMBER"] = np.arange(1, n_obj + 1, dtype=np.int64)
 
     with fits.open(image_path) as hdul:
         img_header = hdul[0].header
@@ -274,7 +211,7 @@ def make_ldac_from_ascii(
     )
 
     ldac_imhead = _build_ldac_imhead(img_header)
-    ldac_objects = _build_ldac_objects(cat_data, unique_id, vignets)
+    ldac_objects = _build_ldac_objects(cat_data, vignets)
 
     hdul_out = fits.HDUList([fits.PrimaryHDU(), ldac_imhead, ldac_objects])
     hdul_out.writeto(output_cat_path, overwrite=True)

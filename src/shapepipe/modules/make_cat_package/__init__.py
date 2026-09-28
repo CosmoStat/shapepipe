@@ -23,7 +23,10 @@ previous module runs. This gathers all relevant information on the measured
 galaxies for weak-lensing post-processing. This includes galaxy detection and
 basic measurement parameters, the PSF model at galaxy positions, the
 spread-model classification, and the shape measurement. Each object is
-tagged with its source tile via the ``TILE_ID`` column; objects duplicated
+tagged with its source tile via the ``TILE_ID`` column and carries the
+survey-wide object ID ``TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER``
+(``tile_id = RRR * 1000 + DDD``, see
+:func:`shapepipe.utilities.cfis.get_tile_unique_id`); objects duplicated
 across overlapping tiles are not deduplicated here, and are left to
 downstream selection.
 

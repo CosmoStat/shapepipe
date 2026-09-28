@@ -364,9 +364,9 @@ _warned_missing_columns = set()
 def read_data(fits_file, params):
     """Read Data.
 
-    Some requested columns (e.g. ``TILE_UNIQUE_ID``, present only for tiles
-    produced with ``tile_detection: unions_catalogue``) may be absent from a
-    given tile's catalogue; such columns are skipped for that tile, with one
+    Some requested columns (e.g. ``TILE_UNIQUE_ID``, absent from final
+    catalogues made before make_cat wrote it) may be absent from a given
+    tile's catalogue; such columns are skipped for that tile, with one
     log line the first time each is seen missing.
 
     """

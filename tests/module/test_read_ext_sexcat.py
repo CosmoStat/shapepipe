@@ -4,9 +4,9 @@ Drives ``make_ldac_from_ascii`` on a synthetic ASCII SExtractor-format
 catalogue and a synthetic tile image, and checks the FITS-LDAC it writes is
 what the tile chain downstream of ``tile_detect`` reads: the LDAC_IMHEAD
 extension carrying the tile header, the SExtractor column aliases, one
-``VIGNET`` stamp per object cut from the image, and ``TILE_UNIQUE_ID``. The
-last test follows that column through ``make_cat.save_sextractor_data`` into
-the final catalogue.
+``VIGNET`` stamp per object cut from the image, and the input ``NUMBER``
+kept as is. The last test follows the catalogue through
+``make_cat.save_sextractor_data``, which builds ``TILE_UNIQUE_ID``.
 """
 
 import numpy as np
@@ -58,7 +58,7 @@ def ldac(tmp_path):
     _write_ascii_cat(cat)
     _write_image(img)
     rs.make_ldac_from_ascii(
-        str(cat), str(img), str(out), "-301-279", stamp_size=STAMP
+        str(cat), str(img), str(out), stamp_size=STAMP
     )
     return out
 
@@ -72,18 +72,13 @@ def test_ldac_layout_and_header(ldac):
         assert "TILEKEY" in text and "2605805p" in text
 
 
-def test_tile_unique_id_and_aliases(ldac):
+def test_number_is_kept_and_aliases_added(ldac):
     with fits.open(ldac) as hdul:
         data = hdul["LDAC_OBJECTS"].data
-    numbers = np.array([o[0] for o in OBJECTS])
-    # NUMBER is renumbered to a contiguous 1..n_obj running index in output
-    # row order; the original NUMBER survives only inside TILE_UNIQUE_ID.
-    npt.assert_array_equal(data["NUMBER"], np.arange(1, len(OBJECTS) + 1))
-    npt.assert_array_equal(data["TILE_UNIQUE_ID"], 301279 * 10**6 + numbers)
-    # A FITS 'K' column reads back as big-endian ('>i8'), not np.int64's
-    # native byte order, so compare kind and width rather than dtype.
-    assert data["TILE_UNIQUE_ID"].dtype.kind == "i"
-    assert data["TILE_UNIQUE_ID"].dtype.itemsize == 8
+    # The input NUMBER (gapped here: 1, 2, 7) is the object's identity and is
+    # copied unchanged; the converter builds no ID of its own.
+    npt.assert_array_equal(data["NUMBER"], [o[0] for o in OBJECTS])
+    assert "TILE_UNIQUE_ID" not in data.names
     npt.assert_array_equal(data["XWIN_IMAGE"], data["X_IMAGE"])
     npt.assert_array_equal(data["YWIN_IMAGE"], data["Y_IMAGE"])
     npt.assert_array_equal(data["XWIN_WORLD"], data["ALPHA_J2000"])
@@ -110,14 +105,8 @@ def test_vignets_are_cut_from_the_image_and_zero_padded(ldac):
     assert vignets[2, STAMP // 2, STAMP // 2] == 29 * 1000 + 39
 
 
-@pytest.mark.parametrize("number", ["-1301-279", "-301-1279"])
-def test_four_digit_grid_index_is_rejected(number):
-    with pytest.raises(ValueError):
-        rs._tile_id_from_file_number_string(number)
-
-
 def test_tile_unique_id_reaches_the_final_catalogue(ldac, tmp_path):
-    """make_cat copies every sexcat column, so the ID needs no extra wiring."""
+    """make_cat builds the ID from the tile and the catalogue's own NUMBER."""
     final = make_cat.prepare_final_cat_file(str(tmp_path), "-301-279")
     n_obj = make_cat.save_sextractor_data(final, str(ldac))
     assert n_obj == len(OBJECTS)

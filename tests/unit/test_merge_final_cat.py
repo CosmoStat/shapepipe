@@ -1,10 +1,9 @@
 """``merge_final_cat.py`` and ``create_final_cat.py`` drop catalogue-param
 columns absent from a given input catalogue.
 
-``TILE_UNIQUE_ID`` is only present in per-tile catalogues produced with
-``tile_detection: unions_catalogue``; a run using ``tile_detection:
-sextractor`` never has it. Listing it in ``final_cat.param`` must not break
-the merge for such runs: ``merge_final_cat.filter_available_columns`` and
+``TILE_UNIQUE_ID`` is absent from final catalogues made before make_cat wrote
+it. Listing it in ``final_cat.param`` must not break the merge for such
+catalogues: ``merge_final_cat.filter_available_columns`` and
 ``create_final_cat.read_data`` are what make that column (and any other
 requested-but-absent column) optional, logging one line per drop instead of
 failing partway through the merge.

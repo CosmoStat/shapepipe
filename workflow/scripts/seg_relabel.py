@@ -9,8 +9,8 @@ object's position. So the seg stamp ngmix overlays must be labelled in the
 SAME numbering as the catalogue it measures, or every mask is inverted.
 
 Under ``tile_detection: unions_catalogue`` the two numberings are different by
-construction: the sample is Steven Gwyn's per-tile catalogue, renumbered 1..N
-by ``read_ext_sexcat``, while the segmentation map comes from a separate
+construction: the sample is Steven Gwyn's per-tile catalogue, whose NUMBER
+``read_ext_sexcat`` keeps as is, while the segmentation map comes from a separate
 SExtractor run whose labels are ITS OWN detection numbers. This script is the
 bridge, and it is the whole of the guarantee:
 
@@ -46,7 +46,7 @@ import numpy as np
 from astropy.io import fits
 
 # The label every unclaimed footprint carries. Negative so that no catalogue
-# NUMBER (1..N) can ever collide with it; UberSeg tests `seg != object_number`,
+# NUMBER (positive) can ever collide with it; UberSeg tests `seg != object_number`,
 # so one shared label for all neighbours is enough.
 NEIGHBOUR_LABEL = -1
 
