@@ -140,7 +140,8 @@ decisions:
       Tiles use a fixed zero-point of 30 (ZP_FROM_HEADER=False), repeated in
       ngmix's MAG_ZP; exposures read the per-image header PHOTZP. The fixed
       value assumes the MegaPipe stacks are calibrated to 30; nothing in the
-      repo checks it. Exposure epochs are rescaled by FSCALE, which must agree
+      repo checks it, but on a sampled exposure (2114045p) FSCALE equals
+      10^(-0.4 (PHOTZP - 30)) to 0.02%. Exposure epochs are rescaled by FSCALE, which must agree
       with header PHOTZP as well as tile MAG_ZEROPOINT and ngmix MAG_ZP.
       Magnitude cuts (the star-selection window, downstream galaxy cuts)
       inherit their stage's convention.
@@ -517,9 +518,10 @@ analyses:
           which bright stars leave the PSF sample; tile FLAGS reach the
           catalogue for downstream cuts. Where the card is absent, SExtractor
           falls back to its built-in SATUR_LEVEL (50000 ADU per its
-          documentation), since neither .sex file sets one. Whether the
-          delivered exposure CCDs and MegaPipe tiles carry SATURATE is
-          unverified. Changing the card or pinning a fixed level requires
+          documentation), since neither .sex file sets one. Delivered data
+          carry the card: a sampled tile (CFIS.186.307) has SATURATE 9558.7
+          and every CCD of a sampled exposure (2114045p) 65535, and split_exp
+          keeps each CCD's header. Changing the card or pinning a fixed level requires
           checking the resulting bright-star selection.
           Values:
           default_exp.sex#SATUR_KEY = SATURATE;
@@ -1173,10 +1175,13 @@ analyses:
           fitter is built with the same joint prior. Prior width drives noise
           bias; no rationale recorded. Guinot+22 used a wider flux prior and a
           flat prior on r50 rather than T. [LINT] the epoch stamps are
-          exposure pixels; star-selection cuts and diagnostics use 0.187
-          arcsec/px while NGMIX_RUNNER.PIXEL_SCALE is 0.186. Reconcile these
-          exposure-pixel conversions; the ngmix_runner comment's noise-window
-          claim is stale because get_noise is never called.
+          exposure pixels and star selection uses 0.187 arcsec/px (MegaCam
+          native), but NGMIX_RUNNER.PIXEL_SCALE pins 0.186 (near the coadd
+          scale), overriding the WCS-derived value #858 made the default;
+          without the key, pixel_scale_from_wcs reads the first exposure
+          CCD's WCS (its docstring says the tile's). The ngmix_runner
+          comment's noise-window claim is stale: get_noise is never
+          called.
           Values:
           get_prior.T_range = -1,1e3;
           get_prior.F_range = -100,1e9;
