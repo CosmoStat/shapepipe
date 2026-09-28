@@ -27,6 +27,7 @@ from shapepipe.pipeline import file_io
 # Neighbour treatments selectable with the BLEND_HANDLING option.
 BLEND_HANDLINGS = ("noisefill", "uberseg")
 
+# @sc [decision:shape_measurement.metacal_scheme]
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
 
 # Noise budget for the PSF observation's flat weight map (psf_wt =
@@ -36,6 +37,7 @@ METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
 # value is non-critical once it is finite (validated on the digital twin: the
 # recovered PSF shape/size are flat across 1e-4..1e-6). See
 # make_ngmix_observation.
+# @sc [decision:shape_measurement.psf_likelihood_noise]
 PSF_NOISE = 1e-5
 
 
@@ -63,12 +65,57 @@ class MetacalResult(NamedTuple):
     orig: dict
 
 
+def get_type_flags(fit):
+    """Get Type Flags.
+
+    Fit flags of one metacal type, reading absence of evidence of success
+    as failure.
+
+    @sc [label:convention] mcal-flags-zero-means-measured
+    A flag of 0 means the fit ran, reported success and returned a finite
+    shear; no default or fallback may produce 0. FLAGS_<SHEAR>, MCAL_FLAGS
+    (OR) and MCAL_TYPES_FAIL (count) all derive from this function, and
+    sp_validation selects galaxies on MCAL_FLAGS == 0 and
+    MCAL_TYPES_FAIL == 0 as "measured". Every failure carries one of
+    ngmix's own bits (``ngmix.flags``); ShapePipe adds none:
+
+    - the fitter reported failure: its own ``flags``, unchanged;
+    - the fitter reported success (``flags == 0``) without a finite shear
+      ``g``, or the result has no ``flags``, or the type is absent:
+      ``LM_FUNC_NOTFINITE`` (2**12). The shear the catalogue holds for
+      such a type is NaN or a sentinel, never a finite measurement.
+
+    An object ngmix never fit (no usable epoch, or its fit raised) has no
+    metacal result at all; make_cat evaluates it as ``{}`` for every type,
+    so it carries ``LM_FUNC_NOTFINITE`` in every flag column and fails all
+    five types. ``NGMIX_N_EPOCH == 0`` tells it apart from a fitted object
+    whose LM fit set the same bit.
+
+    Parameters
+    ----------
+    fit : dict
+        One metacal type's fit result; ``{}`` when the type is absent.
+
+    Returns
+    -------
+    int
+        The fit's own ``flags``, or ``ngmix.flags.LM_FUNC_NOTFINITE`` when
+        the result is absent, lacks ``flags``, or claims success
+        (``flags == 0``) without a finite shear ``g``.
+    """
+    notfinite = ngmix.flags.LM_FUNC_NOTFINITE
+    flags = int(fit.get('flags', notfinite))
+    g = np.asarray(fit.get('g', (np.nan, np.nan)), dtype=float)
+    if flags == 0 and not np.all(np.isfinite(g)):
+        return notfinite
+    return flags
+
+
 def get_mcal_flags(res):
     """Get Metacal Flags.
 
-    Bitwise OR of the per-type metacal fit flags, the v1 contract for the
-    downstream NGMIX_MCAL_FLAGS column: nonzero whenever any metacal
-    type's galaxy fit failed.
+    Object-level metacal flags: the bitwise OR of :func:`get_type_flags`
+    over :data:`METACAL_TYPES` (the NGMIX_MCAL_FLAGS column).
 
     Parameters
     ----------
@@ -78,11 +125,257 @@ def get_mcal_flags(res):
     Returns
     -------
     int
-        OR of all per-type ``flags``.
+        OR of all per-type flags; 0 only if every type was measured.
     """
     return int(np.bitwise_or.reduce(
-        [res.get(name, {}).get('flags', 0) for name in METACAL_TYPES]
+        [get_type_flags(res.get(name, {})) for name in METACAL_TYPES]
     ))
+
+
+def get_mcal_types_fail(res):
+    """Get Metacal Types Fail.
+
+    Number of metacal types (0-5) with nonzero :func:`get_type_flags` (the
+    NGMIX_MCAL_TYPES_FAIL column).
+
+    Parameters
+    ----------
+    res : dict
+        MetacalBootstrapper result dict with one entry per metacal type.
+
+    Returns
+    -------
+    int
+        Count of failed metacal types.
+    """
+    return sum(
+        get_type_flags(res.get(name, {})) != 0 for name in METACAL_TYPES
+    )
+
+
+def log_run_health(w_log, count, n_fitted, n_flagged):
+    """Log Run Health.
+
+    Log an error when a run's metacal fits failed wholesale: either no
+    object fitted at all, or every fitted object carries nonzero
+    ``mcal_flags``.
+
+    @sc [label:operations] run-health-logs-not-raises
+    Wholesale metacal failure is logged at error level, never raised: one
+    empty edge tile or broken input must not abort a multi-tile campaign
+    job, and the error line is the signal to catch in review.
+
+    Parameters
+    ----------
+    w_log : logging.Logger
+        Logging instance
+    count : int
+        Number of objects considered for fitting
+    n_fitted : int
+        Number of objects that were fitted (present in the results list)
+    n_flagged : int
+        Number of fitted objects whose ``mcal_flags`` ended up nonzero
+
+    """
+    if count > 0 and n_fitted == 0:
+        w_log.error(
+            f'ngmix: all {count} objects failed the metacal fit'
+            ' (0 fitted); writing an empty catalogue. Expected only for a'
+            ' tile with no usable epochs; otherwise check the vignettes,'
+            ' PSFs and ngmix installation.'
+        )
+    if n_fitted > 0 and n_flagged == n_fitted:
+        w_log.error(
+            f'ngmix: 100% of {n_fitted} fitted objects carry nonzero'
+            ' mcal_flags -- the metacal fit failed wholesale; outputs'
+            ' are unusable.'
+        )
+
+
+def empty_metacal_output():
+    """Empty Metacal Output.
+
+    The five-HDU-shaped output dict :meth:`Ngmix.compile_results` returns
+    for zero fitted objects: one empty list per column, per metacal type.
+    Factored out so a tile with no measurable objects gets the identical
+    catalogue shape whether it is discovered by :meth:`Ngmix.process`
+    (partly-empty tile, one skipped object at a time) or by one of
+    ``ngmix_runner``'s all-empty-store guards (wholesale-empty tile, before
+    any object is read).
+
+    Returns
+    -------
+    dict
+        ``{metacal_type: {column: []}}``, matching an empty
+        :meth:`Ngmix.compile_results` call.
+
+    Raises
+    ------
+    ValueError
+        If the hardcoded HDU name list drifts out of sync with
+        :data:`METACAL_TYPES`.
+    """
+    # Output HDU order. Same set as METACAL_TYPES, but kept in this
+    # fixed order so output catalogues stay byte-reproducible; the check
+    # below guards against the two lists silently diverging.
+    names = ["1m", "1p", "2m", "2p", "noshear"]
+    if set(names) != set(METACAL_TYPES):
+        raise ValueError(
+            "compile_results metacal type list is out of sync with"
+            + " METACAL_TYPES"
+        )
+    names2 = [
+        'id',
+        'n_epoch_model',
+        'mcal_types_fail',
+        'neighbour_flag',
+        'nfev_fit',
+        # galaxy
+        'g1',
+        'g1_err',
+        'g2',
+        'g2_err',
+        'T',
+        'T_err',
+        'flux',
+        'flux_err',
+        's2n',
+        'mag',
+        'mag_err',
+        'flags',
+        'mcal_flags',
+        # original image PSF (psfex/mccd), fit by average_original_psf
+        'g1_psf_orig',
+        'g2_psf_orig',
+        'g1_err_psf_orig',
+        'g2_err_psf_orig',
+        'T_psf_orig',
+        'T_err_psf_orig',
+        # metacal reconvolution kernel, fit by average_multiepoch_psf
+        'g1_psf_reconv',
+        'g2_psf_reconv',
+        'g1_err_psf_reconv',
+        'g2_err_psf_reconv',
+        'T_psf_reconv',
+        'T_err_psf_reconv',
+    ]
+    return {k: {kk: [] for kk in names2} for k in names}
+
+
+def write_ngmix_fits(output_path, output_dict):
+    """Write Ngmix Fits.
+
+    Write a compiled ngmix results dict to a fresh output FITS file, one
+    HDU per metacal type. The file must not already exist; an existing
+    output is appended to by :meth:`Ngmix.save_results`, not this function.
+
+    Parameters
+    ----------
+    output_path : str
+        Path of the FITS file to create
+    output_dict : dict
+        Compiled results, as returned by :meth:`Ngmix.compile_results` or
+        :func:`empty_metacal_output`
+
+    Raises
+    ------
+    IndexError
+        If ``output_dict`` does not have exactly five HDUs
+    """
+    n_hdu = len(output_dict.keys())
+    if n_hdu != 5:
+        raise IndexError(
+            f"FITS output file data has {n_hdu} HDUs,"
+            + " expected are 5"
+        )
+    f_out = file_io.FITSCatalogue(
+        output_path, open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
+    )
+    for key in output_dict.keys():
+        f_out.save_as_fits(output_dict[key], ext_name=key.upper())
+
+
+def write_empty_tile_output(output_dir, file_number_string, w_log, count):
+    """Write Empty Tile Output.
+
+    Write ngmix's empty-tile product for a guard that fires before any
+    stamp is read: the same five-HDU empty catalogue and run-health error
+    line that :meth:`Ngmix.process` writes once every object in a tile has
+    been skipped, without constructing an ``Ngmix`` instance (which would
+    open the galaxy vignette store) or reading any vignette.
+
+    Used by ``ngmix_runner``'s all-empty-store guards, which must return
+    before the galaxy vignette store is opened at all -- reading its
+    many-epoch, many-object arrays is what triggers a C-level malloc crash
+    when the store is large (see the PSF-empty guard's own comment).
+
+    Parameters
+    ----------
+    output_dir : str
+        Output directory
+    file_number_string : str
+        File numbering scheme
+    w_log : logging.Logger
+        Logging instance
+    count : int
+        Number of objects considered for fitting (see :func:`log_run_health`);
+        for these guards, the number of entries in the empty store.
+    """
+    log_run_health(w_log, count, n_fitted=0, n_flagged=0)
+    output_path = f"{output_dir}/ngmix{file_number_string}.fits"
+    if not os.path.exists(output_path):
+        write_ngmix_fits(output_path, empty_metacal_output())
+
+
+def check_wcs_centroid_offset(centroid_source, tile_cat, gal_vign_cat):
+    """Check WCS Centroid Offset.
+
+    Fail once, up front, when ``centroid_source="wcs"`` would have no
+    coadd-centroid offset to place the galaxy Jacobian at.
+
+    @sc [label:coupling] wcs-centroid-needs-offset
+    ``centroid_source="wcs"`` reads the ``OFFSET`` the stamp extractor
+    (:func:`shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps`)
+    writes into every vignette epoch entry; vignettes cut before that
+    extractor carry none. Left unchecked, :func:`make_ngmix_observation`
+    raises for every object in turn and :meth:`Ngmix.process`'s per-object
+    exception handling turns the whole tile into a silently empty
+    catalogue. OFFSET is a property of the extraction run, not of any one
+    object, so the first object with epochs speaks for the whole vignette
+    file: checking it is enough, and scanning every object would only cost
+    more sqlitedict unpickling for the same answer.
+
+    Parameters
+    ----------
+    centroid_source : {"wcs", "hsm"}
+        The configured centroid source; a no-op unless it is ``"wcs"``.
+    tile_cat : Tile_cat
+        Tile catalogue, read for its object ID order.
+    gal_vign_cat : Mapping
+        Galaxy vignette store, keyed by ``str(obj_id)``.
+
+    Raises
+    ------
+    ValueError
+        If ``centroid_source == "wcs"`` and the first object with epochs
+        has an epoch entry with no ``OFFSET``.
+    """
+    if centroid_source != "wcs":
+        return
+    for obj_id in tile_cat.obj_id:
+        gal_obj = gal_vign_cat[str(obj_id)]
+        if gal_obj == 'empty' or not gal_obj:
+            continue
+        first_epoch = next(iter(gal_obj.values()))
+        if 'OFFSET' not in first_epoch:
+            raise ValueError(
+                "centroid_source='wcs' requires the coadd-centroid OFFSET"
+                " the stamp extractor writes into every vignette epoch,"
+                " but this tile's vignettes carry none: re-extract the"
+                " stamps with the current vignetmaker, or set"
+                " centroid_source='hsm'."
+            )
+        return
 
 
 def get_prior(pixel_scale, rng, T_range=None, F_range=None):
@@ -102,6 +395,8 @@ def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     Returns
     -------
     ngmix.joint_prior.PriorSimpleSep
+
+    @sc [decision:shape_measurement.fit_priors]
     """
     if T_range is None:
         T_range = [-1.0, 1.0e3]
@@ -165,6 +460,8 @@ def position_seed(ra, dec, ccd):
     -------
     int
         Seed in ``[0, 2**32)`` for ``numpy.random.RandomState``.
+
+    @sc [decision:shape_measurement.ngmix_seed_mode]
     """
     box_x = int(np.floor((ra * 3600) / 3) + (ccd + 1))
     box_y = int(np.floor((dec * 3600) / 3) + (ccd + 2))
@@ -586,6 +883,7 @@ class Ngmix(object):
         numpy.ndarray
             The flipped postage stamp
 
+        @sc [decision:shape_measurement.megacam_ccd_flip]
         """
         if ccd_nb < 18 or ccd_nb in [36, 37]:
             # swap x axis so origin is on top-right
@@ -624,60 +922,26 @@ class Ngmix(object):
             If SNR key not found
 
         """
-        # Output HDU order. Same set as METACAL_TYPES, but kept in this
-        # fixed order so output catalogues stay byte-reproducible; the check
-        # below guards against the two lists silently diverging.
-        names = ["1m", "1p", "2m", "2p", "noshear"]
-        if set(names) != set(METACAL_TYPES):
-            raise ValueError(
-                "compile_results metacal type list is out of sync with"
-                + " METACAL_TYPES"
-            )
-        names2 = [
-            'id',
-            'n_epoch_model',
-            'mcal_types_fail',
-            'neighbour_flag',
-            'nfev_fit',
-            # galaxy
-            'g1',
-            'g1_err',
-            'g2',
-            'g2_err',
-            'T',
-            'T_err',
-            'flux',
-            'flux_err',
-            's2n',
-            'mag',
-            'mag_err',
-            'flags',
-            'mcal_flags',
-            # original image PSF (psfex/mccd), fit by average_original_psf
-            'g1_psf_orig',
-            'g2_psf_orig',
-            'g1_err_psf_orig',
-            'g2_err_psf_orig',
-            'T_psf_orig',
-            'T_err_psf_orig',
-            # metacal reconvolution kernel, fit by average_multiepoch_psf
-            'g1_psf_reconv',
-            'g2_psf_reconv',
-            'g1_err_psf_reconv',
-            'g2_err_psf_reconv',
-            'T_psf_reconv',
-            'T_err_psf_reconv',
-        ]
-        output_dict = {k: {kk: [] for kk in names2} for k in names}
+        # Column layout (HDU names and per-type columns) lives in
+        # empty_metacal_output, shared with the runner's all-empty-store
+        # guards so every zero-object catalogue has the identical shape.
+        output_dict = empty_metacal_output()
+        names = list(output_dict.keys())
         for idx in range(len(results)):
+            # Object-level quality columns, derived from the same per-type
+            # flags as the ``flags`` column below (see get_type_flags).
+            mcal_flags = get_mcal_flags(results[idx])
+            mcal_types_fail = get_mcal_types_fail(results[idx])
             for name in names:
-                fit = results[idx][name]
+                fit = results[idx].get(name, {})
+                flags = get_type_flags(fit)
 
                 # ngmix 2.x does not raise on fit failure: after ntry the
                 # result keeps flags != 0 and carries none of the
                 # measurement keys (g, g_cov, T, T_err, flux, flux_err,
-                # s2n).  NaN-fill those so failed types are recorded with
-                # their flags instead of crashing the tile on a KeyError.
+                # s2n). NaN-fill those (and an absent type) so failed types
+                # are recorded with their flags instead of crashing the tile
+                # on a KeyError.
                 flux = fit.get("flux", np.nan)
                 flux_err = fit.get("flux_err", np.nan)
                 g = np.asarray(fit.get("g", (np.nan, np.nan)))
@@ -694,9 +958,7 @@ class Ngmix(object):
                 output_dict[name]["n_epoch_model"].append(
                     results[idx]["n_epoch_model"]
                 )
-                output_dict[name]["mcal_types_fail"].append(
-                    results[idx]["mcal_types_fail"]
-                )
+                output_dict[name]["mcal_types_fail"].append(mcal_types_fail)
                 # Per-object blend flag (see process()); replicated across all
                 # shear types like id / n_epoch_model / mcal_types_fail.
                 output_dict[name]["neighbour_flag"].append(
@@ -743,15 +1005,13 @@ class Ngmix(object):
                     output_dict[name]["s2n"].append(fit["s2n"])
                 elif "s2n_r" in fit:
                     output_dict[name]["s2n"].append(fit["s2n_r"])
-                elif fit["flags"] != 0:
+                elif flags != 0:
                     output_dict[name]["s2n"].append(np.nan)
                 else:
                     raise KeyError("No SNR key (s2n, s2n_r) found in results")
 
-                output_dict[name]["flags"].append(fit["flags"])
-                output_dict[name]["mcal_flags"].append(
-                    results[idx].get("mcal_flags", 0)
-                )
+                output_dict[name]["flags"].append(flags)
+                output_dict[name]["mcal_flags"].append(mcal_flags)
 
         return output_dict
 
@@ -794,11 +1054,7 @@ class Ngmix(object):
 
         output_name = self.get_output_path(self._output_dir)
         if not os.path.exists(output_name):
-            f_out = file_io.FITSCatalogue(
-                output_name, open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
-            )
-            for key in output_dict.keys():
-                f_out.save_as_fits(output_dict[key], ext_name=key.upper())
+            write_ngmix_fits(output_name, output_dict)
             return
 
         with fits.open(output_name, mode='update') as hdul:
@@ -971,9 +1227,21 @@ class Ngmix(object):
         dict
             Dictionary containing the NGMIX metacal results
 
+        Raises
+        ------
+        ValueError
+            If ``centroid_source == "wcs"`` and the vignette catalogue
+            carries no coadd-centroid OFFSET (see
+            :func:`check_wcs_centroid_offset`).
+
+        @sc [decision:shape_measurement.fit_initialisation,decision:shape_measurement.ngmix_seed_mode]
         """
         tile_cat = Tile_cat(self._tile_cat_path, self._seg_cat_path)
         vignet_cat = self._vignet_cat
+
+        check_wcs_centroid_offset(
+            self._centroid_source, tile_cat, vignet_cat.gal_vign_cat
+        )
 
         final_res = []
 
@@ -982,6 +1250,7 @@ class Ngmix(object):
         n_no_epoch = 0
         n_ngmix_fail = 0
         n_fitted = 0
+        n_flagged = 0
         id_first = -1
         id_last = -1
         count_batch = 0
@@ -1001,8 +1270,12 @@ class Ngmix(object):
             # Read each store once here and pass the dicts down: every
             # sqlitedict access unpickles the object's whole all-epoch dict.
             psf_obj = vignet_cat.psf_vign_cat[str(obj_id)]
+            # Avoid allocating galaxy stamp arrays when there is no PSF coverage.
+            if psf_obj == 'empty' or not psf_obj:
+                n_empty_cat += 1
+                continue
             gal_obj = vignet_cat.gal_vign_cat[str(obj_id)]
-            if psf_obj == 'empty' or gal_obj == 'empty':
+            if gal_obj == 'empty' or not gal_obj:
                 n_empty_cat += 1
                 continue
 
@@ -1078,15 +1351,10 @@ class Ngmix(object):
             # epochs that survived the PSF fit and entered the model,
             # not the number of epochs submitted (v1 contract)
             res['n_epoch_model'] = psf_res['n_epoch']
-            # Count of metacal fit types (0-5) with nonzero fit flags.
-            # (In ngmix v1 the same-named column counted moments-initial-guess
-            # failures from get_guess, which no longer exists — hence the
-            # rename to mcal_types_fail / NGMIX_MCAL_TYPES_FAIL.)
-            res['mcal_types_fail'] = sum(
-                1 for k in METACAL_TYPES
-                if res.get(k, {}).get('flags', 0) != 0
-            )
-            res['mcal_flags'] = get_mcal_flags(res)
+            # The mcal flag columns are derived from the per-type results in
+            # compile_results; here they only feed the run-health count.
+            if get_mcal_flags(res) != 0:
+                n_flagged += 1
             # Two distinct PSF families (shapepipe#749), each carrying its own
             # ellipticity AND size: the metacal reconvolution kernel (psf_res)
             # and the original image PSF (psf_orig_res). Tag both into res from
@@ -1131,6 +1399,8 @@ class Ngmix(object):
             + f" {n_fitted} fitted"
         )
 
+        log_run_health(self._w_log, count, n_fitted, n_flagged)
+
         vignet_cat.close()
 
         # Put all results together
@@ -1151,7 +1421,10 @@ def prepare_postage_stamps(
     psf_obj=None,
     gal_obj=None,
 ):
-    # define per-object lists of individual exposures to go into ngmix
+    """Prepare the per-object lists of exposures passed to ngmix.
+
+    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut]
+    """
     stamp = Postage_stamp(bkg_sub=bkg_sub)
     # Read each store's per-object dict ONCE: every sqlitedict access
     # unpickles the object's whole all-epoch dict, so keeping these out of
@@ -1300,6 +1573,7 @@ def background_subtract(gal,bkg):
     -------
     numpy.ndarray
         background subtracted galaxy
+    @sc [decision:shape_measurement.galaxy_pixel_weights]
     """
 
     # background subtraction
@@ -1329,6 +1603,7 @@ def rescale_epoch_fluxes(gal, weight, header, bkg_rms=None):
         rescaled weight image
     numpy.ndarray or None
         rescaled background RMS image
+    @sc [decision:shape_measurement.epoch_flux_rescaling]
     """
     Fscale = header['FSCALE']
 
@@ -1533,6 +1808,7 @@ def uberseg_weight(weight, seg, object_number, dilate_neighbour=0):
     -------
     numpy.ndarray
         Copy of ``weight`` with neighbour-side pixels zeroed.
+    @sc [decision:shape_measurement.blend_handling]
     """
     weight = np.copy(weight)
 
@@ -1612,6 +1888,7 @@ def prepare_ngmix_weights(
         Variance map for NGMIX.
     numpy.ndarray
         Noise image.
+    @sc [decision:masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights]
     """
     if blend_handling not in BLEND_HANDLINGS:
         raise ValueError(
@@ -1741,6 +2018,7 @@ def make_ngmix_observation(
     Returns
     -------
     ngmix.observation.Observation
+    @sc [decision:shape_measurement.centroid_source,decision:shape_measurement.psf_likelihood_noise]
     """
     psf_jacob = ngmix.Jacobian(
         row=(psf.shape[0] - 1) / 2,
@@ -1836,6 +2114,7 @@ def _average_psf_fits(results_and_weights):
     dict
         Keys ``g_psf``, ``g_psf_err``, ``T_psf``, ``T_psf_err`` (weighted
         averages over the surviving epochs) and ``n_epoch`` (their count).
+    @sc [decision:shape_measurement.psf_epoch_averaging]
     """
     n_epoch_used = 0
     wsum = 0
@@ -1887,6 +2166,8 @@ def average_multiepoch_psf(obsdict):
         Keys: 'g_psf', 'g_psf_err', 'T_psf', 'T_psf_err' (weighted
         averages over the epochs whose PSF fit succeeded) and 'n_epoch'
         (the number of those surviving epochs).
+
+    @sc [decision:shape_measurement.psf_epoch_averaging]
     """
     # ignore_failed_psf=True drops failed-PSF epochs from the galaxy fit but
     # keeps them in obsdict; _average_psf_fits skips them on flags != 0.
@@ -1941,6 +2222,7 @@ def average_original_psf(gal_obs_list, psf_runner):
     -------
     dict
         Same keys as :func:`average_multiepoch_psf`.
+    @sc [decision:shape_measurement.psf_epoch_averaging]
     """
     def fit(gal_obs):
         # Fit a COPY so gal_obs.psf stays pristine for metacal — see docstring.
@@ -1973,6 +2255,7 @@ def make_runners(prior, flux_guess, rng):
     -------
     tuple
         (runner, psf_runner) : ngmix.runners.Runner, ngmix.runners.PSFRunner
+    @sc [decision:shape_measurement.fit_initialisation,decision:shape_measurement.fit_priors,decision:shape_measurement.galaxy_model]
     """
     fitter = ngmix.fitting.Fitter(model='gauss', prior=prior)
     guesser = ngmix.guessers.TPSFFluxAndPriorGuesser(rng=rng, T=0.25, prior=prior)
@@ -2046,6 +2329,7 @@ def do_ngmix_metacal(
         dict (:func:`average_original_psf`). The two PSF dicts share keys but
         describe different PSFs; the named fields guard against transposing
         them. Unpacks positionally as ``resdict, psf_res, psf_orig_res``.
+    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]
     """
     n_epoch = len(stamp.gals)
     if n_epoch == 0:

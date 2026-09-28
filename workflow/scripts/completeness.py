@@ -2,13 +2,12 @@
 """The count-based completeness table — the single failure policy.
 
 This is the ported ``complete_check`` count table from the v2.0 bash layer
-(``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4). Across smk-g6
-(127 exposures, 64 tiles, and 512 ngmix chunks), every non-warning runner
-produced exactly its ``expect`` count; the v2.0 layer likewise used exact counts,
-with only ``psfex_interp`` marked ``:warn``. The formerly ported lower bounds
-(and the unsupported ~0.2% setools-attrition claim) therefore have no basis:
-setools produced 80/80 in all 127 exposures. ``split_exp`` is also structurally
-all-or-nothing because it raises on an HDU-count mismatch.
+(``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4): every non-warning
+runner is expected to produce exactly its ``expect`` count. Across smk-g6
+(127 exposures, 64 tiles, and 512 ngmix chunks), setools produced 80/80 in
+all 127 exposures, so ``setools_runner`` is mandatory with no tolerance for
+attrition. ``split_exp`` is likewise structurally all-or-nothing because it
+raises on an HDU-count mismatch.
 
 A runner below ``expect`` fails its unit unless it has ``warn=True``; such a
 shortfall gives the unit status ``warn``. There is no 3-class taxonomy and no
@@ -57,7 +56,8 @@ UNMOVED mtime, or the mtime rerun-trigger churns the cone on every unrelated
 Per-runner fields:
     expect   nominal file count for a fully complete unit; below it fails
     warn     if True a shortfall warns instead of failing the unit (bash
-             ``:warn`` — e.g. psfex_interp on tiles missing some epochs)
+             ``:warn`` — e.g. ``exp_psf``'s ``psfex_interp_runner``; the
+             ``tile_vignets`` ``psfex_interp_runner`` is mandatory)
     subpath  count files in ``<runner>/output/<subpath>/`` instead of
              ``<runner>/output/`` (bash ``:rand_split`` — setools split cats)
 
@@ -74,6 +74,7 @@ from pathlib import Path
 
 # stage -> {runner_subdir: {expect, [warn], [subpath]}}
 # exp_psf and tile_vignets are selected by $SP_PSF at check time.
+# @sc [decision:per_unit_completeness]
 COMPLETENESS = {
     # --- tile prepare (phase A) ---
     # get_images counts are CONFIG-FLAVOR-DEPENDENT: the v2.0 bash table said 4/6
@@ -106,15 +107,22 @@ COMPLETENESS = {
         # focal-plane model per exposure. Preprocessing is a serial runner that
         # merges the 40 CCDs' split catalogues into one training and one test
         # catalogue; fit_val writes the model (fitted_model-<exp>.npy, what the
-        # tiles interpolate) and its validation catalogue. Both are
-        # exposure-wide and all-or-nothing: an exposure without a model has no
-        # PSF on any tile it overlaps.
+        # tiles interpolate) and its validation catalogue; merge_starcat and
+        # mccd_plots add per-exposure diagnostics. Every runner here is :warn.
         "mccd": {
-            "sextractor_runner":          dict(expect=120),
-            "mask_query_runner":          dict(expect=40),
-            "setools_runner":             dict(expect=80, subpath="rand_split"),
-            "mccd_preprocessing_runner":  dict(expect=2),
-            "mccd_fit_val_runner":        dict(expect=2),
+            "sextractor_runner":          dict(expect=120, warn=True),
+            "mask_query_runner":          dict(expect=40, warn=True),
+            "setools_runner":             dict(expect=80, warn=True,
+                                                subpath="rand_split"),
+            # mccd_preprocessing merges the exposure's per-CCD star catalogues
+            # into one train and one test catalogue, not one output per CCD.
+            "mccd_preprocessing_runner":  dict(expect=2, warn=True),
+            # Fit/validation is exposure-wide: one model and one validation
+            # catalogue.
+            "mccd_fit_val_runner":        dict(expect=2, warn=True),
+            "merge_starcat_runner":       dict(expect=1, warn=True),
+            # config_exp_mccd enables the ten meanshape and six histogram plots.
+            "mccd_plots_runner":          dict(expect=16, warn=True),
         },
         # Image simulations with the true PSF (psf_model: fake): no PSF fit on
         # the exposures, only the SExtractor pass whose background/background_rms
@@ -382,6 +390,12 @@ def _unit_from_run_dir(run_dir):
 
 
 def main(argv=None) -> int:
+    """Run the CLI and persist the per-unit verdict.
+
+    @sc [label:policy] exact-counts-fail-the-unit
+    ``--job-rc`` can fail a stage even when product counts pass; the log records
+    every verdict, while the manifest is emitted only for success.
+    """
     p = argparse.ArgumentParser(description="ShapePipe per-unit completeness check")
     sub = p.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="count products, write the manifest")

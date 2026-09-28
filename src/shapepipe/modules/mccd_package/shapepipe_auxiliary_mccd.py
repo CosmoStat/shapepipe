@@ -249,6 +249,8 @@ def mccd_fit_pipeline(
 
     Fit the MCCD model to the Observations.
 
+    @sc [decision:star_selection_psf.psf_modelling_software]
+
     Parameters
     ----------
     trainstar_path : str

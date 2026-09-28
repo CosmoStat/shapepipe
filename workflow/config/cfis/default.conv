@@ -1,4 +1,5 @@
 CONV NORM
+# @sc [decision:detection.detection_threshold_policy,scope:file]
 # 3x3 ``all-ground'' convolution mask with FWHM = 2 pixels.
 1 2 1
 2 4 2

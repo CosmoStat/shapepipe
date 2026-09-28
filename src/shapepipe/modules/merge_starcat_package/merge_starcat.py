@@ -32,7 +32,7 @@ def _stack(chunks, dtype=None):
 
     IT EMPTIES THE LIST IT IS GIVEN, and that is not a side effect to tidy away
     later — it is half the saving. np.concatenate holds the chunks and the
-    result at once, so a caller that stacks sixteen columns while all sixteen
+    result at once, so a caller that stacks every column while all its
     chunk lists are still alive peaks at twice the campaign. Released column by
     column, the peak is one campaign plus one column. Callers stack once, at the
     end, and do not touch the accumulators afterwards.
@@ -559,14 +559,19 @@ class MergeStarCatPSFEX(object):
         self._input_cat_type = input_cat_type
 
     # The columns this class writes, and where each comes from. Kept as data
-    # rather than as sixteen repeated lines, because a two-pass merge would
-    # otherwise state every column three times: to size it, to allocate it and
-    # to fill it.
+    # rather than as repeated lines, because a two-pass merge would otherwise
+    # state every column three times: to size it, to allocate it and to fill
+    # it. Size columns already hold T = 2 sigma^2.
     _COLUMNS = (
         ("X", "X"), ("Y", "Y"), ("RA", "RA"), ("DEC", "DEC"),
         ("HSM_G1_PSF", "HSM_G1_PSF"), ("HSM_G2_PSF", "HSM_G2_PSF"),
-        ("HSM_T_PSF", "HSM_T_PSF"), ("HSM_G1_STAR", "HSM_G1_STAR"),
-        ("HSM_G2_STAR", "HSM_G2_STAR"), ("HSM_T_STAR", "HSM_T_STAR"),
+        ("HSM_T_PSF", "HSM_T_PSF"),
+        ("HSM_M4_1_PSF", "HSM_M4_1_PSF"), ("HSM_M4_2_PSF", "HSM_M4_2_PSF"),
+        ("HSM_RHO4_PSF", "HSM_RHO4_PSF"),
+        ("HSM_G1_STAR", "HSM_G1_STAR"), ("HSM_G2_STAR", "HSM_G2_STAR"),
+        ("HSM_T_STAR", "HSM_T_STAR"),
+        ("HSM_M4_1_STAR", "HSM_M4_1_STAR"), ("HSM_M4_2_STAR", "HSM_M4_2_STAR"),
+        ("HSM_RHO4_STAR", "HSM_RHO4_STAR"),
         ("HSM_FLAG_PSF", "HSM_FLAG_PSF"), ("HSM_FLAG_STAR", "HSM_FLAG_STAR"),
     )
     # Present in psfex_interp output, absent from pix2wcs-converted files
@@ -587,6 +592,12 @@ class MergeStarCatPSFEX(object):
         touches a data block; the second allocates the output columns once, at
         their exact final length, and fills them slice by slice. Peak memory is
         therefore ONE output plus ONE input catalogue.
+
+        @sc [label:schema] psfex-starcat-columns-strict
+        Every ``HSM_*`` column is read by name with no fallback, so the set
+        read here (``_COLUMNS``) equals the set
+        ``PSFExInterpolator._write_output_validation`` writes
+        (``test_hsm_column_seams``).
 
         What this replaces, in two steps, is instructive about the cost of the
         obvious code. Accumulating each column into a python LIST OF VALUES —

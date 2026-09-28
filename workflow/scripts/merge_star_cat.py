@@ -108,7 +108,9 @@ HDU = 2
 # order every consumer has seen. The optional three are zero-filled per file.
 COLUMNS = ("X", "Y", "RA", "DEC",
            "HSM_G1_PSF", "HSM_G2_PSF", "HSM_T_PSF",
+           "HSM_M4_1_PSF", "HSM_M4_2_PSF", "HSM_RHO4_PSF",
            "HSM_G1_STAR", "HSM_G2_STAR", "HSM_T_STAR",
+           "HSM_M4_1_STAR", "HSM_M4_2_STAR", "HSM_RHO4_STAR",
            "HSM_FLAG_PSF", "HSM_FLAG_STAR")
 # CANONICAL DTYPES, not whatever the first file that carries the column happens
 # to use. These three are absent from pix2wcs-converted catalogues, so an

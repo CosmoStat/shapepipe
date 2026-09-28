@@ -24,9 +24,13 @@ import pytest
 from astropy.io import fits
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from ngmix.flags import LM_FUNC_NOTFINITE
 
 from shapepipe.modules.make_cat_package.make_cat import SaveCatalogue
-from shapepipe.modules.ngmix_package.ngmix import _average_psf_fits
+from shapepipe.modules.ngmix_package.ngmix import (
+    METACAL_TYPES,
+    _average_psf_fits,
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -235,7 +239,7 @@ def test_all_epochs_failed_raises_zero_division(flagged_specs):
 _SENTINELS = {
     "NGMIX_T_NOSHEAR": 0.0,
     "NGMIX_SNR_NOSHEAR": 0.0,
-    "NGMIX_FLAGS_NOSHEAR": 0.0,
+    "NGMIX_FLAGS_NOSHEAR": LM_FUNC_NOTFINITE,
     "NGMIX_T_PSF_ORIG_NOSHEAR": 0.0,
     "NGMIX_T_PSF_RECONV_NOSHEAR": 0.0,
     "NGMIX_FLUX_ERR_NOSHEAR": -1.0,
@@ -248,8 +252,11 @@ _SENTINELS = {
     "NGMIX_T_ERR_PSF_ORIG_NOSHEAR": 1e30,
     "NGMIX_T_ERR_PSF_RECONV_NOSHEAR": 1e30,
     "NGMIX_N_EPOCH": 0.0,
-    "NGMIX_MCAL_FLAGS": 0.0,
-    "NGMIX_MCAL_TYPES_FAIL": 0.0,
+    # Never fit reads as an empty metacal result, not a clean fit
+    # (contract failure-sentinel-cut-semantics): LM_FUNC_NOTFINITE, all types
+    # failed.
+    "NGMIX_MCAL_FLAGS": LM_FUNC_NOTFINITE,
+    "NGMIX_MCAL_TYPES_FAIL": len(METACAL_TYPES),
     "NGMIX_NEIGHBOUR_FLAG": 0.0,
 }
 
@@ -277,8 +284,14 @@ class _NullLogger:
 
 
 def _measured_row(obj_id):
-    """One fit object whose every value is far from any sentinel (5 / 0.5)."""
+    """One fit object whose every value is far from any sentinel (5 / 0.5).
+
+    ``mcal_types_fail`` is the one int column whose sentinel (absent ->
+    ``len(METACAL_TYPES)`` == 5, shapepipe#889) coincides with the generic
+    placeholder, so it gets its own distinct in-range value.
+    """
     row = {key: (5 if key in _INT_KEYS else 0.5) for key in _NGMIX_KEYS}
+    row["mcal_types_fail"] = 2
     row["id"] = obj_id
     return row
 

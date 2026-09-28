@@ -80,7 +80,9 @@ the jobs read.) `SP_PROFILE` (default `nibi`, or `machine:` in the run config, w
 agree with it) and `input_type:` then select an entry of the `machines:` table, which supplies
 `tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
 `container` for any of these the run config leaves unset (`$base_dir` expands
-to that machine's `base_dir`, `$run` to the run config's `run:`). `run:` is
+to that machine's `base_dir`, and `$name` or `${name}` to any top-level scalar
+of the run config, e.g. `$run` to `run:`; write `${name}` when word characters
+follow). `run:` is
 required: it also names the campaign's merged catalogues, and config.yaml leaves
 it unset. An unset required key, or a value of `TBD`, stops the run at parse time
 until it is set. A run config therefore only needs what differs, e.g. for one
@@ -392,7 +394,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   **Two writers, one schema.** The module runner still emits the flat FITS
   table through `MergeStarCatPSFEX`, and this rule emits the hdf5; they are
   separate implementations on purpose, because only one of them reads tars,
-  keeps native dtypes and reconciles. Their 16 COLUMN NAMES must not drift
+  keeps native dtypes and reconciles. Their 22 COLUMN NAMES must not drift
   apart, and nothing else would notice if they did — a column added to one
   writer would just be missing from the other's product. `tests/unit/`
   `test_star_cat_columns.py` is what holds them together.
