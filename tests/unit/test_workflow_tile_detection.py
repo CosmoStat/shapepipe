@@ -12,6 +12,7 @@ Container-free: the scripts are stdlib-only.
 
 import configparser
 import importlib.util
+import re
 import sys
 from pathlib import Path
 
@@ -118,6 +119,70 @@ def test_report_lists_the_fetch_stage_only_for_catalogue_runs(monkeypatch, mode,
         assert stages.index("tile_get_catalogue") == stages.index("tile_detect") - 1
 
 
+# --- the segmentation half: unions_catalogue + uberseg ----------------------
+
+
+def test_blend_handlings_mirror_the_ngmix_module():
+    """completeness.BLEND_HANDLINGS is a copy; the copy must stay true.
+
+    The Snakefile validates `blend_handling:` against it in the launcher venv,
+    outside the container where shapepipe is importable, so the tuple is
+    mirrored rather than imported. Read out of the source text here for the
+    same reason: this file is container-free.
+    """
+    src = (REPO_ROOT / "src" / "shapepipe" / "modules" / "ngmix_package"
+           / "ngmix.py").read_text()
+    match = re.search(r"^BLEND_HANDLINGS = \(([^)]*)\)", src, re.M)
+    assert match, "ngmix.py no longer defines BLEND_HANDLINGS"
+    assert completeness.BLEND_HANDLINGS == tuple(
+        part.strip().strip('"\'') for part in match.group(1).split(",")
+        if part.strip())
+
+
+def test_segmentation_ini_matches_its_stage_and_yields_the_map():
+    level, sg = completeness.STAGE_DIR["tile_segmentation"]
+    assert level == "tile"
+    ini = _ini("config_tile_Sg.ini")
+    assert ini["DEFAULT"]["RUN_NAME"].strip() == sg
+    assert ini["DEFAULT"]["RUN_DATETIME"].strip() == "False"
+    sx = ini["SEXTRACTOR_RUNNER"]
+    # The check image is the whole point, and it is the only one asked for.
+    assert [c.strip() for c in sx["CHECKIMAGE"].split(",")] == ["SEGMENTATION"]
+    # No multi-epoch post-processing: those extensions ride on the sexcat
+    # config_tile_Uc.ini writes, and without it the WCS sqlite is not an input.
+    assert sx["MAKE_POST_PROCESS"].strip() == "False"
+    assert "log_exp_headers" not in sx["FILE_PATTERN"]
+    # Same detection settings as the SExtractor mode, so the footprints are
+    # the ones that mode would have drawn.
+    detect = _ini("config_tile_Sx.ini")["SEXTRACTOR_RUNNER"]
+    for key in ("DOT_SEX_FILE", "DOT_PARAM_FILE", "DOT_CONV_FILE",
+                "WEIGHT_IMAGE", "FLAG_IMAGE"):
+        assert sx[key].strip() == detect[key].strip(), key
+
+
+def test_segmentation_stage_is_checked(tmp_path):
+    """Two products: the SEGMENTATION check image and SExtractor's own sexcat."""
+    ok, details = completeness.check_counts(
+        "tile_segmentation", _stage_dir(tmp_path, "sextractor_runner", 2))
+    assert ok and details == [("sextractor_runner", 2, 2, False)]
+
+
+@pytest.mark.parametrize("detection, blend, present", [
+    ("unions_catalogue", "uberseg", True),
+    ("unions_catalogue", "noisefill", False),
+    ("sextractor", "uberseg", False),
+])
+def test_report_lists_the_segmentation_stage_only_for_the_pair(
+        monkeypatch, detection, blend, present):
+    monkeypatch.setenv("SP_TILE_DETECTION", detection)
+    monkeypatch.setenv("SP_BLEND_HANDLING", blend)
+    stages = _load("run_report").TILE_STAGES
+    assert ("tile_segmentation" in stages) is present
+    if present:
+        assert stages.index("tile_segmentation") == stages.index(
+            "tile_detect") + 1
+
+
 @pytest.mark.parametrize("machine", ["nibi", "candide"])
 @pytest.mark.parametrize("input_type", ["data", "image_sims"])
 def test_machine_defaults_pair_the_catalogue_with_its_source(
@@ -135,6 +200,7 @@ def test_machine_defaults_pair_the_catalogue_with_its_source(
     over.write_text(f"input_type: {input_type}\n")
     config = run_config.load(
         str(REPO_ROOT / "workflow" / "config.yaml"), str(over))
+    assert config["blend_handling"] in completeness.BLEND_HANDLINGS
     if input_type == "data":
         assert config["tile_detection"] == "unions_catalogue"
         assert config["inputs"]["catalogues"]

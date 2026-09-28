@@ -24,6 +24,14 @@ input_type: data
 # Run name, available as `$run` in the paths below.
 run: smk-g6
 
+# How ngmix treats a stamp's neighbours (its BLEND_HANDLING option):
+# `noisefill` replaces neighbour pixels with a noise realisation, `uberseg`
+# hard-masks them using the tile segmentation map. Under
+# tile_detection: unions_catalogue, `uberseg` adds the tile_segmentation rule
+# -- one SExtractor run on the tile image for the segmentation map alone,
+# relabelled into the catalogue's numbering (workflow/rules/tile.smk).
+blend_handling: noisefill
+
 # tile_detection is set per (machine, input_type) in the table below:
 # `unions_catalogue` fetches the UNIONS per-tile catalogue (inputs.catalogues:
 # a local directory, symlinked in, or a vos: URL) and converts it in place;

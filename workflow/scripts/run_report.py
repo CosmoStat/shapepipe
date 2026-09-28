@@ -65,6 +65,12 @@ TILE_STAGES = ["tile_get_images", "tile_uncompress", "tile_find_exposures",
 # so a SExtractor run does not report the stage as not run.
 if os.environ.get("SP_TILE_DETECTION") == "unions_catalogue":
     TILE_STAGES.insert(TILE_STAGES.index("tile_detect"), "tile_get_catalogue")
+    # The segmentation run is the second half of that pair: it exists only when
+    # the converted catalogue has to be measured with ngmix's uberseg blend
+    # handling, which needs a segmentation map the catalogue does not carry.
+    if os.environ.get("SP_BLEND_HANDLING") == "uberseg":
+        TILE_STAGES.insert(TILE_STAGES.index("tile_detect") + 1,
+                           "tile_segmentation")
 EXP_STAGES = ["exp_get_images", "exp_split", "exp_psf"]
 
 # The manifests clean_tile leaves on disk (workflow/scripts/clean_tile.py names

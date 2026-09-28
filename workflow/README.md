@@ -32,6 +32,9 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # fetched and converted in place, keeping its NUMBER) or `sextractor` (the tile
 # is detected with SExtractor; the default for image sims). Either way make_cat
 # writes TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER.
+# `blend_handling` is ngmix's neighbour treatment, `noisefill` or `uberseg`.
+# With `unions_catalogue`, `uberseg` adds one SExtractor run per tile for the
+# segmentation map alone, relabelled into the catalogue's numbering.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
