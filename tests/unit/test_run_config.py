@@ -75,6 +75,21 @@ def test_base_dir_holding_run_expands_fully():
     assert run_config.unresolved(cfg) == []
 
 
+def test_run_config_shorthands_nest_and_run_is_written_back():
+    """Top-level scalars are variables, ${name} delimits, nesting resolves."""
+    cfg = run_config.apply_machine_defaults(_machine_config(
+        "/b", shear="1p2z", grid="grid_2", run="${shear}_${grid}",
+        outputs={"run_dir": "/o/$run/scratch"}))
+    assert cfg["run"] == "1p2z_grid_2"
+    assert cfg["outputs"]["run_dir"] == "/o/1p2z_grid_2/scratch"
+    assert run_config.unresolved(cfg) == []
+
+
+def test_run_holding_an_unknown_variable_is_reported():
+    cfg = run_config.apply_machine_defaults(_machine_config("/b", run="$nope"))
+    assert "run" in run_config.unresolved(cfg)
+
+
 def test_optional_path_with_an_unknown_variable_is_reported():
     cfg = run_config.apply_machine_defaults(_machine_config(
         "/b", outputs={"products_dir": "/p/$nope/products"},
