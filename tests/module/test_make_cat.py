@@ -24,8 +24,12 @@ from astropy.io import fits
 from ngmix.flags import LM_FUNC_NOTFINITE, NAME_MAP
 from sqlitedict import SqliteDict
 
+from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.make_cat_package.make_cat import SaveCatalogue
+from shapepipe.modules.make_cat_runner import make_cat_runner
 from shapepipe.modules.ngmix_package.ngmix import Ngmix
+from shapepipe.pipeline import file_io
+from shapepipe.pipeline.config import CustomParser
 
 
 class _NullLogger:
@@ -470,6 +474,73 @@ def test_save_psf_data_fills_sentinel_for_absent_epochs(tmp_path):
         assert out[col][0] == -1, col
     for col in ("EXP_ID_1", "CCD_1", "EXP_ID_2", "CCD_2", "EXP_ID_3", "CCD_3"):
         assert out[col][1] == -1, col
+
+
+# --- make_cat_runner: end-to-end catalogue assembly ---
+
+
+def _write_sex_like_cat(path, data):
+    """Write a minimal SExtractor-format FITS (data lives at HDU index 2)."""
+    fits.HDUList(
+        [
+            fits.PrimaryHDU(),
+            fits.BinTableHDU(name="LDAC_IMHEAD"),
+            fits.BinTableHDU(data, name="LDAC_OBJECTS"),
+        ]
+    ).writeto(str(path), overwrite=True)
+
+
+def _numbered_data(obj_ids):
+    """A ``NUMBER`` + dummy second field structured array, one row per id.
+
+    A structured array with a single field gets collapsed by
+    ``file_io.FITSCatalogue._save_to_fits`` into one row holding a
+    vector-valued column (``len(names) == 1`` triggers a
+    ``data = np.array([data])`` wrap), so every SExtractor-like fixture
+    that ``save_sextractor_data`` re-saves through ``save_as_fits`` needs a
+    second field to keep one row per object.
+    """
+    return np.array(
+        [(oid, 0.0) for oid in obj_ids],
+        dtype=[("NUMBER", "i8"), ("X_IMAGE", "f8")],
+    )
+
+
+def test_make_cat_runner_ships_every_detection_unclassified(tmp_path):
+    """The runner assembles every detection, with no star/galaxy column.
+
+    Star/galaxy separation happens downstream, so the final catalogue keeps
+    each SExtractor object and carries no classification or spread-model
+    column.
+    """
+    obj_ids = [1, 2, 3]
+    tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
+    _write_sex_like_cat(tile_sexcat_path, _numbered_data(obj_ids))
+    galaxy_psf_path = tmp_path / "galaxy_psf-350-100.sqlite"
+    ngmix_path = tmp_path / "ngmix-350-100.fits"
+    _write_ngmix_cat(ngmix_path, obj_ids)
+
+    config = CustomParser()
+    config.read_dict({"MAKE_CAT_RUNNER": {"SHAPE_MEASUREMENT_TYPE": "ngmix"}})
+
+    result = make_cat_runner(
+        [str(tile_sexcat_path), str(galaxy_psf_path), str(ngmix_path)],
+        {"output": str(tmp_path)},
+        "-350-100",
+        config,
+        "MAKE_CAT_RUNNER",
+        _NullLogger(),
+    )
+
+    assert result == (None, None)
+    final_cat = file_io.FITSCatalogue(
+        str(make_cat.get_output_name(str(tmp_path), "-350-100"))
+    )
+    final_cat.open()
+    data = final_cat.get_data()
+    final_cat.close()
+    npt.assert_array_equal(data["NUMBER"], obj_ids)
+    assert not [name for name in data.dtype.names if "SPREAD" in name]
 
 
 @pytest.mark.parametrize("shear", SHEAR_EXTS)
