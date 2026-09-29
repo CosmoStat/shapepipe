@@ -457,6 +457,18 @@ def test_seg_vignet_needs_the_segmentation_map(tmp_path):
                                 stamp_size=STAMP, seg_vignet=True)
 
 
+def test_seg_vignet_stays_out_of_the_final_catalogue(tmp_path):
+    """make_cat drops SEG_VIGNET with VIGNET: the stamps are ngmix inputs,
+    not catalogue columns."""
+    _convert_with_seg(tmp_path, seg_vignet=True)
+    final = make_cat.prepare_final_cat_file(str(tmp_path), "-301-279")
+    make_cat.save_sextractor_data(final, str(tmp_path / "sexcat-301-279.fits"))
+    with fits.open(tmp_path / "final_cat-301-279.fits") as hdul:
+        names = hdul["RESULTS"].data.names
+    assert "VIGNET" not in names and "SEG_VIGNET" not in names
+    assert "NUMBER" in names
+
+
 # --- the runner's output against the completeness table -------------------
 
 
