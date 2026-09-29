@@ -8,9 +8,13 @@ YWIN_WORLD
 # @sc [decision:catalogue_assembly.tile_overlap_handling]
 TILE_ID
 
-# SExtractor object number within the tile: sp_validation's extraction joins
-# on it, and the per-tile catalogue always carries it.
+# Object number within the tile: sp_validation's extraction joins on it, and
+# the per-tile catalogue always carries it.
 NUMBER
+
+# Survey-wide object ID, tile_id * 10**6 + NUMBER (make_cat, both
+# tile_detection modes): the join key to other catalogues.
+TILE_UNIQUE_ID
 
 # flags
 FLAGS

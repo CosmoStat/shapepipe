@@ -55,7 +55,6 @@ def read_ext_sexcat_runner(
         cat_path,
         image_path,
         output_path,
-        file_number_string,
         stamp_size=stamp_size,
         w_log=w_log,
     )

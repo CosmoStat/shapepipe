@@ -19,6 +19,9 @@ YWIN_WORLD
 # tile ID, for plot of tile-dependent additive bias.
 TILE_ID
 
+# Survey-wide object ID, tile_id * 10**6 + NUMBER (make_cat).
+TILE_UNIQUE_ID
+
 # SExtractor number
 NUMBER
 

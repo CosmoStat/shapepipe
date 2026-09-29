@@ -15,6 +15,7 @@ analyses:
       nexp_map_valid_psf_ccds: valid_psf_ccds
   detection:
     decisions:
+      tile_detection: unions_catalogue
       detection_threshold_policy: megapipe_tiles
       deblending_policy: megapipe_tiles
       background_model: auto_megapipe_tiles
