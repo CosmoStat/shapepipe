@@ -17,11 +17,13 @@ Covers the ``BLEND_HANDLING = uberseg`` option added to the ngmix module:
 import numpy as np
 import numpy.testing as npt
 import pytest
+from astropy.io import fits
 from scipy import ndimage
 from sqlitedict import SqliteDict
 
 from shapepipe.modules.ngmix_package.ngmix import (
     Ngmix,
+    Tile_cat,
     central_seg_label,
     prepare_ngmix_weights,
     seg_has_neighbour,
@@ -350,60 +352,108 @@ def test_check_central_seg_label_missing_number_raises(tmp_path):
         ngmix._check_central_seg_label(seg, obj_id=99)
 
 
-# --- FIX 3a: uberseg without seg_cat_path fails at construction -------------
+# --- the seg stamps ride the tile catalogue as SEG_VIGNET -------------------
 
-def test_ngmix_init_uberseg_without_seg_cat_raises(tmp_path):
-    """blend_handling='uberseg' with seg_cat_path=None raises at __init__."""
+def _write_tile_cat(path, seg_vignets=None):
+    """A three-object LDAC tile catalogue, with SEG_VIGNET when given."""
+    n_obj, size = 3, 5
+    cols = [
+        fits.Column(name="NUMBER", format="J", array=np.array([4, 5, 9])),
+        fits.Column(name="XWIN_WORLD", format="D", array=np.zeros(n_obj)),
+        fits.Column(name="YWIN_WORLD", format="D", array=np.zeros(n_obj)),
+        fits.Column(name="VIGNET", format=f"{size * size}E",
+                    array=np.ones((n_obj, size * size), np.float32),
+                    dim=f"({size},{size})"),
+    ]
+    if seg_vignets is not None:
+        cols.append(fits.Column(name="SEG_VIGNET", format=f"{size * size}J",
+                                array=seg_vignets.reshape(n_obj, -1),
+                                dim=f"({size},{size})"))
+    imhead = fits.BinTableHDU.from_columns(
+        [fits.Column(name="Field Header Card", format="1A", array=["x"])],
+        name="LDAC_IMHEAD",
+    )
+    fits.HDUList([
+        fits.PrimaryHDU(), imhead,
+        fits.BinTableHDU.from_columns(cols, name="LDAC_OBJECTS"),
+    ]).writeto(path)
+    return path
+
+
+def test_tile_cat_reads_seg_vignet(tmp_path):
+    """Tile_cat's seg stamps are the catalogue's SEG_VIGNET, row for row;
+    a catalogue without the column has none."""
+    seg = np.arange(3 * 25, dtype=np.int32).reshape(3, 5, 5)
+    with_seg = Tile_cat(str(_write_tile_cat(tmp_path / "a.fits", seg)))
+    npt.assert_array_equal(with_seg.seg, seg)
+    assert with_seg.seg.dtype.kind == "i"
+    assert Tile_cat(str(_write_tile_cat(tmp_path / "b.fits"))).seg is None
+
+
+def test_tile_cat_holds_the_stamp_columns_once(tmp_path):
+    """VIGNET and SEG_VIGNET are views into the one loaded table: copying
+    either would double the bulk of every ngmix chunk's catalogue memory."""
+    seg = np.zeros((3, 5, 5), np.int32)
+    tile = Tile_cat(str(_write_tile_cat(tmp_path / "a.fits", seg)))
+    # Interleaved fields of one record buffer: their extents overlap.
+    assert np.may_share_memory(tile.vign, tile.seg)
+
+
+def test_uberseg_without_seg_vignet_fails_loudly(tmp_path):
+    """BLEND_HANDLING = uberseg on a catalogue without SEG_VIGNET raises
+    before any object is fitted, rather than dropping every object."""
+    cat = _write_tile_cat(tmp_path / "tile_cat.fits")
     names = ("gal", "bkg", "psf", "weight", "flag", "headers")
     paths = [tmp_path / f"{name}.sqlite" for name in names]
     for path in paths:
         SqliteDict(str(path)).close()
-    with pytest.raises(ValueError, match="requires SEG_VIGNET_PATH"):
-        Ngmix(
-            ["tile_cat.fits"] + [str(p) for p in paths[:5]],
-            str(tmp_path), "-001-001", 30.0, 0.186, str(paths[5]),
-            _RecordingLogger(),
-            blend_handling="uberseg",
-            seg_cat_path=None,
-        )
+    ngmix = Ngmix(
+        [str(cat)] + [str(p) for p in paths[:5]],
+        str(tmp_path), "-001-001", 30.0, 0.186, str(paths[5]),
+        _RecordingLogger(), blend_handling="uberseg",
+    )
+    with pytest.raises(ValueError, match="SEG_VIGNET"):
+        ngmix.process()
 
 
-# --- FIX 3b: runner raises when SEG_VIGNET_PATH is set but missing ----------
+def test_runner_reads_blend_handling_from_the_environment(
+    tmp_path, monkeypatch,
+):
+    """The committed ini's ``${SP_BLEND_HANDLING:-noisefill}`` reaches Ngmix
+    as noisefill when the variable is unset and as its value when set."""
+    from shapepipe.modules import ngmix_runner as runner_module
+    from shapepipe.pipeline.config import CustomParser
 
-class _FakeConfig:
-    """Config stub: SEG_VIGNET_PATH is the only present option, and it resolves
-    to ``seg_path`` (a path the test leaves nonexistent)."""
+    names = ("cat", "gal", "bkg", "psf", "weight", "flag", "headers")
+    paths = [str(tmp_path / f"{name}.sqlite") for name in names]
+    for path in paths[1:]:
+        SqliteDict(path).close()
+    config = CustomParser()
+    config.add_section("NGMIX_RUNNER")
+    for key, value in {"MAG_ZP": "30.0", "ID_OBJ_MIN": "-1",
+                       "ID_OBJ_MAX": "-1",
+                       "BLEND_HANDLING": "${SP_BLEND_HANDLING:-noisefill}",
+                       }.items():
+        config.set("NGMIX_RUNNER", key, value)
 
-    def __init__(self, seg_path):
-        self._seg_path = seg_path
+    seen = []
 
-    def getfloat(self, _sec, _key):
-        return 30.0 if _key == "MAG_ZP" else 0.186
+    class _Stop(Exception):
+        pass
 
-    def getboolean(self, _sec, _key, fallback=False):
-        return fallback
+    def fake_ngmix(*_args, **kwargs):
+        seen.append(kwargs["blend_handling"])
+        raise _Stop
 
-    def has_option(self, _sec, key):
-        return key == "SEG_VIGNET_PATH"
-
-    def getexpanded(self, _sec, _key):
-        return self._seg_path
-
-
-def test_runner_missing_seg_vignet_file_raises(tmp_path):
-    """SEG_VIGNET_PATH configured but the resolved file is absent -> the runner
-    fails fast with FileNotFoundError, before constructing Ngmix."""
-    from shapepipe.modules.ngmix_runner import ngmix_runner
-
-    input_file_list = ["tile_cat.fits"] + [f"in{i}.sqlite" for i in range(6)]
-    seg_path = str(tmp_path / "does_not_exist.fits")
-    with pytest.raises(FileNotFoundError, match="Segmentation vignet file"):
-        ngmix_runner(
-            input_file_list,
-            {"output": str(tmp_path)},
-            "-001-001",
-            _FakeConfig(seg_path),
-            "NGMIX_RUNNER",
-            _RecordingLogger(),
-        )
-
+    monkeypatch.setattr(runner_module, "Ngmix", fake_ngmix)
+    runner = getattr(runner_module.ngmix_runner, "__wrapped__",
+                     runner_module.ngmix_runner)
+    for env in (None, "uberseg"):
+        if env is None:
+            monkeypatch.delenv("SP_BLEND_HANDLING", raising=False)
+        else:
+            monkeypatch.setenv("SP_BLEND_HANDLING", env)
+        with pytest.raises(_Stop):
+            runner(paths, {"output": str(tmp_path)}, "-001-001", config,
+                   "NGMIX_RUNNER", _RecordingLogger())
+    assert seen == ["noisefill", "uberseg"]

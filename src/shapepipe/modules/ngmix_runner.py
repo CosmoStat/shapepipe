@@ -100,24 +100,6 @@ def ngmix_runner(
     else:
         input_file_list = input_file_list[:wcs_idx]
 
-    # SEG_VIGNET_PATH (optional): coadd-frame SExtractor segmentation vignets
-    # (a CLASSIC-mode vignetmaker output), row-aligned to the tile catalogue.
-    # Required for BLEND_HANDLING = uberseg; when set, the file must exist for
-    # every tile (missing file -> error). Read on Tile_cat, not via Vignet, so
-    # it is threaded to Ngmix as its own argument rather than into
-    # input_file_list.
-    if config.has_option(module_config_sec, "SEG_VIGNET_PATH"):
-        seg_vignet_path = config.getexpanded(
-            module_config_sec,
-            "SEG_VIGNET_PATH",
-        ).format(file_number_string=file_number_string)
-        if not os.path.exists(seg_vignet_path):
-            raise FileNotFoundError(
-                f"Segmentation vignet file not found: {seg_vignet_path}"
-            )
-    else:
-        seg_vignet_path = None
-
     # Batch save option
     if config.has_option(module_config_sec, "SAVE_BATCH"):
         save_batch = config.getint(
@@ -152,7 +134,7 @@ def ngmix_runner(
     # zero-weight, invalid-RMS or off-tile) are zero-weighted and filled
     # under both (DEFECT_FILL below); see prepare_ngmix_weights.
     if config.has_option(module_config_sec, "BLEND_HANDLING"):
-        blend_handling = config.get(module_config_sec, "BLEND_HANDLING")
+        blend_handling = config.getexpanded(module_config_sec, "BLEND_HANDLING")
     else:
         blend_handling = "noisefill"
 
@@ -263,7 +245,6 @@ def ngmix_runner(
         bkg_sub=bkg_sub,
         centroid_source=centroid_source,
         blend_handling=blend_handling,
-        seg_cat_path=seg_vignet_path,
         dilate_neighbour=dilate_neighbour,
         metacal_psf=metacal_psf,
         epoch_central_defect_radius=epoch_central_defect_radius,

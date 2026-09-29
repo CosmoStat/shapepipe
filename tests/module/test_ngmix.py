@@ -652,7 +652,6 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     )
     inst = object.__new__(Ngmix)
     inst._tile_cat_path = "in-memory-tile"
-    inst._seg_cat_path = None
     inst._vignet_cat = SimpleNamespace(
         gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
     )

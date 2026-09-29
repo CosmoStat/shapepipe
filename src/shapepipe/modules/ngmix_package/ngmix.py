@@ -539,22 +539,17 @@ class Tile_cat():
     Parameters
     ----------
     cat_path : str
-        Path to the tile SExtractor catalogue.
-    seg_cat_path : str, optional
-        Path to the coadd-frame segmentation VIGNET catalogue (a CLASSIC-mode
-        vignetmaker output cut from the tile ``SEGMENTATION`` check image),
-        row-aligned to ``cat_path``. When given, ``self.seg`` holds one integer
-        seg stamp per object for the ``"uberseg"`` blend handling; ``None``
-        leaves ``self.seg`` unset, which only ``"uberseg"`` needs.
+        Path to the tile SExtractor catalogue. Its optional ``SEG_VIGNET``
+        column, one integer coadd segmentation stamp per object on the grid
+        of its ``VIGNET``, becomes ``self.seg`` for the ``"uberseg"`` blend
+        handling; without it ``self.seg`` is ``None``.
 
     """
     def __init__(
         self,
         cat_path,
-        seg_cat_path=None,
     ):
         self.cat_path = cat_path
-        self.seg_cat_path = seg_cat_path
         if cat_path:
             self.get_data(cat_path)
 
@@ -571,44 +566,20 @@ class Tile_cat():
         self.ra = np.copy(data['XWIN_WORLD'])
         self.dec = np.copy(data['YWIN_WORLD'])
 
-        # Optional columns — may be absent in external (non-SExtractor) catalogs
+        # Optional columns — may be absent in external (non-SExtractor) catalogs.
+        # The stamp columns are the bulk of the table and are views into it,
+        # not copies, so it is held once (prepare_postage_stamps copies each
+        # object's stamp before changing it).
         self.flux = np.copy(data['FLUX_AUTO']) if 'FLUX_AUTO' in cols else None
-        self.vign = np.copy(data['VIGNET']) if 'VIGNET' in cols else None
+        self.vign = data['VIGNET'] if 'VIGNET' in cols else None
+
+        # Coadd-frame segmentation stamp (integer labels, the catalogue's
+        # NUMBER), one per object on the grid of its VIGNET, overlaid
+        # unchanged on every epoch for uberseg neighbour masking
+        # (shapepipe#776).
+        self.seg = data['SEG_VIGNET'] if 'SEG_VIGNET' in cols else None
 
         tile_cat.close()
-
-        # Coadd-frame SExtractor segmentation stamp (integer labels), one per
-        # object and row-aligned to the tile catalogue, overlaid unchanged on
-        # every epoch for uberseg neighbour masking (shapepipe#776). None ->
-        # uberseg unavailable; ``"noisefill"`` does not read it.
-        self.seg = None
-        if self.seg_cat_path:
-            seg_cat = file_io.FITSCatalogue(
-                self.seg_cat_path,
-                SEx_catalogue=True,
-            )
-            seg_cat.open()
-            seg_data = seg_cat.get_data()
-            # The seg VIGNETs are indexed by tile-catalogue row (self.seg[i]),
-            # so the two catalogues MUST be row-aligned. Fail loud at load if
-            # they are not — a silent length/order mismatch would hand every
-            # object the wrong footprint and quietly corrupt every mask.
-            if len(seg_data) != len(self.obj_id):
-                raise ValueError(
-                    f"SEG_VIGNET_PATH '{self.seg_cat_path}' has"
-                    + f" {len(seg_data)} rows but the tile catalogue has"
-                    + f" {len(self.obj_id)}; the segmentation vignets must be"
-                    + " row-aligned to the tile catalogue."
-                )
-            if 'NUMBER' in seg_data.dtype.names:
-                if not np.array_equal(seg_data['NUMBER'], self.obj_id):
-                    raise ValueError(
-                        f"SEG_VIGNET_PATH '{self.seg_cat_path}' NUMBER column"
-                        + " does not match the tile catalogue NUMBER; the"
-                        + " segmentation vignets are misaligned or reordered."
-                    )
-            self.seg = np.copy(seg_data['VIGNET'])
-            seg_cat.close()
 
 class Postage_stamp():
     """Galaxy Postage Stamp.
@@ -792,13 +763,11 @@ class Ngmix(object):
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment. ``"noisefill"`` (default) zero-weights and
         noise-fills the pixels marked -1e30 in the tile VIGNET on other
-        detections' footprints; ``"uberseg"`` ignores those markers,
+        detections' footprints; ``"uberseg"`` ignores those markers and
         zeroes the weight of neighbour-side pixels from the coadd
-        segmentation map and requires ``seg_cat_path``. Defect pixels are
-        filled under both (see :func:`prepare_ngmix_weights`).
-    seg_cat_path : str, optional
-        Path to the coadd-frame segmentation VIGNET catalogue (see
-        :class:`Tile_cat`). Required when ``blend_handling="uberseg"``.
+        segmentation stamps, the tile catalogue's ``SEG_VIGNET`` column (see
+        :class:`Tile_cat`), which it requires. Defect pixels are filled
+        under both (see :func:`prepare_ngmix_weights`).
     dilate_neighbour : int, optional
         Neighbour-mask dilation iterations for ``"uberseg"`` (see
         :func:`uberseg_weight`); the default is ``1``.
@@ -829,8 +798,7 @@ class Ngmix(object):
     IndexError
         If the length of the input file list is incorrect
     ValueError
-        If ``blend_handling`` or ``defect_fill`` is unknown, or ``"uberseg"``
-        is selected without ``seg_cat_path``.
+        If ``blend_handling`` or ``defect_fill`` is unknown.
 
     """
 
@@ -849,7 +817,6 @@ class Ngmix(object):
         bkg_sub=True,
         centroid_source="wcs",
         blend_handling="noisefill",
-        seg_cat_path=None,
         dilate_neighbour=1,
         metacal_psf="fitgauss",
         epoch_central_defect_radius=EPOCH_CENTRAL_DEFECT_RADIUS,
@@ -878,14 +845,6 @@ class Ngmix(object):
             raise ValueError(
                 f"Unknown DEFECT_FILL '{defect_fill}'; expected one of"
                 + f" {DEFECT_FILLS}"
-            )
-
-        # Fail fast at construction (not deep in the per-epoch loop) when
-        # uberseg is requested without its segmentation input (shapepipe#776).
-        if blend_handling == "uberseg" and seg_cat_path is None:
-            raise ValueError(
-                "blend_handling='uberseg' requires SEG_VIGNET_PATH (the coadd"
-                + " SExtractor segmentation vignets); none configured."
             )
 
         self._tile_cat_path = input_file_list[0]
@@ -927,7 +886,6 @@ class Ngmix(object):
         self._bkg_sub = bkg_sub
         self._centroid_source = centroid_source
         self._blend_handling = blend_handling
-        self._seg_cat_path = seg_cat_path
         self._dilate_neighbour = dilate_neighbour
         self._metacal_psf = metacal_psf
         self._epoch_central_defect_radius = epoch_central_defect_radius
@@ -1336,8 +1294,17 @@ class Ngmix(object):
 
         @sc [decision:shape_measurement.fit_initialisation,decision:shape_measurement.ngmix_seed_mode]
         """
-        tile_cat = Tile_cat(self._tile_cat_path, self._seg_cat_path)
+        tile_cat = Tile_cat(self._tile_cat_path)
         vignet_cat = self._vignet_cat
+
+        # Fail before the per-object loop, whose try/except would otherwise
+        # drop every object one by one (shapepipe#776).
+        if self._blend_handling == "uberseg" and tile_cat.seg is None:
+            raise ValueError(
+                "BLEND_HANDLING = uberseg needs the tile catalogue's"
+                + f" SEG_VIGNET column, which {self._tile_cat_path} lacks;"
+                + " write it at tile detection (SEG_VIGNET = True)."
+            )
 
         check_wcs_centroid_offset(
             self._centroid_source, tile_cat, vignet_cat.gal_vign_cat
