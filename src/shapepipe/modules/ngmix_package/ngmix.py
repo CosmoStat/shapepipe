@@ -2204,9 +2204,10 @@ def fill_defects(image, defect, noise):
     Returns
     -------
     numpy.ndarray
-        ``image`` with ``defect`` pixels taken from ``noise``.
+        ``image`` with ``defect`` pixels taken from ``noise``, in the dtype
+        of ``image``.
     """
-    return np.where(defect, noise, image)
+    return np.where(defect, noise, image).astype(image.dtype, copy=False)
 
 
 def prepare_ngmix_weights(

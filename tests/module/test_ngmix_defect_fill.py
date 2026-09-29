@@ -934,13 +934,16 @@ def _develop_noisefill(gal, weight, flag, rng, bkg_rms=None):
     with_rms=st.booleans(),
     rms_scale=st.floats(0.5, 2.0),
     with_defects=st.booleans(),
+    dtype=st.sampled_from([np.float64, np.float32]),
 )
 def test_noisefill_matches_develop_on_marked_neighbours(
-    seed, with_rms, rms_scale, with_defects,
+    seed, with_rms, rms_scale, with_defects, dtype,
 ):
     """For an epoch with a marked neighbour, noisefill returns the image,
     weight and noise image develop returned, bit for bit: with no defect,
-    and with a flagged column and a dead pixel under the default noise fill.
+    and with a flagged column and a dead pixel under the default noise fill,
+    for float64 and float32 stamps (the filled image keeps the stamp's
+    dtype).
     The stamps carry no off-tile pixels, and the equivalence is claimed for
     such stamps only. Off-tile pixels reach this function as flag 2**10
     defects (off-tile-pixels-are-defects), as every marker did on develop;
@@ -963,6 +966,7 @@ def test_noisefill_matches_develop_on_marked_neighbours(
     if with_defects:
         flag[:, 2] = 1
         weight[n - 3, n // 2] = 0.0
+    gal = gal.astype(dtype)
     bkg_rms = (
         rms_scale * (1.0 + 0.1 * rng.random((n, n))) if with_rms else None
     )
@@ -976,6 +980,7 @@ def test_noisefill_matches_develop_on_marked_neighbours(
         np.random.RandomState(seed), bkg_rms=bkg_rms,
     )
     for a, b in zip(new, old):
+        assert a.dtype == b.dtype
         npt.assert_array_equal(a, b)
 
 
