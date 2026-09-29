@@ -22,6 +22,7 @@ import glob
 import hashlib
 import re
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -31,7 +32,8 @@ SNAKEFILE = REPO_ROOT / "workflow" / "Snakefile"
 EXP = "2243881"
 HELPERS = ("exp_dir", "exp_manifest", "prod_exp_dir", "prod_exp_manifest",
            "tombstone", "exp_store_reclaimed", "footprint_edge",
-           "unit_fingerprint", "nexp_map_exposures")
+           "unit_fingerprint", "nexp_map_exposures", "nexp_map",
+           "nexp_map_manifest", "nexp_map_targets")
 # The ready tiles' exposures, as psf_exposures() would return them.
 IN_SCOPE = ["2243881", "2243882"]
 
@@ -47,9 +49,14 @@ def _snakefile_def(name):
 @pytest.fixture
 def roots(tmp_path):
     """The lifted helpers, bound to a temporary scratch and products root."""
+    warnings = []
     ns = {"Path": Path, "glob": glob, "hashlib": hashlib,
           "RUN_DIR": tmp_path / "run", "PRODUCTS_DIR": tmp_path / "products",
-          "psf_exposures": lambda: list(IN_SCOPE)}
+          "psf_exposures": lambda: list(IN_SCOPE),
+          "MAPS_NEXP": True, "CAMPAIGN": "campaign-sentinel",
+          "workflow": SimpleNamespace(is_main_process=True),
+          "logger": SimpleNamespace(warning=warnings.append),
+          "warnings": warnings}
     for name in HELPERS:
         exec(_snakefile_def(name), ns)
     return ns
@@ -160,3 +167,35 @@ def test_nexp_map_params_carry_the_fingerprint():
     params = re.search(r"^rule nexp_map:.*?^    params:\n(.*?)^    \w",
                        rule, re.M | re.S).group(1)
     assert "unit_fingerprint(nexp_map_exposures())" in params, params
+
+
+def test_no_record_anywhere_requests_no_map(roots):
+    """Every in-scope exposure reclaimed before exp_footprint existed: no record
+    on the root and none declared. Requesting the map would be a job that fails
+    on every invocation; it is not requested, and the loss is said."""
+    for exp in IN_SCOPE:
+        reclaim(roots, exp)
+    assert roots["nexp_map_targets"]() == []
+    assert len(roots["warnings"]) == 1
+    assert "2 of this campaign's 2 exposure(s)" in roots["warnings"][0]
+    assert "no map is built" in roots["warnings"][0]
+
+
+def test_partial_records_build_an_undercounting_map_and_say_so(roots):
+    """One exposure reclaimed with its record, one without: the map is built
+    from what there is, and the parse warns that it undercounts."""
+    for exp in IN_SCOPE:
+        reclaim(roots, exp)
+    touch(roots["prod_exp_manifest"]("2243881", "exp_footprint"))
+    assert roots["nexp_map_targets"]() == [
+        roots["nexp_map"](), roots["nexp_map_manifest"]()]
+    assert len(roots["warnings"]) == 1
+    assert "1 of this campaign's 2 exposure(s)" in roots["warnings"][0]
+    assert "undercounts" in roots["warnings"][0]
+
+
+def test_live_exposures_request_the_map_silently(roots):
+    """A fresh campaign: every exposure is declared, nothing is lost."""
+    assert roots["nexp_map_targets"]() == [
+        roots["nexp_map"](), roots["nexp_map_manifest"]()]
+    assert roots["warnings"] == []

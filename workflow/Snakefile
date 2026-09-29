@@ -951,13 +951,36 @@ def nexp_map_exposures():
 
 
 def nexp_map_targets():
-    """The campaign map, whenever the campaign fits a PSF (MAPS_NEXP).
+    """The campaign map, whenever the campaign fits a PSF (MAPS_NEXP) and has a
+    footprint record to stamp.
+
+    NO RECORD, NO JOB. An exposure reclaimed by a workflow predating
+    exp_footprint has no record and cannot get one without rebuilding its chain
+    from VOS, so a resumed campaign can reach this point with nothing on the
+    root and nothing declared; requesting the map there is a job that fails
+    ("nothing to build a map from") on every invocation.
+
+    SILENCE IS THE WRONG ANSWER for the in-scope exposures with no record: the
+    map is built without them and UNDERCOUNTS where they lie. Say how many, once,
+    at parse time, as defect_map_targets() does for its own lost exposures.
 
     HEAD PROCESS ONLY, for the reason clean_targets() gives: this feeds `rule
     all` at module level, so it is evaluated on every per-job re-parse too, none
     of which can schedule `all`.
     """
     if not MAPS_NEXP or not workflow.is_main_process:
+        return []
+    have = set(nexp_map_exposures())
+    lost = [e for e in psf_exposures() if e not in have]
+    if lost:
+        logger.warning(
+            f"exposure-count map: {len(lost)} of this campaign's "
+            f"{len(psf_exposures())} exposure(s) have no footprint record — "
+            f"each was reclaimed before exp_footprint could read its headers — "
+            f"so the map undercounts wherever they lie"
+            + ("" if have else "; with no record at all, no map is built")
+            + ".")
+    if not have:
         return []
     return [nexp_map(), nexp_map_manifest()]
 

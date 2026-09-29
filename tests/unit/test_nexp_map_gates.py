@@ -44,6 +44,8 @@ def _namespace(psf_model, tmp_path, *, main=True):
         "WorkflowError": WorkflowError,
         "Path": Path,
         "script_hash": lambda name: "hash-sentinel",
+        "glob": __import__("glob"),
+        "logger": SimpleNamespace(warning=lambda message: None),
     }
     text = SNAKEFILE.read_text()
     assignment = re.search(r"^PERSISTS_PSF\s*=.*$", text, re.M)
@@ -59,7 +61,7 @@ def _namespace(psf_model, tmp_path, *, main=True):
                  "tile_dir", "tile_manifest", "psf_exposures",
                  "footprint_targets", "flag", "prod_exp_tar",
                  "prod_exp_fragment", "nexp_map", "nexp_map_manifest",
-                 "nexp_map_targets"):
+                 "nexp_map_exposures", "nexp_map_targets"):
         definition = re.search(
             rf"^def {name}\(.*?(?=^\S|\Z)", text, re.M | re.S)
         assert definition, f"Snakefile must define {name}()"
