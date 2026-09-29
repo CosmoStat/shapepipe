@@ -53,8 +53,8 @@ def _build_ldac_imhead(img_header):
 BIG = -1e30
 
 # The label of a footprint no catalogue object claims in the relabelled
-# segmentation map. Negative, so it never collides with a NUMBER; UberSeg only
-# asks "self or not self", so neighbours need no identity.
+# segmentation map. Negative, so it never collides with a NUMBER; VIGNET
+# marking only asks "self or not self", so neighbours need no identity.
 NEIGHBOUR_LABEL = -1
 
 # Radius, in pixels, of the disc of its own NUMBER painted for an object with
@@ -143,14 +143,6 @@ def relabel_seg(seg, number, x_image, y_image, fallback_radius=FALLBACK_RADIUS):
         taken.add(pixel)
         out[pixel] = number[i]
     return out, counts
-
-
-def _image_header(header):
-    """Header of an image HDU without its compression or extension cards."""
-    header = header.copy()
-    for key in ("XTENSION", "PCOUNT", "GCOUNT", "EXTNAME"):
-        header.remove(key, ignore_missing=True, remove_all=True)
-    return header
 
 
 def _extract_vignets(image_data, x_pos, y_pos, stamp_size, seg=None,
@@ -276,7 +268,6 @@ def make_ldac_from_ascii(
     output_cat_path,
     stamp_size=51,
     seg_path=None,
-    seg_output_path=None,
     w_log=None,
 ):
     """Convert an external ASCII catalogue to FITS-LDAC format.
@@ -292,8 +283,7 @@ def make_ldac_from_ascii(
     ``VIGNET`` column (postage stamps extracted from the tile image) is
     added to ``LDAC_OBJECTS``. Given the catalogue's segmentation map, which
     shares the tile's pixel grid, the map is relabelled to the catalogue's
-    ``NUMBER`` (:func:`relabel_seg`), written to ``seg_output_path``, and
-    used to set neighbours' pixels in each ``VIGNET`` to ``BIG``, as
+    ``NUMBER`` (:func:`relabel_seg`) and used to set neighbours' pixels in each ``VIGNET`` to ``BIG``, as
     SExtractor does.
 
     Parameters
@@ -308,9 +298,6 @@ def make_ldac_from_ascii(
         Side length of the square postage stamp in pixels, default 51
     seg_path : str, optional
         Path to the catalogue's segmentation map (FITS, compressed or not)
-    seg_output_path : str, optional
-        Path to write the relabelled segmentation map to, required with
-        ``seg_path``
     w_log : logging.Logger, optional
         Pipeline logger
 
@@ -328,7 +315,6 @@ def make_ldac_from_ascii(
     if seg_path is not None:
         with fits.open(seg_path) as hdul:
             hdu = next(h for h in hdul if h.data is not None)
-            seg_header = hdu.header
             seg_raw = hdu.data
         if seg_raw.shape != image_data.shape:
             raise ValueError(
@@ -340,13 +326,9 @@ def make_ldac_from_ascii(
             cat_data["Y_IMAGE"],
         )
         del seg_raw
-        fits.PrimaryHDU(seg, header=_image_header(seg_header)).writeto(
-            seg_output_path, overwrite=True
-        )
         if w_log:
             w_log.info(
-                f"Relabelled {seg_path} to NUMBER, written to"
-                + f" {seg_output_path}: "
+                f"Relabelled {seg_path} to NUMBER: "
                 + ", ".join(f"{k}={v}" for k, v in counts.items())
             )
 

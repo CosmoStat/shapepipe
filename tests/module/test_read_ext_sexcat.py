@@ -286,30 +286,26 @@ def test_a_claimed_neighbour_is_masked_by_its_number():
 
 
 @pytest.mark.decision("detection.catalogue_neighbour_marking")
-def test_converter_writes_the_relabelled_map_and_marks(tmp_path):
+def test_converter_relabels_and_marks_from_compressed_map(tmp_path):
     """End to end from a compressed map, as fetched from vos."""
     cat = tmp_path / "CFIS_cat-301-279.cat"
     img = tmp_path / "CFIS_image-301-279.fits"
     seg_in = tmp_path / "CFIS_seg-301-279.fitsfz"
-    seg_out = tmp_path / "seg-301-279.fits"
     out = tmp_path / "sexcat-301-279.fits"
     lines = ["#   1 NUMBER", "#   2 X_IMAGE", "#   3 Y_IMAGE",
              "#   4 ALPHA_J2000", "#   5 DELTA_J2000"]
     lines += [f"{n} {x} {y} 150.0 30.0" for n, x, y in SEG_OBJECTS]
     cat.write_text("\n".join(lines) + "\n")
     fits.PrimaryHDU(np.ones((20, 20), np.float32)).writeto(img)
-    header = fits.Header()
-    header["CRPIX1"] = 10.0
     fits.HDUList([fits.PrimaryHDU(),
-                  fits.CompImageHDU(_seg_map(), header=header)]).writeto(seg_in)
+                  fits.CompImageHDU(_seg_map())]).writeto(seg_in)
 
     rs.make_ldac_from_ascii(str(cat), str(img), str(out), stamp_size=SEG_STAMP,
-                            seg_path=str(seg_in), seg_output_path=str(seg_out))
+                            seg_path=str(seg_in))
 
-    with fits.open(seg_out) as hdul:
-        relabelled = hdul[0].data
-        assert hdul[0].header["CRPIX1"] == 10.0
     seg = _seg_map()
+    number, x, y = (np.array(c) for c in zip(*SEG_OBJECTS))
+    relabelled, _ = rs.relabel_seg(seg, number, x, y)
     assert set(np.unique(relabelled[seg == 7])) == {1}
     assert set(np.unique(relabelled[seg == 9])) == {rs.NEIGHBOUR_LABEL}
     with fits.open(out) as hdul:
@@ -322,8 +318,7 @@ def test_converter_writes_the_relabelled_map_and_marks(tmp_path):
         seg_in, overwrite=True)
     with pytest.raises(ValueError, match="one grid"):
         rs.make_ldac_from_ascii(str(cat), str(img), str(out),
-                                stamp_size=SEG_STAMP, seg_path=str(seg_in),
-                                seg_output_path=str(seg_out))
+                                stamp_size=SEG_STAMP, seg_path=str(seg_in))
 
 
 DR6_PATCH = Path(__file__).parent / "data" / "dr6_202.301_seg_patch.fits"

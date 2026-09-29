@@ -52,10 +52,7 @@ multi-epoch post-processing. It keeps the catalogue's own
 NUMBER, from which make_cat builds ``TILE_UNIQUE_ID`` exactly as in SExtractor
 mode. The converter writes run_sp_tile_Sx/read_ext_sexcat_runner, and the rule links it as
 sextractor_runner, the one path every downstream config reads; the manifest is
-tile_detect.json in both modes, so tile_vignets onwards is the same DAG. Beside
-the sexcat it writes seg-<tile>.fits, the segmentation map relabelled to the
-catalogue's NUMBER (-1 on footprints no object claims, 0 on sky), the map an
-UberSeg vignet run cuts its seg stamps from.
+tile_detect.json in both modes, so tile_vignets onwards is the same DAG.
 
 There is no `tile_mask` rule, and there will not be one (PR #847). ShapePipe
 generates no masks: tiles have no instrument flag image of their own, so

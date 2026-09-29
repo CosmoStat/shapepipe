@@ -647,8 +647,7 @@ analyses:
           the footprint under its centre pixel (the VIGNET centre pixel), which
           on 202.301 matches 36,064 of 36,065 objects with none shared. The map
           is relabelled to NUMBER (unclaimed footprints -1; an object on sky or
-          on a claimed footprint gets a 3-pixel-radius disc of its own) and
-          written beside the sexcat as seg-<tile>.fits for an UberSeg seg run;
+          on a claimed footprint gets a 3-pixel-radius disc of its own), and
           VIGNET pixels whose relabelled value is neither 0 nor the object's
           NUMBER become -1e30. Without it, catalogue-mode ngmix fits neighbour
           light: in pilot smk-g10, NGMIX_MAG_NOSHEAR was over 1 mag brighter

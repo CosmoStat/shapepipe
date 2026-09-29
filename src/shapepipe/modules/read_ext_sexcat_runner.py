@@ -64,7 +64,6 @@ def read_ext_sexcat_runner(
         output_path,
         stamp_size=stamp_size,
         seg_path=seg_path,
-        seg_output_path=f"{run_dirs['output']}/seg{file_number_string}.fits",
         w_log=w_log,
     )
 
