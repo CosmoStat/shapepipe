@@ -109,6 +109,27 @@ def sextractor_runner(
     # Parse SExtractor errors
     stdout, stderr = ss_inst.parse_errors(stderr, stdout)
 
+    # SEG_VIGNET (optional, environment-expanded boolean): add the
+    # SEGMENTATION check image's stamps, on each VIGNET's grid, as the
+    # SEG_VIGNET column ngmix's UberSeg blend handling reads. Needs the
+    # SEGMENTATION and BACKGROUND check images.
+    if config.has_option(
+        module_config_sec, "SEG_VIGNET"
+    ) and config.getexpandedboolean(module_config_sec, "SEG_VIGNET"):
+        missing = {"SEGMENTATION", "BACKGROUND"} - set(ss_inst.check_paths)
+        if missing:
+            raise ValueError(
+                f"SEG_VIGNET needs the {', '.join(sorted(missing))} check"
+                + " image(s) in CHECKIMAGE."
+            )
+        ss.add_seg_vignet(
+            ss_inst.path_output_file,
+            ss_inst.check_paths["SEGMENTATION"],
+            input_file_list[0],
+            ss_inst.check_paths["BACKGROUND"],
+            w_log=w_log,
+        )
+
     # Run sextractor post processing
     if config.getboolean(module_config_sec, "MAKE_POST_PROCESS"):
         pos_params = config.getlist(module_config_sec, "WORLD_POSITION")
