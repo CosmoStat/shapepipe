@@ -144,7 +144,7 @@ def ngmix_runner(
     else:
         centroid_source = "wcs"
 
-    # Neighbour treatment: "none" (default) leaves neighbour pixels
+    # Neighbour treatment: "noisefill" (default) leaves neighbour pixels
     # weighted and untouched; "uberseg" zeroes the weight of every pixel
     # closer to a neighbour than to the central object, from the segmentation
     # map, and leaves its image raw. Defect pixels (flagged, zero-weight or
@@ -153,7 +153,7 @@ def ngmix_runner(
     if config.has_option(module_config_sec, "BLEND_HANDLING"):
         blend_handling = config.get(module_config_sec, "BLEND_HANDLING")
     else:
-        blend_handling = "none"
+        blend_handling = "noisefill"
 
     # DILATE_NEIGHBOUR (optional): binary-dilation iterations enlarging the
     # uberseg neighbour mask, to absorb the few-pixel coadd-vs-epoch seg-overlay

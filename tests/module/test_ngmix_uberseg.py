@@ -239,8 +239,8 @@ def _gal_flag_weight(npix=41, seed=7):
     return gal, flag, weight
 
 
-def test_none_ignores_seg_and_dilate_kwargs():
-    """Under BLEND_HANDLING = none, passing seg / dilate_neighbour changes
+def test_noisefill_ignores_seg_and_dilate_kwargs():
+    """Under BLEND_HANDLING = noisefill, passing seg / dilate_neighbour changes
     nothing: the result matches the plain default call on the same RNG stream."""
     gal, flag, weight = _gal_flag_weight()
     seg, _, _ = two_object_seg(npix=gal.shape[0], sep=12)
@@ -406,10 +406,3 @@ def test_runner_missing_seg_vignet_file_raises(tmp_path):
             _RecordingLogger(),
         )
 
-
-def test_retired_noisefill_name_is_rejected():
-    """Do not silently interpret the retired neighbour option."""
-    with pytest.raises(ValueError, match="noisefill"):
-        prepare_ngmix_weights(np.ones((5, 5)), np.ones((5, 5)),
-                              np.zeros((5, 5)), np.random.RandomState(3),
-                              blend_handling="noisefill")

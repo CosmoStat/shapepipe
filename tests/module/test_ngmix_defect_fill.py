@@ -75,7 +75,7 @@ def _uberseg_seg(n):
 
 @given(
     stamp=defect_stamps(),
-    blend_handling=st.sampled_from(["none", "uberseg"]),
+    blend_handling=st.sampled_from(["noisefill", "uberseg"]),
     seed=st.integers(0, 2**31 - 1),
 )
 def test_filled_set_is_the_defect_set(stamp, blend_handling, seed):
@@ -572,7 +572,7 @@ def _hot_stamp():
     return gal, np.ones((N_STAMP, N_STAMP)), flag
 
 
-@pytest.mark.parametrize("blend_handling", ["none", "uberseg"])
+@pytest.mark.parametrize("blend_handling", ["noisefill", "uberseg"])
 def test_interpolated_fill_and_its_weights(blend_handling):
     """Short defect runs take the interpolant of the clean image; other
     defects take noise; the weight is zero on the defects and on the

@@ -660,7 +660,7 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     inst._id_obj_min = inst._id_obj_max = -1
     inst._bkg_sub = True
     inst._pixel_scale = .186
-    inst._blend_handling = "none"
+    inst._blend_handling = "noisefill"
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
     inst._epoch_central_defect_radius = module.EPOCH_CENTRAL_DEFECT_RADIUS

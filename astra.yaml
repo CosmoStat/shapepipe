@@ -1392,7 +1392,7 @@ analyses:
         rationale: >-
           Covers only pixels shared with a neighbour; defect_fill does not
           depend on it: defects are noise-filled under every BLEND_HANDLING.
-          none (the default; the committed config
+          noisefill (the default; the committed config
           sets no key) leaves neighbours fully weighted and untouched.
           uberseg zeroes the weight of pixels nearer a neighbour's coadd
           segmentation footprint than the target's (DILATE_NEIGHBOUR, default 1)
@@ -1415,10 +1415,10 @@ analyses:
           instead cut the target's own light along an unsheared boundary, a
           sharp edge that rings in the FFTs. The recommended comparison arm is
           uberseg (weight-only), with defect_fill held equal across arms.
-        default: none
+        default: noisefill
         options:
-          none:
-            label: No neighbour treatment (BLEND_HANDLING = none)
+          noisefill:
+            label: No neighbour treatment (BLEND_HANDLING = noisefill)
             description: >-
               Neighbour pixels keep their full weight and image values, so the
               fit sees all neighbour light, which biases shapes toward
