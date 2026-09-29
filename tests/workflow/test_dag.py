@@ -1,5 +1,6 @@
 """Resolved-job checks for campaign scope, product paths, and PSF custody."""
 
+import os
 from collections import Counter
 from pathlib import Path
 
@@ -224,3 +225,43 @@ def test_unknown_blend_handling_fails_during_parse(tmp_path, resolve_dag):
     with pytest.raises(WorkflowError, match=r"Invalid blend_handling='mof'"):
         with resolve_dag(campaign):
             pytest.fail("an unknown blend_handling must fail at parse time")
+
+
+INHERITED_BLEND_ENV = {
+    f"{prefix}{name}": value
+    for prefix in ("", "APPTAINERENV_", "SINGULARITYENV_")
+    for name, value in (("SP_SEG_VIGNET", "True"),
+                        ("SP_BLEND_HANDLING", "uberseg"))
+}
+
+
+def test_noisefill_ignores_blend_variables_in_the_launch_shell(
+        tmp_path, resolve_dag):
+    """A noisefill campaign launched from a shell that still exports the
+    uberseg variables plans exactly the campaign launched from a clean one,
+    and the parse leaves none of them in the environment jobs inherit (the
+    slurm executor submits with --export=ALL from this process)."""
+    clean = Campaign(tmp_path / "clean", "data", "psfex")
+    _, clean_jobs = _surface(clean, resolve_dag)
+
+    dirty = Campaign(tmp_path / "dirty", "data", "psfex")
+    with resolve_dag(dirty, launch_env=INHERITED_BLEND_ENV) as dag:
+        leaked = sorted(set(INHERITED_BLEND_ENV) & set(os.environ))
+        dirty_jobs = {
+            (job.rule.name, tuple(sorted(job.wildcards_dict.items()))): (
+                getattr(job.params, "pre", None), job.shellcmd,
+                job.resources.get("mem_mb"))
+            for job in dag.jobs
+        }
+    assert leaked == []
+
+    def normalized(jobs, root):
+        return {key: tuple(v.replace(str(root), "<ROOT>")
+                           if isinstance(v, str) else v for v in value)
+                for key, value in jobs.items()}
+
+    assert (normalized(dirty_jobs, tmp_path / "dirty")
+            == normalized(clean_jobs, tmp_path / "clean"))
+    for _, shell, _ in dirty_jobs.values():
+        assert "SP_BLEND_HANDLING" not in (shell or "")
+        assert "SP_SEG_VIGNET" not in (shell or "")
