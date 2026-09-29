@@ -23,13 +23,15 @@ FLAGS
 #
 # Its replacement is make_cat's per-bit MASK_n<bit> columns, queried from the
 # sky-fixed UNIONS healsparse maps named by MASK_EXT_PATHS in
-# config_tile_Mc.ini — which carries the bit table and the caveats. Those 11
+# config_tile_Mc.ini — which carries the bit table and the caveats. The numeric
+# bit identifies each column; source labels include HSC z for n256 and
+# Pan-STARRS z-band (z2) for n2048. Those 11
 # names and these 11 lines must stay in step: a name here that make_cat did not
 # write fails every merge, on every campaign.
 #
-# sp_validation still cuts on IMAFLAGS_ISO; that cut has to move onto these
-# columns (issue to follow), and it is NOT a plain OR — n2048 is 1 where there
-# is no Pan-STARRS z2 data, so OR-ing every column masks the whole survey.
+# sp_validation selects which columns enter its mask cut. It cannot be a plain
+# OR of every column: n2048 is 1 where there is no Pan-STARRS z2 data, so that
+# OR masks the whole survey.
 MASK_n1
 MASK_n2
 MASK_n4

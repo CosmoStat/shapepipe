@@ -301,7 +301,9 @@ analyses:
           integer maps). The committed config names the UNIONS band-combined
           ugriz mask ladder, one boolean map per bit (nside 131072, True =
           masked), labelled n<bit>: eleven MASK_n* columns, matched line for
-          line in final_cat.param. Nothing in the pipeline cuts on them
+          line in final_cat.param. The numeric bit identifies the column;
+          source labels such as HSC z (n256) and Pan-STARRS z2 (n2048) describe
+          the maps. Nothing in the pipeline cuts on them
           (mask_default_cut).
         default: catalogue_columns
         options:
@@ -320,8 +322,9 @@ analyses:
         rationale: >-
           make_cat writes one boolean MASK_n<bit> column per map in
           MASK_EXT_PATHS (11 bits: star halos n1/n2, star body n4, manual n8,
-          per-band no-data footprints n16..n256, MaxiMask n1024, Pan-STARRS
-          z2 footprint n2048) and cuts nothing; the cut is the consumer's
+          per-band no-data footprints n16..n256 (n256 is HSC z), MaxiMask
+          n1024, Pan-STARRS z-band footprint n2048 (z2)) and cuts nothing;
+          the cut is the consumer's
           (sp_validation). The default is n1|n2|n4|n8|n64|n1024 because it
           reproduces the published 2D-cosmic-shear mask
           (/n17data/UNIONS/WL/masks/mask_r_nside131072.hsp), so the
@@ -349,7 +352,8 @@ analyses:
             label: OR of all 11 MASK_n* columns
             excluded: true
             excluded_reason: >-
-              The u/g/i/z footprint bits and n2048 flag missing data in other
+              The u/g/i/HSC-z footprint bits and Pan-STARRS z2 bit n2048 flag
+              missing data in other
               filters, not r-band defects; OR-ing them masks whole regions
               with no u or Pan-STARRS z2 coverage.
     prior_insights:
