@@ -1040,6 +1040,7 @@ rule final_cat_merge:
         tile_list    = str(config["tile_list"]),
         index_db     = str(INDEX_DB),
         param_file   = str(CONFIG_DIR / "final_cat.param"),
+        tile_detection = TILE_DETECTION,
         campaign     = CAMPAIGN,
         snapshot     = str(SNAPSHOT_JSON),
         inputs       = unit_fingerprint(TILES_READY),
@@ -1064,4 +1065,5 @@ rule final_cat_merge:
         " --output {output.merged}"
         " --campaign '{params.campaign}'"
         " --param-file '{params.param_file}'"
+        " --tile-detection {params.tile_detection}"
         " --snapshot-json '{params.snapshot}'"

@@ -234,6 +234,10 @@ NGMIX_FLUX_ERR_2P
 NGMIX_FLUX_ERR_NOSHEAR
 
 # magnitudes
+# SExtractor detection columns. Under tile_detection: unions_catalogue the
+# UNIONS catalogue supplies them, and the merge drops the ones it lacks
+# (merge_final_cat.SEXTRACTOR_ONLY_COLUMNS: the WIN, AUTO-flux, APER and FWHM
+# columns and SNR_WIN); MAG_AUTO, MAGERR_AUTO and FLUX_RADIUS are in both.
 MAG_AUTO
 MAGERR_AUTO
 MAG_WIN
