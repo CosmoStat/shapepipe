@@ -563,8 +563,8 @@ def get_tile_number(tile_name):
         tile number for x and tile number for y
 
     """
-    m = re.search(r"(\d{3})[\.-](\d{3})", tile_name)
-    if m is None or len(m.groups()) != 2:
+    m = re.search(r"(?<!\d)(\d{3})[\.-](\d{3})(?!\d)", tile_name)
+    if m is None:
         raise CfisError(
             f"Image name '{tile_name}' does not match tile name syntax"
         )
@@ -599,6 +599,94 @@ def get_tile_number_list(tile_name_list):
         niy_list.append(niy)
 
     return nix_list, niy_list
+
+
+# Survey-wide object ID: ``tile_id * TILE_UNIQUE_ID_BASE + NUMBER``, with
+# ``tile_id = RRR * 1000 + DDD``. Assumes fewer than 10**6 objects per tile.
+TILE_UNIQUE_ID_BASE = 10**6
+
+
+def get_tile_id(tile_name):
+    """Get Tile ID.
+
+    Return the integer tile ID ``RRR * 1000 + DDD`` of a tile, where
+    ``RRR`` and ``DDD`` are the 3-digit tile numbers (see
+    :func:`get_tile_number`).
+
+    Parameters
+    ----------
+    tile_name : str
+        Tile name or file-number string, e.g. ``'CFIS.301.279.r'`` or
+        ``'-301-279'``
+
+    Returns
+    -------
+    int
+        Tile ID, e.g. ``301279``
+
+    """
+    nix, niy = get_tile_number(tile_name)
+    return int(nix) * 1000 + int(niy)
+
+
+def get_tile_unique_id(tile_id, number):
+    """Get Tile Unique ID.
+
+    Return the survey-wide object ID ``tile_id * 10**6 + number``.
+
+    Parameters
+    ----------
+    tile_id : int
+        Tile ID from :func:`get_tile_id`
+    number : int or array_like
+        Object number in the tile's input detection catalogue
+
+    Raises
+    ------
+    CfisError
+        if ``tile_id`` is outside ``[0, 10**6)`` or any ``number`` is
+        outside ``[0, 10**6)``
+
+    Returns
+    -------
+    int or numpy.ndarray
+        Unique ID(s), int64
+
+    """
+    number = np.asarray(number, dtype=np.int64)
+    if not 0 <= tile_id < TILE_UNIQUE_ID_BASE:
+        raise CfisError(
+            f"tile_id {tile_id} outside [0, {TILE_UNIQUE_ID_BASE})"
+        )
+    if number.size and (
+        number.min() < 0 or number.max() >= TILE_UNIQUE_ID_BASE
+    ):
+        raise CfisError(
+            f"Object number outside [0, {TILE_UNIQUE_ID_BASE}) in tile "
+            f"{tile_id}: range [{number.min()}, {number.max()}]"
+        )
+    unique_id = np.int64(tile_id) * TILE_UNIQUE_ID_BASE + number
+    return unique_id[()] if unique_id.ndim == 0 else unique_id
+
+
+def split_tile_unique_id(unique_id):
+    """Split Tile Unique ID.
+
+    Inverse of :func:`get_tile_unique_id`.
+
+    Parameters
+    ----------
+    unique_id : int or array_like
+        Unique ID(s)
+
+    Returns
+    -------
+    tuple
+        tile ID(s) and object number(s)
+
+    """
+    unique_id = np.asarray(unique_id, dtype=np.int64)
+    return np.divmod(unique_id, TILE_UNIQUE_ID_BASE)
 
 
 def get_log_file(path, verbose=False):

@@ -28,6 +28,7 @@ Scratch and persistent roots differ, and the products directory's basename delib
 The three modes are `data+psfex`, `data+mccd`, and `image_sims+fake`.
 `final_cat_merge` is present in all three: it merges galaxy catalogues regardless of the PSF source.
 Only `exp_persist` and `star_cat_merge` disappear for fake PSFs.
+The run config leaves `tile_detection` to config.yaml's `input_types:` table, so `data` plans the UNIONS-catalogue detection (adding `tile_get_catalogue`, fed from a fixture-local `inputs.catalogues`) and `image_sims` plans SExtractor.
 
 `resolve()` uses the same `SP_PHASE`, `SP_PROFILE`, `SP_RUN_CONFIG`, image selection, and state-directory conventions as `workflow/bin/sp`.
 It isolates the environment, source cache, bare script imports, and Snakemake's shared global namespace.

@@ -42,13 +42,14 @@ SAVE_BATCH : int, optional
     Save the output catalogue in batches of this size; default is ``-1``
     (no batch saving)
 ID_OBJ_MIN : int
-    ID of first galaxy object to be processed; not used if set to ``-1``
-    (default). Environment variables are expanded, so an orchestrator can
-    set the object range per chunk, for example
-    ``ID_OBJ_MIN = $SP_NGMIX_ID_OBJ_MIN``.
+    First tile-catalogue row to process, as a 1-based row position (not a
+    ``NUMBER`` value); not used if set to ``-1`` (default). Environment
+    variables are expanded, so an orchestrator can set the row range per
+    chunk, for example ``ID_OBJ_MIN = $NGMIX_ROW_MIN``.
 ID_OBJ_MAX : int
-    ID of last galaxy object to be processed; not used if set to ``-1``
-    (default). Environment variables are expanded, as for ``ID_OBJ_MIN``.
+    Last tile-catalogue row to process (1-based, inclusive); not used if
+    set to ``-1`` (default). Environment variables are expanded, as for
+    ``ID_OBJ_MIN``.
 BKG_RMS_VIGNET_PATH : str, optional
     Path to a ``background_rms_vignet*.sqlite`` file produced by
     ``vignetmaker_runner``. The string may contain
