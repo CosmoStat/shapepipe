@@ -96,3 +96,35 @@ def test_optional_path_with_an_unknown_variable_is_reported():
         inputs={"masks": "/m/$nope"}, container="/c/$nope.sif"))
     assert set(run_config.unresolved(cfg)) == {
         "outputs.products_dir", "inputs.masks", "container"}
+
+
+def test_shipped_config_carries_no_retired_key():
+    assert run_config.retired(yaml.safe_load(CONFIG_YAML.read_text())) == []
+
+
+def test_retired_keys_are_found_wherever_they_sit():
+    """`coverage:` / `defect_map:` at the top level, on a machine, or on a
+    machine's input_type block are each reported with their replacement."""
+    config = {
+        "coverage": {"enabled": False},
+        "exposure_maps": {"nexp": {"enabled": True}},
+        "machines": {
+            "nibi": {"defect_map": {"oversample": 3},
+                     "data": {"coverage": {"nside": 131072}}},
+            "candide": {"image_sims": {"retrieve": "symlink"}},
+        },
+    }
+    found = dict(run_config.retired(config))
+    assert set(found) == {"coverage", "machines.nibi.defect_map",
+                          "machines.nibi.data.coverage"}
+    assert "exposure_maps.nexp" in found["coverage"]
+    assert "exposure_maps.defect" in found["machines.nibi.defect_map"]
+    assert "exposure_maps.nside" in found["machines.nibi.data.coverage"]
+
+
+def test_snakefile_refuses_retired_keys_at_parse_time():
+    """The Snakefile raises on retired() before anything else reads config."""
+    text = (REPO_ROOT / "workflow" / "Snakefile").read_text()
+    check = text.index("run_config.retired(config)")
+    assert check < text.index("run_config.apply_machine_defaults(config)")
+    assert "raise WorkflowError" in text[check:check + 400]
