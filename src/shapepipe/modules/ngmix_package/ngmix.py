@@ -30,6 +30,9 @@ from shapepipe.modules.ngmix_package.defect_interpolation import (
 )
 from shapepipe.pipeline import file_io
 
+# Flag bit set on an epoch's off-tile pixels (see :func:`split_tile_markers`).
+OFF_TILE_FLAG = 2**10
+
 # Neighbour treatments selectable with the BLEND_HANDLING option.
 BLEND_HANDLINGS = ("noisefill", "uberseg")
 
@@ -604,8 +607,9 @@ class Postage_stamp():
         self.weights = []
         self.flags = []
         # Neighbour masks, one per epoch: the pixels SExtractor marks -1e30 in
-        # the tile VIGNET (other detections' footprints), MegaCam-flipped to
-        # the epoch. noisefill zero-weights and noise-fills them; uberseg and
+        # the tile VIGNET on other detections' footprints (off-tile markers
+        # are flagged as defects instead; see split_tile_markers),
+        # MegaCam-flipped to the epoch. noisefill zero-weights and noise-fills them; uberseg and
         # the epoch cuts do not read them (see prepare_ngmix_weights).
         self.neighbours = []
         self.bkg_rms = []
@@ -761,7 +765,7 @@ class Ngmix(object):
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment. ``"noisefill"`` (default) zero-weights and
         noise-fills the pixels SExtractor marks -1e30 in the tile VIGNET
-        (other detections' footprints); ``"uberseg"`` ignores those markers,
+        on other detections' footprints; ``"uberseg"`` ignores those markers,
         zeroes the weight of neighbour-side pixels from the coadd
         segmentation map and requires ``seg_cat_path``. Defect pixels are
         filled under both (see :func:`prepare_ngmix_weights`).
@@ -1525,12 +1529,20 @@ def prepare_postage_stamps(
 
     @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
     SExtractor writes -1e30 into the tile VIGNET on the footprints of other
-    detections (and beyond the tile's edge). These markers form the epoch's neighbour mask
-    (``stamp.neighbours``, MegaCam-flipped like the epoch), kept apart from
-    its flag stamp, so neither the masked-fraction cut nor the central
-    veto counts them. Every epoch shares the tile VIGNET: counting a
-    neighbour within the veto radius as a defect would drop every epoch of
-    the object.
+    detections and beyond the tile's edge (:func:`split_tile_markers`). The
+    footprint markers form the epoch's neighbour mask (``stamp.neighbours``,
+    MegaCam-flipped like the epoch), kept apart from its flag stamp, so
+    neither the masked-fraction cut nor the central veto counts them. Every
+    epoch shares the tile VIGNET: counting a neighbour within the veto
+    radius as a defect would drop every epoch of the object.
+
+    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.defect_fill] off-tile-pixels-are-defects
+    Beyond the tile's edge the epoch holds real data, the object's own light
+    cut off by the tile. Those pixels are flagged ``OFF_TILE_FLAG`` (2**10)
+    in the epoch's flag stamp and so join its defect set under every
+    ``blend_handling``: zero weight, the defect fill, and both epoch cuts.
+    On a 51-px stamp an object within about 8.5 px of the tile edge fails
+    the 1/3 cut.
 
     Parameters
     ----------
@@ -1634,12 +1646,10 @@ def prepare_postage_stamps(
             tile_seg = Ngmix.MegaCamFlip(tile_seg, int(ccd_n))
 
         flag_vign = flag_obj[expccd_name]['VIGNET']
-        # Neighbour markers (neighbour-markers-are-not-defects).
-        neighbour = (
-            tile_vign == -1e30
-            if tile_vign is not None
-            else np.zeros(np.shape(gal_vign), dtype=bool)
-        )
+        # Off-tile pixels are defects (off-tile-pixels-are-defects); the
+        # other -1e30 markers are neighbours (neighbour-markers-are-not-defects).
+        neighbour, off_tile = split_tile_markers(tile_vign, np.shape(gal_vign))
+        flag_vign[off_tile] = OFF_TILE_FLAG
         weight_vign = weight_obj[expccd_name]['VIGNET']
         bkg_rms_vign = (
             bkg_rms_obj[expccd_name]['VIGNET']
@@ -1713,6 +1723,38 @@ def prepare_postage_stamps(
             stamp.ccd = int(ccd_n)
 
     return stamp
+
+def split_tile_markers(tile_vign, shape):
+    """Split the tile VIGNET's -1e30 markers into neighbour and off-tile.
+
+    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-whole-marked-rows-and-columns
+    SExtractor writes -1e30 on the footprints of other detections and on
+    stamp pixels beyond the tile's edge. A stamp clipped by the tile's
+    rectangle loses whole rows and whole columns, so the off-tile pixels are
+    the union of the stamp rows and columns that are entirely -1e30. The
+    remaining markers are neighbour pixels; a footprint touching the stamp
+    border stays a neighbour unless it fills a whole row or column.
+
+    Parameters
+    ----------
+    tile_vign : numpy.ndarray or None
+        Tile VIGNET stamp, oriented like the epoch; ``None`` marks nothing.
+    shape : tuple of int
+        Stamp shape, used when ``tile_vign`` is ``None``.
+
+    Returns
+    -------
+    numpy.ndarray of bool
+        Neighbour pixels.
+    numpy.ndarray of bool
+        Off-tile pixels.
+    """
+    if tile_vign is None:
+        return np.zeros(shape, dtype=bool), np.zeros(shape, dtype=bool)
+    marker = tile_vign == -1e30
+    off_tile = marker.all(axis=1)[:, None] | marker.all(axis=0)[None, :]
+    return marker & ~off_tile, off_tile
+
 
 def background_subtract(gal,bkg):
     """background subtraction.
@@ -2007,7 +2049,8 @@ def defect_mask(weight, flag, bkg_rms=None):
     This one set is zero-weighted and filled by :func:`prepare_ngmix_weights`
     under every ``blend_handling`` and counted by the epoch cuts in
     :func:`prepare_postage_stamps`. SExtractor's neighbour markers are not
-    in it (neighbour-markers-are-not-defects). It is not ORed with its
+    in it (neighbour-markers-are-not-defects); off-tile pixels are, as flag
+    ``OFF_TILE_FLAG`` (off-tile-pixels-are-defects). It is not ORed with its
     rotations. For defects the central-defect veto keeps
     (:func:`has_central_defect`), the unsymmetrized fill leaves
     |c| <= 3e-4 per affected epoch on galaxies with half-light radius 0.3"
@@ -2196,7 +2239,7 @@ def prepare_ngmix_weights(
     raw and weighted.
 
     @sc [decision:shape_measurement.blend_handling] uberseg-ignores-markers
-    Under ``"uberseg"`` the markers are ignored: :func:`uberseg_weight`
+    Under ``"uberseg"`` the neighbour markers are ignored: :func:`uberseg_weight`
     zeroes the weight of pixels nearer a neighbour's segmentation footprint
     than the target's and leaves their image values raw, because that light
     is real sky that metacal shears along with the target; filling it with

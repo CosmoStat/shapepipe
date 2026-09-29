@@ -1321,8 +1321,8 @@ analyses:
       defect_fill:
         label: Image content of defect pixels before metacal
         rationale: >-
-          A defect pixel (nonzero instrument flag, zero exposure weight or
-          invalid background RMS) gets weight 0 in prepare_ngmix_weights. Its
+          A defect pixel (nonzero instrument flag, zero exposure weight,
+          invalid background RMS, or off-tile) gets weight 0 in prepare_ngmix_weights. Its
           image value still matters: ngmix's metacal deconvolves, shears and
           reconvolves an InterpolatedImage of the whole image and copies the
           weights through, so a zero-weight pixel's content spreads into the
@@ -1331,9 +1331,13 @@ analyses:
           FFTs". Under every BLEND_HANDLING and the default DEFECT_FILL =
           noise, defect pixels are replaced with independent noise at the
           per-pixel background RMS when supplied, or the stamp's robust noise
-          scale otherwise. SExtractor's -1e30 neighbour markers in the tile
-          VIGNET are not defects; blend_handling decides their treatment. The
-          committed fill
+          scale otherwise. SExtractor writes -1e30 into the tile VIGNET on
+          other detections' footprints and beyond the tile's edge. The stamp
+          rows and columns that are entirely -1e30 (the off-image part of a
+          rectangle clip) are off-tile: the epoch holds the object's own light
+          there, so they are defects, flagged 2**10. The other markers are
+          neighbour pixels, not defects; blend_handling decides their
+          treatment. The committed fill
           uses the unsymmetrized defect set: DES symmetrized its masks, but
           four-fold symmetrization quadruples m and still leaves an additive c1
           (symmetrized_4fold_noise). The cost of not symmetrizing, a hole in
@@ -1396,8 +1400,10 @@ analyses:
           BLEND_HANDLING, and the epoch cuts never count neighbour pixels.
           noisefill (the default; the committed config sets no key) gives
           weight 0 to the pixels SExtractor marks -1e30 in the tile VIGNET
-          (other detections' footprints; about 93% of neighbour-footprint
-          pixels on a SExtractor-mode sims tile) and replaces them with noise; unmarked
+          on other detections' footprints (about 93% of neighbour-footprint
+          pixels on a SExtractor-mode sims tile), excluding the off-tile
+          rows and columns, which are defects, and replaces them with noise;
+          unmarked
           neighbour pixels keep their weight and light. uberseg ignores the
           markers and zeroes the weight of pixels nearer a neighbour's coadd
           segmentation footprint than the target's (DILATE_NEIGHBOUR, default 1)
@@ -1465,7 +1471,8 @@ analyses:
           in the epoch loop; EPOCH_CENTRAL_DEFECT_RADIUS = 0 disables it.
           SExtractor's -1e30 neighbour markers are not defects: all epochs
           share the tile VIGNET, so a neighbour inside the radius would drop
-          every epoch. The veto reads only the defect mask, so it selects on nothing shear-responsive; for the same
+          every epoch. Off-tile pixels are defects, so an object near the
+          tile edge is vetoed. The veto reads only the defect mask, so it selects on nothing shear-responsive; for the same
           reason the radii are fixed rather than scaled by galaxy size: 10 px
           for noise-filled pixels (EPOCH_CENTRAL_DEFECT_RADIUS) and 7 px for
           interpolated ones (EPOCH_INTERPOLATED_DEFECT_RADIUS,
@@ -1500,10 +1507,12 @@ analyses:
           An epoch whose stamp has more than EPOCH_MASKED_FRACTION_CUT
           (default 1/3) of its pixels in the raw, unsymmetrized defect set is
           dropped from the multi-epoch fit: flagged pixels (any nonzero
-          exposure flag bit), zero-weight pixels and invalid-RMS pixels, the
-          set defect_fill fills. SExtractor's -1e30 neighbour markers in the
-          tile VIGNET are not counted: every epoch shares the tile VIGNET, so
-          a large neighbour would drop them all. An object with no surviving epoch has no
+          exposure flag bit), zero-weight pixels, invalid-RMS pixels and
+          off-tile pixels (whole -1e30 rows and columns of the tile VIGNET,
+          flag 2**10), the set defect_fill fills. On a 51-px stamp an object
+          within about 8.5 px of the tile edge fails the 1/3 cut. The other
+          -1e30 markers, neighbour footprints, are not counted: every epoch
+          shares the tile VIGNET, so a large neighbour would drop them all. An object with no surviving epoch has no
           shape. Before the cut, an epoch is
           dropped silently if its galaxy stamp is all zeros or its
           background-subtracted sigma_mad is not positive. DES was stricter:

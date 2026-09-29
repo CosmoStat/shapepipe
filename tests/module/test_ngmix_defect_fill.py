@@ -786,7 +786,7 @@ def _expected_neighbours(tile, name):
 
 
 def test_neighbour_markers_near_the_centre_keep_every_epoch():
-    """A neighbour footprint 3 px from the centre, and one covering 45% of
+    """A neighbour footprint 3 px from the centre, and one covering 41% of
     the stamp, drop no epoch: the masked-fraction cut and the central veto
     count no marker.
 
@@ -796,8 +796,10 @@ def test_neighbour_markers_near_the_centre_keep_every_epoch():
     (neighbour-markers-are-not-defects).
     """
     small = _tile_with_neighbour()
-    large = _tile_with_neighbour(rows=(0, N_STAMP))
-    large[:, _CENTRE + 3:] = _MARKER
+    # Large, but short of the stamp border: no row or column is entirely
+    # marked, so it is a neighbour, not off-tile.
+    large = _tile_with_neighbour()
+    large[1:-1, _CENTRE + 3:-1] = _MARKER
     assert (large == _MARKER).mean() > 1 / 3
     for tile in (small, large):
         stamp, _, _ = _marker_stamp(tile)
@@ -939,6 +941,11 @@ def test_noisefill_matches_develop_on_marked_neighbours(
     """For an epoch with a marked neighbour, noisefill returns the image,
     weight and noise image develop returned, bit for bit: with no defect,
     and with a flagged column and a dead pixel under the default noise fill.
+    The stamps carry no off-tile pixels, and the equivalence is claimed for
+    such stamps only. Off-tile pixels reach this function as flag 2**10
+    defects (off-tile-pixels-are-defects), as every marker did on develop;
+    which epochs survive the cuts differs from develop wherever there are
+    neighbour markers.
 
     Failure mode: carrying the markers apart from the flags changes what
     noisefill does to neighbour pixels, their weights, the noise level or
@@ -1002,3 +1009,111 @@ def test_do_ngmix_metacal_threads_each_epochs_neighbour_mask(monkeypatch):
         )
     for got, want in zip(seen, stamp.neighbours):
         assert got is want
+
+
+# --- Off-tile pixels are defects -------------------------------------------
+#
+# SExtractor also writes -1e30 beyond the tile's edge, where the epoch holds
+# the object's own light, cut off. Those pixels are the stamp rows and
+# columns that are entirely -1e30 (the off-image part of a rectangle clip);
+# they join the epoch's defect set as flag 2**10. The other markers are the
+# neighbour mask.
+
+_OFF_TILE = 2**10
+
+
+def _off_tile_expected(tile, name):
+    flipped = Ngmix.MegaCamFlip(tile, int(name.split("-")[1])) == _MARKER
+    return flipped.all(axis=1)[:, None] | flipped.all(axis=0)[None, :]
+
+
+def test_object_three_px_from_the_tile_edge_is_dropped():
+    """With the tile edge 3 px from the object, every epoch is dropped: the
+    off-tile band counts toward the epoch cuts.
+
+    Failure mode: off-tile pixels are treated as neighbour markers, so an
+    edge object is measured with a noise-filled band through its own light
+    (off-tile-pixels-are-defects).
+    """
+    tile = np.random.default_rng(5).normal(0.0, 1.0, (N_STAMP, N_STAMP))
+    tile[:, :_CENTRE - 2] = _MARKER
+    stamp, _, _ = _marker_stamp(tile)
+    assert len(stamp.gals) == 0
+    assert stamp.epoch_cuts["considered"] == len(_MARKER_EPOCH_NAMES)
+    assert (
+        stamp.epoch_cuts["masked_fraction"] + stamp.epoch_cuts["central_veto"]
+        == len(_MARKER_EPOCH_NAMES)
+    )
+
+
+def test_the_central_veto_sees_off_tile_pixels():
+    """An off-tile band 12 px from the object (27% of the stamp) passes the
+    default cuts and is vetoed at radius 13.
+
+    Failure mode: the central veto does not read the off-tile set.
+    """
+    tile = np.random.default_rng(5).normal(0.0, 1.0, (N_STAMP, N_STAMP))
+    tile[:, :_CENTRE - 11] = _MARKER
+    kept, _, _ = _marker_stamp(tile)
+    assert len(kept.gals) == len(_MARKER_EPOCH_NAMES)
+    vetoed, _, _ = _marker_stamp(tile, epoch_central_defect_radius=13)
+    assert len(vetoed.gals) == 0
+    assert vetoed.epoch_cuts["central_veto"] == len(_MARKER_EPOCH_NAMES)
+
+
+def test_corner_off_tile_region_and_border_neighbour_are_classified():
+    """At a tile corner, the L-shaped off-tile region is flagged 2**10
+    exactly, and a neighbour footprint touching the stamp border without
+    filling a row or column stays in the neighbour mask.
+
+    Failure modes: off-tile pixels are classified by something other than
+    whole marked rows and columns (the L is missed or a border-touching
+    neighbour is swallowed); the classification ignores the MegaCam flip.
+    """
+    tile = np.random.default_rng(5).normal(0.0, 1.0, (N_STAMP, N_STAMP))
+    tile[:5, :] = _MARKER
+    tile[:, -5:] = _MARKER
+    tile[40:, :6] = _MARKER  # neighbour on the bottom-left border
+    stamp, epochs, _ = _marker_stamp(tile)
+    names = {id(v[0]): name for name, v in epochs.items()}
+    assert len(stamp.gals) == len(_MARKER_EPOCH_NAMES)
+    for flag, neighbour in zip(stamp.flags, stamp.neighbours):
+        name = names[id(flag)]
+        off_tile = _off_tile_expected(tile, name)
+        assert off_tile.sum() == 5 * N_STAMP * 2 - 25
+        npt.assert_array_equal(flag == _OFF_TILE, off_tile)
+        npt.assert_array_equal(
+            neighbour, _expected_neighbours(tile, name) & ~off_tile
+        )
+        assert neighbour.sum() == 11 * 6
+
+
+@pytest.mark.parametrize("blend_handling", ["noisefill", "uberseg"])
+def test_off_tile_pixels_are_zero_weighted_and_filled(blend_handling):
+    """Off-tile pixels are zero-weighted and noise-filled under either
+    BLEND_HANDLING; under uberseg the neighbour markers stay raw.
+
+    Failure mode: under uberseg the off-tile band keeps its weight, or the
+    fill differs between blend handlings.
+    """
+    tile = np.random.default_rng(5).normal(0.0, 1.0, (N_STAMP, N_STAMP))
+    tile[:5, :] = _MARKER
+    tile[20:24, 35:40] = _MARKER
+    stamp, _, _ = _marker_stamp(tile)
+    seg = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+    seg[_CENTRE - 1:_CENTRE + 2, _CENTRE - 1:_CENTRE + 2] = 1
+    kwargs = (
+        dict(seg=seg, object_number=1) if blend_handling == "uberseg" else {}
+    )
+    for i in range(len(stamp.gals)):
+        gal = 1.0e3 + stamp.gals[i]
+        gal_out, w_out, _ = _stamp_epoch_weights(
+            stamp, i, seed=i, blend_handling=blend_handling, **kwargs,
+        )
+        off_tile = stamp.flags[i] == _OFF_TILE
+        assert off_tile.sum() == 5 * N_STAMP
+        removed = off_tile | (
+            stamp.neighbours[i] if blend_handling == "noisefill" else False
+        )
+        npt.assert_array_equal(gal_out != gal, removed)
+        npt.assert_array_equal(w_out == 0.0, removed)
