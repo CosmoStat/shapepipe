@@ -21,7 +21,7 @@ from shapepipe.modules.ngmix_package.ngmix import (
     get_type_flags,
 )
 from shapepipe.pipeline import file_io
-from shapepipe.utilities import mask_query
+from shapepipe.utilities import cfis, mask_query
 
 
 def get_output_name(output_dir, file_number_string):
@@ -100,7 +100,11 @@ def remove_field_name(arr, name):
 def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     """Save SExtractor Data.
 
-    Save the SExtractor catalogue into the final one.
+    Save the SExtractor catalogue into the final one, adding the tile as
+    ``TILE_ID`` (float ``RRR.DDD``) and the survey-wide object ID
+    ``TILE_UNIQUE_ID`` (:func:`shapepipe.utilities.cfis.get_tile_unique_id`
+    of the tile and ``NUMBER``). The tile is read from the catalogue's file
+    name, e.g. ``sexcat-301-279.fits``.
 
     Parameters
     ----------
@@ -123,22 +127,19 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     data = np.copy(sexcat_file.get_data())
     if remove_vignet:
         data = remove_field_name(data, "VIGNET")
-
-    final_cat_file.save_as_fits(data, ext_name="RESULTS")
-
     cat_size = len(data)
 
-    tile_id = float(
-        ".".join(
-            re.split("-", os.path.splitext(os.path.split(sexcat_path)[1])[0])[
-                1:
-            ]
-        )
+    tile_name = os.path.basename(sexcat_path)
+    nix, niy = cfis.get_tile_number(tile_name)
+    tile_id_array = np.full(cat_size, float(f"{nix}.{niy}"))
+    unique_id = cfis.get_tile_unique_id(
+        cfis.get_tile_id(tile_name), data["NUMBER"]
     )
-    tile_id_array = np.ones(cat_size) * tile_id
 
+    final_cat_file.save_as_fits(data, ext_name="RESULTS")
     final_cat_file.open()
     final_cat_file.add_col("TILE_ID", tile_id_array)
+    final_cat_file.add_col("TILE_UNIQUE_ID", unique_id)
 
     sexcat_file.close()
 

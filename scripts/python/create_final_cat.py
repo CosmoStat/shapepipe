@@ -33,8 +33,8 @@ def params_from_run_config(params, defaults):
     The workflow already knows where a campaign writes, so a manual merge
     should not have to restate it. Resolution goes through the workflow's own
     resolver (workflow/scripts/run_config.py), layering the run config on
-    workflow/config.yaml and then the machines: table, so what lands here is
-    what the rules would have used.
+    workflow/config.yaml and then the input_types: and machines: tables, so
+    what lands here is what the rules would have used.
 
     Only values still at their default are filled -- an explicit flag always
     wins. Nothing is derived for the data path: its patch naming differs and

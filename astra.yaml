@@ -329,10 +329,11 @@ analyses:
   # ═════════════════════════════════════════════════════════════════════════
   detection:
     description: >-
-      Object detection with SExtractor on r-band tiles (the galaxy sample) and
-      on single-exposure CCDs (PSF-star candidates). Tiles follow the MegaPipe
-      parameters of Gwyn's UNIONS tile catalogue; exposures keep ShapePipe's
-      stock values.
+      Object detection on r-band tiles (the galaxy sample) and on
+      single-exposure CCDs (PSF-star candidates, always SExtractor). The tile
+      sample is Gwyn's UNIONS tile catalogue or ShapePipe's own SExtractor run
+      (tile_detection); the latter follows the MegaPipe parameters of that
+      catalogue, while exposures keep ShapePipe's stock values.
     inputs:
       - id: tile_stack
         type: data
@@ -344,12 +345,34 @@ analyses:
         description: Per-tile SExtractor LDAC catalogue with per-epoch CCD membership.
         inputs: [tile_stack]
         decisions:
-          [detection_threshold_policy, deblending_policy, background_model,
+          [tile_detection, detection_threshold_policy, deblending_policy,
+           background_model,
            weight_map_usage, zero_weight_interpolation, detection_source_mode,
-           epoch_membership_ccd_bounds, photometry_parameters,
+           epoch_membership_ccd_bounds, catalogue_neighbour_marking,
+           photometry_parameters,
            spurious_detection_cleaning, blend_photometry_mask_type,
            saturation_level]
     decisions:
+      tile_detection:
+        label: Source of the tile galaxy sample
+        rationale: >-
+          Real data takes its tile sample from Gwyn's UNIONS per-tile
+          catalogue, converted to the sexcat the chain reads with its own
+          NUMBER kept, so shape, photometry and photo-z catalogues share one
+          object list and one ID (TILE_UNIQUE_ID). PSF stars still come from
+          ShapePipe's exposure-level SExtractor run, because external star
+          catalogues are too shallow. detection_source_mode and the tile
+          SExtractor settings of the other decisions here govern only the
+          sextractor option; epoch_membership_ccd_bounds applies to both.
+          Image simulations, which have no UNIONS catalogue, use sextractor.
+          Values:
+          input_types.data.tile_detection = unions_catalogue.
+        default: unions_catalogue
+        options:
+          unions_catalogue:
+            label: Gwyn's UNIONS per-tile catalogue, converted in place
+          sextractor:
+            label: SExtractor on the tile image
       detection_threshold_policy:
         label: Detection significance, minimum area, matched filter
         rationale: >-
@@ -599,15 +622,48 @@ analyses:
           admits its upper endpoint, column 2080. A WCS inversion failure skips
           that CCD, lowering N_EPOCH; this sets how many exposures enter each
           galaxy's multi-epoch fit.
+          Both tile_detection options run this post-processing.
           Values:
           SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
-          SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True.
+          SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True;
+          READ_EXT_SEXCAT_RUNNER.CCD_SIZE = 33,2080,1,4612;
+          READ_EXT_SEXCAT_RUNNER.MAKE_POST_PROCESS = True.
         default: trimmed_bounds_33_2080
         options:
           trimmed_bounds_33_2080:
             label: "x in (33,2080), y in (1,4612), strict"
           inclusive_bounds:
             label: Same bounds, inclusive
+      catalogue_neighbour_marking:
+        label: Neighbour pixels in the catalogue path's VIGNET
+        rationale: >-
+          ngmix masks a neighbour only where the tile VIGNET is -1e30 (flag
+          2**10: zero weight, noise-filled under noisefill), and SExtractor
+          writes -1e30 on neighbours' footprints and off the image. The
+          unions_catalogue converter reproduces that from the catalogue's own
+          r-band segmentation map (CFIS.<tile>.r.seg.fits.fz, on the tile's
+          pixel grid), so both tile_detection options mask the same way.
+          Segmentation labels are not the catalogue NUMBER; each object claims
+          the footprint under its centre pixel (the VIGNET centre pixel), which
+          on 202.301 matches 36,064 of 36,065 objects with none shared. The map
+          is relabelled to NUMBER (unclaimed footprints -1; an object on sky or
+          on a claimed footprint gets a 3-pixel-radius disc of its own), and
+          VIGNET pixels whose relabelled value is neither 0 nor the object's
+          NUMBER become -1e30. Without it, catalogue-mode ngmix fits neighbour
+          light: in pilot smk-g10, NGMIX_MAG_NOSHEAR was over 1 mag brighter
+          than MAG_AUTO for 6.1% of objects (2.7% with SExtractor, g9).
+          Values:
+          READ_EXT_SEXCAT_RUNNER.SEGMENTATION = True.
+        default: segmentation_map
+        options:
+          segmentation_map:
+            label: -1e30 on other objects' segmentation footprints, as SExtractor
+          none:
+            label: Image pixels only; ngmix masks no neighbours
+            excluded: true
+            excluded_reason: >-
+              Leaves neighbour light in the fit, unlike the sextractor option
+              it replaces; the cause of the smk-g10 magnitude outliers.
     prior_insights:
       guinot22_sextractor_params:
         claim: >-
@@ -913,9 +969,8 @@ analyses:
       psf_modelling_software:
         label: PSF model, PSFEx per CCD or MCCD over the focal plane
         rationale: >-
-          psf_model in workflow/config.yaml's machines: table (per machine and
-          input type; image sims use fake) selects the exposure and tile
-          config pair; the committed value is psfex, which fits each CCD
+          psf_model in workflow/config.yaml's input_types: table (image sims
+          use fake) selects the exposure and tile config pair; the committed value is psfex, which fits each CCD
           independently. MCCD (Liaudat+2021) fits one hybrid local+global
           model over the focal plane; the completeness table treats its
           counts as warnings because no campaign has run it. Up to the model,

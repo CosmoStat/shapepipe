@@ -16,14 +16,26 @@
 # input_tyle: allowed are data or image_sims
 input_type: data
 
-# psf_model (psfex, mccd, or fake) and psf_dict are set per (machine,
-# input_type) in the machines: table below, NOT here: a top-level key
-# shadows that table. The Snakefile falls back to psfex if no entry
-# supplies one.
-
 # Run name, available as `$run` in the paths below; it also names the
 # campaign's merged catalogues. Required, and set by the run config.
 # run: smk-g6
+
+# Default settings per input_type, can be overridden by a user-defined run config file.
+# - tile_detection: allowed are `unions_catalogue` (fetch official UNIONS catalogue
+#   from vos; recommended for data); `sextractor` (detect objects via a SExtractor
+#   module run; required for image_sims)
+# - psf_model: allowed are `psfex` (default), `mccd`; `fake` (image_sims only,
+#   PSF read from psf_dict)
+input_types:
+  data:
+    # @sc [decision:detection.tile_detection]
+    tile_detection: unions_catalogue
+    # @sc [decision:star_selection_psf.psf_modelling_software]
+    psf_model: psfex
+  image_sims:
+    tile_detection: sextractor
+    # @sc [decision:star_selection_psf.psf_modelling_software]
+    psf_model: fake
 
 # Entries per machine (SP_PROFILE, default nibi; implemented: nibi, candide)
 # and input_type. A run config may instead state `machine:`, which must
@@ -32,6 +44,9 @@ input_type: data
 # - tile_list: text file with tile IDs
 # - retrieve: method to get input data, allowed are symlink, vos
 # - inputs.tiles,, .exposures: path for input tile and exposure
+# - inputs.catalogues: UNIONS per-tile catalogues, a local directory
+#   (symlinked in) or a vos: URL (tile_detection: unions_catalogue)
+# - psf_dict: simulation PSF stamps (psf_model: fake)
 # - outputs.run_dir: (scratch) run directory, where tmp files will be stored
 # - outputs.products_dir: path to final products (default run_dir; one root
 #   needs clean: false and clean_tiles: false)
@@ -42,13 +57,15 @@ machines:
   nibi:
     base_dir: /project/def-mjhudson
     data:
-      # @sc [decision:star_selection_psf.psf_modelling_software]
-      psf_model: psfex
       tile_list: $base_dir/cdaley/sp-products/$run/tiles.txt
       retrieve: symlink
       inputs:
         tiles: $base_dir/unions-wl/tiles
         exposures: $base_dir/unions-wl/exposures
+        # UNIONS per-tile catalogues and segmentation maps (CFIS.<tile>.r.cat,
+        # CFIS.<tile>.r.seg.fits.fz), fetched by vcp in
+        # the job: needs network from compute nodes and ~/.ssl/cadcproxy.pem.
+        catalogues: vos:cfis/tiles_DR6
       outputs:
         run_dir: /scratch/cdaley/shapepipe-output/$run
         products_dir: $base_dir/cdaley/sp-products/$run
@@ -58,22 +75,19 @@ machines:
   candide:
     base_dir: /n17data/UNIONS/WL
     data:
-      # @sc [decision:star_selection_psf.psf_modelling_software]
-      psf_model: psfex
       retrieve: vos
+      inputs:
+        catalogues: vos:cfis/tiles_DR6
       container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
     image_sims:
       retrieve: symlink
-      # True simulation PSF: no exposure PSF fit; fake_interp_runner
-      # reads psf_dict below.
-      # @sc [decision:star_selection_psf.psf_modelling_software]
-      psf_model: fake
       inputs:
         # $run is the branch dir (e.g. 1p2z_grid_1), so a run config
         # picks the grid by setting `run:` alone.
         tiles: /n09data/hervas/skills_out/$run/images/SP_tiles
         exposures: /n09data/hervas/skills_out/$run/images/SP_exp
-      # Dictionary of PSF model stamps
+      # Dictionary of PSF model stamps, which psf_model: fake reads in place
+      # of an exposure PSF fit.
       psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle 
       container: /n17data/cdaley/containers/shapepipe_im_sims-runtime.sif
 
