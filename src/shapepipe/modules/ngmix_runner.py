@@ -16,6 +16,7 @@ from shapepipe.modules.ngmix_package.ngmix import (
     EPOCH_INTERPOLATED_DEFECT_RADIUS,
     EPOCH_MASKED_FRACTION_CUT,
     Ngmix,
+    write_empty_tile_output,
 )
 
 
@@ -48,7 +49,18 @@ def ngmix_runner(
     w_log,
 ):
     """Define The Ngmix Runner.
+
     @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.centroid_source,decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]
+
+    @sc [label:operations] empty-tile-product
+    A tile whose PSF or galaxy vignette store is entirely empty never
+    reaches ``Ngmix``: an early guard in this runner writes the empty
+    catalogue and logs the zero-fitted run itself, before either store is
+    opened for its stamps. A tile that is only partly empty runs
+    ``Ngmix.process`` as usual, which skips each empty object individually
+    and writes the same empty-catalogue product if every object ends up
+    skipped. Either way, campaign completeness checks see one catalogue per
+    tile.
     """
     # Read config file entries
 
@@ -204,6 +216,9 @@ def ngmix_runner(
             f"All {len(psf_keys)} PSF vignet entries are empty in "
             f"{psf_vignet_path} — no PSF coverage for this tile. Skipping ngmix."
         )
+        write_empty_tile_output(
+            run_dirs["output"], file_number_string, w_log, len(psf_keys)
+        )
         return None, None
 
     # Check that image vignets are not all empty before initialising ngmix
@@ -215,6 +230,9 @@ def ngmix_runner(
         w_log.warning(
             f"All {len(keys)} image vignets are 'empty' in {image_vignet_path} "
             "— no valid CCD coverage for this tile. Skipping ngmix."
+        )
+        write_empty_tile_output(
+            run_dirs["output"], file_number_string, w_log, len(keys)
         )
         return None, None
 

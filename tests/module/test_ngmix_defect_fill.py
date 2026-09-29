@@ -170,6 +170,8 @@ def _fake_inputs(epochs):
     with_rms = any(len(v) == 3 for v in epochs.values())
     psf_obj = per_epoch(lambda k: np.ones((N_STAMP, N_STAMP)))
     gal_obj = per_epoch(lambda k: rng.normal(0.0, 1.0, (N_STAMP, N_STAMP)))
+    for epoch in gal_obj.values():
+        epoch["OFFSET"] = np.zeros(2)
     vignet = SimpleNamespace(
         gal_vign_cat={"1": gal_obj},
         bkg_vign_cat=None,
@@ -345,6 +347,8 @@ class _RecordingLogger:
 
     def info(self, msg, *_args, **_kwargs):
         self.messages.append(msg)
+
+    warning = error = info
 
 
 def test_process_logs_the_epoch_cut_tally(tmp_path, monkeypatch):

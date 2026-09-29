@@ -572,9 +572,8 @@ analyses:
           No detection image, no flag image, and the default_noimaflags.param
           column list: tiles have no instrument flag image and no detection
           coadd exists, so detection sees every tile pixel and the tile
-          catalogue carries no IMAFLAGS_ISO. [LINT]
-          final_cat.param, read by the post-processing merge, requests
-          IMAFLAGS_ISO, which the tile chain never produces (issue #912).
+          catalogue carries no IMAFLAGS_ISO; final_cat.param, the merge's
+          exact allow-list, does not request it.
           Values:
           SEXTRACTOR_RUNNER.DETECTION_IMAGE = False;
           SEXTRACTOR_RUNNER.FLAG_IMAGE = False.
@@ -1909,16 +1908,11 @@ analyses:
       star_galaxy_classification:
         label: Star/galaxy separation deferred out of the pipeline
         rationale: >-
-          Classification is off and no spread-model input is wired, so the
-          catalogue ships every object and separation happens downstream. The
-          dormant make_cat classifier computes class = sm + 2 sm_err, with
-          stars at |class| < SM_STAR_THRESH and galaxies at class >
-          SM_GAL_THRESH, both read from config (the function defaults, 0.003
-          and 0.01, are bypassed); the committed config sets neither key, so
-          enabling classification alone raises. Unlike Guinot+22
-          (guinot22_spread_model_cut), it applies no s > 0 or magnitude cut.
-          Values:
-          MAKE_CAT_RUNNER.SM_DO_CLASSIFICATION = False.
+          [HARDCODED] ShapePipe does no star/galaxy classification: make_cat
+          keeps every detection, and the catalogue carries no classification
+          column. Separation happens downstream, in sp_validation's size-based
+          selection. The spread-model classifier Guinot+22 used
+          (guinot22_spread_model_cut) is removed from the pipeline.
         default: deferred_downstream
         options:
           deferred_downstream:
@@ -1926,10 +1920,10 @@ analyses:
           spread_model_inline:
             label: spread_model classification in make_cat
             insights: [guinot22_spread_model_cut]
-            description: >-
-              Not wired; needs spread_model_runner after the PSF
-              interpolation, its output added to make_cat's inputs, and both
-              thresholds set.
+            excluded: true
+            excluded_reason: >-
+              It did not work reliably when last run, and it separates stars
+              from galaxies worse than the downstream classification.
       tile_overlap_handling:
         label: Tile-overlap duplicates neither removed nor flagged
         rationale: >-
@@ -1957,15 +1951,18 @@ analyses:
         rationale: >-
           [HARDCODED] detections with no ngmix row (no surviving epoch, or an
           exception during the fit) stay in the catalogue with sentinels:
-          sizes, fluxes, magnitudes and flags 0, flux and magnitude errors -1,
+          sizes, fluxes and magnitudes 0, flux and magnitude errors -1,
           ellipticities and their errors -10, size errors 1e30,
-          NGMIX_N_EPOCH 0. A failed object's NGMIX_MCAL_FLAGS reads 0, the
-          success value, so a cut on flags alone keeps it; NGMIX_N_EPOCH > 0
-          removes it.
+          NGMIX_N_EPOCH 0. Their flag columns carry ngmix's own
+          LM_FUNC_NOTFINITE bit (2**12; FLAGS_<SHEAR> and NGMIX_MCAL_FLAGS)
+          and NGMIX_MCAL_TYPES_FAIL is 5, as for a metacal type that reports
+          success without a finite shear, so the MCAL_FLAGS == 0 and
+          MCAL_TYPES_FAIL == 0 cut rejects them; NGMIX_N_EPOCH == 0 tells
+          them apart from fitted objects.
         default: sentinel_values
         options:
           sentinel_values:
-            label: Keep with sentinels (flags 0, e -10, T_ERR 1e30)
+            label: Keep with sentinels (flags LM_FUNC_NOTFINITE, e -10, T_ERR 1e30)
           drop_unmatched:
             label: Drop objects without shapes
             excluded: true

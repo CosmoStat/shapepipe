@@ -58,22 +58,32 @@ def params_from_run_config(params, defaults):
         raise ValueError(f"run config {params['run_config']} sets neither "
                          "outputs.products_dir nor outputs.run_dir")
 
-    # The same derivation as the workflow's merge_final_cats rule: the patch
-    # dir is the branch dir holding product/tiles, and -i is its parent.
+    # The group and file are named for `run:`, as the workflow's
+    # final_cat_merge names them. -P is also the directory the -I walk
+    # matches under -i, so this needs the run template's layout,
+    # products_dir = <root>/<run>/product, and -i is <root>.
+    patch = cfg["run"]
     patch_dir = os.path.dirname(os.path.normpath(products))
-    patch = os.path.basename(patch_dir)
+    if os.path.basename(patch_dir) != patch:
+        raise ValueError(
+            f"run config {params['run_config']}: products_dir {products} is "
+            f"not <root>/{patch}/product, so -c cannot locate the tiles; "
+            "pass -i and -P explicitly")
     derived = {
         "image_sims": True,
         "input_root_dir": os.path.dirname(patch_dir),
         "patch": patch,
         "merged_cat_path": os.path.join(products, f"final_cat_{patch}.hdf5"),
-        "output_summary": os.path.join(products, "n_tiles_final.txt"),
         "param_path": os.path.join(repo, "workflow", "config",
                                    "cfis_image_sims", "final_cat.param"),
     }
     for key, value in derived.items():
         if params.get(key) == defaults.get(key):
             params[key] = value
+    # The tile count is the file's n_tiles attribute; the text summary is
+    # written only when -o asks for it.
+    if params.get("output_summary") == defaults.get("output_summary"):
+        params["output_summary"] = None
     return params
 
 
@@ -152,7 +162,8 @@ def params_default():
         "param_path": "parameter file path, if not given use all columns, default={}",
         "patch": "patch number (data) or grid subdir (image_sims), default={}",
         "list_only": "print list of patches and IDs only, default={}",
-        "output_summary": "output file for numbre of tiles, default={}",
+        "output_summary": "output file for number of tiles (with -c, written"
+                          " only if given), default={}",
         "ID": "ID for single-ID operation, default={}",
         "single_op": "single ID operation, allowed are 'check', 'add', 'remove'; default={}",
         "image_sims": "image simulations mode (different dir layout and run prefix), default={}",
@@ -205,13 +216,17 @@ def read_param_file(path, verbose=False):
             print("No parameters read", end="")
         print(" into merged catalogue")
 
-    param_list_unique = list(set(param_list))
-    
+    # Ordered dedup. list(set(...)) reordered the columns by the process's
+    # string hash seed, so two runs of this tool over the same inputs produced
+    # files whose datasets differed in column ORDER — which is part of a
+    # structured dtype, and therefore part of the file.
+    param_list_unique = list(dict.fromkeys(param_list))
+
     if verbose:
         n = len(param_list) - len(param_list_unique)
-        if n > 1:
-            print("Removed {n} duplicate entries")
-    
+        if n > 0:
+            print(f"Removed {n} duplicate entries")
+
     return param_list_unique
 
 
@@ -317,8 +332,9 @@ def print_list(params):
     if verbose:
         print(f"Total: {n_tiles} tiles")
 
-    with open(params["output_summary"], "w") as f_out:
-        print(n_tiles, file=f_out)
+    if params["output_summary"]:
+        with open(params["output_summary"], "w") as f_out:
+            print(n_tiles, file=f_out)
 
     # Write n_tiles to HDF5 file header
     with h5py.File(params["merged_cat_path"], "a") as hdf5_file:
@@ -359,8 +375,15 @@ def get_patch_group(hdf5_file, patch, verbose=False):
 
 
 def read_data(fits_file, params):
-    """Read Data.
+    """Read the parameter list's columns out of one catalogue.
 
+    @sc [label:schema] read-data-raises-on-missing-column
+    A requested column the catalogue lacks raises `KeyError` naming it; it is
+    never skipped or filled. `copy_data` keeps only columns present in the
+    source, so this raise is the one place a missing name stops a merge, and
+    without it a tile short a per-epoch slot would land in the merged file
+    silently narrower, with that slot's exposure identity gone. Enforced by
+    tests/unit/test_final_cat_merge_invariants.py.
     """
     with fits.open(fits_file) as hdu_list:
         try:
@@ -373,16 +396,20 @@ def read_data(fits_file, params):
     if params["param_list"] is None:
         params["param_list"] = [col for col in data.keys()]
 
-    try:
-        extracted_data = {col: data[col] for col in params["param_list"]}
-        dtype = data.dtype
-    except:
-        print(f"Error for ID {id}, path {fits_file}")
-        for col in params["param_list"]:
-            if col not in data:
-                print(col, end=" ")
-            print()
-            continue
+    # RAISE, do not print and fall through. The bare `except:` this replaces
+    # left extracted_data and dtype unbound, so the caller's own error was an
+    # UnboundLocalError from the return statement below, naming neither the
+    # file nor the column that was actually missing.
+    present = set(data.dtype.names or ())
+    missing = [col for col in params["param_list"] if col not in present]
+    if missing:
+        raise KeyError(
+            f"{fits_file}: missing {len(missing)} of the "
+            f"{len(params['param_list'])} requested column(s): "
+            f"{' '.join(missing)}"
+        )
+    extracted_data = {col: data[col] for col in params["param_list"]}
+    dtype = data.dtype
 
     return extracted_data, dtype
 
@@ -391,16 +418,29 @@ def copy_data(param_list, extracted_data, dtype):
     """Copy Data.
 
     """
+    # THE REQUESTED COLUMNS ONLY, IN THE PARAMETER FILE'S ORDER. Two things
+    # are being fixed here and they are easy to conflate. Allocating with the
+    # source's full dtype and filling only the requested columns left every
+    # other column as uninitialised memory — meaningless values, and different
+    # bytes on every run over the same inputs. And ordering the result by the
+    # SOURCE catalogue's columns made the output dtype a property of the
+    # catalogue rather than of the parameter file: two tiles written by
+    # different ShapePipe versions, whose catalogues order or extend their
+    # columns differently, then landed in one merged file with two different
+    # structured dtypes, which np.concatenate refuses. The parameter file is
+    # the schema; it says which columns AND in what order.
+    wanted = set(dtype.names or ())
+    columns = [col for col in param_list if col in wanted]
+    subset = np.dtype([(col, dtype[col]) for col in columns])
+
     # Initialize new data structure
     structured_data = np.empty(
         len(extracted_data[param_list[0]]),
-        dtype=dtype,
+        dtype=subset,
     )
 
     # Loop over parameters
-    for col in param_list:
-        if not col in extracted_data:
-            print(f"Column {col} not in file with ID {id}")
+    for col in columns:
         structured_data[col] = extracted_data[col]
     
     #if isinstance(extracted_data[col][0], (np.ndarray, tuple, list)):
@@ -547,12 +587,14 @@ def process(params):
 
                 structured_data = copy_data(params["param_list"], extracted_data, dtype)
 
-                # Create a new dataset
+                # Create a new dataset. dtype comes from the array copy_data
+                # built, not from the source catalogue: they differ now that
+                # copy_data allocates the requested columns alone.
                 try:
                     patch_group.create_dataset(
                         str(id),
                         data=structured_data,
-                        dtype=dtype,
+                        dtype=structured_data.dtype,
                     )
                 except:
                     print(f"Error for {id}: Could not create dataset in group {patch}")
