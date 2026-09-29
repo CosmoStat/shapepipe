@@ -78,17 +78,9 @@ from pathlib import Path
 # when it is not the default, so a SExtractor run's prologue is unchanged.
 TILE_DETECTIONS = ("sextractor", "unions_catalogue")
 
-# ngmix's neighbour treatments, mirroring BLEND_HANDLINGS in
-# shapepipe.modules.ngmix_package.ngmix. Mirrored rather than imported: the
-# Snakefile parses this module in the launcher venv, outside the container
-# where shapepipe lives. tests/unit/test_workflow_tile_detection.py asserts
-# the two tuples agree.
-BLEND_HANDLINGS = ("noisefill", "uberseg")
-
 # stage -> {runner_subdir: {expect, [warn], [subpath]}}
 # exp_psf and tile_vignets are selected by $SP_PSF at check time, tile_detect
-# by $SP_TILE_DETECTION; tile_vignets adds SEG_VIGNETS under
-# $SP_BLEND_HANDLING=uberseg.
+# by $SP_TILE_DETECTION.
 # @sc [decision:per_unit_completeness]
 COMPLETENESS = {
     # --- tile prepare (phase A) ---
@@ -189,12 +181,6 @@ COMPLETENESS = {
 }
 
 
-# tile_vignets' extra run under blend_handling: uberseg: the one seg_vignet
-# file ngmix's SEG_VIGNET_PATH reads. The rules export $SP_BLEND_HANDLING only
-# for uberseg, so a noise-fill run's prologue is unchanged.
-SEG_VIGNETS = {"vignetmaker_runner_run_3": dict(expect=1)}
-
-
 def count_products(run_dir, runner, spec):
     """Count files in ``run_dir/<runner>/output[/<subpath>]/`` (live links only).
 
@@ -238,14 +224,6 @@ def check_counts(stage, run_dir):
             raise ValueError(
                 f"Invalid SP_PSF={psf_model!r}; expected one of {sorted(table)}."
             ) from exc
-        if stage == "tile_vignets":
-            blend = os.environ.get("SP_BLEND_HANDLING", BLEND_HANDLINGS[0])
-            if blend not in BLEND_HANDLINGS:
-                raise ValueError(
-                    f"Invalid SP_BLEND_HANDLING={blend!r}; expected one of "
-                    f"{', '.join(BLEND_HANDLINGS)}.")
-            if blend == "uberseg":
-                table = {**table, **SEG_VIGNETS}
     elif stage == "tile_detect":
         detection = os.environ.get("SP_TILE_DETECTION", TILE_DETECTIONS[0])
         if detection not in TILE_DETECTIONS:
