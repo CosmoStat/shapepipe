@@ -1,8 +1,8 @@
 """Fitted-PSF gates on footprints, reclamation and the exposure-count map.
 
 Failure modes: fake PSFs request nonexistent persistence products; a fitted
-PSF loses a durable edge before cleanup; an enabled exposure-count map with
-fake PSFs reaches submission instead of failing at parse time. Lift the
+PSF loses a durable edge before cleanup; a fake-PSF (sim) campaign requests
+an exposure-count map it cannot build, or a fitted one silently loses it. Lift the
 Snakefile's functions and the rule's input lambdas into sentinel roots, as
 test_campaign_lineage does, without parsing a second workflow DAG.
 """
@@ -79,13 +79,12 @@ def _clean_inputs(ns):
     return eval("[\n" + textwrap.dedent(inputs.group(1)) + "\n]", ns)
 
 
-def _nexp_gate(ns, enabled):
-    """Execute the Snakefile's exposure-count-map switch and its PSF guard."""
+def _nexp_gate(ns, nexp):
+    """Execute the Snakefile's exposure-count-map gate against a `nexp:` block."""
     text = SNAKEFILE.read_text()
-    gate = re.search(r"^_NEXP\s*=.*?^if NEXP_ENABLED and not PERSISTS_PSF:\n"
-                     r"(?:    [^\n]*\n)+", text, re.M | re.S)
+    gate = re.search(r"^_NEXP\s*=.*\n^MAPS_NEXP\s*=.*\n", text, re.M)
     assert gate, "Snakefile must gate exposure_maps.nexp on a fitted PSF"
-    ns["_MAPS"] = {"nexp": {"enabled": enabled}}
+    ns["_MAPS"] = {} if nexp is None else {"nexp": nexp}
     exec(gate.group(0), ns)
 
 
@@ -124,18 +123,15 @@ def test_clean_exposure_waits_on_persist_iff_psf(psf_model, tmp_path):
 
 
 @pytest.mark.parametrize("psf_model", ["fake", "psfex"])
-@pytest.mark.parametrize("enabled", [True, False, "true", "false"])
-def test_nexp_map_refuses_enabled_fake_at_parse_time(
-        psf_model, enabled, tmp_path):
-    """Fake PSFs are refused only when the map is enabled, before any rule."""
+@pytest.mark.parametrize("nexp", [None, {}, {"enabled": True},
+                                  {"enabled": False}, {"enabled": "true"},
+                                  {"enabled": "false"}])
+def test_nexp_map_follows_the_psf_model(psf_model, nexp, tmp_path):
+    """On by default for a fitted PSF, off only by explicit opt-out; a fake-PSF
+    (sim) campaign skips it silently, whatever the block says."""
     ns = _namespace(psf_model, tmp_path)
-    is_enabled = enabled in (True, "true")
-    if psf_model == "fake" and is_enabled:
-        with pytest.raises(WorkflowError,
-                           match=r"nexp.enabled.*psf_model=fake"):
-            _nexp_gate(ns, enabled)
-    else:
-        _nexp_gate(ns, enabled)
-        expected = ([ns["nexp_map"](), ns["nexp_map_manifest"]()]
-                    if is_enabled else [])
-        assert ns["nexp_map_targets"]() == expected
+    _nexp_gate(ns, nexp)
+    opted_out = (nexp or {}).get("enabled") in (False, "false")
+    built = psf_model == "psfex" and not opted_out
+    expected = [ns["nexp_map"](), ns["nexp_map_manifest"]()] if built else []
+    assert ns["nexp_map_targets"]() == expected

@@ -252,13 +252,13 @@ persist_exp:
 # FILE_NOT_FOUND); exp_persist packs those catalogues whatever `persist_exp:`
 # says, so there is nothing to configure for the records, and they are written
 # all along whatever `enabled` says, because their input is on /scratch and the
-# purge takes it. psf_model: fake writes no PSF model and so records no
-# footprint: an image-sims campaign on the true PSF has no exposure-count map.
-#
-# `nexp.enabled: true` adds ONE campaign-level job, `nexp_map`, which stamps
-# every footprint on the products root into the map. OFF by default because the
-# map is a campaign-END product rebuilt whole: a half-finished campaign's map is
-# a picture of how far it has got, not of the survey.
+# purge takes it. ONE campaign-level job, `nexp_map`, stamps every footprint on
+# the products root into the map. Fitted-PSF runs only, like the defect map's
+# data-only rule: psf_model: fake writes no PSF model and records no
+# footprint, so an image-sims campaign on the true PSF skips the map.
+# `nexp.enabled: false` opts a fitted-PSF campaign out; the map is rebuilt whole
+# on every invocation that adds records, so a campaign appended in many small
+# batches may prefer to build it once at the end.
 #
 # Plot windows are the two UNIONS sky regions, with the colourbar clipped to the
 # 1-5 exposure range. Plotting stays OUT of the DAG (a human act on a durable
@@ -272,7 +272,7 @@ exposure_maps:
     oversample: 3
   # @sc [decision:masking.nexp_map_valid_psf_ccds]
   nexp:
-    enabled: false
+    enabled: true
     plot:
       colorbar: true
       n_exp_min: 1

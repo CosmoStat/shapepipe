@@ -361,17 +361,20 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   keep list says. Like `exp_persist` it runs whatever `clean:` and
   `exposure_maps.nexp.enabled` say, because its input is on /scratch and the
   purge takes it; `clean_exposure` takes its manifest as an input.
-  Set `exposure_maps: {nexp: {enabled: true}}` and one further job, `nexp_map`,
-  stamps every footprint into `<products_dir>/nexp_map/nexp_map_<campaign>.hsp`
+  One further job, `nexp_map`, stamps every footprint into
+  `<products_dir>/nexp_map/nexp_map_<campaign>.hsp`
   — a uint16 map counting, per sky pixel, the exposures with a valid PSF there,
   beside a record `nexp_map_<campaign>.json` of which exposures it holds. There
   is one count, of exposures: it is what sp_validation's `npoint >= 3` cut
   reads (`notebooks/demo_apply_hsp_masks.py`). The job is
   **campaign-cumulative**: its declared inputs are the in-scope footprints, but
   the script reads *every* record on the products root, reclaimed exposures
-  included, so appending tiles grows the map instead of replacing it. It is
-  rebuilt whole rather than reconciled, which is why it is off by default: it
-  is a campaign-end product. Its memory is the map itself, sized on the
+  included, so appending tiles grows the map instead of replacing it. Like the
+  defect map it is built whenever the campaign can support it — every
+  fitted-PSF run; `psf_model: fake` records no footprints and skips it — and
+  `exposure_maps.nexp.enabled: false` opts out: it is rebuilt whole rather
+  than reconciled, so a campaign appended in many small batches may prefer to
+  build it once at the end. Its memory is the map itself, sized on the
   campaign's footprint like `defect_map_merge` (~48 GB of uint16 over the DR6
   footprint). Plotting stays out of the DAG: run `plot_coverage_map -i
   <products_dir>/nexp_map/nexp_map_<campaign>.hsp ...` by hand, with the sky

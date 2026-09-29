@@ -15,8 +15,7 @@ BASE_RULES = {
     "tile_ngmix", "tile_merge_cats", "tile_make_cat", "clean_tile",
     "final_cat_merge",
 }
-PSF_RULES = {"exp_persist", "star_cat_merge", "exp_footprint"}
-# nexp_map joins only with exposure_maps.nexp.enabled, which the fixture leaves off.
+PSF_RULES = {"exp_persist", "star_cat_merge", "exp_footprint", "nexp_map"}
 DEFECT_RULES = {"exp_defect_map", "defect_map_merge"}   # MAPS_DEFECTS: data only
 
 

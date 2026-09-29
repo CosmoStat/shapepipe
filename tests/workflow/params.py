@@ -34,9 +34,8 @@ def params_pin(dag):
     rules = {}
     for rule in sorted(dag.workflow.rules, key=lambda rule: rule.name):
         jobs = dag.jobs_for(rule.name)
-        # Aggregation-only targets have no shell or pre to expand; a rule
-        # that is declared but off in this campaign (nexp_map with
-        # exposure_maps.nexp.enabled false) still pins its shell template.
+        # Aggregation-only targets have no shell or pre to expand.
+        assert jobs or (not rule.shellcmd and not rule.params), rule.name
         rules[rule.name] = {
             "shell_template": normalize(rule.shellcmd),
             "jobs": [{

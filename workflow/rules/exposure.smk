@@ -604,8 +604,8 @@ rule defect_map_merge:
 # --- the campaign's exposure-count map --------------------------------------
 # ONE job per campaign: every exposure footprint on the persistent root, stamped
 # into `<products_dir>/nexp_map/nexp_map_<campaign>.hsp` — per sky pixel, the
-# number of exposures with a valid PSF model covering it. Off unless
-# `exposure_maps.nexp.enabled` (the Snakefile argues the default).
+# number of exposures with a valid PSF model covering it. Fitted-PSF runs only
+# (MAPS_NEXP, Snakefile, which argues the gate and the opt-out).
 #
 # CAMPAIGN-CUMULATIVE. The declared inputs are the IN-SCOPE footprint manifests
 # of live stores — ordering, and reruns when one is rewritten, without dragging

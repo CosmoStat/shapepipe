@@ -844,23 +844,17 @@ def defect_map_fragment_targets():
 # ALWAYS set), so its manifest always carries the valid-PSF set the record
 # selects on.
 #
-# `nexp.enabled` is OFF by default. The map is a campaign-END product — a
-# half-finished campaign's map is a picture of how far it has got, not of the
-# survey — and it is rebuilt whole, not reconciled, so leaving it on would
-# restamp the campaign after every batch. The per-exposure records are written
-# all along whatever it says; turning it on later costs one job. flag() because
-# `--config` delivers booleans as strings.
+# FITTED-PSF RUNS ONLY, by the same rule as MAPS_DEFECTS: the map is built
+# whenever the campaign can support it. psf_model=fake (the image simulations'
+# true PSF) fits no PSF model, so no exposure records a footprint
+# (footprint_targets) and there is nothing to count; such a campaign skips the
+# map rather than failing. `nexp.enabled: false` opts a fitted-PSF campaign
+# out — the map is rebuilt whole, not reconciled, so a campaign appended in
+# many small batches may want to build it once at the end; the per-exposure
+# records are written either way. flag() because `--config` delivers booleans
+# as strings.
 _NEXP = dict(_MAPS.get("nexp") or {})
-NEXP_ENABLED = flag(_NEXP.get("enabled", False))
-
-# psf_model=fake fits no PSF model, so no exposure records a footprint
-# (footprint_targets) and nexp_map would reach its job only to find no record on
-# the products root. Refused here, before the campaign runs.
-if NEXP_ENABLED and not PERSISTS_PSF:
-    raise WorkflowError(
-        "exposure_maps.nexp.enabled needs a fitted PSF model: psf_model=fake "
-        "records no exposure footprint, so there is no exposure-count map to "
-        "build")
+MAPS_NEXP = PERSISTS_PSF and flag(_NEXP.get("enabled", True), default=True)
 
 
 def nexp_map():
@@ -957,13 +951,13 @@ def nexp_map_exposures():
 
 
 def nexp_map_targets():
-    """The campaign map, when `exposure_maps.nexp.enabled` asks for one.
+    """The campaign map, whenever the campaign fits a PSF (MAPS_NEXP).
 
     HEAD PROCESS ONLY, for the reason clean_targets() gives: this feeds `rule
     all` at module level, so it is evaluated on every per-job re-parse too, none
     of which can schedule `all`.
     """
-    if not NEXP_ENABLED or not workflow.is_main_process:
+    if not MAPS_NEXP or not workflow.is_main_process:
         return []
     return [nexp_map(), nexp_map_manifest()]
 

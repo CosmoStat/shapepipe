@@ -245,7 +245,8 @@ analyses:
           defect map's resolution holding, per pixel, the number of exposures
           with a valid PSF model covering it. The count sp_validation's
           npoint cut reads. A product; nothing in the workflow reads it.
-          Fitted-PSF campaigns only, and only with exposure_maps.nexp.enabled.
+          Built for every fitted-PSF campaign; image simulations on the true
+          PSF record no footprints and skip it.
         inputs: [exposure_psf_ccds]
         decisions: [nexp_map_valid_psf_ccds]
     decisions:
@@ -265,7 +266,7 @@ analyses:
           not of pointings. The resolution is the mask ladder's, shared with
           the defect map.
           Values:
-          config.yaml#exposure_maps.nexp.enabled = false.
+          config.yaml#exposure_maps.nexp.enabled = true.
         default: valid_psf_ccds
         options:
           valid_psf_ccds:

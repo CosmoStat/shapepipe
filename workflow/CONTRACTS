@@ -62,8 +62,8 @@ tests/unit/test_nexp_map_gates.py and tests/unit/test_footprint_edges.py.
 
 @sc [label:custody] nexp-map-requires-fitted-psf
 `footprint_targets()` requests the ready tiles' exposures only for a fitted
-PSF model in the head process. Under `psf_model: fake` no exposure has a
-valid-PSF CCD set to record, so footprints are absent and
-`exposure_maps.nexp.enabled` must fail at parse time, before submission.
-A disabled map remains valid under either PSF mode. Enforced by
-tests/unit/test_nexp_map_gates.py.
+PSF model in the head process, and `nexp_map_targets()` requests the map only
+under the same condition (`MAPS_NEXP`). Under `psf_model: fake` no exposure has
+a valid-PSF CCD set to record, so a sim campaign requests neither — whatever
+`exposure_maps.nexp.enabled` says — and parses without error. Enforced by
+tests/unit/test_nexp_map_gates.py and tests/workflow/test_dag.py.
