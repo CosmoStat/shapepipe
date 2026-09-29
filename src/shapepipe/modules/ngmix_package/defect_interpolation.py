@@ -94,14 +94,14 @@ def fourfold(mask):
     return mask | np.rot90(mask) | np.rot90(mask, 2) | np.rot90(mask, 3)
 
 
-def _interpolate_once(planes, defect, target):
+def _interpolate_once(planes, excluded, target):
     """One Clough-Tocher interpolant of every plane at ``target``; NaN
     elsewhere and where the support cannot reach."""
     out = np.full(planes.shape, np.nan)
     support = binary_dilation(
         target, structure=np.ones((3, 3), dtype=bool),
         iterations=SUPPORT_RADIUS,
-    ) & ~defect
+    ) & ~excluded
     points = np.argwhere(support).astype(float)
     if len(points) < 3:
         return out
@@ -116,14 +116,14 @@ def _interpolate_once(planes, defect, target):
     return out
 
 
-def interpolate_defects(planes, defect, target):
+def interpolate_defects(planes, excluded, target):
     """Replace the ``target`` pixels of every plane by a Clough-Tocher
-    interpolant of the clean pixels around them.
+    interpolant of the kept pixels around them.
 
     @sc [decision:shape_measurement.defect_fill] shared-rotation-averaged-interpolant
-    The support is the clean pixels within ``SUPPORT_RADIUS`` (4 px) of the
-    target; no defect pixel enters it, so defect values are never read. For
-    each quarter turn of the stamp, one Delaunay triangulation of the support
+    The support is the pixels within ``SUPPORT_RADIUS`` (4 px) of the target
+    outside ``excluded``; no excluded pixel enters it, so their values are
+    never read. For each quarter turn of the stamp, one Delaunay triangulation of the support
     serves every plane, so the science image and the metacal noise image
     see the same linear operator and fixnoise mirrors the science image's
     interpolated noise. A regular grid's triangulation has degenerate
@@ -136,9 +136,9 @@ def interpolate_defects(planes, defect, target):
     ----------
     planes : array_like
         Stamp planes, shape ``(n, ny, nx)``.
-    defect : numpy.ndarray of bool
-        Every defect pixel, shape ``(ny, nx)``; none of them supports the
-        interpolant.
+    excluded : numpy.ndarray of bool
+        Pixels that never support the interpolant, shape ``(ny, nx)``: every
+        defect, and any pixel whose light the image does not keep.
     target : numpy.ndarray of bool
         Defect pixels to interpolate (:func:`interpolable_defects`).
 
@@ -149,7 +149,7 @@ def interpolate_defects(planes, defect, target):
         target pixel whose support is degenerate in some orientation.
     """
     planes = np.asarray(planes, dtype=float)
-    defect = np.asarray(defect, dtype=bool)
+    excluded = np.asarray(excluded, dtype=bool)
     target = np.asarray(target, dtype=bool)
     out = planes.copy()
     if not target.any():
@@ -157,7 +157,7 @@ def interpolate_defects(planes, defect, target):
     turns = [
         np.rot90(
             _interpolate_once(
-                np.rot90(planes, k, axes=(1, 2)), np.rot90(defect, k),
+                np.rot90(planes, k, axes=(1, 2)), np.rot90(excluded, k),
                 np.rot90(target, k),
             ),
             -k, axes=(1, 2),

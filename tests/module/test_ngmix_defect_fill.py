@@ -1117,3 +1117,55 @@ def test_off_tile_pixels_are_zero_weighted_and_filled(blend_handling):
         )
         npt.assert_array_equal(gal_out != gal, removed)
         npt.assert_array_equal(w_out == 0.0, removed)
+
+
+# --- DEFECT_FILL = interpolate beside a removed neighbour -------------------
+
+def _defect_beside_neighbour():
+    """A single flagged pixel 6 px right of the centre, with a bright marked
+    neighbour footprint starting on the next column."""
+    n = 31
+    c = n // 2
+    gal = np.random.default_rng(3).normal(0.0, 1.0, (n, n))
+    flag = np.zeros((n, n), dtype=np.int32)
+    flag[c, c + 6] = 1
+    neighbour = np.zeros((n, n), dtype=bool)
+    neighbour[c - 2:c + 3, c + 7:c + 10] = True
+    gal[neighbour] += 1.0e4
+    seg = np.zeros((n, n), dtype=np.int32)
+    seg[c - 1:c + 2, c - 1:c + 2] = 1
+    return gal, flag, neighbour, seg, (c, c + 6)
+
+
+def test_noisefill_interpolation_does_not_read_removed_neighbour_light():
+    """Under noisefill, the interpolant of a defect beside a marked neighbour
+    is built from the pixels the image keeps: the neighbour's light, which
+    noisefill removes, is not in its support. Under uberseg the neighbour
+    light is raw in the image and supports the interpolant.
+
+    Failure mode: the support includes the removed neighbour pixels, so the
+    defect is filled with light the image no longer contains
+    (interpolation-support-is-the-kept-image).
+    """
+    gal, flag, neighbour, seg, pix = _defect_beside_neighbour()
+    weight = np.ones_like(gal)
+    target = np.zeros_like(neighbour)
+    target[pix] = True
+
+    out, _, _ = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(0),
+        blend_handling="noisefill", neighbour=neighbour,
+        defect_fill="interpolate",
+    )
+    expected = interpolate_defects(gal[None], (flag != 0) | neighbour, target)
+    assert out[pix] == pytest.approx(expected[0][pix])
+    assert abs(out[pix]) < 100.0
+
+    out, _, _ = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(0),
+        blend_handling="uberseg", seg=seg, object_number=1,
+        neighbour=neighbour, defect_fill="interpolate",
+    )
+    expected = interpolate_defects(gal[None], flag != 0, target)
+    assert out[pix] == pytest.approx(expected[0][pix])
+    assert out[pix] > 1000.0

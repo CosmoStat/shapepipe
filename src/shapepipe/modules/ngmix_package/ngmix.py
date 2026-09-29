@@ -2228,6 +2228,15 @@ def prepare_ngmix_weights(
     ``blend_handling`` is, by the same operator. ``blend_handling`` acts on
     the neighbour pixels only, and the noise image covers the whole stamp.
 
+    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.blend_handling] interpolation-support-is-the-kept-image
+    Under ``defect_fill="interpolate"`` the interpolant is supported on the
+    pixels whose light the image keeps: never a defect, and under
+    ``"noisefill"`` never a marked neighbour pixel, whose light is replaced
+    by noise; a Clough-Tocher interpolant next to a bright neighbour would
+    otherwise build the defect's value from light the image no longer
+    contains. Under ``"uberseg"`` the neighbour light stays in the image and
+    supports the interpolant.
+
     @sc [decision:shape_measurement.blend_handling] noisefill-fills-markers
     Under ``"noisefill"`` the pixels of ``neighbour``, SExtractor's -1e30
     neighbour markers, get weight 0 and are replaced by the same noise
@@ -2390,10 +2399,11 @@ def prepare_ngmix_weights(
     noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
     gal_filled = fill_defects(gal, ~clean, noise_img_gal)
     if interpolated.any():
-        # One operator for the image and the noise image; a pixel whose
-        # support is degenerate, or that noisefill removes as a neighbour,
-        # keeps its noise fill.
-        filled = interpolate_defects([gal, noise_img], defect, interpolated)
+        # One operator for the image and the noise image, supported on the
+        # pixels the image keeps (interpolation-support-is-the-kept-image); a
+        # pixel whose support is degenerate, or that noisefill removes as a
+        # neighbour, keeps its noise fill.
+        filled = interpolate_defects([gal, noise_img], ~clean, interpolated)
         done = (
             interpolated
             & ~removed_neighbour
