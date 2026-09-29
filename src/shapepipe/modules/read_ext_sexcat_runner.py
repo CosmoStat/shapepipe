@@ -33,15 +33,22 @@ def read_ext_sexcat_runner(
     The inputs are the catalogue and the tile image, then the catalogue's
     segmentation map if SEGMENTATION = True, then the WCS log if
     MAKE_POST_PROCESS = True. With the segmentation map, neighbours' pixels
-    in VIGNET are set to -1e30; the map itself is not written out; the
-    only output is the FITS-LDAC ``sexcat<number>.fits``. MAKE_POST_PROCESS runs the
-    multi-epoch post-processing that adds per-exposure HDUs.
+    in VIGNET are set to -1e30. SEG_VIGNET = True (it needs SEGMENTATION)
+    adds the map's stamps, relabelled to the catalogue's NUMBER and cut on
+    each VIGNET's grid, as the SEG_VIGNET column ngmix's UberSeg blend
+    handling reads; the value is environment-expanded. The map itself is
+    not written out: the only output is the FITS-LDAC
+    ``sexcat<number>.fits``. MAKE_POST_PROCESS runs the multi-epoch
+    post-processing that adds per-exposure HDUs.
     """
     cat_path, image_path, *extra_inputs = input_file_list
     use_seg = config.has_option(
         module_config_sec, "SEGMENTATION"
     ) and config.getboolean(module_config_sec, "SEGMENTATION")
     seg_path = extra_inputs.pop(0) if use_seg else None
+    seg_vignet = config.has_option(
+        module_config_sec, "SEG_VIGNET"
+    ) and config.getexpandedboolean(module_config_sec, "SEG_VIGNET")
 
     if config.has_option(module_config_sec, "SUFFIX"):
         suffix = config.get(module_config_sec, "SUFFIX")
@@ -64,6 +71,7 @@ def read_ext_sexcat_runner(
         output_path,
         stamp_size=stamp_size,
         seg_path=seg_path,
+        seg_vignet=seg_vignet,
         w_log=w_log,
     )
 

@@ -1142,7 +1142,7 @@ def _converter_stamps(seg, number, x, y):
     """Converter tile VIGNETs on a unit image, and each stamp's off-image
     mask."""
     relabelled, _ = read_ext_sexcat.relabel_seg(seg, number, x, y)
-    vignets = read_ext_sexcat._extract_vignets(
+    vignets, _ = read_ext_sexcat._extract_vignets(
         np.ones(seg.shape, np.float32), x, y, N_STAMP, seg=relabelled,
         number=number,
     )

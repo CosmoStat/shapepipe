@@ -230,16 +230,22 @@ def _marked(number, x, y, seg=None):
     image = np.ones(_seg_map().shape, np.float32)
     seg = _seg_map() if seg is None else seg
     relabelled, _ = rs.relabel_seg(seg, number, x, y)
-    return rs._extract_vignets(image, x, y, SEG_STAMP, seg=relabelled,
-                               number=number)
+    vignets, _ = rs._extract_vignets(image, x, y, SEG_STAMP, seg=relabelled,
+                                     number=number)
+    return vignets
+
+
+def _stamp_at(array, x, y, size, fill):
+    """The ``size`` stamp of ``array`` centred on 1-based (x, y)."""
+    half = size // 2
+    padded = np.pad(array, half, constant_values=fill)
+    row, col = int(np.rint(y)) - 1, int(np.rint(x)) - 1
+    return padded[row:row + size, col:col + size]
 
 
 def _stamp_of(array, x, y, fill):
     """The SEG_STAMP stamp of ``array`` centred on 1-based (x, y)."""
-    half = SEG_STAMP // 2
-    padded = np.pad(array, half, constant_values=fill)
-    row, col = int(round(y)) - 1, int(round(x)) - 1
-    return padded[row:row + SEG_STAMP, col:col + SEG_STAMP]
+    return _stamp_at(array, x, y, SEG_STAMP, fill)
 
 
 @pytest.mark.decision("detection.catalogue_neighbour_marking")
@@ -346,8 +352,8 @@ def test_dr6_marks_every_neighbour_pixel_and_no_own_pixel():
 
     stamp, half = 51, 25
     image = np.ones(seg.shape, np.float32)
-    vignets = rs._extract_vignets(image, x, y, stamp, seg=relabelled,
-                                  number=number)
+    vignets, seg_vignets = rs._extract_vignets(image, x, y, stamp,
+                                               seg=relabelled, number=number)
     col, row = np.rint(x).astype(int) - 1, np.rint(y).astype(int) - 1
     full = ((col >= half) & (col < seg.shape[1] - half)
             & (row >= half) & (row < seg.shape[0] - half))
@@ -366,23 +372,109 @@ def test_dr6_marks_every_neighbour_pixel_and_no_own_pixel():
     assert marked["neighbour"][0] == marked["neighbour"][1]
     assert marked["own"][0] == 0
     assert marked["sky"][0] == 0
+    # SEG_VIGNET is the relabelled map on VIGNET's grid, and VIGNET's
+    # neighbour marks are exactly its foreign labels.
+    for i in range(len(number)):
+        npt.assert_array_equal(seg_vignets[i],
+                               _stamp_at(relabelled, x[i], y[i], stamp, 0))
+        on_image = _stamp_at(np.ones(seg.shape, bool), x[i], y[i], stamp,
+                             False)
+        foreign = (seg_vignets[i] != 0) & (seg_vignets[i] != number[i])
+        npt.assert_array_equal((vignets[i] == rs.BIG) & on_image, foreign)
+
+
+# --- SEG_VIGNET: the coadd seg stamp UberSeg reads ------------------------
+
+
+def _convert_with_seg(tmp_path, seg_vignet, objects=SEG_OBJECTS):
+    tmp_path.mkdir(exist_ok=True)
+    cat = tmp_path / "CFIS_cat-301-279.cat"
+    img = tmp_path / "CFIS_image-301-279.fits"
+    seg_in = tmp_path / "CFIS_seg-301-279.fits"
+    out = tmp_path / "sexcat-301-279.fits"
+    lines = ["#   1 NUMBER", "#   2 X_IMAGE", "#   3 Y_IMAGE",
+             "#   4 ALPHA_J2000", "#   5 DELTA_J2000"]
+    lines += [f"{n} {x} {y} 150.0 30.0" for n, x, y in objects]
+    cat.write_text("\n".join(lines) + "\n")
+    image = np.arange(400, dtype=np.float32).reshape(20, 20)
+    fits.PrimaryHDU(image).writeto(img, overwrite=True)
+    fits.PrimaryHDU(_seg_map()).writeto(seg_in, overwrite=True)
+    rs.make_ldac_from_ascii(str(cat), str(img), str(out), stamp_size=SEG_STAMP,
+                            seg_path=str(seg_in), seg_vignet=seg_vignet)
+    with fits.open(out) as hdul:
+        data = hdul["LDAC_OBJECTS"].data
+    number, x, y = (np.array(c) for c in zip(*objects))
+    relabelled, _ = rs.relabel_seg(_seg_map(), number, x, y)
+    return data, relabelled
+
+
+def test_seg_vignet_is_written_only_when_asked(tmp_path):
+    """The column exists only under SEG_VIGNET, and asking for it changes no
+    other column: a noise-fill sexcat is the sexcat without it."""
+    without, _ = _convert_with_seg(tmp_path / "a", seg_vignet=False)
+    with_, _ = _convert_with_seg(tmp_path / "b", seg_vignet=True)
+    assert "SEG_VIGNET" not in without.names
+    assert with_.names == without.names + ["SEG_VIGNET"]
+    for name in without.names:
+        npt.assert_array_equal(with_[name], without[name])
+
+
+# Positions on exact half pixels round the way VIGNET does (np.rint).
+REGISTRATION_OBJECTS = SEG_OBJECTS + [(3, 13.5, 14.5), (4, 1.0, 19.5),
+                                      (5, 20.0, 1.0)]
+
+
+def test_seg_vignet_is_registered_with_vignet(tmp_path):
+    """SEG_VIGNET is the relabelled map cut on VIGNET's own grid: int32, the
+    same shape, 0 off the image, and VIGNET's on-image -1e30 pixels are
+    exactly its foreign labels, so the two agree pixel for pixel."""
+    data, relabelled = _convert_with_seg(tmp_path / "c", seg_vignet=True,
+                                         objects=REGISTRATION_OBJECTS)
+    seg_vignets, vignets = data["SEG_VIGNET"], data["VIGNET"]
+    assert seg_vignets.dtype.kind == "i" and seg_vignets.dtype.itemsize == 4
+    assert seg_vignets.shape == vignets.shape
+    image = np.arange(400, dtype=np.float32).reshape(20, 20)
+    for i, (number, x, y) in enumerate(REGISTRATION_OBJECTS):
+        npt.assert_array_equal(seg_vignets[i],
+                               _stamp_of(relabelled, x, y, fill=0))
+        on_image = _stamp_of(np.ones((20, 20), bool), x, y, fill=False)
+        foreign = (seg_vignets[i] != 0) & (seg_vignets[i] != number)
+        npt.assert_array_equal((vignets[i] == rs.BIG) & on_image, foreign)
+        clean = on_image & ~foreign
+        npt.assert_array_equal(vignets[i][clean],
+                               _stamp_of(image, x, y, fill=0)[clean])
+        assert seg_vignets[i][SEG_STAMP // 2, SEG_STAMP // 2] == number
+
+
+def test_seg_vignet_needs_the_segmentation_map(tmp_path):
+    cat = tmp_path / "CFIS_cat-301-279.cat"
+    img = tmp_path / "CFIS_image-301-279.fits"
+    _write_ascii_cat(cat)
+    _write_image(img)
+    with pytest.raises(ValueError, match="SEG_VIGNET"):
+        rs.make_ldac_from_ascii(str(cat), str(img),
+                                str(tmp_path / "sexcat-301-279.fits"),
+                                stamp_size=STAMP, seg_vignet=True)
 
 
 # --- the runner's output against the completeness table -------------------
 
 
-def test_runner_output_matches_tile_detect_completeness(tmp_path, monkeypatch):
+@pytest.mark.parametrize("seg_vignet", ["False", "True"])
+def test_runner_output_matches_tile_detect_completeness(tmp_path, monkeypatch,
+                                                        seg_vignet):
     """The runner writes exactly the files ``tile_detect`` expects.
 
     Runs the real runner, segmentation map on, into a run dir and checks it
     with ``completeness.check_counts`` under ``SP_TILE_DETECTION=unions_catalogue``,
-    so the table and the converter's outputs cannot drift apart.
+    so the table and the converter's outputs cannot drift apart. SEG_VIGNET
+    is a column of the sexcat, so it adds no file.
     """
-    import configparser
     import importlib.util
     import logging
 
     from shapepipe.modules.read_ext_sexcat_runner import read_ext_sexcat_runner
+    from shapepipe.pipeline.config import CustomParser
 
     scripts = Path(__file__).resolve().parents[2] / "workflow" / "scripts"
     spec = importlib.util.spec_from_file_location(
@@ -404,10 +496,10 @@ def test_runner_output_matches_tile_detect_completeness(tmp_path, monkeypatch):
     run_dir = tmp_path / "run_sp_tile_Rx"
     out_dir = run_dir / "read_ext_sexcat_runner" / "output"
     out_dir.mkdir(parents=True)
-    config = configparser.ConfigParser()
+    config = CustomParser()
     config["READ_EXT_SEXCAT_RUNNER"] = {
         "SEGMENTATION": "True", "MAKE_POST_PROCESS": "False",
-        "VIGNET_SIZE": str(SEG_STAMP),
+        "VIGNET_SIZE": str(SEG_STAMP), "SEG_VIGNET": seg_vignet,
     }
     read_ext_sexcat_runner(
         [str(cat), str(img), str(seg_in)], {"output": str(out_dir)},
@@ -422,3 +514,6 @@ def test_runner_output_matches_tile_detect_completeness(tmp_path, monkeypatch):
     assert len(written) == expect, written
     ok, details = completeness.check_counts("tile_detect", run_dir)
     assert ok, details
+    with fits.open(out_dir / written[0]) as hdul:
+        names = hdul["LDAC_OBJECTS"].data.names
+    assert ("SEG_VIGNET" in names) == (seg_vignet == "True")

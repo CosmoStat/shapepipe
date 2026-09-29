@@ -16,6 +16,71 @@ from sqlitedict import SqliteDict
 from shapepipe.pipeline import file_io
 
 
+def cut_stamps(array, col, row, stamp_size, fill):
+    """Cut one square stamp per object from a 2-D array.
+
+    Each stamp is ``stamp_size`` pixels on a side with the 0-based pixel
+    (``row``, ``col``) at index ``stamp_size // 2`` on both axes; pixels off
+    the array take ``fill``. This is the window SExtractor cuts ``VIGNET``
+    with, so stamps cut at the same centres from arrays on one pixel grid are
+    registered pixel for pixel.
+
+    Parameters
+    ----------
+    array : numpy.ndarray
+        2-D array, shape ``(ny, nx)``
+    col, row : array_like of int
+        0-based column and row of each stamp's centre pixel
+    stamp_size : int
+        Side length of the stamps
+    fill : scalar
+        Value of the stamp pixels off the array
+
+    Returns
+    -------
+    numpy.ndarray
+        Stamps, shape ``(n_obj, stamp_size, stamp_size)``, dtype of ``array``
+
+    """
+    ny, nx = array.shape
+    half = stamp_size // 2
+    stamps = np.full((len(col), stamp_size, stamp_size), fill, array.dtype)
+    for i, (xi, yi) in enumerate(zip(col, row)):
+        x0, y0 = xi - half, yi - half
+        xc0, xc1 = max(0, x0), min(nx, x0 + stamp_size)
+        yc0, yc1 = max(0, y0), min(ny, y0 + stamp_size)
+        if xc0 >= xc1 or yc0 >= yc1:
+            continue
+        stamps[i, yc0 - y0:yc1 - y0, xc0 - x0:xc1 - x0] = (
+            array[yc0:yc1, xc0:xc1]
+        )
+    return stamps
+
+
+def seg_vignet_column(seg_vignets):
+    """The ``SEG_VIGNET`` LDAC column: one int32 seg stamp per object.
+
+    Parameters
+    ----------
+    seg_vignets : numpy.ndarray
+        Segmentation stamps, shape ``(n_obj, stamp_size, stamp_size)``, cut
+        on ``VIGNET``'s grid (:func:`cut_stamps`)
+
+    Returns
+    -------
+    astropy.io.fits.Column
+        The column, laid out as ``VIGNET`` is
+
+    """
+    n_obj, ny, nx = seg_vignets.shape
+    return fits.Column(
+        name="SEG_VIGNET",
+        format=f"{ny * nx}J",
+        array=seg_vignets.astype(np.int32, copy=False).reshape(n_obj, -1),
+        dim=f"({nx},{ny})",
+    )
+
+
 def get_header_value(image_path, key):
     """Get Header Value.
 

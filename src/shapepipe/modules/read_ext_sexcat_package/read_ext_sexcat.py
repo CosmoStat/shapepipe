@@ -11,6 +11,8 @@ import numpy as np
 from astropy.io import ascii as asc
 from astropy.io import fits
 
+from shapepipe.modules.sextractor_package import sextractor_script as ss
+
 
 def _build_ldac_imhead(img_header):
     """Build LDAC_IMHEAD extension from a FITS image header.
@@ -55,7 +57,8 @@ BIG = -1e30
 
 # The label of a footprint no catalogue object claims in the relabelled
 # segmentation map. Negative, so it never collides with a NUMBER; VIGNET
-# marking only asks "self or not self", so neighbours need no identity.
+# marking and UberSeg only ask "self or not self", so neighbours need no
+# identity.
 NEIGHBOUR_LABEL = -1
 
 # Radius, in pixels, of the disc of its own NUMBER painted for an object with
@@ -153,9 +156,9 @@ def _extract_vignets(image_data, x_pos, y_pos, stamp_size, seg=None,
     For each object position, a ``stamp_size x stamp_size`` cutout is
     extracted, centred on the pixel holding the position. Pixels off the
     image are set to ``BIG``, as SExtractor does. With a segmentation map in
-    the catalogue's numbering (:func:`relabel_seg`), pixels on any footprint
-    other than the object's own are set to ``BIG`` too, which is how
-    SExtractor's VIGNET marks neighbours.
+    the catalogue's numbering (:func:`relabel_seg`), the map is cut on the
+    same grid, and pixels on any footprint other than the object's own are
+    set to ``BIG`` too, which is how SExtractor's VIGNET marks neighbours.
 
     Parameters
     ----------
@@ -175,33 +178,27 @@ def _extract_vignets(image_data, x_pos, y_pos, stamp_size, seg=None,
     Returns
     -------
     numpy.ndarray
-        Array of shape ``(n_obj, stamp_size, stamp_size)``, dtype float32
+        Image stamps, shape ``(n_obj, stamp_size, stamp_size)``, float32
+    numpy.ndarray or None
+        Segmentation stamps on the same grid, 0 off the map, or ``None``
+        without ``seg``
 
     @sc [decision:detection.catalogue_neighbour_marking]
     """
-    ny, nx = image_data.shape
-    half = stamp_size // 2
     col, row = _centre_pixels(x_pos, y_pos)
-    vignets = np.full((len(col), stamp_size, stamp_size), BIG, np.float32)
-    seg_stamp = np.zeros((stamp_size, stamp_size), np.int32)
-
-    for i, (xi, yi) in enumerate(zip(col, row)):
-        x0, y0 = xi - half, yi - half
-        xc0, xc1 = max(0, x0), min(nx, x0 + stamp_size)
-        yc0, yc1 = max(0, y0), min(ny, y0 + stamp_size)
-        if xc0 >= xc1 or yc0 >= yc1:
-            continue
-        inner = np.s_[yc0 - y0:yc1 - y0, xc0 - x0:xc1 - x0]
-        vignets[i][inner] = image_data[yc0:yc1, xc0:xc1]
-        if seg is not None:
-            seg_stamp[:] = 0
-            seg_stamp[inner] = seg[yc0:yc1, xc0:xc1]
-            vignets[i][(seg_stamp != 0) & (seg_stamp != number[i])] = BIG
-
-    return vignets
+    vignets = ss.cut_stamps(
+        image_data.astype(np.float32, copy=False), col, row, stamp_size,
+        np.float32(BIG),
+    )
+    if seg is None:
+        return vignets, None
+    seg_vignets = ss.cut_stamps(seg, col, row, stamp_size, 0)
+    own = np.asarray(number)[:, None, None]
+    vignets[(seg_vignets != 0) & (seg_vignets != own)] = BIG
+    return vignets, seg_vignets
 
 
-def _build_ldac_objects(cat_data, vignets):
+def _build_ldac_objects(cat_data, vignets, seg_vignets=None):
     """Build LDAC_OBJECTS extension from an astropy table.
 
     Parameters
@@ -210,6 +207,9 @@ def _build_ldac_objects(cat_data, vignets):
         Catalogue data read from the ASCII SExtractor file
     vignets : numpy.ndarray
         Array of shape ``(n_obj, stamp_size, stamp_size)``
+    seg_vignets : numpy.ndarray, optional
+        Segmentation stamps on the grid of ``vignets``, written as the
+        ``SEG_VIGNET`` column when given
 
     Returns
     -------
@@ -257,6 +257,8 @@ def _build_ldac_objects(cat_data, vignets):
         dim=f"({stamp_size},{stamp_size})",
     )
     fits_cols.append(vignet_col)
+    if seg_vignets is not None:
+        fits_cols.append(ss.seg_vignet_column(seg_vignets))
 
     hdu = fits.BinTableHDU.from_columns(fits_cols)
     hdu.name = "LDAC_OBJECTS"
@@ -269,6 +271,7 @@ def make_ldac_from_ascii(
     output_cat_path,
     stamp_size=51,
     seg_path=None,
+    seg_vignet=False,
     w_log=None,
 ):
     """Convert an external ASCII catalogue to FITS-LDAC format.
@@ -284,8 +287,11 @@ def make_ldac_from_ascii(
     ``VIGNET`` column (postage stamps extracted from the tile image) is
     added to ``LDAC_OBJECTS``. Given the catalogue's segmentation map, which
     shares the tile's pixel grid, the map is relabelled to the catalogue's
-    ``NUMBER`` (:func:`relabel_seg`) and used to set neighbours' pixels in each ``VIGNET`` to ``BIG``, as
-    SExtractor does.
+    ``NUMBER`` (:func:`relabel_seg`) and used to set neighbours' pixels
+    in each ``VIGNET`` to ``BIG``, as SExtractor does. With ``seg_vignet``,
+    the relabelled map's stamps, cut on each ``VIGNET``'s grid, are written
+    as the int32 ``SEG_VIGNET`` column that ngmix's UberSeg blend handling
+    reads.
 
     Parameters
     ----------
@@ -299,10 +305,17 @@ def make_ldac_from_ascii(
         Side length of the square postage stamp in pixels, default 51
     seg_path : str, optional
         Path to the catalogue's segmentation map (FITS, compressed or not)
+    seg_vignet : bool, optional
+        Write the ``SEG_VIGNET`` column, which needs ``seg_path``; default
+        ``False``
     w_log : logging.Logger, optional
         Pipeline logger
 
     """
+    if seg_vignet and seg_path is None:
+        raise ValueError(
+            "SEG_VIGNET needs the catalogue's segmentation map (seg_path)."
+        )
     cat_data = asc.read(input_cat_path, format="sextractor")
     n_obj = len(cat_data)
     if w_log:
@@ -337,7 +350,7 @@ def make_ldac_from_ascii(
         w_log.info(
             f"Extracting {stamp_size}x{stamp_size} vignets from {image_path}"
         )
-    vignets = _extract_vignets(
+    vignets, seg_vignets = _extract_vignets(
         image_data,
         cat_data["X_IMAGE"],
         cat_data["Y_IMAGE"],
@@ -347,7 +360,9 @@ def make_ldac_from_ascii(
     )
 
     ldac_imhead = _build_ldac_imhead(img_header)
-    ldac_objects = _build_ldac_objects(cat_data, vignets)
+    ldac_objects = _build_ldac_objects(
+        cat_data, vignets, seg_vignets if seg_vignet else None
+    )
 
     hdul_out = fits.HDUList([fits.PrimaryHDU(), ldac_imhead, ldac_objects])
     hdul_out.writeto(output_cat_path, overwrite=True)
