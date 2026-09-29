@@ -9,6 +9,7 @@ name to the run config. A ``$base_dir`` whose value holds ``$run`` expands
 through both, and an optional path left holding a ``$`` is reported.
 """
 
+import re
 import importlib.util
 from pathlib import Path
 
@@ -126,5 +127,6 @@ def test_snakefile_refuses_retired_keys_at_parse_time():
     """The Snakefile raises on retired() before anything else reads config."""
     text = (REPO_ROOT / "workflow" / "Snakefile").read_text()
     check = text.index("run_config.retired(config)")
-    assert check < text.index("run_config.apply_machine_defaults(config)")
+    defaults = re.search(r"run_config\.apply_(machine_)?defaults\(config\)", text)
+    assert defaults is not None and check < defaults.start()
     assert "raise WorkflowError" in text[check:check + 400]
