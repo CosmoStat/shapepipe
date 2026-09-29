@@ -366,3 +366,59 @@ def test_dr6_marks_every_neighbour_pixel_and_no_own_pixel():
     assert marked["neighbour"][0] == marked["neighbour"][1]
     assert marked["own"][0] == 0
     assert marked["sky"][0] == 0
+
+
+# --- the runner's output against the completeness table -------------------
+
+
+def test_runner_output_matches_tile_detect_completeness(tmp_path, monkeypatch):
+    """The runner writes exactly the files ``tile_detect`` expects.
+
+    Runs the real runner, segmentation map on, into a run dir and checks it
+    with ``completeness.check_counts`` under ``SP_TILE_DETECTION=unions_catalogue``,
+    so the table and the converter's outputs cannot drift apart.
+    """
+    import configparser
+    import importlib.util
+    import logging
+
+    from shapepipe.modules.read_ext_sexcat_runner import read_ext_sexcat_runner
+
+    scripts = Path(__file__).resolve().parents[2] / "workflow" / "scripts"
+    spec = importlib.util.spec_from_file_location(
+        "_completeness", scripts / "completeness.py")
+    completeness = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(completeness)
+
+    cat = tmp_path / "CFIS_cat-301-279.cat"
+    img = tmp_path / "CFIS_image-301-279.fits"
+    seg_in = tmp_path / "CFIS_seg-301-279.fitsfz"
+    lines = ["#   1 NUMBER", "#   2 X_IMAGE", "#   3 Y_IMAGE",
+             "#   4 ALPHA_J2000", "#   5 DELTA_J2000"]
+    lines += [f"{n} {x} {y} 150.0 30.0" for n, x, y in SEG_OBJECTS]
+    cat.write_text("\n".join(lines) + "\n")
+    fits.PrimaryHDU(np.ones((20, 20), np.float32)).writeto(img)
+    fits.HDUList([fits.PrimaryHDU(),
+                  fits.CompImageHDU(_seg_map())]).writeto(seg_in)
+
+    run_dir = tmp_path / "run_sp_tile_Rx"
+    out_dir = run_dir / "read_ext_sexcat_runner" / "output"
+    out_dir.mkdir(parents=True)
+    config = configparser.ConfigParser()
+    config["READ_EXT_SEXCAT_RUNNER"] = {
+        "SEGMENTATION": "True", "MAKE_POST_PROCESS": "False",
+        "VIGNET_SIZE": str(SEG_STAMP),
+    }
+    read_ext_sexcat_runner(
+        [str(cat), str(img), str(seg_in)], {"output": str(out_dir)},
+        "-301-279", config, "READ_EXT_SEXCAT_RUNNER",
+        logging.getLogger("test"),
+    )
+
+    monkeypatch.setenv("SP_TILE_DETECTION", "unions_catalogue")
+    table = completeness.COMPLETENESS["tile_detect"]["unions_catalogue"]
+    expect = table["read_ext_sexcat_runner"]["expect"]
+    written = sorted(p.name for p in out_dir.iterdir())
+    assert len(written) == expect, written
+    ok, details = completeness.check_counts("tile_detect", run_dir)
+    assert ok, details

@@ -33,8 +33,8 @@ def read_ext_sexcat_runner(
     The inputs are the catalogue and the tile image, then the catalogue's
     segmentation map if SEGMENTATION = True, then the WCS log if
     MAKE_POST_PROCESS = True. With the segmentation map, neighbours' pixels
-    in VIGNET are set to -1e30 and the map, relabelled to the catalogue's
-    NUMBER, is written as ``seg<number>.fits``. MAKE_POST_PROCESS runs the
+    in VIGNET are set to -1e30; the map itself is not written out; the
+    only output is the FITS-LDAC ``sexcat<number>.fits``. MAKE_POST_PROCESS runs the
     multi-epoch post-processing that adds per-exposure HDUs.
     """
     cat_path, image_path, *extra_inputs = input_file_list

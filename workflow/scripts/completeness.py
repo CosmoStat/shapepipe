@@ -146,9 +146,8 @@ COMPLETENESS = {
     "tile_get_catalogue": {"get_images_runner":     dict(expect=2)},
     "tile_detect": {
         "sextractor":       {"sextractor_runner":      dict(expect=2)},
-        # The FITS-LDAC sexcat converted from the fetched catalogue, and the
-        # segmentation map relabelled to its NUMBER.
-        "unions_catalogue": {"read_ext_sexcat_runner": dict(expect=2)},
+        # The FITS-LDAC sexcat converted from the fetched catalogue.
+        "unions_catalogue": {"read_ext_sexcat_runner": dict(expect=1)},
     },
     "tile_vignets": {
         "psfex": {

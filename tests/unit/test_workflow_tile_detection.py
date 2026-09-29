@@ -93,7 +93,7 @@ def _stage_dir(tmp_path, runner, n):
 
 @pytest.mark.parametrize("mode, runner, expect", [
     ("sextractor", "sextractor_runner", 2),
-    ("unions_catalogue", "read_ext_sexcat_runner", 2),
+    ("unions_catalogue", "read_ext_sexcat_runner", 1),
 ])
 def test_tile_detect_is_checked_per_mode(tmp_path, monkeypatch, mode, runner, expect):
     monkeypatch.setenv("SP_TILE_DETECTION", mode)
