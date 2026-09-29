@@ -2349,7 +2349,7 @@ def prepare_ngmix_weights(
         raise ValueError(
             "blend_handling='uberseg' requires a segmentation map and the"
             + " central object_number; none reached prepare_ngmix_weights."
-            + " Set SEG_VIGNET_PATH on the ngmix run (see"
+            + " The tile catalogue's SEG_VIGNET column carries the map (see"
             + " CosmoStat/shapepipe#776)."
         )
 

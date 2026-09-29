@@ -1457,7 +1457,8 @@ analyses:
           Covers only pixels shared with a neighbour; defect_fill does not
           depend on it: defects are filled the same way under every
           BLEND_HANDLING, and the epoch cuts never count neighbour pixels.
-          noisefill (the default; the committed config sets no key) gives
+          noisefill (the default, and the committed ini's unless the
+          workflow's blend_handling says uberseg) gives
           weight 0 to the pixels marked -1e30 in the tile VIGNET on other
           detections' footprints (about 93% of neighbour-footprint pixels on
           a SExtractor-mode sims tile; every one in catalogue mode, from the
