@@ -263,7 +263,8 @@ def test_uberseg_fills_defects_and_leaves_neighbour_pixels_raw():
 
     Failure modes: the defect fill is skipped under uberseg, so raw bad
     pixels reach metacal; or the neighbour side is noise-filled
-    (defects-filled-neighbours-raw).
+    (defects-filled-whatever-the-blend-handling,
+    uberseg-ignores-markers).
     """
     npix = 41
     gal, flag, weight = _gal_flag_weight(npix=npix)

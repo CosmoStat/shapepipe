@@ -144,10 +144,11 @@ def ngmix_runner(
     else:
         centroid_source = "wcs"
 
-    # Neighbour treatment: "noisefill" (default) leaves neighbour pixels
-    # weighted and untouched; "uberseg" zeroes the weight of every pixel
-    # closer to a neighbour than to the central object, from the segmentation
-    # map, and leaves its image raw. Defect pixels (flagged, zero-weight or
+    # Neighbour treatment: "noisefill" (default) zero-weights and noise-fills
+    # the pixels SExtractor marks -1e30 in the tile VIGNET (other detections'
+    # footprints); "uberseg" ignores those markers, zeroes the weight of every
+    # pixel closer to a neighbour than to the central object, from the
+    # segmentation map, and leaves its image raw. Defect pixels (flagged, zero-weight or
     # invalid-RMS) are zero-weighted and filled under both (DEFECT_FILL
     # below); see prepare_ngmix_weights.
     if config.has_option(module_config_sec, "BLEND_HANDLING"):
@@ -164,7 +165,8 @@ def ngmix_runner(
         dilate_neighbour = 1
 
     # EPOCH_CENTRAL_DEFECT_RADIUS (optional, pixels): drop an epoch when a
-    # masked pixel lies closer than this to the stamp centre; 0 disables.
+    # defect pixel (flagged, zero-weight or invalid-RMS; not a neighbour
+    # marker) lies closer than this to the stamp centre; 0 disables.
     if config.has_option(module_config_sec, "EPOCH_CENTRAL_DEFECT_RADIUS"):
         epoch_central_defect_radius = config.getfloat(
             module_config_sec, "EPOCH_CENTRAL_DEFECT_RADIUS"
@@ -173,7 +175,8 @@ def ngmix_runner(
         epoch_central_defect_radius = EPOCH_CENTRAL_DEFECT_RADIUS
 
     # EPOCH_MASKED_FRACTION_CUT (optional): drop an epoch when more than this
-    # fraction of its stamp is masked (flagged, zero-weight or invalid-RMS).
+    # fraction of its stamp is defects (flagged, zero-weight or invalid-RMS;
+    # neighbour markers are not counted).
     if config.has_option(module_config_sec, "EPOCH_MASKED_FRACTION_CUT"):
         epoch_masked_fraction_cut = config.getfloat(
             module_config_sec, "EPOCH_MASKED_FRACTION_CUT"
