@@ -11,18 +11,24 @@ import re
 from configparser import ConfigParser
 
 
+# ``$VAR``, ``${VAR}`` or ``${VAR:-default}``.
+_VAR_RE = re.compile(r"\$(?:\{(\w+)(?::-([^}]*))?\}|(\w+))")
+
+
 def _expandvars_strict(value):
     """Expand Environment Variables Strictly.
 
     Expand environment variables in ``value``, raising an error if any
     referenced variable is unset instead of silently leaving the literal
-    ``$VAR`` string in place.
+    ``$VAR`` string in place. ``${VAR:-default}`` expands to ``default``
+    when ``VAR`` is unset or empty, as in the shell. Each value is inserted
+    as is, not expanded again.
 
     Parameters
     ----------
     value : str
-        Configuration value possibly containing ``$VAR`` or ``${VAR}``
-        references
+        Configuration value possibly containing ``$VAR``, ``${VAR}`` or
+        ``${VAR:-default}`` references
 
     Returns
     -------
@@ -32,11 +38,23 @@ def _expandvars_strict(value):
     Raises
     ------
     ValueError
-        If a referenced environment variable is not set
+        If a referenced environment variable without a default is not set
 
     """
-    expanded = os.path.expandvars(value)
-    unset = re.findall(r"\$\{?(\w+)\}?", expanded)
+    unset = []
+
+    def substitute(match):
+        braced, default, bare = match.groups()
+        name = braced or bare
+        env = os.environ.get(name)
+        if default is not None:
+            return env or default
+        if env is None:
+            unset.append(name)
+            return match.group(0)
+        return env
+
+    expanded = _VAR_RE.sub(substitute, value)
     if unset:
         raise ValueError(
             f"Environment variable(s) {', '.join(sorted(set(unset)))} "
@@ -71,6 +89,29 @@ class CustomParser(ConfigParser):
 
         """
         return self._get(section, _expandvars_strict, option, **kwargs)
+
+    def getexpandedboolean(self, section, option, **kwargs):
+        """Get Expanded Boolean.
+
+        Expand enviroment variables in the value, then read it as a boolean
+        the way ``getboolean`` does.
+
+        Parameters
+        ----------
+        section : str
+            Configuration file section
+        option : str
+            Configuration file option
+
+        Returns
+        -------
+        bool
+            The expanded value as a boolean
+
+        """
+        return self._convert_to_boolean(
+            self.getexpanded(section, option, **kwargs)
+        )
 
     def getlist(self, section, option, delimiter=",", **kwargs):
         """Get List.
