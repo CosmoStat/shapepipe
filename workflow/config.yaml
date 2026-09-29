@@ -20,14 +20,12 @@ input_type: data
 # campaign's merged catalogues. Required, and set by the run config.
 # run: smk-g6
 
-# Defaults per input_type: what follows from the kind of input, whatever the
-# machine. A run config, or a machines: entry below, overrides them; a
-# top-level key here would shadow both tables, so none of these is set above.
-# - tile_detection: `unions_catalogue` fetches the UNIONS per-tile catalogue
-#   (inputs.catalogues) and converts it in place; `sextractor` runs SExtractor
-#   on the tile image
-# - psf_model: psfex, mccd, or fake (image sims only: the true simulation
-#   PSF, read from psf_dict)
+# Default settings per input_type, can be overridden by a user-defined run config file.
+# - tile_detection: allowed are `unions_catalogue` (fetch official UNIONS catalogue
+#   from vos; recommended for data); `sextractor` (detect objects via a SExtractor
+#   module run; required for image_sims)
+# - psf_model: allowed are `psfex` (default), `mccd`; `fake` (image_sims only,
+#   PSF read from psf_dict)
 input_types:
   data:
     # @sc [decision:detection.tile_detection]
