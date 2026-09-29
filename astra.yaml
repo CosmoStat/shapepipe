@@ -215,6 +215,9 @@ analyses:
       - id: sky_masks
         type: data
         source: UNIONS healsparse mask maps
+      - id: exposure_psf_ccds
+        type: data
+        source: per-exposure split WCS (headers-<exp>.npy) and the persisted validation_psf members (exp_persist)
     outputs:
       - id: masked_measurement_inputs
         type: data
@@ -225,7 +228,97 @@ analyses:
           catalogue's MASK_n<bit> columns.
         inputs: [exposure_flags, sky_masks]
         decisions: [pixel_mask_source, psf_star_mask_veto, sky_mask_application, mask_default_cut]
+      - id: defect_map
+        type: data
+        format: hsp
+        description: >-
+          The campaign's instrument-flag defect map: a boolean healsparse
+          map, True = masked, the union of one fragment per exposure. A
+          product; nothing in the workflow reads it. Data runs only.
+        inputs: [exposure_flags]
+        decisions: [defect_map_from_flags]
+      - id: nexp_map
+        type: data
+        format: hsp
+        description: >-
+          The campaign's exposure-count map: a uint16 healsparse map at the
+          defect map's resolution holding, per pixel, the number of exposures
+          with a valid PSF model covering it. The count sp_validation's
+          npoint cut reads. A product; nothing in the workflow reads it.
+          Built for every fitted-PSF campaign; image simulations on the true
+          PSF record no footprints and skip it.
+        inputs: [exposure_psf_ccds]
+        decisions: [nexp_map_valid_psf_ccds]
     decisions:
+      nexp_map_valid_psf_ccds:
+        label: The exposure-count map stamps only CCDs with a valid PSF model
+        rationale: >-
+          exp_footprint records the four sky corners of each CCD whose
+          validation_psf catalogue exp_persist packed; psfex_interp writes that
+          catalogue on success and returns without it on NOT_ENOUGH_STARS,
+          BAD_CHI2 or FILE_NOT_FOUND, so the member list is the valid-PSF set.
+          Corners come from the split's WCS at pixel edges. nexp_map stamps
+          value 1 per CCD polygon into a uint16 map; the CCDs of one exposure
+          do not overlap, so a pixel's value is the number of exposures that
+          can contribute a PSF-corrected epoch there. It is built from every
+          record on the products root, reclaimed exposures included, and
+          written raw (no median smoothing). There is one count: of exposures,
+          not of pointings. The resolution is the mask ladder's, shared with
+          the defect map.
+          Values:
+          config.yaml#exposure_maps.nexp.enabled = true.
+        default: valid_psf_ccds
+        options:
+          valid_psf_ccds:
+            label: Count exposures whose CCD has a valid PSF model
+          all_ccds:
+            label: Count every exposure whose CCD covers the pixel
+            excluded: true
+            excluded_reason: >-
+              Counts epochs that cannot contribute a shape: a CCD without a
+              PSF model yields no PSF-corrected measurement, so the count
+              overstates depth exactly where the PSF fit failed.
+      defect_map_from_flags:
+        label: Instrument flags rasterized conservatively into a healsparse defect map
+        rationale: >-
+          The per-CCD flag images (bad columns, saturated
+          pixels, bleed trails; the exposure_flags input) otherwise never leave the
+          pixel domain, and the footprint built from CCD-corner WCS cannot
+          subtract them. exp_defect_map samples every nonzero-flag CCD pixel
+          on an oversample x oversample grid spanning its full extent,
+          corners included (exposure_maps.defect.oversample 3 in workflow/config.yaml),
+          maps the samples through the CCD's image-split WCS, and masks every
+          healpix pixel they touch, at the mask ladder's convention (nside
+          131072 over coverage 128, True = masked). Any flag bit counts.
+          defect_map_merge ORs the campaign's fragments into
+          defect_map/defect_map_<campaign>.hsp, with a sidecar recording which exposures
+          are in; a removed or changed fragment forces a rebuild, since a
+          union cannot be un-OR-ed. On 2079612p CCD 0, oversample 2, 3 and 5
+          miss 169, 54 and 5 of 14229 reference healpix pixels. The map is a
+          product no workflow stage consumes (config_tile_Mc.ini's
+          MASK_EXT_PATHS does not name it); image simulations get none, their
+          flag images being all zero.
+          Values:
+          config.yaml#exposure_maps.nside = 131072;
+          config.yaml#exposure_maps.nside_coverage = 128;
+          config.yaml#exposure_maps.defect.oversample = 3.
+        default: rasterize_conservative_os3
+        options:
+          rasterize_conservative_os3:
+            label: "Any-touch rasterization, 3x3 samples per CCD pixel"
+          centre_sampling:
+            label: Mask a healpix pixel only where its centre is flagged
+            excluded: true
+            excluded_reason: >-
+              Erases one-pixel bad columns, the thin geometry #878 exists to
+              keep.
+          none_footprint_from_wcs:
+            label: No defect map; footprint from CCD-corner WCS alone
+            excluded: true
+            excluded_reason: >-
+              The footprint silently includes defective pixels: percent-level
+              area, in exactly the thin small-scale geometry a window function
+              needs.
       pixel_mask_source:
         label: Only the instrument flag image reaches pixels
         rationale: >-
