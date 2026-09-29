@@ -120,6 +120,17 @@ def test_missing_run_fails_during_parse(campaign, resolve_dag):
             pytest.fail("a campaign without run: must fail at parse time")
 
 
+@pytest.mark.parametrize("key", ["coverage", "defect_map"])
+def test_retired_map_keys_fail_during_parse(campaign, resolve_dag, key):
+    """A run config still carrying a retired block is refused, naming its
+    replacement, instead of parsing with the block silently ignored."""
+    campaign.config[key] = {"enabled": False}
+    campaign.write_config()
+    with pytest.raises(WorkflowError, match=rf"{key} -> exposure_maps\."):
+        with resolve_dag(campaign):
+            pytest.fail(f"a run config with {key}: must fail at parse time")
+
+
 def test_mccd_is_refused_during_parse(tmp_path, resolve_dag):
     """MCCD products are unreadable to persistence and the star merge."""
     campaign = Campaign(tmp_path / "campaign", "data", "mccd")

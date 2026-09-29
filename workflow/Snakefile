@@ -64,6 +64,16 @@ configfile: str(Path(workflow.snakefile).parent / "config.yaml")
 if os.environ.get("SP_RUN_CONFIG"):
     workflow.configfile(os.environ["SP_RUN_CONFIG"])
 
+# A retired block parses without complaint and does nothing, so a run config
+# still carrying one would believe it had switched a map off (or resized it).
+# Checked on the merged config, before machine defaults are applied.
+_retired = run_config.retired(config)
+if _retired:
+    raise WorkflowError(
+        "Retired config key(s), no longer read — move them: "
+        + "; ".join(f"{path} -> {repl}" for path, repl in _retired)
+        + f" ({_RUN_CONFIG}).")
+
 # input_type picks where the pixels come from (and config/cfis vs
 # config/cfis_image_sims); everything after ingestion is the same chain.
 INPUT_TYPES = {"data", "image_sims"}
