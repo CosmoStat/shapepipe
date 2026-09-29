@@ -27,6 +27,7 @@ analyses:
       photometry_parameters: kron_25_35
       detection_source_mode: sx_nomask_single_image
       epoch_membership_ccd_bounds: trimmed_bounds_33_2080
+      catalogue_neighbour_marking: segmentation_map
   preparation:
     decisions:
       astrometric_solution_source: delivered_headers
