@@ -1501,8 +1501,8 @@ analyses:
           uberseg:
             label: UberSeg, weight-only
             description: >-
-              As in DES Y1/Y3. Needs the coadd segmentation stamp
-              (SEG_VIGNET_PATH). DILATE_NEIGHBOUR absorbs the coadd-vs-epoch
+              As in DES Y1/Y3. Needs the coadd segmentation stamp (the tile
+              catalogue's SEG_VIGNET). DILATE_NEIGHBOUR absorbs the coadd-vs-epoch
               overlay offset: ShapePipe reuses one coadd seg stamp for every
               epoch where MEDS reprojects it.
             insights: [mask_uberseg_weight_only, mask_uberseg_neighbour_bias, mask_des_y1_uberseg_only, mask_blend_bias_detection]
