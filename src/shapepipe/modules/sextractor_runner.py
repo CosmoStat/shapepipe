@@ -78,6 +78,24 @@ def sextractor_runner(
         f_wcs_path = input_file_list[-1]
         input_file_list = list(input_file_list[:-1])
 
+    # SEG_VIGNET (optional, environment-expanded boolean): add the
+    # SEGMENTATION check image's stamps, on each VIGNET's grid, as the
+    # SEG_VIGNET column ngmix's UberSeg blend handling reads. SExtractor then
+    # also writes the double-precision positions VIGNET is centred on, which
+    # add_seg_vignet reads and drops.
+    seg_vignet = config.has_option(
+        module_config_sec, "SEG_VIGNET"
+    ) and config.getexpandedboolean(module_config_sec, "SEG_VIGNET")
+    if seg_vignet:
+        if "SEGMENTATION" not in [key.upper() for key in check_image]:
+            raise ValueError(
+                "SEG_VIGNET needs the SEGMENTATION check image in CHECKIMAGE."
+            )
+        dot_param = ss.seg_vignet_param_file(
+            dot_param,
+            f"{run_dirs['tmp']}/seg_vignet{file_number_string}.param",
+        )
+
     # Create sextractor caller class instance
     ss_inst = ss.SExtractorCaller(
         input_file_list,
@@ -109,24 +127,10 @@ def sextractor_runner(
     # Parse SExtractor errors
     stdout, stderr = ss_inst.parse_errors(stderr, stdout)
 
-    # SEG_VIGNET (optional, environment-expanded boolean): add the
-    # SEGMENTATION check image's stamps, on each VIGNET's grid, as the
-    # SEG_VIGNET column ngmix's UberSeg blend handling reads. Needs the
-    # SEGMENTATION and BACKGROUND check images.
-    if config.has_option(
-        module_config_sec, "SEG_VIGNET"
-    ) and config.getexpandedboolean(module_config_sec, "SEG_VIGNET"):
-        missing = {"SEGMENTATION", "BACKGROUND"} - set(ss_inst.check_paths)
-        if missing:
-            raise ValueError(
-                f"SEG_VIGNET needs the {', '.join(sorted(missing))} check"
-                + " image(s) in CHECKIMAGE."
-            )
+    if seg_vignet:
         ss.add_seg_vignet(
             ss_inst.path_output_file,
             ss_inst.check_paths["SEGMENTATION"],
-            input_file_list[0],
-            ss_inst.check_paths["BACKGROUND"],
             w_log=w_log,
         )
 

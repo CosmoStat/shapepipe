@@ -81,68 +81,51 @@ def seg_vignet_column(seg_vignets):
     )
 
 
-def vignet_centres(x_image, y_image, vignets, image, background):
-    """0-based centre pixels of SExtractor's VIGNET stamps.
+# Double-precision positions add_seg_vignet centres SEG_VIGNET on.
+DOUBLE_POSITIONS = ("X_IMAGE_DBL", "Y_IMAGE_DBL")
 
-    SExtractor centres VIGNET on the pixel nearest the object's barycentre,
-    held in double precision. The catalogue's float32 ``X_IMAGE`` /
-    ``Y_IMAGE`` round to the same pixel except where they land on an exact
-    half pixel, which hides the side the barycentre was on. For those, each
-    neighbouring centre is tried and the one whose stamp of ``image`` minus
-    ``background`` agrees with the object's VIGNET on the most pixels wins.
+
+def seg_vignet_param_file(dot_param, output_path):
+    """Write a SExtractor parameter file that also asks for the double
+    positions.
+
+    SExtractor centres VIGNET on the pixel nearest its double-precision
+    barycentre, which the float32 ``X_IMAGE`` / ``Y_IMAGE`` hide on exact
+    half pixels; ``X_IMAGE_DBL`` / ``Y_IMAGE_DBL`` carry it.
+    :func:`add_seg_vignet` reads them and drops them again.
 
     Parameters
     ----------
-    x_image, y_image : numpy.ndarray
-        1-based positions as the catalogue stores them
-    vignets : numpy.ndarray
-        The catalogue's VIGNET stamps, shape ``(n_obj, size, size)``
-    image, background : numpy.ndarray
-        The measurement image and SExtractor's BACKGROUND check image
+    dot_param : str
+        Path to the configured parameter file
+    output_path : str
+        Path to write the extended parameter file to
 
     Returns
     -------
-    numpy.ndarray
-        0-based column of each stamp's centre pixel
-    numpy.ndarray
-        0-based row of each stamp's centre pixel
-    int
-        Number of objects on a half pixel
+    str
+        ``output_path``
 
     """
-    x = np.asarray(x_image, dtype=np.float64) - 1
-    y = np.asarray(y_image, dtype=np.float64) - 1
-    col, row = np.rint(x).astype(np.int64), np.rint(y).astype(np.int64)
-    x_tie, y_tie = x % 1 == 0.5, y % 1 == 0.5
-    size = vignets.shape[1]
-    image = image.astype(np.float32, copy=False)
-    background = background.astype(np.float32, copy=False)
-    ties = np.flatnonzero(x_tie | y_tie)
-    for i in ties:
-        cols = np.floor(x[i]) + np.array([0, 1]) if x_tie[i] else [col[i]]
-        rows = np.floor(y[i]) + np.array([0, 1]) if y_tie[i] else [row[i]]
-        candidates = [(int(c), int(r)) for c in cols for r in rows]
-        valid = vignets[i] > -1e29
-
-        def agreement(centre):
-            c, r = [centre[0]], [centre[1]]
-            stamp = (cut_stamps(image, c, r, size, np.float32(0))[0]
-                     - cut_stamps(background, c, r, size, np.float32(0))[0])
-            return np.count_nonzero((stamp == vignets[i]) & valid)
-
-        col[i], row[i] = max(candidates, key=agreement)
-    return col, row, len(ties)
+    with open(dot_param) as f:
+        text = f.read()
+    if text and not text.endswith("\n"):
+        text += "\n"
+    with open(output_path, "w") as f:
+        f.write(text + "".join(f"{name}\n" for name in DOUBLE_POSITIONS))
+    return output_path
 
 
-def add_seg_vignet(cat_path, seg_path, image_path, background_path,
-                   w_log=None):
+def add_seg_vignet(cat_path, seg_path, w_log=None):
     """Add the ``SEG_VIGNET`` column to a SExtractor catalogue.
 
     The SEGMENTATION check image, whose labels are the catalogue's
-    ``NUMBER``, is cut on the grid of each object's VIGNET
-    (:func:`vignet_centres`, :func:`cut_stamps`) and written, int32 and 0
-    off the image, as ``SEG_VIGNET`` in ``LDAC_OBJECTS``, which ngmix's
-    UberSeg blend handling reads. Every other HDU and column is kept.
+    ``NUMBER``, is cut on the grid of each object's VIGNET, centred on the
+    pixel nearest ``X_IMAGE_DBL`` / ``Y_IMAGE_DBL`` as SExtractor centres
+    VIGNET (:func:`cut_stamps`), and written, int32 and 0 off the image, as
+    ``SEG_VIGNET`` in ``LDAC_OBJECTS``, which ngmix's UberSeg blend handling
+    reads. The double positions (:func:`seg_vignet_param_file`) are dropped;
+    every other HDU and column is kept.
 
     Parameters
     ----------
@@ -150,40 +133,33 @@ def add_seg_vignet(cat_path, seg_path, image_path, background_path,
         Path to the SExtractor FITS-LDAC catalogue, rewritten in place
     seg_path : str
         Path to the SEGMENTATION check image
-    image_path : str
-        Path to the measurement image
-    background_path : str
-        Path to the BACKGROUND check image
     w_log : logging.Logger, optional
         Pipeline logger
 
     Raises
     ------
     ValueError
-        If the check images and the image are not on one pixel grid
+        If the catalogue lacks the double positions
 
     """
     with fits.open(cat_path) as hdul:
         hdus = [hdu.copy() for hdu in hdul]
     objects = next(h for h in hdus if h.name == "LDAC_OBJECTS")
     data = objects.data
-    image = fits.getdata(image_path)
-    background = fits.getdata(background_path)
-    seg = fits.getdata(seg_path)
-    if not (seg.shape == image.shape == background.shape):
+    missing = [name for name in DOUBLE_POSITIONS if name not in data.names]
+    if missing:
         raise ValueError(
-            f"Segmentation {seg.shape}, image {image.shape} and background"
-            + f" {background.shape} must share one grid."
+            f"{cat_path} lacks {', '.join(missing)}, which SEG_VIGNET is"
+            + " centred on; run SExtractor with seg_vignet_param_file."
         )
-    vignets = data["VIGNET"]
-    col, row, n_tie = vignet_centres(
-        data["X_IMAGE"], data["Y_IMAGE"], vignets, image, background
-    )
-    del image, background
-    seg_vignets = cut_stamps(seg, col, row, vignets.shape[1], 0)
-    del seg
+    col = np.rint(np.asarray(data["X_IMAGE_DBL"]) - 1).astype(np.int64)
+    row = np.rint(np.asarray(data["Y_IMAGE_DBL"]) - 1).astype(np.int64)
+    size = data["VIGNET"].shape[1]
+    seg_vignets = cut_stamps(fits.getdata(seg_path), col, row, size, 0)
+    kept = [c for c in objects.columns.columns
+            if c.name not in DOUBLE_POSITIONS]
     new = fits.BinTableHDU.from_columns(
-        objects.columns.columns + [seg_vignet_column(seg_vignets)],
+        kept + [seg_vignet_column(seg_vignets)],
         header=objects.header,
         name="LDAC_OBJECTS",
     )
@@ -191,11 +167,10 @@ def add_seg_vignet(cat_path, seg_path, image_path, background_path,
         [new if h is objects else h for h in hdus]
     ).writeto(cat_path, overwrite=True)
     if w_log:
-        centre = vignets.shape[1] // 2
+        centre = size // 2
         own = np.mean(seg_vignets[:, centre, centre] == data["NUMBER"])
         w_log.info(
-            f"SEG_VIGNET cut from {seg_path} for {len(col)} objects"
-            + f" ({n_tie} on a half pixel, resolved against VIGNET);"
+            f"SEG_VIGNET cut from {seg_path} for {len(col)} objects;"
             + f" centre label = NUMBER for {own:.4f}"
         )
 
