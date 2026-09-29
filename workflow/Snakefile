@@ -188,6 +188,14 @@ try:
 except ValueError as err:
     raise WorkflowError(str(err)) from None
 
+# How ngmix treats a stamp's neighbours; tile.smk's blend handling section
+# carries it to tile_detect and tile_ngmix.
+BLEND_HANDLING = config.get("blend_handling", "noisefill")
+if BLEND_HANDLING not in run_config.BLEND_HANDLINGS:
+    raise WorkflowError(
+        f"Invalid blend_handling={BLEND_HANDLING!r}; expected one of "
+        f"{sorted(run_config.BLEND_HANDLINGS)}.")
+
 # SP_PHASE is set by bin/sp and NOWHERE else: `prepare`/`compute` on the two
 # invocations of `sp run`, `passthrough` on direct commands (`sp --unlock`, `sp
 # --dag`, `sp exp_psf ...`). It gates the two parse-time side effects — the index
