@@ -10,6 +10,9 @@ only lose their weight, and their image values stay raw. The per-epoch cuts
 in :func:`prepare_postage_stamps` act on the same defect set: the
 masked-fraction cut counts it, and the central-defect veto drops an epoch
 with a defect near the stamp centre, at a radius set by the defect's fill.
+SExtractor's -1e30 neighbour markers in the tile VIGNET are not defects:
+noisefill zero-weights and noise-fills them, uberseg ignores them, and the
+epoch cuts never count them.
 """
 
 import re
@@ -22,6 +25,7 @@ from astropy.io import fits
 from astropy.wcs import WCS
 from hypothesis import given
 from hypothesis import strategies as st
+from modopt.math.stats import sigma_mad
 from sqlitedict import SqliteDict
 from shapepipe.modules.ngmix_package import ngmix as ngmix_module
 
@@ -735,3 +739,266 @@ def test_ngmix_rejects_an_unknown_defect_fill(tmp_path):
             str(tmp_path), "-001-001", 30.0, 0.186, str(paths[4]),
             _RecordingLogger(), bkg_sub=False, defect_fill="interp",
         )
+
+
+# --- SExtractor's -1e30 neighbour markers are not defects -------------------
+#
+# The tile VIGNET carries -1e30 on the footprints of other detections. Every
+# epoch shares that tile stamp, so a marker counted as a defect would drop
+# every epoch of an object with a neighbour inside the veto radius. The
+# markers are their own per-epoch mask (``stamp.neighbours``): noisefill
+# zero-weights and noise-fills them, uberseg ignores them, and the epoch cuts
+# never read them.
+
+_MARKER = -1.0e30
+_CENTRE = N_STAMP // 2
+# Flipped (ccd < 18) and unflipped (ccd >= 18) MegaCam CCDs.
+_MARKER_EPOCH_NAMES = ["2100001-10", "2100002-20", "2100003-11"]
+
+
+def _tile_with_neighbour(columns_from=_CENTRE + 3, rows=(_CENTRE - 2,
+                                                         _CENTRE + 3)):
+    """Tile VIGNET with a -1e30 neighbour footprint whose nearest pixel is
+    3 px from the stamp centre. The footprint is off-centre, so the MegaCam
+    flip moves it."""
+    tile = np.random.default_rng(5).normal(0.0, 1.0, (N_STAMP, N_STAMP))
+    tile[rows[0]:rows[1], columns_from:columns_from + 6] = _MARKER
+    return tile
+
+
+def _marker_stamp(tile, epochs=None, **kwargs):
+    """Run prepare_postage_stamps on defect-free epochs under ``tile``."""
+    clean = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+    ones = np.ones((N_STAMP, N_STAMP))
+    if epochs is None:
+        epochs = {name: (clean.copy(), ones) for name in _MARKER_EPOCH_NAMES}
+    vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(epochs)
+    tile_cat.vign = tile[np.newaxis]
+    stamp = prepare_postage_stamps(
+        vignet, 1, 0, tile_cat, bkg_sub=False,
+        psf_obj=psf_obj, gal_obj=gal_obj, **kwargs,
+    )
+    return stamp, epochs, gal_obj
+
+
+def _expected_neighbours(tile, name):
+    return Ngmix.MegaCamFlip(tile, int(name.split("-")[1])) == _MARKER
+
+
+def test_neighbour_markers_near_the_centre_keep_every_epoch():
+    """A neighbour footprint 3 px from the centre, and one covering 45% of
+    the stamp, drop no epoch: the masked-fraction cut and the central veto
+    count no marker.
+
+    Failure mode: the markers are written into the flag stamp and counted as
+    defects, so every epoch (they all share the tile VIGNET) is dropped by
+    the veto or the fraction cut and the object loses its shape
+    (neighbour-markers-are-not-defects).
+    """
+    small = _tile_with_neighbour()
+    large = _tile_with_neighbour(rows=(0, N_STAMP))
+    large[:, _CENTRE + 3:] = _MARKER
+    assert (large == _MARKER).mean() > 1 / 3
+    for tile in (small, large):
+        stamp, _, _ = _marker_stamp(tile)
+        assert len(stamp.gals) == len(_MARKER_EPOCH_NAMES)
+        assert stamp.epoch_cuts["considered"] == len(_MARKER_EPOCH_NAMES)
+        assert stamp.epoch_cuts["masked_fraction"] == 0
+        assert stamp.epoch_cuts["central_veto"] == 0
+
+
+def test_neighbour_markers_are_their_own_per_epoch_mask():
+    """``stamp.neighbours`` holds the MegaCam-flipped marker mask of each
+    surviving epoch, and the flag stamps stay the exposure's own.
+
+    Failure mode: the markers are merged into the flags, or the neighbour
+    mask is not flipped with its epoch and lands on the wrong pixels.
+    """
+    tile = _tile_with_neighbour()
+    stamp, epochs, _ = _marker_stamp(tile)
+    names = {id(v[0]): name for name, v in epochs.items()}
+    assert len(stamp.neighbours) == len(stamp.flags)
+    for flag, neighbour in zip(stamp.flags, stamp.neighbours):
+        name = names[id(flag)]
+        npt.assert_array_equal(flag, 0)
+        npt.assert_array_equal(neighbour, _expected_neighbours(tile, name))
+    assert not np.array_equal(stamp.neighbours[0], stamp.neighbours[1])
+
+
+def test_a_flagged_column_near_the_centre_is_still_vetoed():
+    """With a neighbour footprint present, an epoch with a genuinely flagged
+    column 3 px from the centre is still dropped, and only that epoch.
+
+    Failure mode: handling the markers apart also exempts real defects from
+    the central veto.
+    """
+    clean = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+    ones = np.ones((N_STAMP, N_STAMP))
+    column = clean.copy()
+    column[:, _CENTRE - 3] = 1
+    epochs = {
+        "2100001-10": (clean, ones),
+        "2100002-20": (column, ones),
+        "2100003-11": (clean.copy(), ones),
+    }
+    stamp, _, _ = _marker_stamp(_tile_with_neighbour(), epochs)
+    names = {id(v[0]): name for name, v in epochs.items()}
+    assert sorted(names[id(f)] for f in stamp.flags) == [
+        "2100001-10", "2100003-11"
+    ]
+    assert stamp.epoch_cuts["central_veto"] == 1
+    assert stamp.epoch_cuts["masked_fraction"] == 0
+
+
+def _stamp_epoch_weights(stamp, i, seed, **kwargs):
+    return prepare_ngmix_weights(
+        1.0e3 + stamp.gals[i], stamp.weights[i], stamp.flags[i],
+        np.random.RandomState(seed), bkg_rms=stamp.bkg_rms[i],
+        neighbour=stamp.neighbours[i], **kwargs,
+    )
+
+
+def test_noisefill_fills_exactly_the_marked_pixels():
+    """Under noisefill, a defect-free epoch has zero weight and noise
+    exactly on the marked neighbour pixels; every other pixel keeps its raw
+    value and its weight.
+
+    Failure mode: the neighbour markers are dropped with the flags, so
+    noisefill no longer removes neighbour light (noisefill-fills-markers).
+    """
+    tile = _tile_with_neighbour()
+    stamp, epochs, _ = _marker_stamp(tile)
+    assert len(stamp.gals) == len(_MARKER_EPOCH_NAMES)
+    for i in range(len(stamp.gals)):
+        gal = 1.0e3 + stamp.gals[i]
+        gal_out, w_out, _ = _stamp_epoch_weights(
+            stamp, i, seed=i, blend_handling="noisefill",
+        )
+        neighbour = stamp.neighbours[i]
+        assert neighbour.any()
+        npt.assert_array_equal(gal_out != gal, neighbour)
+        npt.assert_array_equal(w_out == 0.0, neighbour)
+        assert np.all(np.abs(gal_out[neighbour]) < 10.0)
+
+
+def test_uberseg_leaves_the_marked_pixels_raw():
+    """Under uberseg, the markers mask nothing: with a seg map holding only
+    the central object, a defect-free epoch keeps every pixel raw and
+    weighted, marked or not.
+
+    Failure mode: the markers reach the defect set or the fill, so uberseg
+    noise-fills the neighbour's light instead of leaving it to the seg-based
+    weight (uberseg-ignores-markers).
+    """
+    tile = _tile_with_neighbour()
+    stamp, _, _ = _marker_stamp(tile)
+    seg = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+    seg[_CENTRE - 1:_CENTRE + 2, _CENTRE - 1:_CENTRE + 2] = 1
+    assert len(stamp.gals) == len(_MARKER_EPOCH_NAMES)
+    for i in range(len(stamp.gals)):
+        gal = 1.0e3 + stamp.gals[i]
+        gal_out, w_out, _ = _stamp_epoch_weights(
+            stamp, i, seed=i, blend_handling="uberseg", seg=seg,
+            object_number=1,
+        )
+        npt.assert_array_equal(gal_out, gal)
+        assert np.all(w_out > 0.0)
+
+
+def _develop_noisefill(gal, weight, flag, rng, bkg_rms=None):
+    """prepare_ngmix_weights under BLEND_HANDLING = noisefill on develop
+    (240b37e4), where the markers arrive as flag 2**10: the reference the
+    noisefill output is pinned to."""
+    mask = np.copy(weight) != 0
+    mask[flag != 0] = False
+    if bkg_rms is None:
+        sig_noise = sigma_mad(gal)
+        weight_map = mask.astype(float) / sig_noise ** 2
+    else:
+        valid_rms = np.isfinite(bkg_rms) & (bkg_rms > 0)
+        mask &= valid_rms
+        weight_map = np.zeros_like(gal, dtype=float)
+        weight_map[mask] = 1.0 / bkg_rms[mask] ** 2
+        sig_noise = np.where(valid_rms, bkg_rms, np.median(bkg_rms[mask]))
+    noise_img = rng.standard_normal(gal.shape) * sig_noise
+    noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
+    gal_masked = np.copy(gal)
+    gal_masked[~mask] = noise_img_gal[~mask]
+    return gal_masked, weight_map, noise_img
+
+
+@given(
+    seed=st.integers(0, 2**31 - 1),
+    with_rms=st.booleans(),
+    rms_scale=st.floats(0.5, 2.0),
+    with_defects=st.booleans(),
+)
+def test_noisefill_matches_develop_on_marked_neighbours(
+    seed, with_rms, rms_scale, with_defects,
+):
+    """For an epoch with a marked neighbour, noisefill returns the image,
+    weight and noise image develop returned, bit for bit: with no defect,
+    and with a flagged column and a dead pixel under the default noise fill.
+
+    Failure mode: carrying the markers apart from the flags changes what
+    noisefill does to neighbour pixels, their weights, the noise level or
+    the RNG stream (noisefill-matches-develop).
+    """
+    rng = np.random.default_rng(seed)
+    n = 31
+    gal = rng.normal(0.0, 1.0, (n, n))
+    gal[n // 2 - 2:n // 2 + 3, n // 2 - 2:n // 2 + 3] += 50.0
+    weight = np.ones((n, n))
+    flag = np.zeros((n, n), dtype=np.int32)
+    neighbour = np.zeros((n, n), dtype=bool)
+    neighbour[n // 2 - 3:n // 2 + 4, n // 2 + 3:n // 2 + 9] = True
+    gal[neighbour] += 30.0
+    if with_defects:
+        flag[:, 2] = 1
+        weight[n - 3, n // 2] = 0.0
+    bkg_rms = (
+        rms_scale * (1.0 + 0.1 * rng.random((n, n))) if with_rms else None
+    )
+
+    new = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(seed), bkg_rms=bkg_rms,
+        blend_handling="noisefill", neighbour=neighbour,
+    )
+    old = _develop_noisefill(
+        gal, weight, np.where(neighbour, 2**10, flag),
+        np.random.RandomState(seed), bkg_rms=bkg_rms,
+    )
+    for a, b in zip(new, old):
+        npt.assert_array_equal(a, b)
+
+
+def test_do_ngmix_metacal_threads_each_epochs_neighbour_mask(monkeypatch):
+    """Each epoch's neighbour mask reaches make_ngmix_observation.
+
+    Failure mode: the mask is built but never used, so noisefill silently
+    stops filling neighbours.
+    """
+    tile = _tile_with_neighbour()
+    stamp, _, _ = _marker_stamp(tile)
+    assert len(stamp.gals) == len(_MARKER_EPOCH_NAMES)
+    seen = []
+
+    class _Stop(Exception):
+        pass
+
+    def fake_observation(*args, **kwargs):
+        seen.append(kwargs["neighbour"])
+        if len(seen) == len(stamp.gals):
+            raise _Stop
+        return None
+
+    monkeypatch.setattr(
+        ngmix_module, "make_ngmix_observation", fake_observation,
+    )
+    monkeypatch.setattr(ngmix_module, "ObsList", list)
+    with pytest.raises(_Stop):
+        ngmix_module.do_ngmix_metacal(
+            stamp, None, 1.0, np.random.RandomState(0),
+        )
+    for got, want in zip(seen, stamp.neighbours):
+        assert got is want
