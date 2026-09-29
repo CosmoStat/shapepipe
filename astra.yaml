@@ -348,7 +348,8 @@ analyses:
           [tile_detection, detection_threshold_policy, deblending_policy,
            background_model,
            weight_map_usage, zero_weight_interpolation, detection_source_mode,
-           epoch_membership_ccd_bounds, photometry_parameters,
+           epoch_membership_ccd_bounds, catalogue_neighbour_marking,
+           photometry_parameters,
            spurious_detection_cleaning, blend_photometry_mask_type,
            saturation_level]
     decisions:
@@ -633,6 +634,37 @@ analyses:
             label: "x in (33,2080), y in (1,4612), strict"
           inclusive_bounds:
             label: Same bounds, inclusive
+      catalogue_neighbour_marking:
+        label: Neighbour pixels in the catalogue path's VIGNET
+        rationale: >-
+          ngmix masks a neighbour only where the tile VIGNET is -1e30 (flag
+          2**10: zero weight, noise-filled under noisefill), and SExtractor
+          writes -1e30 on neighbours' footprints and off the image. The
+          unions_catalogue converter reproduces that from the catalogue's own
+          r-band segmentation map (CFIS.<tile>.r.seg.fits.fz, on the tile's
+          pixel grid), so both tile_detection options mask the same way.
+          Segmentation labels are not the catalogue NUMBER; each object claims
+          the footprint under its centre pixel (the VIGNET centre pixel), which
+          on 202.301 matches 36,064 of 36,065 objects with none shared. The map
+          is relabelled to NUMBER (unclaimed footprints -1; an object on sky or
+          on a claimed footprint gets a 3-pixel-radius disc of its own) and
+          written beside the sexcat as seg-<tile>.fits for an UberSeg seg run;
+          VIGNET pixels whose relabelled value is neither 0 nor the object's
+          NUMBER become -1e30. Without it, catalogue-mode ngmix fits neighbour
+          light: in pilot smk-g10, NGMIX_MAG_NOSHEAR was over 1 mag brighter
+          than MAG_AUTO for 6.1% of objects (2.7% with SExtractor, g9).
+          Values:
+          READ_EXT_SEXCAT_RUNNER.SEGMENTATION = True.
+        default: segmentation_map
+        options:
+          segmentation_map:
+            label: -1e30 on other objects' segmentation footprints, as SExtractor
+          none:
+            label: Image pixels only; ngmix masks no neighbours
+            excluded: true
+            excluded_reason: >-
+              Leaves neighbour light in the fit, unlike the sextractor option
+              it replaces; the cause of the smk-g10 magnitude outliers.
     prior_insights:
       guinot22_sextractor_params:
         claim: >-

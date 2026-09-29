@@ -29,9 +29,11 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # an image-sim star tile (one focal-plane model per exposure, ~1.5 CPU-hours each).
 # `tile_detection` is `unions_catalogue` (the input_types default for data:
 # the UNIONS per-tile catalogue at `inputs.catalogues` is fetched and
-# converted in place, keeping its NUMBER) or `sextractor` (the tile is
-# detected with SExtractor; the default for image sims). Either way make_cat
-# writes TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER.
+# converted in place, keeping its NUMBER, and its segmentation map sets
+# neighbours' VIGNET pixels to -1e30 as SExtractor does) or `sextractor` (the
+# tile is detected with SExtractor; the default for image sims). Either way
+# make_cat writes TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER and ngmix masks
+# the same neighbours.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.

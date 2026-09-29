@@ -30,11 +30,18 @@ def read_ext_sexcat_runner(
 
     Reads an external ASCII catalogue (SExtractor format), converts it to
     a FITS-LDAC catalogue compatible with downstream ShapePipe modules.
-    If MAKE_POST_PROCESS = True, runs multi-epoch post-processing to add
-    per-exposure HDUs.
+    The inputs are the catalogue and the tile image, then the catalogue's
+    segmentation map if SEGMENTATION = True, then the WCS log if
+    MAKE_POST_PROCESS = True. With the segmentation map, neighbours' pixels
+    in VIGNET are set to -1e30 and the map, relabelled to the catalogue's
+    NUMBER, is written as ``seg<number>.fits``. MAKE_POST_PROCESS runs the
+    multi-epoch post-processing that adds per-exposure HDUs.
     """
-    cat_path = input_file_list[0]
-    image_path = input_file_list[1]
+    cat_path, image_path, *extra_inputs = input_file_list
+    use_seg = config.has_option(
+        module_config_sec, "SEGMENTATION"
+    ) and config.getboolean(module_config_sec, "SEGMENTATION")
+    seg_path = extra_inputs.pop(0) if use_seg else None
 
     if config.has_option(module_config_sec, "SUFFIX"):
         suffix = config.get(module_config_sec, "SUFFIX")
@@ -56,19 +63,21 @@ def read_ext_sexcat_runner(
         image_path,
         output_path,
         stamp_size=stamp_size,
+        seg_path=seg_path,
+        seg_output_path=f"{run_dirs['output']}/seg{file_number_string}.fits",
         w_log=w_log,
     )
 
     if config.getboolean(module_config_sec, "MAKE_POST_PROCESS"):
         # The WCS log is supplied as a positional input (via FILE_PATTERN)
         # when post-processing is enabled, not by the decorator default.
-        if len(input_file_list) < 3:
+        if not extra_inputs:
             raise ValueError(
-                "MAKE_POST_PROCESS requires the WCS log file as a third"
+                "MAKE_POST_PROCESS requires the WCS log file as the last"
                 + " input; add 'log_exp_headers' to FILE_PATTERN and"
                 + f" FILE_EXT in the [{module_config_sec}] config section."
             )
-        f_wcs_path = input_file_list[2]
+        f_wcs_path = extra_inputs[0]
         pos_params = config.getlist(module_config_sec, "WORLD_POSITION")
         ccd_size = config.getlist(module_config_sec, "CCD_SIZE")
         w_log.info("Running post-processing")

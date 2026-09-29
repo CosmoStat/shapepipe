@@ -47,12 +47,122 @@ def _build_ldac_imhead(img_header):
     return hdu
 
 
-def _extract_vignets(image_data, x_pos, y_pos, stamp_size):
+# SExtractor's VIGNET value for pixels that are not the object's: off the
+# image and on a neighbour's segmentation footprint. ngmix flags these pixels
+# (tile VIGNET == -1e30) and noise-fills them at zero weight.
+BIG = -1e30
+
+# The label of a footprint no catalogue object claims in the relabelled
+# segmentation map. Negative, so it never collides with a NUMBER; UberSeg only
+# asks "self or not self", so neighbours need no identity.
+NEIGHBOUR_LABEL = -1
+
+# Radius, in pixels, of the disc of its own NUMBER painted for an object with
+# no footprint of its own (on sky, or on a footprint claimed by another).
+FALLBACK_RADIUS = 3
+
+
+def _centre_pixels(x_pos, y_pos):
+    """0-based (column, row) of the pixel holding each 1-based position."""
+    col = np.rint(np.asarray(x_pos, dtype=float)).astype(np.int64) - 1
+    row = np.rint(np.asarray(y_pos, dtype=float)).astype(np.int64) - 1
+    return col, row
+
+
+def relabel_seg(seg, number, x_image, y_image, fallback_radius=FALLBACK_RADIUS):
+    """Relabel a segmentation map into a catalogue's NUMBER.
+
+    Each object claims, in NUMBER order and first come first served, the
+    footprint its centre pixel falls in; that footprint becomes its NUMBER.
+    Footprints nobody claims become ``NEIGHBOUR_LABEL``; sky stays 0. An
+    object on sky or on an already-claimed footprint gets a disc of radius
+    ``fallback_radius`` of its NUMBER, and every object on the image ends
+    holding its own centre pixel (the lower NUMBER wins a shared pixel).
+
+    Parameters
+    ----------
+    seg : numpy.ndarray
+        Segmentation map, 0 for sky and one positive label per footprint
+    number : array_like
+        Catalogue ``NUMBER``
+    x_image, y_image : array_like
+        1-based pixel positions on the grid of ``seg``
+    fallback_radius : int, optional
+        Radius of the disc painted for an object without a footprint
+
+    Returns
+    -------
+    numpy.ndarray
+        Relabelled map, ``int32``
+    dict
+        Counts of the claim outcomes ``matched``, ``unclaimed`` (on sky),
+        ``shared`` and ``off_image``, which partition the catalogue, plus
+        ``shared_pixel`` (objects rounding to a lower NUMBER's pixel)
+
+    @sc [decision:detection.catalogue_neighbour_marking]
+    """
+    number = np.asarray(number)
+    col, row = _centre_pixels(x_image, y_image)
+    n_row, n_col = seg.shape
+    inside = (col >= 0) & (col < n_col) & (row >= 0) & (row < n_row)
+    order = np.argsort(number, kind="stable")
+
+    counts = dict(matched=0, unclaimed=0, shared=0, off_image=0,
+                  shared_pixel=0)
+    table = np.full(max(int(seg.max()), 0) + 1, NEIGHBOUR_LABEL, np.int32)
+    table[0] = 0
+    claimed, fallback = set(), []
+    for i in order:
+        if not inside[i]:
+            counts["off_image"] += 1
+            continue
+        label = int(seg[row[i], col[i]])
+        if label == 0 or label in claimed:
+            counts["unclaimed" if label == 0 else "shared"] += 1
+            fallback.append(i)
+        else:
+            claimed.add(label)
+            table[label] = number[i]
+            counts["matched"] += 1
+    out = table[np.clip(seg, 0, None)]
+
+    r = np.arange(-fallback_radius, fallback_radius + 1)
+    disc = np.argwhere(np.add.outer(r**2, r**2) <= fallback_radius**2)
+    disc -= fallback_radius
+    for i in fallback:
+        out[np.clip(row[i] + disc[:, 0], 0, n_row - 1),
+            np.clip(col[i] + disc[:, 1], 0, n_col - 1)] = number[i]
+
+    # Centres last, so no disc can take an object's centre away.
+    taken = set()
+    for i in order[inside[order]]:
+        pixel = (row[i], col[i])
+        if pixel in taken:
+            counts["shared_pixel"] += 1
+            continue
+        taken.add(pixel)
+        out[pixel] = number[i]
+    return out, counts
+
+
+def _image_header(header):
+    """Header of an image HDU without its compression or extension cards."""
+    header = header.copy()
+    for key in ("XTENSION", "PCOUNT", "GCOUNT", "EXTNAME"):
+        header.remove(key, ignore_missing=True, remove_all=True)
+    return header
+
+
+def _extract_vignets(image_data, x_pos, y_pos, stamp_size, seg=None,
+                     number=None):
     """Extract postage stamps from a tile image array.
 
     For each object position, a ``stamp_size x stamp_size`` cutout is
-    extracted.  Objects whose stamp falls partially outside the image are
-    padded with zeros, matching SExtractor behaviour.
+    extracted, centred on the pixel holding the position. Pixels off the
+    image are set to ``BIG``, as SExtractor does. With a segmentation map in
+    the catalogue's numbering (:func:`relabel_seg`), pixels on any footprint
+    other than the object's own are set to ``BIG`` too, which is how
+    SExtractor's VIGNET marks neighbours.
 
     Parameters
     ----------
@@ -64,32 +174,36 @@ def _extract_vignets(image_data, x_pos, y_pos, stamp_size):
         Y pixel positions, 1-based (SExtractor convention)
     stamp_size : int
         Side length of the square postage stamp (should be odd)
+    seg : numpy.ndarray, optional
+        Segmentation map on the image grid, labelled with ``number``
+    number : array_like, optional
+        Catalogue ``NUMBER``, required with ``seg``
 
     Returns
     -------
     numpy.ndarray
         Array of shape ``(n_obj, stamp_size, stamp_size)``, dtype float32
 
+    @sc [decision:detection.catalogue_neighbour_marking]
     """
     ny, nx = image_data.shape
     half = stamp_size // 2
-    n_obj = len(x_pos)
-    vignets = np.zeros((n_obj, stamp_size, stamp_size), dtype=np.float32)
+    col, row = _centre_pixels(x_pos, y_pos)
+    vignets = np.full((len(col), stamp_size, stamp_size), BIG, np.float32)
+    seg_stamp = np.zeros((stamp_size, stamp_size), np.int32)
 
-    for i, (x, y) in enumerate(zip(x_pos, y_pos)):
-        xi = int(round(float(x))) - 1
-        yi = int(round(float(y))) - 1
-
-        x0, x1 = xi - half, xi + half + 1
-        y0, y1 = yi - half, yi + half + 1
-
-        xc0, xc1 = max(0, x0), min(nx, x1)
-        yc0, yc1 = max(0, y0), min(ny, y1)
-
-        dx0, dx1 = xc0 - x0, xc0 - x0 + (xc1 - xc0)
-        dy0, dy1 = yc0 - y0, yc0 - y0 + (yc1 - yc0)
-
-        vignets[i, dy0:dy1, dx0:dx1] = image_data[yc0:yc1, xc0:xc1]
+    for i, (xi, yi) in enumerate(zip(col, row)):
+        x0, y0 = xi - half, yi - half
+        xc0, xc1 = max(0, x0), min(nx, x0 + stamp_size)
+        yc0, yc1 = max(0, y0), min(ny, y0 + stamp_size)
+        if xc0 >= xc1 or yc0 >= yc1:
+            continue
+        inner = np.s_[yc0 - y0:yc1 - y0, xc0 - x0:xc1 - x0]
+        vignets[i][inner] = image_data[yc0:yc1, xc0:xc1]
+        if seg is not None:
+            seg_stamp[:] = 0
+            seg_stamp[inner] = seg[yc0:yc1, xc0:xc1]
+            vignets[i][(seg_stamp != 0) & (seg_stamp != number[i])] = BIG
 
     return vignets
 
@@ -161,6 +275,8 @@ def make_ldac_from_ascii(
     image_path,
     output_cat_path,
     stamp_size=51,
+    seg_path=None,
+    seg_output_path=None,
     w_log=None,
 ):
     """Convert an external ASCII catalogue to FITS-LDAC format.
@@ -174,7 +290,11 @@ def make_ldac_from_ascii(
 
     The input columns, ``NUMBER`` included, are copied unchanged; a
     ``VIGNET`` column (postage stamps extracted from the tile image) is
-    added to ``LDAC_OBJECTS``.
+    added to ``LDAC_OBJECTS``. Given the catalogue's segmentation map, which
+    shares the tile's pixel grid, the map is relabelled to the catalogue's
+    ``NUMBER`` (:func:`relabel_seg`), written to ``seg_output_path``, and
+    used to set neighbours' pixels in each ``VIGNET`` to ``BIG``, as
+    SExtractor does.
 
     Parameters
     ----------
@@ -186,6 +306,11 @@ def make_ldac_from_ascii(
         Path to the output FITS-LDAC catalogue
     stamp_size : int, optional
         Side length of the square postage stamp in pixels, default 51
+    seg_path : str, optional
+        Path to the catalogue's segmentation map (FITS, compressed or not)
+    seg_output_path : str, optional
+        Path to write the relabelled segmentation map to, required with
+        ``seg_path``
     w_log : logging.Logger, optional
         Pipeline logger
 
@@ -199,6 +324,32 @@ def make_ldac_from_ascii(
         img_header = hdul[0].header
         image_data = hdul[0].data.astype(np.float32)
 
+    seg = None
+    if seg_path is not None:
+        with fits.open(seg_path) as hdul:
+            hdu = next(h for h in hdul if h.data is not None)
+            seg_header = hdu.header
+            seg_raw = hdu.data
+        if seg_raw.shape != image_data.shape:
+            raise ValueError(
+                f"Segmentation map {seg_path} has shape {seg_raw.shape}, the"
+                + f" image {image_data.shape}; they must share one grid."
+            )
+        seg, counts = relabel_seg(
+            seg_raw, cat_data["NUMBER"], cat_data["X_IMAGE"],
+            cat_data["Y_IMAGE"],
+        )
+        del seg_raw
+        fits.PrimaryHDU(seg, header=_image_header(seg_header)).writeto(
+            seg_output_path, overwrite=True
+        )
+        if w_log:
+            w_log.info(
+                f"Relabelled {seg_path} to NUMBER, written to"
+                + f" {seg_output_path}: "
+                + ", ".join(f"{k}={v}" for k, v in counts.items())
+            )
+
     if w_log:
         w_log.info(
             f"Extracting {stamp_size}x{stamp_size} vignets from {image_path}"
@@ -208,6 +359,8 @@ def make_ldac_from_ascii(
         cat_data["X_IMAGE"],
         cat_data["Y_IMAGE"],
         stamp_size,
+        seg=seg,
+        number=np.asarray(cat_data["NUMBER"]),
     )
 
     ldac_imhead = _build_ldac_imhead(img_header)

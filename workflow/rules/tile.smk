@@ -42,17 +42,20 @@ run that the shape chain does not need co-scheduled, and folding it in would add
 its runtime to a sum that has no room.
 
 ``tile_detection: unions_catalogue`` (config.yaml) replaces that SExtractor run
-with two rules: tile_get_catalogue fetches the UNIONS per-tile catalogue
-(get_images_runner, config_tile_Gic.ini) and tile_detect converts it to the
-FITS-LDAC sexcat SExtractor would have written (read_ext_sexcat_runner,
-config_tile_Uc.ini), with the tile image's header, VIGNET stamps cut from the
-tile image, and the multi-epoch post-processing. It keeps the catalogue's own
+with two rules: tile_get_catalogue fetches the UNIONS per-tile catalogue and
+its r-band segmentation map (get_images_runner, config_tile_Gic.ini) and
+tile_detect converts it to the FITS-LDAC sexcat SExtractor would have written
+(read_ext_sexcat_runner, config_tile_Uc.ini), with the tile image's header,
+VIGNET stamps cut from the tile image with neighbours' footprints set to -1e30
+as SExtractor sets them (so ngmix masks neighbours in both modes), and the
+multi-epoch post-processing. It keeps the catalogue's own
 NUMBER, from which make_cat builds ``TILE_UNIQUE_ID`` exactly as in SExtractor
 mode. The converter writes run_sp_tile_Sx/read_ext_sexcat_runner, and the rule links it as
 sextractor_runner, the one path every downstream config reads; the manifest is
-tile_detect.json in both modes, so tile_vignets onwards is the same DAG. What
-this path does not have is a segmentation map: ngmix's ``BLEND_HANDLING =
-uberseg`` needs the SExtractor mode.
+tile_detect.json in both modes, so tile_vignets onwards is the same DAG. Beside
+the sexcat it writes seg-<tile>.fits, the segmentation map relabelled to the
+catalogue's NUMBER (-1 on footprints no object claims, 0 on sky), the map an
+UberSeg vignet run cuts its seg stamps from.
 
 There is no `tile_mask` rule, and there will not be one (PR #847). ShapePipe
 generates no masks: tiles have no instrument flag image of their own, so
@@ -498,8 +501,8 @@ if TILE_DETECTION == "sextractor":
 
 else:
 
-    # Fetch the UNIONS per-tile catalogue (CFIS.<tile>.r.cat), from a local
-    # mirror or from vos, the way tile_get_images fetches the image. Reads
+    # Fetch the UNIONS per-tile catalogue (CFIS.<tile>.r.cat) and segmentation
+    # map (CFIS.<tile>.r.seg.fits.fz), from a local mirror or from vos, the way tile_get_images fetches the image. Reads
     # only tile_numbers.txt, which unit_pre writes; the edge on the image
     # manifest is what puts it after the prepare phase.
     rule tile_get_catalogue:

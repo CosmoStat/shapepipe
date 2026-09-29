@@ -142,12 +142,13 @@ COMPLETENESS = {
 
     # --- tile post ---
     "tile_merge_headers": {"merge_headers_runner": dict(expect=1)},
-    # The fetched UNIONS catalogue: one .cat per tile.
-    "tile_get_catalogue": {"get_images_runner":     dict(expect=1)},
+    # The fetched UNIONS catalogue and its r-band segmentation map.
+    "tile_get_catalogue": {"get_images_runner":     dict(expect=2)},
     "tile_detect": {
         "sextractor":       {"sextractor_runner":      dict(expect=2)},
-        # One FITS-LDAC sexcat, converted from the fetched catalogue.
-        "unions_catalogue": {"read_ext_sexcat_runner": dict(expect=1)},
+        # The FITS-LDAC sexcat converted from the fetched catalogue, and the
+        # segmentation map relabelled to its NUMBER.
+        "unions_catalogue": {"read_ext_sexcat_runner": dict(expect=2)},
     },
     "tile_vignets": {
         "psfex": {

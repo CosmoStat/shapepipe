@@ -66,6 +66,18 @@ def test_fetch_ini_matches_its_stage_and_feeds_the_converter():
     uc = _ini("config_tile_Uc.ini")["READ_EXT_SEXCAT_RUNNER"]
     assert f"$SP_RUN/output/{gic}/get_images_runner/output" in uc["INPUT_DIR"]
     assert uc["FILE_PATTERN"].split(",")[0].strip() == "CFIS_cat"
+    # The segmentation map rides the same fetch and is the converter's third
+    # input, the position SEGMENTATION = True reads it from.
+    gi = _ini("config_tile_Gic.ini")["GET_IMAGES_RUNNER"]
+    assert [p.strip() for p in gi["OUTPUT_FILE_PATTERN"].split(",")] == [
+        "CFIS_cat-", "CFIS_seg-"]
+    assert [e.strip() for e in gi["INPUT_FILE_EXT"].split(",")] == [
+        ".cat", ".fits.fz"]
+    third = [[v.strip() for v in uc[k].split(",")][2]
+             for k in ("INPUT_DIR", "FILE_PATTERN", "FILE_EXT")]
+    assert third == [f"$SP_RUN/output/{gic}/get_images_runner/output",
+                     "CFIS_seg", ".fitsfz"]
+    assert uc["SEGMENTATION"].strip() == "True"
     # The multi-epoch post-processing is what gives the sexcat its EPOCH_k
     # extensions; ngmix_range.py refuses a sexcat without them.
     assert uc["MAKE_POST_PROCESS"].strip() == "True"
@@ -81,7 +93,7 @@ def _stage_dir(tmp_path, runner, n):
 
 @pytest.mark.parametrize("mode, runner, expect", [
     ("sextractor", "sextractor_runner", 2),
-    ("unions_catalogue", "read_ext_sexcat_runner", 1),
+    ("unions_catalogue", "read_ext_sexcat_runner", 2),
 ])
 def test_tile_detect_is_checked_per_mode(tmp_path, monkeypatch, mode, runner, expect):
     monkeypatch.setenv("SP_TILE_DETECTION", mode)
