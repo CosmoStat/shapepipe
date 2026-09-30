@@ -211,8 +211,9 @@ def measure_windowed_positions(cat_data, image_data, img_header, seg=None):
     ``Y_IMAGE``) and half-light radius (``FLUX_RADIUS``) start and size
     SExtractor's windowed centroid, measured on the tile image less a
     SExtractor-like background map (``default_tile.sex``: ``BACK_SIZE``
-    512, ``BACK_FILTERSIZE`` 9). Pixels exactly 0 carry no data in a
-    MegaPipe tile and are left out of the background. Given the relabelled
+    512, ``BACK_FILTERSIZE`` 9). Pixels exactly 0 or not finite carry no
+    data in a MegaPipe tile: they are left out of the background and
+    replaced by their mirror image in the window. Given the relabelled
     segmentation map, neighbours are masked as SExtractor's ``MASK_TYPE
     CORRECT`` masks them. Where the window fails, the position stays the
     barycentre and ``FLAGS_WIN`` says why
@@ -254,12 +255,14 @@ def measure_windowed_positions(cat_data, image_data, img_header, seg=None):
             cat_data["A_WORLD"], cat_data["B_WORLD"], cat_data["THETA_J2000"],
             wcs, x, y,
         )
+    has_data = (image_data != 0) & np.isfinite(image_data)
     measured = image_data - wp.sextractor_background(
-        image_data, good=image_data != 0
+        image_data, good=has_data
     )
     xwin, ywin, flags = wp.windowed_positions(
         measured, x, y, cat_data["FLUX_RADIUS"], seg=seg,
         number=np.asarray(cat_data["NUMBER"]), cxx=cxx, cyy=cyy, cxy=cxy,
+        valid=has_data,
     )
     ra, dec = wcs.all_pix2world(xwin, ywin, 1)
     return [

@@ -151,6 +151,35 @@ def test_converter_measures_windowed_centroids(tmp_path):
     npt.assert_allclose(data["X_IMAGE"], [t[1] + 0.6 for t in truth])
 
 
+@pytest.mark.decision("preparation.object_position_columns")
+def test_converter_mirrors_no_data_pixels(tmp_path):
+    """Zero (no-data) tile columns through a galaxy do not move XWIN.
+
+    A Gaussian at (31, 31) on a sky of 3, with columns 33-35 set to 0 as a
+    tile gap is: the gap is left out of the background and mirrored in the
+    window, so a centroid started at the centre stays there (read as
+    signal, the gap drags it 0.6 px).
+    """
+    y, x = np.mgrid[1:62, 1:62]
+    image = 3.0 + 500 * np.exp(-((x - 31.0) ** 2 + (y - 31.0) ** 2) / 8.0)
+    image[:, 32:35] = 0.0
+    img = tmp_path / "CFIS_image-301-279.fits"
+    hdu = fits.PrimaryHDU(image.astype(np.float32))
+    hdu.header.update(TILE_WCS)
+    hdu.writeto(img)
+    cat = tmp_path / "CFIS_cat-301-279.cat"
+    hlr = 2.0 * np.sqrt(2 * np.log(2))
+    cat.write_text("#   1 NUMBER\n#   2 X_IMAGE\n#   3 Y_IMAGE\n"
+                   f"#   4 FLUX_RADIUS\n1 31.0 31.0 {hlr}\n")
+    out = tmp_path / "sexcat-301-279.fits"
+    rs.make_ldac_from_ascii(str(cat), str(img), str(out), stamp_size=5)
+    with fits.open(out) as hdul:
+        data = hdul["LDAC_OBJECTS"].data
+    assert data["FLAGS_WIN"][0] == 0
+    npt.assert_allclose(data["XWIN_IMAGE"], 31.0, atol=1e-3)
+    npt.assert_allclose(data["YWIN_IMAGE"], 31.0, atol=1e-3)
+
+
 def test_converter_needs_flux_radius(tmp_path):
     """Without FLUX_RADIUS there is no window, and the converter stops."""
     cat = tmp_path / "CFIS_cat-301-279.cat"

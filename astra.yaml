@@ -803,7 +803,14 @@ analyses:
           SExtractor's own XWIN_IMAGE to 0.01 px for 97% of objects, the rest
           being blends whose SExtractor masking the segmentation map does not
           fully record; the barycentre it replaces is off by 0.16 px at the
-          median and 1.4 px at the 99th percentile. Where SExtractor would
+          median and 1.4 px at the 99th percentile. On tile 202.301 the rest
+          follows DR6's FLUX_RADIUS, which sizes the window: where it agrees
+          with ShapePipe's SExtractor to 1e-3 px the match is 4e-5 px at the
+          median and 2e-4 px at p90. Tile pixels that are 0 or not finite
+          carry no data and are mirrored like neighbours; the weight map is
+          not read, so SExtractor's MAP_WEIGHT thresholds and INTERP_TYPE ALL
+          interpolation are not emulated. A FLUX_RADIUS that is not positive
+          is an empty window (FLAGS_WIN 4). Where SExtractor would
           fall back to the barycentre (FLAGS_WIN 1, 2, 4, 8), or nothing can
           be measured (16), the position is the barycentre; FLAGS_WIN, in the
           final catalogue, records it, and 32 marks a centroid still moving

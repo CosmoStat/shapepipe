@@ -31,7 +31,7 @@ FLAGS_WIN_SINGULAR = 1  # windowed second moments are singular
 FLAGS_WIN_NEGATIVE_MOMENT = 2  # a windowed second moment is negative
 FLAGS_WIN_NEGATIVE_FLUX = 4  # windowed flux is not positive
 FLAGS_WIN_WANDERED = 8  # centroid left the isophotal 1-sigma ellipse
-FLAGS_WIN_UNMEASURED = 16  # no measurement: barycentre not finite or off image
+FLAGS_WIN_UNMEASURED = 16  # not measured: bad start, huge window, NaN sums
 FLAGS_WIN_NOT_CONVERGED = 32  # still moving after 16 steps; position kept
 FLAGS_WIN_FALLBACK = (
     FLAGS_WIN_SINGULAR
@@ -43,6 +43,11 @@ FLAGS_WIN_FALLBACK = (
 
 # Pixels per object and chunk, bounding the working arrays (~100 MB).
 _CHUNK_PIXELS = 2_000_000
+
+# Largest stamp half-width, in pixels: a window radius of 256 px, which a
+# FLUX_RADIUS of about 75 px reaches. Larger windows are not measured
+# (FLAGS_WIN 16), so a wild FLUX_RADIUS cannot allocate without bound.
+MAX_HALF = 256
 
 
 def _natural_spline(nodes, at, axis):
@@ -101,7 +106,7 @@ def sextractor_background(image, back_size=512, filter_size=9, good=None):
         ``BACK_FILTERSIZE``, the median-filter side in meshes
     good : numpy.ndarray, optional
         Boolean map of the pixels to use (SExtractor: weight above
-        threshold); default all finite pixels
+        threshold); non-finite pixels are never used
 
     Returns
     -------
@@ -112,8 +117,7 @@ def sextractor_background(image, back_size=512, filter_size=9, good=None):
     """
     ny, nx = image.shape
     nbx, nby = (nx - 1) // back_size + 1, (ny - 1) // back_size + 1
-    if good is None:
-        good = np.isfinite(image)
+    good = np.isfinite(image) if good is None else good & np.isfinite(image)
     back = np.full((nby, nbx), np.nan)
     for j in range(nby):
         for i in range(nbx):
@@ -181,18 +185,20 @@ def _blanked(label, own):
     return (label != 0) & (label != own)
 
 
-def _iterate(image, mx, my, sig, seg=None, own=None,
+def _iterate(image, valid, mx, my, sig, seg=None, own=None,
              n_iter_max=WINPOS_NITERMAX):
     """Run ``compute_winpos``'s loop for objects sharing one stamp size.
 
     ``mx``, ``my`` are 0-based starting positions and are not modified.
-    With ``seg``, pixels :func:`_blanked` for the object take the value
-    of their mirror image through the current centre, or 0 where the
-    mirror is off the image or blanked too: SExtractor's ``MASK_TYPE
-    CORRECT``. Returns the final
-    0-based positions, the windowed flux ``tv``, the windowed second
-    moments of the last step, and whether each object stopped on the step
-    criterion.
+    Pixels not ``valid`` (SExtractor: weight below threshold) and, with
+    ``seg``, pixels :func:`_blanked` for the object take the value of
+    their mirror image through the current centre, or 0 where the mirror
+    is off the image, not valid or blanked: SExtractor's ``MASK_TYPE
+    CORRECT``. Returns the final 0-based positions, the windowed flux
+    ``tv``, the windowed second moments as SExtractor normalises them
+    after its last step, whether each object stopped on the step
+    criterion, and whether a sum went non-finite (the object is then
+    dropped at its last finite position).
     """
     ny, nx = image.shape
     n = len(mx)
@@ -202,12 +208,13 @@ def _iterate(image, mx, my, sig, seg=None, own=None,
     raper2 = raper * raper
     rintlim2 = np.clip(raper - 0.75, 0, None) ** 2
     rextlim2 = (raper + 0.75) ** 2
-    half = int(np.ceil(raper.max())) + 2
+    half = min(int(np.ceil(raper.max())) + 2, max(nx, ny))
     offs = np.arange(-half, half + 1)
 
     tv = np.zeros(n)
     mom = np.zeros((3, n))
     converged = np.zeros(n, bool)
+    failed = np.zeros(n, bool)
     active = np.arange(n)
     for _ in range(n_iter_max):
         if active.size == 0:
@@ -237,55 +244,73 @@ def _iterate(image, mx, my, sig, seg=None, own=None,
         area *= in_y[:, :, None] & in_x[:, None, :]
         cy = np.clip(ys, 0, ny - 1)[:, :, None]
         cx = np.clip(xs, 0, nx - 1)[:, None, :]
-        pix = image[cy, cx]
+        pix = image[cy, cx].astype(np.float64)
+        mask = ~valid[cy, cx]
         if seg is not None:
-            lab = seg[cy, cx]
-            blank = _blanked(lab, own[active, None, None]) & (area > 0)
-            if blank.any():
-                k, iy, ix = np.nonzero(blank)
-                # (int)(2 m + 0.49999 - x), truncating as C does.
-                x2 = np.trunc(2 * amx[k] + 0.49999 - xs[k, ix])
-                y2 = np.trunc(2 * amy[k] + 0.49999 - ys[k, iy])
-                x2, y2 = x2.astype(np.int64), y2.astype(np.int64)
-                inside = (x2 >= 0) & (x2 < nx) & (y2 >= 0) & (y2 < ny)
-                x2c, y2c = np.clip(x2, 0, nx - 1), np.clip(y2, 0, ny - 1)
-                mlab = seg[y2c, x2c]
-                usable = inside & ~_blanked(mlab, own[active][k])
-                pix = pix.astype(np.float64)
-                pix[k, iy, ix] = np.where(usable, image[y2c, x2c], 0.0)
+            mask |= _blanked(seg[cy, cx], own[active, None, None])
+        mask &= area > 0
+        if mask.any():
+            k, iy, ix = np.nonzero(mask)
+            # (int)(2 m + 0.49999 - x), truncating as C does.
+            x2 = np.trunc(2 * amx[k] + 0.49999 - xs[k, ix]).astype(np.int64)
+            y2 = np.trunc(2 * amy[k] + 0.49999 - ys[k, iy]).astype(np.int64)
+            inside = (x2 >= 0) & (x2 < nx) & (y2 >= 0) & (y2 < ny)
+            x2, y2 = np.clip(x2, 0, nx - 1), np.clip(y2, 0, ny - 1)
+            usable = inside & valid[y2, x2]
+            if seg is not None:
+                usable &= ~_blanked(seg[y2, x2], own[active][k])
+            pix[k, iy, ix] = np.where(usable, image[y2, x2], 0.0)
+        # Samples outside the aperture are 0, whatever the image holds.
+        pix = np.where(area > 0, pix, 0.0)
         locpix = area * np.exp(-r2 * invtwosig2[active, None, None]) * pix
 
         atv = locpix.sum((1, 2))
-        pos = atv > 0
-        safe = np.where(pos, atv, 1.0)
-        dxpos = (locpix * dx).sum((1, 2)) / safe
-        dypos = (locpix * dy).sum((1, 2)) / safe
+        sx = (locpix * dx).sum((1, 2))
+        sy = (locpix * dy).sum((1, 2))
+        sxx = (locpix * dx * dx).sum((1, 2))
+        syy = (locpix * dy * dy).sum((1, 2))
+        sxy = (locpix * dx * dy).sum((1, 2))
+        finite = np.isfinite(atv) & np.isfinite(sx) & np.isfinite(sy)
+        failed[active[~finite]] = True
+        pos = finite & (atv > 0)
+        # SExtractor divides the offsets by tv only when tv > 0, and
+        # normalises the moments by tv after the loop either way.
+        with np.errstate(divide="ignore", invalid="ignore"):
+            dxpos = np.where(pos, sx / np.where(pos, atv, 1.0), sx)
+            dypos = np.where(pos, sy / np.where(pos, atv, 1.0), sy)
+            mom[0, active] = sxx / atv - dxpos**2
+            mom[1, active] = syy / atv - dypos**2
+            mom[2, active] = sxy / atv - dxpos * dypos
         tv[active] = atv
-        mom[0, active] = (locpix * dx * dx).sum((1, 2)) / safe - dxpos**2
-        mom[1, active] = (locpix * dy * dy).sum((1, 2)) / safe - dypos**2
-        mom[2, active] = (locpix * dx * dy).sum((1, 2)) / safe - dxpos * dypos
         mx[active] += np.where(pos, dxpos * WINPOS_FAC, 0.0)
         my[active] += np.where(pos, dypos * WINPOS_FAC, 0.0)
         done = pos & (dxpos**2 + dypos**2 < WINPOS_STEPMIN**2)
         converged[active[done]] = True
         active = active[pos & ~done]
-    return mx, my, tv, mom, converged
+    return mx, my, tv, mom, converged, failed
 
 
 def windowed_positions(image, x_image, y_image, flux_radius, seg=None,
-                       number=None, cxx=None, cyy=None, cxy=None):
+                       number=None, cxx=None, cyy=None, cxy=None,
+                       valid=None):
     """SExtractor's windowed centroid, started from given positions.
 
     For each object, a Gaussian window of sigma
-    ``2 * hl / 2.35`` (``hl`` = ``|flux_radius|``, at least 0.5 pixel)
+    ``2 * hl / 2.35`` (``hl`` = ``flux_radius``, at least 0.5 pixel)
     weights the image within ``WINPOS_NSIG`` sigmas, the aperture edge
     subsampled 11 x 11; the centre moves by ``WINPOS_FAC`` times the
     weighted mean offset, up to ``WINPOS_NITERMAX`` times, until that
-    offset is below ``WINPOS_STEPMIN``. Given the segmentation map,
-    neighbours' footprints take the mirror image of the object's side, as
-    SExtractor's ``MASK_TYPE CORRECT`` does. Where SExtractor would revert
-    to the isophotal position (``FLAGS_WIN`` 1, 2, 4, 8) this returns the
-    input position, and so it does where there is nothing to measure (16).
+    offset is below ``WINPOS_STEPMIN``. Invalid pixels and, given the
+    segmentation map, neighbours' footprints take the mirror image of the
+    object's side, as SExtractor's ``MASK_TYPE CORRECT`` does. Where
+    SExtractor would revert to the isophotal position (``FLAGS_WIN`` 1, 2,
+    4, 8) this returns the input position, and so it does where there is
+    nothing to measure, the window is wider than ``MAX_HALF`` or a sum is
+    not finite (16). A ``flux_radius`` that is not positive or not finite
+    gives an empty aperture, so zero windowed flux (4). The tile weight map
+    is not used: SExtractor's ``WEIGHT_TYPE MAP_WEIGHT`` thresholds and
+    ``INTERP_TYPE ALL`` interpolation of zero-weight pixels are not
+    emulated; pixels outside ``valid`` are mirrored instead.
     A centroid still moving after the last step keeps its position, as
     SExtractor's does, and is flagged 32.
 
@@ -306,6 +331,9 @@ def windowed_positions(image, x_image, y_image, flux_radius, seg=None,
     cxx, cyy, cxy : array_like, optional
         Isophotal ellipse (``CXX_IMAGE`` ...) for the flag-8 test; without
         them bit 8 is never set
+    valid : numpy.ndarray, optional
+        Boolean map of the pixels holding data (SExtractor: weight above
+        threshold); non-finite pixels are never valid
 
     Returns
     -------
@@ -326,30 +354,39 @@ def windowed_positions(image, x_image, y_image, flux_radius, seg=None,
     flags = np.zeros(n, np.int16)
     xwin, ywin = x0.copy(), y0.copy()
 
-    ok = np.isfinite(x0) & np.isfinite(y0) & np.isfinite(fr)
+    ok = np.isfinite(x0) & np.isfinite(y0)
     ok &= (x0 >= 0.5) & (x0 < nx + 0.5) & (y0 >= 0.5) & (y0 < ny + 0.5)
-    flags[~ok] |= FLAGS_WIN_UNMEASURED
-    sig = np.maximum(np.abs(np.where(ok, fr, 1.0)), GROWTH_MINHLRAD) * 2 / 2.35
+    empty = ok & ~(fr > 0)
+    flags[empty] |= FLAGS_WIN_NEGATIVE_FLUX
+    sig = np.maximum(np.where(fr > 0, fr, 1.0), GROWTH_MINHLRAD) * 2 / 2.35
     half = np.ceil(WINPOS_NSIG * sig).astype(np.int64) + 2
+    ok &= ~empty & (half <= MAX_HALF)
+    flags[~ok & ~empty] |= FLAGS_WIN_UNMEASURED
+    # A box wider than the image holds nothing more than the image.
+    half = np.minimum(half, max(nx, ny))
 
+    finite = np.isfinite(image)
+    valid = finite if valid is None else valid & finite
     own = None if seg is None else np.asarray(number)
     tv = np.zeros(n)
     mom = np.zeros((3, n))
+    failed = np.zeros(n, bool)
     for h in np.unique(half[ok]):
         members = np.flatnonzero(ok & (half == h))
         size = (2 * h + 1) ** 2
         for c0 in range(0, len(members), max(1, _CHUNK_PIXELS // size)):
             idx = members[c0:c0 + max(1, _CHUNK_PIXELS // size)]
-            mx, my, tv[idx], mom[:, idx], conv = _iterate(
-                image, x0[idx] - 1.0, y0[idx] - 1.0, sig[idx], seg,
+            mx, my, tv[idx], mom[:, idx], conv, failed[idx] = _iterate(
+                image, valid, x0[idx] - 1.0, y0[idx] - 1.0, sig[idx], seg,
                 None if own is None else own[idx],
             )
             xwin[idx], ywin[idx] = mx + 1.0, my + 1.0
-            stopped_on_flux = tv[idx] <= 0
-            flags[idx[~conv & ~stopped_on_flux]] |= FLAGS_WIN_NOT_CONVERGED
+            stopped = conv | (tv[idx] <= 0) | failed[idx]
+            flags[idx[~stopped]] |= FLAGS_WIN_NOT_CONVERGED
 
+    flags[failed] |= FLAGS_WIN_UNMEASURED
     mx2, my2, mxy = mom
-    measured = ok
+    measured = ok & ~failed
     flags[measured & (mx2 * my2 - mxy * mxy < 0)] |= FLAGS_WIN_SINGULAR
     flags[measured & ((mx2 < 0) | (my2 < 0))] |= FLAGS_WIN_NEGATIVE_MOMENT
     flags[measured & (tv <= 0)] |= FLAGS_WIN_NEGATIVE_FLUX
