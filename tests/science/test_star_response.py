@@ -33,7 +33,9 @@ Fast + local: marked neither ``slow`` nor ``candide``; part of the inner loop.
 """
 
 import numpy as np
+import pytest
 
+pytestmark = pytest.mark.decision("shape_measurement.metacal_scheme")
 
 PSF_E1 = 0.05  # true PSF ellipticity the deconvolution must remove
 METACAL_STEP = 0.01  # ngmix MetacalBootstrapper default shear step
@@ -71,7 +73,7 @@ def _recover_c_with_response(seed):
     stamp.gals, stamp.psfs, stamp.weights, stamp.flags, stamp.jacobs = (
         gals, psfs, weights, flags, jacobs,
     )
-    res, _, _ = do_ngmix_metacal(stamp, prior, 1.0, rng)
+    res, _, _ = do_ngmix_metacal(stamp, prior, 1.0, rng, centroid_source="hsm")
 
     g1_noshear = res["noshear"]["g"][0]
     R11 = (res["1p"]["g"][0] - res["1m"]["g"][0]) / (2 * METACAL_STEP)

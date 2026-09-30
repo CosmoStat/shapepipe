@@ -1,142 +1,217 @@
-# Run configuration for the ShapePipe Snakemake workflow.
+# Main configuration for the ShapePipe Snakemake workflow.
+
+# To run, first set the profile env variable to the desired machine/architecture:
+
+# SP_PROFILE=nibi|candide
+
+# Then, run in /path/to/shapepipe:
+
+# ./workflow/bin/sp run -c /path/to/my_run.yaml
 #
-# A "run" is declared by a tile list plus the paths below. Everything here is
-# read at parse time; none of it is a rule input, so editing it (e.g. appending
-# tiles) never invalidates completed work — it only changes which jobs exist.
+# The config file my_run.yaml can contain user- or run-specific entries
+# that overwrite the main config file workflow/config.yaml .
 
-# The tile list that scopes this run (one "IDra.IDdec" per line).
-# The campaign grows by appending to this file — parse-time config, so
-# completed work is never invalidated. Current contents: smk-g5, ONE tile
-# (186.307), the paired control for the two fixes landed after smk-g4 — the
-# node-local WCS sqlite and tile_ngmix's mem_mb 14000 -> 5000. That tile ran
-# ALONE as smk-g4 job 20799387 (elapsed 8063 s, chunk median 6813 s, chunk mean
-# load 59%, MaxRSS 26.6 GiB), so the baseline carries no concurrency confound
-# and the contrast is same tile, same solitude, two commits apart.
-# The 34-tile smk-g4 set is preserved at smk-g4/tiles34.txt.
-# (The 210/211 quad used earlier is unusable: its tile images are symlinks into
-# anaennis' moved processed_tiles tree — ~8.5k of the 10.3k staged tiles are
-# broken.)
-tile_list: /project/def-mjhudson/cdaley/sp-products/smk-g6/tiles.txt
+# Main keys, global for all machines
 
-# Inputs are the only site-specific data paths; all committed configs consume these
-# through SP_INPUT_TILES and SP_INPUT_EXPOSURES.
-inputs:
-  # Pre-staged P3 data (get_images RETRIEVE=symlink).
-  tiles: /project/def-mjhudson/unions-wl/tiles
-  exposures: /project/def-mjhudson/unions-wl/exposures
+# input_tyle: allowed are data or image_sims
+input_type: data
 
-# The container every job runs inside (apptainer software-deployment in the profile).
-container: /project/def-mjhudson/cdaley/containers/shapepipe-develop-runtime.sif
+# Run name, available as `$run` in the paths below; it also names the
+# campaign's merged catalogues. Required, and set by the run config.
+# run: smk-g6
 
-# PSF model used by the exposure and tile interpolation stages.
-psf_model: psfex
+# Default settings per input_type, can be overridden by a user-defined run config file.
+# - tile_detection: allowed are `unions_catalogue` (fetch official UNIONS catalogue
+#   from vos; recommended for data); `sextractor` (detect objects via a SExtractor
+#   module run; required for image_sims)
+# - psf_model: allowed are `psfex` (default), `mccd`; `fake` (image_sims only,
+#   PSF read from psf_dict)
+input_types:
+  data:
+    # @sc [decision:detection.tile_detection]
+    tile_detection: unions_catalogue
+    # @sc [decision:star_selection_psf.psf_modelling_software]
+    psf_model: psfex
+  image_sims:
+    tile_detection: sextractor
+    # @sc [decision:star_selection_psf.psf_modelling_software]
+    psf_model: fake
 
-# THE TWO ROOTS (D5).
+# Entries per machine (SP_PROFILE, default nibi; implemented: nibi, candide)
+# and input_type. A run config may instead state `machine:`, which must
+# then agree with SP_PROFILE.
+# - base_dir
+# - tile_list: text file with tile IDs
+# - retrieve: method to get input data, allowed are symlink, vos
+# - inputs.tiles,, .exposures: path for input tile and exposure
+# - inputs.catalogues: UNIONS per-tile catalogues, a local directory
+#   (symlinked in) or a vos: URL (tile_detection: unions_catalogue)
+# - psf_dict: simulation PSF stamps (psf_model: fake)
+# - outputs.run_dir: (scratch) run directory, where tmp files will be stored
+# - outputs.products_dir: path to final products (default run_dir; one root
+#   needs clean: false and clean_tiles: false)
+# - outputs.index_db: path to bookkeeping index sqlite file
+# - container: TBD
+
+machines:
+  nibi:
+    base_dir: /project/def-mjhudson
+    data:
+      tile_list: $base_dir/cdaley/sp-products/$run/tiles.txt
+      retrieve: symlink
+      inputs:
+        tiles: $base_dir/unions-wl/tiles
+        exposures: $base_dir/unions-wl/exposures
+        # UNIONS per-tile catalogues and segmentation maps (CFIS.<tile>.r.cat,
+        # CFIS.<tile>.r.seg.fits.fz), fetched by vcp in
+        # the job: needs network from compute nodes and ~/.ssl/cadcproxy.pem.
+        catalogues: vos:cfis/tiles_DR6
+      outputs:
+        run_dir: /scratch/cdaley/shapepipe-output/$run
+        products_dir: $base_dir/cdaley/sp-products/$run
+        index_db: $base_dir/cdaley/sp-products/$run/index/run_index.sqlite
+      container: $base_dir/cdaley/containers/shapepipe-develop-runtime.sif
+
+  candide:
+    base_dir: /n17data/UNIONS/WL
+    data:
+      retrieve: vos
+      inputs:
+        catalogues: vos:cfis/tiles_DR6
+      container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
+    image_sims:
+      retrieve: symlink
+      inputs:
+        # $run is the branch dir (e.g. 1p2z_grid_1), so a run config
+        # picks the grid by setting `run:` alone.
+        tiles: /n09data/hervas/skills_out/$run/images/SP_tiles
+        exposures: /n09data/hervas/skills_out/$run/images/SP_exp
+      # Dictionary of PSF model stamps, which psf_model: fake reads in place
+      # of an exposure PSF fit.
+      psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle 
+      container: /n17data/cdaley/containers/shapepipe_im_sims-runtime.sif
+
+# OPTIONAL per-exposure retention: what to carry onto the persistent root ON TOP
+# OF the star catalogue's own inputs, before the scratch store goes
+# (`exp_persist`, exposure.smk).
 #
-# run_dir is the SCRATCH root and the $SP_RUN every config interpolates: bulk
-# intermediates, sized so a batch finishes inside the 60-day purge window. The
-# sharded per-unit stores live under it:
-#   <run_dir>/tiles/<2-char prefix>/<ID>/   and   <run_dir>/exp/<prefix>/<base>/
-outputs:
-  run_dir: /scratch/cdaley/shapepipe-output/smk-g6
-
-# products_dir is the PERSISTENT root: the durable, low-volume products — the
-# final catalogues (<products_dir>/tiles/<prefix>/<ID>/final_cat-<ID>.fits,
-# mirroring the scratch tree shard for shard), the index, the report. ~32-46 MB
-# per tile, so a full DR6 campaign is a few hundred GB.
+# WHAT IS ALWAYS KEPT, AND IS NOT A CHOICE HERE: psf_validation, the psfex_interp
+# validation catalogue, one per CCD. `star_cat_merge` stacks every one of them
+# into <products_dir>/full_starcat_<run>.hdf5, so they are that
+# catalogue's PROVENANCE — a merged star catalogue with no per-exposure inputs
+# beside it cannot be audited, re-cut, or recomputed after a purge — and they are
+# what keeps APPENDING TILES CHEAP, since a tile added next month brings
+# exposures whose catalogues must join the existing stack. ~2 MB per exposure:
+# ~40 GB and ~40k inodes at DR6 scale, against a ~1 M-inode group quota. That is
+# the price of being able to say where the number came from, and it is paid.
 #
-# The final catalogue is also the tile-finished MARKER that cuts a finished
-# tile's exposure edges (D5), which is the second reason it cannot sit on
-# scratch: a purge would not merely lose a product, it would make every finished
-# tile re-declare inputs against exposure stores reclamation already deleted.
+# SO THIS LIST IS PURELY ADDITIVE, and an empty one is a coherent instruction:
+# the tar then holds the star catalogue's inputs and nothing else.
 #
-# Unset means "one root": products land under run_dir, exactly the pre-D5
-# layout, which is what a fixture or smoke test wants.
+# Entries are PRODUCT NAMES — not globs. The catalogue below is the rendering of
+# workflow/scripts/persist_exp.py's PRODUCTS table, which is the single source of
+# truth for what each name means and what keeping it buys
+# (CosmoStat/shapepipe#844); print it any time with
 #
-# Snakemake's own state is the one durable-looking thing that stays on scratch
-# (<run_dir>-state; bin/sp explains why).
-  products_dir: /project/def-mjhudson/cdaley/sp-products/smk-g6
+#     workflow/bin/sp container exec python workflow/scripts/persist_exp.py --list-products
+#
+#   product         glob                        size/exposure
+#   --------------  --------------------------  -------------
+#   star_selection  star_selection-*.fits       24.5 MB
+#                       setools' PRE-SPLIT selection. The only file that answers which
+#                       stars the selection cuts rejected and why; the split samples have
+#                       already lost the rejects.
+#   star_train      star_split_ratio_80-*.fits  19.9 MB
+#                       the 80% TRAINING sample, the stars PSFEx actually fitted. Rows
+#                       duplicate star_selection.
+#   star_test       star_split_ratio_20-*.fits  7.1 MB
+#                       the 20% VALIDATION sample — the positions psf_validation's rows
+#                       correspond to. Rows duplicate star_selection.
+#   star_stats      star_stat-*.txt             unmeasured
+#                       setools' per-CCD STAT block: star counts, stars/deg^2, FWHM mode
+#                       and cuts. The selection's summary without its catalogue.
+#   psf_model       *.psf                       2.8 MB
+#                       the PSFEx model itself. Keeping it means the PSF can be
+#                       re-interpolated at ANY position later without rebuilding the
+#                       exposure chain — the single most capability-adding entry here.
+#   psfex_cat       psfex_cat-*.cat             unmeasured
+#                       PSFEx's own output catalogue (FITS_LDAC): the per-star FLAGS_PSF
+#                       and CHI2_PSF, i.e. WHICH stars outlier rejection clipped. Not
+#                       recoverable from anything else — the .psf header keeps only the
+#                       LOADED/ACCEPTED counts.
+#   psf_validation  validation_psf-*.fits       2.0 MB
+#                       the psfex_interp validation catalogue, one per CCD: the input to
+#                       the rho/tau statistics, and to the star_cat_merge rule that stacks
+#                       them into the campaign's full_starcat.
+#
+# A RAW GLOB IS STILL ACCEPTED, as an escape hatch for a file the catalogue does
+# not name yet: anything carrying a glob metacharacter or a dot is taken as a
+# glob rather than a name (`*.psf` is a glob, `psf_model` is the name for it).
+# An unknown NAME is a parse-time error listing the valid ones.
+#
+# Matches are packed, flat, into ONE uncompressed tar per exposure:
+# <products_dir>/exp/<shard>/<exp>/psf/<exp>.tar, with a manifest listing the
+# members (and the product each came from) beside it. One tar rather than loose
+# copies because inodes, not bytes, bind on /project. FITS members read straight
+# from the tar: fits.open(io.BytesIO(tarfile.open(t).extractfile(m).read())).
+#
+# WHY COPY RATHER THAN EXEMPT THESE FROM CLEANUP. Reclamation is not the threat.
+# run_dir is /scratch and is PURGED on a 60-day window whether or not
+# clean_exposure ever ran; products_dir is /project, backed up and not purged.
+# The only way a per-exposure product outlives its campaign is to leave the
+# filesystem. (Ordering is free: clean_exposure takes the exp_persist manifest
+# as an input, so a store is never reclaimed before its keepers are written.)
+#
+# EDITING THIS LIST IS CHEAP. It rides on exp_persist's `params`, so a change
+# reruns the packing (seconds) and NOT exp_psf (four hours per exposure). That
+# separation is the whole reason exp_persist is a rule of its own.
+#
+# THE DEFAULT is psf_model (2.8 MB per exposure on top of psf_validation's 2.0):
+# the model that lets the PSF be re-interpolated at any position later without
+# rebuilding the exposure chain from VOS, which is the single most
+# capability-adding thing an exposure can keep. Add psfex_cat for a production
+# run if you want to know which stars PSFEx clipped; the star_* products are for
+# selection studies and cost an order of magnitude more.
+#
+# THIS LIST IS EXPOSURE-SIDE ONLY. Tile-side retention is not configurable: the
+# only tile product that persists today is final_cat, written by tile_make_cat
+# straight to products_dir. A tile keep list is #844 follow-up.
+#
+# NOTE ON products_dir DEFAULTING TO run_dir (a fixture or smoke test): the tar
+# then lands beside the store on the same filesystem and buys nothing, and
+# final_cat and the persist manifests sit inside the trees clean_tile and
+# clean_exposure delete. A one-root run is for fixtures and smoke tests only and
+# must set clean: false and clean_tiles: false; the Snakefile refuses it
+# otherwise.
+persist_exp:
+  - psf_model
 
-# There is no config_src knob: the config chain is workflow/config/cfis, resolved
-# relative to the Snakefile. The configs interpolate $SP_RUN / $SP_UNIT_NUM /
-# $SP_CONFIG / $SP_EXP / $NGMIX_* and the rules export them -- configs and rules
-# are one artefact and must version together, so the dir is fixed by construction.
-
-# The run index, and — sharing its directory — missing.json and run_report.json.
-# On the persistent root with the catalogues (D5): the index is the record of
-# which tile reads which exposure, so it is what a post-purge reconstruction
-# would otherwise have to rebuild from tile headers.
-  index_db: /project/def-mjhudson/cdaley/sp-products/smk-g6/index/run_index.sqlite
-
-# Rolling exposure-store reclamation (D5). When true, the COMPUTE DAG grows one
-# `clean_exposure` job per exposure. It fires once every campaign tile that reads
-# that exposure has its vignets, deletes the exposure's store AND its manifests,
-# and leaves `cleaned.json`, which absorbs the manifests — `sp report` reads them
-# back out of the tombstone and reports the exposure as `cleaned`. OFF for smk-g5:
-# this is a one-tile control, its ~8 exposure stores cost ~54 GiB against 979 GiB
-# free, reclamation is already measured exactly by smk-g4, and keeping the stores
-# means a re-measurement re-runs only the shape chain instead of the whole tile.
+# Per-exposure store reclamation once every tile reading it has its vignets.
 clean: true
 
-# Rolling TILE-store reclamation (D5). When true, the COMPUTE DAG grows one
-# `clean_tile` job per in-scope tile, ordered after that tile's own final_cat, so
-# a tile's scratch store goes as soon as its chain lands rather than at the end
-# of the batch. It deletes the tile's whole <run_dir>/tiles/<shard>/<tile>/ tree
-# except four things another mechanism owns — `cleaned.json`,
-# `manifests/tile_vignets.json` (clean_exposure's eligibility currency),
-# `manifests/tile_find_exposures.json` (prepare_all_tiles' target) and the Fe
-# exposure list under output/ (build_index re-reads it at every compute parse).
-# clean_tile.py argues each one.
-#
-# A SEPARATE SWITCH FROM `clean:` ABOVE, AND NOT AN OVERSIGHT. Exposure
-# reclamation is reversible in the only sense that matters: a tile appended later
-# rebuilds the exposure chain from VOS, expensively but completely. TILE
-# reclamation DESTROYS THE PER-TILE AUDIT TRAIL and nothing rebuilds it.
-# TWO tools read it: sp-products/tools/sp_tilecost.py and sp_costmodel.py. Both
-# attribute the fused tile_shape group job's cost per tile from that tile's
-# scratch store — the SExtractor catalogue (NAXIS2 of the sexcat is the object
-# count, the cost model's independent variable; sp_costmodel also reads its
-# EPOCH_k extensions for the geometric epoch count) and the eight tile_ngmix
-# benchmark TSVs — and that model is how every mem_mb and runtime number in
-# tile.smk was derived. The sexcat is ~380 MB per tile and cannot be kept; the
-# benchmark ROWS are absorbed into the tombstone, so the measurements survive
-# but not at the paths the tools read.
-#
-# (The third artifact they read, run_sp_tile_ngmix_Ng<k>u/, is NOT lost to this
-# flag: tile_ngmix declares its chunk dir temp(), so snakemake reclaims it as
-# soon as tile_merge_cats runs. It is already absent from every finished tile,
-# clean_tiles or not.)
-#
-# The honest one-line summary: REQUIRED FOR ANY BATCH OVER ~850 TILES, AND IT
-# TURNS OFF PER-TILE COST ATTRIBUTION. The arithmetic: a finished tile leaves
-# 1.19 GiB across 137 inodes (measured on 186.307), so a 1 TiB scratch quota is
-# full at 859 tiles, and DR6's 23,114 tiles would want 26.9 TiB and 3.17M inodes
-# against a 1M quota. Reclaimed, a tile costs 10 inodes and 12.9 KB — 231k inodes
-# and ~300 MB for the whole of DR6.
-#
-# OFF here for the same reason `clean:` is: smk-g5 is a one-tile control, and its
-# store is what a re-measurement would read.
+# Per-tile store reclamation after the tile's final_cat. Needed above ~850
+# tiles (scratch quota); deletes the per-tile data sp_tilecost/sp_costmodel
+# read. Set both false for a small control run you want to re-measure.
 clean_tiles: true
 
-# Tiles that may NOT pin an exposure store (default: empty).
-#
-# An exposure is eligible for cleaning only once EVERY consuming tile has its
-# vignets. One permanently-failed tile therefore holds all its exposures
-# (~8 measured on P3: 7.9 exposures/tile) for the life of the campaign. A tile listed here is dropped from the
-# consumer sets, and its exposures become eligible.
-#
-# READ THIS BEFORE ADDING A TILE. Ignoring a tile is a decision to give up its
-# exposures' stores. If you later retry that tile, those exposure chains are
-# gone and will be REBUILT from scratch — get_images, split, psf, per
-# exposure. That is correct, and expensive. Ignore a tile when you have decided
-# it is dead, not while you are still debugging it.
+# Failed tiles that should not keep their exposures from being cleaned.
+# Their exposures are rebuilt from scratch if the tile is retried.
 clean_ignore_tiles: []
 
-# ngmix within-tile chunking: static N chunks (closed ID ranges computed
-# per-tile, in-job, from the tile's own sexcat).
+# The ceiling on any rule's mem_mb: nibi's, whose standard compute node is
+# 766 GB (192 cores at 4 GB/core), so 750000 leaves room for the OS and slurm's
+# own overhead. A candide run never reaches it. A request above the partition
+# maximum is a job SLURM never schedules and snakemake never diagnoses: it sits
+# PENDING while the campaign looks alive. The two
+# campaign-level merges size themselves from the campaign's bytes and will cross
+# this at survey scale — the cap turns "never runs" into "runs on the biggest
+# node there is", with a parse-time warning saying which rule was capped.
+max_mem_mb: 750000
+
+# ngmix chunks per tile.
 ngmix_chunks: 8
 
-# The container's installed shapepipe is overridden by the prod worktree via
-# --env PYTHONPATH in profiles/nibi (settled call 3); no config knob here.
-# build_index.py's missing-tile fraction threshold is passed by workflow/bin/sp
-# (SP_MISSING_THRESHOLD, default 0.0 = any missing tile is fatal).
+# Node-local tile store (vignets, WCS). Unset: the profile's /local/scratch
+# bind (nibi NVMe, candide node /tmp). Dense image-sim campaigns on candide
+# want a shared directory instead.
+# tile_store_root: /n23data1/<user>/shapepipe/tilestore

@@ -30,8 +30,11 @@ Fast + local: marked neither ``slow`` nor ``candide``; part of the inner loop.
 """
 
 import numpy as np
+import pytest
 
 from tests.helpers.metacal_sim import recover
+
+pytestmark = pytest.mark.decision("shape_measurement.metacal_scheme")
 
 SEEDS = list(range(8))  # deterministic ensemble; additive bias is statistical
 PSF_E1 = 0.05  # true PSF ellipticity the deconvolution must remove

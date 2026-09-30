@@ -182,10 +182,12 @@ GRAMMAR_RE = re.compile(
 )
 
 # The shipped final-catalogue param files, two levels up from tests/module/.
-# Both are consumer contracts updated to the new grammar, so both are checked.
+# All are consumer contracts updated to the new grammar, so all are checked;
+# final_cat_merge reads the cfis_image_sims one for image-sims campaigns.
 _ROOT = Path(__file__).resolve().parents[2]
 PARAM_PATHS = [
     _ROOT / "workflow" / "config" / "cfis" / "final_cat.param",
+    _ROOT / "workflow" / "config" / "cfis_image_sims" / "final_cat.param",
     _ROOT / "example" / "unions_800" / "cat_matched.param",
 ]
 
@@ -357,11 +359,12 @@ def test_emitted_column_names_match_grammar(obj_ids, tmp_path_factory):
 def test_param_file_ngmix_tokens_are_producible(param_path, obj_ids):
     """Every NGMIX_* token the param file names is a column the writer produces.
 
-    Each shipped final-catalogue param file (``workflow/config/cfis/final_cat.param``
-    and ``example/unions_800/cat_matched.param``) is a consumer contract for the
+    Each shipped final-catalogue param file (``final_cat.param`` under
+    ``workflow/config/cfis/`` and ``cfis_image_sims/``, and
+    ``example/unions_800/cat_matched.param``) is a consumer contract for the
     final catalogue; ``create_final_cat`` keeps only the listed columns, so a
     token it names that the writer cannot emit is a silent, empty column
-    downstream. Both files are checked so a future divergence in either (a
+    downstream. Every file is checked so a future divergence in any (a
     typo'd or stale NGMIX token) cannot escape the consistency check. The one
     known exception — ``NGMIX_MOM_FAIL``, the moments-failure flag set by a
     different path — is excluded BY NAME, and we assert it is genuinely outside
@@ -417,7 +420,7 @@ FROZEN_GRAMMAR_RE = re.compile(
     r"|NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH|NEIGHBOUR_FLAG)"
     # HSM: g-type, explicit PSF/STAR object, singular FLAG; the multi-epoch
     # sink in make_cat._save_psf_data appends a bare epoch index.
-    r"|HSM_(?:G1|G2|T)_(?:PSF|STAR)(?:_\d+)?"
+    r"|HSM_(?:G1|G2|T|M4_1|M4_2|RHO4)_(?:PSF|STAR)(?:_\d+)?"
     r"|HSM_FLAG_(?:PSF|STAR)(?:_\d+)?"
     r")$"
 )
@@ -438,6 +441,9 @@ _GRAMMAR_VALID_EXAMPLES = [
     "HSM_G1_PSF_3",  # make_cat multi-epoch sink
     "HSM_T_PSF_2",
     "HSM_FLAG_STAR_1",
+    "HSM_M4_1_PSF",  # spin-2 fourth moments + rho4 (shapepipe#697)
+    "HSM_RHO4_STAR",
+    "HSM_M4_2_PSF_2",
 ]
 
 # Pre-#761 / off-grammar columns the rename REMOVES — each violates exactly
@@ -452,6 +458,7 @@ _GRAMMAR_INVALID_EXAMPLES = [
     "HSM_FLAGS_PSF",  # plural — HSM is singular FLAG
     "NGMIX_ELL_PSF_ORIG_NOSHEAR",  # packed ellipticity, not G1/G2
     "SPREAD_MODEL",  # removed entirely, not renamed
+    "M_4_PSF_1",  # pre-#859 fourth-moment naming (shapepipe#698)
 ]
 
 

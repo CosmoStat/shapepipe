@@ -11,7 +11,7 @@ import os
 from sqlitedict import SqliteDict
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.ngmix_package.ngmix import Ngmix
+from shapepipe.modules.ngmix_package.ngmix import Ngmix, write_empty_tile_output
 
 
 @module_runner(
@@ -42,7 +42,20 @@ def ngmix_runner(
     module_config_sec,
     w_log,
 ):
-    """Define The Ngmix Runner."""
+    """Define The Ngmix Runner.
+
+    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.centroid_source,decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]
+
+    @sc [label:operations] empty-tile-product
+    A tile whose PSF or galaxy vignette store is entirely empty never
+    reaches ``Ngmix``: an early guard in this runner writes the empty
+    catalogue and logs the zero-fitted run itself, before either store is
+    opened for its stamps. A tile that is only partly empty runs
+    ``Ngmix.process`` as usual, which skips each empty object individually
+    and writes the same empty-catalogue product if every object ends up
+    skipped. Either way, campaign completeness checks see one catalogue per
+    tile.
+    """
     # Read config file entries
 
     # Photometric zero point
@@ -109,17 +122,17 @@ def ngmix_runner(
         # No batch saving
         save_batch = -1
 
-    # First and last galaxy ID to process. Read via ``getexpanded`` so an
-    # orchestrator can drive the chunk bounds from environment variables
-    # (``$SP_NGMIX_ID_OBJ_MIN`` and friends); ``getexpanded`` is the only
-    # accessor in ShapePipe's config that expands ``$VAR``.
+    # First and last catalogue row (1-based) to process. Read via
+    # ``getexpanded`` so an orchestrator can drive the chunk bounds from
+    # environment variables (``$NGMIX_ROW_MIN`` and friends); ``getexpanded``
+    # is the only accessor in ShapePipe's config that expands ``$VAR``.
     id_obj_min = int(config.getexpanded(module_config_sec, "ID_OBJ_MIN"))
     id_obj_max = int(config.getexpanded(module_config_sec, "ID_OBJ_MAX"))
 
     # Centroid source for the galaxy Jacobian origin: "wcs" (default -- the
-    # catalog sky position projected through the WCS, trusting the astrometry)
-    # or "hsm" (legacy HSM adaptive-moment centroid, being phased out: noisy
-    # for stars and flagged as incorrect by Fabian -- see #767).
+    # coadd-centroid offset the stamp extractor propagates on the vignette)
+    # or "hsm" (adaptive-moment centroid re-measured from the stamp; opt-in).
+    # See make_ngmix_observation.
     if config.has_option(module_config_sec, "CENTROID_SOURCE"):
         centroid_source = config.get(module_config_sec, "CENTROID_SOURCE")
     else:
@@ -156,6 +169,9 @@ def ngmix_runner(
             f"All {len(psf_keys)} PSF vignet entries are empty in "
             f"{psf_vignet_path} — no PSF coverage for this tile. Skipping ngmix."
         )
+        write_empty_tile_output(
+            run_dirs["output"], file_number_string, w_log, len(psf_keys)
+        )
         return None, None
 
     # Check that image vignets are not all empty before initialising ngmix
@@ -167,6 +183,9 @@ def ngmix_runner(
         w_log.warning(
             f"All {len(keys)} image vignets are 'empty' in {image_vignet_path} "
             "— no valid CCD coverage for this tile. Skipping ngmix."
+        )
+        write_empty_tile_output(
+            run_dirs["output"], file_number_string, w_log, len(keys)
         )
         return None, None
 

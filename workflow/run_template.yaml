@@ -1,0 +1,18 @@
+# Run config template file, can be specified along with main config.yaml for
+# ShapePipe run.
+
+input_type: image_sims
+
+# Run name: the SKiLLS grid to use. Available as $run in the paths below.
+run: 1z2z_grid_1
+
+tile_list: <user-defined directory>/tiles.txt
+
+inputs:
+  tiles: /n09data/hervas/skills_out/$run/images/SP_tiles
+  exposures: /n09data/hervas/skills_out/$run/images/SP_exp
+
+outputs:
+  run_dir: <user-defined directory>/$run/run
+  products_dir: <user-defined directory>/$run/product
+  index_db: <user-defined directory>/$run/run/index.sqlite

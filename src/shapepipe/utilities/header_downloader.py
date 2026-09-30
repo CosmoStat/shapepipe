@@ -82,8 +82,9 @@ class HeaderDownloader(object):
         )
         self._params = options
 
-        # Save calling command
-        logging.log_command(args)
+        # Save calling command to log_download_headers; args excludes the program
+        # name, which log_command takes from argv[0]
+        logging.log_command(["download_headers", *args])
 
     def update_params(self):
         """Update parameters.

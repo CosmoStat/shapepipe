@@ -125,6 +125,10 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
     all_exposures: set[tuple[str, str]] = set()
     for tile_id in tile_ids:
         if tile_id in missing_set:
+            # Not ready (ready_tiles reads the tiles table), but its edges stay:
+            # clean_exposure's consumer sets must still see a tile that read an
+            # exposure.
+            con.execute("DELETE FROM tiles WHERE tile_id = ?", (tile_id,))
             continue
         ra_dir = tile_id.split(".")[0]
         exp_pairs = read_exposure_list(exp_list_path(run_dir, tile_id))
@@ -150,6 +154,68 @@ def build(tile_ids: list[str], run_dir: Path, db_path: Path,
     return {"n_tiles": len(tile_ids) - len(missing),
             "n_exposures": len(all_exposures),
             "n_missing": len(missing)}
+
+
+# --- reading it back, for the campaign-level merges -------------------------
+# The Snakefile loads this index into dicts at parse time and derives the
+# campaign's unit sets from them (TILES_READY, and the exposures those tiles
+# read). A merge JOB has to derive the same two sets, and cannot be handed them
+# on its command line — ~20k paths is an order of magnitude over Linux's 128 KiB
+# MAX_ARG_STRLEN for a single argv entry. So it is given the two things the
+# Snakefile itself started from, the tile list and this database, and rebuilds
+# the sets here. Both halves therefore read the schema through one module rather
+# than two hand-written queries that could drift apart.
+
+
+def ready_tiles(db_path: Path) -> set[str]:
+    """Tiles whose exposure list the last build over them found non-empty.
+
+    Readiness is the ``tiles`` row, which a build removes when the list goes
+    missing; the edges in ``tile_exposures`` outlive it as cleanup consumers,
+    so they alone do not make a tile ready. ``n_exp`` is the number of edges
+    the build wrote beside the row. Only the small ``tiles`` table is read,
+    since every job's parse of the Snakefile calls this.
+    """
+    con = sqlite3.connect(db_path, timeout=60)
+    ready = {r[0] for r in con.execute(
+        "SELECT tile_id FROM tiles WHERE n_exp > 0")}
+    con.close()
+    return ready
+
+
+def campaign_tiles(tile_list: Path, db_path: Path) -> list[str]:
+    """The campaign's ready tiles: declared in the list AND ready_tiles().
+
+    Exactly the Snakefile's TILES_READY, computed the same way from the same two
+    files — a declared tile with no current exposure list cannot have been
+    computed, so it has no catalogue to merge.
+    """
+    # DEDUPED, order preserved. The tile list is appended to by hand across a
+    # campaign, so a tile can appear twice; a merge would then try to write that
+    # tile's dataset twice and die on the second. Deduping here rather than at
+    # the call sites keeps the answer the same for every reader of the index.
+    seen, declared = set(), []
+    with open(tile_list) as f:
+        for line in f:
+            tile = line.strip()
+            if tile and tile not in seen:
+                seen.add(tile)
+                declared.append(tile)
+    ready = ready_tiles(db_path)
+    return [t for t in declared if t in ready]
+
+
+def campaign_exposures(tile_list: Path, db_path: Path) -> list[str]:
+    """Every exposure the campaign's ready tiles read, sorted.
+
+    Exactly the set the Snakefile's persist_manifests() builds its manifest
+    paths from.
+    """
+    tiles = set(campaign_tiles(tile_list, db_path))
+    con = sqlite3.connect(db_path, timeout=60)
+    rows = con.execute("SELECT tile_id, exp_id FROM tile_exposures").fetchall()
+    con.close()
+    return sorted({e for t, e in rows if t in tiles})
 
 
 def main() -> None:

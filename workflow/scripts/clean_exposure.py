@@ -7,7 +7,7 @@ this executes, every campaign tile that reads this exposure has already extracte
 its postage stamps. Writer, then readers, then cleaner — DAG-ordered, race-free.
 
 What it deletes: the exposure's whole ``output/`` tree (the bulk store —
-run_sp_exp_Gie/Sp/SxSePsfPi), its ``manifests/`` and its ``logs/``. That is the
+run_sp_exp_Gie/Sp/SxSePsf), its ``manifests/`` and its ``logs/``. That is the
 entire exposure store: since PR #847 removed ShapePipe's mask generation there
 is no run_sp_exp_Ma tree and no star-catalogue link farm to reclaim beside it.
 

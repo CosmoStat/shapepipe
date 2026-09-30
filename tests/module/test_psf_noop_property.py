@@ -78,7 +78,7 @@ def _build_gal_obs_list(psf_shear, noise, n_epochs, img_size, data_seed, obs_see
         gal_obs_list.append(
             make_ngmix_observation(
                 gals[n_e], weights[n_e], flags[n_e], psfs[n_e], jacobs[n_e],
-                rng,
+                rng, centroid_source="hsm",
             )
         )
     return gal_obs_list

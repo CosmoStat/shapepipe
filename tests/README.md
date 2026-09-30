@@ -11,6 +11,7 @@ is driven by `pytest` from the repo root (in the dev container — see the proje
 |----------|-------|----------|
 | `tests/module/` | **module-unit tests** — the fitter, file handler, split-exp, vignetmaker, ngmix internals, the GalSim weight-validation suite | per-module unit/property/integration tests; import package internals directly. (Relocated from `src/shapepipe/tests/` so the suite has one home.) |
 | `tests/unit/` | **structural tests** — every submodule imports, configs parse, shell scripts lint, runner metadata is well-formed, console entry points respond to `-h` | suite-level checks on the *tree*, not any one module |
+| `tests/workflow/` | **Snakemake DAG checks** — isolated campaigns resolved through the Python API, without executing jobs | checks per-job dependencies, input modes, and campaign product paths |
 | `tests/science/` | **fast scientific guardrails** — controlled simulations with a known answer, runnable in the inner loop with nothing from the cluster | scientific correctness that must stay green on every commit |
 | `tests/cluster/` | **candide guardrails** — read real on-disk catalogs / submit cluster jobs | need the cluster + real data; marked and auto-skipped off it |
 | `tests/helpers/` | shared, non-test library code (cluster submission, artifact emission, the star-response R-function) | imported by tests as `tests.helpers.*`; not collected as tests |
@@ -27,10 +28,15 @@ policy — it applies everywhere.
 ```
 slow      heavy compute (minutes); excluded from the fast inner loop
 candide   needs the candide cluster and/or its real data; auto-skipped elsewhere
+decision(*ids) ASTRA decisions protected by a test; ids checked against astra.yaml
 ```
 
 `--strict-markers` is on, so a typo'd marker is an error, not a silent no-op.
-Use `pytest -m "not unions"` to run the survey-generic tests.
+Science guardrails use `decision(*ids)` at module or test level; AST parsing
+checks every ID against `astra.yaml` without importing the tests.
+`tests/unit/test_decisions.py` also checks that `@sc` site tags and rationale
+`Values:` refs agree with the decision record, and that test markers name real
+decisions. Use `pytest -m "not unions"` to run the survey-generic tests.
 
 A `candide`-marked test is **collected everywhere** (so `--collect-only` shows
 it exists) but **skipped off-cluster** with a clear reason. Candide is detected
