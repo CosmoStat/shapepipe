@@ -48,8 +48,9 @@ def _build_ldac_imhead(img_header):
 
 
 # SExtractor's VIGNET value for pixels that are not the object's: off the
-# image and on a neighbour's segmentation footprint. ngmix flags these pixels
-# (tile VIGNET == -1e30) and noise-fills them at zero weight.
+# image and on a neighbour's segmentation footprint. ngmix splits these pixels
+# (tile VIGNET == -1e30, ``ngmix.split_tile_markers``): the off-image rows and
+# columns are defects, the footprint pixels its neighbour mask.
 BIG = -1e30
 
 # The label of a footprint no catalogue object claims in the relabelled

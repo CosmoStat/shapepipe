@@ -637,9 +637,10 @@ analyses:
       catalogue_neighbour_marking:
         label: Neighbour pixels in the catalogue path's VIGNET
         rationale: >-
-          ngmix masks a neighbour only where the tile VIGNET is -1e30 (flag
-          2**10: zero weight, noise-filled under noisefill), and SExtractor
-          writes -1e30 on neighbours' footprints and off the image. The
+          ngmix's noisefill masks a neighbour only where the tile VIGNET is
+          -1e30 (zero weight, noise-filled; the off-tile rows and columns are
+          defects instead), and SExtractor writes -1e30 on neighbours'
+          footprints and off the image. The
           unions_catalogue converter reproduces that from the catalogue's own
           r-band segmentation map (CFIS.<tile>.r.seg.fits.fz, on the tile's
           pixel grid), so both tile_detection options mask the same way.
@@ -1457,9 +1458,10 @@ analyses:
           depend on it: defects are filled the same way under every
           BLEND_HANDLING, and the epoch cuts never count neighbour pixels.
           noisefill (the default; the committed config sets no key) gives
-          weight 0 to the pixels SExtractor marks -1e30 in the tile VIGNET
-          on other detections' footprints (about 93% of neighbour-footprint
-          pixels on a SExtractor-mode sims tile), excluding the off-tile
+          weight 0 to the pixels marked -1e30 in the tile VIGNET on other
+          detections' footprints (about 93% of neighbour-footprint pixels on
+          a SExtractor-mode sims tile; every one in catalogue mode, from the
+          segmentation map), excluding the off-tile
           rows and columns, which are defects, and replaces them with noise;
           unmarked
           neighbour pixels keep their weight and light. uberseg ignores the
@@ -1487,7 +1489,7 @@ analyses:
         default: noisefill
         options:
           noisefill:
-            label: Noise-fill SExtractor-marked neighbour pixels (BLEND_HANDLING = noisefill)
+            label: Noise-fill the marked neighbour pixels (BLEND_HANDLING = noisefill)
             description: >-
               Pixels marked -1e30 in the tile VIGNET get weight 0 and noise.
               The fill stops at the marked footprint, so unmarked neighbour
@@ -1527,7 +1529,7 @@ analyses:
           An epoch is dropped when a defect pixel lies strictly closer to the
           stamp centre than its fill's radius, beside the masked-fraction cut
           in the epoch loop; EPOCH_CENTRAL_DEFECT_RADIUS = 0 disables it.
-          SExtractor's -1e30 neighbour markers are not defects: all epochs
+          The tile VIGNET's -1e30 neighbour markers are not defects: all epochs
           share the tile VIGNET, so a neighbour inside the radius would drop
           every epoch. Off-tile pixels are defects, so an object near the
           tile edge is vetoed. The veto reads only the defect mask, so it selects on nothing shear-responsive; for the same
@@ -1566,8 +1568,8 @@ analyses:
           (default 1/3) of its pixels in the raw, unsymmetrized defect set is
           dropped from the multi-epoch fit: flagged pixels (any nonzero
           exposure flag bit), zero-weight pixels, invalid-RMS pixels and
-          off-tile pixels (whole -1e30 rows and columns of the tile VIGNET,
-          flag 2**10), the set defect_fill fills. On a 51-px stamp an object
+          off-tile pixels (whole -1e30 rows and columns at the tile VIGNET's
+          border, flag 2**10), the set defect_fill fills. On a 51-px stamp an object
           within about 8.5 px of the tile edge fails the 1/3 cut. The other
           -1e30 markers, neighbour footprints, are not counted: every epoch
           shares the tile VIGNET, so a large neighbour would drop them all. An object with no surviving epoch has no

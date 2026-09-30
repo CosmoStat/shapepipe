@@ -10,7 +10,7 @@ only lose their weight, and their image values stay raw. The per-epoch cuts
 in :func:`prepare_postage_stamps` act on the same defect set: the
 masked-fraction cut counts it, and the central-defect veto drops an epoch
 with a defect near the stamp centre, at a radius set by the defect's fill.
-SExtractor's -1e30 neighbour markers in the tile VIGNET are not defects:
+The tile VIGNET's -1e30 neighbour markers are not defects:
 noisefill zero-weights and noise-fills them, uberseg ignores them, and the
 epoch cuts never count them.
 """
@@ -744,7 +744,7 @@ def test_ngmix_rejects_an_unknown_defect_fill(tmp_path):
         )
 
 
-# --- SExtractor's -1e30 neighbour markers are not defects -------------------
+# --- The tile VIGNET's -1e30 neighbour markers are not defects -------------
 #
 # The tile VIGNET carries -1e30 on the footprints of other detections. Every
 # epoch shares that tile stamp, so a marker counted as a defect would drop
@@ -1021,9 +1021,10 @@ def test_do_ngmix_metacal_threads_each_epochs_neighbour_mask(monkeypatch):
 
 # --- Off-tile pixels are defects -------------------------------------------
 #
-# SExtractor also writes -1e30 beyond the tile's edge, where the epoch holds
-# the object's own light, cut off. Those pixels are the stamp rows and
-# columns that are entirely -1e30 (the off-image part of a rectangle clip);
+# The tile VIGNET also holds -1e30 beyond the tile's edge, where the epoch
+# holds the object's own light, cut off. Those pixels are the runs of
+# entirely -1e30 stamp rows and columns that start at a stamp border (the
+# off-image part of a rectangle clip);
 # they join the epoch's defect set as flag 2**10. The other markers are the
 # neighbour mask.
 

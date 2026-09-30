@@ -633,8 +633,8 @@ class Postage_stamp():
         self.psfs = []
         self.weights = []
         self.flags = []
-        # Neighbour masks, one per epoch: the pixels SExtractor marks -1e30 in
-        # the tile VIGNET on other detections' footprints (off-tile markers
+        # Neighbour masks, one per epoch: the pixels marked -1e30 in the tile
+        # VIGNET on other detections' footprints (off-tile markers
         # are flagged as defects instead; see split_tile_markers),
         # MegaCam-flipped to the epoch. noisefill zero-weights and noise-fills them; uberseg and
         # the epoch cuts do not read them (see prepare_ngmix_weights).
@@ -791,8 +791,8 @@ class Ngmix(object):
         :func:`make_ngmix_observation`.
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment. ``"noisefill"`` (default) zero-weights and
-        noise-fills the pixels SExtractor marks -1e30 in the tile VIGNET
-        on other detections' footprints; ``"uberseg"`` ignores those markers,
+        noise-fills the pixels marked -1e30 in the tile VIGNET on other
+        detections' footprints; ``"uberseg"`` ignores those markers,
         zeroes the weight of neighbour-side pixels from the coadd
         segmentation map and requires ``seg_cat_path``. Defect pixels are
         filled under both (see :func:`prepare_ngmix_weights`).
@@ -1555,8 +1555,8 @@ def prepare_postage_stamps(
     1/3; 10%, the DES Y3 and Y6 value, is the alternative to test.
 
     @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
-    SExtractor writes -1e30 into the tile VIGNET on the footprints of other
-    detections and beyond the tile's edge (:func:`split_tile_markers`). The
+    The tile VIGNET holds -1e30 on the footprints of other detections and
+    beyond the tile's edge (:func:`split_tile_markers`). The
     footprint markers form the epoch's neighbour mask (``stamp.neighbours``,
     MegaCam-flipped like the epoch), kept apart from its flag stamp, so
     neither the masked-fraction cut nor the central veto counts them. Every
@@ -2089,7 +2089,7 @@ def defect_mask(weight, flag, bkg_rms=None):
     or (when a background RMS map is given) a non-finite or non-positive RMS.
     This one set is zero-weighted and filled by :func:`prepare_ngmix_weights`
     under every ``blend_handling`` and counted by the epoch cuts in
-    :func:`prepare_postage_stamps`. SExtractor's neighbour markers are not
+    :func:`prepare_postage_stamps`. The tile VIGNET's neighbour markers are not
     in it (neighbour-markers-are-not-defects); off-tile pixels are, as flag
     ``OFF_TILE_FLAG`` (off-tile-pixels-are-defects). It is not ORed with its
     rotations. For defects the central-defect veto keeps
@@ -2280,8 +2280,8 @@ def prepare_ngmix_weights(
     supports the interpolant.
 
     @sc [decision:shape_measurement.blend_handling] noisefill-fills-markers
-    Under ``"noisefill"`` the pixels of ``neighbour``, SExtractor's -1e30
-    neighbour markers, get weight 0 and are replaced by the same noise
+    Under ``"noisefill"`` the pixels of ``neighbour``, the tile VIGNET's
+    -1e30 neighbour markers, get weight 0 and are replaced by the same noise
     realisation as the noise-filled defects, so no marked neighbour light
     reaches metacal. Under the default noise fill, the image, weight map and
     noise image are those the marked pixels would get as flagged defects;
