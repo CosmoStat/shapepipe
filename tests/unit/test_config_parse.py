@@ -160,8 +160,8 @@ def _module_config_sections(raw_module_list):
     Mirrors FileHandler.set_up_module / get_module_config_sec: a module named
     once uses its own upper-cased name as its section; a module repeated in
     MODULE gets ``<module>_run_<n>`` (1-indexed) upper-cased instead — every
-    invocation is returned, so a module used twice (e.g. ``vignetmaker_runner``
-    for ``_RUN_1`` and ``_RUN_2``) yields two pairs, not one. A module whose
+    invocation is returned, so a module used twice yields two pairs
+    (``_RUN_1`` and ``_RUN_2``), not one. A module whose
     name is not resolvable statically (e.g. ``${SP_PSF}_interp_runner``) is
     skipped.
     """
@@ -230,24 +230,43 @@ def test_workflow_config_module_sections_have_required_keys(config_path):
     assert not problems, f"{config_path}: " + "; ".join(problems)
 
 
-def test_module_sections_check_catches_a_missing_repeated_section():
-    """A module used twice must have both of its sections checked.
-
-    Regression guard for _module_config_sections: it must return one
-    (module, section) pair per invocation of a repeated module, not
-    collapse them, or deleting one of the two sections a module needs
-    (here vignetmaker_runner's _RUN_1) would go unnoticed.
-    """
+def test_module_sections_check_catches_a_missing_singleton_section():
+    """A module called once must have its configuration section checked."""
     config_path = next(
         p for p in WORKFLOW_CONFIG_FILES if p.name == "config_tile_PiViVi_mccd.ini"
     )
 
     parser = configparser.ConfigParser()
     parser.read(config_path)
-    assert parser.has_section("VIGNETMAKER_RUNNER_RUN_1")
+    assert parser.has_section("VIGNETMAKER_RUNNER")
 
-    parser.remove_section("VIGNETMAKER_RUNNER_RUN_1")
+    parser.remove_section("VIGNETMAKER_RUNNER")
 
     problems = _missing_required_keys(parser)
 
-    assert any("VIGNETMAKER_RUNNER_RUN_1" in problem for problem in problems)
+    assert any("VIGNETMAKER_RUNNER" in problem for problem in problems)
+
+
+def test_module_sections_check_catches_a_missing_repeated_section():
+    """A module used twice must have both of its sections checked.
+
+    Regression guard for _module_config_sections: it must return one
+    (module, section) pair per invocation of a repeated module, not collapse
+    them, or a missing ``_RUN_1`` section would go unnoticed.
+    """
+    config_path = next(
+        p for p in WORKFLOW_CONFIG_FILES if p.name == "config_tile_PiViVi_psfex.ini"
+    )
+
+    parser = configparser.ConfigParser()
+    parser.read(config_path)
+    parser.set("EXECUTION", "MODULE", "vignetmaker_runner, vignetmaker_runner")
+    parser.add_section("VIGNETMAKER_RUNNER_RUN_2")
+    for key, value in parser.items("VIGNETMAKER_RUNNER", raw=True):
+        parser.set("VIGNETMAKER_RUNNER_RUN_2", key, value)
+
+    problems = _missing_required_keys(parser)
+
+    assert problems == [
+        "vignetmaker_runner: missing section [VIGNETMAKER_RUNNER_RUN_1]"
+    ]
