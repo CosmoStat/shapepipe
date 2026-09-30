@@ -35,6 +35,7 @@ import ast
 import configparser
 import fnmatch
 import re
+import subprocess
 import sys
 import tokenize
 import warnings
@@ -294,13 +295,23 @@ def _comment_site(path, lines, index, meta, tree=None, *, snakemake=False):
     return None
 
 
-def _parse_file_tags(path, root):
-    relative = Path(path).relative_to(root).as_posix()
-    source = Path(path).read_text(encoding="utf-8")
+def _taggable(path):
+    """Whether files at this path can carry ``@sc`` tags."""
+
+    path = Path(path)
+    return path.name != "CONTRACTS" and (
+        path.suffix.lower() in _CONFIG_SUFFIXES | {".py", ".smk"}
+        or path.name == "Snakefile"
+    )
+
+
+def _parse_source_tags(relative, source):
+    """Parse tags from the text of the file at repository path ``relative``."""
+
     lines = source.splitlines()
-    suffix = Path(path).suffix.lower()
+    suffix = Path(relative).suffix.lower()
     tags, errors = [], []
-    is_snakemake = suffix == ".smk" or Path(path).name == "Snakefile"
+    is_snakemake = suffix == ".smk" or Path(relative).name == "Snakefile"
     tree = None
     consumed = set()
     comment_tokens = {}
@@ -373,11 +384,11 @@ def scan_tags(root):
         if (not path.is_file() or path.is_symlink()
                 or any(part in _SKIP for part in path.parts)):
             continue
-        if path.name == "CONTRACTS":
+        if not _taggable(path):
             continue
-        if path.suffix.lower() not in _CONFIG_SUFFIXES | {".py", ".smk"} and path.name != "Snakefile":
-            continue
-        found, issues = _parse_file_tags(path, root)
+        found, issues = _parse_source_tags(
+            path.relative_to(root).as_posix(), path.read_text(encoding="utf-8")
+        )
         tags.extend(found)
         errors.extend(issues)
     by_id = {}
@@ -1459,13 +1470,113 @@ def _print_decision_sites(record, tags, decision):
                 print(f"    Local contract {tag.ident}: {tag.prose}")
 
 
+_HUNK = re.compile(r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
+
+
+def _git(root, *args):
+    return subprocess.run(
+        ["git", *args], cwd=root, check=True, capture_output=True,
+        text=True, errors="replace",
+    ).stdout
+
+
+def _changed_ranges(patch):
+    """Yield ``(side, path, first, last)`` per hunk of a ``-U0`` diff.
+
+    Side 0 is the old file, 1 the new; pure deletions or insertions yield
+    only the side that has lines.
+    """
+
+    paths, header = [None, None], False
+    for line in patch.splitlines():
+        if line.startswith("diff --git "):
+            paths, header = [None, None], True
+        elif header and line.startswith(("--- ", "+++ ")):
+            path = line[4:].rstrip("\t")
+            paths[line[0] == "+"] = None if path == "/dev/null" else path
+        elif line.startswith("@@ "):
+            header = False
+            numbers = _HUNK.match(line).groups()
+            for side in (0, 1):
+                start, count = numbers[2 * side:2 * side + 2]
+                count = 1 if count is None else int(count)
+                if paths[side] and count:
+                    yield side, paths[side], int(start), int(start) + count - 1
+
+
+def _decisions_at(root, revision):
+    try:
+        text = _git(root, "show", f"{revision}:astra.yaml")
+    except subprocess.CalledProcessError:
+        return {}
+    return dict(_iter_decision_defs(yaml.safe_load(text)))
+
+
+def diff_report(root, base):
+    """Markdown table of decisions whose tagged sites overlap ``base...HEAD``.
+
+    Changed lines are matched against sites parsed at the merge base (old
+    side, so deleted sites count) and at HEAD (new side). A decision's
+    record counts as amended when its ``astra.yaml`` block differs between
+    the two revisions.
+    """
+
+    revisions = (_git(root, "merge-base", base, "HEAD").strip(), "HEAD")
+    patch = _git(
+        root, "-c", "core.quotePath=false", "diff", "-U0", "-M", "--no-prefix",
+        "--no-color", "--no-ext-diff", "--no-textconv", *revisions,
+    )
+    parsed, touched = {}, {}
+    for side, path, first, last in _changed_ranges(patch):
+        if not _taggable(path):
+            continue
+        if (side, path) not in parsed:
+            source = _git(root, "show", f"{revisions[side]}:{path}")
+            parsed[side, path] = _parse_source_tags(path, source)[0]
+        for tag in parsed[side, path]:
+            site = tag.site
+            if site and site.start <= last and first <= site.end:
+                for decision in tag.decisions:
+                    touched.setdefault(decision, set()).add(
+                        (path, site.start, site.end, side))
+    lines = ["## Scientific decisions touched", ""]
+    if not touched:
+        lines.append("No tagged decision site overlaps this diff.")
+        return "\n".join(lines)
+    before, after = (_decisions_at(root, revision) for revision in revisions)
+    lines += ["| Decision | Tagged sites | Record |", "| --- | --- | --- |"]
+    for decision, sites in sorted(touched.items()):
+        # Base-side sites are listed only for files where this decision has
+        # no HEAD-side hit: a deleted site, not an edited one's old position.
+        at_head = {path for path, *_, side in sites if side}
+        cells = [
+            f"`{path}:{start}-{end}`" + ("" if side else " (base)")
+            for path, start, end, side in sorted(sites)
+            if side or path not in at_head
+        ]
+        verdict = (
+            "record amended" if before.get(decision) != after.get(decision)
+            else "record unchanged — check the rationale still holds"
+        )
+        lines.append(f"| `{decision}` | {'<br>'.join(cells)} | {verdict} |")
+    return "\n".join(lines)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("location", nargs="?", help="path[:line] to inspect")
     parser.add_argument("--decision", help="list all sites for one decision")
+    parser.add_argument("--diff", metavar="BASE",
+                        help="report decisions touched by BASE...HEAD")
     parser.add_argument("--root", default=Path(__file__).resolve().parents[2])
     args = parser.parse_args(argv)
     root = Path(args.root)
+    if args.diff:
+        try:
+            print(diff_report(root, args.diff))
+        except subprocess.CalledProcessError as error:
+            sys.exit(f"{' '.join(error.cmd)}: {error.stderr.strip()}")
+        return 0
     record = load_yaml(root / "astra.yaml")
     tags, errors = scan_tags(root)
     if args.decision:
@@ -1473,7 +1584,7 @@ def main(argv=None):
     elif args.location:
         _print_location(root, record, tags, args.location)
     else:
-        parser.error("supply a path[:line] or --decision <id>")
+        parser.error("supply a path[:line], --decision <id> or --diff <base>")
     if errors:
         print(f"\n{len(errors)} tag parse error(s):")
         for error in errors:

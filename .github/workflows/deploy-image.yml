@@ -38,6 +38,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0  # the decision report diffs against the PR base
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -64,6 +66,21 @@ jobs:
           # mode=min: exporting only the final image's layers is what keeps the
           # cache restore useful without paying CI time for intermediate layers.
           cache-to: type=gha,mode=min
+
+      # Lists the scientific decisions whose tagged sites this PR touches
+      # (tests/helpers/decisions.py --diff). A report, not a gate: a failure
+      # posts its error to the summary and the job carries on.
+      - name: Report scientific decisions touched
+        if: github.event_name == 'pull_request'
+        run: |
+          IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          if ! docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" -w /repo "$IMAGE" \
+              python -m tests.helpers.decisions --diff "${{ github.event.pull_request.base.sha }}" \
+              > "$RUNNER_TEMP/decisions.md" 2> "$RUNNER_TEMP/decisions.err"; then
+            { echo "Decision report failed:"; echo '```'; tail -n 20 "$RUNNER_TEMP/decisions.err"; echo '```'; } \
+              > "$RUNNER_TEMP/decisions.md"
+          fi
+          cat "$RUNNER_TEMP/decisions.md" >> "$GITHUB_STEP_SUMMARY"
 
       # Catches the class of regression where the image builds but a runtime
       # tool (sextractor, psfex) is missing or unrunnable.
