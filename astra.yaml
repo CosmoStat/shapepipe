@@ -749,11 +749,13 @@ analyses:
       astrometric_solution_source:
         label: Astrometry taken verbatim from delivered per-CCD headers
         rationale: >-
-          split_exp builds WCS(header) from each raw CCD header and
-          merge_headers stores them; every downstream world-to-pixel transform
-          (stamp placement, epoch membership, position seeding) uses that
-          solution. [HARDCODED] no astrometric re-derivation or refinement
-          exists; a joint re-fit would move every stamp centre and position seed.
+          split_exp builds WCS(header) from each delivered CCD header, and
+          merge_headers stores these per-tile. Every committed world-to-pixel
+          step on exposures uses that solution: epoch membership,
+          multi-epoch stamp placement and OFFSET, tile-side PSF interpolation
+          positions, and the per-epoch ngmix Jacobian. [HARDCODED] No
+          astrometric re-derivation or refinement exists. A re-fit would shift
+          stamp centres and Jacobians and could change epoch membership.
         default: delivered_headers
         options:
           delivered_headers:
@@ -780,13 +782,16 @@ analyses:
       epoch_provenance_from_tile_history:
         label: Epoch sets parsed from tile FITS HISTORY cards
         rationale: >-
-          The coadd's own provenance is the epoch list: the file names in
-          column COLNUM of each HISTORY line, stripped of their full extension
-          and deduplicated. A tile whose header cannot be read fails rather
-          than yielding an empty list. Names keep their trailing p (2243881p),
-          an epoch letter rather than a prefix, so EXP_PREFIX is blank;
-          downstream code drops the p when it needs the bare exposure ID. A
-          mis-parse changes N_EPOCH and which exposures are fit.
+          The tile's primary-header HISTORY cards are its exposure list, and
+          two readers parse the same cards. find_exposures takes the file name
+          in column COLNUM, strips the extension and deduplicates. EXP_PREFIX
+          is blank, so 2243881p keeps its p. This list decides which exposures
+          are retrieved, split and merged into the tile's WCS log.
+          make_post_process re-parses the HISTORY copied into the catalogue
+          (the digits before an optional p) and builds the EPOCH HDUs and
+          N_EPOCH that the stamps and ngmix use. It raises if a HISTORY
+          exposure is missing from the WCS log. A tile whose header or HISTORY
+          cannot be read fails; it never gets an empty exposure list.
           Values:
           FIND_EXPOSURES_RUNNER.COLNUM = 3.
         default: history_parse
