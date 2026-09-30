@@ -130,7 +130,7 @@ def _campaign(root: Path, drop=None):
     argv = [sys.executable, str(SCRIPT), "--products-dir", str(products),
             "--tile-list", str(tile_list), "--index-db", str(index),
             "--output", str(output), "--campaign", CAMPAIGN,
-            "--param-file", str(param)]
+            "--param-file", str(param), "--tile-detection", "sextractor"]
     return argv, output, sources
 
 

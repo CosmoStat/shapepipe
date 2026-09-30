@@ -88,6 +88,7 @@ class Campaign:
             "inputs": {
                 "tiles": "$base_dir/inputs/$run/tiles",
                 "exposures": "$base_dir/inputs/$run/exposures",
+                "catalogues": "$base_dir/inputs/$run/catalogues",
             },
             "outputs": {
                 "run_dir": "$base_dir/scratch/$run",
@@ -114,6 +115,16 @@ class Campaign:
             }},
         }
         self.write_config()
+
+    @property
+    def tile_detection(self):
+        """Return the committed tile_detection default for this input_type.
+
+        The run config leaves it unset, so the DAG follows config.yaml's
+        input_types: table and a change to that default moves the pin.
+        """
+        committed = yaml.safe_load((REPO / "workflow" / "config.yaml").read_text())
+        return committed["input_types"][self.input_type]["tile_detection"]
 
     def _manifest(self, tile, stage):
         path = self.tile_manifest(tile, stage)

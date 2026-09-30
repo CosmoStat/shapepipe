@@ -50,7 +50,8 @@ from snakemake.logging import logger
 # --directory on /scratch (bin/sp) so .snakemake/ state never lands on /project.
 #
 # config.yaml is always loaded; SP_RUN_CONFIG (bin/sp) is merged on top, then
-# the `machines:` entry for (machine, input_type) fills whatever is still unset
+# the `input_types:` entry for input_type and the `machines:` entry for
+# (machine, input_type) fill whatever is still unset, the machine entry winning
 # (scripts/run_config.py, shared with bin/sp and container.py).
 sys.path.insert(0, str(Path(workflow.snakefile).parent / "scripts"))
 import run_config                                      # noqa: E402
@@ -81,7 +82,7 @@ if config.get("machine") is not None and config["machine"] != SP_PROFILE:
         f"SP_PROFILE={SP_PROFILE!r}. Set SP_PROFILE={MACHINE}, or fix "
         f"`machine:`.")
 
-run_config.apply_machine_defaults(config)
+run_config.apply_defaults(config)
 _unresolved = run_config.unresolved(config)
 if _unresolved:
     raise WorkflowError(
@@ -181,7 +182,20 @@ SNAPSHOT_JSON = Path(workflow.basedir).parent / "snapshot.json"
 
 sys.path.insert(0, str(SCRIPTS))
 import build_index                                     # noqa: E402
-from completeness import STAGE_DIR                     # noqa: E402
+from completeness import STAGE_DIR, TILE_DETECTIONS  # noqa: E402
+
+# Where the tile's galaxy sample comes from: SExtractor on the tile image, or
+# the UNIONS per-tile catalogue fetched and converted in place (tile.smk).
+# Both write run_sp_tile_Sx, so nothing downstream of tile_detect branches.
+TILE_DETECTION = config.get("tile_detection", "sextractor")
+if TILE_DETECTION not in TILE_DETECTIONS:
+    raise WorkflowError(
+        f"Invalid tile_detection={TILE_DETECTION!r}; expected one of "
+        f"{sorted(TILE_DETECTIONS)}.")
+try:
+    CATALOGUES, CATALOGUE_RETRIEVE = run_config.catalogue_source(config)
+except ValueError as err:
+    raise WorkflowError(str(err)) from None
 
 # SP_PHASE is set by bin/sp and NOWHERE else: `prepare`/`compute` on the two
 # invocations of `sp run`, `passthrough` on direct commands (`sp --unlock`, `sp
@@ -461,7 +475,7 @@ MERGE_FINAL_HASH = ":".join((
     path_hash(CONFIG_DIR / "final_cat.param")))
 # ngmix_range.py earns a hash for a stronger reason than the others. What it
 # emits is not a stale RESULT but a stale BOUNDARY, and a tile's eight chunks are
-# a PARTITION of its object IDs: resume a tile across an edit to the split and
+# a PARTITION of its catalogue rows: resume a tile across an edit to the split and
 # the chunks that already succeeded keep the old ranges while the reruns take the
 # new ones, so within one tile some objects are measured twice and others by
 # nobody. merge_sep_cats concatenates whatever it is handed, so the tile
@@ -1276,7 +1290,8 @@ rule prepare_all_tiles:
 # emitted automatically at the end of the COMPUTE invocation, runnable any time
 # via `sp report`.
 def _report(status):
-    shell(f"python {SCRIPTS}/run_report.py --run-dir {RUN_DIR} "
+    shell(f"SP_TILE_DETECTION='{TILE_DETECTION}' "
+          f"python {SCRIPTS}/run_report.py --run-dir {RUN_DIR} "
           f"--index {INDEX_DB} --status {status} || true")
 
 if PHASE == "compute":
