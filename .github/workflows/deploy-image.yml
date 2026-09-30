@@ -80,7 +80,7 @@ jobs:
             { echo "Decision report failed:"; echo '```'; tail -n 20 "$RUNNER_TEMP/decisions.err"; echo '```'; } \
               > "$RUNNER_TEMP/decisions.md"
           fi
-          cat "$RUNNER_TEMP/decisions.md" >> "$GITHUB_STEP_SUMMARY"
+          tee -a "$GITHUB_STEP_SUMMARY" < "$RUNNER_TEMP/decisions.md"
 
       # Catches the class of regression where the image builds but a runtime
       # tool (sextractor, psfex) is missing or unrunnable.
