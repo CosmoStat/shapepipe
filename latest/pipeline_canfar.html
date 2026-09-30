@@ -973,7 +973,7 @@ ln<span class="w"> </span>-s<span class="w"> </span>~/astro/repositories/github/
 <p>Then edit <code class="docutils literal notranslate"><span class="pre">params.py</span></code>: Set patch name; set <code class="docutils literal notranslate"><span class="pre">wrap_ra</span></code> for P2.</p>
 <p>Now we can run the script, recommended via job submission on candide. For large patches,
 this requies a job with a large memory, e.g. with <code class="docutils literal notranslate"><span class="pre">mem=380000</span></code></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>squeue<span class="o">]</span><span class="w"> </span>python<span class="w"> </span>~/astro/repositories/github/sp_validation/scripts/calibrate/extract_info.py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>squeue<span class="o">]</span><span class="w"> </span>python<span class="w"> </span>~/astro/repositories/github/sp_validation/scripts/calibration/extract_info.py
 </pre></div>
 </div>
 <p>This creates a patch-wise comprehensive catalogue.</p>
@@ -981,7 +981,7 @@ this requies a job with a large memory, e.g. with <code class="docutils literal 
 <section id="create-global-comprehensive-catalogues">
 <h3>Create global comprehensive catalogues<a class="headerlink" href="#create-global-comprehensive-catalogues" title="Link to this heading">#</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/patch/to/version
-<span class="o">[</span>squeue<span class="o">]</span><span class="w"> </span>python<span class="w"> </span>~/astro/repositories/github/sp_validation/scripts/create_joint_comprehensive_cat.py<span class="w"> </span><span class="se">\</span>
+<span class="o">[</span>squeue<span class="o">]</span><span class="w"> </span>python<span class="w"> </span>~/astro/repositories/github/sp_validation/scripts/calibration/create_joint_comprehensive_cat.py<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-v<span class="w"> </span>v1.6.c<span class="w"> </span>-v<span class="w"> </span>-p<span class="w"> </span>P1+P2+P3+P4+P5+P6+P7+P8+P9
 </pre></div>
 </div>
