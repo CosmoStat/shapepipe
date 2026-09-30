@@ -331,9 +331,11 @@ analyses:
     description: >-
       Object detection on r-band tiles (the galaxy sample) and on
       single-exposure CCDs (PSF-star candidates, always SExtractor). The tile
-      sample is Gwyn's UNIONS tile catalogue or ShapePipe's own SExtractor run
-      (tile_detection); the latter follows the MegaPipe parameters of that
-      catalogue, while exposures keep ShapePipe's stock values.
+      sample is Gwyn's UNIONS tile catalogue (committed for data) or
+      ShapePipe's own SExtractor run (image simulations), per tile_detection.
+      Every default_tile.sex / config_tile_Sx.ini setting below applies only
+      to the SExtractor run, which follows the MegaPipe parameters of that
+      catalogue; exposures keep ShapePipe's stock values.
     inputs:
       - id: tile_stack
         type: data
@@ -376,20 +378,25 @@ analyses:
       detection_threshold_policy:
         label: Detection significance, minimum area, matched filter
         rationale: >-
-          Tiles use the MegaPipe tile-catalogue threshold, minimum area and
-          filter, so ShapePipe's galaxy sample matches the catalogue UNIONS
-          adopts; the 7x7 Gaussian of FWHM 3 px is near the CFIS average seeing
-          of 0.65 arcsec (about 3.5 px at 0.187 arcsec/px). Exposures only feed
-          star selection and keep stock values with the 3x3 FWHM 2 px kernel.
-          The tiles differ from Guinot+22 in all three. Matching image
-          simulations must use the same prescription.
+          Tile SExtractor (tile_detection = sextractor, i.e. image
+          simulations) uses the MegaPipe tile-catalogue threshold, minimum
+          area and filter, so that its galaxy sample reproduces the UNIONS
+          catalogue committed data adopts; the 7x7 Gaussian of FWHM 3 px is
+          near the CFIS average seeing of 0.65 arcsec (about 3.5 px at
+          0.187 arcsec/px). Exposures only feed star selection and keep stock
+          values with the 3x3 FWHM 2 px kernel. The tiles differ from Guinot+22
+          in all three.
           Values:
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_SEX_FILE =
+          $SP_CONFIG/default_tile.sex;
           default_tile.sex#DETECT_THRESH = 1.0;
           default_tile.sex#ANALYSIS_THRESH = 1.0;
           default_tile.sex#DETECT_MINAREA = 3;
           default_tile.sex#FILTER = Y;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE =
           $SP_CONFIG/gauss_3.0_7x7.conv;
+          config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_SEX_FILE =
+          $SP_CONFIG/default_exp.sex;
           default_exp.sex#DETECT_THRESH = 1.5;
           default_exp.sex#ANALYSIS_THRESH = 1.5;
           default_exp.sex#DETECT_MINAREA = 5;
@@ -543,17 +550,18 @@ analyses:
       saturation_level:
         label: Saturation level read from each image's header
         rationale: >-
-          Both passes take each image's saturation level from its SATURATE
-          header card and set FLAGS bit 4 on objects with saturated pixels.
-          Star selection requires FLAGS == 0 at every step, so the level decides
-          which bright stars leave the PSF sample; tile FLAGS reach the
-          catalogue for downstream cuts. Where the card is absent, SExtractor
-          falls back to its built-in SATUR_LEVEL (50000 ADU per its
-          documentation), since neither .sex file sets one. Delivered data
-          carry the card: a sampled tile (CFIS.186.307) has SATURATE 9558.7
-          and every CCD of a sampled exposure (2114045p) 65535, and split_exp
-          keeps each CCD's header. Changing the card or pinning a fixed level requires
-          checking the resulting bright-star selection.
+          Each SExtractor pass takes the image's saturation level from its
+          SATURATE header card and sets FLAGS bit 4 on objects with saturated
+          pixels. Neither .sex file sets SATUR_LEVEL, so where the card is
+          absent SExtractor falls back to its built-in level (50000 ADU per
+          its documentation). Delivered exposures carry the card (every CCD
+          of 2114045p: 65535) and split_exp keeps each CCD's header; a sampled
+          tile (CFIS.186.307) has 9558.7, which applies under tile_detection =
+          sextractor. The PSF-star masks require FLAGS == 0, so the level can
+          remove bright stars from the PSF sample. In committed data the final
+          catalogue's FLAGS column is the UNIONS catalogue's own, not this
+          pass's. Changing the card or pinning a fixed level requires checking
+          the resulting bright-star selection.
           Values:
           default_exp.sex#SATUR_KEY = SATURATE;
           default_tile.sex#SATUR_KEY = SATURATE;
@@ -571,12 +579,15 @@ analyses:
       photometry_parameters:
         label: Kron and aperture photometry definitions
         rationale: >-
-          Stock Kron, aperture and flux-fraction settings on both passes; no
-          rationale recorded. MAG_AUTO is the axis of the star-selection
-          magnitude window and the catalogue magnitude; FLUX_AUTO is PSFEx's
-          photometric normalisation. A different Kron factor shifts magnitudes
-          and so every magnitude-based cut. The reported apertures and flux-
-          fraction measurements must also match the simulated catalogue.
+          Stock Kron, aperture and flux-fraction settings; no rationale
+          recorded. On the exposure pass MAG_AUTO is the axis of the
+          star-selection magnitude windows and FLUX_AUTO is PSFEx's
+          photometric normalisation, so a different Kron factor moves stars
+          across those cuts. The tile values apply under tile_detection =
+          sextractor; in committed data the catalogue's MAG_AUTO is the UNIONS
+          catalogue's own. The reported apertures and flux-fraction
+          measurements must match the simulated catalogue they are compared
+          with.
           Values:
           default_tile.sex#PHOT_AUTOPARAMS = 2.5,3.5;
           default_exp.sex#PHOT_AUTOPARAMS = 2.5,3.5;
@@ -619,10 +630,11 @@ analyses:
           `all_world2pix(..., 0)` returns 0-based pixels, and the strict test
           accepts `33 < x < 2080`. In 1-based FITS coordinates this is x=35
           through x=2080 inclusive: it trims DATASEC columns 33 and 34 but
-          admits its upper endpoint, column 2080. A WCS inversion failure skips
-          that CCD, lowering N_EPOCH; this sets how many exposures enter each
-          galaxy's multi-epoch fit.
-          Both tile_detection options run this post-processing.
+          admits its upper endpoint, column 2080. [HARDCODED] The comparisons
+          are strict in make_post_process; CCD_SIZE sets only the bounds. A
+          WCS inversion failure skips that CCD, lowering N_EPOCH, which caps
+          how many exposures enter each galaxy's multi-epoch fit. Both
+          tile_detection options run this post-processing.
           Values:
           SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
           SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True;
@@ -634,6 +646,7 @@ analyses:
             label: "x in (33,2080), y in (1,4612), strict"
           inclusive_bounds:
             label: Same bounds, inclusive
+            description: Not implemented; make_post_process uses strict comparisons.
       catalogue_neighbour_marking:
         label: Neighbour pixels in the catalogue path's VIGNET
         rationale: >-
