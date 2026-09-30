@@ -37,6 +37,17 @@ class _NullLogger:
     def info(self, *_args, **_kwargs):
         pass
 
+    def warning(self, *_args, **_kwargs):
+        pass
+
+
+class _CaptureLogger(_NullLogger):
+    def __init__(self):
+        self.warnings = []
+
+    def warning(self, message, *_args, **_kwargs):
+        self.warnings.append(message)
+
 
 # Per-object key set that compile_results emits into every shear-type
 # extension (mirrors ngmix.compile_results ``names2``). Sentinel values are
@@ -116,7 +127,7 @@ def _write_ngmix_cat(path, obj_ids):
     fits.HDUList(hdus).writeto(path, overwrite=True)
 
 
-def _run_save_ngmix(ngmix_path, obj_id, cat_size_target=None):
+def _run_save_ngmix(ngmix_path, obj_id, cat_size_target=None, w_log=None):
     """Drive ``_save_ngmix_data`` and return its populated output dict."""
     inst = object.__new__(SaveCatalogue)
     inst._obj_id = np.asarray(obj_id)
@@ -124,7 +135,7 @@ def _run_save_ngmix(ngmix_path, obj_id, cat_size_target=None):
     inst._cat_size_target = (
         len(inst._obj_id) if cat_size_target is None else cat_size_target
     )
-    inst._w_log = _NullLogger()
+    inst._w_log = w_log or _NullLogger()
 
     err_msg = inst._save_ngmix_data(str(ngmix_path))
     assert err_msg is None
@@ -263,6 +274,25 @@ def test_save_ngmix_data_fills_sentinels_for_absent_objects(tmp_path):
     n_epoch = np.asarray(out["NGMIX_N_EPOCH"])
     npt.assert_allclose(n_epoch[present], row["n_epoch_model"])
     npt.assert_allclose(n_epoch[absent], [0.0, 0.0])
+
+
+def test_low_match_fraction_warns_and_continues_with_sentinels(tmp_path):
+    """A low match count warns while unmatched detections stay in the output."""
+    ngmix_path = tmp_path / "ngmix-low-match.fits"
+    obj_ids = list(range(1, 12))
+    _write_ngmix_cat(ngmix_path, [obj_ids[0]])
+    logger = _CaptureLogger()
+
+    out = _run_save_ngmix(
+        ngmix_path,
+        obj_ids,
+        cat_size_target=len(obj_ids),
+        w_log=logger,
+    )
+
+    assert len(logger.warnings) == 1
+    assert "continuing with sentinels" in logger.warnings[0]
+    assert out["NGMIX_G1_NOSHEAR"][1] == -10.0
 
 
 def _metacal_result(obj_id):

@@ -375,19 +375,17 @@ class SaveCatalogue:
         ngmix_cat_file.open()
 
         ngmix_n_epoch = ngmix_cat_file.get_data()["n_epoch_model"]
-        # Low number of ngmix objects could be due to
-        # (1) shape measurement failures (e.g. missing PSF): ok, continue
-        # (2) previous processing errors, e.g. premature run of
-        # merge_sep_cats_runner: raise error
+        # A low match fraction can be valid (e.g. missing PSFs). Warn but
+        # continue; unmatched detections retain their pre-filled sentinels.
+        # Completeness gates reject premature or incomplete merges.
         if len(ngmix_n_epoch) / self._cat_size_target < 0.1:
-            err_msg = (
-                f"Merged shape catalogue {ngmix_cat_path} has very different"
-                + f" size ({len(ngmix_n_epoch)}) compared to target size"
-                + f" {self._cat_size_target})"
+            warning = (
+                f"Merged shape catalogue {ngmix_cat_path} contains only "
+                f"{len(ngmix_n_epoch)} of {self._cat_size_target} target "
+                "objects (<10%); continuing with sentinels for unmatched "
+                "detections."
             )
-            self._w_log.info(err_msg)
-            #ngmix_cat_file.close()
-            #return err_msg
+            self._w_log.warning(warning)
 
         ngmix_mcal_types_fail = ngmix_cat_file.get_data()["mcal_types_fail"]
         # Per-object blend flag (shapepipe#776): the seg stamp held a
