@@ -1754,13 +1754,17 @@ def prepare_postage_stamps(
 def split_tile_markers(tile_vign, shape):
     """Split the tile VIGNET's -1e30 markers into neighbour and off-tile.
 
-    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-whole-marked-rows-and-columns
-    SExtractor writes -1e30 on the footprints of other detections and on
-    stamp pixels beyond the tile's edge. A stamp clipped by the tile's
-    rectangle loses whole rows and whole columns, so the off-tile pixels are
-    the union of the stamp rows and columns that are entirely -1e30. The
-    remaining markers are neighbour pixels; a footprint touching the stamp
-    border stays a neighbour unless it fills a whole row or column.
+    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-marked-border-rows-and-columns
+    The tile VIGNET holds -1e30 on the footprints of other detections and on
+    stamp pixels beyond the tile's edge; SExtractor writes it, and in
+    catalogue mode the converter paints it from the catalogue's segmentation
+    map (``read_ext_sexcat._extract_vignets``). A stamp clipped by the tile's
+    rectangle loses whole rows and whole columns from its border, so the
+    off-tile pixels are the union of the runs of entirely -1e30 rows and
+    columns that start at a stamp border. The remaining markers are
+    neighbour pixels: a footprint touching the stamp border, and a footprint
+    that completes an interior row or column beside an off-tile band, stay
+    neighbours.
 
     Parameters
     ----------
@@ -1779,7 +1783,17 @@ def split_tile_markers(tile_vign, shape):
     if tile_vign is None:
         return np.zeros(shape, dtype=bool), np.zeros(shape, dtype=bool)
     marker = tile_vign == -1e30
-    off_tile = marker.all(axis=1)[:, None] | marker.all(axis=0)[None, :]
+
+    def border_runs(full):
+        # Lines in the unbroken run of marked lines from either border.
+        lead = np.logical_and.accumulate(full)
+        trail = np.logical_and.accumulate(full[::-1])[::-1]
+        return lead | trail
+
+    off_tile = (
+        border_runs(marker.all(axis=1))[:, None]
+        | border_runs(marker.all(axis=0))[None, :]
+    )
     return marker & ~off_tile, off_tile
 
 

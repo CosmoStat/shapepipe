@@ -1386,13 +1386,16 @@ analyses:
           FFTs". Under every BLEND_HANDLING and the default DEFECT_FILL =
           noise, defect pixels are replaced with independent noise at the
           per-pixel background RMS when supplied, or the stamp's robust noise
-          scale otherwise. SExtractor writes -1e30 into the tile VIGNET on
-          other detections' footprints and beyond the tile's edge. The stamp
-          rows and columns that are entirely -1e30 (the off-image part of a
-          rectangle clip) are off-tile: the epoch holds the object's own light
-          there, so they are defects, flagged 2**10. The other markers are
-          neighbour pixels, not defects; blend_handling decides their
-          treatment. The committed fill
+          scale otherwise. The tile VIGNET holds -1e30 on other detections'
+          footprints and beyond the tile's edge (written by SExtractor, or by
+          the unions_catalogue converter from the catalogue's segmentation
+          map; catalogue_neighbour_marking). The runs of entirely -1e30 stamp
+          rows and columns that start at a stamp border (the off-image part of
+          a rectangle clip) are off-tile: the epoch holds the object's own
+          light there, so they are defects, flagged 2**10. The other markers,
+          including a neighbour footprint that completes an interior row
+          beside an off-tile band, are neighbour pixels, not defects;
+          blend_handling decides their treatment. The committed fill
           uses the unsymmetrized defect set: DES symmetrized its masks, but
           four-fold symmetrization quadruples m and still leaves an additive c1
           (symmetrized_4fold_noise). The cost of not symmetrizing, a hole in

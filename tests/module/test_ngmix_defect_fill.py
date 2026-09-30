@@ -16,6 +16,7 @@ epoch cuts never count them.
 """
 
 import re
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -41,8 +42,10 @@ from shapepipe.modules.ngmix_package.ngmix import (
     make_ngmix_observation,
     prepare_ngmix_weights,
     prepare_postage_stamps,
+    split_tile_markers,
     uberseg_weight,
 )
+from shapepipe.modules.read_ext_sexcat_package import read_ext_sexcat
 
 
 # --- prepare_ngmix_weights: the filled set is the defect set ---------------
@@ -1122,6 +1125,94 @@ def test_off_tile_pixels_are_zero_weighted_and_filled(blend_handling):
         )
         npt.assert_array_equal(gal_out != gal, removed)
         npt.assert_array_equal(w_out == 0.0, removed)
+
+
+# --- Catalogue mode: converter-built tile VIGNETs ---------------------------
+#
+# In catalogue mode the tile VIGNET comes from read_ext_sexcat, which paints
+# -1e30 off the image and on other footprints of the DR6 segmentation map.
+# The off-image pixels are the off-tile defects and the footprint pixels are
+# the neighbour mask, exactly.
+
+DR6_PATCH = Path(__file__).parent / "data" / "dr6_202.301_seg_patch.fits"
+
+
+def _converter_stamps(seg, number, x, y):
+    """Converter tile VIGNETs on a unit image, and each stamp's off-image
+    mask."""
+    relabelled, _ = read_ext_sexcat.relabel_seg(seg, number, x, y)
+    vignets = read_ext_sexcat._extract_vignets(
+        np.ones(seg.shape, np.float32), x, y, N_STAMP, seg=relabelled,
+        number=number,
+    )
+    half = N_STAMP // 2
+    ny, nx = seg.shape
+    off_image = []
+    for xi, yi in zip(x, y):
+        rows = int(np.rint(yi)) - 1 - half + np.arange(N_STAMP)
+        cols = int(np.rint(xi)) - 1 - half + np.arange(N_STAMP)
+        off_image.append(
+            ((rows < 0) | (rows >= ny))[:, None]
+            | ((cols < 0) | (cols >= nx))[None, :]
+        )
+    return vignets, off_image
+
+
+def test_dr6_converter_stamps_split_into_off_image_and_neighbours():
+    """On the real 202.301 patch, every converter stamp splits into its
+    off-image pixels (off-tile) and its other -1e30 pixels (neighbours).
+
+    Failure modes: the converter's float32 -1e30 is not recognised as a
+    marker; off-image pixels of an edge stamp land in the neighbour mask;
+    neighbour-footprint pixels become off-tile defects.
+    """
+    with fits.open(DR6_PATCH) as hdul:
+        seg = hdul["SEG"].data
+        objects = hdul["OBJECTS"].data
+    number = np.array(objects["NUMBER"])
+    x, y = np.array(objects["X_IMAGE"]), np.array(objects["Y_IMAGE"])
+    vignets, off_image = _converter_stamps(seg, number, x, y)
+    assert vignets.dtype == np.float32
+    n_edge = 0
+    for vign, off in zip(vignets, off_image):
+        neighbour, off_tile = split_tile_markers(vign, vign.shape)
+        npt.assert_array_equal(off_tile, off)
+        npt.assert_array_equal(neighbour, (vign == _MARKER) & ~off)
+        n_edge += off.any()
+    assert n_edge >= 5
+    assert sum(
+        split_tile_markers(v, v.shape)[0].sum() for v in vignets
+    ) > 1000
+
+
+def test_a_neighbour_completing_rows_beside_the_tile_edge_stays_a_neighbour():
+    """An object 14 px from the tile's left edge, with a wide neighbour
+    footprint that runs from the tile edge across the stamp: in the rows of
+    that footprint every stamp pixel is -1e30, off the image or on the
+    neighbour. Only the off-image columns are off-tile; the footprint is the
+    neighbour mask, through prepare_postage_stamps.
+
+    Failure mode: every entirely -1e30 row counts as off-tile, so the
+    neighbour's rows become defects that the epoch cuts count and the defect
+    fill interpolates (off-tile-is-marked-border-rows-and-columns).
+    """
+    seg = np.zeros((80, 80), np.int32)
+    seg[20:24, 0:45] = 5
+    seg[27:32, 13:18] = 1
+    number, x, y = np.array([1, 5]), np.array([15.0, 30.0]), np.array([30.0, 22.0])
+    vignets, off_image = _converter_stamps(seg, number, x, y)
+    tile, off = vignets[0], off_image[0]
+    footprint = (tile == _MARKER) & ~off
+    assert footprint.sum() == 4 * (N_STAMP - 11)
+    assert ((tile == _MARKER).all(axis=1) & ~off.all(axis=1)).sum() == 4
+
+    stamp, epochs, _ = _marker_stamp(tile)
+    names = {id(v[0]): name for name, v in epochs.items()}
+    assert len(stamp.flags) == len(_MARKER_EPOCH_NAMES)
+    for flag, neighbour in zip(stamp.flags, stamp.neighbours):
+        ccd = int(names[id(flag)].split("-")[1])
+        npt.assert_array_equal(flag == _OFF_TILE, Ngmix.MegaCamFlip(off, ccd))
+        npt.assert_array_equal(neighbour, Ngmix.MegaCamFlip(footprint, ccd))
 
 
 # --- DEFECT_FILL = interpolate beside a removed neighbour -------------------
