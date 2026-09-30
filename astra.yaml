@@ -83,18 +83,20 @@ decisions:
   per_unit_completeness:
     label: Per-unit completeness gate
     rationale: >-
-      Every shapepipe_run rule checks its products against a nominal
-      per-runner count (per chunk for tile_ngmix). A runner short of its count
-      fails the unit (exposure or tile), so a partial unit never enters the
-      catalogue and a failed unit's objects are absent. The one tolerated
-      shortfall is the exposure-side psfex_interp VALIDATION output: a CCD
-      whose model fails the acceptance gate
-      (star_selection_psf.psf_acceptance_thresholds) produces nothing and the
-      unit only warns. The MCCD chain, never run in a campaign, warns on every
-      runner; its counts follow config_exp_mccd.ini (one mask_query catalogue
-      per CCD; preprocessing merges an exposure's stars into one train and one
-      test catalogue). Science-path PSF rejection bypasses this table:
-      psfex_interp drops the epoch per object inside the tile run.
+      Every shapepipe_run rule checks its products against a per-runner
+      nominal count (per chunk for tile_ngmix). The unit fails if a
+      non-warning runner falls short or shapepipe_run exits nonzero, and a
+      failed unit publishes no manifest for later rules to build on. A tile
+      needs the exp_psf manifest of every exposure it lists, so one failed
+      exposure keeps every tile it contributes to out of the catalogue; the
+      tile does not run with fewer epochs. The one tolerated shortfall is the
+      exposure-side psfex_interp VALIDATION output. A CCD whose model fails
+      the acceptance gate (star_selection_psf.psf_acceptance_thresholds)
+      produces nothing there, and the unit only warns. Science-path PSF
+      rejection bypasses this table: psfex_interp drops that epoch per object
+      inside the tile run. The MCCD table (one mask_query catalogue per CCD;
+      one train and one test catalogue per exposure) warns on every runner,
+      and the workflow refuses psf_model=mccd.
       Values:
       COMPLETENESS[exp_psf.psfex.psfex_interp_runner.warn] = True;
       COMPLETENESS[exp_psf.mccd.mask_query_runner.expect] = 40;
@@ -121,14 +123,18 @@ decisions:
   postage_stamp_size:
     label: Postage-stamp size shared by vignets, ngmix stamps and PSF models
     rationale: >-
-      One size pins three coupled apertures: the SExtractor VIGNET around each
-      detection, the vignetmaker stamps ngmix fits, and the PSFEx model
-      stamp. The stamp bounds the measurable galaxy size and truncates the
-      wings of large galaxies. No rationale for 51 px (about 9.5 arcsec) is
-      recorded.
+      Every stamp width is 51 px (about 9.5 arcsec): the tile VIGNET (cut
+      from the tile image by read_ext_sexcat in committed data, by SExtractor
+      under tile_detection = sextractor), the multi-epoch vignetmaker stamps
+      ngmix fits, the exposure SExtractor VIGNET PSFEx trains on, and the
+      PSFEx model stamp. Only the first two are coupled: ngmix lays the tile
+      VIGNET's -1e30 neighbour markers over each epoch stamp pixel for pixel,
+      so they must be the same size. The stamp truncates the wings of large
+      galaxies. No rationale for 51 px is recorded.
       Values:
       default_noimaflags.param#VIGNET = 51;
       default.param#VIGNET = 51;
+      READ_EXT_SEXCAT_RUNNER.VIGNET_SIZE = 51;
       VIGNETMAKER_RUNNER_RUN_1.STAMP_SIZE = 51;
       VIGNETMAKER_RUNNER_RUN_2.STAMP_SIZE = 51;
       PSF_SIZE = 51.
@@ -139,20 +145,22 @@ decisions:
       larger_adaptive:
         label: Larger or size-adaptive stamps
         description: >-
-          Not implemented; the vignet, stamp and PSF sizes must change
-          together.
+          Per-object sizes are not implemented. A larger fixed size is a
+          config change, provided the tile VIGNET and the multi-epoch stamp
+          change together.
 
   photometric_zeropoint:
     label: Magnitude zero-point convention
     rationale: >-
-      Tiles use a fixed zero-point of 30 (ZP_FROM_HEADER=False), repeated in
-      ngmix's MAG_ZP; exposures read the per-image header PHOTZP. The fixed
-      value assumes the MegaPipe stacks are calibrated to 30; nothing in the
-      repo checks it, but on a sampled exposure (2114045p) FSCALE equals
-      10^(-0.4 (PHOTZP - 30)) to 0.02%. Exposure epochs are rescaled by FSCALE, which must agree
-      with header PHOTZP as well as tile MAG_ZEROPOINT and ngmix MAG_ZP.
-      Magnitude cuts (the star-selection window, downstream galaxy cuts)
-      inherit their stage's convention.
+      Exposures read the per-image header PHOTZP, so the PSF-star MAG_AUTO
+      window is on each exposure's own scale. Epochs are multiplied by header
+      FSCALE before the joint fit, which puts them on zero-point 30 only if
+      FSCALE = 10^(-0.4 (PHOTZP - 30)). Nothing in the repo checks this, but it
+      held to 0.02% on a sampled exposure (2114045p). ngmix magnitudes use
+      MAG_ZP = 30. In committed data the catalogue's tile MAG_AUTO is the
+      UNIONS catalogue's own; the fixed tile zero-point of 30
+      (ZP_FROM_HEADER=False) applies only under tile_detection = sextractor,
+      and assumes the MegaPipe stacks are calibrated to 30.
       Values:
       MAG_ZEROPOINT = 30.0;
       config_tile_Sx.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER = False;
@@ -166,8 +174,9 @@ decisions:
       header_everywhere:
         label: Per-image header zero-points on tiles too
         description: >-
-          ZP_FROM_HEADER=True on tiles; changes magnitudes only where a tile's
-          header zero-point differs from 30.
+          ZP_FROM_HEADER=True for tile SExtractor (tile_detection =
+          sextractor only); changes tile magnitudes only where a tile's header
+          zero-point differs from 30. ngmix MAG_ZP stays 30.
 
 prior_insights:
   des_psf_blacklist:
@@ -2009,16 +2018,21 @@ analyses:
       tile_overlap_handling:
         label: Tile-overlap duplicates neither removed nor flagged
         rationale: >-
-          Adjacent tiles overlap, and objects in the overlap are measured in
-          both. [HARDCODED] make_cat attaches only TILE_ID; with no
-          unique-object rule or overlap flag, duplicates are left to
-          downstream selection. NUMBER_LIST selects input tiles; it does not
-          carve disjoint sky regions, and no config key makes these catalogues
-          unique or flags their overlap rows.
+          Adjacent tiles overlap, and the UNIONS per-tile catalogue spans the
+          whole tile image, so an object in an overlap is measured once in
+          each tile. [HARDCODED] make_cat keeps every row and adds TILE_ID and
+          TILE_UNIQUE_ID (tile_id * 10**6 + NUMBER). The second is unique per
+          tile row, so an overlap object gets a different ID in each tile. No
+          config key deduplicates or flags overlap rows. sp_validation removes
+          the duplicates by keeping each object only inside its own tile's
+          nominal box (classification_galaxy_overlap_ra_dec, from TILE_ID and
+          XWIN_WORLD/YWIN_WORLD).
         default: no_dedup_in_pipeline
         options:
           no_dedup_in_pipeline:
-            label: Ship duplicates; TILE_ID is the only handle
+            label: >-
+              Ship overlap duplicates; sp_validation cuts each tile to its
+              nominal box
           overlap_flagging:
             label: Flag overlap objects in the catalogue
             description: Not implemented.
@@ -2026,8 +2040,10 @@ analyses:
             label: Keep each object only in its nearest tile
             excluded: true
             excluded_reason: >-
-              Requires cross-tile coordination at assembly time, which the
-              per-tile DAG deliberately avoids.
+              Not needed in the pipeline: the cut needs only each object's
+              TILE_ID and position, and sp_validation applies it downstream.
+              Leaving it out keeps every UNIONS catalogue row in the shape
+              catalogue.
       failure_sentinels:
         label: Objects without shape measurements kept, with sentinel values
         rationale: >-

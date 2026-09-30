@@ -82,14 +82,13 @@ trigger would notice. A tile in the derived set whose catalogue is missing is a
 hard error here, not a skip — under the DAG it cannot happen, since every one of
 them is a declared input of this job.
 
-@sc [label:selection] never-fit-rows-pass-through
+@sc [decision:catalogue_assembly.failure_sentinels,label:selection] never-fit-rows-pass-through
 Every row of every tile catalogue reaches the merged file, unchanged,
 including objects ngmix never fit. Those carry `NGMIX_N_EPOCH == 0` with
-sentinel values (`NGMIX_MCAL_FLAGS == 0`, ellipticities `-10`, `T == 0`), so
-`NGMIX_MCAL_FLAGS == 0` is not a validity cut: consumers select fitted objects
-with `NGMIX_N_EPOCH > 0`. The merge neither fills these rows nor drops them;
-that selection belongs to the consumer. Enforced by
-tests/unit/test_final_cat_merge_invariants.py.
+sentinel values (ellipticities `-10`, `T == 0`), `NGMIX_MCAL_FLAGS` nonzero
+(`LM_FUNC_NOTFINITE`) and `NGMIX_MCAL_TYPES_FAIL == 5`, so the consumer's
+`NGMIX_MCAL_FLAGS == 0` cut rejects them. The merge neither fills these rows
+nor drops them. Enforced by tests/unit/test_final_cat_merge_invariants.py.
 """
 
 import argparse
