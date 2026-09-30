@@ -868,7 +868,8 @@ analyses:
         rationale: >-
           Stars are flag-free objects in a MAG_AUTO window whose FWHM lies
           within 0.2 px of the mode of a looser, size-limited preselection
-          (FWHM 0.3-1.5 arcsec at 0.187 arcsec/px). The mode estimator is an
+          (FWHM_WORLD 0.3-1.5 arcsec, angular bounds from each exposure's
+          WCS). The mode estimator is an
           iterative histogram zoom that falls back to the median below 20
           objects, so small-N behaviour changes selection on sparse CCDs.
           PSFEx's own selection is off; see psfex_candidate_vetting for what
@@ -882,8 +883,8 @@ analyses:
           MASK:star_selection.FWHM_IMAGE = ["<= mode(FWHM_IMAGE{preselect})
           + 0.2", ">= mode(FWHM_IMAGE{preselect}) - 0.2"];
           MASK:preselect.MAG_AUTO = ["> 0", "< 21"];
-          MASK:preselect.FWHM_IMAGE = ["> 0.3 / 0.187", "< 1.5 / 0.187"];
-          PLOT:fwhm_field.SCATTER = "FWHM_IMAGE{star_selection}*0.187";
+          MASK:preselect.FWHM_WORLD = ["> 0.3 / 3600", "< 1.5 / 3600"];
+          PLOT:fwhm_field.SCATTER = "FWHM_WORLD{star_selection}*3600";
           SAMPLE_AUTOSELECT = N.
         default: mode_centred_box
         options:
