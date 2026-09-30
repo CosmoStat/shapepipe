@@ -602,6 +602,7 @@ PERSIST_EXP = list(config.get("persist_exp") or [])
 PERSISTS_PSF = PSF_MODEL != "fake"
 
 
+# @sc [decision:star_selection_psf.psf_modelling_software]
 def refuse_unpersistable_psf(psf_model):
     """Refuse a PSF model whose products the persistence path cannot read.
 

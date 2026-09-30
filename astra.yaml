@@ -990,16 +990,18 @@ analyses:
       psf_modelling_software:
         label: PSF model, PSFEx per CCD or MCCD over the focal plane
         rationale: >-
-          psf_model in workflow/config.yaml's input_types: table (image sims
-          use fake) selects the exposure and tile config pair; the committed value is psfex, which fits each CCD
-          independently. MCCD (Liaudat+2021) fits one hybrid local+global
-          model over the focal plane; the completeness table treats its
-          counts as warnings because no campaign has run it. Up to the model,
-          its exposure chain matches PSFEx's: SExtractor reads the split
-          image, weight and instrument flag directly, and mask_query sits
-          between SExtractor and setools. The selected model name also flows
-          through SP_PSF in downstream inputs, so producer and consumer choices
-          must move together.
+          psf_model in workflow/config.yaml's input_types: table selects the
+          exposure and tile config pair and is exported as SP_PSF to the tile
+          interpolation. The committed value is psfex, which fits each split
+          CCD independently (image sims default to fake, the true PSF with no
+          exposure fit). MCCD (Liaudat+2021) fits one hybrid local+global
+          model per exposure over the focal plane. Its ShapePipe chain exists
+          and matches PSFEx's up to the model: SExtractor reads the split
+          image, weight and instrument flag, then mask_query, then setools.
+          However, the Snakefile refuses psf_model=mccd at parse time, because
+          exp_persist and star_cat_merge read only PSFEx products. Choosing
+          MCCD therefore needs MCCD-aware persistence and star-catalogue
+          merging first.
           Values:
           INSTANCE.N_COMP_LOC = 8;
           INSTANCE.D_COMP_GLOB = 8;
@@ -1020,6 +1022,9 @@ analyses:
             insights: [guinot22_psfex_software, farrens22_two_psf_methods]
           mccd_focal_plane:
             label: MCCD hybrid local+global focal-plane model
+            description: >-
+              Refused by workflow/Snakefile (refuse_unpersistable_psf) until
+              persistence and star-catalogue merging read MCCD products.
             insights: [farrens22_two_psf_methods]
       psf_model_complexity:
         label: PSFEx pixel basis with degree-2 spatial variation per CCD
