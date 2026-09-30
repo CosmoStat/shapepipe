@@ -331,7 +331,7 @@ TILE_NGMIX_RANGES = (
 # vignets manifest would break clean_exposure, which keys reclamation
 # eligibility on exactly that file.
 TILE_VIGNET_REQUIRED = r"""
-if [ ! -d "$NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output" ]; then
+if [ ! -d "$NGMIX_VIGNET_DIR/vignetmaker_runner/output" ]; then
   echo "tile_shape: the node-local vignette store is missing." >&2
   echo "  expected: $NGMIX_VIGNET_DIR" >&2
   echo "  This means tile_vignets did NOT run in this group job — its manifest" >&2
