@@ -302,7 +302,8 @@ analyses:
           ugriz mask ladder, one boolean map per bit (nside 131072, True =
           masked), labelled n<bit>: eleven MASK_n* columns, matched line for
           line in final_cat.param. The numeric bit identifies the column;
-          source labels such as HSC z (n256) and Pan-STARRS z2 (n2048) describe
+          source labels such as faint star halos (n1, bit 0), bright star halos
+          (n2, bit 1), HSC z (n256) and Pan-STARRS z2 (n2048) describe
           the maps. Nothing in the pipeline cuts on them
           (mask_default_cut).
         default: catalogue_columns
@@ -321,7 +322,8 @@ analyses:
         label: Default external-mask cut — the six r-mask bits of the MASK_n* ladder
         rationale: >-
           make_cat writes one boolean MASK_n<bit> column per map in
-          MASK_EXT_PATHS (11 bits: star halos n1/n2, star body n4, manual n8,
+          MASK_EXT_PATHS (11 bits: faint star halos n1, bright star halos n2,
+          star body n4, manual n8,
           per-band no-data footprints n16..n256 (n256 is HSC z), MaxiMask
           n1024, Pan-STARRS z-band footprint n2048 (z2)) and cuts nothing;
           the cut is the consumer's
@@ -333,9 +335,10 @@ analyses:
           interior coverage granules; on 4M random footprint pixels the only
           difference is 0.46% of area at footprint-edge granules where mask_r
           has no coverage and reads unmasked. Every bit is needed: dropping
-          any one leaves mask_r-only area (n2 most, 4.4%). The August
-          regeneration may have swapped n1 and n2, which is why they are
-          used only together. The DR6 ladder MASK_EXT_PATHS points at is not
+          any one leaves mask_r-only area (n2 most, 4.4%). The halo names
+          follow the producer schema: n1 (bit 0, value 1) is faint star halos
+          and n2 (bit 1, value 2) is bright star halos. Both enter the default
+          selection. The DR6 ladder MASK_EXT_PATHS points at is not
           yet measured against the Feb-2025 one.
         default: r_mask_bits
         options:

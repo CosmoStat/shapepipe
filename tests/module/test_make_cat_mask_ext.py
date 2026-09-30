@@ -16,8 +16,8 @@ import pytest
 
 healsparse = pytest.importorskip("healsparse")
 
-from shapepipe.modules.make_cat_package import make_cat
-from shapepipe.pipeline import file_io
+from shapepipe.modules.make_cat_package import make_cat  # noqa: E402
+from shapepipe.pipeline import file_io  # noqa: E402
 
 
 class _NullLogger:
@@ -49,7 +49,7 @@ def _make_map(value, dtype=np.int16, sentinel=-1):
 
 
 def _write_final_cat(path):
-    """Write a synthetic final_cat FITS with a RESULTS ext of known positions."""
+    """Write a final_cat FITS with a RESULTS extension of known positions."""
     data = np.empty(
         len(RA),
         dtype=[
@@ -127,3 +127,36 @@ def test_mask_ext_absent_is_noop(tmp_path):
 
     assert cols == {"NUMBER", "XWIN_WORLD", "YWIN_WORLD"}
     assert not any(name.startswith("MASK_") for name in cols)
+
+
+def test_boolean_halo_maps_preserve_bit_identity(tmp_path):
+    """n1 faint and n2 bright halo columns preserve separate boolean maps."""
+    paths = {}
+    for label, values in (
+        ("n2", [False, True, True]),
+        ("n1", [True, False, True]),
+    ):
+        smap = healsparse.HealSparseMap.make_empty(
+            NSIDE_COVERAGE, NSIDE_SPARSE, np.bool_, sentinel=False
+        )
+        smap.update_values_pos(
+            RA[:3], DEC[:3], np.array(values, dtype=bool), lonlat=True
+        )
+        path = tmp_path / f"mask_{label}.hsp"
+        smap.write(str(path))
+        paths[label] = str(path)
+
+    cat_path = tmp_path / "final_cat-halos.fits"
+    _write_final_cat(cat_path)
+    cat = file_io.FITSCatalogue(
+        str(cat_path), open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
+    )
+    make_cat.save_mask_ext_data(cat, paths, _NullLogger())
+
+    cat.open()
+    data = cat.get_data()
+    npt.assert_array_equal(data["MASK_n1"], [True, False, True, False])
+    npt.assert_array_equal(data["MASK_n2"], [False, True, True, False])
+    assert data["MASK_n1"].dtype == np.dtype(bool)
+    assert data["MASK_n2"].dtype == np.dtype(bool)
+    cat.close()

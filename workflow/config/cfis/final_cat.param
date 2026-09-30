@@ -28,7 +28,8 @@ FLAGS
 # Its replacement is make_cat's per-bit MASK_n<bit> columns, queried from the
 # sky-fixed UNIONS healsparse maps named by MASK_EXT_PATHS in
 # config_tile_Mc.ini — which carries the bit table and the caveats. The numeric
-# bit identifies each column; source labels include HSC z for n256 and
+# bit identifies each column: n1 is faint star halos (bit 0, value 1), n2 is
+# bright star halos (bit 1, value 2); source labels include HSC z for n256 and
 # Pan-STARRS z-band (z2) for n2048. Those 11
 # names and these 11 lines must stay in step: a name here that make_cat did not
 # write fails every merge, on every campaign.
