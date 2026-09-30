@@ -62,8 +62,8 @@ def ngmix_runner(
     zero_point = config.getfloat(module_config_sec, "MAG_ZP")
 
     # Pixel scale -- optional override. When absent (or non-positive) it is
-    # derived from the image WCS inside Ngmix, so it cannot drift from the
-    # pixels. Only the centroid-prior width and noise window use it.
+    # derived from the merged image WCS inside Ngmix. In the pipeline fit it
+    # sets only the centroid-prior width; each fit Jacobian uses its full WCS.
     if config.has_option(module_config_sec, "PIXEL_SCALE"):
         pixel_scale = config.getfloat(module_config_sec, "PIXEL_SCALE")
     else:

@@ -674,41 +674,42 @@ class Vignet():
             self.bkg_rms_vign_cat.close()
 
 def pixel_scale_from_wcs(f_wcs_file):
-    """Representative pixel scale (arcsec) from the tile's image WCS.
+    """Mean pixel scale (arcsec) over every CCD WCS in the merged headers.
 
-    The ngmix fit builds each object's Jacobian from the full per-epoch WCS,
-    so this scalar only sets the centroid-prior width and the noise-window
-    scale (see :func:`get_prior`, :func:`get_noise`). A single value read from
-    the astrometry is therefore sufficient -- and, unlike a hard-coded config
-    constant, it cannot silently drift from the pixels it describes (this
-    mirrors SExtractor's ``PIXEL_SCALE 0`` convention).
+    ``f_wcs_file`` is the ``merge_headers`` store: an optional ``TILE_ID``
+    string, then one entry per exposure holding the object ndarray written by
+    ``split_exp`` -- one ``{"WCS": astropy.wcs.WCS, "header": str}`` dict per
+    CCD. Both projected-plane axes of every CCD WCS are averaged. The ngmix
+    fit builds each object's Jacobian from its full per-epoch WCS, so this
+    scalar sets only the centroid-prior width (see :func:`get_prior`).
 
     Parameters
     ----------
     f_wcs_file : dict-like
-        Mapping ``exposure -> {ccd -> {"WCS": astropy.wcs.WCS, ...}}`` (the
-        merged single-exposure headers opened by :class:`Vignet`).
+        Merged single-exposure headers opened by :class:`Vignet`.
 
     Returns
     -------
     float
-        Pixel scale in arcsec, averaged over the two axes of the first WCS.
+        Pixel scale in arcsec.
 
     Raises
     ------
     ValueError
-        If no WCS can be found in ``f_wcs_file``.
+        If ``f_wcs_file`` holds no CCD WCS.
     """
-    for exp_name in f_wcs_file:
-        for ccd_dict in f_wcs_file[exp_name].values():
-            # proj_plane_pixel_scales returns deg/pixel per world axis; the
-            # two axes are equal to sub-per-mille for survey astrometry.
-            scales = proj_plane_pixel_scales(ccd_dict["WCS"])
-            return float(np.mean(scales) * 3600.0)
-    raise ValueError(
-        "cannot derive PIXEL_SCALE from the WCS: the merged single-exposure "
-        "headers file contains no exposures"
-    )
+    scales = [
+        proj_plane_pixel_scales(ccd["WCS"])
+        for key, exposure in f_wcs_file.items()
+        if key != "TILE_ID"
+        for ccd in exposure
+    ]
+    if not scales:
+        raise ValueError(
+            "cannot derive PIXEL_SCALE from the WCS: the merged headers file "
+            "contains no CCD WCS"
+        )
+    return float(np.mean(scales) * 3600.0)
 
 
 class Ngmix(object):
@@ -873,9 +874,9 @@ class Ngmix(object):
 
         # Pixel scale: an explicit positive PIXEL_SCALE overrides; otherwise
         # derive it from the image WCS so it can never drift from the pixels
-        # (mirrors SExtractor's ``PIXEL_SCALE 0`` convention). Only the
-        # centroid-prior width and noise window use it -- the fit Jacobian is
-        # built per object from the full WCS.
+        # (mirrors SExtractor's ``PIXEL_SCALE 0`` convention). In the pipeline
+        # fit it sets only the centroid-prior width; each fit Jacobian is built
+        # per object from the full WCS.
         if pixel_scale is None or pixel_scale <= 0:
             self._pixel_scale = pixel_scale_from_wcs(
                 self._vignet_cat.f_wcs_file

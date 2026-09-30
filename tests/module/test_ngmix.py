@@ -8,7 +8,7 @@ import numpy.testing as npt
 import pytest
 from sqlitedict import SqliteDict
 
-from shapepipe.modules.ngmix_package.ngmix import Ngmix
+from shapepipe.modules.ngmix_package.ngmix import Ngmix, pixel_scale_from_wcs
 
 rotated_ccds = st.integers(max_value=17) | st.sampled_from([36, 37])
 unrotated_ccds = st.integers(min_value=18, max_value=40).filter(
@@ -24,6 +24,45 @@ class _NullLogger:
 def _empty_sqlite(path):
     db = SqliteDict(path)
     db.close()
+
+
+def test_pixel_scale_from_wcs_reads_merged_headers(tmp_path):
+    """Average every CCD WCS of the store split_exp + merge_headers write.
+
+    That store opens with a TILE_ID string and holds each exposure as an
+    object ndarray of per-CCD ``{"WCS", "header"}`` dicts.
+    """
+    from shapepipe.modules.merge_headers_package.merge_headers import (
+        merge_headers,
+    )
+    from shapepipe.modules.split_exp_package.split_exp import SplitExposures
+
+    header_paths = []
+    for exp_id, scales in (("1000001", (0.185, 0.186)), ("1000002", (0.186, 0.187))):
+        ccds = []
+        for scale in scales:
+            header = fits.Header()
+            header["CTYPE1"], header["CTYPE2"] = "RA---TAN", "DEC--TAN"
+            header["CRPIX1"] = header["CRPIX2"] = 4.0
+            header["CRVAL1"], header["CRVAL2"] = 180.0, 30.0
+            header["CD1_1"], header["CD2_2"] = -scale / 3600, scale / 3600
+            ccds.append(fits.ImageHDU(np.zeros((8, 8), "f4"), header))
+        exp_path = tmp_path / f"{exp_id}p.fits"
+        fits.HDUList([fits.PrimaryHDU(), *ccds]).writeto(exp_path)
+        SplitExposures(
+            input_file_list=[str(exp_path)],
+            output_dir=str(tmp_path),
+            file_number_string=f"-{exp_id}",
+            output_suffix=["image"],
+            n_hdu=len(ccds),
+        ).process()
+        header_paths.append((str(tmp_path / f"headers-{exp_id}.npy"),))
+
+    merge_headers(header_paths, str(tmp_path), tile_number="-180-030")
+
+    with SqliteDict(str(tmp_path / "log_exp_headers-180-030.sqlite")) as merged:
+        assert list(merged) == ["TILE_ID", "1000001", "1000002"]
+        assert pixel_scale_from_wcs(merged) == pytest.approx(0.186, rel=1e-6)
 
 
 def test_ngmix_accepts_optional_background_rms_vignet(tmp_path):
