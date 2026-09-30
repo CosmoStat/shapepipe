@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="28 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="30 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -616,7 +616,10 @@ galaxies for weak-lensing post-processing. This includes galaxy detection and
 basic measurement parameters, the PSF model at galaxy positions, and the
 shape measurement. Every detected object is kept: the catalogue carries no
 star/galaxy classification, which is done downstream. Each object is
-tagged with its source tile via the <code class="docutils literal notranslate"><span class="pre">TILE_ID</span></code> column; objects duplicated
+tagged with its source tile via the <code class="docutils literal notranslate"><span class="pre">TILE_ID</span></code> column and carries the
+survey-wide object ID <code class="docutils literal notranslate"><span class="pre">TILE_UNIQUE_ID</span> <span class="pre">=</span> <span class="pre">tile_id</span> <span class="pre">*</span> <span class="pre">10**6</span> <span class="pre">+</span> <span class="pre">NUMBER</span></code>
+(<code class="docutils literal notranslate"><span class="pre">tile_id</span> <span class="pre">=</span> <span class="pre">RRR</span> <span class="pre">*</span> <span class="pre">1000</span> <span class="pre">+</span> <span class="pre">DDD</span></code>, see
+<a class="reference internal" href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_unique_id" title="shapepipe.utilities.cfis.get_tile_unique_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">shapepipe.utilities.cfis.get_tile_unique_id()</span></code></a>); objects duplicated
 across overlapping tiles are not deduplicated here, and are left to
 downstream selection.</p>
 </section>
@@ -745,7 +748,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 28 Sep, 2026.
+  Last updated on 30 Sep, 2026.
   <br/>
 </p>
   </div>

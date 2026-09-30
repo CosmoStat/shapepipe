@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="28 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="30 Sep, 2026"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -574,7 +574,7 @@
     <span class="n">get_type_flags</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">mask_query</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">cfis</span><span class="p">,</span> <span class="n">mask_query</span>
 
 
 <div class="viewcode-block" id="get_output_name">
@@ -664,7 +664,11 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">save_sextractor_data</span><span class="p">(</span><span class="n">final_cat_file</span><span class="p">,</span> <span class="n">sexcat_path</span><span class="p">,</span> <span class="n">remove_vignet</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Save SExtractor Data.</span>
 
-<span class="sd">    Save the SExtractor catalogue into the final one.</span>
+<span class="sd">    Save the SExtractor catalogue into the final one, adding the tile as</span>
+<span class="sd">    ``TILE_ID`` (float ``RRR.DDD``) and the survey-wide object ID</span>
+<span class="sd">    ``TILE_UNIQUE_ID`` (:func:`shapepipe.utilities.cfis.get_tile_unique_id`</span>
+<span class="sd">    of the tile and ``NUMBER``). The tile is read from the catalogue's file</span>
+<span class="sd">    name, e.g. ``sexcat-301-279.fits``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -687,22 +691,19 @@
     <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sexcat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">())</span>
     <span class="k">if</span> <span class="n">remove_vignet</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">remove_field_name</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"VIGNET"</span><span class="p">)</span>
-
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ext_name</span><span class="o">=</span><span class="s2">"RESULTS"</span><span class="p">)</span>
-
     <span class="n">cat_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-    <span class="n">tile_id</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
-        <span class="s2">"."</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-            <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"-"</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sexcat_path</span><span class="p">)[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">])[</span>
-                <span class="mi">1</span><span class="p">:</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
+    <span class="n">tile_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">sexcat_path</span><span class="p">)</span>
+    <span class="n">nix</span><span class="p">,</span> <span class="n">niy</span> <span class="o">=</span> <span class="n">cfis</span><span class="o">.</span><span class="n">get_tile_number</span><span class="p">(</span><span class="n">tile_name</span><span class="p">)</span>
+    <span class="n">tile_id_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">cat_size</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">nix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">niy</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
+    <span class="n">unique_id</span> <span class="o">=</span> <span class="n">cfis</span><span class="o">.</span><span class="n">get_tile_unique_id</span><span class="p">(</span>
+        <span class="n">cfis</span><span class="o">.</span><span class="n">get_tile_id</span><span class="p">(</span><span class="n">tile_name</span><span class="p">),</span> <span class="n">data</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">]</span>
     <span class="p">)</span>
-    <span class="n">tile_id_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">cat_size</span><span class="p">)</span> <span class="o">*</span> <span class="n">tile_id</span>
 
+    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ext_name</span><span class="o">=</span><span class="s2">"RESULTS"</span><span class="p">)</span>
     <span class="n">final_cat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
     <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"TILE_ID"</span><span class="p">,</span> <span class="n">tile_id_array</span><span class="p">)</span>
+    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"TILE_UNIQUE_ID"</span><span class="p">,</span> <span class="n">unique_id</span><span class="p">)</span>
 
     <span class="n">sexcat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -1318,7 +1319,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 28 Sep, 2026.
+  Last updated on 30 Sep, 2026.
   <br/>
 </p>
   </div>

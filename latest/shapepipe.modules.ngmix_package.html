@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="28 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="30 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -634,13 +634,14 @@ built per object from the full WCS.</p>
 <dt>SAVE_BATCH<span class="classifier">int, optional</span></dt><dd><p>Save the output catalogue in batches of this size; default is <code class="docutils literal notranslate"><span class="pre">-1</span></code>
 (no batch saving)</p>
 </dd>
-<dt>ID_OBJ_MIN<span class="classifier">int</span></dt><dd><p>ID of first galaxy object to be processed; not used if set to <code class="docutils literal notranslate"><span class="pre">-1</span></code>
-(default). Environment variables are expanded, so an orchestrator can
-set the object range per chunk, for example
-<code class="docutils literal notranslate"><span class="pre">ID_OBJ_MIN</span> <span class="pre">=</span> <span class="pre">$SP_NGMIX_ID_OBJ_MIN</span></code>.</p>
+<dt>ID_OBJ_MIN<span class="classifier">int</span></dt><dd><p>First tile-catalogue row to process, as a 1-based row position (not a
+<code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> value); not used if set to <code class="docutils literal notranslate"><span class="pre">-1</span></code> (default). Environment
+variables are expanded, so an orchestrator can set the row range per
+chunk, for example <code class="docutils literal notranslate"><span class="pre">ID_OBJ_MIN</span> <span class="pre">=</span> <span class="pre">$NGMIX_ROW_MIN</span></code>.</p>
 </dd>
-<dt>ID_OBJ_MAX<span class="classifier">int</span></dt><dd><p>ID of last galaxy object to be processed; not used if set to <code class="docutils literal notranslate"><span class="pre">-1</span></code>
-(default). Environment variables are expanded, as for <code class="docutils literal notranslate"><span class="pre">ID_OBJ_MIN</span></code>.</p>
+<dt>ID_OBJ_MAX<span class="classifier">int</span></dt><dd><p>Last tile-catalogue row to process (1-based, inclusive); not used if
+set to <code class="docutils literal notranslate"><span class="pre">-1</span></code> (default). Environment variables are expanded, as for
+<code class="docutils literal notranslate"><span class="pre">ID_OBJ_MIN</span></code>.</p>
 </dd>
 <dt>BKG_RMS_VIGNET_PATH<span class="classifier">str, optional</span></dt><dd><p>Path to a <code class="docutils literal notranslate"><span class="pre">background_rms_vignet*.sqlite</span></code> file produced by
 <code class="docutils literal notranslate"><span class="pre">vignetmaker_runner</span></code>. The string may contain
@@ -681,6 +682,7 @@ and CCD (<code class="docutils literal notranslate"><span class="pre">ngmix.posi
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.write_empty_tile_output"><code class="docutils literal notranslate"><span class="pre">write_empty_tile_output()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.check_wcs_centroid_offset"><code class="docutils literal notranslate"><span class="pre">check_wcs_centroid_offset()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">get_prior()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.chunk_rows"><code class="docutils literal notranslate"><span class="pre">chunk_rows()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="docutils literal notranslate"><span class="pre">position_seed()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Tile_cat"><code class="docutils literal notranslate"><span class="pre">Tile_cat</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data"><code class="docutils literal notranslate"><span class="pre">Tile_cat.get_data()</span></code></a></li>
@@ -809,7 +811,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 28 Sep, 2026.
+  Last updated on 30 Sep, 2026.
   <br/>
 </p>
   </div>

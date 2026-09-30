@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="28 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="30 Sep, 2026"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -1003,6 +1003,35 @@
 
 
 
+<div class="viewcode-block" id="chunk_rows">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.chunk_rows">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">chunk_rows</span><span class="p">(</span><span class="n">n_obj</span><span class="p">,</span> <span class="n">row_min</span><span class="p">,</span> <span class="n">row_max</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Catalogue rows of one ngmix chunk.</span>
+
+<span class="sd">    A chunk is a closed range of 1-based row positions in the tile</span>
+<span class="sd">    catalogue, independent of the ``NUMBER`` values those rows carry, so a</span>
+<span class="sd">    partition of ``1..n_obj`` covers every object once however ``NUMBER``</span>
+<span class="sd">    is ordered or spaced. A bound ``&lt;= 0`` is unbounded on that side.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_obj : int</span>
+<span class="sd">        Number of rows in the tile catalogue</span>
+<span class="sd">    row_min, row_max : int</span>
+<span class="sd">        First and last row of the chunk (1-based, inclusive)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    range</span>
+<span class="sd">        0-based row indices of the chunk</span>
+
+<span class="sd">    """</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">row_min</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">row_min</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">stop</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">row_max</span><span class="p">,</span> <span class="n">n_obj</span><span class="p">)</span> <span class="k">if</span> <span class="n">row_max</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">n_obj</span>
+    <span class="k">return</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">))</span></div>
+
+
+
 <div class="viewcode-block" id="position_seed">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.position_seed">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">position_seed</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">ccd</span><span class="p">):</span>
@@ -1011,7 +1040,8 @@
 <span class="sd">    Position seeding gives the same object the same RNG stream in each image</span>
 <span class="sd">    branch, provided its sky position falls in the same seed box. It also makes</span>
 <span class="sd">    the result independent of how the tile is split into</span>
-<span class="sd">    ``ID_OBJ_MIN``/``ID_OBJ_MAX`` chunks, which is why it is now the only mode.</span>
+<span class="sd">    ``ID_OBJ_MIN``/``ID_OBJ_MAX`` row chunks, which is why it is now the only</span>
+<span class="sd">    mode.</span>
 
 <span class="sd">    Box math (kept exactly as Fabian's issue #796)::</span>
 
@@ -1317,11 +1347,11 @@
 <span class="sd">        Save output catalogue in batches of this size; detaul is ``-1`` (no</span>
 <span class="sd">        batch save)</span>
 <span class="sd">    id_obj_min : int, optional</span>
-<span class="sd">        First galaxy ID to process, not used if the value is set to ``-1``;</span>
-<span class="sd">        the default is ``-1``</span>
+<span class="sd">        First catalogue row to process (1-based, see :func:`chunk_rows`),</span>
+<span class="sd">        not used if the value is set to ``-1``; the default is ``-1``</span>
 <span class="sd">    id_obj_max : int, optional</span>
-<span class="sd">        Last galaxy ID to process, not used if the value is set to ``-1``;</span>
-<span class="sd">        the default is ``-1``</span>
+<span class="sd">        Last catalogue row to process (1-based, inclusive), not used if the</span>
+<span class="sd">        value is set to ``-1``; the default is ``-1``</span>
 <span class="sd">    centroid_source : {"wcs", "hsm"}, optional</span>
 <span class="sd">        How to place the galaxy Jacobian origin for the centroid prior. The</span>
 <span class="sd">        default ``"wcs"`` places it at the coadd centroid: the sub-pixel</span>
@@ -1885,11 +1915,11 @@
         <span class="n">count_batch</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">saved_batch_cumul</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="k">for</span> <span class="n">i_tile</span><span class="p">,</span> <span class="n">obj_id</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">obj_id</span><span class="p">):</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_min</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">obj_id</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_min</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">obj_id</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span><span class="p">:</span>
-                <span class="k">continue</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">chunk_rows</span><span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">obj_id</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_min</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i_tile</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="n">obj_id</span> <span class="o">=</span> <span class="n">tile_cat</span><span class="o">.</span><span class="n">obj_id</span><span class="p">[</span><span class="n">i_tile</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">id_first</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
                 <span class="n">id_first</span> <span class="o">=</span> <span class="n">obj_id</span>
             <span class="n">id_last</span> <span class="o">=</span> <span class="n">obj_id</span>
@@ -3122,7 +3152,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 28 Sep, 2026.
+  Last updated on 30 Sep, 2026.
   <br/>
 </p>
   </div>

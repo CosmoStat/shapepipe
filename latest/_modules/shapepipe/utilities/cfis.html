@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="28 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="30 Sep, 2026"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -1163,8 +1163,8 @@
 <span class="sd">        tile number for x and tile number for y</span>
 
 <span class="sd">    """</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(\d</span><span class="si">{3}</span><span class="s2">)[\.-](\d</span><span class="si">{3}</span><span class="s2">)"</span><span class="p">,</span> <span class="n">tile_name</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(?&lt;!\d)(\d</span><span class="si">{3}</span><span class="s2">)[\.-](\d</span><span class="si">{3}</span><span class="s2">)(?!\d)"</span><span class="p">,</span> <span class="n">tile_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"Image name '</span><span class="si">{</span><span class="n">tile_name</span><span class="si">}</span><span class="s2">' does not match tile name syntax"</span>
         <span class="p">)</span>
@@ -1202,6 +1202,103 @@
         <span class="n">niy_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">niy</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">nix_list</span><span class="p">,</span> <span class="n">niy_list</span></div>
+
+
+
+<span class="c1"># Survey-wide object ID: ``tile_id * TILE_UNIQUE_ID_BASE + NUMBER``, with</span>
+<span class="c1"># ``tile_id = RRR * 1000 + DDD``. Assumes fewer than 10**6 objects per tile.</span>
+<span class="n">TILE_UNIQUE_ID_BASE</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span>
+
+
+<div class="viewcode-block" id="get_tile_id">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_id">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_tile_id</span><span class="p">(</span><span class="n">tile_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Get Tile ID.</span>
+
+<span class="sd">    Return the integer tile ID ``RRR * 1000 + DDD`` of a tile, where</span>
+<span class="sd">    ``RRR`` and ``DDD`` are the 3-digit tile numbers (see</span>
+<span class="sd">    :func:`get_tile_number`).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tile_name : str</span>
+<span class="sd">        Tile name or file-number string, e.g. ``'CFIS.301.279.r'`` or</span>
+<span class="sd">        ``'-301-279'``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        Tile ID, e.g. ``301279``</span>
+
+<span class="sd">    """</span>
+    <span class="n">nix</span><span class="p">,</span> <span class="n">niy</span> <span class="o">=</span> <span class="n">get_tile_number</span><span class="p">(</span><span class="n">tile_name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">nix</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">niy</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_tile_unique_id">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_unique_id">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_tile_unique_id</span><span class="p">(</span><span class="n">tile_id</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Get Tile Unique ID.</span>
+
+<span class="sd">    Return the survey-wide object ID ``tile_id * 10**6 + number``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tile_id : int</span>
+<span class="sd">        Tile ID from :func:`get_tile_id`</span>
+<span class="sd">    number : int or array_like</span>
+<span class="sd">        Object number in the tile's input detection catalogue</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    CfisError</span>
+<span class="sd">        if ``tile_id`` is outside ``[0, 10**6)`` or any ``number`` is</span>
+<span class="sd">        outside ``[0, 10**6)``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int or numpy.ndarray</span>
+<span class="sd">        Unique ID(s), int64</span>
+
+<span class="sd">    """</span>
+    <span class="n">number</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">tile_id</span> <span class="o">&lt;</span> <span class="n">TILE_UNIQUE_ID_BASE</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"tile_id </span><span class="si">{</span><span class="n">tile_id</span><span class="si">}</span><span class="s2"> outside [0, </span><span class="si">{</span><span class="n">TILE_UNIQUE_ID_BASE</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">number</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="p">(</span>
+        <span class="n">number</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">number</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">TILE_UNIQUE_ID_BASE</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Object number outside [0, </span><span class="si">{</span><span class="n">TILE_UNIQUE_ID_BASE</span><span class="si">}</span><span class="s2">) in tile "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">tile_id</span><span class="si">}</span><span class="s2">: range [</span><span class="si">{</span><span class="n">number</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">number</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s2">]"</span>
+        <span class="p">)</span>
+    <span class="n">unique_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">tile_id</span><span class="p">)</span> <span class="o">*</span> <span class="n">TILE_UNIQUE_ID_BASE</span> <span class="o">+</span> <span class="n">number</span>
+    <span class="k">return</span> <span class="n">unique_id</span><span class="p">[()]</span> <span class="k">if</span> <span class="n">unique_id</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">unique_id</span></div>
+
+
+
+<div class="viewcode-block" id="split_tile_unique_id">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.split_tile_unique_id">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">split_tile_unique_id</span><span class="p">(</span><span class="n">unique_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Split Tile Unique ID.</span>
+
+<span class="sd">    Inverse of :func:`get_tile_unique_id`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    unique_id : int or array_like</span>
+<span class="sd">        Unique ID(s)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        tile ID(s) and object number(s)</span>
+
+<span class="sd">    """</span>
+    <span class="n">unique_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">unique_id</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">divmod</span><span class="p">(</span><span class="n">unique_id</span><span class="p">,</span> <span class="n">TILE_UNIQUE_ID_BASE</span><span class="p">)</span></div>
 
 
 
@@ -2120,7 +2217,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 28 Sep, 2026.
+  Last updated on 30 Sep, 2026.
   <br/>
 </p>
   </div>

@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="28 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="30 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -571,9 +571,10 @@
             <nav aria-label="Page">
                 <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._build_ldac_imhead"><code class="docutils literal notranslate"><span class="pre">_build_ldac_imhead()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._centre_pixels"><code class="docutils literal notranslate"><span class="pre">_centre_pixels()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.relabel_seg"><code class="docutils literal notranslate"><span class="pre">relabel_seg()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._extract_vignets"><code class="docutils literal notranslate"><span class="pre">_extract_vignets()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._build_ldac_objects"><code class="docutils literal notranslate"><span class="pre">_build_ldac_objects()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._tile_id_from_file_number_string"><code class="docutils literal notranslate"><span class="pre">_tile_id_from_file_number_string()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.make_ldac_from_ascii"><code class="docutils literal notranslate"><span class="pre">make_ldac_from_ascii()</span></code></a></li>
 </ul>
             </nav>
@@ -618,12 +619,54 @@ the single exposures that contributed to the tile.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._centre_pixels">
+<span class="sig-name descname"><span class="pre">_centre_pixels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/read_ext_sexcat_package/read_ext_sexcat.html#_centre_pixels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._centre_pixels" title="Link to this definition">#</a></dt>
+<dd><p>0-based (column, row) of the pixel holding each 1-based position.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.relabel_seg">
+<span class="sig-name descname"><span class="pre">relabel_seg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fallback_radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/read_ext_sexcat_package/read_ext_sexcat.html#relabel_seg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.relabel_seg" title="Link to this definition">#</a></dt>
+<dd><p>Relabel a segmentation map into a catalogue’s NUMBER.</p>
+<p>Each object claims, in NUMBER order and first come first served, the
+footprint its centre pixel falls in; that footprint becomes its NUMBER.
+Footprints nobody claims become <code class="docutils literal notranslate"><span class="pre">NEIGHBOUR_LABEL</span></code>; sky stays 0. An
+object on sky or on an already-claimed footprint gets a disc of radius
+<code class="docutils literal notranslate"><span class="pre">fallback_radius</span></code> of its NUMBER, and every object on the image ends
+holding its own centre pixel (the lower NUMBER wins a shared pixel).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seg</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Segmentation map, 0 for sky and one positive label per footprint</p></li>
+<li><p><strong>number</strong> (<em>array_like</em>) – Catalogue <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code></p></li>
+<li><p><strong>x_image</strong> (<em>array_like</em>) – 1-based pixel positions on the grid of <code class="docutils literal notranslate"><span class="pre">seg</span></code></p></li>
+<li><p><strong>y_image</strong> (<em>array_like</em>) – 1-based pixel positions on the grid of <code class="docutils literal notranslate"><span class="pre">seg</span></code></p></li>
+<li><p><strong>fallback_radius</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Radius of the disc painted for an object without a footprint</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray</em> – Relabelled map, <code class="docutils literal notranslate"><span class="pre">int32</span></code></p></li>
+<li><p><em>dict</em> – Counts of the claim outcomes <code class="docutils literal notranslate"><span class="pre">matched</span></code>, <code class="docutils literal notranslate"><span class="pre">unclaimed</span></code> (on sky),
+<code class="docutils literal notranslate"><span class="pre">shared</span></code> and <code class="docutils literal notranslate"><span class="pre">off_image</span></code>, which partition the catalogue, plus
+<code class="docutils literal notranslate"><span class="pre">shared_pixel</span></code> (objects rounding to a lower NUMBER’s pixel)</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>detection.catalogue_neighbour_marking]</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._extract_vignets">
-<span class="sig-name descname"><span class="pre">_extract_vignets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stamp_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/read_ext_sexcat_package/read_ext_sexcat.html#_extract_vignets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._extract_vignets" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">_extract_vignets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stamp_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/read_ext_sexcat_package/read_ext_sexcat.html#_extract_vignets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._extract_vignets" title="Link to this definition">#</a></dt>
 <dd><p>Extract postage stamps from a tile image array.</p>
 <p>For each object position, a <code class="docutils literal notranslate"><span class="pre">stamp_size</span> <span class="pre">x</span> <span class="pre">stamp_size</span></code> cutout is
-extracted.  Objects whose stamp falls partially outside the image are
-padded with zeros, matching SExtractor behaviour.</p>
+extracted, centred on the pixel holding the position. Pixels off the
+image are set to <code class="docutils literal notranslate"><span class="pre">BIG</span></code>, as SExtractor does. With a segmentation map in
+the catalogue’s numbering (<a class="reference internal" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.relabel_seg" title="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.relabel_seg"><code class="xref py py-func docutils literal notranslate"><span class="pre">relabel_seg()</span></code></a>), pixels on any footprint
+other than the object’s own are set to <code class="docutils literal notranslate"><span class="pre">BIG</span></code> too, which is how
+SExtractor’s VIGNET marks neighbours.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -631,26 +674,28 @@ padded with zeros, matching SExtractor behaviour.</p>
 <li><p><strong>x_pos</strong> (<em>array_like</em>) – X pixel positions, 1-based (SExtractor convention)</p></li>
 <li><p><strong>y_pos</strong> (<em>array_like</em>) – Y pixel positions, 1-based (SExtractor convention)</p></li>
 <li><p><strong>stamp_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Side length of the square postage stamp (should be odd)</p></li>
+<li><p><strong>seg</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Segmentation map on the image grid, labelled with <code class="docutils literal notranslate"><span class="pre">number</span></code></p></li>
+<li><p><strong>number</strong> (<em>array_like</em><em>, </em><em>optional</em>) – Catalogue <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>, required with <code class="docutils literal notranslate"><span class="pre">seg</span></code></p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Array of shape <code class="docutils literal notranslate"><span class="pre">(n_obj,</span> <span class="pre">stamp_size,</span> <span class="pre">stamp_size)</span></code>, dtype float32</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray</em> – Array of shape <code class="docutils literal notranslate"><span class="pre">(n_obj,</span> <span class="pre">stamp_size,</span> <span class="pre">stamp_size)</span></code>, dtype float32</p></li>
+<li><p><strong>&#64;sc [decision</strong> (<em>detection.catalogue_neighbour_marking]</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._build_ldac_objects">
-<span class="sig-name descname"><span class="pre">_build_ldac_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vignets</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/read_ext_sexcat_package/read_ext_sexcat.html#_build_ldac_objects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._build_ldac_objects" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">_build_ldac_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vignets</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/read_ext_sexcat_package/read_ext_sexcat.html#_build_ldac_objects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._build_ldac_objects" title="Link to this definition">#</a></dt>
 <dd><p>Build LDAC_OBJECTS extension from an astropy table.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cat_data</strong> (<a class="reference external" href="https://docs.astropy.org/en/latest/api/astropy.table.Table.html#astropy.table.Table" title="(in Astropy v8.1)"><em>astropy.table.Table</em></a>) – Catalogue data read from the ASCII SExtractor file</p></li>
-<li><p><strong>unique_id</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – 1-D int64 array of per-object unique IDs across all tiles</p></li>
 <li><p><strong>vignets</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Array of shape <code class="docutils literal notranslate"><span class="pre">(n_obj,</span> <span class="pre">stamp_size,</span> <span class="pre">stamp_size)</span></code></p></li>
 </ul>
 </dd>
@@ -664,33 +709,8 @@ padded with zeros, matching SExtractor behaviour.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._tile_id_from_file_number_string">
-<span class="sig-name descname"><span class="pre">_tile_id_from_file_number_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/read_ext_sexcat_package/read_ext_sexcat.html#_tile_id_from_file_number_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._tile_id_from_file_number_string" title="Link to this definition">#</a></dt>
-<dd><p>Decode file-number string into a collision-free tile ID.</p>
-<p>CFIS tile file-number strings are of the form <code class="docutils literal notranslate"><span class="pre">'-RRR-DDD'</span></code> where
-<code class="docutils literal notranslate"><span class="pre">RRR</span></code> is the RA grid index and <code class="docutils literal notranslate"><span class="pre">DDD</span></code> the dec grid index (both
-3-digit).  The encoded tile_id is <code class="docutils literal notranslate"><span class="pre">RRR</span> <span class="pre">*</span> <span class="pre">1000</span> <span class="pre">+</span> <span class="pre">DDD</span></code>; the 3-digit
-assumption is an invariant of the CFIS grid, not a data assumption,
-so we assert it rather than silently overflowing.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>file_number_string</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Pipeline file-number string, e.g. <code class="docutils literal notranslate"><span class="pre">'-301-279'</span></code></p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Collision-free tile_id (e.g. <code class="docutils literal notranslate"><span class="pre">301279</span></code>)</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)">int</a></p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If either grid component exceeds three digits.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.make_ldac_from_ascii">
-<span class="sig-name descname"><span class="pre">make_ldac_from_ascii</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stamp_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">51</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/read_ext_sexcat_package/read_ext_sexcat.html#make_ldac_from_ascii"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.make_ldac_from_ascii" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">make_ldac_from_ascii</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stamp_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">51</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/read_ext_sexcat_package/read_ext_sexcat.html#make_ldac_from_ascii"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.make_ldac_from_ascii" title="Link to this definition">#</a></dt>
 <dd><p>Convert an external ASCII catalogue to FITS-LDAC format.</p>
 <p>Reads an ASCII catalogue in SExtractor format (column definitions as
 <code class="docutils literal notranslate"><span class="pre">#</span>&#160; <span class="pre">N</span>&#160; <span class="pre">NAME</span>&#160; <span class="pre">...</span></code> comment lines followed by data rows), attaches the
@@ -698,19 +718,20 @@ tile image header as an <code class="docutils literal notranslate"><span class="
 <code class="docutils literal notranslate"><span class="pre">make_post_process</span></code> can recover the contributing single exposures, and
 writes a standard FITS-LDAC file compatible with all downstream ShapePipe
 modules.</p>
-<p>A <code class="docutils literal notranslate"><span class="pre">TILE_UNIQUE_ID</span></code> column and a <code class="docutils literal notranslate"><span class="pre">VIGNET</span></code> column (postage stamps
-extracted from the tile image) are added to <code class="docutils literal notranslate"><span class="pre">LDAC_OBJECTS</span></code>.</p>
-<p>The unique ID is computed as <code class="docutils literal notranslate"><span class="pre">tile_id</span> <span class="pre">*</span> <span class="pre">10**6</span> <span class="pre">+</span> <span class="pre">NUMBER</span></code> where
-<code class="docutils literal notranslate"><span class="pre">tile_id</span></code> is derived from the tile RA/Dec grid coordinates encoded in
-<code class="docutils literal notranslate"><span class="pre">file_number_string</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">'-301-279'</span></code> → <code class="docutils literal notranslate"><span class="pre">tile_id</span> <span class="pre">=</span> <span class="pre">301279</span></code>).</p>
+<p>The input columns, <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> included, are copied unchanged; a
+<code class="docutils literal notranslate"><span class="pre">VIGNET</span></code> column (postage stamps extracted from the tile image) is
+added to <code class="docutils literal notranslate"><span class="pre">LDAC_OBJECTS</span></code>. Given the catalogue’s segmentation map, which
+shares the tile’s pixel grid, the map is relabelled to the catalogue’s
+<code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> (<a class="reference internal" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.relabel_seg" title="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.relabel_seg"><code class="xref py py-func docutils literal notranslate"><span class="pre">relabel_seg()</span></code></a>) and used to set neighbours’ pixels in each <code class="docutils literal notranslate"><span class="pre">VIGNET</span></code> to <code class="docutils literal notranslate"><span class="pre">BIG</span></code>, as
+SExtractor does.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>input_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to input ASCII catalogue in SExtractor format</p></li>
 <li><p><strong>image_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to tile image FITS file</p></li>
 <li><p><strong>output_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the output FITS-LDAC catalogue</p></li>
-<li><p><strong>file_number_string</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Pipeline file-number string, e.g. <code class="docutils literal notranslate"><span class="pre">'-301-279'</span></code></p></li>
 <li><p><strong>stamp_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Side length of the square postage stamp in pixels, default 51</p></li>
+<li><p><strong>seg_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Path to the catalogue’s segmentation map (FITS, compressed or not)</p></li>
 <li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a><em>, </em><em>optional</em>) – Pipeline logger</p></li>
 </ul>
 </dd>
@@ -767,9 +788,10 @@ extracted from the tile image) are added to <code class="docutils literal notran
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._build_ldac_imhead"><code class="docutils literal notranslate"><span class="pre">_build_ldac_imhead()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._centre_pixels"><code class="docutils literal notranslate"><span class="pre">_centre_pixels()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.relabel_seg"><code class="docutils literal notranslate"><span class="pre">relabel_seg()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._extract_vignets"><code class="docutils literal notranslate"><span class="pre">_extract_vignets()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._build_ldac_objects"><code class="docutils literal notranslate"><span class="pre">_build_ldac_objects()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._tile_id_from_file_number_string"><code class="docutils literal notranslate"><span class="pre">_tile_id_from_file_number_string()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.make_ldac_from_ascii"><code class="docutils literal notranslate"><span class="pre">make_ldac_from_ascii()</span></code></a></li>
 </ul>
   </nav></div>
@@ -804,7 +826,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 28 Sep, 2026.
+  Last updated on 30 Sep, 2026.
   <br/>
 </p>
   </div>

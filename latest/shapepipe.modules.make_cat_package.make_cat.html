@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="28 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="30 Sep, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -671,7 +671,11 @@
 <dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.save_sextractor_data">
 <span class="sig-name descname"><span class="pre">save_sextractor_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">final_cat_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sexcat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_vignet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#save_sextractor_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.save_sextractor_data" title="Link to this definition">#</a></dt>
 <dd><p>Save SExtractor Data.</p>
-<p>Save the SExtractor catalogue into the final one.</p>
+<p>Save the SExtractor catalogue into the final one, adding the tile as
+<code class="docutils literal notranslate"><span class="pre">TILE_ID</span></code> (float <code class="docutils literal notranslate"><span class="pre">RRR.DDD</span></code>) and the survey-wide object ID
+<code class="docutils literal notranslate"><span class="pre">TILE_UNIQUE_ID</span></code> (<a class="reference internal" href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_unique_id" title="shapepipe.utilities.cfis.get_tile_unique_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">shapepipe.utilities.cfis.get_tile_unique_id()</span></code></a>
+of the tile and <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>). The tile is read from the catalogue’s file
+name, e.g. <code class="docutils literal notranslate"><span class="pre">sexcat-301-279.fits</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -983,7 +987,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 28 Sep, 2026.
+  Last updated on 30 Sep, 2026.
   <br/>
 </p>
   </div>
