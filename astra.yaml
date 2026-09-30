@@ -866,14 +866,17 @@ analyses:
       star_selection_box:
         label: Stellar-locus selection, magnitude window and FWHM window around the mode
         rationale: >-
-          Stars are flag-free objects in a MAG_AUTO window whose FWHM lies
-          within 0.2 px of the mode of a looser, size-limited preselection
-          (FWHM_WORLD 0.3-1.5 arcsec, angular bounds from each exposure's
-          WCS). The mode estimator is an
-          iterative histogram zoom that falls back to the median below 20
-          objects, so small-N behaviour changes selection on sparse CCDs.
-          PSFEx's own selection is off; see psfex_candidate_vetting for what
-          PSFEx may still apply.
+          Stars are objects with FLAGS == 0 and IMAFLAGS_ISO == 0 in a
+          MAG_AUTO window whose FWHM_IMAGE lies within 0.2 px of the mode of
+          a looser, size-limited preselection (FWHM_WORLD 0.3-1.5 arcsec,
+          angular bounds from each exposure's WCS). The mode estimator is an
+          iterative histogram zoom whose first bins span the preselection's
+          full range in N/10 bins; later zooms are noise-dominated, so the
+          box centre moves with the preselection's extremes and count (3
+          added objects moved it 0.05 px on exposure 2114045p CCD 10, 74 to
+          66 stars; #928). Below 20 objects it returns the median, and with
+          none -1, which selects nothing. PSFEx's SAMPLE_AUTOSELECT is off;
+          see psfex_candidate_vetting for the cuts PSFEx still applies.
           Values:
           MASK:star_selection.FLAGS = "== 0";
           MASK:preselect.FLAGS = "== 0";
@@ -899,8 +902,9 @@ analyses:
             insights: [guinot22_psfex_preselection_off]
             excluded: true
             excluded_reason: >-
-              Disabled so that the pipeline's own star selection is the only
-              one.
+              Disabled because the pipeline does its own star selection
+              (Guinot+22); PSFEx's other SAMPLE_* cuts still apply
+              (psfex_candidate_vetting).
       psf_train_validation_split:
         label: Seeded 80/20 star split, model fit vs held-out validation
         rationale: >-
@@ -1271,7 +1275,8 @@ analyses:
           do_ngmix_metacal.metacal_pars[types] = noshear,1p,1m,2p,2m;
           do_ngmix_metacal.metacal_pars[step] = 0.01;
           do_ngmix_metacal.metacal_pars[fixnoise] = True;
-          do_ngmix_metacal.metacal_pars[use_noise_image] = True.
+          do_ngmix_metacal.metacal_pars[use_noise_image] = True;
+          NGMIX_RUNNER.METACAL_PSF = absent.
         default: five_types_step001_fitgauss
         options:
           five_types_step001_fitgauss:
@@ -1289,6 +1294,8 @@ analyses:
           CENTROID_SOURCE). Extraction and prior share one projection and one
           rounding, so they cannot disagree near a rounding tie.
           "hsm" re-centres on adaptive moments measured from the stamp.
+          Values:
+          NGMIX_RUNNER.CENTROID_SOURCE = absent.
         default: wcs
         options:
           wcs:
@@ -1332,7 +1339,8 @@ analyses:
           (BKG_SUB, on unless set False).
           Values:
           NGMIX_RUNNER.BKG_RMS_VIGNET_PATH =
-          $NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output/background_rms_vignet{file_number_string}.sqlite.
+          $NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output/background_rms_vignet{file_number_string}.sqlite;
+          NGMIX_RUNNER.BKG_SUB = absent.
         default: rms_vignet_weights
         options:
           rms_vignet_weights:

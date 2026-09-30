@@ -697,6 +697,8 @@ def pixel_scale_from_wcs(f_wcs_file):
     ------
     ValueError
         If ``f_wcs_file`` holds no CCD WCS.
+
+    @sc [decision:shape_measurement.fit_priors]
     """
     scales = [
         proj_plane_pixel_scales(ccd["WCS"])
