@@ -129,6 +129,10 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
     - ``EXP_NAME``: name of the single exposure for this epoch
     - ``CCD_N``: extension where the object was detected
 
+    @sc [decision:preparation.epoch_provenance_from_tile_history,label:invariant] duplicate-history-cards-count-once
+    Repeated HISTORY cards for one exposure yield one EPOCH HDU and count once
+    in N_EPOCH, as find_exposures' deduplicated list does.
+
     Parameters
     ----------
     cat_path: str
@@ -178,6 +182,8 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
                 f"Could not parse exposure ID from HISTORY entry: '{hist}'"
             )
         exp_list.append(m.group(1))
+
+    exp_list = list(dict.fromkeys(exp_list))
 
     obj_id = np.copy(cat.get_data()["NUMBER"])
 
