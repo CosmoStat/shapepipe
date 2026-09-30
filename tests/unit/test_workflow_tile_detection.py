@@ -200,4 +200,4 @@ def test_blend_handlings_mirror_the_ngmix_module():
         if part.strip())
     committed = _load("run_config").load(
         str(REPO_ROOT / "workflow" / "config.yaml"))
-    assert committed["blend_handling"] == "noisefill"
+    assert committed["blend_handling"] == "uberseg"

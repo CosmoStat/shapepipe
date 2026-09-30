@@ -54,15 +54,16 @@ mode. The converter writes run_sp_tile_Sx/read_ext_sexcat_runner, and the rule l
 sextractor_runner, the one path every downstream config reads; the manifest is
 tile_detect.json in both modes, so tile_vignets onwards is the same DAG.
 
-``blend_handling: uberseg`` switches ngmix from noise-filling neighbours to
-UberSeg's hard mask, which reads one coadd segmentation stamp per object from
+``blend_handling: uberseg``, the default, gives ngmix UberSeg's hard mask
+instead of its own noise-fill default; the mask reads one coadd segmentation
+stamp per object from
 the sexcat's SEG_VIGNET column, cut on the grid of the object's VIGNET.
 tile_detect writes that column in both modes: the converter cuts it from the
 catalogue's segmentation map relabelled to its NUMBER (-1 on footprints no
 object claims, 0 on sky), SExtractor mode from the SEGMENTATION check image,
 labelled by the same run's NUMBER. The switch is two prologue variables and
-nothing else (blend_env, below), so a noise-fill campaign runs exactly the
-chain it ran without the knob.
+nothing else (blend_env, below), so ``blend_handling: noisefill`` runs exactly
+the chain the committed inis run with neither variable set.
 
 There is no `tile_mask` rule, and there will not be one (PR #847). ShapePipe
 generates no masks: tiles have no instrument flag image of their own, so
@@ -484,9 +485,10 @@ rule tile_merge_headers:
 
 # --- blend handling -------------------------------------------------------
 
-# What blend_handling: uberseg exports into a stage's prologue; nothing under
-# noisefill, so noise-fill prologues (rerun triggers) are those without the
-# knob. The committed inis read each variable with its noise-fill default:
+# What blend_handling: uberseg (the default) exports into a stage's prologue;
+# nothing under noisefill, whose prologues (rerun triggers) are those the
+# committed inis need no variable for. The inis read each variable with the
+# module's own noise-fill default:
 # SEG_VIGNET = ${SP_SEG_VIGNET:-False} in config_tile_Sx.ini and
 # config_tile_Uc.ini, BLEND_HANDLING = ${SP_BLEND_HANDLING:-noisefill} in
 # config_tile_Ng_template.ini. Being in the prologue, a flip reruns

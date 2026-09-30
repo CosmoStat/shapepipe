@@ -163,10 +163,11 @@ def _committed_value(shell, config_dir, option, env, monkeypatch):
 @pytest.mark.parametrize("detection", ["sextractor", "unions_catalogue"])
 def test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg(
         tmp_path, resolve_dag, monkeypatch, detection):
-    """noisefill plans exactly the campaign without the knob; uberseg only
-    adds its two exports to tile_detect's and tile_ngmix's prologues and the
-    seg stamps' memory to tile_ngmix, and each export turns its committed
-    ini's option from the noise-fill default to the uberseg value."""
+    """A campaign without the knob plans exactly the uberseg campaign. Against
+    explicit noisefill, uberseg only adds its two exports to tile_detect's and
+    tile_ngmix's prologues and the seg stamps' memory to tile_ngmix, and each
+    export turns its committed ini's option from the noise-fill default to
+    the uberseg value."""
     surfaces = {}
     for blend in (None, "noisefill", "uberseg"):
         campaign = Campaign(tmp_path / str(blend), "data", "psfex")
@@ -183,7 +184,7 @@ def test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg(
                                   if isinstance(v, str) else v for v in value)
                        for key, value in jobs.items()}
 
-    assert normalized("noisefill") == normalized(None)
+    assert normalized("uberseg") == normalized(None)
     rules, noisefill = normalized("noisefill")
     uberseg_rules, uberseg = normalized("uberseg")
     assert uberseg_rules == rules
@@ -241,10 +242,14 @@ def test_noisefill_ignores_blend_variables_in_the_launch_shell(
     uberseg variables plans exactly the campaign launched from a clean one,
     and the parse leaves none of them in the environment jobs inherit (the
     slurm executor submits with --export=ALL from this process)."""
-    clean = Campaign(tmp_path / "clean", "data", "psfex")
+    campaigns = {}
+    for name in ("clean", "dirty"):
+        campaigns[name] = Campaign(tmp_path / name, "data", "psfex")
+        campaigns[name].config["blend_handling"] = "noisefill"
+        campaigns[name].write_config()
+    clean, dirty = campaigns["clean"], campaigns["dirty"]
     _, clean_jobs = _surface(clean, resolve_dag)
 
-    dirty = Campaign(tmp_path / "dirty", "data", "psfex")
     with resolve_dag(dirty, launch_env=INHERITED_BLEND_ENV) as dag:
         leaked = sorted(set(INHERITED_BLEND_ENV) & set(os.environ))
         dirty_jobs = {

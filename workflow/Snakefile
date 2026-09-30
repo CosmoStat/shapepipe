@@ -190,14 +190,15 @@ except ValueError as err:
 
 # How ngmix treats a stamp's neighbours; tile.smk's blend handling section
 # carries it to tile_detect and tile_ngmix.
-BLEND_HANDLING = config.get("blend_handling", "noisefill")
+BLEND_HANDLING = config.get("blend_handling", "uberseg")
 if BLEND_HANDLING not in run_config.BLEND_HANDLINGS:
     raise WorkflowError(
         f"Invalid blend_handling={BLEND_HANDLING!r}; expected one of "
         f"{sorted(run_config.BLEND_HANDLINGS)}.")
 
-# The committed inis read SP_SEG_VIGNET and SP_BLEND_HANDLING with noise-fill
-# defaults, and only tile.smk's blend_env exports them. Drop any copy the
+# The committed inis read SP_SEG_VIGNET and SP_BLEND_HANDLING with the modules'
+# own noise-fill defaults, and only tile.smk's blend_env exports them (under
+# uberseg, the workflow's default). Drop any copy the
 # launching shell carries, bare or as the APPTAINERENV_/SINGULARITYENV_ forms
 # that survive --cleanenv, so a job inherits none: the slurm executor submits
 # with --export=ALL from this process's environment, and each job re-parses

@@ -150,6 +150,49 @@ def test_uberseg_defect_in_neighbour_region_is_filled():
     assert w_out[0, 3] == 0.0 and gal_out[0, 3] == gal[0, 3]
 
 
+def test_committed_blend_handling_fills_defects():
+    """The committed universe's blend_handling x defect_fill pair is what
+    prepare_ngmix_weights does: the workflow's default blend_handling is the
+    committed one, and under it every defect is zero-weighted and filled.
+
+    Failure mode: the committed blend handling skips the defect fill, so the
+    record claims a fill the default campaign does not run (raw defects,
+    which astra excludes, reaching metacal).
+    """
+    import yaml
+
+    repo = Path(__file__).resolve().parents[2]
+    universe = yaml.safe_load((repo / "universes" / "committed.yaml").read_text())
+    decisions = universe["analyses"]["shape_measurement"]["decisions"]
+    blend_handling = decisions["blend_handling"]
+    defect_fill = decisions["defect_fill"]
+    assert blend_handling in ngmix_module.BLEND_HANDLINGS
+    assert defect_fill in ngmix_module.DEFECT_FILLS
+    workflow = yaml.safe_load((repo / "workflow" / "config.yaml").read_text())
+    assert workflow["blend_handling"] == blend_handling
+
+    n = 21
+    gal = 1.0e3 + np.arange(n * n, dtype=float).reshape(n, n)
+    weight = np.ones((n, n))
+    flag = np.zeros((n, n), dtype=np.int32)
+    flag[3, 15] = 1
+    flag[10, 2] = 2**10
+    weight[17, 9] = 0.0
+    defect = (weight == 0) | (flag != 0)
+    kwargs = (
+        dict(seg=_uberseg_seg(n), object_number=1)
+        if blend_handling == "uberseg"
+        else {}
+    )
+    gal_out, w_out, _ = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(0), bkg_rms=np.ones((n, n)),
+        blend_handling=blend_handling, defect_fill=defect_fill, **kwargs,
+    )
+    assert np.all(w_out[defect] == 0.0)
+    assert np.all(gal_out[defect] != gal[defect]), "defects are left raw"
+    assert np.all(np.abs(gal_out[defect]) < 10.0), "fill is not unit noise"
+
+
 # --- prepare_postage_stamps: the fraction cut counts the defect set --------
 
 N_STAMP = 51

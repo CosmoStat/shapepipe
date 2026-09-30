@@ -20,13 +20,15 @@ input_type: data
 # campaign's merged catalogues. Required, and set by the run config.
 # run: smk-g6
 
-# How ngmix treats a stamp's neighbours (its BLEND_HANDLING): `noisefill`
-# noise-fills them; `uberseg` zeroes their weight from the coadd segmentation
-# map, whose stamps tile_detect then writes into the sexcat as SEG_VIGNET.
-# Chosen per campaign: flipping it on an existing run dir reruns tile_detect
-# and everything after it for every finished tile, and reclaimed exposures
-# make that destructive -- an uberseg comparison needs its own `run:`.
-blend_handling: noisefill
+# How ngmix treats a stamp's neighbours (its BLEND_HANDLING): `uberseg` zeroes
+# their weight from the coadd segmentation map, whose stamps tile_detect writes
+# into the sexcat as SEG_VIGNET; `noisefill` is ngmix's own default, without
+# the segmentation stamps. Chosen per campaign: flipping it on an existing run
+# dir reruns tile_detect and everything after it for every finished tile, and
+# reclaimed exposures make that destructive -- a comparison needs its own
+# `run:`. A campaign that ran as noisefill resumes unchanged with
+# `blend_handling: noisefill` in its run config.
+blend_handling: uberseg
 
 # Default settings per input_type, can be overridden by a user-defined run config file.
 # - tile_detection: allowed are `unions_catalogue` (fetch official UNIONS catalogue
