@@ -32,8 +32,11 @@ def read_ext_sexcat_runner(
     a FITS-LDAC catalogue compatible with downstream ShapePipe modules.
     The inputs are the catalogue and the tile image, then the catalogue's
     segmentation map if SEGMENTATION = True, then the WCS log if
-    MAKE_POST_PROCESS = True. With the segmentation map, neighbours' pixels
-    in VIGNET are set to -1e30; the map itself is not written out; the
+    MAKE_POST_PROCESS = True. The windowed positions (XWIN_*, FLAGS_WIN)
+    are measured on the tile image at each catalogue object. With the
+    segmentation map, neighbours' pixels in VIGNET are set to -1e30, and
+    the windowed centroid masks neighbours as SExtractor does; the map
+    itself is not written out; the
     only output is the FITS-LDAC ``sexcat<number>.fits``. MAKE_POST_PROCESS runs the
     multi-epoch post-processing that adds per-exposure HDUs.
     """

@@ -2,6 +2,10 @@
 # @sc [decision:preparation.object_position_columns]
 XWIN_WORLD
 YWIN_WORLD
+# FLAGS_WIN: how the windowed position was obtained. 1-8 are SExtractor's
+# reasons to fall back to the isophotal barycentre; under unions_catalogue
+# also 16 (not measurable, barycentre kept) and 32 (not converged in 16 steps).
+FLAGS_WIN
 
 # tile ID, for plot of tile-dependent additive bias.
 # Can maybe be removed.
