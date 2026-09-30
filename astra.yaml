@@ -1377,8 +1377,11 @@ analyses:
       psf_likelihood_noise:
         label: Flat PSF-observation weight
         rationale: >-
-          [HARDCODED] the PSF observation carries a flat weight 1/PSF_NOISE^2;
-          without it the g-prior swamps the PSF likelihood. The recovered PSF
+          [HARDCODED] each PSF observation carries a flat weight
+          1/PSF_NOISE^2. Without it, ngmix's unit weight lets the GPriorBA(0.4)
+          prior swamp the original-PSF prefit and pull the *_psf_orig
+          ellipticity to zero; the metacal shears are unchanged
+          (test_psf_weight_leaves_metacal_shear_invariant). The recovered PSF
           shape and size are flat for PSF_NOISE from 1e-4 to 1e-6 on the
           digital twin.
           Values:
