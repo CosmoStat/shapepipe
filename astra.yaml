@@ -300,8 +300,8 @@ analyses:
           (False for boolean maps, reading as unmasked; typically -1 for
           integer maps). The committed config names the UNIONS band-combined
           ugriz mask ladder, one boolean map per bit (nside 131072, True =
-          masked), labelled n<bit>: eleven MASK_n* columns, matched line for
-          line in final_cat.param. The numeric bit identifies the column;
+          masked), labelled n<value>: eleven MASK_n* columns, matched line for
+          line in final_cat.param. The flag value identifies the column;
           source labels such as faint star halos (n1, bit 0), bright star halos
           (n2, bit 1), HSC z (n256) and Pan-STARRS z2 (n2048) describe
           the maps. Nothing in the pipeline cuts on them
@@ -321,7 +321,7 @@ analyses:
       mask_default_cut:
         label: Default external-mask cut — the six r-mask bits of the MASK_n* ladder
         rationale: >-
-          make_cat writes one boolean MASK_n<bit> column per map in
+          make_cat writes one boolean MASK_n<value> column per map in
           MASK_EXT_PATHS (11 bits: faint star halos n1, bright star halos n2,
           star body n4, manual n8,
           per-band no-data footprints n16..n256 (n256 is HSC z), MaxiMask

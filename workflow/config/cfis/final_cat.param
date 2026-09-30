@@ -18,17 +18,15 @@ TILE_UNIQUE_ID
 
 # flags
 FLAGS
-# NO IMAFLAGS_ISO — the MASK_n* columns below replace it.
 # The tile-side SExtractor runs with FLAG_IMAGE = False and DOT_PARAM_FILE =
-# default_noimaflags.param (config_tile_Sx.ini), so IMAFLAGS_ISO is never
-# written into a tile catalogue and asking for it here only made the merge
-# fail. Instrument flags reach the pipeline on the EXPOSURE side, where
+# default_noimaflags.param (config_tile_Sx.ini), so tile catalogues have no
+# IMAFLAGS_ISO column. Instrument flags enter on the exposure side, where
 # exp_split delivers the flag image and SExtractor reads it.
 #
-# Its replacement is make_cat's per-bit MASK_n<bit> columns, queried from the
+# make_cat writes per-bit MASK_n<value> columns, queried from the
 # sky-fixed UNIONS healsparse maps named by MASK_EXT_PATHS in
-# config_tile_Mc.ini — which carries the bit table and the caveats. The numeric
-# bit identifies each column: n1 is faint star halos (bit 0, value 1), n2 is
+# config_tile_Mc.ini — which carries the bit table and coverage caveats. The
+# flag value identifies each column: n1 is faint star halos (bit 0, value 1), n2 is
 # bright star halos (bit 1, value 2); source labels include HSC z for n256 and
 # Pan-STARRS z-band (z2) for n2048. Those 11
 # names and these 11 lines must stay in step: a name here that make_cat did not
