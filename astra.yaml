@@ -393,7 +393,12 @@ analyses:
           Tile SExtractor (tile_detection = sextractor, i.e. image
           simulations) uses the MegaPipe tile-catalogue threshold, minimum
           area and filter, so that its galaxy sample reproduces the UNIONS
-          catalogue committed data adopts; the 7x7 Gaussian of FWHM 3 px is
+          catalogue committed data adopts. Run on the DR6 image of tile
+          186.307, it reproduces the DR6 catalogue to 99.89% completeness
+          and 100% purity with identical segmentation pixels; the 45 misses
+          are faint deblended children of bright parents (#929). This
+          validates the configuration on data pixels, not detection on
+          simulated images. The 7x7 Gaussian of FWHM 3 px is
           near the CFIS average seeing of 0.65 arcsec (about 3.5 px at
           0.187 arcsec/px). Exposures only feed star selection and keep stock
           values with the 3x3 FWHM 2 px kernel. The tiles differ from Guinot+22
