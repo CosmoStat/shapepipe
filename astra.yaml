@@ -870,8 +870,8 @@ analyses:
           within 0.2 px of the mode of a looser, size-limited preselection
           (FWHM 0.3-1.5 arcsec at 0.187 arcsec/px). The mode is the peak of a
           Gaussian kernel density estimate with a [HARDCODED] 0.1 px
-          bandwidth, about the stellar-locus width (0.07 px at 0.52 arcsec
-          seeing, 0.10 px at 0.70 arcsec), so the box centre follows the
+          bandwidth, about the stellar-locus width (0.07 px at 0.53 arcsec
+          seeing, 0.10 px at 0.69 arcsec), so the box centre follows the
           locus and not the preselection's extremes or count: across 80 CCDs
           its bootstrap spread is 0.01 px, against 0.04 px for the histogram
           zoom it replaces (#928). Below 20 objects it returns the median,
