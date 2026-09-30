@@ -253,10 +253,16 @@ class StrInterpreter(object):
         else:
             return np.mean()
 
-    def _mode(self, input, eps=0.001, iter_max=1000):
+    def _mode(self, input, bandwidth=0.1):
         """Get Mode.
 
-        Compute the mode, the most frequent value of a continuous distribution.
+        Compute the mode of a continuous distribution as the peak of its
+        Gaussian kernel density estimate. The bandwidth is fixed, in the
+        units of the input (pixels for FWHM_IMAGE), and comparable to the
+        width of the stellar locus, so the peak follows the locus and not
+        the sample's extremes or size. The density is evaluated on a grid
+        of spacing ``bandwidth / 10`` and the peak refined by a parabola
+        through the maximum and its neighbours.
 
         @sc [decision:star_selection_psf.star_selection_box]
 
@@ -264,10 +270,8 @@ class StrInterpreter(object):
         ----------
         input : numpy.ndarray
             Numpy array containing the data.
-        eps : float, optional
-            Accuracy to achieve (default is 0.001)
-        iter_max : int, optional
-            Maximum number of iterations
+        bandwidth : float, optional
+            Standard deviation of the Gaussian kernel (default is 0.1)
 
         Returns
         -------
@@ -277,58 +281,29 @@ class StrInterpreter(object):
             -1, if input array has 0 elements
 
         """
-        cat_size = len(input)
-        if cat_size > 100:
-            bins = int(float(cat_size) / 10.0)
-        elif cat_size >= 20:
-            bins = int(float(cat_size) / 5.0)
-        elif cat_size > 0:
-            return np.median(input)
-        else:
+        data = np.asarray(input, dtype=float)
+        if len(data) == 0:
             return -1
+        if len(data) < 20:
+            return np.median(data)
 
-        data = input
-        diff = eps + 1.0
+        step = bandwidth / 10.0
+        grid = np.arange(data.min(), data.max() + step, step)
+        density = np.zeros_like(grid)
+        # Chunk over the data to bound memory for large samples.
+        for chunk in np.array_split(data, max(1, len(data) // 1000)):
+            density += np.exp(
+                -0.5 * ((grid[:, None] - chunk[None, :]) / bandwidth) ** 2
+            ).sum(axis=1)
 
-        iteration = 0
-        while diff > eps:
-            if len(data) == 0:
-                raise ValueError(
-                    "Mode computation failed: zoom window emptied out"
-                    f" after {iteration} iterations"
-                )
-            if np.ptp(data) <= eps:
-                # The zoom window has degenerated: the remaining values span
-                # less than the requested accuracy (e.g. near-identical
-                # float32 values, for which np.histogram cannot construct
-                # distinct bin edges). The surviving sample localises the
-                # mode to within eps, so return its median.
-                return np.median(data)
-
-            hist = np.histogram(data, bins)
-            if hist[0].max() == 1:
-                break
-
-            b_min = hist[1][hist[0].argmax()]
-            b_max = hist[1][hist[0].argmax() + 1]
-
-            diff = b_max - b_min
-
-            data = data[(data > b_min) & (data < b_max)]
-
-            if iteration == iter_max:
-                break
-            iteration += 1
-
-        if iteration == iter_max:
-            raise ValueError(
-                f"Mode computation did not converge after {iter_max} "
-                f"iterations ({len(data)} objects left in zoom window, "
-                f"value range [{data.min()}, {data.max()}])"
-            )
-        else:
-            mode = (b_min + b_max) / 2.0
-            return mode
+        peak = int(np.argmax(density))
+        mode = grid[peak]
+        if 0 < peak < len(grid) - 1:
+            left, centre, right = density[peak - 1:peak + 2]
+            curvature = left - 2.0 * centre + right
+            if curvature < 0:
+                mode += 0.5 * step * (left - right) / curvature
+        return float(mode)
 
     def _sigma_mad(self, input):
         """Get Mean Absolute Deviation.
