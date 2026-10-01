@@ -14,6 +14,7 @@ import ngmix
 import galsim
 import numpy as np
 from astropy.io import fits
+from cs_util import size as cs_size
 from modopt.math.stats import sigma_mad
 from ngmix.observation import Observation, ObsList
 from scipy.ndimage import binary_dilation
@@ -1628,6 +1629,52 @@ def stamp_pixel_scale(jacobs):
     @sc [decision:shape_measurement.fit_priors]
     """
     return float(np.mean([np.sqrt(abs(jac.pixelArea())) for jac in jacobs]))
+
+
+def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
+    """Get Noise.
+    TO DO: modify guess, pixel scale
+    Compute the sigma of the noise from an object postage stamp.
+    Use a guess on the object size, ellipticity and flux to create a window
+    function.
+
+    Parameters
+    ----------
+    gal : numpy.ndarray
+        Galaxy image
+    weight : numpy.ndarray
+        Weight image
+    guess : list
+        Gaussian parameters fot the window function
+        ``[x0, y0, g1, g2, T, flux]``
+    pixel_scale : float
+        Pixel scale of the galaxy image
+    thresh : float, optional
+        Threshold to cut the window function,
+        cut = ``thresh`` * sigma_noise;  the default is ``1.2``
+
+    Returns
+    -------
+    float
+        Sigma of the noise on the galaxy image
+
+    """
+    img_shape = gal.shape
+    m_weight = weight != 0
+
+    sig_tmp = sigma_mad(gal[m_weight])
+
+    gauss_win = galsim.Gaussian(sigma=cs_size.T_to_sigma(guess[4]), flux=guess[5])
+    gauss_win = gauss_win.shear(g1=guess[2], g2=guess[3])
+    gauss_win = gauss_win.drawImage(
+        nx=img_shape[0], ny=img_shape[1], scale=pixel_scale
+    ).array
+
+    m_weight = weight[gauss_win < thresh * sig_tmp] != 0
+
+    sig_noise = sigma_mad(gal[gauss_win < thresh * sig_tmp][m_weight])
+
+    return sig_noise
 
 
 def central_seg_label(seg):
