@@ -44,7 +44,7 @@ The API context remains open while tests inspect jobs and closes before the fixt
 
 ## Campaign-boundary pin
 
-`params_pin.json` pins SHA-256 digests of:
+`params_pin.json` pins the default campaign (data, psfex, `blend_handling: uberseg`), and `params_pin_noisefill.json` the same campaign with `blend_handling: noisefill`, so a campaign that ran as noisefill stays resumable. Each pins SHA-256 digests of:
 
 - `unit_pre()` rendered for every stage;
 - every rule's shell template;
@@ -76,7 +76,10 @@ Apply mutations only to a disposable checkout, run the named test without `--upd
 | `test_clean_exposure_waits_on_persist_iff_psf` | Drop the persist edge; make it unconditional under fake PSFs; drop vignets consumers; remove the in-scope consumer filter. |
 | `test_final_cat_merge_reads_every_ready_tile` | Drop one ready tile; append an out-of-scope tile. |
 | `test_products_use_products_dir_and_run_name` | Rename either merged catalogue or the persist manifest; route products to scratch; derive `CAMPAIGN` from the products directory's basename. |
+| `test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg` | Make the Snakefile or config.yaml default `noisefill`; export `BLEND_ENV` under noisefill; drop `blend_env(...)` from either tile_detect or tile_ngmix; export the wrong value; set `NGMIX_SEG_MEM_MB` to 0; give a committed ini's `SEG_VIGNET` / `BLEND_HANDLING` a literal or the wrong default. |
+| `test_unknown_blend_handling_fails_during_parse` | Remove the Snakefile's `blend_handling` check. |
 | `test_missing_run_fails_during_parse` | Remove `run` from `run_config.REQUIRED`; literal paths must still receive the required-key diagnostic, not a later `KeyError`. |
 | `test_unit_pre_changes_at_campaign_boundary` | Append a line to `unit_pre`; change one rule's `params.pre`; change one shell; change a rendered thread count. |
+| `test_noisefill_plan_changes_at_campaign_boundary` | Export anything under noisefill; change one rule's `params.pre` or shell. |
 | `test_params_pin_ignores_fixture_root` | Remove fixture-root normalization. |
 | `test_params_is_a_rerun_trigger_under_both_profiles` | Remove `params` from candide or nibi's `rerun-triggers`. |

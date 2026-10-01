@@ -1,5 +1,7 @@
 """UNIT TESTS FOR MODULE PACKAGE: NGMIX."""
 
+from collections import Counter
+
 from astropy.io import fits
 from hypothesis import given
 from hypothesis import strategies as st
@@ -629,6 +631,7 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     galaxies = {str(i): {"exp-1": {"OFFSET": [0., 0.]}} for i in tile.obj_id}
     stamp = SimpleNamespace(
         gals=[np.ones((5, 5))], ra=[42.], dec=[30.], ccd=20,
+        epoch_cuts=Counter(considered=1),
     )
     psf = dict(
         n_epoch=1, g_psf=[.01, -.01], g_psf_err=[.001, .001],
@@ -641,13 +644,14 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
         results.append((result, psf, psf))
     fits_to_return = iter(results)
     monkeypatch.setattr(module, "Tile_cat", lambda *args: tile)
-    monkeypatch.setattr(module, "prepare_postage_stamps", lambda *args: stamp)
+    monkeypatch.setattr(
+        module, "prepare_postage_stamps", lambda *args, **kwargs: stamp,
+    )
     monkeypatch.setattr(
         module, "do_ngmix_metacal", lambda *args, **kwargs: next(fits_to_return),
     )
     inst = object.__new__(Ngmix)
     inst._tile_cat_path = "in-memory-tile"
-    inst._seg_cat_path = None
     inst._vignet_cat = SimpleNamespace(
         gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
     )
@@ -658,6 +662,12 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     inst._blend_handling = "noisefill"
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
+    inst._epoch_central_defect_radius = module.EPOCH_CENTRAL_DEFECT_RADIUS
+    inst._epoch_masked_fraction_cut = module.EPOCH_MASKED_FRACTION_CUT
+    inst._defect_fill = "noise"
+    inst._epoch_interpolated_defect_radius = (
+        module.EPOCH_INTERPOLATED_DEFECT_RADIUS
+    )
     inst._save_batch = 1
     inst._zero_point = 30.
     inst._output_dir = str(tmp_path)
