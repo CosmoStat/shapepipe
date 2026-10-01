@@ -33,8 +33,9 @@
 
 MAG_AUTO > 0
 MAG_AUTO < 21
-FWHM_IMAGE > 0.3 / 0.187
-FWHM_IMAGE < 1.5 / 0.187
+# FWHM_WORLD is in degrees, from each CCD's WCS: 0.3-1.5 arcsec.
+FWHM_WORLD > 0.3 / 3600
+FWHM_WORLD < 1.5 / 3600
 # @sc [decision:detection.saturation_level]
 FLAGS == 0
 
@@ -94,7 +95,7 @@ MARKER_2 = .
 MARKERSIZE_1 = 3
 MARKERSIZE_2 = 3
 LABEL_1 = All
-LABEL_2 = "Stars, mean FWHM: @mean(FWHM_IMAGE{star_selection})*0.187@ arcsec"
+LABEL_2 = "Stars, mean FWHM: @mean(FWHM_WORLD{star_selection})*3600@ arcsec"
 TITLE = "Stellar locus"
 XLABEL = "FWHM (pix)"
 YLABEL = Mag
@@ -116,7 +117,7 @@ X = X_IMAGE{star_selection}
 Y = Y_IMAGE{star_selection}
 # @sc [decision:star_selection_psf.star_selection_box,label:diagnostic] stellar-diagnostic-matches-cut
 # FWHM_FIELD plot labels and summary statistics must describe the size cut actually applied.
-SCATTER = FWHM_IMAGE{star_selection}*0.187
+SCATTER = FWHM_WORLD{star_selection}*3600
 
 MARKER = .
 LABEL = "FWHM (arcsec)"
@@ -140,10 +141,9 @@ YLABEL = "Y (pix)"
 "Nb objects full cat" = len(FWHM_IMAGE)
 "Nb objects not masked" = len(FWHM_IMAGE{flag})
 "Nb stars" = len(FWHM_IMAGE{star_selection})
-"stars/deg^2" = len(FWHM_IMAGE{star_selection})/4612./0.187*3600.*1./2048./0.187*3600.
-"Mean star fwhm selected (arcsec)" = mean(FWHM_IMAGE{star_selection})*0.187
-"Standard deviation fwhm star selected (arcsec)" = std(FWHM_IMAGE{star_selection})*0.187
-"Mode fwhm used (arcsec)" = mode(FWHM_IMAGE{preselect})*0.187
-"Locus width (arcsec)" = locus_width(FWHM_IMAGE{preselect})*0.187
-"Min fwhm cut (arcesec)" = mode(FWHM_IMAGE{preselect})*0.187-3*locus_width(FWHM_IMAGE{preselect})*0.187
-"Max fwhm cut (arcsec)" = mode(FWHM_IMAGE{preselect})*0.187+3*locus_width(FWHM_IMAGE{preselect})*0.187
+"Mean star fwhm selected (arcsec)" = mean(FWHM_WORLD{star_selection})*3600
+"Standard deviation fwhm star selected (arcsec)" = std(FWHM_WORLD{star_selection})*3600
+"Mode fwhm used (pix)" = mode(FWHM_IMAGE{preselect})
+"Locus width (pix)" = locus_width(FWHM_IMAGE{preselect})
+"Min fwhm cut (pix)" = mode(FWHM_IMAGE{preselect})-3*locus_width(FWHM_IMAGE{preselect})
+"Max fwhm cut (pix)" = mode(FWHM_IMAGE{preselect})+3*locus_width(FWHM_IMAGE{preselect})
