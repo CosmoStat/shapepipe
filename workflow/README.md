@@ -305,13 +305,12 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   `machines:` table, exported as `$SP_INPUT_MASKS` and
   pointing at the UNIONS DR6 ugriz bit ladder: one boolean healsparse map per
   bit, nside 131072, `True` = masked. `config_tile_Mc.ini` names all 11 of them
-  in `MASK_EXT_PATHS`, so `make_cat` writes `MASK_n1` … `MASK_n2048` and
-  `final_cat.param` carries the matching 11 names. That file and the config
-  hold the producer's bit table: `n1` (bit 0, value 1) flags faint star halos
-  and `n2` (bit 1, value 2) flags bright star halos. Both enter the default
-  r-band selection. `n2048` is 1 where there is *no* Pan-STARRS z2 data, so an
-  OR over every column masks everything. Nothing
-  cuts on them here.
+  in `MASK_EXT_PATHS` under a `<flag value>_<name>` label, so `make_cat`
+  writes `MASK_1_Faint_star_halos` … `MASK_2048_z2` and `final_cat.param`
+  carries the matching 11 names; the config holds the label table. Both halo
+  columns enter the default r-band selection. `MASK_2048_z2` is True where
+  there is *no* Pan-STARRS z data, so an OR over every column masks
+  everything. Nothing cuts on them here.
 - **The index is parse-time data, never a rule input.** Appending tiles
   changes which jobs exist without invalidating completed work.
 - **Exposure products are not `temp()`.** Exposures overlap tiles, so

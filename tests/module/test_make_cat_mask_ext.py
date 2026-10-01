@@ -130,11 +130,11 @@ def test_mask_ext_absent_is_noop(tmp_path):
 
 
 def test_boolean_halo_maps_preserve_bit_identity(tmp_path):
-    """n1 faint and n2 bright halo columns preserve separate boolean maps."""
+    """Faint and bright halo columns preserve separate boolean maps."""
     paths = {}
     for label, values in (
-        ("n2", [False, True, True]),
-        ("n1", [True, False, True]),
+        ("2_Bright_star_halos", [False, True, True]),
+        ("1_Faint_star_halos", [True, False, True]),
     ):
         smap = healsparse.HealSparseMap.make_empty(
             NSIDE_COVERAGE, NSIDE_SPARSE, np.bool_, sentinel=False
@@ -155,8 +155,10 @@ def test_boolean_halo_maps_preserve_bit_identity(tmp_path):
 
     cat.open()
     data = cat.get_data()
-    npt.assert_array_equal(data["MASK_n1"], [True, False, True, False])
-    npt.assert_array_equal(data["MASK_n2"], [False, True, True, False])
-    assert data["MASK_n1"].dtype == np.dtype(bool)
-    assert data["MASK_n2"].dtype == np.dtype(bool)
+    faint = data["MASK_1_Faint_star_halos"]
+    bright = data["MASK_2_Bright_star_halos"]
+    npt.assert_array_equal(faint, [True, False, True, False])
+    npt.assert_array_equal(bright, [False, True, True, False])
+    assert faint.dtype == np.dtype(bool)
+    assert bright.dtype == np.dtype(bool)
     cat.close()

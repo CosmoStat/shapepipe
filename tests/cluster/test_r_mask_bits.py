@@ -1,7 +1,8 @@
 """The OR of the six r-ladder bits is the published 2D-cosmic-shear r mask.
 
 Decision ``mask_default_cut`` (astra.yaml, catalogue_assembly) makes the
-catalogue's default cut ``n1|n2|n4|n8|n64|n1024``, on the claim that this OR
+catalogue's default cut the OR of the six maps with flag values 1, 2, 4, 8,
+64 and 1024 (file suffixes ``n1`` ... ``n1024``), on the claim that this OR
 reproduces ``mask_r_nside131072.hsp``, the mask the 2D analysis used. This
 test checks that claim pixel-exactly on three whole coverage granules
 (nside_cov 128, 2^20 nside-131072 pixels each) lying fully inside the v1.6.x

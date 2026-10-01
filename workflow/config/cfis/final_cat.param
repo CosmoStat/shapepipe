@@ -23,29 +23,26 @@ FLAGS
 # IMAFLAGS_ISO column. Instrument flags enter on the exposure side, where
 # exp_split delivers the flag image and SExtractor reads it.
 #
-# make_cat writes per-bit MASK_n<value> columns, queried from the
-# sky-fixed UNIONS healsparse maps named by MASK_EXT_PATHS in
-# config_tile_Mc.ini — which carries the bit table and coverage caveats. The
-# flag value identifies each column: n1 is faint star halos (bit 0, value 1), n2 is
-# bright star halos (bit 1, value 2); source labels include HSC z for n256 and
-# Pan-STARRS z-band (z2) for n2048. Those 11
-# names and these 11 lines must stay in step: a name here that make_cat did not
-# write fails every merge, on every campaign.
+# make_cat writes one MASK_<flag value>_<name> column per sky-fixed UNIONS
+# healsparse map named by MASK_EXT_PATHS in config_tile_Mc.ini — which carries
+# the label table and coverage caveats. Those 11 labels and these 11 lines must
+# stay in step: a name here that make_cat did not write fails every merge, on
+# every campaign.
 #
 # sp_validation selects which columns enter its mask cut. It cannot be a plain
-# OR of every column: n2048 is 1 where there is no Pan-STARRS z2 data, so that
-# OR masks the whole survey.
-MASK_n1
-MASK_n2
-MASK_n4
-MASK_n8
-MASK_n16
-MASK_n32
-MASK_n64
-MASK_n128
-MASK_n256
-MASK_n1024
-MASK_n2048
+# OR of every column: MASK_2048_z2 is True where there is no Pan-STARRS z data,
+# so that OR masks the whole survey.
+MASK_1_Faint_star_halos
+MASK_2_Bright_star_halos
+MASK_4_Stars
+MASK_8_Manual
+MASK_16_u
+MASK_32_g
+MASK_64_r
+MASK_128_i
+MASK_256_z
+MASK_1024_Maximask
+MASK_2048_z2
 
 NGMIX_MCAL_FLAGS
 

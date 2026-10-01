@@ -1,9 +1,11 @@
-"""The MASK_n* columns final_cat.param asks for are the ones make_cat writes.
+"""The MASK_* columns final_cat.param asks for are the ones make_cat writes.
 
 make_cat writes one ``MASK_<label>`` column per ``label:path`` pair in
 ``MASK_EXT_PATHS`` (config_tile_Mc.ini); the post-processing merge reads
 ``final_cat.param`` and fails every tile on a name make_cat did not write.
-Enforces contract ``mask-ext-ladder-columns``.
+Each label is ``<flag value>_<name>``, and the flag value is the one in the
+map's file name: a label on the wrong map would publish one mask under
+another's name. Enforces contract ``mask-ext-ladder-columns``.
 """
 
 import configparser
@@ -18,7 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_DIR = REPO_ROOT / "workflow" / "config" / "cfis"
 
 
-def _written_mask_columns(monkeypatch):
+def _mask_ext_paths(monkeypatch):
     monkeypatch.setenv("SP_INPUT_MASKS", "/dummy/masks")
     config = configparser.ConfigParser(interpolation=None)
     config.read(CONFIG_DIR / "config_tile_Mc.ini")
@@ -26,7 +28,11 @@ def _written_mask_columns(monkeypatch):
     band_paths = make_cat.parse_mask_ext_paths(os.path.expandvars(raw))
     for path in band_paths.values():
         assert path.startswith("/dummy/masks/"), path
-    return [f"MASK_{label}" for label in band_paths]
+    return band_paths
+
+
+def _written_mask_columns(monkeypatch):
+    return [f"MASK_{label}" for label in _mask_ext_paths(monkeypatch)]
 
 
 def _requested_mask_columns():
@@ -44,3 +50,13 @@ def test_final_cat_mask_columns_match_mask_ext_paths(monkeypatch):
         f"{requested} != the columns MASK_EXT_PATHS makes make_cat write "
         f"{written}"
     )
+
+
+def test_mask_label_flag_value_is_the_maps(monkeypatch):
+    """Each label's flag value is the one in its map's file name."""
+    for label, path in _mask_ext_paths(monkeypatch).items():
+        value, _, name = label.partition("_")
+        assert name, f"label {label!r} is not <flag value>_<name>"
+        assert path.endswith(f"_n{value}.hsp"), (
+            f"mask-ext-ladder-columns: MASK_{label} is read from {path}"
+        )

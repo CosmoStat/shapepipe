@@ -191,14 +191,15 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
     ``query_map`` result to ``MASK_<BAND>`` unchanged.
 
     @sc [decision:masking.mask_default_cut,label:convention] mask-ext-ladder-columns
-    The labels in ``MASK_EXT_PATHS`` are the UNIONS mask ladder's bit names
-    (``n1`` ... ``n2048``), and this function writes ``MASK_<label>`` verbatim.
-    The eleven ``MASK_n*`` lines in ``workflow/config/cfis/final_cat.param``
-    must match those labels line for line: the post-processing merge fails
-    every tile on a name this function did not write. Nothing here cuts; the
-    catalogue's default cut, applied by the consumer, is the OR of the six
-    r-mask bits ``n1|n2|n4|n8|n64|n1024`` (astra decision
-    ``masking.mask_default_cut``), not the OR of every column.
+    The labels in ``MASK_EXT_PATHS`` are ``<flag value>_<name>`` for each map
+    of the UNIONS mask ladder (``1_Faint_star_halos`` ... ``2048_z2``), and
+    this function writes ``MASK_<label>`` verbatim. The eleven ``MASK_*``
+    lines in ``workflow/config/cfis/final_cat.param`` must match those labels
+    line for line: the post-processing merge fails every tile on a name this
+    function did not write. Nothing here cuts; the catalogue's default cut,
+    applied by the consumer, is the OR of the six r-mask columns (flag values
+    1, 2, 4, 8, 64, 1024; astra decision ``masking.mask_default_cut``), not
+    the OR of every column.
 
     Parameters
     ----------
