@@ -8,39 +8,41 @@ YWIN_WORLD
 # @sc [decision:catalogue_assembly.tile_overlap_handling]
 TILE_ID
 
-# SExtractor object number within the tile: sp_validation's extraction joins
-# on it, and the per-tile catalogue always carries it.
+# Object number within the tile: sp_validation's extraction joins on it, and
+# the per-tile catalogue always carries it.
 NUMBER
+
+# Survey-wide object ID, tile_id * 10**6 + NUMBER (make_cat, both
+# tile_detection modes): the join key to other catalogues.
+TILE_UNIQUE_ID
 
 # flags
 FLAGS
-# NO IMAFLAGS_ISO — the MASK_n* columns below replace it.
 # The tile-side SExtractor runs with FLAG_IMAGE = False and DOT_PARAM_FILE =
-# default_noimaflags.param (config_tile_Sx.ini), so IMAFLAGS_ISO is never
-# written into a tile catalogue and asking for it here only made the merge
-# fail. Instrument flags reach the pipeline on the EXPOSURE side, where
+# default_noimaflags.param (config_tile_Sx.ini), so tile catalogues have no
+# IMAFLAGS_ISO column. Instrument flags enter on the exposure side, where
 # exp_split delivers the flag image and SExtractor reads it.
 #
-# Its replacement is make_cat's per-bit MASK_n<bit> columns, queried from the
-# sky-fixed UNIONS healsparse maps named by MASK_EXT_PATHS in
-# config_tile_Mc.ini — which carries the bit table and the caveats. Those 11
-# names and these 11 lines must stay in step: a name here that make_cat did not
-# write fails every merge, on every campaign.
+# make_cat writes one MASK_<flag value>_<name> column per sky-fixed UNIONS
+# healsparse map named by MASK_EXT_PATHS in config_tile_Mc.ini — which carries
+# the label table and coverage caveats. Those 11 labels and these 11 lines must
+# stay in step: a name here that make_cat did not write fails every merge, on
+# every campaign.
 #
-# sp_validation still cuts on IMAFLAGS_ISO; that cut has to move onto these
-# columns (issue to follow), and it is NOT a plain OR — n2048 is 1 where there
-# is no Pan-STARRS z2 data, so OR-ing every column masks the whole survey.
-MASK_n1
-MASK_n2
-MASK_n4
-MASK_n8
-MASK_n16
-MASK_n32
-MASK_n64
-MASK_n128
-MASK_n256
-MASK_n1024
-MASK_n2048
+# sp_validation selects which columns enter its mask cut. It cannot be a plain
+# OR of every column: MASK_2048_z2 is True where there is no Pan-STARRS z data,
+# so that OR masks the whole survey.
+MASK_1_Faint_star_halos
+MASK_2_Bright_star_halos
+MASK_4_Stars
+MASK_8_Manual
+MASK_16_u
+MASK_32_g
+MASK_64_r
+MASK_128_i
+MASK_256_z
+MASK_1024_Maximask
+MASK_2048_z2
 
 NGMIX_MCAL_FLAGS
 
@@ -230,6 +232,10 @@ NGMIX_FLUX_ERR_2P
 NGMIX_FLUX_ERR_NOSHEAR
 
 # magnitudes
+# SExtractor detection columns. Under tile_detection: unions_catalogue the
+# UNIONS catalogue supplies them, and the merge drops the ones it lacks
+# (merge_final_cat.SEXTRACTOR_ONLY_COLUMNS: the WIN, AUTO-flux, APER and FWHM
+# columns and SNR_WIN); MAG_AUTO, MAGERR_AUTO and FLUX_RADIUS are in both.
 MAG_AUTO
 MAGERR_AUTO
 MAG_WIN

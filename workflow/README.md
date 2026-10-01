@@ -23,10 +23,17 @@ source /project/def-mjhudson/cdaley/snakemake-env/bin/activate
 uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 
 # Write a run config (see Run configuration below) that sets at least `run:`,
-# the campaign's name; workflow/config.yaml's machines: table supplies the rest.
+# the campaign's name; workflow/config.yaml's input_types: and machines: tables supply the rest.
 
 # `psf_model` is `psfex` or `mccd`. psfex is exercised by smk-g4 through smk-g6; mccd has run the full chain on
 # an image-sim star tile (one focal-plane model per exposure, ~1.5 CPU-hours each).
+# `tile_detection` is `unions_catalogue` (the input_types default for data:
+# the UNIONS per-tile catalogue at `inputs.catalogues` is fetched and
+# converted in place, keeping its NUMBER, and its segmentation map sets
+# neighbours' VIGNET pixels to -1e30 as SExtractor does) or `sextractor` (the
+# tile is detected with SExtractor; the default for image sims). Either way
+# make_cat writes TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER and ngmix masks
+# the same neighbours.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -79,9 +86,11 @@ A run config passed with `-c/--config-file` is merged on top of
 `workflow/config.yaml` and snapshotted with the code. (`-c` is `sp`'s own flag;
 pass snakemake's cores as `--cores`/`-j`. `SP_RUN_CONFIG` still works and is what
 the jobs read.) `SP_PROFILE` (default `nibi`, or `machine:` in the run config, which must
-agree with it) and `input_type:` then select an entry of the `machines:` table, which supplies
-`tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
-`container` for any of these the run config leaves unset (`$base_dir` expands
+agree with it) and `input_type:` then select defaults for whatever the run
+config leaves unset: first the `input_types:` entry, which supplies what follows
+from the kind of input (`tile_detection`, `psf_model`), then, overriding it,
+the `machines:` entry, which supplies `tile_list`, `retrieve` (`symlink` or
+`vos`), `inputs`, `outputs`, `container` and `psf_dict` (`$base_dir` expands
 to that machine's `base_dir`, and `$name` or `${name}` to any top-level scalar
 of the run config, e.g. `$run` to `run:`; write `${name}` when word characters
 follow). `run:` is
@@ -94,8 +103,6 @@ SKiLLS shear branch on candide:
 machine: candide
 input_type: image_sims
 run: 1z2z_grid_3
-psf_model: fake
-psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle
 tile_list: /path/to/tiles.txt
 inputs:
   tiles: /n09data/hervas/skills_out/1z2z_grid_3/images/SP_tiles
@@ -152,9 +159,9 @@ sp container resolve                     # just the path the workflow will run
 in-sync / behind / ahead / diverged, or unknown when the image carries no label
 or the commit was never fetched here.
 
-**`pull` needs the network.** Compute nodes on Alliance clusters generally have
-none, so run it on a login node or inside an `salloc` allocation — never from a
-batch job. `pull` and `sandbox` both stage to a sibling path and swap it in, so
+**`pull` needs the network.** Candide and nibi compute nodes both have it, so
+`pull` runs from a login node, an `salloc` allocation or a batch job alike.
+`pull` and `sandbox` both stage to a sibling path and swap it in, so
 an in-flight job never sees a half-written image and a failed rebuild leaves the
 one you had intact.
 
@@ -233,7 +240,7 @@ workflow/
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
     exposure.smk         per-exposure: get_images, split, psf, persist, footprint, defect_map (no temp()); campaign star_cat_merge, defect_map_merge, nexp_map
-    tile.smk             per-tile: exp forest, merge_headers, detect, vignets, ngmix, merge, make_cat; campaign final_cat_merge
+    tile.smk             per-tile: exp forest, merge_headers, detect (SExtractor, or fetch + convert the UNIONS catalogue), vignets, ngmix, merge, make_cat; campaign final_cat_merge
   scripts/
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
@@ -384,12 +391,12 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   `machines:` table, exported as `$SP_INPUT_MASKS` and
   pointing at the UNIONS DR6 ugriz bit ladder: one boolean healsparse map per
   bit, nside 131072, `True` = masked. `config_tile_Mc.ini` names all 11 of them
-  in `MASK_EXT_PATHS`, so `make_cat` writes `MASK_n1` … `MASK_n2048` and
-  `final_cat.param` carries the matching 11 names. That file and the config
-  hold the bit table and the two caveats (the August bit-0/1 halo swap is
-  unconfirmed, so use `n1|n2` combined; `n2048` is 1 where there is *no*
-  Pan-STARRS z2 data, so an OR over every column masks everything). Nothing
-  cuts on them here.
+  in `MASK_EXT_PATHS` under a `<flag value>_<name>` label, so `make_cat`
+  writes `MASK_1_Faint_star_halos` … `MASK_2048_z2` and `final_cat.param`
+  carries the matching 11 names; the config holds the label table. Both halo
+  columns enter the default r-band selection. `MASK_2048_z2` is True where
+  there is *no* Pan-STARRS z data, so an OR over every column masks
+  everything. Nothing cuts on them here.
 - **The index is parse-time data, never a rule input.** Appending tiles
   changes which jobs exist without invalidating completed work.
 - **Exposure products are not `temp()`.** Exposures overlap tiles, so

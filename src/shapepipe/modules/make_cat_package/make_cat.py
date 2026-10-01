@@ -21,7 +21,7 @@ from shapepipe.modules.ngmix_package.ngmix import (
     get_type_flags,
 )
 from shapepipe.pipeline import file_io
-from shapepipe.utilities import mask_query
+from shapepipe.utilities import cfis, mask_query
 
 
 def get_output_name(output_dir, file_number_string):
@@ -100,7 +100,11 @@ def remove_field_name(arr, name):
 def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     """Save SExtractor Data.
 
-    Save the SExtractor catalogue into the final one.
+    Save the SExtractor catalogue into the final one, adding the tile as
+    ``TILE_ID`` (float ``RRR.DDD``) and the survey-wide object ID
+    ``TILE_UNIQUE_ID`` (:func:`shapepipe.utilities.cfis.get_tile_unique_id`
+    of the tile and ``NUMBER``). The tile is read from the catalogue's file
+    name, e.g. ``sexcat-301-279.fits``.
 
     Parameters
     ----------
@@ -123,22 +127,19 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     data = np.copy(sexcat_file.get_data())
     if remove_vignet:
         data = remove_field_name(data, "VIGNET")
-
-    final_cat_file.save_as_fits(data, ext_name="RESULTS")
-
     cat_size = len(data)
 
-    tile_id = float(
-        ".".join(
-            re.split("-", os.path.splitext(os.path.split(sexcat_path)[1])[0])[
-                1:
-            ]
-        )
+    tile_name = os.path.basename(sexcat_path)
+    nix, niy = cfis.get_tile_number(tile_name)
+    tile_id_array = np.full(cat_size, float(f"{nix}.{niy}"))
+    unique_id = cfis.get_tile_unique_id(
+        cfis.get_tile_id(tile_name), data["NUMBER"]
     )
-    tile_id_array = np.ones(cat_size) * tile_id
 
+    final_cat_file.save_as_fits(data, ext_name="RESULTS")
     final_cat_file.open()
     final_cat_file.add_col("TILE_ID", tile_id_array)
+    final_cat_file.add_col("TILE_UNIQUE_ID", unique_id)
 
     sexcat_file.close()
 
@@ -190,14 +191,15 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
     ``query_map`` result to ``MASK_<BAND>`` unchanged.
 
     @sc [decision:masking.mask_default_cut,label:convention] mask-ext-ladder-columns
-    The labels in ``MASK_EXT_PATHS`` are the UNIONS mask ladder's bit names
-    (``n1`` ... ``n2048``), and this function writes ``MASK_<label>`` verbatim.
-    The eleven ``MASK_n*`` lines in ``workflow/config/cfis/final_cat.param``
-    must match those labels line for line: the post-processing merge fails
-    every tile on a name this function did not write. Nothing here cuts; the
-    catalogue's default cut, applied by the consumer, is the OR of the six
-    r-mask bits ``n1|n2|n4|n8|n64|n1024`` (astra decision
-    ``masking.mask_default_cut``), not the OR of every column.
+    The labels in ``MASK_EXT_PATHS`` are ``<flag value>_<name>`` for each map
+    of the UNIONS mask ladder (``1_Faint_star_halos`` ... ``2048_z2``), and
+    this function writes ``MASK_<label>`` verbatim. The eleven ``MASK_*``
+    lines in ``workflow/config/cfis/final_cat.param`` must match those labels
+    line for line: the post-processing merge fails every tile on a name this
+    function did not write. Nothing here cuts; the catalogue's default cut,
+    applied by the consumer, is the OR of the six r-mask columns (flag values
+    1, 2, 4, 8, 64, 1024; astra decision ``masking.mask_default_cut``), not
+    the OR of every column.
 
     Parameters
     ----------

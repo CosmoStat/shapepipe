@@ -225,7 +225,7 @@ analyses:
         description: >-
           Exposure detection catalogues carrying IMAFLAGS_ISO (and MASK_EXT when
           maps are configured), the flag stamps ngmix reads, and the final
-          catalogue's MASK_n<bit> columns.
+          catalogue's MASK_<flag value>_<name> columns.
         inputs: [exposure_flags, sky_masks]
         decisions: [pixel_mask_source, psf_star_mask_veto, sky_mask_application, mask_default_cut]
       - id: defect_map
@@ -393,9 +393,11 @@ analyses:
           (False for boolean maps, reading as unmasked; typically -1 for
           integer maps). The committed config names the UNIONS band-combined
           ugriz mask ladder, one boolean map per bit (nside 131072, True =
-          masked), labelled n<bit>: eleven MASK_n* columns, matched line for
-          line in final_cat.param. Nothing in the pipeline cuts on them
-          (mask_default_cut).
+          masked), labelled <flag value>_<name>: eleven columns,
+          MASK_1_Faint_star_halos to MASK_2048_z2, matched line for line in
+          final_cat.param. The flag value is the one in the map's file name;
+          the names are the ones sp_validation uses for the same bits.
+          Nothing in the pipeline cuts on them (mask_default_cut).
         default: catalogue_columns
         options:
           deferred_downstream:
@@ -409,42 +411,44 @@ analyses:
               Location flags are analysis decisions; a pipeline cut would fix
               one mask version into the catalogue.
       mask_default_cut:
-        label: Default external-mask cut — the six r-mask bits of the MASK_n* ladder
+        label: Default external-mask cut — the six r-mask columns of the MASK_* ladder
         rationale: >-
-          make_cat writes one boolean MASK_n<bit> column per map in
-          MASK_EXT_PATHS (11 bits: star halos n1/n2, star body n4, manual n8,
-          per-band no-data footprints n16..n256, MaxiMask n1024, Pan-STARRS
-          z2 footprint n2048) and cuts nothing; the cut is the consumer's
-          (sp_validation). The default is n1|n2|n4|n8|n64|n1024 because it
+          make_cat writes one boolean MASK_<flag value>_<name> column per map
+          in MASK_EXT_PATHS (11 maps: 1_Faint_star_halos, 2_Bright_star_halos,
+          4_Stars (star bodies), 8_Manual, the per-band no-data footprints
+          16_u, 32_g, 64_r, 128_i and 256_z (HSC z), 1024_Maximask, and
+          2048_z2 (the Pan-STARRS z footprint)) and cuts nothing; the cut is
+          the consumer's (sp_validation). The default is the OR of
+          MASK_1_Faint_star_halos, MASK_2_Bright_star_halos, MASK_4_Stars,
+          MASK_8_Manual, MASK_64_r and MASK_1024_Maximask because it
           reproduces the published 2D-cosmic-shear mask
           (/n17data/UNIONS/WL/masks/mask_r_nside131072.hsp), so the
           catalogue's footprint matches the 2D analysis'. Measured on candide
           against the Feb-2025 r ladder beside it: pixel-exact on three whole
           interior coverage granules; on 4M random footprint pixels the only
           difference is 0.46% of area at footprint-edge granules where mask_r
-          has no coverage and reads unmasked. Every bit is needed: dropping
-          any one leaves mask_r-only area (n2 most, 4.4%). The August
-          regeneration may have swapped n1 and n2, which is why they are
-          used only together. The DR6 ladder MASK_EXT_PATHS points at is not
+          has no coverage and reads unmasked. Every one of the six is needed:
+          dropping any one leaves mask_r-only area (2_Bright_star_halos most,
+          4.4%). The DR6 ladder MASK_EXT_PATHS points at is not
           yet measured against the Feb-2025 one.
         default: r_mask_bits
         options:
           r_mask_bits:
-            label: "OR of n1|n2|n4|n8|n64|n1024 — reproduces mask_r"
+            label: "OR of the 1, 2, 4, 8, 64 and 1024 columns — reproduces mask_r"
           defects_only:
-            label: "OR of the defect bits n1|n2|n4|n8|n1024"
+            label: "OR of the defect columns 1, 2, 4, 8 and 1024"
             excluded: true
             excluded_reason: >-
-              Omits the r-footprint bit n64 (no r data) and so misses 9% of
+              Omits the r-footprint column 64_r (no r data) and so misses 9% of
               mask_r's masked area; the footprint no longer matches the 2D
               analysis'.
           all_bits:
-            label: OR of all 11 MASK_n* columns
+            label: OR of all 11 MASK_* columns
             excluded: true
             excluded_reason: >-
-              The u/g/i/z footprint bits and n2048 flag missing data in other
-              filters, not r-band defects; OR-ing them masks whole regions
-              with no u or Pan-STARRS z2 coverage.
+              The u, g, i, HSC-z and Pan-STARRS-z (2048_z2) footprint columns
+              flag missing data in other filters, not r-band defects; OR-ing
+              them masks whole regions with no u or Pan-STARRS z coverage.
     prior_insights:
       farrens22_pipeline_masks:
         claim: >-
@@ -462,10 +466,11 @@ analyses:
   # ═════════════════════════════════════════════════════════════════════════
   detection:
     description: >-
-      Object detection with SExtractor on r-band tiles (the galaxy sample) and
-      on single-exposure CCDs (PSF-star candidates). Tiles follow the MegaPipe
-      parameters of Gwyn's UNIONS tile catalogue; exposures keep ShapePipe's
-      stock values.
+      Object detection on r-band tiles (the galaxy sample) and on
+      single-exposure CCDs (PSF-star candidates, always SExtractor). The tile
+      sample is Gwyn's UNIONS tile catalogue or ShapePipe's own SExtractor run
+      (tile_detection); the latter follows the MegaPipe parameters of that
+      catalogue, while exposures keep ShapePipe's stock values.
     inputs:
       - id: tile_stack
         type: data
@@ -477,12 +482,34 @@ analyses:
         description: Per-tile SExtractor LDAC catalogue with per-epoch CCD membership.
         inputs: [tile_stack]
         decisions:
-          [detection_threshold_policy, deblending_policy, background_model,
+          [tile_detection, detection_threshold_policy, deblending_policy,
+           background_model,
            weight_map_usage, zero_weight_interpolation, detection_source_mode,
-           epoch_membership_ccd_bounds, photometry_parameters,
+           epoch_membership_ccd_bounds, catalogue_neighbour_marking,
+           photometry_parameters,
            spurious_detection_cleaning, blend_photometry_mask_type,
            saturation_level]
     decisions:
+      tile_detection:
+        label: Source of the tile galaxy sample
+        rationale: >-
+          Real data takes its tile sample from Gwyn's UNIONS per-tile
+          catalogue, converted to the sexcat the chain reads with its own
+          NUMBER kept, so shape, photometry and photo-z catalogues share one
+          object list and one ID (TILE_UNIQUE_ID). PSF stars still come from
+          ShapePipe's exposure-level SExtractor run, because external star
+          catalogues are too shallow. detection_source_mode and the tile
+          SExtractor settings of the other decisions here govern only the
+          sextractor option; epoch_membership_ccd_bounds applies to both.
+          Image simulations, which have no UNIONS catalogue, use sextractor.
+          Values:
+          input_types.data.tile_detection = unions_catalogue.
+        default: unions_catalogue
+        options:
+          unions_catalogue:
+            label: Gwyn's UNIONS per-tile catalogue, converted in place
+          sextractor:
+            label: SExtractor on the tile image
       detection_threshold_policy:
         label: Detection significance, minimum area, matched filter
         rationale: >-
@@ -732,15 +759,48 @@ analyses:
           admits its upper endpoint, column 2080. A WCS inversion failure skips
           that CCD, lowering N_EPOCH; this sets how many exposures enter each
           galaxy's multi-epoch fit.
+          Both tile_detection options run this post-processing.
           Values:
           SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
-          SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True.
+          SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True;
+          READ_EXT_SEXCAT_RUNNER.CCD_SIZE = 33,2080,1,4612;
+          READ_EXT_SEXCAT_RUNNER.MAKE_POST_PROCESS = True.
         default: trimmed_bounds_33_2080
         options:
           trimmed_bounds_33_2080:
             label: "x in (33,2080), y in (1,4612), strict"
           inclusive_bounds:
             label: Same bounds, inclusive
+      catalogue_neighbour_marking:
+        label: Neighbour pixels in the catalogue path's VIGNET
+        rationale: >-
+          ngmix masks a neighbour only where the tile VIGNET is -1e30 (flag
+          2**10: zero weight, noise-filled under noisefill), and SExtractor
+          writes -1e30 on neighbours' footprints and off the image. The
+          unions_catalogue converter reproduces that from the catalogue's own
+          r-band segmentation map (CFIS.<tile>.r.seg.fits.fz, on the tile's
+          pixel grid), so both tile_detection options mask the same way.
+          Segmentation labels are not the catalogue NUMBER; each object claims
+          the footprint under its centre pixel (the VIGNET centre pixel), which
+          on 202.301 matches 36,064 of 36,065 objects with none shared. The map
+          is relabelled to NUMBER (unclaimed footprints -1; an object on sky or
+          on a claimed footprint gets a 3-pixel-radius disc of its own), and
+          VIGNET pixels whose relabelled value is neither 0 nor the object's
+          NUMBER become -1e30. Without it, catalogue-mode ngmix fits neighbour
+          light: in pilot smk-g10, NGMIX_MAG_NOSHEAR was over 1 mag brighter
+          than MAG_AUTO for 6.1% of objects (2.7% with SExtractor, g9).
+          Values:
+          READ_EXT_SEXCAT_RUNNER.SEGMENTATION = True.
+        default: segmentation_map
+        options:
+          segmentation_map:
+            label: -1e30 on other objects' segmentation footprints, as SExtractor
+          none:
+            label: Image pixels only; ngmix masks no neighbours
+            excluded: true
+            excluded_reason: >-
+              Leaves neighbour light in the fit, unlike the sextractor option
+              it replaces; the cause of the smk-g10 magnitude outliers.
     prior_insights:
       guinot22_sextractor_params:
         claim: >-
@@ -1046,9 +1106,8 @@ analyses:
       psf_modelling_software:
         label: PSF model, PSFEx per CCD or MCCD over the focal plane
         rationale: >-
-          psf_model in workflow/config.yaml's machines: table (per machine and
-          input type; image sims use fake) selects the exposure and tile
-          config pair; the committed value is psfex, which fits each CCD
+          psf_model in workflow/config.yaml's input_types: table (image sims
+          use fake) selects the exposure and tile config pair; the committed value is psfex, which fits each CCD
           independently. MCCD (Liaudat+2021) fits one hybrid local+global
           model over the focal plane; the completeness table treats its
           counts as warnings because no campaign has run it. Up to the model,
