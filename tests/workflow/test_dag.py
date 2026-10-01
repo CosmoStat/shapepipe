@@ -15,7 +15,8 @@ BASE_RULES = {
     "tile_ngmix", "tile_merge_cats", "tile_make_cat", "clean_tile",
     "final_cat_merge",
 }
-PSF_RULES = {"exp_persist", "star_cat_merge"}
+PSF_RULES = {"exp_persist", "star_cat_merge", "exp_footprint", "nexp_map"}
+DEFECT_RULES = {"exp_defect_map", "defect_map_merge"}   # MAPS_DEFECTS: data only
 CATALOGUE_RULES = {"tile_get_catalogue"}
 
 
@@ -25,6 +26,8 @@ def test_rule_set_matches_input_mode(campaign, dag):
     expected = BASE_RULES.copy()
     if campaign.psf_model != "fake":
         expected |= PSF_RULES
+    if campaign.input_type == "data":
+        expected |= DEFECT_RULES
     if campaign.tile_detection == "unions_catalogue":
         expected |= CATALOGUE_RULES
     assert dag.rule_names == expected
@@ -61,6 +64,10 @@ def test_clean_exposure_waits_on_persist_iff_psf(campaign, dag):
         ]
         if campaign.psf_model != "fake":
             expected.append(campaign.persist_manifest(exp))
+        if campaign.input_type == "data":
+            expected.append(campaign.exp_manifest(exp, "exp_defect_map"))
+        if campaign.psf_model != "fake":
+            expected.append(campaign.exp_manifest(exp, "exp_footprint"))
         assert Counter(map(str, job.input)) == Counter(map(str, expected)), (
             "clean-exposure-waits-on-persist-iff-psf", exp, list(job.input)
         )
@@ -129,6 +136,17 @@ def test_missing_run_fails_during_parse(campaign, resolve_dag):
     )):
         with resolve_dag(campaign):
             pytest.fail("a campaign without run: must fail at parse time")
+
+
+@pytest.mark.parametrize("key", ["coverage", "defect_map"])
+def test_retired_map_keys_fail_during_parse(campaign, resolve_dag, key):
+    """A run config still carrying a retired block is refused, naming its
+    replacement, instead of parsing with the block silently ignored."""
+    campaign.config[key] = {"enabled": False}
+    campaign.write_config()
+    with pytest.raises(WorkflowError, match=rf"{key} -> exposure_maps\."):
+        with resolve_dag(campaign):
+            pytest.fail(f"a run config with {key}: must fail at parse time")
 
 
 def test_mccd_is_refused_during_parse(tmp_path, resolve_dag):
