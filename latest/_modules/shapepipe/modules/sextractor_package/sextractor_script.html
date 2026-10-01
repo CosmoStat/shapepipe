@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="30 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="01 Oct, 2026"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -690,6 +690,10 @@
 <span class="sd">    - ``EXP_NAME``: name of the single exposure for this epoch</span>
 <span class="sd">    - ``CCD_N``: extension where the object was detected</span>
 
+<span class="sd">    @sc [decision:preparation.epoch_provenance_from_tile_history,label:invariant] duplicate-history-cards-count-once</span>
+<span class="sd">    Repeated HISTORY cards for one exposure yield one EPOCH HDU and count once</span>
+<span class="sd">    in N_EPOCH, as find_exposures' deduplicated list does.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    cat_path: str</span>
@@ -739,6 +743,8 @@
                 <span class="sa">f</span><span class="s2">"Could not parse exposure ID from HISTORY entry: '</span><span class="si">{</span><span class="n">hist</span><span class="si">}</span><span class="s2">'"</span>
             <span class="p">)</span>
         <span class="n">exp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">exp_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">exp_list</span><span class="p">))</span>
 
     <span class="n">obj_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
 
@@ -1231,7 +1237,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 30 Sep, 2026.
+  Last updated on 01 Oct, 2026.
   <br/>
 </p>
   </div>

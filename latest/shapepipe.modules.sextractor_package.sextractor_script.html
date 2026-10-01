@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="30 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="01 Oct, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -677,6 +677,9 @@ gives the CCD file and its header entry.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">EXP_NAME</span></code>: name of the single exposure for this epoch</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">CCD_N</span></code>: extension where the object was detected</p></li>
 </ul>
+<p>&#64;sc [decision:preparation.epoch_provenance_from_tile_history,label:invariant] duplicate-history-cards-count-once
+Repeated HISTORY cards for one exposure yield one EPOCH HDU and count once
+in N_EPOCH, as find_exposures’ deduplicated list does.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -951,7 +954,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 30 Sep, 2026.
+  Last updated on 01 Oct, 2026.
   <br/>
 </p>
   </div>

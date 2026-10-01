@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="30 Sep, 2026"/>
+    <meta name="docbuild:last-update" content="01 Oct, 2026"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -959,19 +959,17 @@
         <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
 
         <span class="n">ngmix_n_epoch</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"n_epoch_model"</span><span class="p">]</span>
-        <span class="c1"># Low number of ngmix objects could be due to</span>
-        <span class="c1"># (1) shape measurement failures (e.g. missing PSF): ok, continue</span>
-        <span class="c1"># (2) previous processing errors, e.g. premature run of</span>
-        <span class="c1"># merge_sep_cats_runner: raise error</span>
+        <span class="c1"># A low match fraction can be valid (e.g. missing PSFs). Warn but</span>
+        <span class="c1"># continue; unmatched detections retain their pre-filled sentinels.</span>
+        <span class="c1"># Completeness gates reject premature or incomplete merges.</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ngmix_n_epoch</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_size_target</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
-            <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Merged shape catalogue </span><span class="si">{</span><span class="n">ngmix_cat_path</span><span class="si">}</span><span class="s2"> has very different"</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">" size (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ngmix_n_epoch</span><span class="p">)</span><span class="si">}</span><span class="s2">) compared to target size"</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_size_target</span><span class="si">}</span><span class="s2">)"</span>
+            <span class="n">warning</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Merged shape catalogue </span><span class="si">{</span><span class="n">ngmix_cat_path</span><span class="si">}</span><span class="s2"> contains only "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ngmix_n_epoch</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_size_target</span><span class="si">}</span><span class="s2"> target "</span>
+                <span class="s2">"objects (&lt;10%); continuing with sentinels for unmatched "</span>
+                <span class="s2">"detections."</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
-            <span class="c1">#ngmix_cat_file.close()</span>
-            <span class="c1">#return err_msg</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warning</span><span class="p">)</span>
 
         <span class="n">ngmix_mcal_types_fail</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"mcal_types_fail"</span><span class="p">]</span>
         <span class="c1"># Per-object blend flag (shapepipe#776): the seg stamp held a</span>
@@ -1319,7 +1317,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 30 Sep, 2026.
+  Last updated on 01 Oct, 2026.
   <br/>
 </p>
   </div>
