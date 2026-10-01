@@ -33,11 +33,6 @@ Module-specific config file entries
 
 MAG_ZP : float
     Photometric zero point
-PIXEL_SCALE : float, optional
-    Pixel scale in arcsec. Optional override; when omitted (or non-positive)
-    it is read from the merged image WCS. In the pipeline fit it sets only
-    the centroid-prior width; each fit Jacobian is built per object from the
-    full WCS.
 SAVE_BATCH : int, optional
     Save the output catalogue in batches of this size; default is ``-1``
     (no batch saving)

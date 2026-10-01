@@ -14,8 +14,6 @@ import ngmix
 import galsim
 import numpy as np
 from astropy.io import fits
-from astropy.wcs.utils import proj_plane_pixel_scales
-from cs_util import size as cs_size
 from modopt.math.stats import sigma_mad
 from ngmix.observation import Observation, ObsList
 from scipy.ndimage import binary_dilation
@@ -673,47 +671,6 @@ class Vignet():
         if self.bkg_rms_vign_cat is not None:
             self.bkg_rms_vign_cat.close()
 
-def pixel_scale_from_wcs(f_wcs_file):
-    """Mean pixel scale (arcsec) over every CCD WCS in the merged headers.
-
-    ``f_wcs_file`` is the ``merge_headers`` store: an optional ``TILE_ID``
-    string, then one entry per exposure holding the object ndarray written by
-    ``split_exp`` -- one ``{"WCS": astropy.wcs.WCS, "header": str}`` dict per
-    CCD. Both projected-plane axes of every CCD WCS are averaged. The ngmix
-    fit builds each object's Jacobian from its full per-epoch WCS, so this
-    scalar sets only the centroid-prior width (see :func:`get_prior`).
-
-    Parameters
-    ----------
-    f_wcs_file : dict-like
-        Merged single-exposure headers opened by :class:`Vignet`.
-
-    Returns
-    -------
-    float
-        Pixel scale in arcsec.
-
-    Raises
-    ------
-    ValueError
-        If ``f_wcs_file`` holds no CCD WCS.
-
-    @sc [decision:shape_measurement.fit_priors]
-    """
-    scales = [
-        proj_plane_pixel_scales(ccd["WCS"])
-        for key, exposure in f_wcs_file.items()
-        if key != "TILE_ID"
-        for ccd in exposure
-    ]
-    if not scales:
-        raise ValueError(
-            "cannot derive PIXEL_SCALE from the WCS: the merged headers file "
-            "contains no CCD WCS"
-        )
-    return float(np.mean(scales) * 3600.0)
-
-
 class Ngmix(object):
     """Ngmix.
 
@@ -729,10 +686,6 @@ class Ngmix(object):
         File numbering scheme
     zero_point : float
         Photometric zero point
-    pixel_scale : float or None
-        Pixel scale in arcsec. Optional override: when ``None`` or
-        non-positive, the pixel scale is derived from the image WCS (see
-        :func:`pixel_scale_from_wcs`).
     f_wcs_path : str
         Path to merged single-exposure single-HDU headers
     w_log : logging.Logger
@@ -785,7 +738,6 @@ class Ngmix(object):
         output_dir,
         file_number_string,
         zero_point,
-        pixel_scale,
         f_wcs_path,
         w_log,
         save_batch=-1,
@@ -873,25 +825,6 @@ class Ngmix(object):
             'Per-object RNG seeded from sky position (ngmix#796): results are'
             ' invariant to how the tile is split into object chunks'
         )
-
-        # Pixel scale: an explicit positive PIXEL_SCALE overrides; otherwise
-        # derive it from the image WCS so it can never drift from the pixels
-        # (mirrors SExtractor's ``PIXEL_SCALE 0`` convention). In the pipeline
-        # fit it sets only the centroid-prior width; each fit Jacobian is built
-        # per object from the full WCS.
-        if pixel_scale is None or pixel_scale <= 0:
-            self._pixel_scale = pixel_scale_from_wcs(
-                self._vignet_cat.f_wcs_file
-            )
-            self._w_log.info(
-                f'PIXEL_SCALE derived from image WCS = '
-                f'{self._pixel_scale:.6f} arcsec'
-            )
-        else:
-            self._pixel_scale = pixel_scale
-            self._w_log.info(
-                f'PIXEL_SCALE from config = {self._pixel_scale:.6f} arcsec'
-            )
 
     @classmethod
     def MegaCamFlip(self, vign, ccd_nb):
@@ -1328,11 +1261,12 @@ class Ngmix(object):
             # because the guesser draws its initial guess via prior.sample()
             # (ngmix guessers.py), which consumes the RNG the prior was
             # CONSTRUCTED with: a per-object rng alone would leave the guess
-            # drawing from a shared stream and break the invariance.
+            # drawing from a shared stream and break the invariance. The
+            # centroid prior is one pixel wide, in this object's own epochs.
             obj_rng = np.random.RandomState(
                 position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
             )
-            obj_prior = get_prior(self._pixel_scale, obj_rng)
+            obj_prior = get_prior(stamp_pixel_scale(stamp.jacobs), obj_rng)
 
             try:
                 flux_guess = (
@@ -1673,50 +1607,28 @@ def get_galsim_jacobian(wcs, ra, dec):
     return galsim_jacob
 
 
-def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
-    """Get Noise.
-    TO DO: modify guess, pixel scale
-    Compute the sigma of the noise from an object postage stamp.
-    Use a guess on the object size, ellipticity and flux to create a window
-    function.
+def stamp_pixel_scale(jacobs):
+    """Pixel scale (arcsec) of one object's epochs, for its centroid prior.
+
+    Each epoch's linear scale is ``sqrt(|det J|)``: the side of a square
+    pixel of the same sky area, blind to the CCD's rotation and flip. The
+    object's scale is the mean over its epochs, because the centroid prior is
+    one Gaussian in the sky frame those epochs share.
 
     Parameters
     ----------
-    gal : numpy.ndarray
-        Galaxy image
-    weight : numpy.ndarray
-        Weight image
-    guess : list
-        Gaussian parameters fot the window function
-        ``[x0, y0, g1, g2, T, flux]``
-    pixel_scale : float
-        Pixel scale of the galaxy image
-    thresh : float, optional
-        Threshold to cut the window function,
-        cut = ``thresh`` * sigma_noise;  the default is ``1.2``
+    jacobs : list of galsim.JacobianWCS
+        The object's per-epoch Jacobians, from :func:`get_galsim_jacobian`.
 
     Returns
     -------
     float
-        Sigma of the noise on the galaxy image
+        Pixel scale in arcsec.
 
+    @sc [decision:shape_measurement.fit_priors]
     """
-    img_shape = gal.shape
-    m_weight = weight != 0
+    return float(np.mean([np.sqrt(abs(jac.pixelArea())) for jac in jacobs]))
 
-    sig_tmp = sigma_mad(gal[m_weight])
-
-    gauss_win = galsim.Gaussian(sigma=cs_size.T_to_sigma(guess[4]), flux=guess[5])
-    gauss_win = gauss_win.shear(g1=guess[2], g2=guess[3])
-    gauss_win = gauss_win.drawImage(
-        nx=img_shape[0], ny=img_shape[1], scale=pixel_scale
-    ).array
-
-    m_weight = weight[gauss_win < thresh * sig_tmp] != 0
-
-    sig_noise = sigma_mad(gal[gauss_win < thresh * sig_tmp][m_weight])
-
-    return sig_noise
 
 def central_seg_label(seg):
     """Centre-pixel label of a seg stamp — a *diagnostic*, not the central id.

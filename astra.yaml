@@ -1241,9 +1241,10 @@ analyses:
         rationale: >-
           [HARDCODED] ellipticity GPriorBA with sigma 0.4; flat T and F
           priors with negative support (the bounds decide which noisy fits
-          survive and which rail); a centroid prior one pixel scale wide,
-          the mean scale of the exposure WCSs in the merged headers. The PSF
-          fitter is built with the same joint prior. Prior width drives noise
+          survive and which rail); a centroid prior one pixel wide, where
+          each object's pixel is sqrt|det J| of its epochs' WCS Jacobians,
+          averaged over those epochs. The PSF fitter is built with the same
+          joint prior. Prior width drives noise
           bias; no rationale recorded. Guinot+22 used a wider flux prior and a
           flat prior on r50 rather than T.
           Values:
