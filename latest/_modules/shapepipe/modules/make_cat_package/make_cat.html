@@ -702,8 +702,9 @@
 
     <span class="n">final_cat_file</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ext_name</span><span class="o">=</span><span class="s2">"RESULTS"</span><span class="p">)</span>
     <span class="n">final_cat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"TILE_ID"</span><span class="p">,</span> <span class="n">tile_id_array</span><span class="p">)</span>
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"TILE_UNIQUE_ID"</span><span class="p">,</span> <span class="n">unique_id</span><span class="p">)</span>
+    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_cols</span><span class="p">(</span>
+        <span class="p">{</span><span class="s2">"TILE_ID"</span><span class="p">:</span> <span class="n">tile_id_array</span><span class="p">,</span> <span class="s2">"TILE_UNIQUE_ID"</span><span class="p">:</span> <span class="n">unique_id</span><span class="p">}</span>
+    <span class="p">)</span>
 
     <span class="n">sexcat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -774,10 +775,11 @@
     <span class="n">ra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">final_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"XWIN_WORLD"</span><span class="p">])</span>
     <span class="n">dec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">final_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"YWIN_WORLD"</span><span class="p">])</span>
 
+    <span class="n">mask_cols</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">band</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">band_paths</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Query external mask for band </span><span class="si">{</span><span class="n">band</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="n">values</span> <span class="o">=</span> <span class="n">mask_query</span><span class="o">.</span><span class="n">query_map</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">)</span>
-        <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MASK_</span><span class="si">{</span><span class="n">band</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+        <span class="n">mask_cols</span><span class="p">[</span><span class="sa">f</span><span class="s2">"MASK_</span><span class="si">{</span><span class="n">band</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask_query</span><span class="o">.</span><span class="n">query_map</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">)</span>
+    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_cols</span><span class="p">(</span><span class="n">mask_cols</span><span class="p">)</span>
 
     <span class="n">final_cat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
@@ -854,9 +856,7 @@
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">err_msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_final_cat_file</span><span class="o">.</span><span class="n">add_cols</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dict</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_final_cat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 

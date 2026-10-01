@@ -2049,7 +2049,7 @@
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Add Column.</span>
 
-<span class="sd">        Add a Column to the catalogue.</span>
+<span class="sd">        Add one column to the catalogue; see :meth:`add_cols`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -2060,7 +2060,49 @@
 <span class="sd">        hdu_no : int</span>
 <span class="sd">            HDU index</span>
 <span class="sd">        ext_name : str, optional</span>
-<span class="sd">            Change the name of the extansion</span>
+<span class="sd">            Change the name of the extension</span>
+<span class="sd">        new_cat : bool, optional</span>
+<span class="sd">            If true will save the changes into a new catalogue</span>
+<span class="sd">        new_cat_inst : io.FITSCatalogue</span>
+<span class="sd">            New catalogue object</span>
+
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_cols</span><span class="p">(</span>
+            <span class="p">{</span><span class="n">col_name</span><span class="p">:</span> <span class="n">col_data</span><span class="p">},</span>
+            <span class="n">hdu_no</span><span class="o">=</span><span class="n">hdu_no</span><span class="p">,</span>
+            <span class="n">ext_name</span><span class="o">=</span><span class="n">ext_name</span><span class="p">,</span>
+            <span class="n">new_cat</span><span class="o">=</span><span class="n">new_cat</span><span class="p">,</span>
+            <span class="n">new_cat_inst</span><span class="o">=</span><span class="n">new_cat_inst</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FITSCatalogue.add_cols">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.add_cols">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_cols</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">columns</span><span class="p">,</span>
+        <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">ext_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">new_cat</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">new_cat_inst</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Add Columns.</span>
+
+<span class="sd">        Append columns to a table HDU, rebuilding the HDU and writing the</span>
+<span class="sd">        file once for all of them. The result is identical to one</span>
+<span class="sd">        :meth:`add_col` call per column in the order of ``columns``, but the</span>
+<span class="sd">        cost is one write of the file instead of one per column, which</span>
+<span class="sd">        dominates when many columns are added to a large catalogue.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        columns : dict</span>
+<span class="sd">            Column name to column data (``numpy.ndarray``); columns are</span>
+<span class="sd">            appended in the dict's order</span>
+<span class="sd">        hdu_no : int</span>
+<span class="sd">            HDU index</span>
+<span class="sd">        ext_name : str, optional</span>
+<span class="sd">            Change the name of the extension</span>
 <span class="sd">        new_cat : bool, optional</span>
 <span class="sd">            If true will save the changes into a new catalogue</span>
 <span class="sd">        new_cat_inst : io.FITSCatalogue</span>
@@ -2083,76 +2125,30 @@
                 <span class="n">open_mode_needed</span><span class="o">=</span><span class="n">FITSCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"col_data must be a numpy.ndarray"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">col_data</span> <span class="ow">in</span> <span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"col_data must be a numpy.ndarray"</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">columns</span><span class="p">:</span>
+            <span class="k">return</span>
 
         <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">hdu_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hdu_no</span>
         <span class="k">if</span> <span class="n">ext_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">ext_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
 
-        <span class="n">n_of_hdu</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">)</span>
-        <span class="n">old_hdu_prev</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">hdu_no</span><span class="p">):</span>
-            <span class="n">old_hdu_prev</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-        <span class="n">old_hdu_next</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">hdu_no</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_of_hdu</span><span class="p">):</span>
-            <span class="n">old_hdu_next</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">col_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="o">+</span> <span class="n">fits</span><span class="o">.</span><span class="n">ColDefs</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_make_fits_col</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">col_data</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">col_data</span> <span class="ow">in</span> <span class="n">columns</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
 
-        <span class="n">new_fits</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">(</span><span class="n">old_hdu_prev</span><span class="p">)</span>
-
-        <span class="n">col_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span>
-
-        <span class="n">data_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_fits_col_type</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span>
-        <span class="n">data_shape</span> <span class="o">=</span> <span class="n">col_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-        <span class="n">dim</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">data_shape</span><span class="p">))</span>
-        <span class="n">mem_size</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">data_shape</span><span class="p">:</span>
-                <span class="n">mem_size</span> <span class="o">*=</span> <span class="n">k</span>
-            <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">"</span>
-            <span class="n">new_col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ColDefs</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
-                        <span class="n">name</span><span class="o">=</span><span class="n">col_name</span><span class="p">,</span>
-                        <span class="nb">format</span><span class="o">=</span><span class="n">data_format</span><span class="p">,</span>
-                        <span class="n">array</span><span class="o">=</span><span class="n">col_data</span><span class="p">,</span>
-                        <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">col_list</span> <span class="o">+=</span> <span class="n">new_col</span>
-        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">"A"</span><span class="p">:</span>
-            <span class="n">mem_size</span> <span class="o">*=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">col_data</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">))</span>
-            <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">"</span>
-            <span class="n">new_col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ColDefs</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
-                        <span class="n">name</span><span class="o">=</span><span class="n">col_name</span><span class="p">,</span>
-                        <span class="nb">format</span><span class="o">=</span><span class="n">data_format</span><span class="p">,</span>
-                        <span class="n">array</span><span class="o">=</span><span class="n">col_data</span><span class="p">,</span>
-                        <span class="n">dim</span><span class="o">=</span><span class="nb">str</span><span class="p">((</span><span class="n">mem_size</span><span class="p">,)),</span>
-                    <span class="p">)</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">col_list</span> <span class="o">+=</span> <span class="n">new_col</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">data_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">"</span>
-            <span class="n">new_col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ColDefs</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
-                        <span class="n">name</span><span class="o">=</span><span class="n">col_name</span><span class="p">,</span>
-                        <span class="nb">format</span><span class="o">=</span><span class="n">data_format</span><span class="p">,</span>
-                        <span class="n">array</span><span class="o">=</span><span class="n">col_data</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">col_list</span> <span class="o">+=</span> <span class="n">new_col</span>
-
-        <span class="n">new_fits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="o">.</span><span class="n">from_columns</span><span class="p">(</span><span class="n">col_list</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">ext_name</span><span class="p">))</span>
-
-        <span class="n">new_fits</span> <span class="o">+=</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">(</span><span class="n">old_hdu_next</span><span class="p">)</span>
-
+        <span class="n">new_fits</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[:</span><span class="n">hdu_no</span><span class="p">]</span>
+            <span class="o">+</span> <span class="p">[</span><span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="o">.</span><span class="n">from_columns</span><span class="p">(</span><span class="n">col_list</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">ext_name</span><span class="p">)]</span>
+            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="n">hdu_no</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
+        <span class="p">)</span>
         <span class="n">new_fits</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">new_cat</span><span class="p">:</span>
@@ -2163,6 +2159,49 @@
                 <span class="n">mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span><span class="p">,</span>
                 <span class="n">memmap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_memmap</span><span class="p">,</span>
             <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FITSCatalogue._make_fits_col">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue._make_fits_col">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_fits_col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">col_data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make FITS Column.</span>
+
+<span class="sd">        Build the ``astropy.io.fits.Column`` that :meth:`add_cols` appends</span>
+<span class="sd">        for one array: the FITS type from :meth:`_get_fits_col_type`, a</span>
+<span class="sd">        repeat count and ``TDIM`` for multi-dimensional arrays, and a width</span>
+<span class="sd">        set by the longest entry for strings.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        col_name : str</span>
+<span class="sd">            Column name</span>
+<span class="sd">        col_data : numpy.ndarray</span>
+<span class="sd">            Column data</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        astropy.io.fits.Column</span>
+<span class="sd">            The column</span>
+
+<span class="sd">        """</span>
+        <span class="n">data_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_fits_col_type</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span>
+        <span class="n">data_shape</span> <span class="o">=</span> <span class="n">col_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">mem_size</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">data_shape</span><span class="p">:</span>
+                <span class="n">mem_size</span> <span class="o">*=</span> <span class="n">k</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">data_shape</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">"A"</span><span class="p">:</span>
+            <span class="n">mem_size</span> <span class="o">*=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">col_data</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">))</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="nb">str</span><span class="p">((</span><span class="n">mem_size</span><span class="p">,))</span>
+
+        <span class="k">return</span> <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">col_name</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mem_size</span><span class="si">}{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">array</span><span class="o">=</span><span class="n">col_data</span><span class="p">,</span>
+            <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FITSCatalogue.remove_col">
