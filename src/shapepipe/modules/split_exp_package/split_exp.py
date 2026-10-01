@@ -79,9 +79,9 @@ class SplitExposures(object):
 
         @sc [decision:preparation.astrometric_solution_source,label:convention] wcs-from-delivered-header
         The stored WCS is ``WCS(header)`` of the delivered CCD header,
-        unmodified. Every downstream world-to-pixel transform (epoch
-        membership, stamp placement, position seeding) uses it, so a refit or
-        header edit here moves every stamp centre and epoch assignment.
+        unmodified. Epoch membership, multi-epoch stamp placement, PSF
+        interpolation positions and the ngmix Jacobian all use it; a refit or
+        header edit here shifts them.
 
         Parameters
         ----------

@@ -128,11 +128,11 @@ def _metacal_noshear_g(seed):
 def test_metacal_is_reproducible_with_fixed_seed():
     """Same seed -> identical metacal shear.
 
-    The module seeds ``self._rng = RandomState(seed)`` per tile precisely so a
-    rerun reproduces. This guards the noise-image and masked-pixel draws in
-    ``prepare_ngmix_weights`` against silently falling back to the unseeded
-    global ``numpy.random`` state, which would make shear estimates
-    irreproducible from one run to the next.
+    Production seeds a fresh RandomState per object from its position
+    (position_seed), so a rerun reproduces. This guards the noise-image and
+    masked-pixel draws in ``prepare_ngmix_weights`` against silently falling
+    back to the unseeded global ``numpy.random`` state, which would make
+    shear estimates irreproducible from one run to the next.
     """
     npt.assert_array_equal(_metacal_noshear_g(42), _metacal_noshear_g(42))
 

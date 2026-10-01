@@ -123,6 +123,8 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
     objects near it, never the tile. CCD_N is the 0-based index that split_exp
     gives the CCD file and its header entry.
 
+    @sc [decision:preparation.epoch_provenance_from_tile_history]
+
     The columns will be:
 
     - ``NUMBER``: same as SExtractor NUMBER

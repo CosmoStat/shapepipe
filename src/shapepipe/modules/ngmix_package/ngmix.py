@@ -71,7 +71,7 @@ def get_type_flags(fit):
     Fit flags of one metacal type, reading absence of evidence of success
     as failure.
 
-    @sc [label:convention] mcal-flags-zero-means-measured
+    @sc [decision:catalogue_assembly.failure_sentinels,label:convention] mcal-flags-zero-means-measured
     A flag of 0 means the fit ran, reported success and returned a finite
     shear; no default or fallback may produce 0. FLAGS_<SHEAR>, MCAL_FLAGS
     (OR) and MCAL_TYPES_FAIL (count) all derive from this function, and
