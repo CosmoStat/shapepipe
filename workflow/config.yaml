@@ -21,9 +21,10 @@ input_type: data
 # run: smk-g6
 
 # Default settings per input_type, can be overridden by a user-defined run config file.
-# - tile_detection: allowed are `unions_catalogue` (fetch official UNIONS catalogue
-#   from vos; recommended for data); `sextractor` (detect objects via a SExtractor
-#   module run; required for image_sims)
+# - tile_detection: both run SExtractor on the tile. `unions_catalogue` (data)
+#   also fetches the UNIONS per-tile catalogue and joins the detections to it,
+#   taking its NUMBER (needs the DR6 tile image); `sextractor` keeps
+#   SExtractor's own (required for image_sims)
 # - psf_model: allowed are `psfex` (default), `mccd`; `fake` (image_sims only,
 #   PSF read from psf_dict)
 input_types:
