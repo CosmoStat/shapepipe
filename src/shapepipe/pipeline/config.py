@@ -38,9 +38,16 @@ def _expandvars_strict(value):
     Raises
     ------
     ValueError
-        If a referenced environment variable without a default is not set
+        If a referenced environment variable without a default is not set,
+        or a ``${`` opens none of the forms above (``${VAR-x}``,
+        ``${VAR:=x}``, ``${ VAR }``)
 
     """
+    if "${" in _VAR_RE.sub("", value):
+        raise ValueError(
+            f"Config value '{value}' has a '${{' that is not $VAR, ${{VAR}}"
+            + " or ${VAR:-default}."
+        )
     unset = []
 
     def substitute(match):
