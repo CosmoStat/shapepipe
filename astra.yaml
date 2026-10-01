@@ -376,21 +376,23 @@ analyses:
           (detection_threshold_policy), so pairs agree to 4e-5 px at the
           median. On tile 186.307 every one of the 41,201 detections pairs;
           over eight DR6 tiles spanning a rich cluster, a bright star's halo,
-          low latitude and the survey edge, at least 99.6% of detections and
-          99.4% of catalogue objects pair. The catalogue objects with no
-          detection (0.1-0.6%, mostly fainter than MAG_AUTO 24.5) are
+          low latitude and the survey edge, at least 99.7% of detections and
+          99.2% of catalogue objects pair. The catalogue objects with no
+          detection (0-0.7%, mostly fainter than MAG_AUTO 24.5) are
           deblended children that ShapePipe's SExtractor leaves merged,
           concentrated around very large objects; they have photometry but
           no shape. The join needs the tile image to be the catalogue's
           release: on the DR5 image of a tile only ~95% of detections pair.
-          The run stops when fewer than 99% of the detections, or of the
-          catalogue objects, pair. PSF stars come from the exposure-level
+          The run stops when the unpaired detections, or the unpaired
+          catalogue objects, exceed both 2% of their side and 20 objects: a
+          margin over deblending near large objects, a stop for other pixels. PSF stars come from the exposure-level
           SExtractor run in both options. Image simulations, which have no
           UNIONS catalogue, keep SExtractor's own NUMBER.
           Values:
           input_types.data.tile_detection = unions_catalogue;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_RADIUS = 1.0;
-          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_MIN_FRACTION = 0.99.
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_MIN_FRACTION = 0.98;
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_TOLERATED_UNPAIRED = 20.
         default: unions_catalogue
         options:
           unions_catalogue:
@@ -405,13 +407,17 @@ analyses:
           catalogue whose NUMBER committed data adopts (tile_detection). Run
           on the DR6 image of tile 186.307, it reproduces the DR6 catalogue to 99.89% completeness
           and 100% purity with identical segmentation pixels; the 45 misses
-          are faint deblended children of bright parents (#929). On tiles
-          where SExtractor's pixel stack overflows on a very large object (a
-          cD galaxy, a bright star's halo, at MEMORY_PIXSTACK = 300000),
-          MAG_AUTO and FLUX_RADIUS differ from the catalogue by more than 1%
-          for 2-11% of objects, most of them beyond the overflow in scan
-          order; a larger stack moves but does not remove the difference, so
-          the catalogue's run differs in a setting not recorded here. This
+          are faint deblended children of bright parents (#929). The pixel
+          stack (MEMORY_PIXSTACK) holds the largest object on every tested
+          tile, a bright star's halo included, so no object is truncated.
+          Unexplained: on tiles with such a large object (a cD galaxy, a
+          bright star's halo) MAG_AUTO and FLUX_RADIUS differ from the
+          catalogue by more than 1% for 2-11% of objects, most of them past
+          the large object in SExtractor's scan order, and on one
+          low-latitude tile for 2% of objects spread over the tile. The
+          catalogue's run must differ in a setting not recorded here
+          (memory, version); shapes use ShapePipe's measurements and
+          photometry the catalogue's, so for those objects the two differ. This
           validates the configuration on data pixels, not detection on
           simulated images. The 7x7 Gaussian of FWHM 3 px is
           near the CFIS average seeing of 0.65 arcsec (about 3.5 px at
@@ -425,7 +431,7 @@ analyses:
           default_tile.sex#ANALYSIS_THRESH = 1.0;
           default_tile.sex#DETECT_MINAREA = 3;
           default_tile.sex#FILTER = Y;
-          default_tile.sex#MEMORY_PIXSTACK = 300000;
+          default_tile.sex#MEMORY_PIXSTACK = 3000000;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE =
           $SP_CONFIG/gauss_3.0_7x7.conv;
           config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_SEX_FILE =

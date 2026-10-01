@@ -542,12 +542,12 @@ rule tile_detect:
     # MEASURED on eight DR6 tiles chosen to span conditions (high latitude,
     # b = 18 deg, the A2199 cluster, Alioth's halo, two survey-edge tiles at
     # 96% zero weight; 1-10 exposures), the step as shapepipe_run runs it on
-    # candide: wall time 23-143 s (SExtractor + join <= 50 s, post-processing
-    # <= 92 s), peak RSS 1.75 GiB, set by the join holding the ~430 MB
+    # candide: wall time 23-160 s (SExtractor + join <= 93 s, post-processing
+    # <= 97 s), peak RSS 1.84 GiB, set by the join holding the ~430 MB
     # catalogue twice. Image simulations run the same step on tiles of the same
     # size (10000 x 10000 px); SExtractor alone on one takes 34 s and 0.74 GiB.
-    # 4000 MB is 2.2x the worst tile, and an OOM retries at 8000. The runtime
-    # is ~8x the slowest tile, for /scratch I/O on nibi (a 400 MB image and
+    # 4000 MB is 2.1x the worst tile, and an OOM retries at 8000. The runtime
+    # is ~7x the slowest tile, for /scratch I/O on nibi (a 400 MB image and
     # weight in, a ~430 MB catalogue out). nibi bills max(cores, mem_GB/4), so
     # the job bills 1 core-equivalent.
     threads: 1

@@ -121,8 +121,10 @@ BACK_FILTTHRESH  0.0            # Threshold above which the background-
 #--------------------- Memory (change with caution!) -------------------------
  
 MEMORY_OBJSTACK  3000           # number of objects in stack
+# Large enough that no object overflows the stack, a bright star's halo
+# included (300000 overflows on such tiles and truncates the object).
 # @sc [decision:detection.detection_threshold_policy]
-MEMORY_PIXSTACK  300000         # number of pixels in stack
+MEMORY_PIXSTACK  3000000        # number of pixels in stack
 MEMORY_BUFSIZE   1024           # number of lines in buffer
  
 #------------------------------- ASSOCiation ---------------------------------
