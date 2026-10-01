@@ -1513,7 +1513,7 @@ def _decisions_at(root, revision):
 
 
 def diff_report(root, base):
-    """Markdown table of decisions whose tagged sites overlap ``base...HEAD``.
+    """Markdown bullet list of decisions whose tagged sites overlap ``base...HEAD``.
 
     Changed lines are matched against sites parsed at the merge base (old
     side, so deleted sites count) and at HEAD (new side). A decision's
@@ -1544,21 +1544,24 @@ def diff_report(root, base):
         lines.append("No tagged decision site overlaps this diff.")
         return "\n".join(lines)
     before, after = (_decisions_at(root, revision) for revision in revisions)
-    lines += ["| Decision | Tagged sites | Record |", "| --- | --- | --- |"]
-    for decision, sites in sorted(touched.items()):
+    entries = []
+    for decision, sites in touched.items():
         # Base-side sites are listed only for files where this decision has
         # no HEAD-side hit: a deleted site, not an edited one's old position.
         at_head = {path for path, *_, side in sites if side}
-        cells = [
-            f"`{path}:{start}-{end}`" + ("" if side else " (base)")
+        amended = before.get(decision) != after.get(decision)
+        entries.append((amended, decision, [
+            f"  - `{path}:{start}-{end}`" + ("" if side else " (base)")
             for path, start, end, side in sorted(sites)
             if side or path not in at_head
-        ]
+        ]))
+    # Unchanged records first: those are the ones asking for a look.
+    for amended, decision, site_lines in sorted(entries):
         verdict = (
-            "record amended" if before.get(decision) != after.get(decision)
-            else "record unchanged — check the rationale still holds"
+            "record amended" if amended
+            else "record unchanged; check the rationale still holds"
         )
-        lines.append(f"| `{decision}` | {'<br>'.join(cells)} | {verdict} |")
+        lines += [f"- `{decision}` — {verdict}", *site_lines]
     return "\n".join(lines)
 
 

@@ -34,7 +34,7 @@ _RATIONALE = {
     "untouched": "Untouched rationale.",
     "sub.inner": "Inner rationale.",
 }
-_UNCHANGED = "record unchanged — check the rationale still holds"
+_UNCHANGED = "record unchanged; check the rationale still holds"
 CONFIG = "config/settings.sex"
 
 
@@ -73,7 +73,7 @@ def _rows(repo):
     return [
         line
         for line in diff_report(repo, "base").splitlines()
-        if line.startswith("| `")
+        if line.startswith(("- ", "  - "))
     ]
 
 
@@ -96,7 +96,8 @@ def test_changed_site_reported_with_its_own_record_verdict(
     _commit(repo)
     line = _CONFIG.splitlines().index(_LINE[changed]) + 1
     assert _rows(repo) == [
-        f"| `{changed}` | `{CONFIG}:{line}-{line}` | {verdict} |"
+        f"- `{changed}` — {verdict}",
+        f"  - `{CONFIG}:{line}-{line}`",
     ]
 
 
@@ -104,17 +105,18 @@ def test_deleted_site_mapped_against_the_base_file(repo):
     _edit(repo, CONFIG, "# @sc [decision:choice]\nTHRESH 1\n\n", "")
     _commit(repo)
     assert _rows(repo) == [
-        f"| `choice` | `{CONFIG}:2-2` (base) | {_UNCHANGED} |"
+        f"- `choice` — {_UNCHANGED}",
+        f"  - `{CONFIG}:2-2` (base)",
     ]
 
 
 def test_deleted_file_reports_every_site(repo):
     _git(repo, "rm", "--quiet", CONFIG)
     _commit(repo)
-    assert [row.split(" | ")[0] for row in _rows(repo)] == [
-        "| `choice`",
-        "| `sub.inner`",
-        "| `untouched`",
+    assert [row for row in _rows(repo) if row.startswith("- ")] == [
+        f"- `choice` — {_UNCHANGED}",
+        f"- `sub.inner` — {_UNCHANGED}",
+        f"- `untouched` — {_UNCHANGED}",
     ]
 
 
@@ -132,7 +134,21 @@ def test_base_advanced_past_the_merge_base(repo):
     _edit(repo, "astra.yaml", "Untouched rationale.", "Rewritten on base.")
     _commit(repo)
     _git(repo, "checkout", "--quiet", "feature")
-    assert _rows(repo) == [f"| `untouched` | `{CONFIG}:5-5` | {_UNCHANGED} |"]
+    assert _rows(repo) == [
+        f"- `untouched` — {_UNCHANGED}",
+        f"  - `{CONFIG}:5-5`",
+    ]
+
+
+def test_unchanged_records_listed_before_amended(repo):
+    _edit(repo, CONFIG, "THRESH 1", "THRESH 10")
+    _edit(repo, CONFIG, "OTHER 7", "OTHER 70")
+    _edit(repo, "astra.yaml", "Choice rationale.", "Rewritten.")
+    _commit(repo)
+    assert [row for row in _rows(repo) if row.startswith("- ")] == [
+        f"- `untouched` — {_UNCHANGED}",
+        "- `choice` — record amended",
+    ]
 
 
 def test_rename_and_binary_touch_nothing(repo):

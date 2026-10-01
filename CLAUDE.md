@@ -133,7 +133,7 @@ constraints. `tests/unit/test_decisions.py` checks tag syntax, bidirectional
 decision/site coverage, values, and test `decision` markers. To inspect tags at
 an implementation site, run `python -m tests.helpers.decisions <path>[:<line>]`;
 `--decision <id>` lists its sites, and `--diff origin/develop` the decisions
-your branch touches and whether their record changed (CI posts this table on
+your branch touches and whether their record changed (CI posts this list on
 every PR). The format is ASTRA.
 
 `uvx astra-tools@0.2.17 guide` is the briefing and
