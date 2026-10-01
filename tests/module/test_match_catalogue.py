@@ -67,7 +67,7 @@ def test_rows_take_the_external_number_one_to_one(tmp_path):
     ext = _external(tmp_path / "ext.cat", numbers + [1006],
                     list(X[order] + 1e-4) + [300.0],
                     list(Y[order] - 1e-4) + [300.0])
-    counts = mc.match_catalogue(cat, ext)
+    counts = mc.match_catalogue(cat, ext, min_fraction=0.8)
     data = _objects(cat)
     expected = np.empty(5, int)
     expected[order] = numbers
@@ -102,6 +102,30 @@ def test_pairs_are_mutual_nearest_neighbours(tmp_path):
     data = _objects(cat)
     assert list(data["NUMBER"]) == [5, 6]
     np.testing.assert_allclose(data["X_IMAGE"], [10.0, 90.0])
+
+
+def test_pairs_lie_within_the_radius(tmp_path):
+    """Mutual nearest neighbours 2 px apart, beyond the radius, do not pair."""
+    x = np.append(X, 300.0)
+    y = np.append(Y, 300.0)
+    cat = _sexcat(tmp_path / "sexcat.fits", x, y)
+    ext = _external(tmp_path / "ext.cat", [1, 2, 3, 4, 5, 6],
+                    np.append(X, 302.0), np.append(Y, 300.0))
+    counts = mc.match_catalogue(cat, ext, radius=1.0, min_fraction=0.8)
+    assert list(_objects(cat)["NUMBER"]) == [1, 2, 3, 4, 5]
+    assert counts["n_dropped"] == 1 and counts["n_external_only"] == 1
+
+
+def test_too_few_catalogue_objects_paired_stop_the_run(tmp_path):
+    """Fewer detections than catalogue objects (a drifted detection
+    configuration) fails, though every detection pairs."""
+    cat = _sexcat(tmp_path / "sexcat.fits", X[:4], Y[:4])
+    ext = _external(tmp_path / "ext.cat", [1, 2, 3, 4, 5], X, Y)
+    with pytest.raises(ValueError, match="fewer objects"):
+        mc.match_catalogue(cat, ext, min_fraction=0.99)
+    assert list(_objects(cat)["NUMBER"]) == [1, 2, 3, 4]
+    counts = mc.match_catalogue(cat, ext, min_fraction=0.8)
+    assert counts["n_paired"] == 4 and counts["n_external_only"] == 1
 
 
 def test_too_few_pairs_stop_the_run(tmp_path):

@@ -6,8 +6,9 @@ so the tile's rows carry the external catalogue's object numbers.
 The UNIONS tile catalogue (Stephen Gwyn's MegaPipe SExtractor run on the DR6
 tile) defines the object list and the ``NUMBER`` that the photometry and
 photo-z catalogues share. ShapePipe runs its own SExtractor on the same image
-with the same detection configuration, which reproduces that catalogue object
-for object, and takes membership and ``NUMBER`` from it here: every
+with the same detection configuration, which reproduces that catalogue for
+all but a few objects in a thousand, and takes membership and ``NUMBER`` from
+it here: every
 measurement (windowed positions, ``VIGNET`` and its neighbour marking, the
 SExtractor columns) stays SExtractor's own.
 
@@ -103,11 +104,16 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.99,
     marked ``UNMATCHED_LABEL``. The catalogue is rewritten in place; every
     other HDU and column is kept.
 
-    The join is exact when both catalogues come from the same pixels: on the
-    DR6 image of tile 186.307 every SExtractor row pairs, at a median
-    separation of 4e-5 pixel. Run on different pixels (a DR5 image against
-    the DR6 catalogue) only ~95% pair, so a pairing fraction below
-    ``min_fraction`` stops the run rather than silently losing objects.
+    Both catalogues come from the same pixels, so pairs agree to ~1e-4
+    pixel. On eight DR6 tiles at least 99.6% of SExtractor rows and 99.4% of
+    UNIONS objects pair; the shortfall is SExtractor deblending differently
+    near very large objects (a cD galaxy, a bright star's halo). Run on
+    different pixels (a DR5 image against the DR6 catalogue) only ~95% pair.
+    So the run stops when fewer than ``min_fraction`` of the SExtractor rows,
+    or of the external objects, pair: the first catches a catalogue from
+    other pixels, the second a detection configuration that finds fewer
+    objects than the catalogue's, which would leave its objects without
+    shapes.
 
     Parameters
     ----------
@@ -119,8 +125,8 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.99,
     radius : float, optional
         Largest separation of a pair, in pixels; default 1
     min_fraction : float, optional
-        Smallest acceptable fraction of SExtractor rows with a partner;
-        default 0.99
+        Smallest acceptable fraction of SExtractor rows, and of external
+        objects, with a partner; default 0.99
     w_log : logging.Logger, optional
         Pipeline logger
 
@@ -134,7 +140,8 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.99,
     Raises
     ------
     ValueError
-        If fewer than ``min_fraction`` of the SExtractor rows pair
+        If fewer than ``min_fraction`` of the SExtractor rows, or of the
+        external objects, pair
 
     @sc [decision:detection.tile_detection]
     """
@@ -163,6 +170,15 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.99,
             + f" {min_fraction}; {summary}). The catalogue must come from the"
             + " same pixels as the image: check that the tile image is the"
             + " release of the catalogue (DR6)."
+        )
+    fraction_ext = len(i_sex) / max(len(ext), 1)
+    if fraction_ext < min_fraction:
+        raise ValueError(
+            f"Only {fraction_ext:.4f} of the objects of {ext_cat_path} pair"
+            + f" with a row of {cat_path} within {radius} px (minimum"
+            + f" {min_fraction}; {summary}). SExtractor finds fewer objects"
+            + " than the catalogue: check that the detection configuration"
+            + " is the catalogue's."
         )
 
     old_number = np.asarray(data["NUMBER"])

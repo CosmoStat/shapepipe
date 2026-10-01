@@ -373,14 +373,18 @@ analyses:
           object list and one ID (TILE_UNIQUE_ID); unpaired detections leave
           the catalogue. The catalogue is MegaPipe's SExtractor run on the
           same DR6 image with the configuration of default_tile.sex
-          (detection_threshold_policy), so on tile 186.307 every one of the
-          41,201 detections pairs, at a median separation of 4e-5 px. The 45
-          catalogue objects with no detection (0.11%; 4 in 20 < MAG_AUTO <
-          24.5) are faint deblended children inside bright parents, which
-          SExtractor 2.25 leaves merged; they have photometry but no shape.
-          The join needs the tile image to be the catalogue's release: on
-          the DR5 image of the same tile only ~95% of detections pair, and
-          below 99% the run stops. PSF stars come from the exposure-level
+          (detection_threshold_policy), so pairs agree to 4e-5 px at the
+          median. On tile 186.307 every one of the 41,201 detections pairs;
+          over eight DR6 tiles spanning a rich cluster, a bright star's halo,
+          low latitude and the survey edge, at least 99.6% of detections and
+          99.4% of catalogue objects pair. The catalogue objects with no
+          detection (0.1-0.6%, mostly fainter than MAG_AUTO 24.5) are
+          deblended children that ShapePipe's SExtractor leaves merged,
+          concentrated around very large objects; they have photometry but
+          no shape. The join needs the tile image to be the catalogue's
+          release: on the DR5 image of a tile only ~95% of detections pair.
+          The run stops when fewer than 99% of the detections, or of the
+          catalogue objects, pair. PSF stars come from the exposure-level
           SExtractor run in both options. Image simulations, which have no
           UNIONS catalogue, keep SExtractor's own NUMBER.
           Values:
@@ -401,7 +405,13 @@ analyses:
           catalogue whose NUMBER committed data adopts (tile_detection). Run
           on the DR6 image of tile 186.307, it reproduces the DR6 catalogue to 99.89% completeness
           and 100% purity with identical segmentation pixels; the 45 misses
-          are faint deblended children of bright parents (#929). This
+          are faint deblended children of bright parents (#929). On tiles
+          where SExtractor's pixel stack overflows on a very large object (a
+          cD galaxy, a bright star's halo, at MEMORY_PIXSTACK = 300000),
+          MAG_AUTO and FLUX_RADIUS differ from the catalogue by more than 1%
+          for 2-11% of objects, most of them beyond the overflow in scan
+          order; a larger stack moves but does not remove the difference, so
+          the catalogue's run differs in a setting not recorded here. This
           validates the configuration on data pixels, not detection on
           simulated images. The 7x7 Gaussian of FWHM 3 px is
           near the CFIS average seeing of 0.65 arcsec (about 3.5 px at
@@ -415,6 +425,7 @@ analyses:
           default_tile.sex#ANALYSIS_THRESH = 1.0;
           default_tile.sex#DETECT_MINAREA = 3;
           default_tile.sex#FILTER = Y;
+          default_tile.sex#MEMORY_PIXSTACK = 300000;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE =
           $SP_CONFIG/gauss_3.0_7x7.conv;
           config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_SEX_FILE =
@@ -625,7 +636,12 @@ analyses:
           column list: tiles have no instrument flag image and no detection
           coadd exists, so detection sees every tile pixel and the tile
           catalogue carries no IMAFLAGS_ISO; final_cat.param, the merge's
-          exact allow-list, does not request it.
+          exact allow-list, does not request it. Without a detection image
+          sextractor_runner calls SExtractor in single-image mode, which on
+          tile 186.307 reproduces the UNIONS catalogue's MAG_AUTO to 0.01 mag
+          for all but 0.03% of objects. Dual-image mode with the same image
+          twice is not equivalent: it changes the background, MAG_AUTO and
+          FLUX_RADIUS of a fifth of the objects (#936).
           Values:
           SEXTRACTOR_RUNNER.DETECTION_IMAGE = False;
           SEXTRACTOR_RUNNER.FLAG_IMAGE = False.
