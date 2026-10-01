@@ -13,9 +13,11 @@ locking and change detection.
 
 ``immutable=1`` is only correct for a file that no process writes while it
 is open: sqlite neither sees concurrent changes nor replays a hot journal
-left by a crashed writer. The pipeline's stores satisfy this at their read
-sites, because each is written and closed by an earlier module than the one
-reading it.
+left by a crashed writer, so it would return uncommitted rows. Every call
+site of this module reads a store that an earlier module wrote and closed
+(``make_post_process`` reads the header log ``merge_headers`` wrote). As a
+guard, opening a store that has a rollback journal or write-ahead log next
+to it raises instead of reading it.
 
 """
 
@@ -49,6 +51,10 @@ class ImmutableSqliteDict(Mapping):
     ------
     FileNotFoundError
         If ``path`` is not an existing file
+    RuntimeError
+        If a ``-journal`` or ``-wal`` file sits next to ``path``: a writer is
+        mid-transaction or crashed in one, and an immutable read would see
+        uncommitted data
 
     """
 
@@ -56,6 +62,15 @@ class ImmutableSqliteDict(Mapping):
         path = Path(path)
         if not path.is_file():
             raise FileNotFoundError(f"SqliteDict file not found: '{path}'")
+        for suffix in ("-journal", "-wal"):
+            sidecar = path.with_name(path.name + suffix)
+            if sidecar.exists():
+                raise RuntimeError(
+                    f"SqliteDict file '{path}' has a '{suffix}' file next to"
+                    + " it: it is being written, or a writer died"
+                    + " mid-transaction. Open it with SqliteDict to roll the"
+                    + " journal back, or rewrite it."
+                )
         self.path = path
         self._table = '"' + tablename.replace('"', '""') + '"'
         self._conn = sqlite3.connect(

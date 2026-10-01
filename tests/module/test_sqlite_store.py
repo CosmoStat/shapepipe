@@ -7,6 +7,8 @@ insertion order, same decoded values.
 """
 
 import pickle
+import subprocess
+import sys
 
 import numpy as np
 import pytest
@@ -94,3 +96,46 @@ def test_read_leaves_no_journal(wcs_store):
     before = sorted(p.name for p in wcs_store.parent.iterdir())
     read_sqlitedict(wcs_store)
     assert sorted(p.name for p in wcs_store.parent.iterdir()) == before
+
+
+@pytest.mark.parametrize("suffix", ["-journal", "-wal"])
+def test_sidecar_journal_refuses_read(object_store, suffix):
+    """A rollback journal or WAL next to the store refuses the read."""
+    object_store.with_name(object_store.name + suffix).write_bytes(b"")
+    with pytest.raises(RuntimeError, match=suffix):
+        ImmutableSqliteDict(object_store)
+
+
+def test_hot_journal_from_killed_writer_refuses_read(tmp_path):
+    """A writer killed mid-transaction leaves a hot journal: refuse, not
+    return its uncommitted rows."""
+    path = tmp_path / "store.sqlite"
+    with SqliteDict(str(path)) as db:
+        db["1"] = "committed"
+        db.commit()
+    script = (
+        "import os, sqlitedict\n"
+        f"db = sqlitedict.SqliteDict({str(path)!r})\n"
+        "db['1'] = 'uncommitted'\n"
+        "db['2'] = 'uncommitted'\n"
+        "db.conn.select_one('SELECT 1')\n"
+        "os._exit(0)\n"
+    )
+    subprocess.run([sys.executable, "-c", script], check=True)
+    if not path.with_name(path.name + "-journal").exists():
+        pytest.skip("writer left no journal on this filesystem")
+    with pytest.raises(RuntimeError, match="-journal"):
+        read_sqlitedict(path)
+    with SqliteDict(str(path), flag="r") as db:
+        assert dict(db.items()) == {"1": "committed"}
+
+
+def test_path_with_uri_special_characters(tmp_path):
+    """Space, '?', '#' and '%' in the path do not break the file: URI."""
+    directory = tmp_path / "a dir?x=1#frag%20"
+    directory.mkdir()
+    path = directory / "st ore?#%.sqlite"
+    with SqliteDict(str(path)) as db:
+        db["k"] = {"v": 1}
+        db.commit()
+    assert read_sqlitedict(path) == {"k": {"v": 1}}
