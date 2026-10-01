@@ -1354,7 +1354,7 @@ class FITSCatalogue(BaseCatalogue):
     ):
         """Add Column.
 
-        Add a Column to the catalogue.
+        Add one column to the catalogue; see :meth:`add_cols`.
 
         Parameters
         ----------
@@ -1362,6 +1362,45 @@ class FITSCatalogue(BaseCatalogue):
             Column name
         col_data : numpy.ndarray
             Column data
+        hdu_no : int
+            HDU index
+        ext_name : str, optional
+            Change the name of the extansion
+        new_cat : bool, optional
+            If true will save the changes into a new catalogue
+        new_cat_inst : io.FITSCatalogue
+            New catalogue object
+
+        """
+        self.add_cols(
+            {col_name: col_data},
+            hdu_no=hdu_no,
+            ext_name=ext_name,
+            new_cat=new_cat,
+            new_cat_inst=new_cat_inst,
+        )
+
+    def add_cols(
+        self,
+        columns,
+        hdu_no=None,
+        ext_name=None,
+        new_cat=False,
+        new_cat_inst=None,
+    ):
+        """Add Columns.
+
+        Append columns to a table HDU, rebuilding the HDU and writing the
+        file once for all of them. The result is identical to one
+        :meth:`add_col` call per column in the order of ``columns``, but the
+        cost is one write of the file instead of one per column, which
+        dominates when many columns are added to a large catalogue.
+
+        Parameters
+        ----------
+        columns : dict
+            Column name to column data (``numpy.ndarray``); columns are
+            appended in the dict's order
         hdu_no : int
             HDU index
         ext_name : str, optional
@@ -1388,76 +1427,30 @@ class FITSCatalogue(BaseCatalogue):
                 open_mode_needed=FITSCatalogue.OpenMode.ReadWrite,
             )
 
-        if type(col_data) != np.ndarray:
-            raise TypeError("col_data must be a numpy.ndarray")
+        for col_data in columns.values():
+            if type(col_data) != np.ndarray:
+                raise TypeError("col_data must be a numpy.ndarray")
+
+        if not columns:
+            return
 
         if hdu_no is None:
             hdu_no = self.hdu_no
         if ext_name is None:
             ext_name = self._cat_data[hdu_no].name
 
-        n_of_hdu = len(self._cat_data)
-        old_hdu_prev = []
-        for i in range(0, hdu_no):
-            old_hdu_prev.append(self._cat_data[i])
-        old_hdu_next = []
-        for i in range(hdu_no + 1, n_of_hdu):
-            old_hdu_next.append(self._cat_data[i])
+        col_list = self._cat_data[hdu_no].data.columns + fits.ColDefs(
+            [
+                self._make_fits_col(col_name, col_data)
+                for col_name, col_data in columns.items()
+            ]
+        )
 
-        new_fits = fits.HDUList(old_hdu_prev)
-
-        col_list = self._cat_data[hdu_no].data.columns
-
-        data_type = self._get_fits_col_type(col_data)
-        data_shape = col_data.shape[1:]
-        dim = str(tuple(data_shape))
-        mem_size = 1
-        if len(data_shape) != 0:
-            for k in data_shape:
-                mem_size *= k
-            data_format = f"{mem_size}{data_type}"
-            new_col = fits.ColDefs(
-                [
-                    fits.Column(
-                        name=col_name,
-                        format=data_format,
-                        array=col_data,
-                        dim=dim,
-                    )
-                ]
-            )
-            col_list += new_col
-        elif data_type == "A":
-            mem_size *= len(max(col_data, key=len))
-            data_format = f"{mem_size}{data_type}"
-            new_col = fits.ColDefs(
-                [
-                    fits.Column(
-                        name=col_name,
-                        format=data_format,
-                        array=col_data,
-                        dim=str((mem_size,)),
-                    )
-                ]
-            )
-            col_list += new_col
-        else:
-            data_format = f"{mem_size}{data_type}"
-            new_col = fits.ColDefs(
-                [
-                    fits.Column(
-                        name=col_name,
-                        format=data_format,
-                        array=col_data,
-                    )
-                ]
-            )
-            col_list += new_col
-
-        new_fits.append(fits.BinTableHDU.from_columns(col_list, name=ext_name))
-
-        new_fits += fits.HDUList(old_hdu_next)
-
+        new_fits = fits.HDUList(
+            self._cat_data[:hdu_no]
+            + [fits.BinTableHDU.from_columns(col_list, name=ext_name)]
+            + self._cat_data[hdu_no + 1 :]
+        )
         new_fits.writeto(output_path, overwrite=True)
 
         if not new_cat:
@@ -1468,6 +1461,46 @@ class FITSCatalogue(BaseCatalogue):
                 mode=self.open_mode,
                 memmap=self.use_memmap,
             )
+
+    def _make_fits_col(self, col_name, col_data):
+        """Make FITS Column.
+
+        Build the ``astropy.io.fits.Column`` that :meth:`add_cols` appends
+        for one array: the FITS type from :meth:`_get_fits_col_type`, a
+        repeat count and ``TDIM`` for multi-dimensional arrays, and a width
+        set by the longest entry for strings.
+
+        Parameters
+        ----------
+        col_name : str
+            Column name
+        col_data : numpy.ndarray
+            Column data
+
+        Returns
+        -------
+        astropy.io.fits.Column
+            The column
+
+        """
+        data_type = self._get_fits_col_type(col_data)
+        data_shape = col_data.shape[1:]
+        dim = None
+        mem_size = 1
+        if len(data_shape) != 0:
+            for k in data_shape:
+                mem_size *= k
+            dim = str(tuple(data_shape))
+        elif data_type == "A":
+            mem_size *= len(max(col_data, key=len))
+            dim = str((mem_size,))
+
+        return fits.Column(
+            name=col_name,
+            format=f"{mem_size}{data_type}",
+            array=col_data,
+            dim=dim,
+        )
 
     def remove_col(self, col_index):
         """Remove Column.

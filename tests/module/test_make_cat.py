@@ -666,7 +666,7 @@ _PSF_SLOT_SENTINELS = {
 
 
 class _ProcessCatStub(_FinalCatStub):
-    """FITSCatalogue stand-in for ``SaveCatalogue.process``; records add_col."""
+    """FITSCatalogue stand-in for ``SaveCatalogue.process``; records add_cols."""
 
     def __init__(self, obj_id, n_epoch):
         super().__init__(n_epoch)
@@ -682,8 +682,8 @@ class _ProcessCatStub(_FinalCatStub):
     def get_data(self):
         return {"NUMBER": self._number, "N_EPOCH": self._n_epoch}
 
-    def add_col(self, name, data):
-        self.cols[name] = data
+    def add_cols(self, columns):
+        self.cols.update(columns)
 
 
 def _slot_numbers(out, family):
