@@ -43,7 +43,12 @@ input_types:
 # - base_dir
 # - tile_list: text file with tile IDs
 # - retrieve: method to get input data, allowed are symlink, vos
-# - inputs.tiles,, .exposures: path for input tile and exposure
+# - inputs.tiles, .exposures: path for input tile and exposure
+# - inputs.masks (data only): the UNIONS sky-fixed masks, one boolean
+#   healsparse map per bit of the band-combined ugriz mask (nside 131072,
+#   True = masked), queried per object by make_cat -- never rasterized.
+#   Consumed by MASK_EXT_PATHS in config/cfis/config_tile_Mc.ini, which
+#   carries the bit table. Required for input_type: data.
 # - inputs.catalogues: UNIONS per-tile catalogues, a local directory
 #   (symlinked in) or a vos: URL (tile_detection: unions_catalogue)
 # - psf_dict: simulation PSF stamps (psf_model: fake)
@@ -62,6 +67,7 @@ machines:
       inputs:
         tiles: $base_dir/unions-wl/tiles
         exposures: $base_dir/unions-wl/exposures
+        masks: $base_dir/unions-wl/masks/dr6-2026-08
         # UNIONS per-tile catalogues and segmentation maps (CFIS.<tile>.r.cat,
         # CFIS.<tile>.r.seg.fits.fz), fetched by vcp in
         # the job: needs network from compute nodes and ~/.ssl/cadcproxy.pem.
@@ -77,6 +83,7 @@ machines:
     data:
       retrieve: vos
       inputs:
+        masks: $base_dir/masks/dr6-2026-08
         catalogues: vos:cfis/tiles_DR6
       container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
     image_sims:

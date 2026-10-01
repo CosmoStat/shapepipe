@@ -9,7 +9,8 @@ analyses:
     decisions:
       pixel_mask_source: instrument_flags_only
       psf_star_mask_veto: instrument_flags_only
-      sky_mask_application: deferred_downstream
+      sky_mask_application: catalogue_columns
+      mask_default_cut: r_mask_bits
   detection:
     decisions:
       tile_detection: unions_catalogue
