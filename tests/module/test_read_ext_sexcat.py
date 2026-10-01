@@ -3,9 +3,9 @@
 Drives ``make_ldac_from_ascii`` on a synthetic ASCII SExtractor-format
 catalogue and a synthetic tile image, and checks the FITS-LDAC it writes is
 what the tile chain downstream of ``tile_detect`` reads: the LDAC_IMHEAD
-extension carrying the tile header, the windowed positions measured on the
-image, one ``VIGNET`` stamp per object cut from the image, and the input
-``NUMBER`` kept as is. It follows the catalogue through
+extension carrying the tile header, the SExtractor column aliases, one
+``VIGNET`` stamp per object cut from the image, and the input ``NUMBER``
+kept as is. It follows the catalogue through
 ``make_cat.save_sextractor_data``, which builds ``TILE_UNIQUE_ID``. The rest
 covers the segmentation map: relabelling it to the catalogue's ``NUMBER`` and
 setting neighbours' ``VIGNET`` pixels to -1e30, as SExtractor does, which is
@@ -18,7 +18,6 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 from astropy.io import fits
-from astropy.wcs import WCS
 
 from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.read_ext_sexcat_package import read_ext_sexcat as rs
@@ -30,14 +29,6 @@ STAMP = 5
 OBJECTS = [(1, 10.0, 12.0), (2, 1.0, 20.0), (7, 40.0, 30.0)]
 
 
-# A MegaPipe-like TAN WCS, 0.187 arcsec pixels.
-TILE_WCS = {
-    "CTYPE1": "RA---TAN", "CTYPE2": "DEC--TAN", "CRVAL1": 150.0,
-    "CRVAL2": 30.0, "CRPIX1": 20.0, "CRPIX2": 15.0,
-    "CD1_1": -5.16e-05, "CD1_2": 0.0, "CD2_1": 0.0, "CD2_2": 5.16e-05,
-}
-
-
 def _write_ascii_cat(path):
     lines = [
         "#   1 NUMBER          Running object number",
@@ -46,12 +37,9 @@ def _write_ascii_cat(path):
         "#   4 ALPHA_J2000     Right ascension of barycenter  [deg]",
         "#   5 DELTA_J2000     Declination of barycenter      [deg]",
         "#   6 MAG_AUTO        Kron-like elliptical aperture magnitude [mag]",
-        "#   7 FLUX_RADIUS     Fraction-of-light radii        [pixel]",
     ]
     for num, x, y in OBJECTS:
-        lines.append(
-            f"{num} {x} {y} {150.0 + num} {30.0 + num} {20.0 + num} 2.0"
-        )
+        lines.append(f"{num} {x} {y} {150.0 + num} {30.0 + num} {20.0 + num}")
     path.write_text("\n".join(lines) + "\n")
 
 
@@ -62,7 +50,6 @@ def _write_image(path):
         np.float32
     )
     hdu = fits.PrimaryHDU(data)
-    hdu.header.update(TILE_WCS)
     hdu.header["HISTORY"] = "input image 2605805p.fits"
     hdu.header["TILEKEY"] = "kept"
     hdu.writeto(path, overwrite=True)
@@ -90,105 +77,17 @@ def test_ldac_layout_and_header(ldac):
         assert "TILEKEY" in text and "2605805p" in text
 
 
-def test_number_is_kept_and_windowed_positions_added(ldac):
-    """NUMBER is the input's; XWIN_* and FLAGS_WIN are added."""
+def test_number_is_kept_and_aliases_added(ldac):
     with fits.open(ldac) as hdul:
         data = hdul["LDAC_OBJECTS"].data
     # The input NUMBER (gapped here: 1, 2, 7) is the object's identity and is
     # copied unchanged; the converter builds no ID of its own.
     npt.assert_array_equal(data["NUMBER"], [o[0] for o in OBJECTS])
     assert "TILE_UNIQUE_ID" not in data.names
-    # The windowed positions are measured, and the world ones are the pixel
-    # ones through the tile WCS, 1-based as SExtractor's.
-    for name in ("XWIN_IMAGE", "YWIN_IMAGE", "XWIN_WORLD", "YWIN_WORLD",
-                 "FLAGS_WIN"):
-        assert name in data.names
-    ra, dec = WCS(fits.Header(TILE_WCS)).all_pix2world(
-        data["XWIN_IMAGE"], data["YWIN_IMAGE"], 1)
-    npt.assert_allclose(data["XWIN_WORLD"], ra, rtol=0, atol=1e-10)
-    npt.assert_allclose(data["YWIN_WORLD"], dec, rtol=0, atol=1e-10)
-
-
-@pytest.mark.decision("preparation.object_position_columns")
-def test_converter_measures_windowed_centroids(tmp_path):
-    """Gaussian galaxies started from offset barycentres land on their centres.
-
-    Each object's starting X_IMAGE, Y_IMAGE is 0.6 px off the true centre;
-    XWIN_IMAGE is the true centre, and XWIN_WORLD its 1-based world position.
-    """
-    truth = [(1, 20.3, 18.6), (2, 45.8, 40.2), (3, 70.1, 22.9)]
-    shape = (60, 90)
-    y, x = np.mgrid[1:shape[0] + 1, 1:shape[1] + 1]
-    image = np.zeros(shape, np.float32)
-    sigma = 1.8
-    for _, xc, yc in truth:
-        image += 500 * np.exp(-((x - xc) ** 2 + (y - yc) ** 2)
-                              / (2 * sigma**2))
-    img = tmp_path / "CFIS_image-301-279.fits"
-    hdu = fits.PrimaryHDU(image + 3.0)  # a sky the background removes
-    hdu.header.update(TILE_WCS)
-    hdu.writeto(img)
-    cat = tmp_path / "CFIS_cat-301-279.cat"
-    lines = ["#   1 NUMBER", "#   2 X_IMAGE", "#   3 Y_IMAGE",
-             "#   4 ALPHA_J2000", "#   5 DELTA_J2000", "#   6 FLUX_RADIUS"]
-    hlr = sigma * np.sqrt(2 * np.log(2))
-    lines += [f"{n} {xc + 0.6} {yc - 0.6} 150.0 30.0 {hlr}"
-              for n, xc, yc in truth]
-    cat.write_text("\n".join(lines) + "\n")
-    out = tmp_path / "sexcat-301-279.fits"
-    rs.make_ldac_from_ascii(str(cat), str(img), str(out), stamp_size=5)
-
-    with fits.open(out) as hdul:
-        data = hdul["LDAC_OBJECTS"].data
-    npt.assert_array_equal(data["FLAGS_WIN"], 0)
-    npt.assert_allclose(data["XWIN_IMAGE"], [t[1] for t in truth], atol=1e-3)
-    npt.assert_allclose(data["YWIN_IMAGE"], [t[2] for t in truth], atol=1e-3)
-    ra, dec = WCS(fits.Header(TILE_WCS)).all_pix2world(
-        [t[1] for t in truth], [t[2] for t in truth], 1)
-    npt.assert_allclose(data["XWIN_WORLD"], ra, rtol=0, atol=1e-7)
-    npt.assert_allclose(data["YWIN_WORLD"], dec, rtol=0, atol=1e-7)
-    # The barycentre columns are the catalogue's, untouched.
-    npt.assert_allclose(data["X_IMAGE"], [t[1] + 0.6 for t in truth])
-
-
-@pytest.mark.decision("preparation.object_position_columns")
-def test_converter_mirrors_no_data_pixels(tmp_path):
-    """Zero (no-data) tile columns through a galaxy do not move XWIN.
-
-    A Gaussian at (31, 31) on a sky of 3, with columns 33-35 set to 0 as a
-    tile gap is: the gap is left out of the background and mirrored in the
-    window, so a centroid started at the centre stays there (read as
-    signal, the gap drags it 0.6 px).
-    """
-    y, x = np.mgrid[1:62, 1:62]
-    image = 3.0 + 500 * np.exp(-((x - 31.0) ** 2 + (y - 31.0) ** 2) / 8.0)
-    image[:, 32:35] = 0.0
-    img = tmp_path / "CFIS_image-301-279.fits"
-    hdu = fits.PrimaryHDU(image.astype(np.float32))
-    hdu.header.update(TILE_WCS)
-    hdu.writeto(img)
-    cat = tmp_path / "CFIS_cat-301-279.cat"
-    hlr = 2.0 * np.sqrt(2 * np.log(2))
-    cat.write_text("#   1 NUMBER\n#   2 X_IMAGE\n#   3 Y_IMAGE\n"
-                   f"#   4 FLUX_RADIUS\n1 31.0 31.0 {hlr}\n")
-    out = tmp_path / "sexcat-301-279.fits"
-    rs.make_ldac_from_ascii(str(cat), str(img), str(out), stamp_size=5)
-    with fits.open(out) as hdul:
-        data = hdul["LDAC_OBJECTS"].data
-    assert data["FLAGS_WIN"][0] == 0
-    npt.assert_allclose(data["XWIN_IMAGE"], 31.0, atol=1e-3)
-    npt.assert_allclose(data["YWIN_IMAGE"], 31.0, atol=1e-3)
-
-
-def test_converter_needs_flux_radius(tmp_path):
-    """Without FLUX_RADIUS there is no window, and the converter stops."""
-    cat = tmp_path / "CFIS_cat-301-279.cat"
-    img = tmp_path / "CFIS_image-301-279.fits"
-    cat.write_text("#   1 NUMBER\n#   2 X_IMAGE\n#   3 Y_IMAGE\n1 5.0 5.0\n")
-    fits.PrimaryHDU(np.ones((10, 10), np.float32)).writeto(img)
-    with pytest.raises(ValueError, match="FLUX_RADIUS"):
-        rs.make_ldac_from_ascii(str(cat), str(img),
-                                str(tmp_path / "out.fits"), stamp_size=3)
+    npt.assert_array_equal(data["XWIN_IMAGE"], data["X_IMAGE"])
+    npt.assert_array_equal(data["YWIN_IMAGE"], data["Y_IMAGE"])
+    npt.assert_array_equal(data["XWIN_WORLD"], data["ALPHA_J2000"])
+    npt.assert_array_equal(data["YWIN_WORLD"], data["DELTA_J2000"])
 
 
 def test_vignets_are_cut_from_the_image_and_padded_as_sextractor(ldac):
@@ -394,8 +293,8 @@ def test_converter_relabels_and_marks_from_compressed_map(tmp_path):
     seg_in = tmp_path / "CFIS_seg-301-279.fitsfz"
     out = tmp_path / "sexcat-301-279.fits"
     lines = ["#   1 NUMBER", "#   2 X_IMAGE", "#   3 Y_IMAGE",
-             "#   4 ALPHA_J2000", "#   5 DELTA_J2000", "#   6 FLUX_RADIUS"]
-    lines += [f"{n} {x} {y} 150.0 30.0 2.0" for n, x, y in SEG_OBJECTS]
+             "#   4 ALPHA_J2000", "#   5 DELTA_J2000"]
+    lines += [f"{n} {x} {y} 150.0 30.0" for n, x, y in SEG_OBJECTS]
     cat.write_text("\n".join(lines) + "\n")
     fits.PrimaryHDU(np.ones((20, 20), np.float32)).writeto(img)
     fits.HDUList([fits.PrimaryHDU(),
@@ -495,8 +394,8 @@ def test_runner_output_matches_tile_detect_completeness(tmp_path, monkeypatch):
     img = tmp_path / "CFIS_image-301-279.fits"
     seg_in = tmp_path / "CFIS_seg-301-279.fitsfz"
     lines = ["#   1 NUMBER", "#   2 X_IMAGE", "#   3 Y_IMAGE",
-             "#   4 ALPHA_J2000", "#   5 DELTA_J2000", "#   6 FLUX_RADIUS"]
-    lines += [f"{n} {x} {y} 150.0 30.0 2.0" for n, x, y in SEG_OBJECTS]
+             "#   4 ALPHA_J2000", "#   5 DELTA_J2000"]
+    lines += [f"{n} {x} {y} 150.0 30.0" for n, x, y in SEG_OBJECTS]
     cat.write_text("\n".join(lines) + "\n")
     fits.PrimaryHDU(np.ones((20, 20), np.float32)).writeto(img)
     fits.HDUList([fits.PrimaryHDU(),

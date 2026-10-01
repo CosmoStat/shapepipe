@@ -1,8 +1,7 @@
 """READ EXTERNAL SEXCAT.
 
 Convert an ASCII SExtractor-format catalogue to FITS-LDAC for use in
-ShapePipe tile processing, measuring the windowed positions the catalogue
-lacks on the tile image.
+ShapePipe tile processing.
 
 :Author: Martin Kilbinger
 
@@ -11,9 +10,6 @@ lacks on the tile image.
 import numpy as np
 from astropy.io import ascii as asc
 from astropy.io import fits
-from astropy.wcs import WCS
-
-from shapepipe.modules.read_ext_sexcat_package import windowed_position as wp
 
 
 def _build_ldac_imhead(img_header):
@@ -204,77 +200,7 @@ def _extract_vignets(image_data, x_pos, y_pos, stamp_size, seg=None,
     return vignets
 
 
-def measure_windowed_positions(cat_data, image_data, img_header, seg=None):
-    """``XWIN_*``, ``YWIN_*`` and ``FLAGS_WIN`` for a catalogue without them.
-
-    The catalogue is the sample; its isophotal barycentre (``X_IMAGE``,
-    ``Y_IMAGE``) and half-light radius (``FLUX_RADIUS``) start and size
-    SExtractor's windowed centroid, measured on the tile image less a
-    SExtractor-like background map (``default_tile.sex``: ``BACK_SIZE``
-    512, ``BACK_FILTERSIZE`` 9). Pixels exactly 0 or not finite carry no
-    data in a MegaPipe tile: they are left out of the background and
-    replaced by their mirror image in the window. Given the relabelled
-    segmentation map, neighbours are masked as SExtractor's ``MASK_TYPE
-    CORRECT`` masks them. Where the window fails, the position stays the
-    barycentre and ``FLAGS_WIN`` says why
-    (:mod:`windowed_position`). World positions come from the tile WCS,
-    1-based as SExtractor's are.
-
-    Parameters
-    ----------
-    cat_data : astropy.table.Table
-        Catalogue with ``NUMBER``, ``X_IMAGE``, ``Y_IMAGE``, ``FLUX_RADIUS``,
-        and optionally ``A_WORLD``, ``B_WORLD``, ``THETA_J2000``
-    image_data : numpy.ndarray
-        Tile image
-    img_header : astropy.io.fits.Header
-        Tile header, for the WCS
-    seg : numpy.ndarray, optional
-        Segmentation map relabelled to ``NUMBER`` (:func:`relabel_seg`)
-
-    Returns
-    -------
-    list of (str, numpy.ndarray, str)
-        ``XWIN_IMAGE``, ``YWIN_IMAGE``, ``XWIN_WORLD``, ``YWIN_WORLD``,
-        ``FLAGS_WIN`` columns with their FITS formats
-
-    @sc [decision:preparation.object_position_columns]
-    """
-    missing = {"X_IMAGE", "Y_IMAGE", "FLUX_RADIUS"} - set(cat_data.colnames)
-    if missing:
-        raise ValueError(
-            f"The catalogue lacks {sorted(missing)}, which the windowed"
-            + " centroid needs."
-        )
-    x = np.asarray(cat_data["X_IMAGE"], dtype=np.float64)
-    y = np.asarray(cat_data["Y_IMAGE"], dtype=np.float64)
-    wcs = WCS(img_header)
-    cxx = cyy = cxy = None
-    if {"A_WORLD", "B_WORLD", "THETA_J2000"} <= set(cat_data.colnames):
-        cxx, cyy, cxy = wp.isophotal_ellipse(
-            cat_data["A_WORLD"], cat_data["B_WORLD"], cat_data["THETA_J2000"],
-            wcs, x, y,
-        )
-    has_data = (image_data != 0) & np.isfinite(image_data)
-    measured = image_data - wp.sextractor_background(
-        image_data, good=has_data
-    )
-    xwin, ywin, flags = wp.windowed_positions(
-        measured, x, y, cat_data["FLUX_RADIUS"], seg=seg,
-        number=np.asarray(cat_data["NUMBER"]), cxx=cxx, cyy=cyy, cxy=cxy,
-        valid=has_data,
-    )
-    ra, dec = wcs.all_pix2world(xwin, ywin, 1)
-    return [
-        ("XWIN_IMAGE", xwin, "D"),
-        ("YWIN_IMAGE", ywin, "D"),
-        ("XWIN_WORLD", ra, "D"),
-        ("YWIN_WORLD", dec, "D"),
-        ("FLAGS_WIN", flags, "I"),
-    ]
-
-
-def _build_ldac_objects(cat_data, vignets, windowed=()):
+def _build_ldac_objects(cat_data, vignets):
     """Build LDAC_OBJECTS extension from an astropy table.
 
     Parameters
@@ -283,8 +209,6 @@ def _build_ldac_objects(cat_data, vignets, windowed=()):
         Catalogue data read from the ASCII SExtractor file
     vignets : numpy.ndarray
         Array of shape ``(n_obj, stamp_size, stamp_size)``
-    windowed : sequence of (str, numpy.ndarray, str), optional
-        Extra ``(name, array, FITS format)`` columns, the windowed positions
 
     Returns
     -------
@@ -307,8 +231,23 @@ def _build_ldac_objects(cat_data, vignets, windowed=()):
             fmt = f"{arr.dtype.itemsize}A"
         fits_cols.append(fits.Column(name=colname, format=fmt, array=arr))
 
-    for name, arr, fmt in windowed:
-        fits_cols.append(fits.Column(name=name, format=fmt, array=arr))
+    _aliases = {
+        "XWIN_IMAGE": "X_IMAGE",
+        "YWIN_IMAGE": "Y_IMAGE",
+        "XWIN_WORLD": "ALPHA_J2000",
+        "YWIN_WORLD": "DELTA_J2000",
+    }
+    col_map = {c.name: c for c in fits_cols}
+    for alias, source in _aliases.items():
+        if source in col_map and alias not in col_map:
+            src_col = col_map[source]
+            fits_cols.append(
+                fits.Column(
+                    name=alias,
+                    format=src_col.format,
+                    array=np.array(cat_data[source]),
+                )
+            )
 
     vignet_col = fits.Column(
         name="VIGNET",
@@ -342,10 +281,7 @@ def make_ldac_from_ascii(
 
     The input columns, ``NUMBER`` included, are copied unchanged; a
     ``VIGNET`` column (postage stamps extracted from the tile image) is
-    added to ``LDAC_OBJECTS``, and, when the catalogue has no windowed
-    positions, ``XWIN_IMAGE``, ``YWIN_IMAGE``, ``XWIN_WORLD``,
-    ``YWIN_WORLD`` and ``FLAGS_WIN`` measured on the tile
-    (:func:`measure_windowed_positions`). Given the catalogue's segmentation map, which
+    added to ``LDAC_OBJECTS``. Given the catalogue's segmentation map, which
     shares the tile's pixel grid, the map is relabelled to the catalogue's
     ``NUMBER`` (:func:`relabel_seg`) and used to set neighbours' pixels in each ``VIGNET`` to ``BIG``, as
     SExtractor does.
@@ -409,23 +345,8 @@ def make_ldac_from_ascii(
         number=np.asarray(cat_data["NUMBER"]),
     )
 
-    windowed = []
-    if "XWIN_IMAGE" not in cat_data.colnames:
-        windowed = measure_windowed_positions(
-            cat_data, image_data, img_header, seg=seg
-        )
-        if w_log and windowed:
-            flags = windowed[-1][1]
-            w_log.info(
-                "Measured windowed positions; FLAGS_WIN counts: "
-                + ", ".join(
-                    f"{v}={c}" for v, c in zip(*np.unique(flags,
-                                                          return_counts=True))
-                )
-            )
-
     ldac_imhead = _build_ldac_imhead(img_header)
-    ldac_objects = _build_ldac_objects(cat_data, vignets, windowed)
+    ldac_objects = _build_ldac_objects(cat_data, vignets)
 
     hdul_out = fits.HDUList([fits.PrimaryHDU(), ldac_imhead, ldac_objects])
     hdul_out.writeto(output_cat_path, overwrite=True)

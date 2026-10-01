@@ -440,12 +440,8 @@ analyses:
           with a finer mesh and a GLOBAL one. ngmix subtracts the exposure
           BACKGROUND map from each epoch and weights its pixels by
           BACKGROUND_RMS (shape_measurement.galaxy_pixel_weights). The header
-          background path is off. Under tile_detection = unions_catalogue,
-          read_ext_sexcat re-estimates the tile background with the same mesh
-          and filter (clipped mode per mesh, median filter, bicubic spline) to
-          measure windowed centroids (preparation.object_position_columns).
-          Residual sky offsets propagate into thresholds, fluxes, completeness
-          and shapes.
+          background path is off. Residual sky offsets propagate into
+          thresholds, fluxes, completeness and shapes.
           Values:
           default_tile.sex#BACK_TYPE = AUTO;
           default_tile.sex#BACK_SIZE = 512;
@@ -784,39 +780,13 @@ analyses:
       object_position_columns:
         label: Windowed centroids (XWIN/YWIN) define every position
         rationale: >-
-          PSF interpolation sites, tile and multi-epoch stamp centres, epoch
-          membership and the catalogue position all use SExtractor's windowed
-          centroid: in pixels for tile stamps and exposure-side PSF
-          validation, in world coordinates for tile-side PSF interpolation,
-          multi-epoch stamps, epoch membership and the catalogue. It is a
-          Gaussian-weighted centroid iterated from the isophotal barycentre,
-          window sigma 2 FLUX_RADIUS / 2.35, and it feeds the stamp OFFSET and
-          the ngmix centroid prior (shape_measurement.centroid_source). The
-          UNIONS per-tile catalogue (detection.tile_detection =
-          unions_catalogue) carries only the barycentre, so read_ext_sexcat
-          measures the windowed centroid itself at every catalogue object: a
-          numpy port of SExtractor 2.25's compute_winpos, started from X_IMAGE,
-          Y_IMAGE with the catalogue's FLUX_RADIUS, on the tile less a
-          SExtractor-like background (detection.background_model), with
-          neighbours' segmentation footprints replaced by their mirror image
-          as MASK_TYPE CORRECT does. On DR6 tile 186.307 it matches the tile
-          SExtractor's own XWIN_IMAGE to 0.01 px for 97% of objects, the rest
-          being blends whose SExtractor masking the segmentation map does not
-          fully record; the barycentre it replaces is off by 0.16 px at the
-          median and 1.4 px at the 99th percentile. On tile 202.301 the rest
-          follows DR6's FLUX_RADIUS, which sizes the window: where it agrees
-          with ShapePipe's SExtractor to 1e-3 px the match is 4e-5 px at the
-          median and 2e-4 px at p90. Tile pixels that are 0 or not finite
-          carry no data and are mirrored like neighbours; the weight map is
-          not read, so SExtractor's MAP_WEIGHT thresholds and INTERP_TYPE ALL
-          interpolation are not emulated. A FLUX_RADIUS that is not positive
-          is an empty window (FLAGS_WIN 4). Where SExtractor would
-          fall back to the barycentre (FLAGS_WIN 1, 2, 4, 8), or nothing can
-          be measured (16), the position is the barycentre; FLAGS_WIN, in the
-          final catalogue, records it, and 32 marks a centroid still moving
-          after 16 steps, kept as SExtractor keeps it. The tile VIGNET is
-          centred on the barycentre, as SExtractor's is. Image simulations
-          (sextractor) take the same quantity from SExtractor.
+          PSF interpolation sites, tile and multi-epoch stamp centres, and the
+          catalogue position all use SExtractor's windowed centroid: in pixels
+          for tile stamps and exposure-side PSF validation, in world
+          coordinates for tile-side PSF interpolation and multi-epoch stamps.
+          Windowed, isophotal and model centroids differ systematically for
+          blends and asymmetric galaxies, and the centroid feeds the position
+          seed and the centroid prior.
           Values:
           VIGNETMAKER_RUNNER_RUN_1.POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE;
           VIGNETMAKER_RUNNER_RUN_1.COORD = PIX;
@@ -825,24 +795,11 @@ analyses:
           VIGNETMAKER_RUNNER_RUN_2.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD;
           VIGNETMAKER_RUNNER_RUN_2.COORD = SPHE;
           config_exp_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS =
-          XWIN_IMAGE,YWIN_IMAGE;
-          config_tile_Uc.ini#READ_EXT_SEXCAT_RUNNER.WORLD_POSITION =
-          XWIN_WORLD,YWIN_WORLD;
-          config_tile_Sx.ini#SEXTRACTOR_RUNNER.WORLD_POSITION =
-          XWIN_WORLD,YWIN_WORLD.
+          XWIN_IMAGE,YWIN_IMAGE.
         default: xwin_windowed
         options:
           xwin_windowed:
-            label: >-
-              Windowed centroids everywhere, measured by ShapePipe on
-              UNIONS-catalogue tiles
-          catalogue_barycentre:
-            label: The UNIONS catalogue's isophotal barycentre under the XWIN names
-            excluded: true
-            excluded_reason: >-
-              Image simulations measure windowed centroids, so data and
-              simulations would differ in the centroid the stamp OFFSET and
-              the ngmix centroid prior start from.
+            label: Windowed centroids everywhere
       stamp_positioning_and_padding:
         label: Nearest-pixel stamp extraction with zero padding
         rationale: >-
