@@ -131,3 +131,58 @@ def test_add_cols_rejects_non_array_before_writing(tmp_path):
         cat.add_cols({"A": np.arange(N_OBJ), "B": list(range(N_OBJ))})
     cat.close()
     assert path.read_bytes() == before
+
+
+def test_add_cols_new_cat_ext_name_hdu_no(tmp_path):
+    """new_cat writes elsewhere and leaves the source; ext_name/hdu_no apply.
+
+    The table at ``hdu_no`` gains the columns under ``ext_name`` in the new
+    file, the HDUs around it are carried over, and the source catalogue on
+    disk and in memory is untouched -- matching successive add_col calls.
+    """
+    columns = _new_columns()
+    src = tmp_path / "src.fits"
+    _write_base(src, sex_catalogue=True)
+    before = src.read_bytes()
+
+    outputs = {}
+    for label in ("one_by_one", "batched"):
+        dest = file_io.FITSCatalogue(
+            str(tmp_path / f"{label}.fits"),
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+        )
+        cat = file_io.FITSCatalogue(
+            str(src),
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+        )
+        cat.open()
+        kwargs = dict(
+            hdu_no=2, ext_name="OBJECTS_PLUS", new_cat=True, new_cat_inst=dest
+        )
+        if label == "batched":
+            cat.add_cols(columns, **kwargs)
+        else:
+            # new_cat leaves the source open on the original file, so one
+            # add_col per column into the same destination keeps only the
+            # last; chain through the destination instead.
+            first, *rest = columns.items()
+            cat.add_col(*first, **kwargs)
+            cat.close()
+            for name, data in rest:
+                step = _open(dest.fullpath, sex_catalogue=True)
+                step.add_col(name, data)
+                step.close()
+            outputs[label] = (tmp_path / f"{label}.fits").read_bytes()
+            continue
+        assert cat.get_col_names(hdu_no=2) == ["NUMBER", "X"]
+        cat.close()
+        outputs[label] = (tmp_path / f"{label}.fits").read_bytes()
+
+    assert src.read_bytes() == before
+    assert outputs["batched"] == outputs["one_by_one"]
+    with fits.open(tmp_path / "batched.fits") as hdul:
+        assert [h.name for h in hdul] == [
+            "PRIMARY", "LDAC_IMHEAD", "OBJECTS_PLUS", "EPOCH_0",
+        ]
+        assert hdul[2].columns.names == ["NUMBER", "X", *columns]
+        npt.assert_array_equal(hdul[3].data["CCD_N"], [3])

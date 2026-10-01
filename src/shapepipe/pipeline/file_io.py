@@ -1365,7 +1365,7 @@ class FITSCatalogue(BaseCatalogue):
         hdu_no : int
             HDU index
         ext_name : str, optional
-            Change the name of the extansion
+            Change the name of the extension
         new_cat : bool, optional
             If true will save the changes into a new catalogue
         new_cat_inst : io.FITSCatalogue
@@ -1404,7 +1404,7 @@ class FITSCatalogue(BaseCatalogue):
         hdu_no : int
             HDU index
         ext_name : str, optional
-            Change the name of the extansion
+            Change the name of the extension
         new_cat : bool, optional
             If true will save the changes into a new catalogue
         new_cat_inst : io.FITSCatalogue

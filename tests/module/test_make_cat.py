@@ -579,31 +579,66 @@ def test_make_cat_runner_work_dir_publishes_same_catalogue(
 ):
     """WORK_DIR moves the build elsewhere; the published catalogue is the same.
 
-    The catalogue built in WORK_DIR is moved to the run's output directory
-    byte-identical to one built there directly, nothing is left in WORK_DIR,
-    and a work file a previous attempt left behind does not leak into it
-    (``save_as_fits`` appends to an existing file).
+    All three save stages run (ngmix, per-epoch PSF slots, one external mask
+    band). The catalogue built in WORK_DIR is moved to the run's output
+    directory byte-identical to one built there directly, nothing is left in
+    WORK_DIR, and a work file a previous attempt left behind does not leak
+    into it (``save_as_fits`` appends to an existing file).
     """
+    healsparse = pytest.importorskip("healsparse")
+
     obj_ids = [1, 2, 3]
+    ra = np.array([10.0, 10.1, 200.0])
+    dec = np.array([20.0, 20.1, -40.0])
+    sexcat = np.array(
+        list(zip(obj_ids, [1, 2, 0], ra, dec)),
+        dtype=[
+            ("NUMBER", "i8"),
+            ("N_EPOCH", "i8"),
+            ("XWIN_WORLD", "f8"),
+            ("YWIN_WORLD", "f8"),
+        ],
+    )
     tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
-    _write_sex_like_cat(tile_sexcat_path, _numbered_data(obj_ids))
+    _write_sex_like_cat(tile_sexcat_path, sexcat)
     galaxy_psf_path = tmp_path / "galaxy_psf-350-100.sqlite"
+    _write_galaxy_psf_cat(
+        galaxy_psf_path,
+        {
+            1: {"2113864-7": _psf_epoch(0.01, 0.02, 0.5)},
+            2: {
+                "2113864-9": _psf_epoch(0.05, 0.06, 0.7),
+                "2358123-21": _psf_epoch(0.07, 0.08, 0.9),
+            },
+            3: "empty",
+        },
+    )
     ngmix_path = tmp_path / "ngmix-350-100.fits"
     _write_ngmix_cat(ngmix_path, obj_ids)
+    mask = healsparse.HealSparseMap.make_empty(32, 4096, np.int16, sentinel=-1)
+    mask.update_values_pos(
+        ra[:2], dec[:2], np.full(2, 64, dtype=np.int16), lonlat=True
+    )
+    mask_path = tmp_path / "mask_r.hsp"
+    mask.write(str(mask_path))
     inputs = [str(tile_sexcat_path), str(galaxy_psf_path), str(ngmix_path)]
+    stages = {
+        "SHAPE_MEASUREMENT_TYPE": "ngmix",
+        "SAVE_PSF_DATA": "True",
+        "N_EPOCH_SLOTS": "3",
+        "MASK_EXT_PATHS": f"r:{mask_path}",
+    }
 
     published = {}
-    for label, section in (
+    for label, work_dir in (
         ("direct", {}),
         ("staged", {"WORK_DIR": "$SP_TEST_LOCAL/make_cat"}),
     ):
         out_dir = tmp_path / label
         out_dir.mkdir()
         config = CustomParser()
-        config.read_dict(
-            {"MAKE_CAT_RUNNER": {"SHAPE_MEASUREMENT_TYPE": "ngmix", **section}}
-        )
-        if section:
+        config.read_dict({"MAKE_CAT_RUNNER": {**stages, **work_dir}})
+        if work_dir:
             local = tmp_path / "local"
             monkeypatch.setenv("SP_TEST_LOCAL", str(local))
             (local / "make_cat").mkdir(parents=True)
@@ -619,6 +654,15 @@ def test_make_cat_runner_work_dir_publishes_same_catalogue(
 
     assert published["staged"] == published["direct"]
     assert list((tmp_path / "local" / "make_cat").iterdir()) == []
+
+    with fits.open(make_cat.get_output_name(str(tmp_path / "staged"), "-350-100")) as hdul:
+        data = hdul[1].data
+        names = data.columns.names
+        npt.assert_array_equal(data["NUMBER"], obj_ids)
+        for col in ("TILE_ID", "NGMIX_MCAL_FLAGS", "HSM_G1_PSF_3", "EXP_ID_2"):
+            assert col in names, col
+        npt.assert_allclose(data["HSM_G1_PSF_1"], [0.01, 0.05, -10.0])
+        npt.assert_array_equal(data["MASK_r"], [64, 64, -1])
 
 
 @pytest.mark.parametrize("shear", SHEAR_EXTS)
