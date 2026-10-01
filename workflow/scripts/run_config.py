@@ -129,6 +129,36 @@ def _dollar_keys(value, prefix):
     return [prefix] if isinstance(value, str) and "$" in value else []
 
 
+# Config blocks the workflow no longer reads, and what replaced each. A key
+# nothing reads is a switch that silently does nothing (`coverage.enabled:
+# false` would leave the exposure-count map on), so retired() makes it an error.
+RETIRED = {
+    "coverage": "exposure_maps.nexp (on/off: exposure_maps.nexp.enabled; "
+                "resolution: the shared exposure_maps.nside / "
+                "exposure_maps.nside_coverage)",
+    "defect_map": "exposure_maps.defect (oversample: "
+                  "exposure_maps.defect.oversample; resolution: the shared "
+                  "exposure_maps.nside / exposure_maps.nside_coverage)",
+}
+
+
+def retired(config):
+    """Every place a RETIRED key appears — top level, a `machines:` entry, or
+    one of its per-input_type blocks — as `(path, replacement)` pairs."""
+    found = [(key, RETIRED[key]) for key in RETIRED if key in config]
+    for machine, entry in (config.get("machines") or {}).items():
+        if not isinstance(entry, dict):
+            continue
+        found += [(f"machines.{machine}.{key}", RETIRED[key])
+                  for key in RETIRED if key in entry]
+        for input_type, block in entry.items():
+            if isinstance(block, dict):
+                found += [(f"machines.{machine}.{input_type}.{key}",
+                           RETIRED[key])
+                          for key in RETIRED if key in block]
+    return found
+
+
 def unresolved(config):
     """REQUIRED keys that are unset, the placeholder, or hold an unexpanded
     $variable, then every other resolved value (recursively through

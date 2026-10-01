@@ -39,8 +39,18 @@ PRODUCT_HELPERS = {
     "prod_exp_dir": (("2605805",), False),
     "prod_exp_manifest": (("2605805", "exp_persist"), False),
     "prod_exp_tar": (("2605805",), False),
+    "defect_map": ((), True),
+    "defect_map_sidecar": ((), True),
+    "nexp_map": ((), True),
+    "nexp_map_manifest": ((), True),
 }
 PRODUCT_TEMPLATES = ("PROD_TILE_DIR", "PROD_EXP_DIR")
+EXPOSURE_MAP_PATHS = {
+    "defect_map": f"{PRODUCTS}/defect_map/defect_map_{CAMPAIGN}.hsp",
+    "defect_map_sidecar": f"{PRODUCTS}/defect_map/defect_map_{CAMPAIGN}.json",
+    "nexp_map": f"{PRODUCTS}/nexp_map/nexp_map_{CAMPAIGN}.hsp",
+    "nexp_map_manifest": f"{PRODUCTS}/nexp_map/nexp_map_{CAMPAIGN}.json",
+}
 
 
 def _code_lines(path):
@@ -126,6 +136,12 @@ def test_product_paths_are_rooted_in_products_dir(helpers, name):
 @pytest.mark.parametrize("name", PRODUCT_TEMPLATES)
 def test_product_templates_are_rooted_in_products_dir(helpers, name):
     assert str(helpers[name]).startswith(PRODUCTS + "/"), helpers[name]
+
+
+@pytest.mark.parametrize("name,expected", EXPOSURE_MAP_PATHS.items())
+def test_exposure_map_paths_use_products_dir_and_run(helpers, name, expected):
+    """Each exposure-level map carries the run name; its record stays beside it."""
+    assert str(helpers[name]()) == expected
 
 
 def _machine_outputs():
