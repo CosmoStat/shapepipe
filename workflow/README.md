@@ -25,8 +25,9 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # Write a run config (see Run configuration below) that sets at least `run:`,
 # the campaign's name; workflow/config.yaml's input_types: and machines: tables supply the rest.
 
-# `psf_model` is `psfex` or `mccd`. psfex is exercised by smk-g4 through smk-g6; mccd has run the full chain on
-# an image-sim star tile (one focal-plane model per exposure, ~1.5 CPU-hours each).
+# `psf_model` is `psfex` for data (`fake` for image sims). `mccd` is refused
+# until `persist_exp.py` and `merge_star_cat.py` read MCCD products. PSFEx is
+# exercised by smk-g4 through smk-g6.
 # `tile_detection` is `unions_catalogue` (the input_types default for data:
 # the UNIONS per-tile catalogue at `inputs.catalogues` is fetched and
 # converted in place, keeping its NUMBER, and its segmentation map sets
@@ -70,7 +71,8 @@ SExtractor (for the background maps the vignets read), and `tile_vignets` runs
 `fake_interp_runner`, which writes the `galaxy_psf` product from `psf_dict`.
 With no PSF model there is nothing to persist per exposure, so `exp_persist` and
 `star_cat_merge` do not run and `clean_exposure` does not wait on them.
-Simulations that contain stars can run `psfex` or `mccd` exactly as the data do.
+Simulations that contain stars can run `psfex` as the data do. `mccd` is
+refused until `persist_exp.py` and `merge_star_cat.py` read MCCD products.
 
 One campaign per shear branch, each with its own run config:
 
