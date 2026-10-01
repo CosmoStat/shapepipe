@@ -384,6 +384,13 @@ class SExtractorCaller:
 
         Set up all of the input image files.
 
+        Without a detection image, SExtractor runs in single-image mode on
+        the measurement image: ``img -WEIGHT_IMAGE w``. With one, it runs in
+        dual-image mode, ``det,img -WEIGHT_IMAGE det_w,w``. Dual-image mode
+        with the same image twice is not equivalent to single-image mode: it
+        changes the background and the photometry of a fifth of the objects of
+        a UNIONS tile (#936).
+
         @sc [decision:detection.weight_map_usage,label:convention] weight-map-on-both-images
         With a weight file, the same map weights detection and measurement (a
         separate detection weight only when DETECTION_WEIGHT is set); without
@@ -443,26 +450,28 @@ class SExtractorCaller:
                 "DETECTION_WEIGHT cannot be True " + "if WEIGHT_FILE is False"
             )
 
-        # Check for separate image file for detection and measurement
+        # A separate detection image switches SExtractor to dual-image mode;
+        # without one, the measurement image alone (single-image mode).
         if use_detect_img:
-            self._detect_img_path = self._all_input_path[extra]
+            self._image_arg = (
+                f"{self._all_input_path[extra]},{self._meas_img_path}"
+            )
             extra += 1
         else:
-            self._detect_img_path = self._meas_img_path
+            self._image_arg = self._meas_img_path
 
-        # Check for separate weight file corresponding to the detection image.
-        # If False, use measurement weight image.
-        # Note: This could be changed, and no weight image could be used, but
-        # this might lead to more user errors.
+        # In dual-image mode the detection image takes the detection weight
+        # if given, else the measurement weight.
         if use_weight:
-            if use_detect_weight:
-                detect_weight_path = self._all_input_path[extra]
-                extra += 1
-            else:
-                detect_weight_path = weight_image
-            self._cmd_line_extra += (
-                f" -WEIGHT_IMAGE {detect_weight_path}" + f",{weight_image}"
-            )
+            weight_arg = weight_image
+            if use_detect_img:
+                if use_detect_weight:
+                    detect_weight_path = self._all_input_path[extra]
+                    extra += 1
+                else:
+                    detect_weight_path = weight_image
+                weight_arg = f"{detect_weight_path},{weight_image}"
+            self._cmd_line_extra += f" -WEIGHT_IMAGE {weight_arg}"
         else:
             self._cmd_line_extra += " -WEIGHT_TYPE None"
 
@@ -563,7 +572,7 @@ class SExtractorCaller:
         """
         # Base arguments for SExtractor
         command_line_base = (
-            f"{exec_path} {self._detect_img_path},{self._meas_img_path} "
+            f"{exec_path} {self._image_arg} "
             + f"-c {self._path_dot_sex} "
             + f"-PARAMETERS_NAME {self._path_dot_param} "
             + f"-FILTER_NAME {self._path_dot_conv} "
