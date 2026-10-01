@@ -63,8 +63,7 @@ machines:
       inputs:
         tiles: $base_dir/unions-wl/tiles
         exposures: $base_dir/unions-wl/exposures
-        # UNIONS per-tile catalogues and segmentation maps (CFIS.<tile>.r.cat,
-        # CFIS.<tile>.r.seg.fits.fz), fetched by vcp in
+        # UNIONS per-tile catalogues (CFIS.<tile>.r.cat), fetched by vcp in
         # the job: needs network from compute nodes and ~/.ssl/cadcproxy.pem.
         catalogues: vos:cfis/tiles_DR6
       outputs:

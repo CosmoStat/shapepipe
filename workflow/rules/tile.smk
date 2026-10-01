@@ -37,9 +37,8 @@ Distinct tiles share no edge, so each is one group job per tile:
   job reaches the widest partition set (plus cpubackfill) — which is why each
   member's runtime is measured p99 plus margin and not the old ceiling.
 
-The heavy middle (tile_detect) stays out: it is a 16 GB / 8 thread SExtractor
-run that the shape chain does not need co-scheduled, and folding it in would add
-its runtime to a sum that has no room.
+tile_detect stays out: the shape chain does not need it co-scheduled, and
+folding it in would add its runtime to a sum that has no room.
 
 tile_detect runs SExtractor on the tile image (sextractor_runner,
 config_tile_Sx.ini) for data and image simulations alike, so both get the same
@@ -512,11 +511,11 @@ if TILE_DETECTION == "unions_catalogue":
 def detect_env(tile):
     """tile_detect's prologue exports: the catalogue to join, if any.
 
-    Nothing under tile_detection: sextractor, so that prologue (a rerun
-    trigger) is the one the image simulations have always run with.
+    Empty under tile_detection: sextractor (image simulations), so that no
+    value left exported in the submitting shell reaches the job.
     """
     if TILE_DETECTION != "unions_catalogue":
-        return {}
+        return {"SP_MATCH_CATALOGUE": ""}
     gic = f"{tile_dir(tile)}/output/run_sp_tile_Gic/get_images_runner/output"
     return {"SP_MATCH_CATALOGUE": f"{gic}/CFIS_cat{unit_num(tile)}.cat"}
 
@@ -534,10 +533,28 @@ rule tile_detect:
         pre = lambda wc: unit_pre("tile_detect", wc.tile,
                                   env=detect_env(wc.tile)),
         script_hash = SCRIPT_HASH
-    threads: 8
+    # One core: the container's SExtractor is built without threads
+    # (NTHREADS 4 warns and runs in the same 36 s), default_tile.sex sets
+    # NTHREADS 1, the join and the post-processing are serial Python, and
+    # `-b {threads}` only sets the SMP batch over input sets, of which a tile
+    # is one.
+    #
+    # MEASURED on eight DR6 tiles chosen to span conditions (high latitude,
+    # b = 18 deg, the A2199 cluster, Alioth's halo, two survey-edge tiles at
+    # 96% zero weight; 1-10 exposures), the step as shapepipe_run runs it on
+    # candide: wall time 23-143 s (SExtractor + join <= 50 s, post-processing
+    # <= 92 s), peak RSS 1.75 GiB, set by the join holding the ~430 MB
+    # catalogue twice. Image simulations run the same step on tiles of the same
+    # size (10000 x 10000 px); SExtractor alone on one takes 34 s and 0.74 GiB.
+    # 4000 MB is 2.2x the worst tile, and an OOM retries at 8000. The runtime
+    # is ~8x the slowest tile, for /scratch I/O on nibi (a 400 MB image and
+    # weight in, a ~430 MB catalogue out). nibi bills max(cores, mem_GB/4), so
+    # the job bills 1 core-equivalent.
+    threads: 1
+    retries: 1
     resources:
-        mem_mb = lambda wc, attempt: 16000 * attempt,
-        runtime = 180
+        mem_mb = lambda wc, attempt: 4000 * attempt,
+        runtime = lambda wc, attempt: 20 * attempt
     shell:
         sp_shell("tile_detect", "config_tile_Sx.ini")
 

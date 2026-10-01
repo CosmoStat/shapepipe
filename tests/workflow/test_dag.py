@@ -33,7 +33,7 @@ def test_rule_set_matches_input_mode(campaign, dag):
 
 def test_tile_detect_joins_the_catalogue_iff_unions(campaign, dag):
     """Data's tile_detect waits on the fetch and exports its catalogue as
-    SP_MATCH_CATALOGUE; the image-simulation prologue exports nothing new."""
+    SP_MATCH_CATALOGUE; the image-simulation prologue exports it empty."""
     for job in dag.jobs_for("tile_detect"):
         tile = job.wildcards.tile
         inputs = {str(f) for f in job.input}
@@ -46,7 +46,7 @@ def test_tile_detect_joins_the_catalogue_iff_unions(campaign, dag):
             assert f"export SP_MATCH_CATALOGUE='{cat}'" in job.params.pre
         else:
             assert fetch not in inputs
-            assert "SP_MATCH_CATALOGUE" not in job.params.pre
+            assert "export SP_MATCH_CATALOGUE=''" in job.params.pre.split("\n")
 
 
 def test_clean_exposure_waits_on_persist_iff_psf(campaign, dag):
