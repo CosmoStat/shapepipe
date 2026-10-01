@@ -138,8 +138,9 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
 
     final_cat_file.save_as_fits(data, ext_name="RESULTS")
     final_cat_file.open()
-    final_cat_file.add_col("TILE_ID", tile_id_array)
-    final_cat_file.add_col("TILE_UNIQUE_ID", unique_id)
+    final_cat_file.add_cols(
+        {"TILE_ID": tile_id_array, "TILE_UNIQUE_ID": unique_id}
+    )
 
     sexcat_file.close()
 
@@ -215,10 +216,11 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
     ra = np.copy(final_cat_file.get_data()["XWIN_WORLD"])
     dec = np.copy(final_cat_file.get_data()["YWIN_WORLD"])
 
+    mask_cols = {}
     for band, path in band_paths.items():
         w_log.info(f"Query external mask for band {band}: {path}")
-        values = mask_query.query_map(path, ra, dec)
-        final_cat_file.add_col(f"MASK_{band}", values)
+        mask_cols[f"MASK_{band}"] = mask_query.query_map(path, ra, dec)
+    final_cat_file.add_cols(mask_cols)
 
     final_cat_file.close()
 
@@ -290,9 +292,7 @@ class SaveCatalogue:
             )
 
         if err_msg is None:
-
-            for key in self._output_dict.keys():
-                self._final_cat_file.add_col(key, self._output_dict[key])
+            self._final_cat_file.add_cols(self._output_dict)
 
         self._final_cat_file.close()
 
