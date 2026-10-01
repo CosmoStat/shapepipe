@@ -9,6 +9,7 @@ Module runner for ``sextractor``.
 import re
 
 from shapepipe.modules.module_decorator import module_runner
+from shapepipe.modules.sextractor_package import match_catalogue as mc
 from shapepipe.modules.sextractor_package import sextractor_script as ss
 from shapepipe.pipeline.execute import execute
 
@@ -108,6 +109,25 @@ def sextractor_runner(
 
     # Parse SExtractor errors
     stdout, stderr = ss_inst.parse_errors(stderr, stdout)
+
+    # MATCH_CATALOGUE (optional, environment-expanded path; empty for none):
+    # take membership and NUMBER from that external catalogue of the same
+    # image, before the post-processing keys the epoch HDUs on NUMBER.
+    match_path = (
+        config.getexpanded(module_config_sec, "MATCH_CATALOGUE")
+        if config.has_option(module_config_sec, "MATCH_CATALOGUE")
+        else ""
+    )
+    if match_path:
+        mc.match_catalogue(
+            ss_inst.path_output_file,
+            match_path,
+            radius=config.getfloat(module_config_sec, "MATCH_RADIUS"),
+            min_fraction=config.getfloat(
+                module_config_sec, "MATCH_MIN_FRACTION"
+            ),
+            w_log=w_log,
+        )
 
     # Run sextractor post processing
     if config.getboolean(module_config_sec, "MAKE_POST_PROCESS"):
