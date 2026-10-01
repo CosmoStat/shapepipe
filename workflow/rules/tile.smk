@@ -554,6 +554,16 @@ def detect_env(tile):
     return {"SP_MATCH_CATALOGUE": match, **blend_env("tile_detect")}
 
 
+# tile_detect's extra memory under uberseg: add_seg_vignet reads the 400 MB
+# SEGMENTATION check image and adds an int32 SEG_VIGNET column the size of
+# VIGNET, which the join then holds twice. MEASURED on DR6 tile 202.301
+# (36,022 detections; sextractor_runner as tile_detect runs it, without the
+# post-processing): peak RSS 1.53 GiB under noisefill, 2.93 GiB under uberseg.
+# Scaled to the 1.84 GiB worst tile above, uberseg needs ~3.5 GiB; 7000 MB is
+# 2x that.
+DETECT_SEG_MEM_MB = 3000 if BLEND_HANDLING == "uberseg" else 0
+
+
 # SExtractor object detection on the tile; under unions_catalogue joined to
 # the UNIONS catalogue (config_tile_Sx.ini, MATCH_CATALOGUE).
 rule tile_detect:
@@ -583,11 +593,11 @@ rule tile_detect:
     # 4000 MB is 2.1x the worst tile, and an OOM retries at 8000. The runtime
     # is ~7x the slowest tile, for /scratch I/O on nibi (a 400 MB image and
     # weight in, a ~430 MB catalogue out). nibi bills max(cores, mem_GB/4), so
-    # the job bills 1 core-equivalent.
+    # the job bills 1 core-equivalent; under uberseg, DETECT_SEG_MEM_MB below.
     threads: 1
     retries: 1
     resources:
-        mem_mb = lambda wc, attempt: 4000 * attempt,
+        mem_mb = lambda wc, attempt: (4000 + DETECT_SEG_MEM_MB) * attempt,
         runtime = lambda wc, attempt: 20 * attempt
     shell:
         sp_shell("tile_detect", "config_tile_Sx.ini")

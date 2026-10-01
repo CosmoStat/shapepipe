@@ -76,7 +76,7 @@ Apply mutations only to a disposable checkout, run the named test without `--upd
 | `test_clean_exposure_waits_on_persist_iff_psf` | Drop the persist edge; make it unconditional under fake PSFs; drop vignets consumers; remove the in-scope consumer filter. |
 | `test_final_cat_merge_reads_every_ready_tile` | Drop one ready tile; append an out-of-scope tile. |
 | `test_products_use_products_dir_and_run_name` | Rename either merged catalogue or the persist manifest; route products to scratch; derive `CAMPAIGN` from the products directory's basename. |
-| `test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg` | Make the Snakefile or config.yaml default `noisefill`; export `BLEND_ENV` under noisefill; drop `blend_env(...)` from either tile_detect or tile_ngmix; export the wrong value; set `NGMIX_SEG_MEM_MB` to 0; give a committed ini's `SEG_VIGNET` / `BLEND_HANDLING` a literal or the wrong default. |
+| `test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg` | Make the Snakefile or config.yaml default `noisefill`; export `BLEND_ENV` under noisefill; drop `blend_env(...)` from either tile_detect or tile_ngmix; export the wrong value; set `NGMIX_SEG_MEM_MB` or `DETECT_SEG_MEM_MB` to 0; give a committed ini's `SEG_VIGNET` / `BLEND_HANDLING` a literal or the wrong default. |
 | `test_unknown_blend_handling_fails_during_parse` | Remove the Snakefile's `blend_handling` check. |
 | `test_missing_run_fails_during_parse` | Remove `run` from `run_config.REQUIRED`; literal paths must still receive the required-key diagnostic, not a later `KeyError`. |
 | `test_unit_pre_changes_at_campaign_boundary` | Append a line to `unit_pre`; change one rule's `params.pre`; change one shell; change a rendered thread count. |

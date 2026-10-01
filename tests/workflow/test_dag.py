@@ -142,6 +142,8 @@ def test_mccd_is_refused_during_parse(tmp_path, resolve_dag):
 
 # --- blend_handling ---------------------------------------------------------
 
+# The memory each stage adds under uberseg for SEG_VIGNET.
+SEG_MEM_MB = {"tile_detect": 3000, "tile_ngmix": 500}
 BLEND_EXPORTS = {"tile_detect": {"SP_SEG_VIGNET": "True"},
                  "tile_ngmix": {"SP_BLEND_HANDLING": "uberseg"}}
 # The option each stage's committed ini reads the export through, and the
@@ -183,7 +185,7 @@ def test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg(
         tmp_path, resolve_dag, monkeypatch, detection):
     """A campaign without the knob plans exactly the uberseg campaign. Against
     explicit noisefill, uberseg only adds its two exports to tile_detect's and
-    tile_ngmix's prologues and the seg stamps' memory to tile_ngmix, and each
+    tile_ngmix's prologues and the seg stamps' memory to both, and each
     export turns its committed ini's option from the noise-fill default to
     the uberseg value."""
     surfaces = {}
@@ -234,7 +236,7 @@ def test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg(
                                     monkeypatch) == default
             assert _committed_value(shell, config_dir, option, exports,
                                     monkeypatch) == value
-        assert mem == (nf_mem + 500 if rule == "tile_ngmix" else nf_mem), key
+        assert mem == nf_mem + SEG_MEM_MB.get(rule, 0), key
 
 
 def test_unknown_blend_handling_fails_during_parse(tmp_path, resolve_dag):
