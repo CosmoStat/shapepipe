@@ -92,8 +92,8 @@ def relabel(seg_vignets, old_number, new_number):
     return table[seg_vignets]
 
 
-def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.99,
-                    w_log=None):
+def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
+                    tolerated_unpaired=20, w_log=None):
     """Take membership and ``NUMBER`` from an external catalogue.
 
     Each SExtractor row is paired with its mutual nearest neighbour in the
@@ -105,15 +105,16 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.99,
     other HDU and column is kept.
 
     Both catalogues come from the same pixels, so pairs agree to ~1e-4
-    pixel. On eight DR6 tiles at least 99.6% of SExtractor rows and 99.4% of
-    UNIONS objects pair; the shortfall is SExtractor deblending differently
-    near very large objects (a cD galaxy, a bright star's halo). Run on
-    different pixels (a DR5 image against the DR6 catalogue) only ~95% pair.
-    So the run stops when fewer than ``min_fraction`` of the SExtractor rows,
-    or of the external objects, pair: the first catches a catalogue from
-    other pixels, the second a detection configuration that finds fewer
-    objects than the catalogue's, which would leave its objects without
-    shapes.
+    pixel, and on eight DR6 tiles at least 99.2% of each side pairs; the
+    shortfall is deblending that differs near very large objects (a cD
+    galaxy, a bright star's halo). On different pixels (a DR5 image against
+    the DR6 catalogue) only ~95% pair. The guard is there to catch that: the
+    run stops when the unpaired rows of either side exceed both
+    ``(1 - min_fraction)`` of that side and ``tolerated_unpaired``, so a
+    near-empty edge tile with a couple of unpaired children passes. On the
+    SExtractor side it catches a catalogue from other pixels; on the
+    external side, a detection configuration that finds fewer objects than
+    the catalogue's, which would leave its objects without shapes.
 
     Parameters
     ----------
@@ -126,7 +127,10 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.99,
         Largest separation of a pair, in pixels; default 1
     min_fraction : float, optional
         Smallest acceptable fraction of SExtractor rows, and of external
-        objects, with a partner; default 0.99
+        objects, with a partner; default 0.98
+    tolerated_unpaired : int, optional
+        Number of unpaired rows on either side accepted whatever the
+        fraction; default 20
     w_log : logging.Logger, optional
         Pipeline logger
 
@@ -140,8 +144,8 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.99,
     Raises
     ------
     ValueError
-        If fewer than ``min_fraction`` of the SExtractor rows, or of the
-        external objects, pair
+        If more than ``tolerated_unpaired`` rows of either side, and more
+        than ``1 - min_fraction`` of it, have no partner
 
     @sc [decision:detection.tile_detection]
     """
@@ -162,21 +166,28 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.99,
         n_external_only=len(ext) - len(i_sex),
     )
     summary = ", ".join(f"{k}={v}" for k, v in counts.items())
+    def too_many_unpaired(n_total):
+        unpaired = n_total - len(i_sex)
+        return (unpaired > tolerated_unpaired
+                and unpaired > (1 - min_fraction) * n_total)
+
     fraction = len(i_sex) / max(len(data), 1)
-    if fraction < min_fraction:
+    if too_many_unpaired(len(data)):
         raise ValueError(
             f"Only {fraction:.4f} of the SExtractor rows of {cat_path} pair"
             + f" with {ext_cat_path} within {radius} px (minimum"
-            + f" {min_fraction}; {summary}). The catalogue must come from the"
+            + f" {min_fraction} beyond {tolerated_unpaired} unpaired;"
+            + f" {summary}). The catalogue must come from the"
             + " same pixels as the image: check that the tile image is the"
             + " release of the catalogue (DR6)."
         )
     fraction_ext = len(i_sex) / max(len(ext), 1)
-    if fraction_ext < min_fraction:
+    if too_many_unpaired(len(ext)):
         raise ValueError(
             f"Only {fraction_ext:.4f} of the objects of {ext_cat_path} pair"
             + f" with a row of {cat_path} within {radius} px (minimum"
-            + f" {min_fraction}; {summary}). SExtractor finds fewer objects"
+            + f" {min_fraction} beyond {tolerated_unpaired} unpaired;"
+            + f" {summary}). SExtractor finds fewer objects"
             + " than the catalogue: check that the detection configuration"
             + " is the catalogue's."
         )

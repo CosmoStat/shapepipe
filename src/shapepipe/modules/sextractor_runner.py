@@ -126,6 +126,9 @@ def sextractor_runner(
             min_fraction=config.getfloat(
                 module_config_sec, "MATCH_MIN_FRACTION"
             ),
+            tolerated_unpaired=config.getint(
+                module_config_sec, "MATCH_TOLERATED_UNPAIRED"
+            ),
             w_log=w_log,
         )
 

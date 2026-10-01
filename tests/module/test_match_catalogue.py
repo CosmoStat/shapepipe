@@ -122,7 +122,7 @@ def test_too_few_catalogue_objects_paired_stop_the_run(tmp_path):
     cat = _sexcat(tmp_path / "sexcat.fits", X[:4], Y[:4])
     ext = _external(tmp_path / "ext.cat", [1, 2, 3, 4, 5], X, Y)
     with pytest.raises(ValueError, match="fewer objects"):
-        mc.match_catalogue(cat, ext, min_fraction=0.99)
+        mc.match_catalogue(cat, ext, min_fraction=0.99, tolerated_unpaired=0)
     assert list(_objects(cat)["NUMBER"]) == [1, 2, 3, 4]
     counts = mc.match_catalogue(cat, ext, min_fraction=0.8)
     assert counts["n_paired"] == 4 and counts["n_external_only"] == 1
@@ -133,11 +133,51 @@ def test_too_few_pairs_stop_the_run(tmp_path):
     cat = _sexcat(tmp_path / "sexcat.fits", X, Y)
     ext = _external(tmp_path / "ext.cat", [1, 2, 3, 4], X[:4], Y[:4])
     with pytest.raises(ValueError, match="DR6"):
-        mc.match_catalogue(cat, ext, min_fraction=0.99)
+        mc.match_catalogue(cat, ext, min_fraction=0.99, tolerated_unpaired=0)
     # Nothing was written.
     assert list(_objects(cat)["NUMBER"]) == [1, 2, 3, 4, 5]
     mc.match_catalogue(cat, ext, min_fraction=0.8)
     assert list(_objects(cat)["NUMBER"]) == [1, 2, 3, 4]
+
+
+def _grid(n):
+    """n well-separated positions, 10 px apart."""
+    i = np.arange(n)
+    return 5.0 + 10.0 * (i % 50), 5.0 + 10.0 * (i // 50)
+
+
+def test_small_tile_with_few_unpaired_children_passes(tmp_path):
+    """An edge tile: 5 of 100 catalogue objects unpaired (5%) is within the
+    20 tolerated, so the run goes on with the default guard."""
+    x, y = _grid(105)
+    cat = _sexcat(tmp_path / "sexcat.fits", x[:100], y[:100])
+    ext = _external(tmp_path / "ext.cat", np.arange(1, 106), x, y)
+    counts = mc.match_catalogue(cat, ext)
+    assert counts["n_paired"] == 100 and counts["n_external_only"] == 5
+
+
+def test_large_tile_with_unpaired_children_passes(tmp_path):
+    """A cluster tile: 30 of 2000 catalogue objects unpaired (1.5%) is more
+    than 20 but under 2%, so the run goes on with the default guard."""
+    x, y = _grid(2000)
+    cat = _sexcat(tmp_path / "sexcat.fits", x[:1970], y[:1970])
+    ext = _external(tmp_path / "ext.cat", np.arange(1, 2001), x, y)
+    counts = mc.match_catalogue(cat, ext)
+    assert counts["n_external_only"] == 30
+
+
+@pytest.mark.parametrize("side", ["sextractor", "external"])
+def test_other_pixels_stop_the_run(tmp_path, side):
+    """5% unpaired on either side (a DR5 image: ~95% pair) stops the run with
+    the default guard, far beyond the 20 tolerated."""
+    x, y = _grid(2000)
+    n_sex, n_ext = (2000, 1900) if side == "sextractor" else (1900, 2000)
+    cat = _sexcat(tmp_path / "sexcat.fits", x[:n_sex], y[:n_sex])
+    ext = _external(tmp_path / "ext.cat", np.arange(1, n_ext + 1),
+                    x[:n_ext], y[:n_ext])
+    with pytest.raises(ValueError, match="DR6" if side == "sextractor"
+                       else "fewer objects"):
+        mc.match_catalogue(cat, ext)
 
 
 def test_seg_vignet_is_relabelled(tmp_path):
