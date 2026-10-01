@@ -175,3 +175,23 @@ def test_duplicate_history_cards_create_one_epoch_hdu(tmp_path):
 
     assert epoch_names == ["EPOCH_0"]
     np.testing.assert_array_equal(n_epoch, [1, 1])
+
+
+def test_exposure_missing_from_header_log_raises(tmp_path):
+    """A HISTORY exposure absent from the header log is a KeyError."""
+    npy_path = tmp_path / "headers-123456.npy"
+    _write_exposure_headers(npy_path)
+    merge_headers([[str(npy_path)]], str(tmp_path), tile_number="53")
+    sqlite_path = tmp_path / "log_exp_headers53.sqlite"
+
+    positions = _make_ccd_wcs(0)[0].all_pix2world([[50.0, 50.0]], 0)
+    cat_path = tmp_path / "sexcat.fits"
+    _write_sex_ldac(cat_path, ["123456", "999999"], positions)
+
+    with pytest.raises(KeyError, match="999999"):
+        sextractor_script.make_post_process(
+            str(cat_path),
+            str(sqlite_path),
+            ["XWIN_WORLD", "YWIN_WORLD"],
+            ["0", str(CCD_NPIX), "0", str(CCD_NPIX)],
+        )
