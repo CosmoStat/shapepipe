@@ -77,13 +77,15 @@ Next, the final star selection is defined:
    [MASK:star_selection]
    MAG_AUTO > 18.
    MAG_AUTO < 22.
-   FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
-   FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
+   FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 3 * locus_width(FWHM_IMAGE{preselect})
+   FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 3 * locus_width(FWHM_IMAGE{preselect})
    FLAGS == 0
    IMAFLAGS_ISO == 0
 
-The size range is now refined using the mode of preselected objects. The
-preselection removes outliers before the mode computation.
+The size range is refined around the stellar locus of the preselected
+objects: ``mode`` returns the peak of their FWHM distribution and
+``locus_width`` the peak's width, as a Gaussian standard deviation. The
+preselection removes outliers before either is computed.
 
 An example of the definition of random subsamples is as follows:
 

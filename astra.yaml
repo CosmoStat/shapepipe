@@ -864,18 +864,38 @@ analyses:
            psf_model_complexity, psf_acceptance_thresholds]
     decisions:
       star_selection_box:
-        label: Stellar-locus selection, magnitude window and FWHM window around the mode
+        label: Stellar-locus selection, magnitude window and FWHM window scaled to the locus
         rationale: >-
           Stars are flag-free objects in a MAG_AUTO window whose FWHM lies
-          within 0.2 px of the mode of a looser, size-limited preselection
-          (FWHM 0.3-1.5 arcsec at 0.187 arcsec/px). The mode is the peak of a
-          Gaussian kernel density estimate with a [HARDCODED] 0.1 px
-          bandwidth, about the stellar-locus width (0.07 px at 0.53 arcsec
-          seeing, 0.10 px at 0.69 arcsec), so the box centre follows the
-          locus and not the preselection's extremes or count: across 80 CCDs
-          its bootstrap spread is 0.01 px, against 0.04 px for the histogram
-          zoom it replaces (#928). Below 20 objects it returns the median,
-          and with none -1, which selects nothing.
+          within 3 locus widths of the stellar-locus peak of a looser,
+          size-limited preselection (FWHM 0.3-1.5 arcsec at 0.187
+          arcsec/px). mode() is the peak of a Gaussian kernel density
+          estimate of the preselection FWHM, and locus_width() is that
+          peak's full width at half maximum as a Gaussian sigma, with the
+          kernel removed in quadrature. The box scales with the locus
+          because the locus width varies from 0.06 to 0.26 px per CCD with
+          seeing and focal-plane position, so a fixed box cuts broad
+          corner loci (2114045p CCD 35 keeps 39 of 63 bright locus stars at
+          +-0.2 px, 63 at 3 sigma) and is loose on sharp ones. k = 3 is
+          where widening stops adding mostly stars: against the
+          size-independent MU_MAX - MAG_AUTO star sequence (18-20.5 mag, 79
+          CCDs), objects added between 2.5 and 3 sigma are 59% (0.53 arcsec
+          seeing) and 71% (0.69 arcsec) stars, and between 3 and 3.5 sigma
+          28% and 65%. At k = 3, 98.9% and 89.1% of locus stars are kept
+          with 2.7% and 5.6% non-stars, against 95.6%, 80.9%, 1.7% and 3.0%
+          for the fixed +-0.2 px box. The [HARDCODED] 0.1 px kernel
+          bandwidth is close to the median locus width (0.08 px at 0.53
+          arcsec, 0.10 px at 0.69 arcsec) and is not tied to each CCD's
+          width: a wider kernel on a broad locus pulls
+          the peak and the width into the galaxies, and a tied bandwidth
+          moved box edges by up to 4.5 px when the preselection bounds
+          shifted slightly on 0.69 arcsec CCDs. Measured widths make the box
+          edges noisier than a fixed half-width (bootstrap 0.03-0.05 px,
+          against 0.01 px), still below the locus width. Below 20 objects the centre is the median
+          and the width the normalised MAD; with none both are -1, which
+          selects nothing. Where galaxies capture the peak (2254826p CCD
+          35), no box recovers the stars; the logged locus width flags it
+          (0.32 px, against 0.06-0.26 px elsewhere).
           PSFEx's own selection is off; see psfex_candidate_vetting for what
           PSFEx may still apply.
           Values:
@@ -885,15 +905,21 @@ analyses:
           MASK:preselect.IMAFLAGS_ISO = "== 0";
           MASK:star_selection.MAG_AUTO = ["> 18.", "< 22."];
           MASK:star_selection.FWHM_IMAGE = ["<= mode(FWHM_IMAGE{preselect})
-          + 0.2", ">= mode(FWHM_IMAGE{preselect}) - 0.2"];
+          + 3 * locus_width(FWHM_IMAGE{preselect})", ">=
+          mode(FWHM_IMAGE{preselect}) - 3 * locus_width(FWHM_IMAGE{preselect})"];
           MASK:preselect.MAG_AUTO = ["> 0", "< 21"];
           MASK:preselect.FWHM_IMAGE = ["> 0.3 / 0.187", "< 1.5 / 0.187"];
           PLOT:fwhm_field.SCATTER = "FWHM_IMAGE{star_selection}*0.187";
+          LOCUS_BANDWIDTH = 0.1;
+          LOCUS_WIDTH_FLOOR = 0.02;
+          LOCUS_MIN_SIZE = 20;
           SAMPLE_AUTOSELECT = N.
-        default: mode_centred_box
+        default: locus_scaled_box
         options:
+          locus_scaled_box:
+            label: Box +-3 locus widths about the locus peak, mag 18-22
           mode_centred_box:
-            label: FWHM-mode-centred box, +-0.2 px, mag 18-22
+            label: Fixed box +-0.2 px (0.04 arcsec) about the FWHM mode, mag 18-22
             insights: [guinot22_star_box]
           size_mag_locus_fit:
             label: Fitted size-magnitude stellar locus
