@@ -371,6 +371,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.sqlite_store.html">shapepipe.pipeline.sqlite_store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
@@ -564,9 +565,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">fits</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.wcs.wcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidCoordinateError</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sqlitedict</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteDict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline.sqlite_store</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_sqlitedict</span>
 
 
 <div class="viewcode-block" id="get_header_value">
@@ -722,11 +723,14 @@
     <span class="p">)</span>
     <span class="n">cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
 
-    <span class="n">f_wcs</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="n">f_wcs_path</span><span class="p">)</span>
+    <span class="c1"># One lock-free read of the whole header log: merge_headers wrote and</span>
+    <span class="c1"># closed it in an earlier step, and keyed SqliteDict reads would take an</span>
+    <span class="c1"># NFS lock per access.</span>
+    <span class="n">f_wcs</span> <span class="o">=</span> <span class="n">read_sqlitedict</span><span class="p">(</span><span class="n">f_wcs_path</span><span class="p">)</span>
     <span class="c1"># Tile-level logs from merge_headers carry a "TILE_ID" metadata entry</span>
     <span class="c1"># (inserted first); n_hdu must be derived from a real exposure entry,</span>
     <span class="c1"># otherwise it measures the tile ID string and truncates the CCD scan.</span>
-    <span class="n">exp_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">f_wcs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">"TILE_ID"</span><span class="p">]</span>
+    <span class="n">exp_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">f_wcs</span> <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">"TILE_ID"</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_keys</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not read sql file '</span><span class="si">{</span><span class="n">f_wcs_path</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
     <span class="n">n_hdu</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">f_wcs</span><span class="p">[</span><span class="n">exp_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
@@ -755,14 +759,14 @@
 
     <span class="n">n_epoch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int32"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">exp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">exp_list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">exp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">f_wcs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Exposure </span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s2"> used in image </span><span class="si">{</span><span class="n">cat_path</span><span class="si">}</span><span class="s2"> but not"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">" found in header file </span><span class="si">{</span><span class="n">f_wcs_path</span><span class="si">}</span><span class="s2">. Make sure this"</span>
+                <span class="o">+</span> <span class="s2">" file is complete."</span>
+            <span class="p">)</span>
         <span class="n">pos_tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int32"</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
         <span class="k">for</span> <span class="n">idx_j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_hdu</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">exp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">f_wcs</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"Exposure </span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s2"> used in image </span><span class="si">{</span><span class="n">cat_path</span><span class="si">}</span><span class="s2"> but not"</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">" found in header file </span><span class="si">{</span><span class="n">f_wcs_path</span><span class="si">}</span><span class="s2">. Make sure this"</span>
-                    <span class="o">+</span> <span class="s2">" file is complete."</span>
-                <span class="p">)</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">f_wcs</span><span class="p">[</span><span class="n">exp</span><span class="p">][</span><span class="n">idx_j</span><span class="p">][</span><span class="s2">"WCS"</span><span class="p">]</span>
             <span class="c1"># Only inverse-project objects near this CCD's footprint.</span>
             <span class="c1"># Positions far outside the distortion domain make the</span>
@@ -803,8 +807,6 @@
         <span class="p">)</span>
         <span class="n">cat</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">ext_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"EPOCH_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-
-    <span class="n">f_wcs</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="n">cat</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"N_EPOCH"</span><span class="p">,</span> <span class="n">n_epoch</span><span class="p">)</span>
 

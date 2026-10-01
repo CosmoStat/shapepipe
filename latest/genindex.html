@@ -371,6 +371,7 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.sqlite_store.html">shapepipe.pipeline.sqlite_store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
@@ -583,7 +584,11 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.pipeline.config.html#shapepipe.pipeline.config.CustomParser._abc_impl">_abc_impl (CustomParser attribute)</a>
+
+      <ul>
+        <li><a href="shapepipe.pipeline.sqlite_store.html#shapepipe.pipeline.sqlite_store.ImmutableSqliteDict._abc_impl">(ImmutableSqliteDict attribute)</a>
 </li>
+      </ul></li>
       <li><a href="shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._add2dict">_add2dict() (SaveCatalogue method)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue._append_col">_append_col() (FITSCatalogue method)</a>
@@ -730,10 +735,10 @@
 </li>
       <li><a href="shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._init_stat_function">_init_stat_function() (StrInterpreter method)</a>
 </li>
-      <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._input_dir">_input_dir (FileHandler property)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._input_dir">_input_dir (FileHandler property)</a>
+</li>
       <li><a href="shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._interpolate">_interpolate() (PSFExInterpolator method)</a>
 </li>
       <li><a href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._interpolate_me">_interpolate_me() (MCCDinterpolator method)</a>
@@ -1004,10 +1009,10 @@
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.check_wcs_centroid_offset">check_wcs_centroid_offset() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html#shapepipe.modules.merge_sep_cats_package.merge_sep_cats.chunk_path">chunk_path() (in module shapepipe.modules.merge_sep_cats_package.merge_sep_cats)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.chunk_rows">chunk_rows() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
       <li><a href="shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler.clean_up">clean_up() (JobHandler method)</a>
@@ -1015,6 +1020,8 @@
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.close">close() (FITSCatalogue method)</a>
 
       <ul>
+        <li><a href="shapepipe.pipeline.sqlite_store.html#shapepipe.pipeline.sqlite_store.ImmutableSqliteDict.close">(ImmutableSqliteDict method)</a>
+</li>
         <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Vignet.close">(Vignet method)</a>
 </li>
       </ul></li>
@@ -1384,6 +1391,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.image">image (class in shapepipe.utilities.cfis)</a>
 </li>
+      <li><a href="shapepipe.pipeline.sqlite_store.html#shapepipe.pipeline.sqlite_store.ImmutableSqliteDict">ImmutableSqliteDict (class in shapepipe.pipeline.sqlite_store)</a>
+</li>
       <li><a href="shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.in2out_pattern">in2out_pattern() (in module shapepipe.modules.get_images_package.get_images)</a>
 </li>
       <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.init_par_runtime">init_par_runtime() (in module shapepipe.utilities.summary)</a>
@@ -1399,6 +1408,8 @@
       <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.is_ID_in_str">is_ID_in_str() (job_data class method)</a>
 </li>
       <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.is_not_in_any">is_not_in_any() (job_data class method)</a>
+</li>
+      <li><a href="shapepipe.pipeline.sqlite_store.html#shapepipe.pipeline.sqlite_store.ImmutableSqliteDict.items">items() (ImmutableSqliteDict method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1644,6 +1655,8 @@
 </li>
         <li><a href="shapepipe.pipeline.shared.html#module-shapepipe.pipeline.shared">shapepipe.pipeline.shared</a>
 </li>
+        <li><a href="shapepipe.pipeline.sqlite_store.html#module-shapepipe.pipeline.sqlite_store">shapepipe.pipeline.sqlite_store</a>
+</li>
         <li><a href="shapepipe.pipeline.str_handler.html#module-shapepipe.pipeline.str_handler">shapepipe.pipeline.str_handler</a>
 </li>
         <li><a href="shapepipe.pipeline.timeout.html#module-shapepipe.pipeline.timeout">shapepipe.pipeline.timeout</a>
@@ -1884,6 +1897,8 @@
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.read_list">read_list() (in module shapepipe.utilities.cfis)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.read_number_list">read_number_list() (FileHandler static method)</a>
+</li>
+      <li><a href="shapepipe.pipeline.sqlite_store.html#shapepipe.pipeline.sqlite_store.read_sqlitedict">read_sqlitedict() (in module shapepipe.pipeline.sqlite_store)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.ReadOnly">ReadOnly (BaseCatalogue.OpenMode attribute)</a>
 </li>
@@ -2297,8 +2312,6 @@
         <li><a href="shapepipe.modules.psfex_package.psfex_script.html#module-shapepipe.modules.psfex_package.psfex_script">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     shapepipe.modules.python_example_package
 
@@ -2306,6 +2319,8 @@
         <li><a href="shapepipe.modules.python_example_package.html#module-shapepipe.modules.python_example_package">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     shapepipe.modules.python_example_package.python_example
 
@@ -2479,6 +2494,13 @@
 
       <ul>
         <li><a href="shapepipe.pipeline.shared.html#module-shapepipe.pipeline.shared">module</a>
+</li>
+      </ul></li>
+      <li>
+    shapepipe.pipeline.sqlite_store
+
+      <ul>
+        <li><a href="shapepipe.pipeline.sqlite_store.html#module-shapepipe.pipeline.sqlite_store">module</a>
 </li>
       </ul></li>
       <li>

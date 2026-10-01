@@ -24,6 +24,7 @@ Submodules
    shapepipe.pipeline.mpi_run
    shapepipe.pipeline.run_log
    shapepipe.pipeline.shared
+   shapepipe.pipeline.sqlite_store
    shapepipe.pipeline.str_handler
    shapepipe.pipeline.timeout
    shapepipe.pipeline.worker_handler

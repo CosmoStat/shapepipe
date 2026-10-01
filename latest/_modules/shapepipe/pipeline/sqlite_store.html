@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>shapepipe.pipeline.args &#8212; ShapePipe v1.1</title>
+    <title>shapepipe.pipeline.sqlite_store &#8212; ShapePipe v1.1</title>
   
   
   
@@ -42,7 +42,7 @@
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/shapepipe/pipeline/args';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/shapepipe/pipeline/sqlite_store';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
@@ -490,7 +490,7 @@
       
       
       
-      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/pipeline/args.html&body=Your%20issue%20content%20here." target="_blank"
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/pipeline/sqlite_store.html&body=Your%20issue%20content%20here." target="_blank"
    class="btn btn-sm btn-source-issues-button dropdown-item"
    title="Open an issue"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -551,165 +551,164 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <h1>Source code for shapepipe.pipeline.args</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""ARGUMENT HANDLING.</span>
+  <h1>Source code for shapepipe.pipeline.sqlite_store</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""SQLITE STORE.</span>
 
-<span class="sd">This module defines methods for handling the pipeline arguments.</span>
+<span class="sd">Lock-free, read-only access to the SqliteDict stores the pipeline writes</span>
+<span class="sd">between modules (WCS header logs, vignet catalogues, PSF catalogues).</span>
 
-<span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
+<span class="sd">Reading through :class:`sqlitedict.SqliteDict` costs one sqlite transaction</span>
+<span class="sd">per key access, and each transaction takes and releases a POSIX lock on the</span>
+<span class="sd">file. On a networked filesystem those locks are slow (tens to hundreds of</span>
+<span class="sd">milliseconds, and far worse on a busy server), so a loop of keyed reads can</span>
+<span class="sd">spend most of its time in lock traffic. :class:`ImmutableSqliteDict` opens the</span>
+<span class="sd">file with sqlite's ``immutable=1`` URI parameter instead, which skips all</span>
+<span class="sd">locking and change detection.</span>
+
+<span class="sd">``immutable=1`` is only correct for a file that no process writes while it</span>
+<span class="sd">is open: sqlite neither sees concurrent changes nor replays a hot journal</span>
+<span class="sd">left by a crashed writer, so it would return uncommitted rows. Every call</span>
+<span class="sd">site of this module reads a store that an earlier module wrote and closed</span>
+<span class="sd">(``make_post_process`` reads the header log ``merge_headers`` wrote). As a</span>
+<span class="sd">guard, opening a store that has a rollback journal or write-ahead log next</span>
+<span class="sd">to it raises instead of reading it.</span>
 
 <span class="sd">"""</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ap</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.info</span><span class="w"> </span><span class="kn">import</span> <span class="n">shapepipe_logo</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.modules</span><span class="w"> </span><span class="kn">import</span> <span class="n">__module_list__</span>
-
-
-<div class="viewcode-block" id="cutomFormatter">
-<a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.cutomFormatter">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">cutomFormatter</span><span class="p">(</span>
-    <span class="n">ap</span><span class="o">.</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span>
-    <span class="n">ap</span><span class="o">.</span><span class="n">RawDescriptionHelpFormatter</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Custom Formatter.</span>
-
-<span class="sd">    This class combines the argparse ``ArgumentDefaultsHelpFormatter`` and</span>
-<span class="sd">    ``RawDescriptionHelpFormatter`` formatters.</span>
-
-<span class="sd">    """</span>
-
-    <span class="k">pass</span></div>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlitedict</span><span class="w"> </span><span class="kn">import</span> <span class="n">decode</span>
 
 
+<div class="viewcode-block" id="ImmutableSqliteDict">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.sqlite_store.html#shapepipe.pipeline.sqlite_store.ImmutableSqliteDict">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ImmutableSqliteDict</span><span class="p">(</span><span class="n">Mapping</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Read-only, lock-free mapping over a SqliteDict file.</span>
 
-<div class="viewcode-block" id="print_message">
-<a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.print_message">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">print_message</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Print Message.</span>
+<span class="sd">    Keys and values are those :class:`sqlitedict.SqliteDict` returns for a</span>
+<span class="sd">    store written with its default key and value encoding (identity keys,</span>
+<span class="sd">    pickled values); iteration follows insertion (``rowid``) order, as</span>
+<span class="sd">    SqliteDict's does. Each lookup is one indexed query; use</span>
+<span class="sd">    :func:`read_sqlitedict` to load a whole store at once.</span>
 
-<span class="sd">    This method returns a custom argparse action for printing a message.</span>
+<span class="sd">    The file must not be written while it is open (see the module</span>
+<span class="sd">    docstring).</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    message : str</span>
-<span class="sd">        Message to be displayed</span>
+<span class="sd">    path : str or os.PathLike</span>
+<span class="sd">        Path to an existing SqliteDict file</span>
+<span class="sd">    tablename : str, optional</span>
+<span class="sd">        SqliteDict table name, default ``"unnamed"`` (SqliteDict's default)</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    customAction</span>
-<span class="sd">        Custom action class object</span>
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    FileNotFoundError</span>
+<span class="sd">        If ``path`` is not an existing file</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If a ``-journal`` or ``-wal`` file sits next to ``path``: a writer is</span>
+<span class="sd">        mid-transaction or crashed in one, and an immutable read would see</span>
+<span class="sd">        uncommitted data</span>
 
 <span class="sd">    """</span>
 
-    <span class="k">class</span><span class="w"> </span><span class="nc">customAction</span><span class="p">(</span><span class="n">ap</span><span class="o">.</span><span class="n">Action</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">tablename</span><span class="o">=</span><span class="s2">"unnamed"</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SqliteDict file not found: '</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">suffix</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"-journal"</span><span class="p">,</span> <span class="s2">"-wal"</span><span class="p">):</span>
+            <span class="n">sidecar</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sidecar</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"SqliteDict file '</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">' has a '</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">' file next to"</span>
+                    <span class="o">+</span> <span class="s2">" it: it is being written, or a writer died"</span>
+                    <span class="o">+</span> <span class="s2">" mid-transaction. Open it with SqliteDict to roll the"</span>
+                    <span class="o">+</span> <span class="s2">" journal back, or rewrite it."</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_table</span> <span class="o">=</span> <span class="s1">'"'</span> <span class="o">+</span> <span class="n">tablename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'"'</span><span class="p">,</span> <span class="s1">'""'</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'"'</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">as_uri</span><span class="p">()</span><span class="si">}</span><span class="s2">?immutable=1"</span><span class="p">,</span>
+            <span class="n">uri</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">check_same_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
 
-        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">option_strings</span><span class="p">,</span>
-            <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">dest</span><span class="o">=</span><span class="n">ap</span><span class="o">.</span><span class="n">SUPPRESS</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="n">ap</span><span class="o">.</span><span class="n">SUPPRESS</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="n">help</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"SELECT value FROM </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_table</span><span class="si">}</span><span class="s2"> WHERE key = ?"</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">decode</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"SELECT 1 FROM </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_table</span><span class="si">}</span><span class="s2"> WHERE key = ?"</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+            <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"SELECT key FROM </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_table</span><span class="si">}</span><span class="s2"> ORDER BY rowid"</span>
         <span class="p">):</span>
-            <span class="nb">super</span><span class="p">(</span><span class="n">customAction</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-                <span class="n">option_strings</span><span class="o">=</span><span class="n">option_strings</span><span class="p">,</span>
-                <span class="n">dest</span><span class="o">=</span><span class="n">dest</span><span class="p">,</span>
-                <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span>
-                <span class="n">nargs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">help</span><span class="o">=</span><span class="n">help</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="k">yield</span> <span class="n">key</span>
 
-        <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-            <span class="n">exit</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"SELECT COUNT(*) FROM </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_table</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">customAction</span></div>
+<div class="viewcode-block" id="ImmutableSqliteDict.items">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.sqlite_store.html#shapepipe.pipeline.sqlite_store.ImmutableSqliteDict.items">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Iterate over ``(key, value)`` pairs with a single query."""</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"SELECT key, value FROM </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_table</span><span class="si">}</span><span class="s2"> ORDER BY rowid"</span>
+        <span class="p">):</span>
+            <span class="k">yield</span> <span class="n">key</span><span class="p">,</span> <span class="n">decode</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ImmutableSqliteDict.close">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.sqlite_store.html#shapepipe.pipeline.sqlite_store.ImmutableSqliteDict.close">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Close the underlying sqlite connection."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">exc</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
 
-<div class="viewcode-block" id="module_str">
-<a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.module_str">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">module_str</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">"""Format Module String.</span>
+<div class="viewcode-block" id="read_sqlitedict">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.sqlite_store.html#shapepipe.pipeline.sqlite_store.read_sqlitedict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_sqlitedict</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">tablename</span><span class="o">=</span><span class="s2">"unnamed"</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Load a whole SqliteDict file into a dict without taking locks.</span>
 
-<span class="sd">    Format the list of modules as a single string.</span>
+<span class="sd">    The file must not be written during the read (see the module docstring).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or os.PathLike</span>
+<span class="sd">        Path to an existing SqliteDict file</span>
+<span class="sd">    tablename : str, optional</span>
+<span class="sd">        SqliteDict table name, default ``"unnamed"``</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    str</span>
-<span class="sd">        Formatted string of module names</span>
+<span class="sd">    dict</span>
+<span class="sd">        Every entry of the store, in insertion order</span>
 
 <span class="sd">    """</span>
-    <span class="n">string</span> <span class="o">=</span> <span class="s2">""</span>
-
-    <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">__module_list__</span><span class="p">:</span>
-        <span class="n">string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">" - </span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
-
-    <span class="k">return</span> <span class="n">string</span></div>
-
-
-
-<div class="viewcode-block" id="create_arg_parser">
-<a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.create_arg_parser">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">create_arg_parser</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">"""Create Argument Parser.</span>
-
-<span class="sd">    This method returns an argument parser.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    argparse.Namespace</span>
-<span class="sd">        Argument parser</span>
-
-<span class="sd">    """</span>
-    <span class="c1"># Create parser</span>
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">ap</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
-        <span class="n">add_help</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="n">shapepipe_logo</span><span class="p">(),</span>
-        <span class="n">formatter_class</span><span class="o">=</span><span class="n">cutomFormatter</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">optional</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">"Optional Arguments"</span><span class="p">)</span>
-
-    <span class="c1"># Add arguments</span>
-    <span class="n">optional</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">"-h"</span><span class="p">,</span>
-        <span class="s2">"--help"</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s2">"help"</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">"show this help message and exit"</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="n">optional</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">"-v"</span><span class="p">,</span> <span class="s2">"--version"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"version"</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="sa">f</span><span class="s2">"%(prog)s v</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span>
-    <span class="p">)</span>
-
-    <span class="n">optional</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">"-l"</span><span class="p">,</span>
-        <span class="s2">"--list_modules"</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="n">print_message</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"ShapePipe modules currently available:</span><span class="se">\n</span><span class="si">{</span><span class="n">module_str</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
-        <span class="p">),</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">"list modules currently available and exit"</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="n">optional</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">"-c"</span><span class="p">,</span>
-        <span class="s2">"--config"</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">"config.ini"</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">"configuration file name"</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="n">optional</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">"-b"</span><span class="p">,</span>
-        <span class="s2">"--batch_size"</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">"SMP batch size; overrides SMP_BATCH_SIZE in the config file"</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="c1"># Return parser</span>
-    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
+    <span class="k">with</span> <span class="n">ImmutableSqliteDict</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">tablename</span><span class="o">=</span><span class="n">tablename</span><span class="p">)</span> <span class="k">as</span> <span class="n">store</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">items</span><span class="p">())</span></div>
 
 </pre></div>
 
