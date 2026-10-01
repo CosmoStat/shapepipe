@@ -13,8 +13,10 @@ default-resources:
   # TILE_SLURM_EXTRA) lands on pscomp; everything else may use either.
   slurm_partition: "comp,pscomp"
   # n09/n17/n36 follow sp_validation's candide exclusions; n23 has measured
-  # SLURM job failures (sp_validation commit 2b40c99).
-  slurm_extra: "'--exclude=n09,n17,n23,n36'"
+  # SLURM job failures (sp_validation commit 2b40c99). n34/n35 (64 cores):
+  # grid_3 vignets/ngmix jobs failed there with "Resource temporarily
+  # unavailable" / "can't start new thread" (2026-09-30).
+  slurm_extra: "'--exclude=n09,n17,n23,n34,n35,n36'"
 software-deployment-method: [apptainer]
 # Bind node /tmp (~29 GB free, local disk) to tile.smk's /local/scratch:
 # candide has no /local, and its writable /scratch path requires a job ID.
@@ -41,10 +43,10 @@ rerun-triggers: [mtime, params, code, software-env]
 # memory intact.
 set-resources:
   tile_vignets:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
   tile_ngmix:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
   tile_merge_cats:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
   tile_make_cat:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n36'"
+    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
