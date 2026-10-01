@@ -634,9 +634,9 @@ and the header list index are the same 0-based CCD number that becomes
 CCD_N downstream.</p>
 <p>&#64;sc [decision:preparation.astrometric_solution_source,label:convention] wcs-from-delivered-header
 The stored WCS is <code class="docutils literal notranslate"><span class="pre">WCS(header)</span></code> of the delivered CCD header,
-unmodified. Every downstream world-to-pixel transform (epoch
-membership, stamp placement, position seeding) uses it, so a refit or
-header edit here moves every stamp centre and epoch assignment.</p>
+unmodified. Epoch membership, multi-epoch stamp placement, PSF
+interpolation positions and the ngmix Jacobian all use it; a refit or
+header edit here shifts them.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

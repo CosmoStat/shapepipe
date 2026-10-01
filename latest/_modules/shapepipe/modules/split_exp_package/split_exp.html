@@ -639,9 +639,9 @@
 
 <span class="sd">        @sc [decision:preparation.astrometric_solution_source,label:convention] wcs-from-delivered-header</span>
 <span class="sd">        The stored WCS is ``WCS(header)`` of the delivered CCD header,</span>
-<span class="sd">        unmodified. Every downstream world-to-pixel transform (epoch</span>
-<span class="sd">        membership, stamp placement, position seeding) uses it, so a refit or</span>
-<span class="sd">        header edit here moves every stamp centre and epoch assignment.</span>
+<span class="sd">        unmodified. Epoch membership, multi-epoch stamp placement, PSF</span>
+<span class="sd">        interpolation positions and the ngmix Jacobian all use it; a refit or</span>
+<span class="sd">        header edit here shifts them.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>

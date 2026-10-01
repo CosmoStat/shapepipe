@@ -621,7 +621,10 @@
 <div class="viewcode-block" id="_centre_pixels">
 <a class="viewcode-back" href="../../../../shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html#shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat._centre_pixels">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_centre_pixels</span><span class="p">(</span><span class="n">x_pos</span><span class="p">,</span> <span class="n">y_pos</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""0-based (column, row) of the pixel holding each 1-based position."""</span>
+<span class="w">    </span><span class="sd">"""0-based (column, row) of the pixel holding each 1-based position.</span>
+
+<span class="sd">    @sc [decision:preparation.stamp_positioning_and_padding]</span>
+<span class="sd">    """</span>
     <span class="n">col</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rint</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x_pos</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="n">row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rint</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y_pos</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span></div>
