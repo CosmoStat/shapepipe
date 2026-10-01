@@ -10,6 +10,7 @@ silently dropping every epoch on the unscanned CCDs.
 """
 
 import numpy as np
+import pytest
 from astropy.io import fits
 from astropy.wcs import WCS
 
@@ -136,3 +137,41 @@ def test_post_process_scans_all_ccds_despite_tile_id_key(tmp_path):
     np.testing.assert_array_equal(n_epoch, [2, 2])
     for idx in range(len(exp_names)):
         np.testing.assert_array_equal(ccd_n[idx], [0, 2])
+
+
+@pytest.mark.decision("preparation.epoch_provenance_from_tile_history")
+def test_duplicate_history_cards_create_one_epoch_hdu(tmp_path):
+    """Repeated HISTORY entries add one epoch to each object's count."""
+    exp_name = "123456"
+    npy_path = tmp_path / f"headers-{exp_name}.npy"
+    _write_exposure_headers(npy_path)
+
+    tile_number = "52"
+    merge_headers([[str(npy_path)]], str(tmp_path), tile_number=tile_number)
+    sqlite_path = tmp_path / f"log_exp_headers{tile_number}.sqlite"
+    assert sqlite_path.is_file()
+
+    positions = np.array(
+        [
+            _make_ccd_wcs(ccd)[0].all_pix2world([[50.0, 50.0]], 0)[0]
+            for ccd in (0, 2)
+        ]
+    )
+    cat_path = tmp_path / "sexcat.fits"
+    _write_sex_ldac(cat_path, [exp_name, exp_name], positions)
+
+    sextractor_script.make_post_process(
+        str(cat_path),
+        str(sqlite_path),
+        ["XWIN_WORLD", "YWIN_WORLD"],
+        ["0", str(CCD_NPIX), "0", str(CCD_NPIX)],
+    )
+
+    with fits.open(cat_path) as hdu_list:
+        epoch_names = [
+            hdu.name for hdu in hdu_list if hdu.name.startswith("EPOCH_")
+        ]
+        n_epoch = hdu_list["LDAC_OBJECTS"].data["N_EPOCH"]
+
+    assert epoch_names == ["EPOCH_0"]
+    np.testing.assert_array_equal(n_epoch, [1, 1])
