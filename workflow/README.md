@@ -302,6 +302,17 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   catalogue server, staged, or rasterized, which is why the old
   `star_catalogue` / `exp_star_cat` / `exp_mask` rules and their cache root are
   gone.
+- **External masks are wired, on the tile side only (data runs).** `inputs.masks`
+  is a third input root beside tiles and exposures, set per machine in the
+  `machines:` table, exported as `$SP_INPUT_MASKS` and
+  pointing at the UNIONS DR6 ugriz bit ladder: one boolean healsparse map per
+  bit, nside 131072, `True` = masked. `config_tile_Mc.ini` names all 11 of them
+  in `MASK_EXT_PATHS` under a `<flag value>_<name>` label, so `make_cat`
+  writes `MASK_1_Faint_star_halos` … `MASK_2048_z2` and `final_cat.param`
+  carries the matching 11 names; the config holds the label table. Both halo
+  columns enter the default r-band selection. `MASK_2048_z2` is True where
+  there is *no* Pan-STARRS z data, so an OR over every column masks
+  everything. Nothing cuts on them here.
 - **The index is parse-time data, never a rule input.** Appending tiles
   changes which jobs exist without invalidating completed work.
 - **Exposure products are not `temp()`.** Exposures overlap tiles, so
