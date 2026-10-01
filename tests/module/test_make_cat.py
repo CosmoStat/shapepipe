@@ -574,6 +574,53 @@ def test_make_cat_runner_ships_every_detection_unclassified(tmp_path):
     assert not [name for name in data.dtype.names if "SPREAD" in name]
 
 
+def test_make_cat_runner_work_dir_publishes_same_catalogue(
+    tmp_path, monkeypatch
+):
+    """WORK_DIR moves the build elsewhere; the published catalogue is the same.
+
+    The catalogue built in WORK_DIR is moved to the run's output directory
+    byte-identical to one built there directly, nothing is left in WORK_DIR,
+    and a work file a previous attempt left behind does not leak into it
+    (``save_as_fits`` appends to an existing file).
+    """
+    obj_ids = [1, 2, 3]
+    tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
+    _write_sex_like_cat(tile_sexcat_path, _numbered_data(obj_ids))
+    galaxy_psf_path = tmp_path / "galaxy_psf-350-100.sqlite"
+    ngmix_path = tmp_path / "ngmix-350-100.fits"
+    _write_ngmix_cat(ngmix_path, obj_ids)
+    inputs = [str(tile_sexcat_path), str(galaxy_psf_path), str(ngmix_path)]
+
+    published = {}
+    for label, section in (
+        ("direct", {}),
+        ("staged", {"WORK_DIR": "$SP_TEST_LOCAL/make_cat"}),
+    ):
+        out_dir = tmp_path / label
+        out_dir.mkdir()
+        config = CustomParser()
+        config.read_dict(
+            {"MAKE_CAT_RUNNER": {"SHAPE_MEASUREMENT_TYPE": "ngmix", **section}}
+        )
+        if section:
+            local = tmp_path / "local"
+            monkeypatch.setenv("SP_TEST_LOCAL", str(local))
+            (local / "make_cat").mkdir(parents=True)
+            stale = make_cat.get_output_name(str(local / "make_cat"), "-350-100")
+            _write_sex_like_cat(stale, _numbered_data([7, 8]))
+        assert make_cat_runner(
+            inputs, {"output": str(out_dir)}, "-350-100", config,
+            "MAKE_CAT_RUNNER", _NullLogger(),
+        ) == (None, None)
+        path = make_cat.get_output_name(str(out_dir), "-350-100")
+        with open(path, "rb") as f:
+            published[label] = f.read()
+
+    assert published["staged"] == published["direct"]
+    assert list((tmp_path / "local" / "make_cat").iterdir()) == []
+
+
 @pytest.mark.parametrize("shear", SHEAR_EXTS)
 @pytest.mark.parametrize("component", [0, 1], ids=["g1", "g2"])
 @pytest.mark.parametrize("nonfinite", [np.nan, np.inf, -np.inf])

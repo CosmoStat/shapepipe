@@ -7,6 +7,7 @@ Module runner for ``make_cat``.
 """
 
 import os
+import shutil
 
 from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.module_decorator import module_runner
@@ -62,9 +63,23 @@ def make_cat_runner(
     else:
         n_epoch_slots = None
 
+    # The catalogue is built in WORK_DIR when set (e.g. node-local disk:
+    # each save stage rewrites the whole file) and moved to the run's output
+    # directory once complete.
+    if config.has_option(module_config_sec, "WORK_DIR"):
+        work_dir = config.getexpanded(module_config_sec, "WORK_DIR")
+        os.makedirs(work_dir, exist_ok=True)
+    else:
+        work_dir = run_dirs["output"]
+    work_path = make_cat.get_output_name(work_dir, file_number_string)
+    # save_as_fits appends to an existing file: a work file left by an
+    # earlier attempt must not survive into this one.
+    if os.path.exists(work_path):
+        os.remove(work_path)
+
     # Set final output file
     final_cat_file = make_cat.prepare_final_cat_file(
-        run_dirs["output"],
+        work_dir,
         file_number_string,
     )
 
@@ -84,12 +99,7 @@ def make_cat_runner(
 
         # If error message: delete (incomplete) output file and raise error
         if err_msg is not None:
-            os.remove(
-                make_cat.get_output_name(
-                    run_dirs["output"],
-                    file_number_string,
-                )
-            )
+            os.remove(work_path)
             #raise ValueError(err_msg)
             w_log.info(err_msg)
 
@@ -107,5 +117,11 @@ def make_cat_runner(
         )
         w_log.info("Save external mask data")
         make_cat.save_mask_ext_data(final_cat_file, band_paths, w_log)
+
+    if work_dir != run_dirs["output"] and os.path.exists(work_path):
+        shutil.move(
+            work_path,
+            make_cat.get_output_name(run_dirs["output"], file_number_string),
+        )
 
     return None, None
