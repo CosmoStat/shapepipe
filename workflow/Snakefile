@@ -175,9 +175,9 @@ sys.path.insert(0, str(SCRIPTS))
 import build_index                                     # noqa: E402
 from completeness import STAGE_DIR, TILE_DETECTIONS  # noqa: E402
 
-# Where the tile's galaxy sample comes from: SExtractor on the tile image, or
-# the UNIONS per-tile catalogue fetched and converted in place (tile.smk).
-# Both write run_sp_tile_Sx, so nothing downstream of tile_detect branches.
+# How the tile's galaxy sample is defined: SExtractor on the tile image, alone
+# or joined to the UNIONS per-tile catalogue (tile.smk). Both write
+# run_sp_tile_Sx, so nothing downstream of tile_detect branches.
 TILE_DETECTION = config.get("tile_detection", "sextractor")
 if TILE_DETECTION not in TILE_DETECTIONS:
     raise WorkflowError(
