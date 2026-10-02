@@ -400,7 +400,7 @@ def final_cat(tile):
     stores that reclamation deleted — the rerun avalanche the cut exists to
     prevent, arriving by way of the purge instead.
     """
-    return f"{PRODUCTS_DIR}/tiles/{tile[:2]}/{tile}/final_cat-{tile}.fits"
+    return f"{PRODUCTS_DIR}/tiles/{tile[:2]}/{tile}/final_cat-{tile}.hdf5"
 
 def unit_num(unit):
     """$SP_UNIT_NUM: ShapePipe's image-number convention, dot -> dash, leading
