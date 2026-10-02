@@ -1,8 +1,8 @@
-"""Defect interpolation (``DEFECT_FILL = interpolate``): which pixels are
-interpolated, and the properties of the interpolant.
+"""Defect interpolation: which pixels are interpolated, and the properties
+of the interpolant.
 
 :func:`interpolable_defects` picks the defect pixels that lie in a short row
-or column run with clean pixels at both ends; :func:`interpolate_defects`
+or column run with support pixels at both ends; :func:`interpolate_defects`
 fills them from the nearby clean pixels with a Clough-Tocher interpolant,
 averaged over the four quarter turns of the stamp and shared by every plane
 (science image and metacal noise image).
@@ -24,9 +24,11 @@ from shapepipe.modules.ngmix_package.defect_interpolation import (
 
 # --- interpolable_defects ---------------------------------------------------
 
-def _oracle(defect, max_run=MAX_INTERPOLATED_RUN):
-    """Brute force: walk each defect pixel's row and column run."""
+def _oracle(defect, removed, max_run=MAX_INTERPOLATED_RUN):
+    """Brute force: walk each kept defect pixel's row and column run."""
     n0, n1 = defect.shape
+    blocked = defect | removed
+    defect = defect & ~removed
     out = np.zeros_like(defect)
     for i, j in zip(*np.nonzero(defect)):
         for di, dj in ((0, 1), (1, 0)):
@@ -39,7 +41,9 @@ def _oracle(defect, max_run=MAX_INTERPOLATED_RUN):
                 hi = (hi[0] + di, hi[1] + dj)
             length = hi[0] - lo[0] + hi[1] - lo[1] + 1
             bounded = (lo[0] - di >= 0 and lo[1] - dj >= 0
-                       and hi[0] + di < n0 and hi[1] + dj < n1)
+                       and hi[0] + di < n0 and hi[1] + dj < n1
+                       and not blocked[lo[0] - di, lo[1] - dj]
+                       and not blocked[hi[0] + di, hi[1] + dj])
             if bounded and length <= max_run:
                 out[i, j] = True
     return out
@@ -48,27 +52,60 @@ def _oracle(defect, max_run=MAX_INTERPOLATED_RUN):
 @given(
     n=st.integers(5, 21),
     density=st.floats(0.0, 0.6),
+    removed_density=st.sampled_from([0.0, 0.1, 0.4]),
     seed=st.integers(0, 2**31 - 1),
 )
 @settings(max_examples=60, deadline=None)
-def test_interpolable_defects_are_the_short_bounded_runs(n, density, seed):
+def test_interpolable_defects_are_the_short_bounded_runs(
+    n, density, removed_density, seed,
+):
     """A defect pixel is interpolated exactly when its row or column run is
-    at most MAX_INTERPOLATED_RUN long and has clean pixels at both ends; the
-    rule commutes with quarter turns.
+    at most MAX_INTERPOLATED_RUN long and the pixels beyond both ends are on
+    the stamp and neither defects nor removed; the rule commutes with
+    quarter turns.
 
-    Failure modes: a run touching the stamp border (edge band, corner) or a
-    wide hole is interpolated from one side; a 3-px bleed is left to noise;
-    a clean pixel is selected; one axis is ignored, so the rule has a
-    preferred direction.
+    Failure modes: a run touching the stamp border (edge band, corner), a
+    wide hole, or a run ending on a removed neighbour pixel is interpolated
+    from one side; a 3-px bleed is left to noise; a clean or removed pixel
+    is selected; one axis is ignored, so the rule has a preferred direction.
     """
-    defect = np.random.RandomState(seed).uniform(size=(n, n)) < density
-    out = interpolable_defects(defect)
-    npt.assert_array_equal(out, _oracle(defect))
-    assert not out[~defect].any()
+    rng = np.random.RandomState(seed)
+    defect = rng.uniform(size=(n, n)) < density
+    removed = rng.uniform(size=(n, n)) < removed_density
+    out = interpolable_defects(defect, removed)
+    npt.assert_array_equal(out, _oracle(defect, removed))
+    assert not out[~defect | removed].any()
     for k in range(1, 4):
         npt.assert_array_equal(
-            interpolable_defects(np.rot90(defect, k)), np.rot90(out, k)
+            interpolable_defects(np.rot90(defect, k), np.rot90(removed, k)),
+            np.rot90(out, k),
         )
+
+
+@given(
+    n=st.integers(5, 31),
+    density=st.floats(0.0, 0.6),
+    removed_density=st.sampled_from([0.0, 0.1, 0.4]),
+    seed=st.integers(0, 2**31 - 1),
+)
+@settings(max_examples=60, deadline=None)
+def test_the_interpolant_reaches_every_interpolable_pixel(
+    n, density, removed_density, seed,
+):
+    """Each selected pixel lies between two support pixels, so the
+    interpolant is finite there; prepare_ngmix_weights relies on this to
+    veto and fill the same pixels.
+
+    Failure mode: a selected pixel falls outside the support's hull and gets
+    NaN, so the fill and the central-defect veto disagree on it.
+    """
+    rng = np.random.RandomState(seed)
+    defect = rng.uniform(size=(n, n)) < density
+    removed = rng.uniform(size=(n, n)) < removed_density
+    target = interpolable_defects(defect, removed)
+    planes = rng.normal(size=(2, n, n))
+    out = interpolate_defects(planes, defect | removed, target)
+    assert np.all(np.isfinite(out[:, target]))
 
 
 @pytest.mark.parametrize("kind,expected", [

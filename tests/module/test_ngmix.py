@@ -663,13 +663,6 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     inst._blend_handling = "noisefill"
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
-    inst._epoch_central_defect_radius = module.EPOCH_CENTRAL_DEFECT_RADIUS
-    inst._epoch_masked_fraction_cut = module.EPOCH_MASKED_FRACTION_CUT
-    inst._defect_fill = "noise"
-    inst._epoch_interpolated_defect_radius = (
-        module.EPOCH_INTERPOLATED_DEFECT_RADIUS
-    )
-    inst._symmetrize_weights = "interpolated"
     inst._save_batch = 1
     inst._zero_point = 30.
     inst._output_dir = str(tmp_path)
@@ -767,13 +760,6 @@ def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
     inst._blend_handling = "noisefill"
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
-    inst._epoch_central_defect_radius = module.EPOCH_CENTRAL_DEFECT_RADIUS
-    inst._epoch_masked_fraction_cut = module.EPOCH_MASKED_FRACTION_CUT
-    inst._defect_fill = "noise"
-    inst._epoch_interpolated_defect_radius = (
-        module.EPOCH_INTERPOLATED_DEFECT_RADIUS
-    )
-    inst._symmetrize_weights = "interpolated"
     inst._save_batch = -1
     inst._w_log = _RecordingLogger()
 
@@ -1132,10 +1118,12 @@ def test_background_rms_builds_per_pixel_inverse_variance():
         gal, weight, flag, np.random.RandomState(0), bkg_rms=bkg_rms
     )
 
+    # The bad-RMS pixel (1, 2) is interpolated from (0, 2) and (2, 2), so
+    # its quarter turns (0, 1) and (1, 0) lose their weight too.
     expected = np.array(
         [
-            [1.0, 0.25, 0.0625],
-            [4.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0625],
+            [0.0, 0.0, 0.0],
             [0.0, 0.0, 1.0],
         ]
     )

@@ -8,8 +8,8 @@ Covers the ``BLEND_HANDLING = uberseg`` option added to the ngmix module:
   emergent "circularisation"), and the neighbour footprint is fully masked.
 * :func:`prepare_ngmix_weights` under ``uberseg`` — neighbour-side pixels
   lose their weight and keep their raw image values, while defect pixels are
-  noise-filled as under any blend handling (the defect fill itself is covered
-  in ``test_ngmix_defect_fill.py``).
+  filled as under any blend handling (the defect fill itself is covered in
+  ``test_ngmix_defect_fill.py``).
 * The error contract when ``uberseg`` is selected without a segmentation map
   (the seg-map source is plumbing-gated upstream).
 """
@@ -237,7 +237,7 @@ def test_noisefill_ignores_seg_and_dilate_kwargs():
 
 
 def test_uberseg_fills_defects_and_leaves_neighbour_pixels_raw():
-    """uberseg: flagged pixels are noise-filled at weight 0; neighbour-side
+    """uberseg: flagged pixels are filled at weight 0; neighbour-side
     pixels get weight 0 and keep their raw image values; the central core
     keeps weight and image.
 
@@ -255,7 +255,7 @@ def test_uberseg_fills_defects_and_leaves_neighbour_pixels_raw():
         blend_handling="uberseg", seg=seg, object_number=1,
     )
 
-    # Flagged pixels: zero weight, image replaced by noise.
+    # Flagged pixels: zero weight, raw value replaced.
     for pix in [(5, 5), (30, 12)]:
         assert w_out[pix] == 0.0
         assert gal_out[pix] != gal[pix]
