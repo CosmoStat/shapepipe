@@ -31,6 +31,24 @@ def test_rule_set_matches_input_mode(campaign, dag):
     assert "merge_final_cats" not in dag.declared_rule_names
 
 
+def test_tile_detect_joins_the_catalogue_iff_unions(campaign, dag):
+    """Data's tile_detect waits on the fetch and exports its catalogue as
+    SP_MATCH_CATALOGUE; the image-simulation prologue exports it empty."""
+    for job in dag.jobs_for("tile_detect"):
+        tile = job.wildcards.tile
+        inputs = {str(f) for f in job.input}
+        fetch = str(campaign.tile_manifest(tile, "tile_get_catalogue"))
+        if campaign.tile_detection == "unions_catalogue":
+            gic = (campaign.run_dir / "tiles" / tile[:2] / tile / "output"
+                   / "run_sp_tile_Gic" / "get_images_runner" / "output")
+            cat = gic / f"CFIS_cat-{tile.replace('.', '-')}.cat"
+            assert fetch in inputs
+            assert f"export SP_MATCH_CATALOGUE='{cat}'" in job.params.pre
+        else:
+            assert fetch not in inputs
+            assert "export SP_MATCH_CATALOGUE=''" in job.params.pre.split("\n")
+
+
 def test_clean_exposure_waits_on_persist_iff_psf(campaign, dag):
     """Reclamation waits for persistence and exactly its in-scope readers."""
     jobs = dag.jobs_for("clean_exposure")

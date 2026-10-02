@@ -124,8 +124,7 @@ decisions:
     label: Postage-stamp size shared by vignets, ngmix stamps and PSF models
     rationale: >-
       Every stamp width is 51 px (about 9.5 arcsec): the tile VIGNET (cut
-      from the tile image by read_ext_sexcat in committed data, by SExtractor
-      under tile_detection = sextractor), the multi-epoch vignetmaker stamps
+      by the tile SExtractor run), the multi-epoch vignetmaker stamps
       ngmix fits, the exposure SExtractor VIGNET PSFEx trains on, and the
       PSFEx model stamp. Only the first two are coupled: ngmix lays the tile
       VIGNET's -1e30 neighbour markers over each epoch stamp pixel for pixel,
@@ -134,7 +133,6 @@ decisions:
       Values:
       default_noimaflags.param#VIGNET = 51;
       default.param#VIGNET = 51;
-      READ_EXT_SEXCAT_RUNNER.VIGNET_SIZE = 51;
       VIGNETMAKER_RUNNER_RUN_1.STAMP_SIZE = 51;
       VIGNETMAKER_RUNNER_RUN_2.STAMP_SIZE = 51;
       PSF_SIZE = 51.
@@ -157,10 +155,9 @@ decisions:
       FSCALE before the joint fit, which puts them on zero-point 30 only if
       FSCALE = 10^(-0.4 (PHOTZP - 30)). Nothing in the repo checks this, but it
       held to 0.02% on a sampled exposure (2114045p). ngmix magnitudes use
-      MAG_ZP = 30. In committed data the catalogue's tile MAG_AUTO is the
-      UNIONS catalogue's own; the fixed tile zero-point of 30
-      (ZP_FROM_HEADER=False) applies only under tile_detection = sextractor,
-      and assumes the MegaPipe stacks are calibrated to 30.
+      MAG_ZP = 30. The tile SExtractor run uses a fixed zero-point of 30
+      (ZP_FROM_HEADER=False), which assumes the MegaPipe stacks are
+      calibrated to 30.
       Values:
       MAG_ZEROPOINT = 30.0;
       config_tile_Sx.ini#SEXTRACTOR_RUNNER.ZP_FROM_HEADER = False;
@@ -174,9 +171,9 @@ decisions:
       header_everywhere:
         label: Per-image header zero-points on tiles too
         description: >-
-          ZP_FROM_HEADER=True for tile SExtractor (tile_detection =
-          sextractor only); changes tile magnitudes only where a tile's header
-          zero-point differs from 30. ngmix MAG_ZP stays 30.
+          ZP_FROM_HEADER=True for tile SExtractor; changes tile magnitudes
+          only where a tile's header zero-point differs from 30. ngmix MAG_ZP
+          stays 30.
 
 prior_insights:
   des_psf_blacklist:
@@ -247,9 +244,8 @@ analyses:
           shape_measurement.epoch_masked_fraction_cut). Tiles have no flag
           image, and ShapePipe's tile SExtractor run requests no IMAFLAGS_ISO
           (detection.detection_source_mode). Neighbour pixels are masked
-          separately, from the tile segmentation map
-          (detection.catalogue_neighbour_marking,
-          shape_measurement.blend_handling). Sky-fixed masks never touch
+          separately, from the -1e30 markers SExtractor writes into the tile
+          VIGNET (shape_measurement.blend_handling). Sky-fixed masks never touch
           pixels: a star halo changes no stamp.
           Values:
           config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = True;
@@ -342,12 +338,11 @@ analyses:
   detection:
     description: >-
       Object detection on r-band tiles (the galaxy sample) and on
-      single-exposure CCDs (PSF-star candidates, always SExtractor). The tile
-      sample is Gwyn's UNIONS tile catalogue (committed for data) or
-      ShapePipe's own SExtractor run (image simulations), per tile_detection.
-      Every default_tile.sex / config_tile_Sx.ini setting below applies only
-      to the SExtractor run, which follows the MegaPipe parameters of that
-      catalogue; exposures keep ShapePipe's stock values.
+      single-exposure CCDs (PSF-star candidates), both by ShapePipe's own
+      SExtractor runs. The tile run follows the MegaPipe parameters of Gwyn's
+      UNIONS tile catalogue, and in committed data its detections are joined
+      to that catalogue (tile_detection); exposures keep ShapePipe's stock
+      values.
     inputs:
       - id: tile_stack
         type: data
@@ -362,41 +357,67 @@ analyses:
           [tile_detection, detection_threshold_policy, deblending_policy,
            background_model,
            weight_map_usage, zero_weight_interpolation, detection_source_mode,
-           epoch_membership_ccd_bounds, catalogue_neighbour_marking,
-           photometry_parameters,
+           epoch_membership_ccd_bounds, photometry_parameters,
            spurious_detection_cleaning, blend_photometry_mask_type,
            saturation_level]
     decisions:
       tile_detection:
-        label: Source of the tile galaxy sample
+        label: Object list and NUMBER of the tile galaxy sample
         rationale: >-
-          Real data takes its tile sample from Gwyn's UNIONS per-tile
-          catalogue, converted to the sexcat the chain reads with its own
-          NUMBER kept, so shape, photometry and photo-z catalogues share one
-          object list and one ID (TILE_UNIQUE_ID). PSF stars still come from
-          ShapePipe's exposure-level SExtractor run, because external star
-          catalogues are too shallow. detection_source_mode and the tile
-          SExtractor settings of the other decisions here govern only the
-          sextractor option; epoch_membership_ccd_bounds applies to both.
-          Image simulations, which have no UNIONS catalogue, use sextractor.
+          Both options run ShapePipe's tile SExtractor, so data and image
+          simulations share one detection and measurement path: windowed
+          positions, VIGNET neighbour markers and every SExtractor column.
+          In real data each detection is then paired with its mutual nearest
+          neighbour within 1 px in Gwyn's UNIONS per-tile catalogue and takes
+          its NUMBER, so shape, photometry and photo-z catalogues share one
+          object list and one ID (TILE_UNIQUE_ID); unpaired detections leave
+          the catalogue. The catalogue is MegaPipe's SExtractor run on the
+          same DR6 image with the configuration of default_tile.sex
+          (detection_threshold_policy), so pairs agree to 4e-5 px at the
+          median. On tile 186.307 every one of the 41,201 detections pairs;
+          over eight DR6 tiles spanning a rich cluster, a bright star's halo,
+          low latitude and the survey edge, at least 99.7% of detections and
+          99.2% of catalogue objects pair. The catalogue objects with no
+          detection (0-0.7%, mostly fainter than MAG_AUTO 24.5) are
+          deblended children that ShapePipe's SExtractor leaves merged,
+          concentrated around very large objects; they have photometry but
+          no shape. The join needs the tile image to be the catalogue's
+          release: on the DR5 image of a tile only ~95% of detections pair.
+          The run stops when the unpaired detections, or the unpaired
+          catalogue objects, exceed both 2% of their side and 20 objects: a
+          margin over deblending near large objects, a stop for other pixels. PSF stars come from the exposure-level
+          SExtractor run in both options. Image simulations, which have no
+          UNIONS catalogue, keep SExtractor's own NUMBER.
           Values:
-          input_types.data.tile_detection = unions_catalogue.
+          input_types.data.tile_detection = unions_catalogue;
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_RADIUS = 1.0;
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_MIN_FRACTION = 0.98;
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_TOLERATED_UNPAIRED = 20.
         default: unions_catalogue
         options:
           unions_catalogue:
-            label: Gwyn's UNIONS per-tile catalogue, converted in place
+            label: Tile SExtractor joined to Gwyn's UNIONS per-tile catalogue
           sextractor:
-            label: SExtractor on the tile image
+            label: Tile SExtractor with its own NUMBER
       detection_threshold_policy:
         label: Detection significance, minimum area, matched filter
         rationale: >-
-          Tile SExtractor (tile_detection = sextractor, i.e. image
-          simulations) uses the MegaPipe tile-catalogue threshold, minimum
+          Tile SExtractor uses the MegaPipe tile-catalogue threshold, minimum
           area and filter, so that its galaxy sample reproduces the UNIONS
-          catalogue committed data adopts. Run on the DR6 image of tile
-          186.307, it reproduces the DR6 catalogue to 99.89% completeness
+          catalogue whose NUMBER committed data adopts (tile_detection). Run
+          on the DR6 image of tile 186.307, it reproduces the DR6 catalogue to 99.89% completeness
           and 100% purity with identical segmentation pixels; the 45 misses
-          are faint deblended children of bright parents (#929). This
+          are faint deblended children of bright parents (#929). The pixel
+          stack (MEMORY_PIXSTACK) holds the largest object on every tested
+          tile, a bright star's halo included, so no object is truncated.
+          Unexplained: on tiles with such a large object (a cD galaxy, a
+          bright star's halo) MAG_AUTO and FLUX_RADIUS differ from the
+          catalogue by more than 1% for 2-11% of objects, most of them past
+          the large object in SExtractor's scan order, and on one
+          low-latitude tile for 2% of objects spread over the tile. The
+          catalogue's run must differ in a setting not recorded here
+          (memory, version); shapes use ShapePipe's measurements and
+          photometry the catalogue's, so for those objects the two differ. This
           validates the configuration on data pixels, not detection on
           simulated images. The 7x7 Gaussian of FWHM 3 px is
           near the CFIS average seeing of 0.65 arcsec (about 3.5 px at
@@ -410,6 +431,7 @@ analyses:
           default_tile.sex#ANALYSIS_THRESH = 1.0;
           default_tile.sex#DETECT_MINAREA = 3;
           default_tile.sex#FILTER = Y;
+          default_tile.sex#MEMORY_PIXSTACK = 3000000;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE =
           $SP_CONFIG/gauss_3.0_7x7.conv;
           config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_SEX_FILE =
@@ -573,11 +595,9 @@ analyses:
           absent SExtractor falls back to its built-in level (50000 ADU per
           its documentation). Delivered exposures carry the card (every CCD
           of 2114045p: 65535) and split_exp keeps each CCD's header; a sampled
-          tile (CFIS.186.307) has 9558.7, which applies under tile_detection =
-          sextractor. The PSF-star masks require FLAGS == 0, so the level can
-          remove bright stars from the PSF sample. In committed data the final
-          catalogue's FLAGS column is the UNIONS catalogue's own, not this
-          pass's. Changing the card or pinning a fixed level requires checking
+          tile (CFIS.186.307) has 9558.7. The PSF-star masks require FLAGS ==
+          0, so the level can remove bright stars from the PSF sample.
+          Changing the card or pinning a fixed level requires checking
           the resulting bright-star selection.
           Values:
           default_exp.sex#SATUR_KEY = SATURATE;
@@ -600,9 +620,7 @@ analyses:
           recorded. On the exposure pass MAG_AUTO is the axis of the
           star-selection magnitude windows and FLUX_AUTO is PSFEx's
           photometric normalisation, so a different Kron factor moves stars
-          across those cuts. The tile values apply under tile_detection =
-          sextractor; in committed data the catalogue's MAG_AUTO is the UNIONS
-          catalogue's own. The reported apertures and flux-fraction
+          across those cuts. The reported apertures and flux-fraction
           measurements must match the simulated catalogue they are compared
           with.
           Values:
@@ -624,7 +642,12 @@ analyses:
           column list: tiles have no instrument flag image and no detection
           coadd exists, so detection sees every tile pixel and the tile
           catalogue carries no IMAFLAGS_ISO; final_cat.param, the merge's
-          exact allow-list, does not request it.
+          exact allow-list, does not request it. Without a detection image
+          sextractor_runner calls SExtractor in single-image mode, which on
+          tile 186.307 reproduces the UNIONS catalogue's MAG_AUTO to 0.01 mag
+          for all but 0.03% of objects. Dual-image mode with the same image
+          twice is not equivalent: it changes the background, MAG_AUTO and
+          FLUX_RADIUS of a fifth of the objects (#936).
           Values:
           SEXTRACTOR_RUNNER.DETECTION_IMAGE = False;
           SEXTRACTOR_RUNNER.FLAG_IMAGE = False.
@@ -650,13 +673,10 @@ analyses:
           admits its upper endpoint, column 2080. [HARDCODED] The comparisons
           are strict in make_post_process; CCD_SIZE sets only the bounds. A
           WCS inversion failure skips that CCD, lowering N_EPOCH, which caps
-          how many exposures enter each galaxy's multi-epoch fit. Both
-          tile_detection options run this post-processing.
+          how many exposures enter each galaxy's multi-epoch fit.
           Values:
           SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
-          SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True;
-          READ_EXT_SEXCAT_RUNNER.CCD_SIZE = 33,2080,1,4612;
-          READ_EXT_SEXCAT_RUNNER.MAKE_POST_PROCESS = True.
+          SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True.
         default: trimmed_bounds_33_2080
         options:
           trimmed_bounds_33_2080:
@@ -664,36 +684,6 @@ analyses:
           inclusive_bounds:
             label: Same bounds, inclusive
             description: Not implemented; make_post_process uses strict comparisons.
-      catalogue_neighbour_marking:
-        label: Neighbour pixels in the catalogue path's VIGNET
-        rationale: >-
-          ngmix masks a neighbour only where the tile VIGNET is -1e30 (flag
-          2**10: zero weight, noise-filled under noisefill), and SExtractor
-          writes -1e30 on neighbours' footprints and off the image. The
-          unions_catalogue converter reproduces that from the catalogue's own
-          r-band segmentation map (CFIS.<tile>.r.seg.fits.fz, on the tile's
-          pixel grid), so both tile_detection options mask the same way.
-          Segmentation labels are not the catalogue NUMBER; each object claims
-          the footprint under its centre pixel (the VIGNET centre pixel), which
-          on 202.301 matches 36,064 of 36,065 objects with none shared. The map
-          is relabelled to NUMBER (unclaimed footprints -1; an object on sky or
-          on a claimed footprint gets a 3-pixel-radius disc of its own), and
-          VIGNET pixels whose relabelled value is neither 0 nor the object's
-          NUMBER become -1e30. Without it, catalogue-mode ngmix fits neighbour
-          light: in pilot smk-g10, NGMIX_MAG_NOSHEAR was over 1 mag brighter
-          than MAG_AUTO for 6.1% of objects (2.7% with SExtractor, g9).
-          Values:
-          READ_EXT_SEXCAT_RUNNER.SEGMENTATION = True.
-        default: segmentation_map
-        options:
-          segmentation_map:
-            label: -1e30 on other objects' segmentation footprints, as SExtractor
-          none:
-            label: Image pixels only; ngmix masks no neighbours
-            excluded: true
-            excluded_reason: >-
-              Leaves neighbour light in the fit, unlike the sextractor option
-              it replaces; the cause of the smk-g10 magnitude outliers.
     prior_insights:
       guinot22_sextractor_params:
         claim: >-
@@ -815,8 +805,9 @@ analyses:
       object_position_columns:
         label: Windowed centroids (XWIN/YWIN) define every position
         rationale: >-
-          PSF interpolation sites, tile and multi-epoch stamp centres, and the
-          catalogue position all use SExtractor's windowed centroid: in pixels
+          PSF interpolation sites, tile and multi-epoch stamp centres, epoch
+          membership and the catalogue position all use the tile SExtractor
+          run's windowed centroid, in data and image simulations alike: in pixels
           for tile stamps and exposure-side PSF validation, in world
           coordinates for tile-side PSF interpolation and multi-epoch stamps.
           Windowed, isophotal and model centroids differ systematically for
@@ -835,6 +826,15 @@ analyses:
         options:
           xwin_windowed:
             label: Windowed centroids everywhere
+          isophotal_barycentre:
+            label: Isophotal barycentre (X_IMAGE/Y_IMAGE)
+            excluded: true
+            excluded_reason: >-
+              Noisier than the windowed centroid and pulled by asymmetric or
+              deblend-clipped footprints; on the DR6 image of tile 186.307
+              it sits 0.16 px (median) and 1.6 px (p99) from it for
+              20 < MAG_AUTO < 24.5, and the image simulations measure the
+              windowed one.
       stamp_positioning_and_padding:
         label: Nearest-pixel stamp extraction with zero padding
         rationale: >-
@@ -2049,7 +2049,7 @@ analyses:
             excluded_reason: >-
               Not needed in the pipeline: the cut needs only each object's
               TILE_ID and position, and sp_validation applies it downstream.
-              Leaving it out keeps every UNIONS catalogue row in the shape
+              Leaving it out keeps every tile-catalogue row in the shape
               catalogue.
       failure_sentinels:
         label: Objects without shape measurements kept, with sentinel values
