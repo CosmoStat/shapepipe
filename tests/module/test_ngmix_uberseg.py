@@ -2,10 +2,10 @@
 
 Covers the ``BLEND_HANDLING = uberseg`` option added to the ngmix module:
 
-* :func:`uberseg_weight` — the Sheldon/MEDS nearest-segment Voronoi mask.
+* :func:`uberseg_mask` — the Sheldon/MEDS nearest-segment Voronoi mask.
   Geometry assertions on a synthetic two-object stamp: neighbour-side pixels
-  are zeroed, the surviving central core is a *single connected* region (the
-  emergent "circularisation"), and the neighbour footprint is fully removed.
+  are masked, the surviving central core is a *single connected* region (the
+  emergent "circularisation"), and the neighbour footprint is fully masked.
 * :func:`prepare_ngmix_weights` under ``uberseg`` — neighbour-side pixels
   lose their weight and keep their raw image values, while defect pixels are
   noise-filled as under any blend handling (the defect fill itself is covered
@@ -25,7 +25,7 @@ from shapepipe.modules.ngmix_package.ngmix import (
     central_seg_label,
     prepare_ngmix_weights,
     seg_has_neighbour,
-    uberseg_weight,
+    uberseg_mask,
 )
 
 
@@ -53,33 +53,24 @@ def two_object_seg(npix=41, sep=12, r_central=3, r_neighbour=3):
     return seg, centre, neigh
 
 
-def test_uberseg_zeros_neighbour_side_keeps_centre():
-    """Neighbour-side pixels lose their weight; the central pixel keeps it."""
+def test_uberseg_masks_neighbour_side_keeps_centre():
+    """Neighbour-side pixels are masked; the central footprint is not."""
     seg, centre, neigh = two_object_seg()
-    weight = np.ones_like(seg, dtype=float)
 
-    out = uberseg_weight(weight, seg, object_number=1)
+    masked = uberseg_mask(seg, object_number=1)
 
-    # Central object pixel kept; deep-neighbour pixel zeroed.
-    assert out[centre] == 1.0
-    assert out[neigh] == 0.0
-    # Every neighbour-footprint pixel is removed from the fit.
-    assert np.all(out[seg == 2] == 0.0)
-    # Every central-footprint pixel survives.
-    assert np.all(out[seg == 1] == 1.0)
-    # The input weight is not mutated in place.
-    assert np.all(weight == 1.0)
+    assert not masked[centre]
+    assert masked[neigh]
+    assert np.all(masked[seg == 2])
+    assert not np.any(masked[seg == 1])
 
 
 def test_uberseg_core_is_single_connected_region():
     """The surviving (kept-weight) region is one connected component — the
     emergent circular core of the nearest-segment Voronoi partition."""
     seg, _, _ = two_object_seg()
-    weight = np.ones_like(seg, dtype=float)
 
-    out = uberseg_weight(weight, seg, object_number=1)
-
-    kept = out > 0
+    kept = ~uberseg_mask(seg, object_number=1)
     _, n_components = ndimage.label(kept)
     assert n_components == 1
     # The partition splits the stamp: some pixels survive, some are masked.
@@ -91,28 +82,26 @@ def test_uberseg_partition_is_the_perpendicular_bisector():
     half-plane beyond the footprint bisector: the left edge survives, the
     column past the neighbour is gone."""
     seg, centre, neigh = two_object_seg(npix=41, sep=12)
-    weight = np.ones_like(seg, dtype=float)
 
-    out = uberseg_weight(weight, seg, object_number=1)
+    masked = uberseg_mask(seg, object_number=1)
 
     c_row, c_col = centre
-    assert out[c_row, 0] == 1.0  # far side from the neighbour: kept
-    assert out[c_row, -1] == 0.0  # neighbour side edge: masked
+    assert not masked[c_row, 0]  # far side from the neighbour: kept
+    assert masked[c_row, -1]  # neighbour side edge: masked
 
 
 def test_uberseg_no_neighbour_is_passthrough():
-    """A stamp with only the central object (or empty seg) is unchanged."""
+    """A stamp with only the central object (or empty seg) masks nothing."""
     npix = 21
-    weight = np.random.default_rng(0).random((npix, npix)) + 0.1
 
     # Only the central object present.
     seg = np.zeros((npix, npix), dtype=np.int32)
     seg[8:13, 8:13] = 1
-    npt.assert_array_equal(uberseg_weight(weight, seg, object_number=1), weight)
+    assert not uberseg_mask(seg, object_number=1, dilate_neighbour=2).any()
 
     # Wholly empty seg (no detections).
     empty = np.zeros((npix, npix), dtype=np.int32)
-    npt.assert_array_equal(uberseg_weight(weight, empty, object_number=1), weight)
+    assert not uberseg_mask(empty, object_number=1).any()
 
 
 # --- central_seg_label: centre-pixel identification (#776 decision 3) -------
@@ -162,7 +151,7 @@ def test_seg_has_neighbour():
 # --- uberseg dilation: additive neighbour-mask enlargement (#776 dec. 2) ----
 
 def test_uberseg_dilation_grows_neighbour_mask():
-    """dilate_neighbour>0 zeros a strict superset of the base (dilate=0) mask,
+    """dilate_neighbour>0 masks a strict superset of the base (dilate=0) mask,
     and every base-masked pixel stays masked (additive-only).
 
     Geometric subtlety: for well-separated objects the base Voronoi cut (the
@@ -171,59 +160,50 @@ def test_uberseg_dilation_grows_neighbour_mask():
     crosses the bisector into the central Voronoi cell. A few iterations
     guarantee that crossing here (sep=8, r=3 -> ~2px footprint gap)."""
     seg, _, _ = two_object_seg(npix=41, sep=8)
-    weight = np.ones_like(seg, dtype=float)
 
-    out0 = uberseg_weight(weight, seg, object_number=1, dilate_neighbour=0)
-    out3 = uberseg_weight(weight, seg, object_number=1, dilate_neighbour=3)
+    out0 = uberseg_mask(seg, object_number=1, dilate_neighbour=0)
+    out3 = uberseg_mask(seg, object_number=1, dilate_neighbour=3)
 
-    # dilate=0 reproduces the validated no-dilation result byte-for-byte.
-    npt.assert_array_equal(
-        out0, uberseg_weight(weight, seg, object_number=1)
-    )
+    # dilate=0 reproduces the validated no-dilation result.
+    npt.assert_array_equal(out0, uberseg_mask(seg, object_number=1))
     # Every pixel masked at dilate=0 is still masked at dilate=3 (additive).
-    assert np.all(out3[out0 == 0.0] == 0.0)
+    assert np.all(out3[out0])
     # And strictly more pixels are masked once the dilation crosses the
     # bisector into the central cell.
-    assert (out3 == 0.0).sum() > (out0 == 0.0).sum()
+    assert out3.sum() > out0.sum()
 
 
 def test_uberseg_dilation_zero_is_pure_sheldon():
     """dilate_neighbour=0 is bit-identical to the default (no-kwarg) call and
     to the O(N^2) brute-force nearest-segment rule."""
     seg, _, _ = two_object_seg(npix=25, sep=8)
-    weight = np.ones_like(seg, dtype=float)
 
-    out = uberseg_weight(weight, seg, object_number=1, dilate_neighbour=0)
-    npt.assert_array_equal(out, uberseg_weight(weight, seg, object_number=1))
-
-    obj = np.argwhere(seg != 0)
-    labels = seg[seg != 0]
-    brute = np.ones_like(weight)
-    for i in range(seg.shape[0]):
-        for j in range(seg.shape[1]):
-            d2 = (i - obj[:, 0]) ** 2 + (j - obj[:, 1]) ** 2
-            if labels[np.argmin(d2)] != 1:
-                brute[i, j] = 0.0
-    npt.assert_array_equal(out, brute)
+    out = uberseg_mask(seg, object_number=1, dilate_neighbour=0)
+    npt.assert_array_equal(out, uberseg_mask(seg, object_number=1))
+    npt.assert_array_equal(out, _brute_force_uberseg(seg))
 
 
 def test_uberseg_matches_bruteforce_nearest_segment():
     """The cKDTree result equals the O(N^2) brute-force nearest-segment rule
     (Sheldon's non-C fallback) it stands in for."""
     seg, _, _ = two_object_seg(npix=25, sep=8)
-    weight = np.ones_like(seg, dtype=float)
 
-    out = uberseg_weight(weight, seg, object_number=1)
+    npt.assert_array_equal(
+        uberseg_mask(seg, object_number=1), _brute_force_uberseg(seg)
+    )
 
+
+def _brute_force_uberseg(seg):
+    """O(N^2) nearest-segment rule: True where the nearest footprint pixel
+    is not the central object's (label 1)."""
     obj = np.argwhere(seg != 0)
     labels = seg[seg != 0]
-    brute = np.ones_like(weight)
+    brute = np.zeros(seg.shape, dtype=bool)
     for i in range(seg.shape[0]):
         for j in range(seg.shape[1]):
             d2 = (i - obj[:, 0]) ** 2 + (j - obj[:, 1]) ** 2
-            if labels[np.argmin(d2)] != 1:
-                brute[i, j] = 0.0
-    npt.assert_array_equal(out, brute)
+            brute[i, j] = labels[np.argmin(d2)] != 1
+    return brute
 
 
 # --- prepare_ngmix_weights: uberseg zeroes neighbour weights only ---------

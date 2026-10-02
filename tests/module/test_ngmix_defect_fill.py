@@ -43,7 +43,7 @@ from shapepipe.modules.ngmix_package.ngmix import (
     prepare_ngmix_weights,
     prepare_postage_stamps,
     split_tile_markers,
-    uberseg_weight,
+    uberseg_mask,
 )
 
 
@@ -87,7 +87,8 @@ def _uberseg_seg(n):
 def test_filled_set_is_the_defect_set(stamp, blend_handling, seed):
     """Filled pixels are exactly the defects (flag, zero weight, bad RMS).
     They carry zero weight and look like noise. Every other pixel keeps its
-    raw value, under either BLEND_HANDLING.
+    raw value, under either BLEND_HANDLING. Under uberseg the weight is also
+    zero on the neighbour side, whose light stays.
 
     Failure modes:
     * a defect source (flag, zero weight, bad RMS) is left out of the fill;
@@ -118,8 +119,7 @@ def test_filled_set_is_the_defect_set(stamp, blend_handling, seed):
     npt.assert_array_equal(filled, defect, "filled set is not the defect set")
     assert np.all(np.abs(gal_out[filled]) < 10.0), "fill is not unit noise"
     neighbour = (
-        uberseg_weight(np.ones((n, n)), kwargs["seg"], 1, dilate_neighbour=1)
-        == 0.0
+        uberseg_mask(kwargs["seg"], 1, dilate_neighbour=1)
         if blend_handling == "uberseg"
         else np.zeros((n, n), dtype=bool)
     )
@@ -607,8 +607,7 @@ def test_interpolated_fill_and_its_weights(blend_handling):
     )
 
     neighbour = (
-        uberseg_weight(np.ones_like(gal), kwargs["seg"], 1, dilate_neighbour=1)
-        == 0.0
+        uberseg_mask(kwargs["seg"], 1, dilate_neighbour=1)
         if kwargs else np.zeros_like(defect)
     )
     npt.assert_array_equal(w_out == 0.0, defect | fourfold(target) | neighbour)
@@ -618,6 +617,106 @@ def test_interpolated_fill_and_its_weights(blend_handling):
     assert np.all(np.abs(gal_out[defect & ~target]) < 10.0)
     refilled = interpolate_defects(noise_out[None], defect, target)[0]
     npt.assert_allclose(noise_out[target], refilled[target], atol=1e-5)
+
+
+# --- SYMMETRIZE_WEIGHTS ----------------------------------------------------
+
+def _symmetrization_case(blend_handling, defect_fill):
+    """The hot stamp with a neighbour in one corner, and its pixel classes:
+    those whose light is replaced, the interpolated defects and the uberseg
+    neighbour side (the last two keep their light at zero weight)."""
+    gal, weight, flag = _hot_stamp()
+    defect = flag != 0
+    seg = np.zeros_like(flag)
+    seg[N_STAMP // 2, N_STAMP // 2] = 1
+    seg[-12:, -12:] = 2
+    marked = seg == 2
+    kwargs = dict(
+        blend_handling=blend_handling, defect_fill=defect_fill,
+        seg=seg, object_number=1, dilate_neighbour=1, neighbour=marked,
+    )
+    interpolated = (
+        interpolable_defects(defect) & ~marked
+        if defect_fill == "interpolate" else np.zeros_like(defect)
+    )
+    side = (
+        uberseg_mask(seg, 1, dilate_neighbour=1)
+        if blend_handling == "uberseg" else np.zeros_like(defect)
+    )
+    replaced = defect & ~interpolated
+    if blend_handling == "noisefill":
+        replaced |= marked
+    return gal, weight, flag, kwargs, replaced, interpolated, side
+
+
+@pytest.mark.parametrize("defect_fill", ["noise", "interpolate"])
+@pytest.mark.parametrize("blend_handling", ["noisefill", "uberseg"])
+@pytest.mark.parametrize(
+    "symmetrize", ["interpolated", "interpolated_and_neighbours", "none"]
+)
+def test_symmetrized_weight_holes(blend_handling, defect_fill, symmetrize):
+    """The weight is zero on the pixels whose light is replaced, on the
+    interpolated defects and on the uberseg neighbour side, and on the
+    quarter turns of the classes SYMMETRIZE_WEIGHTS names. The switch moves
+    no image value and no noise draw.
+
+    Failure modes: a noise-filled defect or noisefill neighbour is
+    symmetrized; the default symmetrizes the uberseg neighbour side (its
+    neighbour light then dominates the bias, see symmetrized-weight-holes),
+    or the opt-in value does not; the switch moves an image value or a
+    noise draw.
+    """
+    gal, weight, flag, kwargs, replaced, interpolated, side = (
+        _symmetrization_case(blend_handling, defect_fill)
+    )
+    rms = np.ones_like(gal)
+    out = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(3), bkg_rms=rms,
+        symmetrize_weights=symmetrize, **kwargs,
+    )
+    unsymmetrized = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(3), bkg_rms=rms,
+        symmetrize_weights="none", **kwargs,
+    )
+    holes = {
+        "interpolated": interpolated,
+        "interpolated_and_neighbours": interpolated | side,
+        "none": np.zeros_like(side),
+    }[symmetrize]
+    npt.assert_array_equal(
+        out[1] == 0.0, replaced | interpolated | side | fourfold(holes)
+    )
+    npt.assert_array_equal(out[0], unsymmetrized[0])
+    npt.assert_array_equal(out[2], unsymmetrized[2])
+
+
+def test_symmetrization_changes_nothing_under_the_defaults():
+    """Under noisefill with the noise fill every zero-weight pixel has its
+    light replaced, so every SYMMETRIZE_WEIGHTS value gives the same
+    image, weight map and noise image."""
+    gal, weight, flag, kwargs, _, _, _ = _symmetrization_case(
+        "noisefill", "noise"
+    )
+    rms = np.ones_like(gal)
+    outputs = [
+        prepare_ngmix_weights(
+            gal, weight, flag, np.random.RandomState(8), bkg_rms=rms,
+            symmetrize_weights=value, **kwargs,
+        )
+        for value in ("interpolated", "interpolated_and_neighbours", "none")
+    ]
+    for other in outputs[1:]:
+        for a, b in zip(outputs[0], other):
+            npt.assert_array_equal(a, b)
+
+
+def test_unknown_symmetrize_weights_is_rejected():
+    gal, weight, flag = _hot_stamp()
+    with pytest.raises(ValueError, match="SYMMETRIZE_WEIGHTS"):
+        prepare_ngmix_weights(
+            gal, weight, flag, np.random.RandomState(0),
+            symmetrize_weights=True,
+        )
 
 
 def test_noise_is_the_default_fill():

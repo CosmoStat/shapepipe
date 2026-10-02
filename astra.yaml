@@ -1223,7 +1223,8 @@ analyses:
            metacal_scheme, centroid_source, epoch_flux_rescaling,
            psf_epoch_averaging, galaxy_pixel_weights, psf_likelihood_noise,
            megacam_ccd_flip, defect_fill, blend_handling,
-           epoch_masked_fraction_cut, central_defect_veto]
+           weight_symmetrization, epoch_masked_fraction_cut,
+           central_defect_veto]
     decisions:
       ngmix_seed_mode:
         label: Per-object RNG seeded from sky position
@@ -1564,6 +1565,57 @@ analyses:
               the ~2% uberseg-only bias in DES Y1 simulations, although Sheldon
               et al. 2020 found similar blend biases with and without MOF.
             insights: [mask_des_y1_uberseg_only, mask_blend_bias_detection]
+      weight_symmetrization:
+        label: Four-fold symmetric weight holes (SYMMETRIZE_WEIGHTS)
+        rationale: >-
+          ngmix fits a Gaussian to a profile that is not one, so a zero-weight
+          hole on one side of the object pulls the fit: a spin-2 term. One
+          step in prepare_ngmix_weights cancels it: the weight is also zeroed
+          on the three quarter-turn copies, about the stamp centre, of the
+          zero-weight pixels whose light stays, of the classes
+          SYMMETRIZE_WEIGHTS names. Pixels whose light is replaced
+          (noise-filled defects, noisefill neighbours) are never symmetrized:
+          the hole is then in the image metacal shears, and a weight orbit
+          leaves m unchanged (-0.53% against -0.54% for a noise-filled column
+          10 px from a 0.5 arcsec galaxy) while moving c by about 1e-4 either
+          way. So under noisefill with the noise fill the option changes
+          nothing. The rotation is about the stamp centre, where the
+          extractor places the object to within half a pixel per axis; the
+          measurements draw the object uniformly within that half pixel.
+          Measured with tests/helpers/defect_response.py (6 seeds, full
+          response matrix, galaxy half-light radius 0.5 arcsec, 0.7 arcsec
+          PSF).
+        default: interpolated
+        options:
+          interpolated:
+            label: Symmetrize the interpolated defects
+            description: >-
+              SYMMETRIZE_WEIGHTS = interpolated. An interpolated column 8 px
+              from the galaxy gives c1 = -1.3e-3 unsymmetrized and +2e-6
+              symmetrized (PR #916). The uberseg neighbour side stays
+              one-sided.
+            insights: [mask_bad_column_symmetrize]
+          interpolated_and_neighbours:
+            label: Also symmetrize the uberseg neighbour side (#815)
+            description: >-
+              SYMMETRIZE_WEIGHTS = interpolated_and_neighbours. Alone, the
+              neighbour-side hole is a strong pull: a neighbour footprint with
+              no light 10 px away gives c1 = -7.8e-3 unsymmetrized and 2e-6
+              symmetrized. A real neighbour leaves light in the target's
+              uberseg cell, which pulls the other way, and the one-sided hole
+              partly offsets it: for a neighbour of a tenth of the target's
+              flux at 10 px, c1 = +1.1e-3 unsymmetrized and +1.2e-2
+              symmetrized; at equal flux, +0.13 and +0.21. The symmetrized
+              hole keeps 117 of 1580 weighted pixels and 97% of the target's
+              S/N at 10 px (99% unsymmetrized), 25 pixels and 71% at 7 px,
+              none at 5 px. For a neighbour-subtracted image, or as an A/B
+              arm beside uberseg.
+            insights: [mask_bad_column_symmetrize, mask_uberseg_neighbour_bias]
+          none:
+            label: No symmetrization (SYMMETRIZE_WEIGHTS = none)
+            description: >-
+              Every zero-weight hole stays one-sided; under DEFECT_FILL =
+              interpolate the column above gives c1 = -1.3e-3.
       central_defect_veto:
         label: Per-epoch veto on a defect near the stamp centre
         rationale: >-

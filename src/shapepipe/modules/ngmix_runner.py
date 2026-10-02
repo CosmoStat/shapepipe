@@ -197,6 +197,20 @@ def ngmix_runner(
     else:
         epoch_interpolated_defect_radius = EPOCH_INTERPOLATED_DEFECT_RADIUS
 
+    # SYMMETRIZE_WEIGHTS (optional): which zero-weight pixels whose light
+    # stays also zero the weight of their quarter-turn copies about the stamp
+    # centre, so no one-sided hole in the likelihood pulls the fit.
+    # "interpolated" (default): the interpolated defects;
+    # "interpolated_and_neighbours": those and the uberseg neighbour side;
+    # "none". Nothing changes under BLEND_HANDLING = noisefill with
+    # DEFECT_FILL = noise. See prepare_ngmix_weights.
+    if config.has_option(module_config_sec, "SYMMETRIZE_WEIGHTS"):
+        symmetrize_weights = config.get(
+            module_config_sec, "SYMMETRIZE_WEIGHTS"
+        )
+    else:
+        symmetrize_weights = "interpolated"
+
     # Check PSF vignets first: if all are empty dicts {}, the exposures for this
     # tile are absent from the PSF dictionary and no shape measurement is possible.
     # This check must come before reading image vignets to avoid a C-level malloc
@@ -261,6 +275,7 @@ def ngmix_runner(
         epoch_masked_fraction_cut=epoch_masked_fraction_cut,
         defect_fill=defect_fill,
         epoch_interpolated_defect_radius=epoch_interpolated_defect_radius,
+        symmetrize_weights=symmetrize_weights,
     )
 
     # Process ngmix shape measurement and metacalibration
