@@ -12,9 +12,11 @@ shard level is not cosmetic: ``exp_utils.get_exp_output_files`` hardwires
 ``<SP_EXP>/<prefix>/<base>/output/run_sp_*`` into its glob, so a flat forest
 makes every tile gather stage fail "No split_exp_runner output found".
 
-All rules are group-compatible (shell only, no mid-chain localrules), and the two
-short regions are grouped, per the composition rules in prepare.smk's docstring.
-Distinct tiles share no edge, so each is one group job per tile:
+All grouped rules are group-compatible (shell only, no mid-chain localrules).
+final_cat_merge is a local DAG leaf outside these groups, so local execution
+does not interrupt either grouped chain. The two short regions are grouped,
+per the composition rules in prepare.smk's docstring. Distinct tiles share no
+edge, so each is one group job per tile:
 
 * ``group: "tile_gather"`` — tile_exp_forest (2 GB, 20 min) and
   tile_merge_headers (median 0:38; 8 GB, 4 threads, 120 min). The group asks max
@@ -1018,18 +1020,22 @@ rule clean_tile:
 # tile-finished marker (see final_cat() in the Snakefile), and it is the file
 # this rule actually reads.
 #
-# NOT A LOCALRULE, and here the reason is IO rather than memory: a first build
-# reads every tile's catalogue end to end — ~32-46 MB per tile, so ~2 GB for a
-# 64-tile campaign and ~800 GB at DR6's 23k tiles. It RECONCILES rather than
-# rebuilds or appends: a tile with no dataset is added, a dataset whose tile
-# left the campaign is deleted, a dataset whose source catalogue changed is
-# re-read, and one that agrees with its source is left alone. So an append
-# reads the appended tiles and nothing else, while the file still cannot drift
-# from its inputs the way an append-only tool does (merge_final_cat.py argues
-# what is and is not a function of the input set here). Memory is one tile's
-# catalogue at a time plus the hdf5 write buffer, which is why mem_mb is modest
-# where star_cat_merge's is not — and why runtime, which is sized on the whole
-# campaign, is the pessimistic first-build case.
+# A LOCALRULE (declared in the Snakefile). This is a DAG leaf outside both tile
+# groups, so local execution does not interrupt either grouped chain. It uses
+# one thread; mem_mb and runtime describe its executor allocation, while the
+# head's memory must cover the local process.
+#
+# A first build reads every tile's catalogue end to end — ~32-46 MB per tile,
+# so ~2 GB for a 64-tile campaign and ~800 GB at DR6's 23k tiles. It RECONCILES
+# rather than rebuilds or appends: a tile with no dataset is added, a dataset
+# whose tile left the campaign is deleted, a dataset whose source catalogue
+# changed is re-read, and one that agrees with its source is left alone. So an
+# append reads the appended tiles and nothing else, while the file still cannot
+# drift from its inputs the way an append-only tool does (merge_final_cat.py
+# argues what is and is not a function of the input set here). Memory is one
+# tile's catalogue at a time plus the hdf5 write buffer, which is why mem_mb is
+# modest where star_cat_merge's is not — and why runtime, which is sized on the
+# whole campaign, is the pessimistic first-build case.
 rule final_cat_merge:
     input:
         lambda wc: [final_cat(t) for t in TILES_READY]

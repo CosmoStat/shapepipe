@@ -43,6 +43,10 @@ prepare.smk's docstring. exp_get_images stays separate for the same reason it
 always did (a download, retried on its own), and exp_psf is heavy (16 GB, 4 h)
 and never fuses with a short rule.
 
+The campaign-level star_cat_merge is a terminal localrule, not a mid-chain
+localrule. Its head-process execution does not interrupt the per-exposure chain
+or any group.
+
 NUMBER_LIST ($SP_UNIT_NUM, see unit_num in the Snakefile) is set only for
 exp_split, whose numbering scheme IS the exposure id; never for get_images /
 exp_psf, whose per-CCD or download numbering would turn tolerated per-CCD
@@ -281,10 +285,11 @@ rule clean_exposure:
 # rows no rerun trigger could notice, which is what a glob over products_dir
 # would have given on a root shared with an earlier, larger tile list.
 #
-# NOT A LOCALRULE. exp_persist is local because it is 20k jobs of seconds; this
-# is one job that reads the campaign's tars end to end. Its MEMORY is flat in
-# the campaign (one exposure at a time) and sized on the largest exposure; its
-# RUNTIME is the total.
+# A LOCALRULE (declared in the Snakefile). This campaign merge is a DAG leaf,
+# so local execution does not interrupt an exposure chain. It uses one thread;
+# mem_mb and runtime describe its executor allocation, while the head's memory
+# must cover the local process. Its MEMORY is flat in the campaign (one exposure
+# at a time) and sized on the largest exposure; its RUNTIME is the total.
 #
 # NO JOB AT ALL when every exposure in scope is tombstoned with no tar left
 # behind: star_cat_targets() (Snakefile) simply does not request the output.

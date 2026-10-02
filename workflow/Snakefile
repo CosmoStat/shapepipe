@@ -1239,15 +1239,22 @@ include: "rules/exposure.smk"
 include: "rules/tile.smk"
 
 # --- top-level targets ------------------------------------------------------
-# The aggregation targets, clean_exposure and clean_tile run in the head
-# process. Both clean rules are seconds of rmtree and hang off `all`; submitted
-# they would be ~20k (clean_exposure) or ~23k (clean_tile) sbatch submissions at
-# DR6 scale for work shorter than the scheduling latency.
+# clean_exposure and clean_tile run in the head process. Both are seconds of
+# rmtree and hang off `all`; submitted, they would be ~20k (clean_exposure) or
+# ~23k (clean_tile) sbatch submissions at DR6 scale for work shorter than the
+# scheduling latency.
 #
-# Both are DAG LEAVES, so neither constrains a `group:` label. (A mid-chain
-# localrule would: a local job cannot be fused into a submitted group. The old
-# star-catalogue rules were exactly that, and they are gone with the internal
-# mask generation.)
+# star_cat_merge and final_cat_merge are campaign-level DAG leaves, so their
+# local execution does not split a grouped chain. A mid-chain localrule cannot
+# be fused into a submitted group.
+#
+# The Nibi head uses --local-cores 4 and 16 GB. Each merge uses one thread, but
+# its mem_mb request does not limit memory in the head process. At 330 tiles,
+# the largest measured merge peaks at 3.95 GB MaxRSS (≤4 GB); the head allocation
+# must cover concurrent local merge peaks as well as the largest individual job.
+#
+# The global container: directive and the profile's Apptainer deployment apply
+# to local and executor jobs alike.
 #
 # exp_persist joins them for the same arithmetic — one tar of a few MB per
 # exposure, ~20k of them at DR6 scale, each far shorter than the scheduling
@@ -1255,7 +1262,7 @@ include: "rules/tile.smk"
 # sits mid-chain between exp_psf and clean_exposure, but both of those are
 # outside every group already (exp_psf is heavy, clean_exposure is local), so it
 # adds no new grouping constraint.
-localrules: all, prepare_all_tiles, clean_exposure, clean_tile, exp_persist
+localrules: all, prepare_all_tiles, clean_exposure, clean_tile, exp_persist, star_cat_merge, final_cat_merge
 
 
 rule all:

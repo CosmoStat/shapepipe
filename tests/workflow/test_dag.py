@@ -57,6 +57,25 @@ def test_final_cat_merge_reads_every_ready_tile(campaign, dag):
     )
 
 
+def test_campaign_merges_are_local_and_containerized(campaign, dag):
+    """Terminal campaign merges run locally with the workflow's image."""
+    expected = {"final_cat_merge"}
+    if campaign.psf_model != "fake":
+        expected.add("star_cat_merge")
+    assert {
+        rule for rule in expected if dag.jobs_for(rule)
+    } == expected
+    for rule in expected:
+        jobs = dag.jobs_for(rule)
+        assert len(jobs) == 1
+        job = jobs[0]
+        assert job.is_local
+        assert job.needs_singularity
+        assert job.container_img_url == str(campaign.image)
+        assert job.threads == 1
+        assert job.rule.group is None
+
+
 def test_products_use_products_dir_and_run_name(campaign, dag):
     """Neither scratch nor a directory basename can name durable products."""
     expected = {
