@@ -548,8 +548,7 @@ def detect_env(tile):
     """
     match = ""
     if TILE_DETECTION == "unions_catalogue":
-        gic = (f"{tile_dir(tile)}/output/run_sp_tile_Gic/get_images_runner"
-               + "/output")
+        gic = f"{tile_dir(tile)}/output/run_sp_tile_Gic/get_images_runner/output"
         match = f"{gic}/CFIS_cat{unit_num(tile)}.cat"
     return {"SP_MATCH_CATALOGUE": match, **blend_env("tile_detect")}
 
