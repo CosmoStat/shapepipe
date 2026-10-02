@@ -6,7 +6,7 @@ Run from the shapepipe checkout root inside the shapepipe container:
   PYTHONPATH=src:scripts/validation/masked_pixels \
     python scripts/validation/masked_pixels/pixel_classes.py REAL.npz OUT.png
 
-REAL.npz is one real epoch written by dr6_blend.py.
+REAL.npz is one real epoch written by dr6_epochs.py.
 """
 import sys
 
