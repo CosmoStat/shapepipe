@@ -55,8 +55,9 @@ analyses:
       galaxy_pixel_weights: rms_vignet_weights
       psf_likelihood_noise: psf_noise_1em5
       megacam_ccd_flip: megapipe_flip
-      defect_fill: noise
+      defect_fill: interpolate
       blend_handling: uberseg
+      weight_symmetrization: interpolated
       epoch_masked_fraction_cut: one_third
       central_defect_veto: fixed_radii
   catalogue_assembly:

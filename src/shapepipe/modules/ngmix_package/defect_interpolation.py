@@ -1,7 +1,6 @@
 """DEFECT INTERPOLATION.
 
-Clough-Tocher interpolation of short defect runs before metacal, selected
-with ``DEFECT_FILL = interpolate`` (see
+Clough-Tocher interpolation of short defect runs before metacal (see
 :func:`shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights`).
 
 """
@@ -21,37 +20,46 @@ SUPPORT_RADIUS = 4
 _ROW_RUNS = np.array([[0, 0, 0], [1, 1, 1], [0, 0, 0]])
 
 
-def _short_row_runs(defect, max_run):
-    """Pixels in row runs of at most ``max_run`` defects that stop short of
-    both stamp borders."""
-    labels, n_runs = label(defect, structure=_ROW_RUNS)
+def _short_row_runs(run, blocked, max_run):
+    """Pixels of ``run`` in row runs of at most ``max_run`` pixels whose
+    neighbours beyond both ends lie on the stamp and outside ``blocked``."""
+    labels, n_runs = label(run, structure=_ROW_RUNS)
     if n_runs == 0:
-        return np.zeros_like(defect)
+        return np.zeros_like(run)
     short = np.bincount(labels.ravel(), minlength=n_runs + 1) <= max_run
     short[0] = False
-    short[labels[:, 0]] = False
-    short[labels[:, -1]] = False
+    # A run pixel's left (right) neighbour must be in the run or open.
+    in_run = np.pad(run, ((0, 0), (1, 1)))
+    is_open = np.pad(~blocked, ((0, 0), (1, 1)))
+    closed_end = run & ~(
+        (in_run[:, :-2] | is_open[:, :-2]) & (in_run[:, 2:] | is_open[:, 2:])
+    )
+    short[labels[closed_end]] = False
     return short[labels]
 
 
-def interpolable_defects(defect, max_run=MAX_INTERPOLATED_RUN):
-    """Defect pixels that ``DEFECT_FILL = interpolate`` interpolates.
+def interpolable_defects(defect, removed=None, max_run=MAX_INTERPOLATED_RUN):
+    """Defect pixels that :func:`interpolate_defects` fills.
 
     @sc [decision:shape_measurement.defect_fill] interpolable-defects
     A defect pixel is interpolated when its row or its column run of defect
-    pixels is at most ``max_run`` (3) long and has clean pixels at both
-    ends. That covers columns, 3-px bleeds and isolated pixels, the widths
-    whose shear recovery is calibrated. Wider holes, and runs that reach the
-    stamp border (edge bands, corners), have clean light on one side only;
-    they are noise-filled and vetoed at the noise-fill radius (see
-    :func:`~shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes`).
-    The rule reads only the mask and commutes with quarter turns of the
-    stamp.
+    pixels is at most ``max_run`` (3) long and the pixels beyond both ends
+    support the interpolant: on the stamp, not a defect, and not
+    ``removed``. That covers columns, 3-px bleeds and isolated pixels.
+    Wider holes, edge bands and runs that end on a removed pixel are
+    noise-filled and vetoed at the noise-fill radius
+    (:func:`~shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes`).
+    Each interpolated pixel lies between two support pixels, so the
+    interpolant reaches it. The rule reads only the masks and commutes with
+    quarter turns of the stamp.
 
     Parameters
     ----------
     defect : numpy.ndarray of bool
         Defect mask of one epoch stamp.
+    removed : numpy.ndarray of bool, optional
+        Pixels whose light the image replaces (noisefill neighbours). They
+        neither support the interpolant nor are interpolated.
     max_run : int, optional
         Longest interpolated run; the default is ``MAX_INTERPOLATED_RUN``.
 
@@ -61,9 +69,14 @@ def interpolable_defects(defect, max_run=MAX_INTERPOLATED_RUN):
         ``True`` on the defect pixels to interpolate.
     """
     defect = np.asarray(defect, dtype=bool)
+    removed = (
+        np.zeros_like(defect) if removed is None
+        else np.asarray(removed, dtype=bool)
+    )
+    run, blocked = defect & ~removed, defect | removed
     return (
-        _short_row_runs(defect, max_run)
-        | _short_row_runs(defect.T, max_run).T
+        _short_row_runs(run, blocked, max_run)
+        | _short_row_runs(run.T, blocked.T, max_run).T
     )
 
 

@@ -12,9 +12,6 @@ from sqlitedict import SqliteDict
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.ngmix_package.ngmix import (
-    EPOCH_CENTRAL_DEFECT_RADIUS,
-    EPOCH_INTERPOLATED_DEFECT_RADIUS,
-    EPOCH_MASKED_FRACTION_CUT,
     Ngmix,
     write_empty_tile_output,
 )
@@ -123,8 +120,9 @@ def ngmix_runner(
     # footprints); "uberseg" ignores those markers, zeroes the weight of every
     # pixel closer to a neighbour than to the central object, from the
     # segmentation map, and leaves its image raw. Defect pixels (flagged,
-    # zero-weight, invalid-RMS or off-tile) are zero-weighted and filled
-    # under both (DEFECT_FILL below); see prepare_ngmix_weights.
+    # zero-weight, invalid-RMS or off-tile) are zero-weighted and filled the
+    # same way under both, and the epoch cuts are fixed; see
+    # prepare_postage_stamps and prepare_ngmix_weights.
     if config.has_option(module_config_sec, "BLEND_HANDLING"):
         blend_handling = config.getexpanded(module_config_sec, "BLEND_HANDLING")
     else:
@@ -137,47 +135,6 @@ def ngmix_runner(
         dilate_neighbour = config.getint(module_config_sec, "DILATE_NEIGHBOUR")
     else:
         dilate_neighbour = 1
-
-    # EPOCH_CENTRAL_DEFECT_RADIUS (optional, pixels): drop an epoch when a
-    # defect pixel (flagged, zero-weight, invalid-RMS or off-tile; not a
-    # neighbour marker) lies closer than this to the stamp centre; 0 disables.
-    if config.has_option(module_config_sec, "EPOCH_CENTRAL_DEFECT_RADIUS"):
-        epoch_central_defect_radius = config.getfloat(
-            module_config_sec, "EPOCH_CENTRAL_DEFECT_RADIUS"
-        )
-    else:
-        epoch_central_defect_radius = EPOCH_CENTRAL_DEFECT_RADIUS
-
-    # EPOCH_MASKED_FRACTION_CUT (optional): drop an epoch when more than this
-    # fraction of its stamp is defects (flagged, zero-weight, invalid-RMS or
-    # off-tile; neighbour markers are not counted).
-    if config.has_option(module_config_sec, "EPOCH_MASKED_FRACTION_CUT"):
-        epoch_masked_fraction_cut = config.getfloat(
-            module_config_sec, "EPOCH_MASKED_FRACTION_CUT"
-        )
-    else:
-        epoch_masked_fraction_cut = EPOCH_MASKED_FRACTION_CUT
-
-    # DEFECT_FILL (optional): "noise" (default) noise-fills every defect;
-    # "interpolate" interpolates short defect runs (at most 3 px along a row
-    # or column) from the clean pixels around them and noise-fills the rest.
-    if config.has_option(module_config_sec, "DEFECT_FILL"):
-        defect_fill = config.get(module_config_sec, "DEFECT_FILL")
-    else:
-        defect_fill = "noise"
-
-    # EPOCH_INTERPOLATED_DEFECT_RADIUS (optional, pixels): under
-    # DEFECT_FILL = interpolate, drop an epoch when an interpolated defect
-    # pixel lies closer than this to the stamp centre; noise-filled defect
-    # pixels keep EPOCH_CENTRAL_DEFECT_RADIUS.
-    if config.has_option(
-        module_config_sec, "EPOCH_INTERPOLATED_DEFECT_RADIUS"
-    ):
-        epoch_interpolated_defect_radius = config.getfloat(
-            module_config_sec, "EPOCH_INTERPOLATED_DEFECT_RADIUS"
-        )
-    else:
-        epoch_interpolated_defect_radius = EPOCH_INTERPOLATED_DEFECT_RADIUS
 
     # Check PSF vignets first: if all are empty dicts {}, the exposures for this
     # tile are absent from the PSF dictionary and no shape measurement is possible.
@@ -238,10 +195,6 @@ def ngmix_runner(
         blend_handling=blend_handling,
         dilate_neighbour=dilate_neighbour,
         metacal_psf=metacal_psf,
-        epoch_central_defect_radius=epoch_central_defect_radius,
-        epoch_masked_fraction_cut=epoch_masked_fraction_cut,
-        defect_fill=defect_fill,
-        epoch_interpolated_defect_radius=epoch_interpolated_defect_radius,
     )
 
     # Process ngmix shape measurement and metacalibration
