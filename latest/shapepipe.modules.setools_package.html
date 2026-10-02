@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="01 Oct, 2026"/>
+    <meta name="docbuild:last-update" content="02 Oct, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -644,16 +644,16 @@ First, a pre-selection is defined:</p>
 <div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MASK:preselect]</span>
 <span class="na">MAG_AUTO &gt; 0</span>
 <span class="na">MAG_AUTO &lt; 21</span>
-<span class="na">FWHM_IMAGE &gt; 0.3 / 0.187</span>
-<span class="na">FWHM_IMAGE &lt; 1.5 / 0.187</span>
+<span class="na">FWHM_WORLD &gt; 0.3 / 3600</span>
+<span class="na">FWHM_WORLD &lt; 1.5 / 3600</span>
 <span class="na">FLAGS</span><span class="w"> </span><span class="o">=</span><span class="s">= 0</span>
 <span class="na">IMAFLAGS_ISO</span><span class="w"> </span><span class="o">=</span><span class="s">= 0</span>
 <span class="na">NO_SAVE</span>
 </pre></div>
 </div>
 <p>This selects objects within a magnitude (<code class="docutils literal notranslate"><span class="pre">MAG_AUTO</span></code>) and size
-(<code class="docutils literal notranslate"><span class="pre">FWHM_IMAGE</span></code>) ranges. The size limits of 0.3” and 1.5” are transformed from
-arcseconds to pixels. Additional flag criteria for <code class="docutils literal notranslate"><span class="pre">FLAGS</span></code> AND
+(<code class="docutils literal notranslate"><span class="pre">FWHM_WORLD</span></code>) ranges. <code class="docutils literal notranslate"><span class="pre">FWHM_WORLD</span></code> is in degrees, computed by SExtractor
+from the image WCS, so the size limits of 0.3” and 1.5” are divided by 3600. Additional flag criteria for <code class="docutils literal notranslate"><span class="pre">FLAGS</span></code> AND
 <code class="docutils literal notranslate"><span class="pre">IMAFLAGS_ISO</span></code> are specified. The keyword <code class="docutils literal notranslate"><span class="pre">NO_SAVE</span></code> indicates that this
 selection is not to be saved to disk.</p>
 <p>Next, the final star selection is defined:</p>
@@ -709,7 +709,7 @@ is defined.</p>
 <span class="na">MARKERSIZE_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">3</span>
 <span class="na">MARKERSIZE_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">3</span>
 <span class="na">LABEL_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">All</span>
-<span class="na">LABEL_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"Stars, mean FWHM: @mean(FWHM_IMAGE{star_selection})*0.187@arcsec"</span>
+<span class="na">LABEL_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"Stars, mean FWHM: @mean(FWHM_WORLD{star_selection})*3600@arcsec"</span>
 <span class="na">TITLE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"Stellar locus"</span>
 <span class="na">XLABEL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"FWHM (pix)"</span>
 <span class="na">YLABEL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">Mag</span>
@@ -896,7 +896,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 01 Oct, 2026.
+  Last updated on 02 Oct, 2026.
   <br/>
 </p>
   </div>
