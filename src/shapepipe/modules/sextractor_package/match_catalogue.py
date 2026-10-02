@@ -23,7 +23,8 @@ from scipy.spatial import cKDTree
 
 # The SEG_VIGNET label of a footprint whose SExtractor row has no partner in
 # the external catalogue, and so leaves the catalogue. Negative, so it never
-# collides with a NUMBER; UberSeg only asks "self or not self".
+# collides with a NUMBER (match_catalogue requires positive ones); UberSeg only
+# asks "self or not self".
 UNMATCHED_LABEL = -1
 
 
@@ -100,9 +101,11 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     external catalogue (``X_IMAGE``, ``Y_IMAGE``, same image grid) within
     ``radius`` pixels. Paired rows take the external ``NUMBER``; unpaired
     rows leave the catalogue. A ``SEG_VIGNET`` column, when present, is
-    relabelled to the new numbering, with the footprints of rows that left
-    marked ``UNMATCHED_LABEL``. The catalogue is rewritten in place; every
-    other HDU and column is kept.
+    relabelled through the whole map from old to new numbers, with the
+    footprints of rows that left marked ``UNMATCHED_LABEL``: as the external
+    numbers are unique and positive, each row's own footprint carries its new
+    ``NUMBER`` and no other footprint can, whatever the two numberings share.
+    The catalogue is rewritten in place; every other HDU and column is kept.
 
     Both catalogues come from the same pixels, so pairs agree to ~1e-4
     pixel, and on eight DR6 tiles at least 99.2% of each side pairs; the
@@ -144,13 +147,21 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     Raises
     ------
     ValueError
-        If more than ``tolerated_unpaired`` rows of either side, and more
-        than ``1 - min_fraction`` of it, have no partner
+        If the external ``NUMBER`` repeats or is not positive, or if more
+        than ``tolerated_unpaired`` rows of either side, and more than
+        ``1 - min_fraction`` of it, have no partner
 
     @sc [decision:detection.tile_detection]
     """
     ext = asc.read(ext_cat_path, format="sextractor",
                    include_names=["NUMBER", "X_IMAGE", "Y_IMAGE"])
+    ext_number = np.asarray(ext["NUMBER"])
+    if (ext_number <= 0).any() or len(np.unique(ext_number)) < len(ext):
+        raise ValueError(
+            f"{ext_cat_path} has a repeated or non-positive NUMBER; the join"
+            + " needs unique positive numbers, so that no relabelled"
+            + " SEG_VIGNET footprint takes another object's number."
+        )
     with fits.open(cat_path) as hdul:
         hdus = [hdu.copy() for hdu in hdul]
     objects = next(h for h in hdus if h.name == "LDAC_OBJECTS")
@@ -194,7 +205,7 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
 
     old_number = np.asarray(data["NUMBER"])
     new_number = np.full(len(data), UNMATCHED_LABEL, np.int64)
-    new_number[i_sex] = np.asarray(ext["NUMBER"])[i_ext]
+    new_number[i_sex] = ext_number[i_ext]
 
     columns = []
     for col in objects.columns:
