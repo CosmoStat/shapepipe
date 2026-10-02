@@ -1,6 +1,6 @@
 """Pixel classes of one epoch stamp and what ngmix receives: a synthetic
-blend under noisefill + noise and uberseg + interpolate, then a real DR6
-blend under uberseg + interpolate.
+blend under BLEND_HANDLING = noisefill and uberseg, then a real DR6 blend
+under uberseg.
 
 Run from the shapepipe checkout root inside the shapepipe container:
   PYTHONPATH=src:scripts/validation/masked_pixels \
@@ -21,22 +21,14 @@ from matplotlib.patches import Circle, Patch
 
 from figstyle import (AQUA, BLUE, INK, INK2, ORANGE, PAPER, TARGET,
                       WEIGHT_LEGEND, clean, show_image, show_weight)
-from shapepipe.modules.ngmix_package.defect_interpolation import (
-    interpolable_defects,
-)
 from shapepipe.modules.ngmix_package.ngmix import (
     EPOCH_CENTRAL_DEFECT_RADIUS,
     EPOCH_INTERPOLATED_DEFECT_RADIUS,
-    OFF_TILE_FLAG,
     defect_mask,
+    interpolated_defects,
     prepare_ngmix_weights,
+    uberseg_mask,
 )
-
-SETTINGS = {
-    "noisefill_noise": dict(blend_handling="noisefill", defect_fill="noise"),
-    "uberseg_interpolate": dict(blend_handling="uberseg",
-                                defect_fill="interpolate"),
-}
 
 
 def synthetic():
@@ -63,26 +55,29 @@ def synthetic():
     flag = np.zeros((N, N), np.int32)
     flag[:, C + 12] = 1               # bad column, 12 px right of centre
     flag[C + 9, C - 9] = 1            # hot pixel, 12.7 px from centre
-    flag[N - 5:, :] = OFF_TILE_FLAG   # off-tile band at the stamp's edge
+    off_tile = np.zeros((N, N), bool)
+    off_tile[N - 5:, :] = True        # off-tile band at the stamp's edge
     gal[:, C + 12] = 400.0
     gal[C + 9, C - 9] = 400.0
-    return dict(gal=gal, weight=np.ones((N, N)), flag=flag,
+    return dict(gal=gal, weight=np.where(off_tile, 0.0, 1.0), flag=flag,
                 bkg_rms=np.full((N, N), rms), seg=seg, object_number=1,
-                neighbour=seg == 2)
+                neighbour=seg == 2, off_tile=off_tile)
 
 
-def run(ep, setting):
-    kw = dict(SETTINGS[setting])
-    if kw["blend_handling"] == "uberseg":
+def run(ep, blend_handling):
+    kw = {}
+    if blend_handling == "uberseg":
         kw.update(seg=ep["seg"], object_number=int(ep["object_number"]))
     img, w, _ = prepare_ngmix_weights(
         ep["gal"], ep["weight"], ep["flag"], np.random.RandomState(1),
-        bkg_rms=ep["bkg_rms"], neighbour=ep["neighbour"], **kw,
+        bkg_rms=ep["bkg_rms"], neighbour=ep["neighbour"],
+        blend_handling=blend_handling, **kw,
     )
     defect = defect_mask(ep["weight"], ep["flag"], ep["bkg_rms"])
-    interp = (interpolable_defects(defect) if kw["defect_fill"] ==
-              "interpolate" else np.zeros_like(defect))
-    return img, w, interp
+    interp = interpolated_defects(defect, ep["neighbour"], blend_handling)
+    neighbour = (ep["neighbour"] if blend_handling == "noisefill" else
+                 uberseg_mask(ep["seg"], int(ep["object_number"])))
+    return img, w, interp, defect | neighbour
 
 
 CLASS_CMAP = ListedColormap([PAPER, BLUE, ORANGE, AQUA, TARGET])
@@ -95,7 +90,7 @@ def classes(ep):
     cls[ep["neighbour"]] = 1
     defect = defect_mask(ep["weight"], ep["flag"], ep["bkg_rms"])
     cls[defect] = 2
-    cls[ep["flag"] == OFF_TILE_FLAG] = 3
+    cls[ep["off_tile"]] = 3
     return cls
 
 
@@ -142,23 +137,23 @@ def main(real_path, out_path):
     axs[1, 0].text(c, c - 6.3, "7 px", ha="center", va="bottom",
                    fontsize=8, color=INK)
 
-    for j, (setting, title) in enumerate(
-        (("noisefill_noise", "(b) noisefill + noise\n(the defaults)"),
-         ("uberseg_interpolate", "(c) uberseg + interpolate")), start=1):
-        img, w, interp = run(syn, setting)
+    for j, (blend, title) in enumerate(
+        (("noisefill", "(b) noisefill (default)"),
+         ("uberseg", "(c) uberseg")), start=1):
+        img, w, interp, zeroed = run(syn, blend)
         show_image(axs[0, j], img)
-        show_weight(axs[1, j], w, interp)
+        show_weight(axs[1, j], w, interp, zeroed)
         axs[0, j].set_title(title, color=INK, fontsize=10)
 
-    # (d) the real DR6 epoch: its classes, then uberseg + interpolate
+    # (d) the real DR6 epoch and its classes, (e) under uberseg
     show_image(axs[0, 3], real["gal"], vmax=vmax_real, soft=soft_real)
     class_panel(axs[1, 3], real)
     axs[0, 3].set_title(f"(d) {real['label']}\n{real['source']}",
                         color=INK, fontsize=10)
-    img, w, interp = run(real, "uberseg_interpolate")
+    img, w, interp, zeroed = run(real, "uberseg")
     show_image(axs[0, 4], img, vmax=vmax_real, soft=soft_real)
-    show_weight(axs[1, 4], w, interp)
-    axs[0, 4].set_title("uberseg + interpolate", color=INK, fontsize=10)
+    show_weight(axs[1, 4], w, interp, zeroed)
+    axs[0, 4].set_title("(e) uberseg", color=INK, fontsize=10)
     for ax in axs.flat:
         clean(ax)
 
