@@ -1459,8 +1459,8 @@ analyses:
               pixels whose neighbours beyond both ends are kept pixels (on
               the stamp, not defects, and not noisefill neighbours) are
               Clough-Tocher interpolated from the kept pixels within
-              SUPPORT_RADIUS = 4 px, averaged over the stamp's quarter turns,
-              in the image and the metacal noise image alike. Other defects
+              SUPPORT_RADIUS = 4 px, with one triangulation for the image
+              and the metacal noise image. Other defects
               (wider holes, edge bands, runs ending on a noisefill neighbour)
               get independent noise at the per-pixel background RMS when
               supplied, or the stamp's robust noise scale otherwise. The

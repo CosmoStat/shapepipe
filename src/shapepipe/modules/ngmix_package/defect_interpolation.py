@@ -107,43 +107,17 @@ def fourfold(mask):
     return mask | np.rot90(mask) | np.rot90(mask, 2) | np.rot90(mask, 3)
 
 
-def _interpolate_once(planes, excluded, target):
-    """One Clough-Tocher interpolant of every plane at ``target``; NaN
-    elsewhere and where the support cannot reach."""
-    out = np.full(planes.shape, np.nan)
-    support = binary_dilation(
-        target, structure=np.ones((3, 3), dtype=bool),
-        iterations=SUPPORT_RADIUS,
-    ) & ~excluded
-    points = np.argwhere(support).astype(float)
-    if len(points) < 3:
-        return out
-    query = np.argwhere(target)
-    try:
-        interpolant = CloughTocher2DInterpolator(
-            points, planes[:, support].T, fill_value=np.nan,
-        )
-    except QhullError:
-        return out
-    out[:, query[:, 0], query[:, 1]] = interpolant(query.astype(float)).T
-    return out
-
-
 def interpolate_defects(planes, excluded, target):
     """Replace the ``target`` pixels of every plane by a Clough-Tocher
     interpolant of the kept pixels around them.
 
-    @sc [decision:shape_measurement.defect_fill] shared-rotation-averaged-interpolant
+    @sc [decision:shape_measurement.defect_fill] shared-interpolant
     The support is the pixels within ``SUPPORT_RADIUS`` (4 px) of the target
     outside ``excluded``; no excluded pixel enters it, so their values are
-    never read. For each quarter turn of the stamp, one Delaunay triangulation of the support
-    serves every plane, so the science image and the metacal noise image
-    see the same linear operator and fixnoise mirrors the science image's
-    interpolated noise. A regular grid's triangulation has degenerate
-    diagonals, so one orientation has a preferred direction; averaging the
-    four quarter-turned operators makes the fill commute with rotations of
-    the stamp. That removes up to 6e-5 of c2 for a column or 3-px bleed
-    6 px from the object.
+    never read. One Delaunay triangulation of the support serves every
+    plane, so the science image and the metacal noise image see the same
+    linear operator and fixnoise mirrors the science image's interpolated
+    noise.
 
     Parameters
     ----------
@@ -159,7 +133,7 @@ def interpolate_defects(planes, excluded, target):
     -------
     numpy.ndarray
         A copy of ``planes`` with ``target`` pixels interpolated; NaN at a
-        target pixel whose support is degenerate in some orientation.
+        target pixel the support cannot reach.
     """
     planes = np.asarray(planes, dtype=float)
     excluded = np.asarray(excluded, dtype=bool)
@@ -167,15 +141,20 @@ def interpolate_defects(planes, excluded, target):
     out = planes.copy()
     if not target.any():
         return out
-    turns = [
-        np.rot90(
-            _interpolate_once(
-                np.rot90(planes, k, axes=(1, 2)), np.rot90(excluded, k),
-                np.rot90(target, k),
-            ),
-            -k, axes=(1, 2),
-        )[:, target]
-        for k in range(4)
-    ]
-    out[:, target] = np.mean(turns, axis=0)
+    out[:, target] = np.nan
+    support = binary_dilation(
+        target, structure=np.ones((3, 3), dtype=bool),
+        iterations=SUPPORT_RADIUS,
+    ) & ~excluded
+    points = np.argwhere(support).astype(float)
+    if len(points) < 3:
+        return out
+    query = np.argwhere(target)
+    try:
+        interpolant = CloughTocher2DInterpolator(
+            points, planes[:, support].T, fill_value=np.nan,
+        )
+    except QhullError:
+        return out
+    out[:, query[:, 0], query[:, 1]] = interpolant(query.astype(float)).T
     return out
