@@ -2,11 +2,15 @@
 
 ``sextractor_script.add_seg_vignet`` cuts the SEGMENTATION check image on the
 grid SExtractor cut each object's VIGNET on and adds it to the sexcat as the
-int32 ``SEG_VIGNET`` column. SExtractor centres VIGNET on the pixel nearest
-its double-precision barycentre. The catalogue's float32 X_IMAGE / Y_IMAGE
-tie a few positions to an exact half pixel, so the runner asks SExtractor
-for X_IMAGE_DBL / Y_IMAGE_DBL too (``seg_vignet_param_file``), and
-``add_seg_vignet`` centres on them and then drops them.
+int32 ``SEG_VIGNET`` column. SExtractor 2.25.0 centres VIGNET on
+``(int)(mx + 0.49999)`` of its 0-based double-precision barycentre
+(``src/analyse.c``), which the catalogue's float32 X_IMAGE / Y_IMAGE cannot
+resolve near half pixels, so the runner asks SExtractor for X_IMAGE_DBL /
+Y_IMAGE_DBL too (``seg_vignet_param_file``), and ``add_seg_vignet`` centres
+on them and then drops them.
+
+The expected centres below are written out by hand from that rule, and the
+expected stamps are cut by plain slicing, not by the module's helpers.
 """
 
 import numpy as np
@@ -20,22 +24,45 @@ NX, NY = 60, 50
 STAMP = 7
 BIG = np.float32(-1e30)
 
-# (NUMBER, x, y): 1-based double-precision barycentres. Object 3's x and
-# object 4's y sit a float32 ulp either side of a half pixel, so the float32
-# catalogue shows an exact .5 for both but SExtractor rounded them apart, and
-# each the other way from rounding the float32 value half to even.
+# (NUMBER, X_IMAGE_DBL, Y_IMAGE_DBL, VIGNET centre col, row (0-based)).
+# Object 3's x is an exact half with an odd floor (np.rint goes to 32 - 1),
+# object 4's y has a fractional part in [0.5, 0.50001) (np.rint goes up), and
+# object 6's x is just past 0.50001, where float32 falls back below it.
 OBJECTS = [
-    (1, 20.2, 15.7),
-    (2, 1.3, 48.9),
-    (3, 31.5 + 5e-7, 30.1),
-    (4, 44.8, 22.5 - 5e-7),
-    (5, 59.9, 1.2),
+    (1, 20.2, 15.7, 19, 15),
+    (2, 1.3, 48.9, 0, 48),
+    (3, 32.5, 30.1, 31, 29),
+    (4, 44.8, 22.5000099, 44, 21),
+    (5, 59.9, 1.2, 59, 0),
+    (6, 31.5000101, 10.2, 31, 9),
 ]
 DBL = ["X_IMAGE_DBL", "Y_IMAGE_DBL"]
 
 
+@pytest.mark.parametrize("pos, centre", [
+    (32.5, 31),          # exact half, odd floor: down, not to even
+    (31.5, 30),          # exact half, even floor
+    (31.49999, 30),
+    (31.5000099, 30),    # fraction 0.5000099 < 0.50001: down
+    (31.5000101, 31),    # fraction 0.5000101 > 0.50001: up
+    (31.4999, 30),
+    (20.2, 19),
+    (20.8, 20),
+    (0.6, 0),            # mx = -0.4 truncates to 0
+])
+def test_vignet_centre_is_sextractors_rule(pos, centre):
+    assert ss.vignet_centre([pos]).tolist() == [centre]
+
+
+def _cut(array, col, row, fill):
+    """The STAMP stamp of ``array`` with 0-based (row, col) at its centre."""
+    half = STAMP // 2
+    padded = np.pad(array, half, constant_values=fill)
+    return padded[row:row + STAMP, col:col + STAMP]
+
+
 def _scene(tmp_path, flat=False):
-    """A sexcat whose VIGNETs are cut as SExtractor cuts them.
+    """A sexcat whose VIGNETs are cut on the hand-written centres.
 
     ``flat`` makes the image uniform, so no pixel comparison can tell a tie
     object's two candidate centres apart.
@@ -44,16 +71,14 @@ def _scene(tmp_path, flat=False):
     image = (np.full((NY, NX), 100, np.float32) if flat
              else rng.normal(100, 5, (NY, NX)).astype(np.float32))
     seg = np.zeros((NY, NX), np.int32)
-    for number, x, y in OBJECTS:
-        col, row = int(np.rint(x - 1)), int(np.rint(y - 1))
+    for number, _, _, col, row in OBJECTS:
         seg[max(row - 2, 0):row + 3, max(col - 2, 0):col + 3] = number
     number = np.array([o[0] for o in OBJECTS])
     x = np.array([o[1] for o in OBJECTS])
     y = np.array([o[2] for o in OBJECTS])
-    col, row = np.rint(x - 1).astype(int), np.rint(y - 1).astype(int)
 
-    vignets = ss.cut_stamps(image, col, row, STAMP, BIG)
-    seg_true = ss.cut_stamps(seg, col, row, STAMP, 0)
+    vignets = np.array([_cut(image, o[3], o[4], BIG) for o in OBJECTS])
+    seg_true = np.array([_cut(seg, o[3], o[4], 0) for o in OBJECTS])
     vignets[(seg_true != 0) & (seg_true != number[:, None, None])] = BIG
 
     paths = {name: str(tmp_path / f"{name}-001-001.fits")
@@ -66,7 +91,8 @@ def _scene(tmp_path, flat=False):
         fits.Column(name="VIGNET", format=f"{STAMP * STAMP}E",
                     array=vignets.reshape(len(number), -1),
                     dim=f"({STAMP},{STAMP})"),
-        fits.Column(name="THETA_J2000", format="E", array=np.zeros(5)),
+        fits.Column(name="THETA_J2000", format="E",
+                    array=np.zeros(len(number))),
         fits.Column(name="X_IMAGE_DBL", format="D", array=x),
         fits.Column(name="Y_IMAGE_DBL", format="D", array=y),
     ], name="LDAC_OBJECTS")
@@ -84,16 +110,20 @@ def _add(paths):
         return [h.name for h in hdul], hdul["LDAC_OBJECTS"].data.copy()
 
 
-def test_float32_catalogue_positions_tie_on_half_pixels():
-    """The premise: the float32 columns lose which way objects 3 and 4
-    rounded, so no rounding rule on the catalogue alone recovers both."""
-    x3 = np.float32(OBJECTS[2][1])
-    y4 = np.float32(OBJECTS[3][2])
-    assert x3 % 1 == 0.5 and y4 % 1 == 0.5
-    assert np.rint(OBJECTS[2][1] - 1) == np.floor(x3 - 1) + 1
-    assert np.rint(OBJECTS[3][2] - 1) == np.floor(y4 - 1)
-    assert np.rint(OBJECTS[2][1] - 1) != np.rint(np.float64(x3) - 1)
-    assert np.rint(OBJECTS[3][2] - 1) != np.rint(np.float64(y4) - 1)
+def test_neither_rint_nor_float32_positions_give_the_centres():
+    """The premise: np.rint of the double positions misses objects 3 and 4,
+    and SExtractor's rule on the float32 positions misses object 6."""
+    x = np.array([o[1] for o in OBJECTS])
+    y = np.array([o[2] for o in OBJECTS])
+    col = np.array([o[3] for o in OBJECTS])
+    row = np.array([o[4] for o in OBJECTS])
+    rint_miss = (np.rint(x - 1) != col) | (np.rint(y - 1) != row)
+    assert np.flatnonzero(rint_miss).tolist() == [2, 3]
+    x32 = x.astype(np.float32).astype(np.float64)
+    y32 = y.astype(np.float32).astype(np.float64)
+    f32_miss = ((ss.vignet_centre(x32) != col)
+                | (ss.vignet_centre(y32) != row))
+    assert np.flatnonzero(f32_miss).tolist() == [5]
 
 
 @pytest.mark.parametrize("flat", [False, True], ids=["noisy", "flat"])

@@ -85,13 +85,38 @@ def seg_vignet_column(seg_vignets):
 DOUBLE_POSITIONS = ("X_IMAGE_DBL", "Y_IMAGE_DBL")
 
 
+def vignet_centre(pos):
+    """The 0-based pixel SExtractor centres VIGNET on, along one axis.
+
+    SExtractor 2.25.0 (``src/analyse.c``, ``ix=(int)(obj->mx+0.49999)``,
+    unchanged in Debian's 2.25.0+ds-3) truncates the 0-based barycentre plus
+    0.49999. That is not round-to-nearest: a fractional part in
+    [0.5, 0.50001) goes down, where ``np.rint`` would go up (or to even).
+
+    Parameters
+    ----------
+    pos : array_like of float
+        1-based double-precision position (``X_IMAGE_DBL`` or
+        ``Y_IMAGE_DBL``; SExtractor writes ``mx + 1``)
+
+    Returns
+    -------
+    numpy.ndarray
+        0-based pixel index, int64
+
+    """
+    mx = np.asarray(pos, np.float64) - 1.0
+    return np.trunc(mx + 0.49999).astype(np.int64)
+
+
 def seg_vignet_param_file(dot_param, output_path):
     """Write a SExtractor parameter file that also asks for the double
     positions.
 
-    SExtractor centres VIGNET on the pixel nearest its double-precision
-    barycentre, which the float32 ``X_IMAGE`` / ``Y_IMAGE`` hide on exact
-    half pixels; ``X_IMAGE_DBL`` / ``Y_IMAGE_DBL`` carry it.
+    SExtractor centres VIGNET from its double-precision barycentre
+    (:func:`vignet_centre`), which the float32 ``X_IMAGE`` / ``Y_IMAGE``
+    cannot resolve near half pixels; ``X_IMAGE_DBL`` / ``Y_IMAGE_DBL``
+    carry it.
     :func:`add_seg_vignet` reads them and drops them again.
 
     Parameters
@@ -120,9 +145,9 @@ def add_seg_vignet(cat_path, seg_path, w_log=None):
     """Add the ``SEG_VIGNET`` column to a SExtractor catalogue.
 
     The SEGMENTATION check image, whose labels are the catalogue's
-    ``NUMBER``, is cut on the grid of each object's VIGNET, centred on the
-    pixel nearest ``X_IMAGE_DBL`` / ``Y_IMAGE_DBL`` as SExtractor centres
-    VIGNET (:func:`cut_stamps`), and written, int32 and 0 off the image, as
+    ``NUMBER``, is cut on the grid of each object's VIGNET, centred where
+    SExtractor centres VIGNET (:func:`vignet_centre` of ``X_IMAGE_DBL`` /
+    ``Y_IMAGE_DBL``, :func:`cut_stamps`), and written, int32 and 0 off the image, as
     ``SEG_VIGNET`` in ``LDAC_OBJECTS``, which ngmix's UberSeg blend handling
     reads. The double positions (:func:`seg_vignet_param_file`) are dropped;
     every other HDU and column is kept.
@@ -152,8 +177,8 @@ def add_seg_vignet(cat_path, seg_path, w_log=None):
             f"{cat_path} lacks {', '.join(missing)}, which SEG_VIGNET is"
             + " centred on; run SExtractor with seg_vignet_param_file."
         )
-    col = np.rint(np.asarray(data["X_IMAGE_DBL"]) - 1).astype(np.int64)
-    row = np.rint(np.asarray(data["Y_IMAGE_DBL"]) - 1).astype(np.int64)
+    col = vignet_centre(data["X_IMAGE_DBL"])
+    row = vignet_centre(data["Y_IMAGE_DBL"])
     size = data["VIGNET"].shape[1]
     seg_vignets = cut_stamps(fits.getdata(seg_path), col, row, size, 0)
     kept = [c for c in objects.columns.columns
