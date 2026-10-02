@@ -252,8 +252,18 @@ passes `--executor local --cores N --resources mem_mb=M`; later explicit
 flags override them. Everything else is the profile's. `group:` labels are
 inactive under local execution, so `--groups` does nothing; the tile_shape
 members still share their node-local store because every job runs on this
-node. That store defaults to `$SLURM_TMPDIR/tile-store`, which Slurm reclaims
-when the job ends (an explicit `tile_store_root:` wins).
+node. That store defaults to `$SLURM_TMPDIR/tile-store/<run>`, which Slurm
+reclaims when the job ends (an explicit `tile_store_root:` wins).
+
+Two campaigns can share one allocation, one `srun` step each. Each step's
+cpuset and cgroup become that campaign's budget, and `<run>` keeps their
+stores apart:
+
+```bash
+srun --exact -n1 -c96 --mem=380000M sp run --in-allocation -c arm_a.yaml &
+srun --exact -n1 -c96 --mem=380000M sp run --in-allocation -c arm_b.yaml &
+wait
+```
 
 A rule's `mem_mb` becomes a packing budget rather than a per-job cgroup: a job
 over its share is killed only if the allocation as a whole runs out. Size the

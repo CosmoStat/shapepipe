@@ -183,12 +183,13 @@ STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"
 #     raise the budget, and a retry asking more than the allocation has stops
 #     the run (snakemake's "Job needs mem_mb=..."), so size the allocation for
 #     the widest rule's third attempt.
-#   * The tile store defaults to $SLURM_TMPDIR/tile-store. The profile cannot
-#     name $SLURM_TMPDIR (its `--bind /local` comment says why), but sp runs
-#     inside the job here and knows the value, so it rebinds /local/scratch
-#     there exactly as `tile_store_root:` does. Slurm reclaims it at job end,
-#     and no other campaign on the node can share it. An explicit
-#     `tile_store_root:` still wins.
+#   * The tile store defaults to $SLURM_TMPDIR/tile-store/<run>. The profile
+#     cannot name $SLURM_TMPDIR (its `--bind /local` comment says why), but sp
+#     runs inside the job here and knows the value, so it rebinds
+#     /local/scratch there exactly as `tile_store_root:` does. Slurm reclaims
+#     it at job end. <run> keeps two campaigns over the same tiles apart when
+#     they share one allocation (one srun step each): data campaigns name
+#     their stores by bare tile id. An explicit `tile_store_root:` still wins.
 # Explicit --cores/--resources after it override the derived values.
 ALLOC_ARGS=()
 TILE_STORE_ROOT=""
@@ -222,7 +223,7 @@ PY
   [ "$ALLOC_MEM_MB" -gt 0 ] || {
     echo "sp: --in-allocation could not read this allocation's memory limit" >&2; exit 2; }
   ALLOC_ARGS=(--executor local --cores "$ALLOC_CORES" --resources "mem_mb=$ALLOC_MEM_MB")
-  [ -n "$TILE_STORE_ROOT" ] || TILE_STORE_ROOT="$SLURM_TMPDIR/tile-store"
+  [ -n "$TILE_STORE_ROOT" ] || TILE_STORE_ROOT="$SLURM_TMPDIR/tile-store/$(cfg run)"
   echo "sp: in allocation $SLURM_JOB_ID: ${ALLOC_ARGS[*]}" >&2
 fi
 
