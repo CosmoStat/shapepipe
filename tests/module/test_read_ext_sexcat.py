@@ -6,7 +6,7 @@ what the tile chain downstream of ``tile_detect`` reads: the LDAC_IMHEAD
 extension carrying the tile header, the SExtractor column aliases, one
 ``VIGNET`` stamp per object cut from the image, and the input ``NUMBER``
 kept as is. It follows the catalogue through
-``make_cat.save_sextractor_data``, which builds ``TILE_UNIQUE_ID``. The rest
+``make_cat.read_sextractor_data``, which builds ``TILE_UNIQUE_ID``. The rest
 covers the segmentation map: relabelling it to the catalogue's ``NUMBER`` and
 setting neighbours' ``VIGNET`` pixels to -1e30, as SExtractor does, which is
 all ngmix reads to mask neighbours.
@@ -111,14 +111,11 @@ def test_vignets_are_cut_from_the_image_and_padded_as_sextractor(ldac):
     assert vignets[2, STAMP // 2, STAMP // 2] == 29 * 1000 + 39
 
 
-def test_tile_unique_id_reaches_the_final_catalogue(ldac, tmp_path):
+def test_tile_unique_id_reaches_the_final_catalogue(ldac):
     """make_cat builds the ID from the tile and the catalogue's own NUMBER."""
-    final = make_cat.prepare_final_cat_file(str(tmp_path), "-301-279")
-    n_obj = make_cat.save_sextractor_data(final, str(ldac))
-    assert n_obj == len(OBJECTS)
-    with fits.open(tmp_path / "final_cat-301-279.fits") as hdul:
-        data = hdul["RESULTS"].data
-    assert "VIGNET" not in data.names
+    data = make_cat.read_sextractor_data(str(ldac))
+    assert len(data["NUMBER"]) == len(OBJECTS)
+    assert "VIGNET" not in data
     npt.assert_array_equal(
         data["TILE_UNIQUE_ID"], 301279 * 10**6 + np.array([1, 2, 7])
     )
