@@ -75,6 +75,7 @@ Apply mutations only to a disposable checkout, run the named test without `--upd
 | `test_rule_set_matches_input_mode` | Invert `PERSISTS_PSF`; omit `star_cat_targets()`; rename `final_cat_merge` to `merge_final_cats`. |
 | `test_clean_exposure_waits_on_persist_iff_psf` | Drop the persist edge; make it unconditional under fake PSFs; drop vignets consumers; remove the in-scope consumer filter. |
 | `test_final_cat_merge_reads_every_ready_tile` | Drop one ready tile; append an out-of-scope tile. |
+| `test_campaign_merges_are_local_and_containerized` | Remove either campaign merge from `localrules`; remove the global `container:` directive; add a group to a merge. |
 | `test_products_use_products_dir_and_run_name` | Rename either merged catalogue or the persist manifest; route products to scratch; derive `CAMPAIGN` from the products directory's basename. |
 | `test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg` | Make the Snakefile or config.yaml default `noisefill`; export `BLEND_ENV` under noisefill; drop `blend_env(...)` from either tile_detect or tile_ngmix; export the wrong value; set `NGMIX_SEG_MEM_MB` or `DETECT_SEG_MEM_MB` to 0; give a committed ini's `SEG_VIGNET` / `BLEND_HANDLING` a literal or the wrong default. |
 | `test_unknown_blend_handling_fails_during_parse` | Remove the Snakefile's `blend_handling` check. |
