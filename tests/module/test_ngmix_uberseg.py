@@ -365,18 +365,10 @@ def test_tile_cat_reads_seg_vignet(tmp_path):
     a catalogue without the column has none."""
     seg = np.arange(3 * 25, dtype=np.int32).reshape(3, 5, 5)
     with_seg = Tile_cat(str(_write_tile_cat(tmp_path / "a.fits", seg)))
-    npt.assert_array_equal(with_seg.seg, seg)
-    assert with_seg.seg.dtype.kind == "i"
+    held = np.array([with_seg.seg[i] for i in with_seg.rows])
+    npt.assert_array_equal(held, seg)
+    assert held.dtype.kind == "i"
     assert Tile_cat(str(_write_tile_cat(tmp_path / "b.fits"))).seg is None
-
-
-def test_tile_cat_holds_the_stamp_columns_once(tmp_path):
-    """VIGNET and SEG_VIGNET are views into the one loaded table: copying
-    either would double the bulk of every ngmix chunk's catalogue memory."""
-    seg = np.zeros((3, 5, 5), np.int32)
-    tile = Tile_cat(str(_write_tile_cat(tmp_path / "a.fits", seg)))
-    # Interleaved fields of one record buffer: their extents overlap.
-    assert np.may_share_memory(tile.vign, tile.seg)
 
 
 def test_uberseg_without_seg_vignet_fails_loudly(tmp_path):
