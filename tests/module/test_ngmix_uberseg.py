@@ -318,7 +318,7 @@ def _make_ngmix(tmp_path):
     log = _RecordingLogger()
     ngmix = Ngmix(
         ["tile_cat.fits"] + [str(p) for p in paths[:5]],
-        str(tmp_path), "-001-001", 30.0, 0.186, str(paths[5]), log,
+        str(tmp_path), "-001-001", 30.0, str(paths[5]), log,
     )
     return ngmix, log
 
@@ -409,7 +409,7 @@ def test_uberseg_without_seg_vignet_fails_loudly(tmp_path):
         SqliteDict(str(path)).close()
     ngmix = Ngmix(
         [str(cat)] + [str(p) for p in paths[:5]],
-        str(tmp_path), "-001-001", 30.0, 0.186, str(paths[5]),
+        str(tmp_path), "-001-001", 30.0, str(paths[5]),
         _RecordingLogger(), blend_handling="uberseg",
     )
     with pytest.raises(ValueError, match="SEG_VIGNET"):

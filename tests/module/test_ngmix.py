@@ -3,6 +3,8 @@
 from collections import Counter
 
 from astropy.io import fits
+from astropy.wcs import WCS
+import galsim
 from hypothesis import given
 from hypothesis import strategies as st
 import numpy as np
@@ -47,7 +49,6 @@ def test_ngmix_accepts_optional_background_rms_vignet(tmp_path):
         str(tmp_path),
         "-001-001",
         30.0,
-        0.186,
         str(sqlite_paths[5]),
         _NullLogger(),
     )
@@ -605,7 +606,6 @@ def test_process_survives_a_tile_with_nothing_to_fit(tmp_path):
         str(tmp_path),
         "-001-001",
         30.0,
-        0.186,
         sqlite_paths[5],
         w_log,
     )
@@ -632,6 +632,7 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     stamp = SimpleNamespace(
         gals=[np.ones((5, 5))], ra=[42.], dec=[30.], ccd=20,
         epoch_cuts=Counter(considered=1),
+        jacobs=[galsim.JacobianWCS(.186, 0., 0., .186)],
     )
     psf = dict(
         n_epoch=1, g_psf=[.01, -.01], g_psf_err=[.001, .001],
@@ -658,7 +659,6 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     inst._centroid_source = "wcs"
     inst._id_obj_min = inst._id_obj_max = -1
     inst._bkg_sub = True
-    inst._pixel_scale = .186
     inst._blend_handling = "noisefill"
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
@@ -683,6 +683,110 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
         assert "100% of 2 fitted objects carry nonzero mcal_flags" in inst._w_log.errors[0]
     else:
         assert inst._w_log.errors == []
+
+
+def _rotation_jacobian(scale, angle_deg, flip=False):
+    """Jacobian of a ``scale`` arcsec/px CCD rotated by ``angle_deg``."""
+    c, s = np.cos(np.radians(angle_deg)), np.sin(np.radians(angle_deg))
+    sign = -1. if flip else 1.
+    return galsim.JacobianWCS(sign * scale * c, -scale * s,
+                              sign * scale * s, scale * c)
+
+
+def test_stamp_pixel_scale_reads_a_rotated_flipped_wcs():
+    """A rotated, flipped TAN WCS gives its linear scale back, in arcsec."""
+    from shapepipe.modules.ngmix_package.ngmix import (
+        get_galsim_jacobian,
+        stamp_pixel_scale,
+    )
+
+    scale, angle = 0.187, np.radians(30.)
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+    wcs.wcs.crval = [180., 30.]
+    wcs.wcs.crpix = [100., 100.]
+    wcs.wcs.cd = scale / 3600 * np.array([
+        [-np.cos(angle), np.sin(angle)],
+        [np.sin(angle), np.cos(angle)],
+    ])
+    jac = get_galsim_jacobian(wcs, 180., 30.)
+    assert stamp_pixel_scale([jac]) == pytest.approx(scale, rel=1e-6)
+
+
+def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
+    """Each object's centroid prior is one pixel of its own epochs wide.
+
+    The width is the mean over the object's epochs of sqrt|det J|, so a
+    rotated or flipped epoch counts at its true scale. The prior still draws
+    from the object's position-seeded RNG, untouched before the fit.
+    """
+    from types import SimpleNamespace
+    from shapepipe.modules.ngmix_package import ngmix as module
+
+    epochs = {
+        1: [_rotation_jacobian(.1845, 0., flip=True),
+            _rotation_jacobian(.1875, 90.)],
+        2: [_rotation_jacobian(.1842, 37.)],
+    }
+    expected = {1: .1860, 2: .1842}
+    tile = SimpleNamespace(obj_id=list(epochs), flux=None, seg=None)
+    galaxies = {str(i): {"exp-1": {"OFFSET": [0., 0.]}} for i in epochs}
+    stamps = {
+        obj_id: SimpleNamespace(
+            gals=[np.ones((5, 5))] * len(jacobs), jacobs=jacobs,
+            ra=[10. * obj_id], dec=[30.], ccd=obj_id,
+            epoch_cuts=Counter(considered=len(jacobs)),
+        )
+        for obj_id, jacobs in epochs.items()
+    }
+    seen = {}
+
+    def capture(stamp, prior, flux_guess, rng, **kwargs):
+        seen[kwargs["object_number"]] = (stamp, prior, rng)
+        raise RuntimeError("captured")
+
+    monkeypatch.setattr(module, "Tile_cat", lambda *args: tile)
+    monkeypatch.setattr(
+        module, "prepare_postage_stamps",
+        lambda vignet, obj_id, *args, **kwargs: stamps[obj_id],
+    )
+    monkeypatch.setattr(module, "do_ngmix_metacal", capture)
+    monkeypatch.setattr(Ngmix, "save_results", lambda self, res: None)
+    monkeypatch.setattr(Ngmix, "log_mean_ellipticity", lambda self: None)
+    inst = object.__new__(Ngmix)
+    inst._tile_cat_path = "in-memory-tile"
+    inst._vignet_cat = SimpleNamespace(
+        gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
+    )
+    inst._centroid_source = "wcs"
+    inst._id_obj_min = inst._id_obj_max = -1
+    inst._bkg_sub = True
+    inst._blend_handling = "noisefill"
+    inst._dilate_neighbour = 1
+    inst._metacal_psf = "fitgauss"
+    inst._epoch_central_defect_radius = module.EPOCH_CENTRAL_DEFECT_RADIUS
+    inst._epoch_masked_fraction_cut = module.EPOCH_MASKED_FRACTION_CUT
+    inst._defect_fill = "noise"
+    inst._epoch_interpolated_defect_radius = (
+        module.EPOCH_INTERPOLATED_DEFECT_RADIUS
+    )
+    inst._save_batch = -1
+    inst._w_log = _RecordingLogger()
+
+    inst.process()
+
+    assert sorted(seen) == sorted(epochs)
+    for obj_id, (stamp, prior, rng) in seen.items():
+        cen = prior.cen_prior
+        assert cen.sigma1 == cen.sigma2 == pytest.approx(
+            expected[obj_id], rel=1e-9,
+        )
+        assert cen.rng is rng
+        fresh = np.random.RandomState(
+            module.position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
+        )
+        npt.assert_array_equal(rng.get_state()[1], fresh.get_state()[1])
+        assert rng.get_state()[2] == fresh.get_state()[2]
 
 
 def _write_tile_cat_with_one_object(tmp_path):
@@ -728,7 +832,6 @@ def _ngmix_with_offsetless_vignette(tmp_path, centroid_source):
         str(tmp_path),
         "-001-001",
         30.0,
-        0.186,
         sqlite_paths[5],
         _RecordingLogger(),
         centroid_source=centroid_source,

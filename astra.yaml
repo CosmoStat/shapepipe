@@ -901,13 +901,17 @@ analyses:
       star_selection_box:
         label: Stellar-locus selection, magnitude window and FWHM window around the mode
         rationale: >-
-          Stars are flag-free objects in a MAG_AUTO window whose FWHM lies
-          within 0.2 px of the mode of a looser, size-limited preselection
-          (FWHM 0.3-1.5 arcsec at 0.187 arcsec/px). The mode estimator is an
-          iterative histogram zoom that falls back to the median below 20
-          objects, so small-N behaviour changes selection on sparse CCDs.
-          PSFEx's own selection is off; see psfex_candidate_vetting for what
-          PSFEx may still apply.
+          Stars are objects with FLAGS == 0 and IMAFLAGS_ISO == 0 in a
+          MAG_AUTO window whose FWHM_IMAGE lies within 0.2 px of the mode of
+          a looser, size-limited preselection (FWHM_WORLD 0.3-1.5 arcsec,
+          angular bounds from each exposure's WCS). The mode estimator is an
+          iterative histogram zoom whose first bins span the preselection's
+          full range in N/10 bins; later zooms are noise-dominated, so the
+          box centre moves with the preselection's extremes and count (3
+          added objects moved it 0.05 px on exposure 2114045p CCD 10, 74 to
+          66 stars; #928). Below 20 objects it returns the median, and with
+          none -1, which selects nothing. PSFEx's SAMPLE_AUTOSELECT is off;
+          see psfex_candidate_vetting for the cuts PSFEx still applies.
           Values:
           MASK:star_selection.FLAGS = "== 0";
           MASK:preselect.FLAGS = "== 0";
@@ -917,8 +921,8 @@ analyses:
           MASK:star_selection.FWHM_IMAGE = ["<= mode(FWHM_IMAGE{preselect})
           + 0.2", ">= mode(FWHM_IMAGE{preselect}) - 0.2"];
           MASK:preselect.MAG_AUTO = ["> 0", "< 21"];
-          MASK:preselect.FWHM_IMAGE = ["> 0.3 / 0.187", "< 1.5 / 0.187"];
-          PLOT:fwhm_field.SCATTER = "FWHM_IMAGE{star_selection}*0.187";
+          MASK:preselect.FWHM_WORLD = ["> 0.3 / 3600", "< 1.5 / 3600"];
+          PLOT:fwhm_field.SCATTER = "FWHM_WORLD{star_selection}*3600";
           SAMPLE_AUTOSELECT = N.
         default: mode_centred_box
         options:
@@ -933,8 +937,9 @@ analyses:
             insights: [guinot22_psfex_preselection_off]
             excluded: true
             excluded_reason: >-
-              Disabled so that the pipeline's own star selection is the only
-              one.
+              Disabled because the pipeline does its own star selection
+              (Guinot+22); PSFEx's other SAMPLE_* cuts still apply
+              (psfex_candidate_vetting).
       psf_train_validation_split:
         label: Seeded 80/20 star split, model fit vs held-out validation
         rationale: >-
@@ -1276,23 +1281,16 @@ analyses:
         rationale: >-
           [HARDCODED] ellipticity GPriorBA with sigma 0.4; flat T and F
           priors with negative support (the bounds decide which noisy fits
-          survive and which rail); a centroid prior one pixel scale wide
-          (PIXEL_SCALE). The PSF fitter is built with the same joint prior.
-          Prior width drives noise bias; no rationale recorded. Guinot+22 used
-          a wider flux prior and a flat prior on r50 rather than T. [LINT] star
-          selection uses 0.187 arcsec/px, while NGMIX_RUNNER.PIXEL_SCALE pins
-          0.186. If the key is absent, pixel_scale_from_wcs raises
-          AttributeError: it calls `.values()` on the first merged-header
-          value, but merge_headers inserts TILE_ID as a string before the
-          exposure entries, which split_exp stores as object ndarrays. The
-          fallback expects nested mappings; its docstring says it reads the
-          tile WCS. The key cannot be dropped until that fallback is fixed.
-          The ngmix_runner comment's noise-window claim is stale: get_noise is
-          never called.
+          survive and which rail); a centroid prior one pixel wide, where
+          each object's pixel is sqrt|det J| of its epochs' WCS Jacobians,
+          averaged over those epochs. The PSF fitter is built with the same
+          joint prior. Prior width drives noise
+          bias; no rationale recorded. Guinot+22 used a wider flux prior and a
+          flat prior on r50 rather than T.
           Values:
           get_prior.T_range = -1,1e3;
           get_prior.F_range = -100,1e9;
-          NGMIX_RUNNER.PIXEL_SCALE = 0.186.
+          NGMIX_RUNNER.PIXEL_SCALE = absent.
         default: gpriorba04_flat
         options:
           gpriorba04_flat:
@@ -1318,7 +1316,8 @@ analyses:
           do_ngmix_metacal.metacal_pars[types] = noshear,1p,1m,2p,2m;
           do_ngmix_metacal.metacal_pars[step] = 0.01;
           do_ngmix_metacal.metacal_pars[fixnoise] = True;
-          do_ngmix_metacal.metacal_pars[use_noise_image] = True.
+          do_ngmix_metacal.metacal_pars[use_noise_image] = True;
+          NGMIX_RUNNER.METACAL_PSF = absent.
         default: five_types_step001_fitgauss
         options:
           five_types_step001_fitgauss:
@@ -1336,6 +1335,8 @@ analyses:
           CENTROID_SOURCE). Extraction and prior share one projection and one
           rounding, so they cannot disagree near a rounding tie.
           "hsm" re-centres on adaptive moments measured from the stamp.
+          Values:
+          NGMIX_RUNNER.CENTROID_SOURCE = absent.
         default: wcs
         options:
           wcs:
@@ -1379,7 +1380,8 @@ analyses:
           (BKG_SUB, on unless set False).
           Values:
           NGMIX_RUNNER.BKG_RMS_VIGNET_PATH =
-          $NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output/background_rms_vignet{file_number_string}.sqlite.
+          $NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output/background_rms_vignet{file_number_string}.sqlite;
+          NGMIX_RUNNER.BKG_SUB = absent.
         default: rms_vignet_weights
         options:
           rms_vignet_weights:

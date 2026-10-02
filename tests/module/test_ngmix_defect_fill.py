@@ -468,7 +468,7 @@ def test_process_logs_the_epoch_cut_tally(tmp_path, monkeypatch):
     log = _RecordingLogger()
     ngmix = Ngmix(
         ["tile_cat.fits"] + [str(p) for p in paths[:4]],
-        str(tmp_path), "-001-001", 30.0, 0.186, str(paths[4]), log,
+        str(tmp_path), "-001-001", 30.0, str(paths[4]), log,
         bkg_sub=False,
     )
     ngmix._vignet_cat.close()
@@ -765,7 +765,7 @@ def test_process_threads_the_defect_fill(tmp_path, monkeypatch):
     for fill in ("interpolate", "noise"):
         ngmix = Ngmix(
             ["tile_cat.fits"] + [str(p) for p in paths[:4]],
-            str(tmp_path), "-001-001", 30.0, 0.186, str(paths[4]),
+            str(tmp_path), "-001-001", 30.0, str(paths[4]),
             _RecordingLogger(), bkg_sub=False, defect_fill=fill,
         )
         ngmix._vignet_cat.close()
@@ -782,7 +782,7 @@ def test_ngmix_rejects_an_unknown_defect_fill(tmp_path):
     with pytest.raises(ValueError, match="DEFECT_FILL"):
         Ngmix(
             ["tile_cat.fits"] + [str(p) for p in paths[:4]],
-            str(tmp_path), "-001-001", 30.0, 0.186, str(paths[4]),
+            str(tmp_path), "-001-001", 30.0, str(paths[4]),
             _RecordingLogger(), bkg_sub=False, defect_fill="interp",
         )
 

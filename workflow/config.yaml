@@ -138,8 +138,8 @@ machines:
 #                       the 20% VALIDATION sample — the positions psf_validation's rows
 #                       correspond to. Rows duplicate star_selection.
 #   star_stats      star_stat-*.txt             unmeasured
-#                       setools' per-CCD STAT block: star counts, stars/deg^2, FWHM mode
-#                       and cuts. The selection's summary without its catalogue.
+#                       setools' per-CCD STAT block: star counts, FWHM mode and cuts.
+#                       The selection's summary without its catalogue.
 #   psf_model       *.psf                       2.8 MB
 #                       the PSFEx model itself. Keeping it means the PSF can be
 #                       re-interpolated at ANY position later without rebuilding the
