@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>shapepipe.modules.pastecat_package.pastecat &#8212; ShapePipe v1.1</title>
+    <title>shapepipe.modules.sextractor_package.match_catalogue &#8212; ShapePipe v1.1</title>
   
   
   
@@ -42,7 +42,7 @@
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/shapepipe/modules/pastecat_package/pastecat';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/shapepipe/modules/sextractor_package/match_catalogue';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
@@ -487,7 +487,7 @@
       
       
       
-      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/modules/pastecat_package/pastecat.html&body=Your%20issue%20content%20here." target="_blank"
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/modules/sextractor_package/match_catalogue.html&body=Your%20issue%20content%20here." target="_blank"
    class="btn btn-sm btn-source-issues-button dropdown-item"
    title="Open an issue"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -548,124 +548,240 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <h1>Source code for shapepipe.modules.pastecat_package.pastecat</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""PASTE CATALOGUES.</span>
+  <h1>Source code for shapepipe.modules.sextractor_package.match_catalogue</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""MATCH CATALOGUE.</span>
 
-<span class="sd">Class to paste different (SExtractor) catalogues of objects.</span>
+<span class="sd">Join a SExtractor tile catalogue to an external catalogue of the same image,</span>
+<span class="sd">so the tile's rows carry the external catalogue's object numbers.</span>
 
-<span class="sd">:Author: Martin Kilbinger &lt;martin.kilbinger@cea.fr&gt;, Axel Guinot</span>
+<span class="sd">The UNIONS tile catalogue (Stephen Gwyn's MegaPipe SExtractor run on the DR6</span>
+<span class="sd">tile) defines the object list and the ``NUMBER`` that the photometry and</span>
+<span class="sd">photo-z catalogues share. ShapePipe runs its own SExtractor on the same image</span>
+<span class="sd">with the same detection configuration, which reproduces that catalogue for</span>
+<span class="sd">all but a few objects in a thousand, and takes membership and ``NUMBER`` from</span>
+<span class="sd">it here: every</span>
+<span class="sd">measurement (windowed positions, ``VIGNET`` and its neighbour marking, the</span>
+<span class="sd">SExtractor columns) stays SExtractor's own.</span>
+
+<span class="sd">:Author: Cail Daley</span>
 
 <span class="sd">"""</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">coordinates</span> <span class="k">as</span> <span class="n">coords</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.wcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">WCS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">ascii</span> <span class="k">as</span> <span class="n">asc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">fits</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">cKDTree</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
+<span class="c1"># The SEG_VIGNET label of a footprint whose SExtractor row has no partner in</span>
+<span class="c1"># the external catalogue, and so leaves the catalogue. Negative, so it never</span>
+<span class="c1"># collides with a NUMBER; UberSeg only asks "self or not self".</span>
+<span class="n">UNMATCHED_LABEL</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
 
-<div class="viewcode-block" id="PasteCat">
-<a class="viewcode-back" href="../../../../shapepipe.modules.pastecat_package.pastecat.html#shapepipe.modules.pastecat_package.pastecat.PasteCat">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">PasteCat</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Paste Catalogues.</span>
-
-<span class="sd">    This class pastes (or concatenates) a series of SExtractor output</span>
-<span class="sd">    catalogues into a single output catalogue.</span>
+<div class="viewcode-block" id="mutual_nearest">
+<a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.match_catalogue.html#shapepipe.modules.sextractor_package.match_catalogue.mutual_nearest">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mutual_nearest</span><span class="p">(</span><span class="n">x_a</span><span class="p">,</span> <span class="n">y_a</span><span class="p">,</span> <span class="n">x_b</span><span class="p">,</span> <span class="n">y_b</span><span class="p">,</span> <span class="n">radius</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""One-to-one pairs of mutual nearest neighbours closer than ``radius``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    input_file_list : list</span>
-<span class="sd">        List of input catalogue paths to be pasted.</span>
-<span class="sd">    output_path : str</span>
-<span class="sd">        Output file path of pasted catalogue</span>
-<span class="sd">    w_log : logging.Logger</span>
-<span class="sd">        Logging instance</span>
-<span class="sd">    ext_name : list, optional</span>
-<span class="sd">        HDU extension names, if ``None`` use input file names</span>
-<span class="sd">    check_col_name : str, optional</span>
-<span class="sd">        If not ``None``, use column with this key to check equal number</span>
-<span class="sd">        of rows in each input catalogue</span>
-<span class="sd">    hdu_no : numpy.ndarray, optional</span>
-<span class="sd">        HDU numbers of the input catalogue; by default set to ``2`` for all</span>
-<span class="sd">        input files</span>
+<span class="sd">    x_a, y_a : array_like</span>
+<span class="sd">        Positions of the first set</span>
+<span class="sd">    x_b, y_b : array_like</span>
+<span class="sd">        Positions of the second set, in the same units</span>
+<span class="sd">    radius : float</span>
+<span class="sd">        Largest separation of a pair</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Indices into the first set of the paired rows, ascending</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Index into the second set of each one's partner</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Separation of each pair</span>
 
 <span class="sd">    """</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span><span class="n">x_a</span><span class="p">,</span> <span class="n">y_a</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span><span class="n">x_b</span><span class="p">,</span> <span class="n">y_b</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">empty</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">empty</span><span class="p">,</span> <span class="n">empty</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">dist</span><span class="p">,</span> <span class="n">nearest_b</span> <span class="o">=</span> <span class="n">cKDTree</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">nearest_a</span> <span class="o">=</span> <span class="n">cKDTree</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">idx_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">paired</span> <span class="o">=</span> <span class="p">(</span><span class="n">dist</span> <span class="o">&lt;</span> <span class="n">radius</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">nearest_a</span><span class="p">[</span><span class="n">nearest_b</span><span class="p">]</span> <span class="o">==</span> <span class="n">idx_a</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">idx_a</span><span class="p">[</span><span class="n">paired</span><span class="p">],</span> <span class="n">nearest_b</span><span class="p">[</span><span class="n">paired</span><span class="p">],</span> <span class="n">dist</span><span class="p">[</span><span class="n">paired</span><span class="p">]</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">input_file_list</span><span class="p">,</span>
-        <span class="n">output_path</span><span class="p">,</span>
-        <span class="n">w_log</span><span class="p">,</span>
-        <span class="n">ext_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">check_col_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">hdu_no</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span> <span class="o">=</span> <span class="n">input_file_list</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span> <span class="o">=</span> <span class="n">output_path</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span> <span class="o">=</span> <span class="n">w_log</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ext_name</span> <span class="o">=</span> <span class="n">ext_name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_col_name</span> <span class="o">=</span> <span class="n">check_col_name</span>
-        <span class="k">if</span> <span class="n">hdu_no</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_hdu_no</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_hdu_no</span> <span class="o">=</span> <span class="n">hdu_no</span>
 
-<div class="viewcode-block" id="PasteCat.process">
-<a class="viewcode-back" href="../../../../shapepipe.modules.pastecat_package.pastecat.html#shapepipe.modules.pastecat_package.pastecat.PasteCat.process">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Process.</span>
+<div class="viewcode-block" id="relabel">
+<a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.match_catalogue.html#shapepipe.modules.sextractor_package.match_catalogue.relabel">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">relabel</span><span class="p">(</span><span class="n">seg_vignets</span><span class="p">,</span> <span class="n">old_number</span><span class="p">,</span> <span class="n">new_number</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Map segmentation labels from one numbering to another.</span>
 
-<span class="sd">        Process the pasting of catalogues.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seg_vignets : numpy.ndarray</span>
+<span class="sd">        Segmentation stamps labelled with the old numbering, 0 on sky</span>
+<span class="sd">    old_number : array_like of int</span>
+<span class="sd">        Every old label in use (the catalogue's ``NUMBER`` before the join)</span>
+<span class="sd">    new_number : array_like of int</span>
+<span class="sd">        New label of each ``old_number``; ``UNMATCHED_LABEL`` for one that</span>
+<span class="sd">        leaves the catalogue</span>
 
-<span class="sd">        """</span>
-        <span class="c1"># Create output catalogue</span>
-        <span class="n">pasted_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span><span class="p">,</span>
-            <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        The stamps in the new numbering, int32; labels outside</span>
+<span class="sd">        ``old_number`` become ``UNMATCHED_LABEL``</span>
+
+<span class="sd">    """</span>
+    <span class="n">old_number</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">old_number</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">old_number</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                            <span class="n">seg_vignets</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">)))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">UNMATCHED_LABEL</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">table</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">table</span><span class="p">[</span><span class="n">old_number</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_number</span>
+    <span class="k">if</span> <span class="n">seg_vignets</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Segmentation stamps hold negative labels."</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">table</span><span class="p">[</span><span class="n">seg_vignets</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="match_catalogue">
+<a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.match_catalogue.html#shapepipe.modules.sextractor_package.match_catalogue.match_catalogue">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">match_catalogue</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">ext_cat_path</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">min_fraction</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span>
+                    <span class="n">tolerated_unpaired</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">w_log</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Take membership and ``NUMBER`` from an external catalogue.</span>
+
+<span class="sd">    Each SExtractor row is paired with its mutual nearest neighbour in the</span>
+<span class="sd">    external catalogue (``X_IMAGE``, ``Y_IMAGE``, same image grid) within</span>
+<span class="sd">    ``radius`` pixels. Paired rows take the external ``NUMBER``; unpaired</span>
+<span class="sd">    rows leave the catalogue. A ``SEG_VIGNET`` column, when present, is</span>
+<span class="sd">    relabelled to the new numbering, with the footprints of rows that left</span>
+<span class="sd">    marked ``UNMATCHED_LABEL``. The catalogue is rewritten in place; every</span>
+<span class="sd">    other HDU and column is kept.</span>
+
+<span class="sd">    Both catalogues come from the same pixels, so pairs agree to ~1e-4</span>
+<span class="sd">    pixel, and on eight DR6 tiles at least 99.2% of each side pairs; the</span>
+<span class="sd">    shortfall is deblending that differs near very large objects (a cD</span>
+<span class="sd">    galaxy, a bright star's halo). On different pixels (a DR5 image against</span>
+<span class="sd">    the DR6 catalogue) only ~95% pair. The guard is there to catch that: the</span>
+<span class="sd">    run stops when the unpaired rows of either side exceed both</span>
+<span class="sd">    ``(1 - min_fraction)`` of that side and ``tolerated_unpaired``, so a</span>
+<span class="sd">    near-empty edge tile with a couple of unpaired children passes. On the</span>
+<span class="sd">    SExtractor side it catches a catalogue from other pixels; on the</span>
+<span class="sd">    external side, a detection configuration that finds fewer objects than</span>
+<span class="sd">    the catalogue's, which would leave its objects without shapes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cat_path : str</span>
+<span class="sd">        Path to the SExtractor FITS-LDAC catalogue, rewritten in place</span>
+<span class="sd">    ext_cat_path : str</span>
+<span class="sd">        Path to the external ASCII catalogue in SExtractor format, with</span>
+<span class="sd">        ``NUMBER``, ``X_IMAGE`` and ``Y_IMAGE``</span>
+<span class="sd">    radius : float, optional</span>
+<span class="sd">        Largest separation of a pair, in pixels; default 1</span>
+<span class="sd">    min_fraction : float, optional</span>
+<span class="sd">        Smallest acceptable fraction of SExtractor rows, and of external</span>
+<span class="sd">        objects, with a partner; default 0.98</span>
+<span class="sd">    tolerated_unpaired : int, optional</span>
+<span class="sd">        Number of unpaired rows on either side accepted whatever the</span>
+<span class="sd">        fraction; default 20</span>
+<span class="sd">    w_log : logging.Logger, optional</span>
+<span class="sd">        Pipeline logger</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        ``n_sextractor``, ``n_external``, ``n_paired``, ``n_dropped``</span>
+<span class="sd">        (SExtractor rows without a partner) and ``n_external_only``</span>
+<span class="sd">        (external objects without a SExtractor row)</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If more than ``tolerated_unpaired`` rows of either side, and more</span>
+<span class="sd">        than ``1 - min_fraction`` of it, have no partner</span>
+
+<span class="sd">    @sc [decision:detection.tile_detection]</span>
+<span class="sd">    """</span>
+    <span class="n">ext</span> <span class="o">=</span> <span class="n">asc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">ext_cat_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"sextractor"</span><span class="p">,</span>
+                   <span class="n">include_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">,</span> <span class="s2">"X_IMAGE"</span><span class="p">,</span> <span class="s2">"Y_IMAGE"</span><span class="p">])</span>
+    <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">cat_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
+        <span class="n">hdus</span> <span class="o">=</span> <span class="p">[</span><span class="n">hdu</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">hdu</span> <span class="ow">in</span> <span class="n">hdul</span><span class="p">]</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hdus</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"LDAC_OBJECTS"</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">objects</span><span class="o">.</span><span class="n">data</span>
+
+    <span class="n">i_sex</span><span class="p">,</span> <span class="n">i_ext</span><span class="p">,</span> <span class="n">dist</span> <span class="o">=</span> <span class="n">mutual_nearest</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">"X_IMAGE"</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s2">"Y_IMAGE"</span><span class="p">],</span> <span class="n">ext</span><span class="p">[</span><span class="s2">"X_IMAGE"</span><span class="p">],</span> <span class="n">ext</span><span class="p">[</span><span class="s2">"Y_IMAGE"</span><span class="p">],</span>
+        <span class="n">radius</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">n_sextractor</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">n_external</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">ext</span><span class="p">),</span> <span class="n">n_paired</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">i_sex</span><span class="p">),</span>
+        <span class="n">n_dropped</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">i_sex</span><span class="p">),</span>
+        <span class="n">n_external_only</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">i_sex</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">counts</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">too_many_unpaired</span><span class="p">(</span><span class="n">n_total</span><span class="p">):</span>
+        <span class="n">unpaired</span> <span class="o">=</span> <span class="n">n_total</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">i_sex</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">unpaired</span> <span class="o">&gt;</span> <span class="n">tolerated_unpaired</span>
+                <span class="ow">and</span> <span class="n">unpaired</span> <span class="o">&gt;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">min_fraction</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_total</span><span class="p">)</span>
+
+    <span class="n">fraction</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">i_sex</span><span class="p">)</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">too_many_unpaired</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Only </span><span class="si">{</span><span class="n">fraction</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> of the SExtractor rows of </span><span class="si">{</span><span class="n">cat_path</span><span class="si">}</span><span class="s2"> pair"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" with </span><span class="si">{</span><span class="n">ext_cat_path</span><span class="si">}</span><span class="s2"> within </span><span class="si">{</span><span class="n">radius</span><span class="si">}</span><span class="s2"> px (minimum"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">min_fraction</span><span class="si">}</span><span class="s2"> beyond </span><span class="si">{</span><span class="n">tolerated_unpaired</span><span class="si">}</span><span class="s2"> unpaired;"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">). The catalogue must come from the"</span>
+            <span class="o">+</span> <span class="s2">" same pixels as the image: check that the tile image is the"</span>
+            <span class="o">+</span> <span class="s2">" release of the catalogue (DR6)."</span>
+        <span class="p">)</span>
+    <span class="n">fraction_ext</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">i_sex</span><span class="p">)</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ext</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">too_many_unpaired</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ext</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Only </span><span class="si">{</span><span class="n">fraction_ext</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> of the objects of </span><span class="si">{</span><span class="n">ext_cat_path</span><span class="si">}</span><span class="s2"> pair"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" with a row of </span><span class="si">{</span><span class="n">cat_path</span><span class="si">}</span><span class="s2"> within </span><span class="si">{</span><span class="n">radius</span><span class="si">}</span><span class="s2"> px (minimum"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">min_fraction</span><span class="si">}</span><span class="s2"> beyond </span><span class="si">{</span><span class="n">tolerated_unpaired</span><span class="si">}</span><span class="s2"> unpaired;"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">). SExtractor finds fewer objects"</span>
+            <span class="o">+</span> <span class="s2">" than the catalogue: check that the detection configuration"</span>
+            <span class="o">+</span> <span class="s2">" is the catalogue's."</span>
         <span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">input_file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">):</span>
+    <span class="n">old_number</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
+    <span class="n">new_number</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">UNMATCHED_LABEL</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">new_number</span><span class="p">[</span><span class="n">i_sex</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ext</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">])[</span><span class="n">i_ext</span><span class="p">]</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Pasting catalogue '</span><span class="si">{</span><span class="n">input_file</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">objects</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">col</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">i_sex</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"NUMBER"</span><span class="p">:</span>
+            <span class="n">array</span> <span class="o">=</span> <span class="n">new_number</span><span class="p">[</span><span class="n">i_sex</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">col</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"SEG_VIGNET"</span><span class="p">:</span>
+            <span class="n">array</span> <span class="o">=</span> <span class="n">relabel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">col</span><span class="o">.</span><span class="n">name</span><span class="p">]),</span> <span class="n">old_number</span><span class="p">,</span>
+                            <span class="n">new_number</span><span class="p">)[</span><span class="n">i_sex</span><span class="p">]</span>
+        <span class="n">columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">col</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">col</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">col</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">col</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">array</span><span class="o">=</span><span class="n">array</span><span class="p">,</span>
+        <span class="p">))</span>
+    <span class="n">new</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="o">.</span><span class="n">from_columns</span><span class="p">(</span>
+        <span class="n">columns</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">objects</span><span class="o">.</span><span class="n">header</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"LDAC_OBJECTS"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">new</span> <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="n">objects</span> <span class="k">else</span> <span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hdus</span><span class="p">]</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-            <span class="c1"># Read input data</span>
-            <span class="n">cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
-            <span class="n">cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_no</span><span class="p">[</span><span class="n">idx</span><span class="p">]))</span>
-            <span class="n">col_names</span> <span class="o">=</span> <span class="n">cat</span><span class="o">.</span><span class="n">get_col_names</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_no</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
-            <span class="n">cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-            <span class="c1"># Check equality if required by user</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_col_name</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">idx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_col_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">col_names</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">"CHECK_COL_NAME key '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_col_name</span><span class="si">}</span><span class="s2">'"</span>
-                            <span class="o">+</span> <span class="s2">"not found in input catalogue"</span>
-                        <span class="p">)</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
-                        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_col_name</span><span class="p">]</span> <span class="o">==</span> <span class="n">data_prev</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_col_name</span><span class="p">]</span>
-                    <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
-                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">"Column check using key"</span>
-                            <span class="o">+</span> <span class="s2">"'</span><span class="si">{self._check_col_name}</span><span class="s2">'"</span>
-                            <span class="o">+</span> <span class="s2">"failed for input catalogues "</span>
-                            <span class="o">+</span> <span class="sa">f</span><span class="s2">"#</span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> and #</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">"</span>
-                        <span class="p">)</span>
-                <span class="n">data_prev</span> <span class="o">=</span> <span class="n">data</span>
-
-            <span class="c1"># Add to output cat</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ext_name</span><span class="p">:</span>
-                <span class="n">ext_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ext_name</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">ext_name</span> <span class="o">=</span> <span class="n">input_file</span>
-            <span class="n">pasted_cat</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ext_name</span><span class="o">=</span><span class="n">ext_name</span><span class="p">)</span></div>
-</div>
+    <span class="k">if</span> <span class="n">w_log</span><span class="p">:</span>
+        <span class="n">sep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">])</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Matched </span><span class="si">{</span><span class="n">cat_path</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">ext_cat_path</span><span class="si">}</span><span class="s2"> within </span><span class="si">{</span><span class="n">radius</span><span class="si">}</span><span class="s2"> px:"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">; pair separation p50 </span><span class="si">{</span><span class="n">sep</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2"> px,"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" p99 </span><span class="si">{</span><span class="n">sep</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2"> px"</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">counts</span></div>
 
 </pre></div>
 

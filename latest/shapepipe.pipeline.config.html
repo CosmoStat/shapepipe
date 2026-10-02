@@ -336,15 +336,12 @@
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
-</ul>
-</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.sextractor_package.match_catalogue.html">shapepipe.modules.sextractor_package.match_catalogue</a></li>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
 </ul>
 </details></li>
@@ -614,11 +611,13 @@
 <dd><p>Expand Environment Variables Strictly.</p>
 <p>Expand environment variables in <code class="docutils literal notranslate"><span class="pre">value</span></code>, raising an error if any
 referenced variable is unset instead of silently leaving the literal
-<code class="docutils literal notranslate"><span class="pre">$VAR</span></code> string in place.</p>
+<code class="docutils literal notranslate"><span class="pre">$VAR</span></code> string in place. <code class="docutils literal notranslate"><span class="pre">${VAR:-default}</span></code> expands to <code class="docutils literal notranslate"><span class="pre">default</span></code>
+when <code class="docutils literal notranslate"><span class="pre">VAR</span></code> is unset or empty, as in the shell. Each value is inserted
+as is, not expanded again.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Configuration value possibly containing <code class="docutils literal notranslate"><span class="pre">$VAR</span></code> or <code class="docutils literal notranslate"><span class="pre">${VAR}</span></code>
-references</p>
+<dd class="field-odd"><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Configuration value possibly containing <code class="docutils literal notranslate"><span class="pre">$VAR</span></code>, <code class="docutils literal notranslate"><span class="pre">${VAR}</span></code> or
+<code class="docutils literal notranslate"><span class="pre">${VAR:-default}</span></code> references</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value with all environment variables expanded</p>
@@ -627,7 +626,9 @@ references</p>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If a referenced environment variable is not set</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If a referenced environment variable without a default is not set,
+or a <code class="docutils literal notranslate"><span class="pre">${</span></code> opens none of the forms above (<code class="docutils literal notranslate"><span class="pre">${VAR-x}</span></code>,
+<code class="docutils literal notranslate"><span class="pre">${VAR:=x}</span></code>, <code class="docutils literal notranslate"><span class="pre">${</span> <span class="pre">VAR</span> <span class="pre">}</span></code>)</p>
 </dd>
 </dl>
 </dd></dl>

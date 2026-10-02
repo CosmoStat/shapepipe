@@ -13,4 +13,5 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   shapepipe.modules.sextractor_package.match_catalogue
    shapepipe.modules.sextractor_package.sextractor_script

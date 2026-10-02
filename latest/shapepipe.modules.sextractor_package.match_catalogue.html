@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>shapepipe.pipeline.mpi_run &#8212; ShapePipe v1.1</title>
+    <title>shapepipe.modules.sextractor_package.match_catalogue &#8212; ShapePipe v1.1</title>
   
   
   
@@ -43,7 +43,7 @@
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'shapepipe.pipeline.mpi_run';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'shapepipe.modules.sextractor_package.match_catalogue';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
@@ -55,8 +55,8 @@
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="shapepipe.pipeline.run_log" href="shapepipe.pipeline.run_log.html" />
-    <link rel="prev" title="shapepipe.pipeline.job_handler" href="shapepipe.pipeline.job_handler.html" />
+    <link rel="next" title="shapepipe.modules.sextractor_package.sextractor_script" href="shapepipe.modules.sextractor_package.sextractor_script.html" />
+    <link rel="prev" title="shapepipe.modules.sextractor_package" href="shapepipe.modules.sextractor_package.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
@@ -273,7 +273,7 @@
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="understanding_api.html">Understanding the API Documentation</a></li>
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="shapepipe.html">shapepipe</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
-<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="shapepipe.modules.html">shapepipe.modules</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.fake_psf_package.html">shapepipe.modules.fake_psf_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.fake_psf_package.fake_psf.html">shapepipe.modules.fake_psf_package.fake_psf</a></li>
 </ul>
@@ -340,8 +340,8 @@
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.sextractor_package.match_catalogue.html">shapepipe.modules.sextractor_package.match_catalogue</a></li>
+<li class="toctree-l3 current active has-children"><a class="reference internal" href="shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l4 current active"><a class="current reference internal" href="#">shapepipe.modules.sextractor_package.match_catalogue</a></li>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
 </ul>
 </details></li>
@@ -361,7 +361,7 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.module_runners.html">shapepipe.modules.module_runners</a></li>
 </ul>
 </details></li>
-<li class="toctree-l2 current active has-children"><a class="reference internal" href="shapepipe.pipeline.html">shapepipe.pipeline</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.pipeline.html">shapepipe.pipeline</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.args.html">shapepipe.pipeline.args</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.config.html">shapepipe.pipeline.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.dependency_handler.html">shapepipe.pipeline.dependency_handler</a></li>
@@ -370,7 +370,7 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.file_handler.html">shapepipe.pipeline.file_handler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.file_io.html">shapepipe.pipeline.file_io</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.job_handler.html">shapepipe.pipeline.job_handler</a></li>
-<li class="toctree-l3 current active"><a class="current reference internal" href="#">shapepipe.pipeline.mpi_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.sqlite_store.html">shapepipe.pipeline.sqlite_store</a></li>
@@ -492,7 +492,7 @@
       
       
       
-      <li><a href="https://github.com/CosmoStat/shapepipe/edit/main/docs/source/shapepipe.pipeline.mpi_run.rst" target="_blank"
+      <li><a href="https://github.com/CosmoStat/shapepipe/edit/main/docs/source/shapepipe.modules.sextractor_package.match_catalogue.rst" target="_blank"
    class="btn btn-sm btn-source-edit-button dropdown-item"
    title="Suggest edit"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -509,7 +509,7 @@
       
       
       
-      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fshapepipe.pipeline.mpi_run.html&body=Your%20issue%20content%20here." target="_blank"
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fshapepipe.modules.sextractor_package.match_catalogue.html&body=Your%20issue%20content%20here." target="_blank"
    class="btn btn-sm btn-source-issues-button dropdown-item"
    title="Open an issue"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -558,7 +558,7 @@
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>shapepipe.pipeline.mpi_run</h1>
+    <h1>shapepipe.modules.sextractor_package.match_catalogue</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -568,8 +568,9 @@
             </div>
             <nav aria-label="Page">
                 <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.mpi_run.split_mpi_jobs"><code class="docutils literal notranslate"><span class="pre">split_mpi_jobs()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.mpi_run.submit_mpi_jobs"><code class="docutils literal notranslate"><span class="pre">submit_mpi_jobs()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.mutual_nearest"><code class="docutils literal notranslate"><span class="pre">mutual_nearest()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.relabel"><code class="docutils literal notranslate"><span class="pre">relabel()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.match_catalogue"><code class="docutils literal notranslate"><span class="pre">match_catalogue()</span></code></a></li>
 </ul>
             </nav>
         </div>
@@ -581,41 +582,124 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-shapepipe.pipeline.mpi_run">
-<span id="shapepipe-pipeline-mpi-run"></span><h1>shapepipe.pipeline.mpi_run<a class="headerlink" href="#module-shapepipe.pipeline.mpi_run" title="Link to this heading">#</a></h1>
-<p>MPI RUN.</p>
-<p>This module includes functions for handling the distribution of MPI jobs.</p>
+  <section id="module-shapepipe.modules.sextractor_package.match_catalogue">
+<span id="shapepipe-modules-sextractor-package-match-catalogue"></span><h1>shapepipe.modules.sextractor_package.match_catalogue<a class="headerlink" href="#module-shapepipe.modules.sextractor_package.match_catalogue" title="Link to this heading">#</a></h1>
+<p>MATCH CATALOGUE.</p>
+<p>Join a SExtractor tile catalogue to an external catalogue of the same image,
+so the tile’s rows carry the external catalogue’s object numbers.</p>
+<p>The UNIONS tile catalogue (Stephen Gwyn’s MegaPipe SExtractor run on the DR6
+tile) defines the object list and the <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> that the photometry and
+photo-z catalogues share. ShapePipe runs its own SExtractor on the same image
+with the same detection configuration, which reproduces that catalogue for
+all but a few objects in a thousand, and takes membership and <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> from
+it here: every
+measurement (windowed positions, <code class="docutils literal notranslate"><span class="pre">VIGNET</span></code> and its neighbour marking, the
+SExtractor columns) stays SExtractor’s own.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Author<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Samuel Farrens &lt;<a class="reference external" href="mailto:samuel&#46;farrens&#37;&#52;&#48;cea&#46;fr">samuel<span>&#46;</span>farrens<span>&#64;</span>cea<span>&#46;</span>fr</a>&gt;</p>
+<dd class="field-odd"><p>Cail Daley</p>
 </dd>
 </dl>
 <dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.pipeline.mpi_run.split_mpi_jobs">
-<span class="sig-name descname"><span class="pre">split_mpi_jobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jobs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/mpi_run.html#split_mpi_jobs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.mpi_run.split_mpi_jobs" title="Link to this definition">#</a></dt>
-<dd><p>Split MPI Jobs.</p>
-<p>Split the number of MPI jobs over the number of processes.</p>
+<dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.match_catalogue.mutual_nearest">
+<span class="sig-name descname"><span class="pre">mutual_nearest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/match_catalogue.html#mutual_nearest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.match_catalogue.mutual_nearest" title="Link to this definition">#</a></dt>
+<dd><p>One-to-one pairs of mutual nearest neighbours closer than <code class="docutils literal notranslate"><span class="pre">radius</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>jobs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of MPI jobs</p></li>
-<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Batch size</p></li>
+<li><p><strong>x_a</strong> (<em>array_like</em>) – Positions of the first set</p></li>
+<li><p><strong>y_a</strong> (<em>array_like</em>) – Positions of the first set</p></li>
+<li><p><strong>x_b</strong> (<em>array_like</em>) – Positions of the second set, in the same units</p></li>
+<li><p><strong>y_b</strong> (<em>array_like</em>) – Positions of the second set, in the same units</p></li>
+<li><p><strong>radius</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Largest separation of a pair</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Split list of jobs</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray</em> – Indices into the first set of the paired rows, ascending</p></li>
+<li><p><em>numpy.ndarray</em> – Index into the second set of each one’s partner</p></li>
+<li><p><em>numpy.ndarray</em> – Separation of each pair</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.pipeline.mpi_run.submit_mpi_jobs">
-<span class="sig-name descname"><span class="pre">submit_mpi_jobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jobs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module_config_sec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_dirs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module_runner</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">worker_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/mpi_run.html#submit_mpi_jobs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.mpi_run.submit_mpi_jobs" title="Link to this definition">#</a></dt>
-<dd><p>Submit MPI Jobs.</p>
-<p>This method distributes the jobs to the workers using MPI.</p>
+<dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.match_catalogue.relabel">
+<span class="sig-name descname"><span class="pre">relabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seg_vignets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/match_catalogue.html#relabel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.match_catalogue.relabel" title="Link to this definition">#</a></dt>
+<dd><p>Map segmentation labels from one numbering to another.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seg_vignets</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Segmentation stamps labelled with the old numbering, 0 on sky</p></li>
+<li><p><strong>old_number</strong> (<em>array_like</em><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Every old label in use (the catalogue’s <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> before the join)</p></li>
+<li><p><strong>new_number</strong> (<em>array_like</em><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – New label of each <code class="docutils literal notranslate"><span class="pre">old_number</span></code>; <code class="docutils literal notranslate"><span class="pre">UNMATCHED_LABEL</span></code> for one that
+leaves the catalogue</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The stamps in the new numbering, int32; labels outside
+<code class="docutils literal notranslate"><span class="pre">old_number</span></code> become <code class="docutils literal notranslate"><span class="pre">UNMATCHED_LABEL</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.match_catalogue.match_catalogue">
+<span class="sig-name descname"><span class="pre">match_catalogue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_fraction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.98</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerated_unpaired</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/match_catalogue.html#match_catalogue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.match_catalogue.match_catalogue" title="Link to this definition">#</a></dt>
+<dd><p>Take membership and <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> from an external catalogue.</p>
+<p>Each SExtractor row is paired with its mutual nearest neighbour in the
+external catalogue (<code class="docutils literal notranslate"><span class="pre">X_IMAGE</span></code>, <code class="docutils literal notranslate"><span class="pre">Y_IMAGE</span></code>, same image grid) within
+<code class="docutils literal notranslate"><span class="pre">radius</span></code> pixels. Paired rows take the external <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>; unpaired
+rows leave the catalogue. A <code class="docutils literal notranslate"><span class="pre">SEG_VIGNET</span></code> column, when present, is
+relabelled to the new numbering, with the footprints of rows that left
+marked <code class="docutils literal notranslate"><span class="pre">UNMATCHED_LABEL</span></code>. The catalogue is rewritten in place; every
+other HDU and column is kept.</p>
+<p>Both catalogues come from the same pixels, so pairs agree to ~1e-4
+pixel, and on eight DR6 tiles at least 99.2% of each side pairs; the
+shortfall is deblending that differs near very large objects (a cD
+galaxy, a bright star’s halo). On different pixels (a DR5 image against
+the DR6 catalogue) only ~95% pair. The guard is there to catch that: the
+run stops when the unpaired rows of either side exceed both
+<code class="docutils literal notranslate"><span class="pre">(1</span> <span class="pre">-</span> <span class="pre">min_fraction)</span></code> of that side and <code class="docutils literal notranslate"><span class="pre">tolerated_unpaired</span></code>, so a
+near-empty edge tile with a couple of unpaired children passes. On the
+SExtractor side it catches a catalogue from other pixels; on the
+external side, a detection configuration that finds fewer objects than
+the catalogue’s, which would leave its objects without shapes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the SExtractor FITS-LDAC catalogue, rewritten in place</p></li>
+<li><p><strong>ext_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the external ASCII catalogue in SExtractor format, with
+<code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>, <code class="docutils literal notranslate"><span class="pre">X_IMAGE</span></code> and <code class="docutils literal notranslate"><span class="pre">Y_IMAGE</span></code></p></li>
+<li><p><strong>radius</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Largest separation of a pair, in pixels; default 1</p></li>
+<li><p><strong>min_fraction</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Smallest acceptable fraction of SExtractor rows, and of external
+objects, with a partner; default 0.98</p></li>
+<li><p><strong>tolerated_unpaired</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Number of unpaired rows on either side accepted whatever the
+fraction; default 20</p></li>
+<li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a><em>, </em><em>optional</em>) – Pipeline logger</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">n_sextractor</span></code>, <code class="docutils literal notranslate"><span class="pre">n_external</span></code>, <code class="docutils literal notranslate"><span class="pre">n_paired</span></code>, <code class="docutils literal notranslate"><span class="pre">n_dropped</span></code>
+(SExtractor rows without a partner) and <code class="docutils literal notranslate"><span class="pre">n_external_only</span></code>
+(external objects without a SExtractor row)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If more than <code class="docutils literal notranslate"><span class="pre">tolerated_unpaired</span></code> rows of either side, and more
+than <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">min_fraction</span></code> of it, have no partner</p></li>
+<li><p><strong>&#64;sc</strong><strong> [</strong><strong>decision:detection.tile_detection</strong><strong>]</strong> – </p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -632,20 +716,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="shapepipe.pipeline.job_handler.html"
+       href="shapepipe.modules.sextractor_package.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">shapepipe.pipeline.job_handler</p>
+        <p class="prev-next-title">shapepipe.modules.sextractor_package</p>
       </div>
     </a>
     <a class="right-next"
-       href="shapepipe.pipeline.run_log.html"
+       href="shapepipe.modules.sextractor_package.sextractor_script.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">shapepipe.pipeline.run_log</p>
+        <p class="prev-next-title">shapepipe.modules.sextractor_package.sextractor_script</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -667,8 +751,9 @@
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.mpi_run.split_mpi_jobs"><code class="docutils literal notranslate"><span class="pre">split_mpi_jobs()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.mpi_run.submit_mpi_jobs"><code class="docutils literal notranslate"><span class="pre">submit_mpi_jobs()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.mutual_nearest"><code class="docutils literal notranslate"><span class="pre">mutual_nearest()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.relabel"><code class="docutils literal notranslate"><span class="pre">relabel()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.match_catalogue"><code class="docutils literal notranslate"><span class="pre">match_catalogue()</span></code></a></li>
 </ul>
   </nav></div>
 

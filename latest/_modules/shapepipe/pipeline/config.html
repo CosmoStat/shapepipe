@@ -331,15 +331,12 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
-</ul>
-</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.sextractor_package.match_catalogue.html">shapepipe.modules.sextractor_package.match_catalogue</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
 </ul>
 </details></li>
@@ -565,6 +562,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigParser</span>
 
 
+<span class="c1"># ``$VAR``, ``${VAR}`` or ``${VAR:-default}``.</span>
+<span class="n">_VAR_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\$(?:\{(\w+)(?::-([^}]*))?\}|(\w+))"</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="_expandvars_strict">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.config.html#shapepipe.pipeline.config._expandvars_strict">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_expandvars_strict</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
@@ -572,13 +573,15 @@
 
 <span class="sd">    Expand environment variables in ``value``, raising an error if any</span>
 <span class="sd">    referenced variable is unset instead of silently leaving the literal</span>
-<span class="sd">    ``$VAR`` string in place.</span>
+<span class="sd">    ``$VAR`` string in place. ``${VAR:-default}`` expands to ``default``</span>
+<span class="sd">    when ``VAR`` is unset or empty, as in the shell. Each value is inserted</span>
+<span class="sd">    as is, not expanded again.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    value : str</span>
-<span class="sd">        Configuration value possibly containing ``$VAR`` or ``${VAR}``</span>
-<span class="sd">        references</span>
+<span class="sd">        Configuration value possibly containing ``$VAR``, ``${VAR}`` or</span>
+<span class="sd">        ``${VAR:-default}`` references</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -588,11 +591,30 @@
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
-<span class="sd">        If a referenced environment variable is not set</span>
+<span class="sd">        If a referenced environment variable without a default is not set,</span>
+<span class="sd">        or a ``${`` opens none of the forms above (``${VAR-x}``,</span>
+<span class="sd">        ``${VAR:=x}``, ``${ VAR }``)</span>
 
 <span class="sd">    """</span>
-    <span class="n">expanded</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-    <span class="n">unset</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\$\{?(\w+)\}?"</span><span class="p">,</span> <span class="n">expanded</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"${"</span> <span class="ow">in</span> <span class="n">_VAR_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Config value '</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">' has a '$</span><span class="se">{{</span><span class="s2">' that is not $VAR, $</span><span class="se">{{</span><span class="s2">VAR</span><span class="se">}}</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="s2">" or ${VAR:-default}."</span>
+        <span class="p">)</span>
+    <span class="n">unset</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">substitute</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
+        <span class="n">braced</span><span class="p">,</span> <span class="n">default</span><span class="p">,</span> <span class="n">bare</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">braced</span> <span class="ow">or</span> <span class="n">bare</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">env</span> <span class="ow">or</span> <span class="n">default</span>
+        <span class="k">if</span> <span class="n">env</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">unset</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">env</span>
+
+    <span class="n">expanded</span> <span class="o">=</span> <span class="n">_VAR_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">substitute</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">unset</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"Environment variable(s) </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">unset</span><span class="p">)))</span><span class="si">}</span><span class="s2"> "</span>

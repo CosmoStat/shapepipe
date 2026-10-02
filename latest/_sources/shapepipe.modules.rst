@@ -28,7 +28,6 @@ Subpackages
    shapepipe.modules.psfex_interp_package
    shapepipe.modules.psfex_package
    shapepipe.modules.python_example_package
-   shapepipe.modules.read_ext_sexcat_package
    shapepipe.modules.setools_package
    shapepipe.modules.sextractor_package
    shapepipe.modules.split_exp_package

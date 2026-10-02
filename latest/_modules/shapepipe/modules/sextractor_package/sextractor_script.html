@@ -331,15 +331,12 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
-</ul>
-</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.sextractor_package.match_catalogue.html">shapepipe.modules.sextractor_package.match_catalogue</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
 </ul>
 </details></li>
@@ -955,6 +952,13 @@
 
 <span class="sd">        Set up all of the input image files.</span>
 
+<span class="sd">        Without a detection image, SExtractor runs in single-image mode on</span>
+<span class="sd">        the measurement image: ``img -WEIGHT_IMAGE w``. With one, it runs in</span>
+<span class="sd">        dual-image mode, ``det,img -WEIGHT_IMAGE det_w,w``. Dual-image mode</span>
+<span class="sd">        with the same image twice is not equivalent to single-image mode: it</span>
+<span class="sd">        changes the background and the photometry of a fifth of the objects of</span>
+<span class="sd">        a UNIONS tile (#936).</span>
+
 <span class="sd">        @sc [decision:detection.weight_map_usage,label:convention] weight-map-on-both-images</span>
 <span class="sd">        With a weight file, the same map weights detection and measurement (a</span>
 <span class="sd">        separate detection weight only when DETECTION_WEIGHT is set); without</span>
@@ -1014,26 +1018,28 @@
                 <span class="s2">"DETECTION_WEIGHT cannot be True "</span> <span class="o">+</span> <span class="s2">"if WEIGHT_FILE is False"</span>
             <span class="p">)</span>
 
-        <span class="c1"># Check for separate image file for detection and measurement</span>
+        <span class="c1"># A separate detection image switches SExtractor to dual-image mode;</span>
+        <span class="c1"># without one, the measurement image alone (single-image mode).</span>
         <span class="k">if</span> <span class="n">use_detect_img</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_detect_img_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span><span class="p">[</span><span class="n">extra</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_image_arg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span><span class="p">[</span><span class="n">extra</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_meas_img_path</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
             <span class="n">extra</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_detect_img_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meas_img_path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_image_arg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meas_img_path</span>
 
-        <span class="c1"># Check for separate weight file corresponding to the detection image.</span>
-        <span class="c1"># If False, use measurement weight image.</span>
-        <span class="c1"># Note: This could be changed, and no weight image could be used, but</span>
-        <span class="c1"># this might lead to more user errors.</span>
+        <span class="c1"># In dual-image mode the detection image takes the detection weight</span>
+        <span class="c1"># if given, else the measurement weight.</span>
         <span class="k">if</span> <span class="n">use_weight</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">use_detect_weight</span><span class="p">:</span>
-                <span class="n">detect_weight_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span><span class="p">[</span><span class="n">extra</span><span class="p">]</span>
-                <span class="n">extra</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">detect_weight_path</span> <span class="o">=</span> <span class="n">weight_image</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">" -WEIGHT_IMAGE </span><span class="si">{</span><span class="n">detect_weight_path</span><span class="si">}</span><span class="s2">"</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">",</span><span class="si">{</span><span class="n">weight_image</span><span class="si">}</span><span class="s2">"</span>
-            <span class="p">)</span>
+            <span class="n">weight_arg</span> <span class="o">=</span> <span class="n">weight_image</span>
+            <span class="k">if</span> <span class="n">use_detect_img</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">use_detect_weight</span><span class="p">:</span>
+                    <span class="n">detect_weight_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_input_path</span><span class="p">[</span><span class="n">extra</span><span class="p">]</span>
+                    <span class="n">extra</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">detect_weight_path</span> <span class="o">=</span> <span class="n">weight_image</span>
+                <span class="n">weight_arg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">detect_weight_path</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">weight_image</span><span class="si">}</span><span class="s2">"</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">" -WEIGHT_IMAGE </span><span class="si">{</span><span class="n">weight_arg</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="s2">" -WEIGHT_TYPE None"</span>
 
@@ -1146,7 +1152,7 @@
 <span class="sd">        """</span>
         <span class="c1"># Base arguments for SExtractor</span>
         <span class="n">command_line_base</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">exec_path</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_detect_img_path</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_meas_img_path</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">exec_path</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_image_arg</span><span class="si">}</span><span class="s2"> "</span>
             <span class="o">+</span> <span class="sa">f</span><span class="s2">"-c </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_dot_sex</span><span class="si">}</span><span class="s2"> "</span>
             <span class="o">+</span> <span class="sa">f</span><span class="s2">"-PARAMETERS_NAME </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_dot_param</span><span class="si">}</span><span class="s2"> "</span>
             <span class="o">+</span> <span class="sa">f</span><span class="s2">"-FILTER_NAME </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_dot_conv</span><span class="si">}</span><span class="s2"> "</span>
