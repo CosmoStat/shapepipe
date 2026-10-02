@@ -138,8 +138,9 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
 
     final_cat_file.save_as_fits(data, ext_name="RESULTS")
     final_cat_file.open()
-    final_cat_file.add_col("TILE_ID", tile_id_array)
-    final_cat_file.add_col("TILE_UNIQUE_ID", unique_id)
+    final_cat_file.add_cols(
+        {"TILE_ID": tile_id_array, "TILE_UNIQUE_ID": unique_id}
+    )
 
     sexcat_file.close()
 
@@ -204,10 +205,11 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
     ra = np.copy(final_cat_file.get_data()["XWIN_WORLD"])
     dec = np.copy(final_cat_file.get_data()["YWIN_WORLD"])
 
+    mask_cols = {}
     for band, path in band_paths.items():
         w_log.info(f"Query external mask for band {band}: {path}")
-        values = mask_query.query_map(path, ra, dec)
-        final_cat_file.add_col(f"MASK_{band}", values)
+        mask_cols[f"MASK_{band}"] = mask_query.query_map(path, ra, dec)
+    final_cat_file.add_cols(mask_cols)
 
     final_cat_file.close()
 
@@ -279,9 +281,7 @@ class SaveCatalogue:
             )
 
         if err_msg is None:
-
-            for key in self._output_dict.keys():
-                self._final_cat_file.add_col(key, self._output_dict[key])
+            self._final_cat_file.add_cols(self._output_dict)
 
         self._final_cat_file.close()
 
@@ -375,19 +375,17 @@ class SaveCatalogue:
         ngmix_cat_file.open()
 
         ngmix_n_epoch = ngmix_cat_file.get_data()["n_epoch_model"]
-        # Low number of ngmix objects could be due to
-        # (1) shape measurement failures (e.g. missing PSF): ok, continue
-        # (2) previous processing errors, e.g. premature run of
-        # merge_sep_cats_runner: raise error
+        # A low match fraction can be valid (e.g. missing PSFs). Warn but
+        # continue; unmatched detections retain their pre-filled sentinels.
+        # Completeness gates reject premature or incomplete merges.
         if len(ngmix_n_epoch) / self._cat_size_target < 0.1:
-            err_msg = (
-                f"Merged shape catalogue {ngmix_cat_path} has very different"
-                + f" size ({len(ngmix_n_epoch)}) compared to target size"
-                + f" {self._cat_size_target})"
+            warning = (
+                f"Merged shape catalogue {ngmix_cat_path} contains only "
+                f"{len(ngmix_n_epoch)} of {self._cat_size_target} target "
+                "objects (<10%); continuing with sentinels for unmatched "
+                "detections."
             )
-            self._w_log.info(err_msg)
-            #ngmix_cat_file.close()
-            #return err_msg
+            self._w_log.warning(warning)
 
         ngmix_mcal_types_fail = ngmix_cat_file.get_data()["mcal_types_fail"]
         # Per-object blend flag (shapepipe#776): the seg stamp held a

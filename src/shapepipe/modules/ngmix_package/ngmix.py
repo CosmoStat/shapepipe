@@ -15,7 +15,6 @@ import ngmix
 import galsim
 import numpy as np
 from astropy.io import fits
-from astropy.wcs.utils import proj_plane_pixel_scales
 from cs_util import size as cs_size
 from modopt.math.stats import sigma_mad
 from ngmix.observation import Observation, ObsList
@@ -101,7 +100,7 @@ def get_type_flags(fit):
     Fit flags of one metacal type, reading absence of evidence of success
     as failure.
 
-    @sc [label:convention] mcal-flags-zero-means-measured
+    @sc [decision:catalogue_assembly.failure_sentinels,label:convention] mcal-flags-zero-means-measured
     A flag of 0 means the fit ran, reported success and returned a finite
     shear; no default or fallback may produce 0. FLAGS_<SHEAR>, MCAL_FLAGS
     (OR) and MCAL_TYPES_FAIL (count) all derive from this function, and
@@ -712,44 +711,6 @@ class Vignet():
         if self.bkg_rms_vign_cat is not None:
             self.bkg_rms_vign_cat.close()
 
-def pixel_scale_from_wcs(f_wcs_file):
-    """Representative pixel scale (arcsec) from the tile's image WCS.
-
-    The ngmix fit builds each object's Jacobian from the full per-epoch WCS,
-    so this scalar only sets the centroid-prior width (see :func:`get_prior`).
-    A single value read from the astrometry is therefore sufficient -- and,
-    unlike a hard-coded config constant, it cannot silently drift from the
-    pixels it describes (this mirrors SExtractor's ``PIXEL_SCALE 0``
-    convention).
-
-    Parameters
-    ----------
-    f_wcs_file : dict-like
-        Mapping ``exposure -> {ccd -> {"WCS": astropy.wcs.WCS, ...}}`` (the
-        merged single-exposure headers opened by :class:`Vignet`).
-
-    Returns
-    -------
-    float
-        Pixel scale in arcsec, averaged over the two axes of the first WCS.
-
-    Raises
-    ------
-    ValueError
-        If no WCS can be found in ``f_wcs_file``.
-    """
-    for exp_name in f_wcs_file:
-        for ccd_dict in f_wcs_file[exp_name].values():
-            # proj_plane_pixel_scales returns deg/pixel per world axis; the
-            # two axes are equal to sub-per-mille for survey astrometry.
-            scales = proj_plane_pixel_scales(ccd_dict["WCS"])
-            return float(np.mean(scales) * 3600.0)
-    raise ValueError(
-        "cannot derive PIXEL_SCALE from the WCS: the merged single-exposure "
-        "headers file contains no exposures"
-    )
-
-
 class Ngmix(object):
     """Ngmix.
 
@@ -765,10 +726,6 @@ class Ngmix(object):
         File numbering scheme
     zero_point : float
         Photometric zero point
-    pixel_scale : float or None
-        Pixel scale in arcsec. Optional override: when ``None`` or
-        non-positive, the pixel scale is derived from the image WCS (see
-        :func:`pixel_scale_from_wcs`).
     f_wcs_path : str
         Path to merged single-exposure single-HDU headers
     w_log : logging.Logger
@@ -840,7 +797,6 @@ class Ngmix(object):
         output_dir,
         file_number_string,
         zero_point,
-        pixel_scale,
         f_wcs_path,
         w_log,
         save_batch=-1,
@@ -943,25 +899,6 @@ class Ngmix(object):
             'Per-object RNG seeded from sky position (ngmix#796): results are'
             ' invariant to how the tile is split into object chunks'
         )
-
-        # Pixel scale: an explicit positive PIXEL_SCALE overrides; otherwise
-        # derive it from the image WCS so it can never drift from the pixels
-        # (mirrors SExtractor's ``PIXEL_SCALE 0`` convention). Only the
-        # centroid-prior width uses it -- the fit Jacobian is built per
-        # object from the full WCS.
-        if pixel_scale is None or pixel_scale <= 0:
-            self._pixel_scale = pixel_scale_from_wcs(
-                self._vignet_cat.f_wcs_file
-            )
-            self._w_log.info(
-                f'PIXEL_SCALE derived from image WCS = '
-                f'{self._pixel_scale:.6f} arcsec'
-            )
-        else:
-            self._pixel_scale = pixel_scale
-            self._w_log.info(
-                f'PIXEL_SCALE from config = {self._pixel_scale:.6f} arcsec'
-            )
 
     @classmethod
     def MegaCamFlip(self, vign, ccd_nb):
@@ -1408,11 +1345,12 @@ class Ngmix(object):
             # because the guesser draws its initial guess via prior.sample()
             # (ngmix guessers.py), which consumes the RNG the prior was
             # CONSTRUCTED with: a per-object rng alone would leave the guess
-            # drawing from a shared stream and break the invariance.
+            # drawing from a shared stream and break the invariance. The
+            # centroid prior is one pixel wide, in this object's own epochs.
             obj_rng = np.random.RandomState(
                 position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
             )
-            obj_prior = get_prior(self._pixel_scale, obj_rng)
+            obj_prior = get_prior(stamp_pixel_scale(stamp.jacobs), obj_rng)
 
             try:
                 flux_guess = (
@@ -1756,12 +1694,10 @@ def split_tile_markers(tile_vign, shape):
 
     @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-marked-border-rows-and-columns
     The tile VIGNET holds -1e30 on the footprints of other detections and on
-    stamp pixels beyond the tile's edge; SExtractor writes it, and in
-    catalogue mode the converter paints it from the catalogue's segmentation
-    map (``read_ext_sexcat._extract_vignets``). A stamp clipped by the tile's
-    rectangle loses whole rows and whole columns from its border, so the
-    off-tile pixels are the union of the runs of entirely -1e30 rows and
-    columns that start at a stamp border. The remaining markers are
+    stamp pixels beyond the tile's edge (SExtractor writes it). A stamp
+    clipped by the tile's rectangle loses whole rows and whole columns from
+    its border, so the off-tile pixels are the union of the runs of
+    entirely -1e30 rows and columns that start at a stamp border. The remaining markers are
     neighbour pixels: a footprint touching the stamp border, and a footprint
     that completes an interior row or column beside an off-tile band, stay
     neighbours.
@@ -1881,6 +1817,29 @@ def get_galsim_jacobian(wcs, ra, dec):
     return galsim_jacob
 
 
+def stamp_pixel_scale(jacobs):
+    """Pixel scale (arcsec) of one object's epochs, for its centroid prior.
+
+    Each epoch's linear scale is ``sqrt(|det J|)``: the side of a square
+    pixel of the same sky area, blind to the CCD's rotation and flip. The
+    object's scale is the mean over its epochs, because the centroid prior is
+    one Gaussian in the sky frame those epochs share.
+
+    Parameters
+    ----------
+    jacobs : list of galsim.JacobianWCS
+        The object's per-epoch Jacobians, from :func:`get_galsim_jacobian`.
+
+    Returns
+    -------
+    float
+        Pixel scale in arcsec.
+
+    @sc [decision:shape_measurement.fit_priors]
+    """
+    return float(np.mean([np.sqrt(abs(jac.pixelArea())) for jac in jacobs]))
+
+
 def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
     """Get Noise.
     TO DO: modify guess, pixel scale
@@ -1925,6 +1884,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
     sig_noise = sigma_mad(gal[gauss_win < thresh * sig_tmp][m_weight])
 
     return sig_noise
+
 
 def central_seg_label(seg):
     """Centre-pixel label of a seg stamp — a *diagnostic*, not the central id.

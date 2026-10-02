@@ -60,6 +60,14 @@ from pathlib import Path
 import h5py
 
 
+# Every unit's dataset is written lzf-compressed: about half the bytes of an
+# uncompressed catalogue, at no measurable write cost. lzf ships with h5py, so
+# any h5py reader decodes it transparently; plain libhdf5 tools (h5dump, C
+# readers) do not carry the filter. Kept datasets move across with the
+# library's group copy, which preserves their filter as written.
+COMPRESSION = "lzf"
+
+
 def schema_digest(columns) -> str:
     """A fingerprint of the COLUMN SET the datasets were written with."""
     return hashlib.md5("\n".join(columns).encode()).hexdigest()[:16]
@@ -314,7 +322,8 @@ def _apply(output: Path, group_path: str, todo: Plan, units: list, read,
                              f"holds one type per column; remake the units "
                              f"whose sources are stale. {output} is "
                              f"untouched.")
-                dset = group.create_dataset(unit, data=data, dtype=data.dtype)
+                dset = group.create_dataset(unit, data=data, dtype=data.dtype,
+                                            compression=COMPRESSION)
                 # The dataset's own record of what it was read from; this is
                 # what lets a later invocation leave it alone.
                 dset.attrs["src_bytes"], dset.attrs["src_mtime_ns"] = \

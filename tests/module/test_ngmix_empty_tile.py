@@ -72,7 +72,6 @@ SMP_BATCH_SIZE = 1
 TIMEOUT = 00:02:00
 [NGMIX_RUNNER]
 MAG_ZP = 30
-PIXEL_SCALE = .186
 ID_OBJ_MIN = -1
 ID_OBJ_MAX = -1
 """)
@@ -114,7 +113,6 @@ def _runner_config():
     config.read_string(
         "[NGMIX_RUNNER]\n"
         "MAG_ZP = 30\n"
-        "PIXEL_SCALE = .186\n"
         "ID_OBJ_MIN = -1\n"
         "ID_OBJ_MAX = -1\n"
     )

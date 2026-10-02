@@ -156,8 +156,8 @@ PRODUCTS = {
         "correspond to. Rows duplicate star_selection."),
     "star_stats": (
         "star_stat-*.txt", None,
-        "setools' per-CCD STAT block: star counts, stars/deg^2, FWHM mode and "
-        "cuts. The selection's summary without its catalogue."),
+        "setools' per-CCD STAT block: star counts, FWHM mode and cuts. The "
+        "selection's summary without its catalogue."),
     "psf_model": (
         "*.psf", 2_800_000,
         "the PSFEx model itself. Keeping it means the PSF can be "

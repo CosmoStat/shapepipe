@@ -25,15 +25,16 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # Write a run config (see Run configuration below) that sets at least `run:`,
 # the campaign's name; workflow/config.yaml's input_types: and machines: tables supply the rest.
 
-# `psf_model` is `psfex` or `mccd`. psfex is exercised by smk-g4 through smk-g6; mccd has run the full chain on
-# an image-sim star tile (one focal-plane model per exposure, ~1.5 CPU-hours each).
-# `tile_detection` is `unions_catalogue` (the input_types default for data:
-# the UNIONS per-tile catalogue at `inputs.catalogues` is fetched and
-# converted in place, keeping its NUMBER, and its segmentation map sets
-# neighbours' VIGNET pixels to -1e30 as SExtractor does) or `sextractor` (the
-# tile is detected with SExtractor; the default for image sims). Either way
-# make_cat writes TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER and ngmix masks
-# the same neighbours.
+# `psf_model` is `psfex` for data (`fake` for image sims). `mccd` is refused
+# until `persist_exp.py` and `merge_star_cat.py` read MCCD products. PSFEx is
+# exercised by smk-g4 through smk-g6.
+# Both `tile_detection` values run SExtractor on the tile image. Under
+# `unions_catalogue` (the input_types default for data) the UNIONS per-tile
+# catalogue at `inputs.catalogues` is fetched and the detections are joined
+# to it, taking its NUMBER; the tile image must be the catalogue's release
+# (DR6), or the join fails. `sextractor` (the default for image sims) keeps
+# SExtractor's own NUMBER. Either way make_cat writes
+# TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -70,7 +71,8 @@ SExtractor (for the background maps the vignets read), and `tile_vignets` runs
 `fake_interp_runner`, which writes the `galaxy_psf` product from `psf_dict`.
 With no PSF model there is nothing to persist per exposure, so `exp_persist` and
 `star_cat_merge` do not run and `clean_exposure` does not wait on them.
-Simulations that contain stars can run `psfex` or `mccd` exactly as the data do.
+Simulations that contain stars can run `psfex` as the data do. `mccd` is
+refused until `persist_exp.py` and `merge_star_cat.py` read MCCD products.
 
 One campaign per shear branch, each with its own run config:
 
@@ -238,7 +240,7 @@ workflow/
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
     exposure.smk         per-exposure: get_images, split, psf, persist (no temp()); campaign star_cat_merge
-    tile.smk             per-tile: exp forest, merge_headers, detect (SExtractor, or fetch + convert the UNIONS catalogue), vignets, ngmix, merge, make_cat; campaign final_cat_merge
+    tile.smk             per-tile: exp forest, merge_headers, detect (SExtractor, joined to the UNIONS catalogue on data), vignets, ngmix, merge, make_cat; campaign final_cat_merge
   scripts/
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
