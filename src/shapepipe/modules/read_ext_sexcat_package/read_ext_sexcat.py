@@ -63,7 +63,10 @@ FALLBACK_RADIUS = 3
 
 
 def _centre_pixels(x_pos, y_pos):
-    """0-based (column, row) of the pixel holding each 1-based position."""
+    """0-based (column, row) of the pixel holding each 1-based position.
+
+    @sc [decision:preparation.stamp_positioning_and_padding]
+    """
     col = np.rint(np.asarray(x_pos, dtype=float)).astype(np.int64) - 1
     row = np.rint(np.asarray(y_pos, dtype=float)).astype(np.int64) - 1
     return col, row

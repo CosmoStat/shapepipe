@@ -11,9 +11,9 @@ import re
 import numpy as np
 from astropy.io import fits
 from astropy.wcs.wcs import InvalidCoordinateError
-from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
+from shapepipe.pipeline.sqlite_store import read_sqlitedict
 
 
 def get_header_value(image_path, key):
@@ -123,11 +123,17 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
     objects near it, never the tile. CCD_N is the 0-based index that split_exp
     gives the CCD file and its header entry.
 
+    @sc [decision:preparation.epoch_provenance_from_tile_history]
+
     The columns will be:
 
     - ``NUMBER``: same as SExtractor NUMBER
     - ``EXP_NAME``: name of the single exposure for this epoch
     - ``CCD_N``: extension where the object was detected
+
+    @sc [decision:preparation.epoch_provenance_from_tile_history,label:invariant] duplicate-history-cards-count-once
+    Repeated HISTORY cards for one exposure yield one EPOCH HDU and count once
+    in N_EPOCH, as find_exposures' deduplicated list does.
 
     Parameters
     ----------
@@ -155,11 +161,14 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
     )
     cat.open()
 
-    f_wcs = SqliteDict(f_wcs_path)
+    # One lock-free read of the whole header log: merge_headers wrote and
+    # closed it in an earlier step, and keyed SqliteDict reads would take an
+    # NFS lock per access.
+    f_wcs = read_sqlitedict(f_wcs_path)
     # Tile-level logs from merge_headers carry a "TILE_ID" metadata entry
     # (inserted first); n_hdu must be derived from a real exposure entry,
     # otherwise it measures the tile ID string and truncates the CCD scan.
-    exp_keys = [key for key in f_wcs.keys() if key != "TILE_ID"]
+    exp_keys = [key for key in f_wcs if key != "TILE_ID"]
     if len(exp_keys) == 0:
         raise IOError(f"Could not read sql file '{f_wcs_path}'")
     n_hdu = len(f_wcs[exp_keys[0]])
@@ -179,6 +188,8 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
             )
         exp_list.append(m.group(1))
 
+    exp_list = list(dict.fromkeys(exp_list))
+
     obj_id = np.copy(cat.get_data()["NUMBER"])
 
     ra = np.copy(cat.get_data()[pos_params[0]])
@@ -186,14 +197,14 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
 
     n_epoch = np.zeros(len(obj_id), dtype="int32")
     for idx, exp in enumerate(exp_list):
+        if exp not in f_wcs:
+            raise KeyError(
+                f"Exposure {exp} used in image {cat_path} but not"
+                + f" found in header file {f_wcs_path}. Make sure this"
+                + " file is complete."
+            )
         pos_tmp = np.ones(len(obj_id), dtype="int32") * -1
         for idx_j in range(n_hdu):
-            if exp not in f_wcs:
-                raise KeyError(
-                    f"Exposure {exp} used in image {cat_path} but not"
-                    + f" found in header file {f_wcs_path}. Make sure this"
-                    + " file is complete."
-                )
             w = f_wcs[exp][idx_j]["WCS"]
             # Only inverse-project objects near this CCD's footprint.
             # Positions far outside the distortion domain make the
@@ -234,8 +245,6 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
         )
         cat.save_as_fits(data=a, ext_name=f"EPOCH_{idx}")
         cat.open()
-
-    f_wcs.close()
 
     cat.add_col("N_EPOCH", n_epoch)
 

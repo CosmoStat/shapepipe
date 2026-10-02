@@ -37,6 +37,17 @@ class _NullLogger:
     def info(self, *_args, **_kwargs):
         pass
 
+    def warning(self, *_args, **_kwargs):
+        pass
+
+
+class _CaptureLogger(_NullLogger):
+    def __init__(self):
+        self.warnings = []
+
+    def warning(self, message, *_args, **_kwargs):
+        self.warnings.append(message)
+
 
 # Per-object key set that compile_results emits into every shear-type
 # extension (mirrors ngmix.compile_results ``names2``). Sentinel values are
@@ -116,7 +127,7 @@ def _write_ngmix_cat(path, obj_ids):
     fits.HDUList(hdus).writeto(path, overwrite=True)
 
 
-def _run_save_ngmix(ngmix_path, obj_id, cat_size_target=None):
+def _run_save_ngmix(ngmix_path, obj_id, cat_size_target=None, w_log=None):
     """Drive ``_save_ngmix_data`` and return its populated output dict."""
     inst = object.__new__(SaveCatalogue)
     inst._obj_id = np.asarray(obj_id)
@@ -124,7 +135,7 @@ def _run_save_ngmix(ngmix_path, obj_id, cat_size_target=None):
     inst._cat_size_target = (
         len(inst._obj_id) if cat_size_target is None else cat_size_target
     )
-    inst._w_log = _NullLogger()
+    inst._w_log = w_log or _NullLogger()
 
     err_msg = inst._save_ngmix_data(str(ngmix_path))
     assert err_msg is None
@@ -263,6 +274,25 @@ def test_save_ngmix_data_fills_sentinels_for_absent_objects(tmp_path):
     n_epoch = np.asarray(out["NGMIX_N_EPOCH"])
     npt.assert_allclose(n_epoch[present], row["n_epoch_model"])
     npt.assert_allclose(n_epoch[absent], [0.0, 0.0])
+
+
+def test_low_match_fraction_warns_and_continues_with_sentinels(tmp_path):
+    """A low match count warns while unmatched detections stay in the output."""
+    ngmix_path = tmp_path / "ngmix-low-match.fits"
+    obj_ids = list(range(1, 12))
+    _write_ngmix_cat(ngmix_path, [obj_ids[0]])
+    logger = _CaptureLogger()
+
+    out = _run_save_ngmix(
+        ngmix_path,
+        obj_ids,
+        cat_size_target=len(obj_ids),
+        w_log=logger,
+    )
+
+    assert len(logger.warnings) == 1
+    assert "continuing with sentinels" in logger.warnings[0]
+    assert out["NGMIX_G1_NOSHEAR"][1] == -10.0
 
 
 def _metacal_result(obj_id):
@@ -544,6 +574,97 @@ def test_make_cat_runner_ships_every_detection_unclassified(tmp_path):
     assert not [name for name in data.dtype.names if "SPREAD" in name]
 
 
+def test_make_cat_runner_work_dir_publishes_same_catalogue(
+    tmp_path, monkeypatch
+):
+    """WORK_DIR moves the build elsewhere; the published catalogue is the same.
+
+    All three save stages run (ngmix, per-epoch PSF slots, one external mask
+    band). The catalogue built in WORK_DIR is moved to the run's output
+    directory byte-identical to one built there directly, nothing is left in
+    WORK_DIR, and a work file a previous attempt left behind does not leak
+    into it (``save_as_fits`` appends to an existing file).
+    """
+    healsparse = pytest.importorskip("healsparse")
+
+    obj_ids = [1, 2, 3]
+    ra = np.array([10.0, 10.1, 200.0])
+    dec = np.array([20.0, 20.1, -40.0])
+    sexcat = np.array(
+        list(zip(obj_ids, [1, 2, 0], ra, dec)),
+        dtype=[
+            ("NUMBER", "i8"),
+            ("N_EPOCH", "i8"),
+            ("XWIN_WORLD", "f8"),
+            ("YWIN_WORLD", "f8"),
+        ],
+    )
+    tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
+    _write_sex_like_cat(tile_sexcat_path, sexcat)
+    galaxy_psf_path = tmp_path / "galaxy_psf-350-100.sqlite"
+    _write_galaxy_psf_cat(
+        galaxy_psf_path,
+        {
+            1: {"2113864-7": _psf_epoch(0.01, 0.02, 0.5)},
+            2: {
+                "2113864-9": _psf_epoch(0.05, 0.06, 0.7),
+                "2358123-21": _psf_epoch(0.07, 0.08, 0.9),
+            },
+            3: "empty",
+        },
+    )
+    ngmix_path = tmp_path / "ngmix-350-100.fits"
+    _write_ngmix_cat(ngmix_path, obj_ids)
+    mask = healsparse.HealSparseMap.make_empty(32, 4096, np.int16, sentinel=-1)
+    mask.update_values_pos(
+        ra[:2], dec[:2], np.full(2, 64, dtype=np.int16), lonlat=True
+    )
+    mask_path = tmp_path / "mask_r.hsp"
+    mask.write(str(mask_path))
+    inputs = [str(tile_sexcat_path), str(galaxy_psf_path), str(ngmix_path)]
+    stages = {
+        "SHAPE_MEASUREMENT_TYPE": "ngmix",
+        "SAVE_PSF_DATA": "True",
+        "N_EPOCH_SLOTS": "3",
+        "MASK_EXT_PATHS": f"r:{mask_path}",
+    }
+
+    published = {}
+    for label, work_dir in (
+        ("direct", {}),
+        ("staged", {"WORK_DIR": "$SP_TEST_LOCAL/make_cat"}),
+    ):
+        out_dir = tmp_path / label
+        out_dir.mkdir()
+        config = CustomParser()
+        config.read_dict({"MAKE_CAT_RUNNER": {**stages, **work_dir}})
+        if work_dir:
+            local = tmp_path / "local"
+            monkeypatch.setenv("SP_TEST_LOCAL", str(local))
+            (local / "make_cat").mkdir(parents=True)
+            stale = make_cat.get_output_name(str(local / "make_cat"), "-350-100")
+            _write_sex_like_cat(stale, _numbered_data([7, 8]))
+        assert make_cat_runner(
+            inputs, {"output": str(out_dir)}, "-350-100", config,
+            "MAKE_CAT_RUNNER", _NullLogger(),
+        ) == (None, None)
+        path = make_cat.get_output_name(str(out_dir), "-350-100")
+        with open(path, "rb") as f:
+            published[label] = f.read()
+
+    assert published["staged"] == published["direct"]
+    assert list((tmp_path / "local" / "make_cat").iterdir()) == []
+
+    with fits.open(make_cat.get_output_name(str(tmp_path / "staged"), "-350-100")) as hdul:
+        data = hdul[1].data
+        names = data.columns.names
+        npt.assert_array_equal(data["NUMBER"], obj_ids)
+        for col in ("TILE_ID", "NGMIX_MCAL_FLAGS", "HSM_G1_PSF_3", "EXP_ID_2"):
+            assert col in names, col
+        npt.assert_allclose(data["HSM_G1_PSF_1"], [0.01, 0.05, -10.0])
+        npt.assert_array_equal(data["MASK_r"], [64, 64, -1])
+
+
 @pytest.mark.parametrize("shear", SHEAR_EXTS)
 @pytest.mark.parametrize("component", [0, 1], ids=["g1", "g2"])
 @pytest.mark.parametrize("nonfinite", [np.nan, np.inf, -np.inf])
@@ -636,7 +757,7 @@ _PSF_SLOT_SENTINELS = {
 
 
 class _ProcessCatStub(_FinalCatStub):
-    """FITSCatalogue stand-in for ``SaveCatalogue.process``; records add_col."""
+    """FITSCatalogue stand-in for ``SaveCatalogue.process``; records add_cols."""
 
     def __init__(self, obj_id, n_epoch):
         super().__init__(n_epoch)
@@ -652,8 +773,8 @@ class _ProcessCatStub(_FinalCatStub):
     def get_data(self):
         return {"NUMBER": self._number, "N_EPOCH": self._n_epoch}
 
-    def add_col(self, name, data):
-        self.cols[name] = data
+    def add_cols(self, columns):
+        self.cols.update(columns)
 
 
 def _slot_numbers(out, family):
