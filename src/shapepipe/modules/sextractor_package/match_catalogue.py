@@ -27,6 +27,9 @@ from scipy.spatial import cKDTree
 # asks "self or not self".
 UNMATCHED_LABEL = -1
 
+# The largest NUMBER the int32 NUMBER and SEG_VIGNET columns hold.
+MAX_NUMBER = np.iinfo(np.int32).max
+
 
 def mutual_nearest(x_a, y_a, x_b, y_b, radius):
     """One-to-one pairs of mutual nearest neighbours closer than ``radius``.
@@ -103,8 +106,9 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     rows leave the catalogue. A ``SEG_VIGNET`` column, when present, is
     relabelled through the whole map from old to new numbers, with the
     footprints of rows that left marked ``UNMATCHED_LABEL``: as the external
-    numbers are unique and positive, each row's own footprint carries its new
-    ``NUMBER`` and no other footprint can, whatever the two numberings share.
+    numbers are unique integers in ``[1, MAX_NUMBER]``, each row's own
+    footprint carries its new ``NUMBER`` and no other footprint can,
+    whatever the two numberings share.
     The catalogue is rewritten in place; every other HDU and column is kept.
 
     Both catalogues come from the same pixels, so pairs agree to ~1e-4
@@ -147,7 +151,8 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     Raises
     ------
     ValueError
-        If the external ``NUMBER`` repeats or is not positive, or if more
+        If the external ``NUMBER`` repeats or is not an integer in
+        ``[1, MAX_NUMBER]``, or if more
         than ``tolerated_unpaired`` rows of either side, and more than
         ``1 - min_fraction`` of it, have no partner
 
@@ -156,11 +161,14 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     ext = asc.read(ext_cat_path, format="sextractor",
                    include_names=["NUMBER", "X_IMAGE", "Y_IMAGE"])
     ext_number = np.asarray(ext["NUMBER"])
-    if (ext_number <= 0).any() or len(np.unique(ext_number)) < len(ext):
+    if (not np.issubdtype(ext_number.dtype, np.integer)
+            or (ext_number <= 0).any() or (ext_number > MAX_NUMBER).any()
+            or len(np.unique(ext_number)) < len(ext)):
         raise ValueError(
-            f"{ext_cat_path} has a repeated or non-positive NUMBER; the join"
-            + " needs unique positive numbers, so that no relabelled"
-            + " SEG_VIGNET footprint takes another object's number."
+            f"{ext_cat_path} has a NUMBER that is not an integer in"
+            + f" [1, {MAX_NUMBER}] or that repeats; the join needs unique"
+            + " numbers that fit the int32 NUMBER and SEG_VIGNET columns, so"
+            + " that no relabelled footprint takes another object's number."
         )
     with fits.open(cat_path) as hdul:
         hdus = [hdu.copy() for hdu in hdul]
