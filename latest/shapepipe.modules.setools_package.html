@@ -657,14 +657,16 @@ selection is not to be saved to disk.</p>
 <div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MASK:star_selection]</span>
 <span class="na">MAG_AUTO &gt; 18.</span>
 <span class="na">MAG_AUTO &lt; 22.</span>
-<span class="na">FWHM_IMAGE &lt;</span><span class="o">=</span><span class="w"> </span><span class="s">mode(FWHM_IMAGE{preselect}) + 0.2</span>
-<span class="na">FWHM_IMAGE &gt;</span><span class="o">=</span><span class="w"> </span><span class="s">mode(FWHM_IMAGE{preselect}) - 0.2</span>
+<span class="na">FWHM_IMAGE &lt;</span><span class="o">=</span><span class="w"> </span><span class="s">mode(FWHM_IMAGE{preselect}) + 3 * locus_width(FWHM_IMAGE{preselect})</span>
+<span class="na">FWHM_IMAGE &gt;</span><span class="o">=</span><span class="w"> </span><span class="s">mode(FWHM_IMAGE{preselect}) - 3 * locus_width(FWHM_IMAGE{preselect})</span>
 <span class="na">FLAGS</span><span class="w"> </span><span class="o">=</span><span class="s">= 0</span>
 <span class="na">IMAFLAGS_ISO</span><span class="w"> </span><span class="o">=</span><span class="s">= 0</span>
 </pre></div>
 </div>
-<p>The size range is now refined using the mode of preselected objects. The
-preselection removes outliers before the mode computation.</p>
+<p>The size range is refined around the stellar locus of the preselected
+objects: <code class="docutils literal notranslate"><span class="pre">mode</span></code> returns the peak of their FWHM distribution and
+<code class="docutils literal notranslate"><span class="pre">locus_width</span></code> the peak’s width, as a Gaussian standard deviation. The
+preselection removes outliers before either is computed.</p>
 <p>An example of the definition of random subsamples is as follows:</p>
 <div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[RAND_SPLIT:star_split]</span>
 <span class="na">RATIO</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20</span>

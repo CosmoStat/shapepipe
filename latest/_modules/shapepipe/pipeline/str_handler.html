@@ -564,6 +564,100 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">modopt.math.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigma_mad</span>
 
+<span class="c1"># Kernel bandwidth, in the input's units (px for FWHM_IMAGE): close to the</span>
+<span class="c1"># median stellar-locus width over 80 CCDs in 0.53 and 0.69 arcsec seeing.</span>
+<span class="c1"># @sc [decision:star_selection_psf.star_selection_box]</span>
+<span class="n">LOCUS_BANDWIDTH</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="c1"># Smallest locus width returned, in the input's units.</span>
+<span class="c1"># @sc [decision:star_selection_psf.star_selection_box]</span>
+<span class="n">LOCUS_WIDTH_FLOOR</span> <span class="o">=</span> <span class="mf">0.02</span>
+<span class="c1"># Below this many values the locus is the median and normalised MAD.</span>
+<span class="c1"># @sc [decision:star_selection_psf.star_selection_box]</span>
+<span class="n">LOCUS_MIN_SIZE</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">FWHM_PER_SIGMA</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="stellar_locus">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.stellar_locus">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">stellar_locus</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">bandwidth</span><span class="o">=</span><span class="n">LOCUS_BANDWIDTH</span><span class="p">,</span> <span class="n">floor</span><span class="o">=</span><span class="n">LOCUS_WIDTH_FLOOR</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Locate the stellar locus as the main peak of a 1D distribution.</span>
+
+<span class="sd">    The centre is the peak of the Gaussian kernel density estimate, refined</span>
+<span class="sd">    by a parabola through the maximum and its neighbours on a grid of</span>
+<span class="sd">    spacing ``bandwidth / 10``. The width is the peak's full width at half</span>
+<span class="sd">    maximum, converted to a Gaussian standard deviation and with the kernel</span>
+<span class="sd">    removed in quadrature, so it measures the locus and not the kernel.</span>
+<span class="sd">    Each half-maximum walk stops early at a density minimum, so a</span>
+<span class="sd">    neighbouring bump (galaxies next to a broad locus) does not widen it.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    values : array_like</span>
+<span class="sd">        Sample, e.g. the FWHM of a size-limited preselection.</span>
+<span class="sd">    bandwidth : float, optional</span>
+<span class="sd">        Standard deviation of the Gaussian kernel.</span>
+<span class="sd">    floor : float, optional</span>
+<span class="sd">        Smallest width returned.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple of float</span>
+<span class="sd">        ``(centre, width)``; ``(median, max(normalised MAD, floor))`` below</span>
+<span class="sd">        ``LOCUS_MIN_SIZE`` values; ``(-1, -1)`` when empty.</span>
+
+<span class="sd">    """</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">LOCUS_MIN_SIZE</span><span class="p">:</span>
+        <span class="n">centre</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">centre</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">sigma_mad</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span> <span class="n">floor</span><span class="p">)</span>
+
+    <span class="n">step</span> <span class="o">=</span> <span class="n">bandwidth</span> <span class="o">/</span> <span class="mf">10.0</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">-</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">bandwidth</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">bandwidth</span><span class="p">,</span> <span class="n">step</span>
+    <span class="p">)</span>
+    <span class="n">density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+    <span class="c1"># Chunk over the data to bound memory for large samples.</span>
+    <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">array_split</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">//</span> <span class="mi">1000</span><span class="p">)):</span>
+        <span class="n">density</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">grid</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">chunk</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span> <span class="o">/</span> <span class="n">bandwidth</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">peak</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">density</span><span class="p">))</span>
+    <span class="n">centre</span> <span class="o">=</span> <span class="n">grid</span><span class="p">[</span><span class="n">peak</span><span class="p">]</span>
+    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">peak</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">left</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">density</span><span class="p">[</span><span class="n">peak</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span><span class="n">peak</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="n">curvature</span> <span class="o">=</span> <span class="n">left</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">top</span> <span class="o">+</span> <span class="n">right</span>
+        <span class="k">if</span> <span class="n">curvature</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">centre</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">step</span> <span class="o">*</span> <span class="p">(</span><span class="n">left</span> <span class="o">-</span> <span class="n">right</span><span class="p">)</span> <span class="o">/</span> <span class="n">curvature</span>
+
+    <span class="n">half</span> <span class="o">=</span> <span class="n">density</span><span class="p">[</span><span class="n">peak</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span>
+    <span class="n">lo</span> <span class="o">=</span> <span class="n">peak</span>
+    <span class="k">while</span> <span class="n">lo</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">density</span><span class="p">[</span><span class="n">lo</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">half</span> <span class="ow">and</span> <span class="n">density</span><span class="p">[</span><span class="n">lo</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">density</span><span class="p">[</span><span class="n">lo</span><span class="p">]:</span>
+        <span class="n">lo</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="n">hi</span> <span class="o">=</span> <span class="n">peak</span>
+    <span class="k">while</span> <span class="p">(</span>
+        <span class="n">hi</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="ow">and</span> <span class="n">density</span><span class="p">[</span><span class="n">hi</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">half</span>
+        <span class="ow">and</span> <span class="n">density</span><span class="p">[</span><span class="n">hi</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">density</span><span class="p">[</span><span class="n">hi</span><span class="p">]</span>
+    <span class="p">):</span>
+        <span class="n">hi</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">x_lo</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">half</span><span class="p">,</span> <span class="n">density</span><span class="p">[[</span><span class="n">lo</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">grid</span><span class="p">[[</span><span class="n">lo</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]])</span>
+        <span class="k">if</span> <span class="n">density</span><span class="p">[</span><span class="n">lo</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">half</span>
+        <span class="k">else</span> <span class="n">grid</span><span class="p">[</span><span class="n">lo</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">x_hi</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">half</span><span class="p">,</span> <span class="n">density</span><span class="p">[[</span><span class="n">hi</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">grid</span><span class="p">[[</span><span class="n">hi</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]])</span>
+        <span class="k">if</span> <span class="n">density</span><span class="p">[</span><span class="n">hi</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">half</span>
+        <span class="k">else</span> <span class="n">grid</span><span class="p">[</span><span class="n">hi</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">sigma_peak</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_hi</span> <span class="o">-</span> <span class="n">x_lo</span><span class="p">)</span> <span class="o">/</span> <span class="n">FWHM_PER_SIGMA</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">sigma_peak</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">bandwidth</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">floor</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">centre</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">width</span><span class="p">)</span></div>
+
+
 
 <div class="viewcode-block" id="StrInterpreter">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter">[docs]</a>
@@ -782,6 +876,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"mean"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"median"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"mode"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"locus_width"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locus_width</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"sqrt"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"pow"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">pow</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stat_func</span><span class="p">[</span><span class="s2">"log"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span>
@@ -823,10 +918,11 @@
 
 <div class="viewcode-block" id="StrInterpreter._mode">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._mode">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">iter_max</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Get Mode.</span>
 
-<span class="sd">        Compute the mode, the most frequent value of a continuous distribution.</span>
+<span class="sd">        Compute the mode of a continuous distribution as the peak of its</span>
+<span class="sd">        Gaussian kernel density estimate; see :func:`stellar_locus`.</span>
 
 <span class="sd">        @sc [decision:star_selection_psf.star_selection_box]</span>
 
@@ -834,10 +930,6 @@
 <span class="sd">        ----------</span>
 <span class="sd">        input : numpy.ndarray</span>
 <span class="sd">            Numpy array containing the data.</span>
-<span class="sd">        eps : float, optional</span>
-<span class="sd">            Accuracy to achieve (default is 0.001)</span>
-<span class="sd">        iter_max : int, optional</span>
-<span class="sd">            Maximum number of iterations</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -847,58 +939,33 @@
 <span class="sd">            -1, if input array has 0 elements</span>
 
 <span class="sd">        """</span>
-        <span class="n">cat_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">cat_size</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
-            <span class="n">bins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">cat_size</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">cat_size</span> <span class="o">&gt;=</span> <span class="mi">20</span><span class="p">:</span>
-            <span class="n">bins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">cat_size</span><span class="p">)</span> <span class="o">/</span> <span class="mf">5.0</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">cat_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="n">stellar_locus</span><span class="p">(</span><span class="nb">input</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
 
-        <span class="n">data</span> <span class="o">=</span> <span class="nb">input</span>
-        <span class="n">diff</span> <span class="o">=</span> <span class="n">eps</span> <span class="o">+</span> <span class="mf">1.0</span>
 
-        <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">while</span> <span class="n">diff</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">"Mode computation failed: zoom window emptied out"</span>
-                    <span class="sa">f</span><span class="s2">" after </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2"> iterations"</span>
-                <span class="p">)</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ptp</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">eps</span><span class="p">:</span>
-                <span class="c1"># The zoom window has degenerated: the remaining values span</span>
-                <span class="c1"># less than the requested accuracy (e.g. near-identical</span>
-                <span class="c1"># float32 values, for which np.histogram cannot construct</span>
-                <span class="c1"># distinct bin edges). The surviving sample localises the</span>
-                <span class="c1"># mode to within eps, so return its median.</span>
-                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<div class="viewcode-block" id="StrInterpreter._locus_width">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter._locus_width">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_locus_width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Get Locus Width.</span>
 
-            <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">hist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">break</span>
+<span class="sd">        Compute the Gaussian-equivalent standard deviation of the peak whose</span>
+<span class="sd">        centre ``mode`` returns; see :func:`stellar_locus`.</span>
 
-            <span class="n">b_min</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">hist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">argmax</span><span class="p">()]</span>
-            <span class="n">b_max</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">hist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+<span class="sd">        @sc [decision:star_selection_psf.star_selection_box]</span>
 
-            <span class="n">diff</span> <span class="o">=</span> <span class="n">b_max</span> <span class="o">-</span> <span class="n">b_min</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input : numpy.ndarray</span>
+<span class="sd">            Numpy array containing the data.</span>
 
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">b_min</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span> <span class="o">&lt;</span> <span class="n">b_max</span><span class="p">)]</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            width of the peak, if input array has 20 or more elements;</span>
+<span class="sd">            normalised MAD about the median, if it has &gt;0 and &lt;20 elements;</span>
+<span class="sd">            -1, if input array has 0 elements</span>
 
-            <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="n">iter_max</span><span class="p">:</span>
-                <span class="k">break</span>
-            <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
-
-        <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="n">iter_max</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Mode computation did not converge after </span><span class="si">{</span><span class="n">iter_max</span><span class="si">}</span><span class="s2"> "</span>
-                <span class="sa">f</span><span class="s2">"iterations (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects left in zoom window, "</span>
-                <span class="sa">f</span><span class="s2">"value range [</span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s2">])"</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">mode</span> <span class="o">=</span> <span class="p">(</span><span class="n">b_min</span> <span class="o">+</span> <span class="n">b_max</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
-            <span class="k">return</span> <span class="n">mode</span></div>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">stellar_locus</span><span class="p">(</span><span class="nb">input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="StrInterpreter._sigma_mad">

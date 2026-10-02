@@ -568,6 +568,7 @@
             </div>
             <nav aria-label="Page">
                 <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.stellar_locus"><code class="docutils literal notranslate"><span class="pre">stellar_locus()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter"><code class="docutils literal notranslate"><span class="pre">StrInterpreter</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter.interpret"><code class="docutils literal notranslate"><span class="pre">StrInterpreter.interpret()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._compare"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._compare()</span></code></a></li>
@@ -575,6 +576,7 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._init_stat_function"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._init_stat_function()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._mean"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._mean()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._mode"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._mode()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._locus_width"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._locus_width()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._sigma_mad"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._sigma_mad()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._test_homogeneity"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._test_homogeneity()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._operate"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._operate()</span></code></a></li>
@@ -602,6 +604,35 @@
 <dd class="field-odd"><p>Axel Guinot</p>
 </dd>
 </dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.pipeline.str_handler.stellar_locus">
+<span class="sig-name descname"><span class="pre">stellar_locus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bandwidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">floor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/str_handler.html#stellar_locus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.str_handler.stellar_locus" title="Link to this definition">#</a></dt>
+<dd><p>Locate the stellar locus as the main peak of a 1D distribution.</p>
+<p>The centre is the peak of the Gaussian kernel density estimate, refined
+by a parabola through the maximum and its neighbours on a grid of
+spacing <code class="docutils literal notranslate"><span class="pre">bandwidth</span> <span class="pre">/</span> <span class="pre">10</span></code>. The width is the peak’s full width at half
+maximum, converted to a Gaussian standard deviation and with the kernel
+removed in quadrature, so it measures the locus and not the kernel.
+Each half-maximum walk stops early at a density minimum, so a
+neighbouring bump (galaxies next to a broad locus) does not widen it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values</strong> (<em>array_like</em>) – Sample, e.g. the FWHM of a size-limited preselection.</p></li>
+<li><p><strong>bandwidth</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Standard deviation of the Gaussian kernel.</p></li>
+<li><p><strong>floor</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Smallest width returned.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(centre,</span> <span class="pre">width)</span></code>; <code class="docutils literal notranslate"><span class="pre">(median,</span> <span class="pre">max(normalised</span> <span class="pre">MAD,</span> <span class="pre">floor))</span></code> below
+<code class="docutils literal notranslate"><span class="pre">LOCUS_MIN_SIZE</span></code> values; <code class="docutils literal notranslate"><span class="pre">(-1,</span> <span class="pre">-1)</span></code> when empty.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a> of <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.pipeline.str_handler.StrInterpreter">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">StrInterpreter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">catalogue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">make_compare</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/str_handler.html#StrInterpreter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.str_handler.StrInterpreter" title="Link to this definition">#</a></dt>
@@ -702,21 +733,40 @@ look into it</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.pipeline.str_handler.StrInterpreter._mode">
-<span class="sig-name descname"><span class="pre">_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iter_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/str_handler.html#StrInterpreter._mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.str_handler.StrInterpreter._mode" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/str_handler.html#StrInterpreter._mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.str_handler.StrInterpreter._mode" title="Link to this definition">#</a></dt>
 <dd><p>Get Mode.</p>
-<p>Compute the mode, the most frequent value of a continuous distribution.</p>
+<p>Compute the mode of a continuous distribution as the peak of its
+Gaussian kernel density estimate; see <a class="reference internal" href="#shapepipe.pipeline.str_handler.stellar_locus" title="shapepipe.pipeline.str_handler.stellar_locus"><code class="xref py py-func docutils literal notranslate"><span class="pre">stellar_locus()</span></code></a>.</p>
 <p>&#64;sc [decision:star_selection_psf.star_selection_box]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Numpy array containing the data.</p></li>
-<li><p><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Accuracy to achieve (default is 0.001)</p></li>
-<li><p><strong>iter_max</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Maximum number of iterations</p></li>
-</ul>
+<dd class="field-odd"><p><strong>input</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Numpy array containing the data.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>mode, if input array has 20 or more elements;
 median, if input array has &gt;0 and &lt;20 elements;
+-1, if input array has 0 elements</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.str_handler.StrInterpreter._locus_width">
+<span class="sig-name descname"><span class="pre">_locus_width</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/str_handler.html#StrInterpreter._locus_width"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.str_handler.StrInterpreter._locus_width" title="Link to this definition">#</a></dt>
+<dd><p>Get Locus Width.</p>
+<p>Compute the Gaussian-equivalent standard deviation of the peak whose
+centre <code class="docutils literal notranslate"><span class="pre">mode</span></code> returns; see <a class="reference internal" href="#shapepipe.pipeline.str_handler.stellar_locus" title="shapepipe.pipeline.str_handler.stellar_locus"><code class="xref py py-func docutils literal notranslate"><span class="pre">stellar_locus()</span></code></a>.</p>
+<p>&#64;sc [decision:star_selection_psf.star_selection_box]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Numpy array containing the data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>width of the peak, if input array has 20 or more elements;
+normalised MAD about the median, if it has &gt;0 and &lt;20 elements;
 -1, if input array has 0 elements</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -888,6 +938,7 @@ with a number as parameter.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.stellar_locus"><code class="docutils literal notranslate"><span class="pre">stellar_locus()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter"><code class="docutils literal notranslate"><span class="pre">StrInterpreter</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter.interpret"><code class="docutils literal notranslate"><span class="pre">StrInterpreter.interpret()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._compare"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._compare()</span></code></a></li>
@@ -895,6 +946,7 @@ with a number as parameter.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._init_stat_function"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._init_stat_function()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._mean"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._mean()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._mode"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._mode()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._locus_width"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._locus_width()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._sigma_mad"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._sigma_mad()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._test_homogeneity"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._test_homogeneity()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.str_handler.StrInterpreter._operate"><code class="docutils literal notranslate"><span class="pre">StrInterpreter._operate()</span></code></a></li>
