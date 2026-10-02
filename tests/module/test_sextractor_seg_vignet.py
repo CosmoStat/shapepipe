@@ -201,7 +201,7 @@ def test_sextractor_caller_names_its_check_images(tmp_path):
 
 # --- SEG_VIGNET through the join to the UNIONS catalogue -------------------
 #
-# UberSeg (uberseg_weight, seg_has_neighbour, Ngmix._check_central_seg_label)
+# UberSeg (uberseg_mask, seg_has_neighbour, Ngmix._check_central_seg_label)
 # compares each stamp's labels with the row's NUMBER. The check image is
 # labelled with SExtractor's NUMBERs; the join replaces NUMBER with the
 # catalogue's, and relabels every stamp through the whole SExtractor -> UNIONS
@@ -365,21 +365,20 @@ def test_runner_seg_vignet_without_a_join_keeps_sextractor_numbers(
 def test_uberseg_sees_the_same_neighbours_after_the_join(tmp_path,
                                                          monkeypatch):
     """UberSeg only asks own-versus-other, so the relabelled stamps give the
-    weights and the neighbour flag the SExtractor-labelled ones give."""
+    neighbour mask and flag the SExtractor-labelled ones give."""
     from shapepipe.modules.ngmix_package.ngmix import (
         seg_has_neighbour,
-        uberseg_weight,
+        uberseg_mask,
     )
 
     data = _run_runner(tmp_path, monkeypatch, match=True)
     paired = [i for i, o in enumerate(CROWD) if o[3] is not None]
     old = _old_stamps()[paired]
-    weight = np.ones((CROWD_STAMP, CROWD_STAMP))
     for i, j in enumerate(paired):
         new_seg, number = data["SEG_VIGNET"][i], data["NUMBER"][i]
         npt.assert_array_equal(
-            uberseg_weight(weight, new_seg, number),
-            uberseg_weight(weight, old[i], CROWD[j][0]))
+            uberseg_mask(new_seg, number),
+            uberseg_mask(old[i], CROWD[j][0]))
         assert (seg_has_neighbour(new_seg, number)
                 == seg_has_neighbour(old[i], CROWD[j][0]))
     assert seg_has_neighbour(data["SEG_VIGNET"][0], data["NUMBER"][0])
