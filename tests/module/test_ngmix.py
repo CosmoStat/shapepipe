@@ -735,6 +735,7 @@ def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
         obj_id: SimpleNamespace(
             gals=[np.ones((5, 5))] * len(jacobs), jacobs=jacobs,
             ra=[10. * obj_id], dec=[30.], ccd=obj_id,
+            epoch_cuts=Counter(considered=len(jacobs)),
         )
         for obj_id, jacobs in epochs.items()
     }
@@ -747,14 +748,13 @@ def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
     monkeypatch.setattr(module, "Tile_cat", lambda *args: tile)
     monkeypatch.setattr(
         module, "prepare_postage_stamps",
-        lambda vignet, obj_id, *args: stamps[obj_id],
+        lambda vignet, obj_id, *args, **kwargs: stamps[obj_id],
     )
     monkeypatch.setattr(module, "do_ngmix_metacal", capture)
     monkeypatch.setattr(Ngmix, "save_results", lambda self, res: None)
     monkeypatch.setattr(Ngmix, "log_mean_ellipticity", lambda self: None)
     inst = object.__new__(Ngmix)
     inst._tile_cat_path = "in-memory-tile"
-    inst._seg_cat_path = None
     inst._vignet_cat = SimpleNamespace(
         gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
     )
@@ -764,6 +764,12 @@ def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
     inst._blend_handling = "noisefill"
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
+    inst._epoch_central_defect_radius = module.EPOCH_CENTRAL_DEFECT_RADIUS
+    inst._epoch_masked_fraction_cut = module.EPOCH_MASKED_FRACTION_CUT
+    inst._defect_fill = "noise"
+    inst._epoch_interpolated_defect_radius = (
+        module.EPOCH_INTERPOLATED_DEFECT_RADIUS
+    )
     inst._save_batch = -1
     inst._w_log = _RecordingLogger()
 
