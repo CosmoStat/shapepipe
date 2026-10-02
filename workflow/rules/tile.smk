@@ -54,6 +54,16 @@ catalogues; unpaired rows leave the catalogue. The catalogue is SExtractor run
 by MegaPipe on the same DR6 image with the same configuration, so the join is
 exact; on other pixels (a DR5 image) it fails loudly.
 
+``blend_handling: uberseg``, the default, gives ngmix UberSeg's hard mask
+instead of its own noise-fill default; the mask reads one coadd segmentation
+stamp per object from the sexcat's SEG_VIGNET column. tile_detect cuts it from
+SExtractor's SEGMENTATION check image on the grid of each object's VIGNET,
+before the join, which relabels every stamp to the catalogue's NUMBER (-1 on
+the footprints of rows that leave, 0 on sky). The switch is two prologue
+variables and nothing else (blend_env, below), so ``blend_handling:
+noisefill`` runs exactly the chain the committed inis run with neither
+variable set.
+
 There is no `tile_mask` rule, and there will not be one (PR #847). ShapePipe
 generates no masks: tiles have no instrument flag image of their own, so
 tile_detect runs SExtractor with FLAG_IMAGE = False against
@@ -472,6 +482,26 @@ rule tile_merge_headers:
     shell:
         sp_shell("tile_merge_headers", "config_tile_Mh_exp.ini")
 
+# --- blend handling -------------------------------------------------------
+
+# What blend_handling: uberseg (the default) exports into a stage's prologue;
+# nothing under noisefill, whose prologues (rerun triggers) are those the
+# committed inis need no variable for. The inis read each variable with the
+# module's own noise-fill default:
+# SEG_VIGNET = ${SP_SEG_VIGNET:-False} in config_tile_Sx.ini,
+# BLEND_HANDLING = ${SP_BLEND_HANDLING:-noisefill} in
+# config_tile_Ng_template.ini. Being in the prologue, a flip reruns
+# tile_detect, and with it the tile's whole shape chain.
+BLEND_ENV = {
+    "tile_detect": {"SP_SEG_VIGNET": "True"},
+    "tile_ngmix": {"SP_BLEND_HANDLING": "uberseg"},
+} if BLEND_HANDLING == "uberseg" else {}
+
+
+def blend_env(stage):
+    return BLEND_ENV.get(stage, {})
+
+
 # The UNIONS per-tile catalogue (CFIS.<tile>.r.cat), from a local mirror or
 # from vos, the way tile_get_images fetches the image; tile_detect joins its
 # SExtractor detections to it. Reads only tile_numbers.txt, which unit_pre
@@ -509,15 +539,28 @@ if TILE_DETECTION == "unions_catalogue":
 
 
 def detect_env(tile):
-    """tile_detect's prologue exports: the catalogue to join, if any.
+    """tile_detect's prologue exports: the catalogue to join, if any, and
+    SP_SEG_VIGNET under blend_handling: uberseg.
 
-    Empty under tile_detection: sextractor (image simulations), so that no
-    value left exported in the submitting shell reaches the job.
+    SP_MATCH_CATALOGUE is empty under tile_detection: sextractor (image
+    simulations), so that no value left exported in the submitting shell
+    reaches the job.
     """
-    if TILE_DETECTION != "unions_catalogue":
-        return {"SP_MATCH_CATALOGUE": ""}
-    gic = f"{tile_dir(tile)}/output/run_sp_tile_Gic/get_images_runner/output"
-    return {"SP_MATCH_CATALOGUE": f"{gic}/CFIS_cat{unit_num(tile)}.cat"}
+    match = ""
+    if TILE_DETECTION == "unions_catalogue":
+        gic = f"{tile_dir(tile)}/output/run_sp_tile_Gic/get_images_runner/output"
+        match = f"{gic}/CFIS_cat{unit_num(tile)}.cat"
+    return {"SP_MATCH_CATALOGUE": match, **blend_env("tile_detect")}
+
+
+# tile_detect's extra memory under uberseg: add_seg_vignet reads the 400 MB
+# SEGMENTATION check image and adds an int32 SEG_VIGNET column the size of
+# VIGNET, which the join then holds twice. MEASURED on DR6 tile 202.301
+# (36,022 detections; sextractor_runner as tile_detect runs it, without the
+# post-processing): peak RSS 1.53 GiB under noisefill, 2.93 GiB under uberseg.
+# Scaled to the 1.84 GiB worst tile above, uberseg needs ~3.5 GiB; 7000 MB is
+# 2x that.
+DETECT_SEG_MEM_MB = 3000 if BLEND_HANDLING == "uberseg" else 0
 
 
 # SExtractor object detection on the tile; under unions_catalogue joined to
@@ -549,11 +592,11 @@ rule tile_detect:
     # 4000 MB is 2.1x the worst tile, and an OOM retries at 8000. The runtime
     # is ~7x the slowest tile, for /scratch I/O on nibi (a 400 MB image and
     # weight in, a ~430 MB catalogue out). nibi bills max(cores, mem_GB/4), so
-    # the job bills 1 core-equivalent.
+    # the job bills 1 core-equivalent; under uberseg, DETECT_SEG_MEM_MB below.
     threads: 1
     retries: 1
     resources:
-        mem_mb = lambda wc, attempt: 4000 * attempt,
+        mem_mb = lambda wc, attempt: (4000 + DETECT_SEG_MEM_MB) * attempt,
         runtime = lambda wc, attempt: 20 * attempt
     shell:
         sp_shell("tile_detect", "config_tile_Sx.ini")
@@ -614,6 +657,13 @@ rule tile_vignets:
         sp_shell("tile_vignets", f"config_tile_PiViVi_{PSF_MODEL}.ini",
                  check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}')
 
+# Each ngmix chunk's extra memory under uberseg: Tile_cat holding the tile's
+# SEG_VIGNET column, a view into the loaded table like VIGNET. Measured on DR6
+# 202.301 (36065 rows, 51x51): Tile_cat peak and resident RSS 955 MiB with the
+# column, 595 without (+360 MiB, the column's size). 500 covers 186.307's
+# ~37.9k rows (~375 MiB) with a third to spare.
+NGMIX_SEG_MEM_MB = 500 if BLEND_HANDLING == "uberseg" else 0
+
 # ngmix shape measurement — N chunks per tile (D4). Each chunk LOOKS UP its own
 # CLOSED catalogue-row range in the file tile_vignets materialised at the top of this
 # group job (TILE_NGMIX_RANGES); the ranges are knowable only at EXECUTION time,
@@ -644,7 +694,8 @@ rule tile_ngmix:
         f"{TILE_DIR}/logs/tile_ngmix_{{chunk}}.json"
     params:
         pre = lambda wc: unit_pre("tile_ngmix", wc.tile,
-            env={"SP_NGMIX_CHUNK": wc.chunk, "NGMIX_N_CHUNKS": NGMIX_CHUNKS},
+            env={"SP_NGMIX_CHUNK": wc.chunk, "NGMIX_N_CHUNKS": NGMIX_CHUNKS,
+                 **blend_env("tile_ngmix")},
             # Two steps, not `eval "$(...)"`: a command substitution inside eval
             # discards the script's exit status, so a missing sexcat would fall
             # through to shapepipe_run with an unset range and fail as something
@@ -803,7 +854,10 @@ rule tile_ngmix:
         # margin over the worst tile measured, and the first thing to give would
         # be the page cache holding the store. Take it only with a measurement
         # of cache behaviour under pressure, not on the arithmetic alone.
-        mem_mb = lambda wc, attempt: 5000 * attempt,
+        #
+        # Under uberseg each chunk also holds the tile's SEG_VIGNET column,
+        # int32 and the size of VIGNET: NGMIX_SEG_MEM_MB below.
+        mem_mb = lambda wc, attempt: (5000 + NGMIX_SEG_MEM_MB) * attempt,
         # 120 on the FIRST attempt, and ATTEMPT-SCALED after it. MEASURED
         # two ways, and the second is why the margin is thinner than it looks:
         #   * alone (job 20795277, tile 198.305 chunk 1): ~76 min for 3547
