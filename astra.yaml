@@ -69,7 +69,7 @@ inputs:
 outputs:
   - id: final_cat
     type: data
-    format: fits
+    format: hdf5
     description: >-
       Per-tile shear catalogue family, the terminal science product
       (make_cat_runner).
@@ -2257,7 +2257,7 @@ analyses:
     outputs:
       - id: tile_final_cat
         type: data
-        format: fits
+        format: hdf5
         description: The assembled per-tile science catalogue (final_cat family).
         inputs: [ngmix_chunks]
         decisions:

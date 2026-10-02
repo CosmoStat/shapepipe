@@ -516,7 +516,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   apart, and nothing else would notice if they did — a column added to one
   writer would just be missing from the other's product. `tests/unit/`
   `test_star_cat_columns.py` is what holds them together.
-  `final_cat_merge` collects every ready tile's `final_cat-<ID>.fits` into
+  `final_cat_merge` collects every ready tile's `final_cat-<ID>.hdf5` into
   `<products_dir>/final_cat_<run>.hdf5`: one dataset per tile under a group
   named for the campaign, the `final_cat.param` columns, an `n_tiles` attribute.
   That schema is what sp_validation's reader opens, so it is fixed; the column
