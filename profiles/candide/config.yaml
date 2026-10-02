@@ -18,13 +18,20 @@ default-resources:
   # unavailable" / "can't start new thread" (2026-09-30).
   slurm_extra: "'--exclude=n09,n17,n23,n34,n35,n36'"
 software-deployment-method: [apptainer]
-# Bind node /tmp (~29 GB free, local disk) to tile.smk's /local/scratch:
-# candide has no /local, and its writable /scratch path requires a job ID.
-# Variable expansion limits are documented in profiles/nibi/config.yaml.
-# The disk holds ~5 real-data tile stores (~5.6 GB each); dense image-sim runs
-# can set tile_store_root in the run config (workflow/config.yaml).
-# PYTHONPATH names a checkout's src/; workflow/bin/sp rewrites the launch copy.
-apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/n17data/mkilbing/astro/repositories/github/shapepipe/src --bind /home,/automnt,/n17data,/n23data1,/n09data --bind /tmp:/local/scratch"
+# /local/scratch is where tile.smk puts the node-local tile store (TILE_LOCAL,
+# ~5.6 GB per real-data tile). candide has no /local, and its node-local /scratch
+# is writable only per job (/scratch/$USER/$SLURM_JOB_ID, made by the prolog),
+# which this line cannot name: snakemake passes it through literally, and
+# --cleanenv drops SLURM_JOB_ID inside the container. The node's /tmp is NOT an
+# option: it is a 31 GB disk shared by every job on the node, and filling it
+# kills other people's jobs. So the default is a shared directory (NFS) on
+# /n23data1; a campaign can move it with `tile_store_root:` in its run config,
+# and bin/sp replaces this bind's source in the launch snapshot (see
+# workflow/config.yaml), refusing a source under /tmp. The PYTHONPATH pin is
+# rewritten by bin/sp to the launch snapshot's src/; the value here only has to
+# be a checkout's src/. bin/sp also appends --env TMPDIR/JOBLIB_TEMP_FOLDER (its
+# tmp_guard).
+apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/n17data/mkilbing/astro/repositories/github/shapepipe/src --bind /home,/automnt,/n17data,/n23data1,/n09data --bind /n23data1/mkilbing/shapepipe/tilestore:/local/scratch"
 latency-wait: 60                 # NFS: wait for outputs to appear after a job
 keep-going: true                 # a failed job poisons only its cone; siblings run on
 # Retry transient node failures, including measured process-slot exhaustion

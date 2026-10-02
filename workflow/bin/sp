@@ -48,6 +48,10 @@
 #   SP_STATE_DIR      snakemake state and code snapshot (default <run_dir>-state)
 #   SP_CONTAINER      image to use, before the config's container:
 #   SP_PHASE          set by sp (prepare/compute/passthrough); do not set
+#   TMPDIR, APPTAINER_TMPDIR
+#                     temporary directories of the jobs and of apptainer; on
+#                     candide REQUIRED, absolute, and not under /tmp or /scratch
+#                     (see "temporary directories" below)
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # workflow/
@@ -132,6 +136,44 @@ fi
 STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"
 [ "$NEEDS_CAMPAIGN" = 0 ] || mkdir -p "$STATE_DIR"
 
+# --- temporary directories ---------------------------------------------------
+# The slurm executor exports this shell's environment to every job, TMPDIR
+# literally. On candide the login node's TMPDIR (/scratch/$USER/tmp) cannot be
+# created on a compute node (only the prolog's /scratch/$USER/$SLURM_JOB_ID is
+# writable), so Slurm logs "Setting TMPDIR to /tmp" and the job falls back to
+# the node's 31 GB /tmp. There apptainer, when it cannot mount the image,
+# unpacks all of it (~3 GB) -- on 2026-09-30 that filled /tmp on n35. Inside
+# the container --cleanenv drops TMPDIR, and candide mounts the host /tmp, so
+# tempfile and joblib land there too. Hence: on candide both directories must
+# be set to a path every node sees, outside /tmp and /scratch, and the same
+# path is passed into the container (snapshot_code). Elsewhere only a warning.
+tmp_guard() {
+  local v val bad
+  for v in TMPDIR APPTAINER_TMPDIR; do
+    val="${!v:-}"
+    bad=""
+    if [ -z "$val" ]; then bad="unset"
+    elif [[ "$val" != /* ]]; then bad="not absolute"
+    elif [ "$val" = /tmp ] || [[ "$val" == /tmp/* ]]; then bad="under /tmp"
+    elif [ "$PROFILE" = candide ] && [[ "$val" == /scratch/* ]]; then
+      bad="under /scratch, which compute nodes cannot create"
+    fi
+    if [ -n "$bad" ]; then
+      if [ "$PROFILE" = candide ]; then
+        echo "sp: $v is $bad (${val:-<empty>}). On candide set TMPDIR and" \
+             "APPTAINER_TMPDIR to a directory every node sees, e.g." \
+             "/n23data1/\$USER/shapepipe/tmp, before \`sp run\`." >&2
+        exit 2
+      fi
+      echo "sp: warning: $v is $bad (${val:-<empty>})" >&2
+      continue
+    fi
+    mkdir -p "$val"
+  done
+  # Older apptainer and the `singularity` name read this one.
+  [ -z "${APPTAINER_TMPDIR:-}" ] || export SINGULARITY_TMPDIR="$APPTAINER_TMPDIR"
+}
+
 # --- the launch code snapshot ----------------------------------------------
 # SLURM jobs re-parse the Snakefile and read scripts/configs when they start,
 # potentially hours after launch. sp run copies code to $STATE_DIR/code so
@@ -201,6 +243,37 @@ if root:
     print(f"sp: tile store root {root} (bound to /local/scratch)", file=sys.stderr)
 PY
 
+  # Temporary directories inside the container (see tmp_guard): --cleanenv drops
+  # TMPDIR, so the head's TMPDIR is passed as a literal --env, for tempfile and
+  # for joblib's memmaps. It must lie under a bound directory, or the container
+  # could not write it. On candide, a tile store bound from /tmp is refused.
+  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "${TMPDIR:-}" "$PROFILE" <<'PY'
+import pathlib, re, sys
+f, tmp, profile = pathlib.Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+text = f.read_text()
+m = re.search(r'apptainer-args:\s*"([^"]*)"', text)
+if not m:
+    sys.exit("sp: the profile has no quoted apptainer-args")
+args = m.group(1)
+store = re.search(r'--bind (\S+):/local/scratch', args)
+if profile == "candide" and store and (store.group(1) == "/tmp"
+                                       or store.group(1).startswith("/tmp/")):
+    sys.exit(f"sp: the tile store is bound from {store.group(1)}; set "
+             "tile_store_root in the run config (never /tmp on candide)")
+if tmp and not tmp.startswith("/tmp"):
+    roots = [s.split(":")[0] for b in re.findall(r'--bind (\S+)', args)
+             for s in b.split(",")]
+    if not any(tmp == r or tmp.startswith(r.rstrip("/") + "/") for r in roots):
+        sys.exit(f"sp: TMPDIR {tmp} is not under any --bind of the profile "
+                 f"({', '.join(roots)}); the container could not write it")
+    args = re.sub(r'\s*--env (TMPDIR|JOBLIB_TEMP_FOLDER)=\S+', '', args)
+    args += f" --env TMPDIR={tmp} --env JOBLIB_TEMP_FOLDER={tmp}"
+    text = text[:m.start(1)] + args + text[m.end(1):]
+    f.write_text(text)
+    print(f"sp: temporary directory {tmp} (head, jobs and container)",
+          file=sys.stderr)
+PY
+
   python - "$SNAPSHOT/snapshot.json" "$REPO" <<'PY'
 import json, pathlib, subprocess, sys, time
 out, repo = pathlib.Path(sys.argv[1]), sys.argv[2]
@@ -243,6 +316,7 @@ code_root() { [ -f "$SNAPSHOT/workflow/Snakefile" ] && echo "$SNAPSHOT" || echo 
 # same tree. Set the phase required by the Snakefile: run uses prepare/compute;
 # other commands default to passthrough (see the Snakefile's SP_PHASE gate).
 sm() {
+  tmp_guard
   local root; root="$(code_root)"
   # The run config the Snakefile reads: the snapshot's copy when this run has
   # one, so every parse of the campaign -- head and jobs -- sees the same file.
@@ -259,6 +333,7 @@ cmd="${1:-}"
 case "$cmd" in
   run)
     shift
+    tmp_guard
     snapshot_code
     # Continue after prepare failure so compute can apply SP_MISSING_THRESHOLD
     # to the whole tile list. Retain prepare's failure for the final exit code.
