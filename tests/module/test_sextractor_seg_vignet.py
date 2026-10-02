@@ -398,23 +398,43 @@ def test_a_partial_relabel_would_collide():
     assert ((partial == 2) & (old != 1)).any()
 
 
-def test_join_rejects_a_catalogue_with_repeated_or_nonpositive_numbers(
-    tmp_path,
-):
-    """Unique positive catalogue NUMBERs are what keep a relabelled stamp's
-    own footprint apart from every other one."""
+def _join_with_numbers(case, numbers):
+    """Join CROWD to a catalogue whose three objects carry ``numbers``
+    (written as given), and return the joined NUMBER column."""
     from shapepipe.modules.sextractor_package import match_catalogue as mc
 
-    for numbers in ([5, 5, 6], [0, 5, 6]):
-        case = tmp_path / str(numbers[0] + numbers[1])
-        case.mkdir()
-        _write_crowd(case / "sexcat.fits", case / "seg.fits")
-        rows = zip(numbers, [10.0, 10.0, 22.0], [10.0, 13.0, 22.0])
-        ext = case / "ext.cat"
-        ext.write_text(EXT_HEADER + "".join(
-            f"{n:10d} {x:11.4f} {y:11.4f}\n" for n, x, y in rows))
-        with pytest.raises(ValueError, match="NUMBER"):
-            mc.match_catalogue(str(case / "sexcat.fits"), str(ext))
+    case.mkdir()
+    _write_crowd(case / "sexcat.fits", case / "seg.fits")
+    rows = zip(numbers, [10.0, 10.0, 22.0], [10.0, 13.0, 22.0])
+    ext = case / "ext.cat"
+    ext.write_text(EXT_HEADER + "".join(
+        f"{n:>10} {x:11.4f} {y:11.4f}\n" for n, x, y in rows))
+    mc.match_catalogue(str(case / "sexcat.fits"), str(ext))
+    with fits.open(case / "sexcat.fits") as hdul:
+        return hdul["LDAC_OBJECTS"].data["NUMBER"].tolist()
+
+
+@pytest.mark.parametrize("numbers", [
+    [5, 5, 6],                   # repeated
+    [0, 5, 6],                   # not positive
+    [-3, 5, 6],
+    ["5.5", 7, 6],               # not an integer
+    ["5.0", 7, 6],               # read as a float
+    [2**31, 5, 6],               # past int32
+    [2**32 - 1, 5, 6],           # would narrow to -1, UNMATCHED_LABEL
+])
+def test_join_rejects_numbers_that_could_collide(tmp_path, numbers):
+    """Unique catalogue NUMBERs that the int32 columns hold exactly are what
+    keep a relabelled stamp's own footprint apart from every other one."""
+    with pytest.raises(ValueError, match="NUMBER"):
+        _join_with_numbers(tmp_path / "case", numbers)
+
+
+def test_join_accepts_the_largest_int32_number(tmp_path):
+    from shapepipe.modules.sextractor_package import match_catalogue as mc
+
+    assert _join_with_numbers(tmp_path / "case", [1, mc.MAX_NUMBER, 6]) == [
+        1, mc.MAX_NUMBER, 6]
 
 
 def test_seg_vignet_stays_out_of_the_final_catalogue(tmp_path):
