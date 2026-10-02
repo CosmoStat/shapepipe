@@ -332,7 +332,7 @@ def _make_ngmix(tmp_path):
     log = _RecordingLogger()
     ngmix = Ngmix(
         ["tile_cat.fits"] + [str(p) for p in paths[:5]],
-        str(tmp_path), "-001-001", 30.0, 0.186, str(paths[5]), log,
+        str(tmp_path), "-001-001", 30.0, str(paths[5]), log,
     )
     return ngmix, log
 
@@ -377,7 +377,7 @@ def test_ngmix_init_uberseg_without_seg_cat_raises(tmp_path):
     with pytest.raises(ValueError, match="requires SEG_VIGNET_PATH"):
         Ngmix(
             ["tile_cat.fits"] + [str(p) for p in paths[:5]],
-            str(tmp_path), "-001-001", 30.0, 0.186, str(paths[5]),
+            str(tmp_path), "-001-001", 30.0, str(paths[5]),
             _RecordingLogger(),
             blend_handling="uberseg",
             seg_cat_path=None,
@@ -394,7 +394,7 @@ class _FakeConfig:
         self._seg_path = seg_path
 
     def getfloat(self, _sec, _key):
-        return 30.0 if _key == "MAG_ZP" else 0.186
+        return 30.0
 
     def getboolean(self, _sec, _key, fallback=False):
         return fallback
