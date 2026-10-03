@@ -10,13 +10,15 @@ it, on galaxies with half-light radius 0.3" and 0.5" through a 0.7" PSF,
 round and with ellipticity (0.05, 0.02), and on a 0.7" galaxy through a
 0.9" PSF. These pass only because the interpolated pixels' quarter turns
 also lose their weight: an unsymmetrized column at 8 px gives
-c1 = -1.3e-3. Defects too wide to interpolate (a 5-px bleed, edge bands)
-are noise-filled, and are checked at ``EPOCH_CENTRAL_DEFECT_RADIUS``. The
-cases sit at the radii themselves, so lowering either below its calibrated
-value turns this red.
+c1 = -1.3e-3. Defects too wide to interpolate (a 4-column cluster, a 5-px
+bleed, edge bands) are noise-filled, and are checked at
+``EPOCH_CENTRAL_DEFECT_RADIUS`` on the same three galaxies; the 0.7"
+galaxy through the 0.9" PSF sets that radius (a 4-column cluster at 10 px
+gives m11 = -6.6%). The cases sit at the radii themselves, so lowering
+either below its calibrated value turns this red.
 
 The bound is checked against the veto alone, not the masked-fraction cut:
-the edge bands at the noise-fill radius cover about 30% of the stamp, which
+the edge bands at the noise-fill radius cover about 25% of the stamp, which
 ``EPOCH_MASKED_FRACTION_CUT`` (10%) drops in production. That they stay
 within the bound is the evidence that the fraction cut is not a bias
 control, so it can be chosen for DES comparability and robustness alone.
@@ -63,6 +65,8 @@ def geometry(kind, distance):
         bad[:, near:near + 3] = True
     elif kind == "finite_bleed":
         bad[CENTRE - 5:CENTRE + 6, near:near + 3] = True
+    elif kind == "cluster4":
+        bad[:, near:near + 4] = True
     elif kind == "wide_bleed":
         bad[:, near:near + 5] = True
     elif kind == "edge":
@@ -79,10 +83,9 @@ CASES = (
        for psf in (ROUND, ELLIPTICAL)]
     + [(k, RN, h, 0.7, ROUND) for k in ("wide_bleed", "edge")
        for h in (0.3, 0.5)]
-    # The widest edge band the veto keeps, on the 0.5" galaxy through the
-    # elliptical PSF, sits at the bound at the radius itself
-    # (m11 = -0.94% +/- 0.06%), so it is checked one pixel out.
-    + [("edge", RN + 1, 0.5, 0.7, ELLIPTICAL)]
+    + [("edge", RN, 0.5, 0.7, ELLIPTICAL)]
+    + [(k, RN, 0.7, 0.9, psf) for k in ("cluster4", "edge")
+       for psf in (ROUND, ELLIPTICAL)]
     + [("edge", N - CENTRE - 5, 0.5, 0.7, psf) for psf in (ROUND, ELLIPTICAL)]
 )
 

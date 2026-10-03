@@ -171,6 +171,13 @@ HSM_RHO4_PSF_12
 # Blend flag: coadd seg stamp held a non-central footprint (shapepipe#776)
 NGMIX_NEIGHBOUR_FLAG
 
+# Defect diagnostics over the kept epochs: epochs with interpolated pixels,
+# min distance (px) from the centre to an interpolated / noise-filled defect
+# pixel, -1 when none (ngmix Postage_stamp.record_defects)
+NGMIX_N_EPOCH_INTERP
+NGMIX_MIN_DIST_INTERP
+NGMIX_MIN_DIST_NOISEFILL
+
 ## Shape measurement outputs
 ## Ngmix: model fitting
 

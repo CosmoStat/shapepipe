@@ -35,6 +35,7 @@ from shapepipe.modules.ngmix_package.defect_interpolation import (
     interpolate_defects,
 )
 from shapepipe.modules.ngmix_package.ngmix import (
+    DEFECT_WEIGHTINGS,
     EPOCH_CENTRAL_DEFECT_RADIUS,
     EPOCH_INTERPOLATED_DEFECT_RADIUS,
     EPOCH_MASKED_FRACTION_CUT,
@@ -558,18 +559,40 @@ def _hot_stamp():
     return gal, np.ones((N_STAMP, N_STAMP)), flag
 
 
-@pytest.mark.parametrize("blend_handling", ["noisefill", "uberseg"])
-def test_interpolated_fill_and_its_weights(blend_handling):
-    """Short defect runs take the interpolant of the clean image; other
-    defects take noise; the weight is zero on the defects and on the
-    quarter-turn orbit of the interpolated pixels, whose light stays; the
-    metacal noise image is interpolated with the same operator.
+def _expected_masks(target, defect, defect_weighting):
+    """The fill and the zero-weight set each DEFECT_WEIGHTING promises,
+    written out independently of ``defect_weighting_masks``."""
+    noisefilled = defect & ~target
+    if defect_weighting == "des_y6":
+        return target | (np.rot90(target) & ~defect), noisefilled
+    zero = {
+        "fourfold_zero": defect | fourfold(target),
+        "hole": defect,
+        "full": noisefilled,
+    }[defect_weighting]
+    return target, zero
 
-    Failure modes: the orbit is not zero-weighted (a one-sided hole in the
-    likelihood biases c), or its light is replaced; the fill mask is
-    symmetrized; wide defects or edge bands are extrapolated; raw defect
-    values leak; the noise image keeps independent noise where the science
-    image is smooth.
+
+@pytest.mark.parametrize("defect_weighting", DEFECT_WEIGHTINGS)
+@pytest.mark.parametrize("blend_handling", ["noisefill", "uberseg"])
+def test_interpolated_fill_and_its_weights(blend_handling, defect_weighting):
+    """Short defect runs take the interpolant of the clean image; other
+    defects take noise. Under fourfold_zero the weight is zero on the
+    defects and on the quarter-turn orbit of the interpolated pixels, whose
+    light stays; under hole on the defects; under full and des_y6 only on
+    the noise-filled ones. des_y6 also interpolates the clean quarter-turn
+    (k=1) copies of the interpolated pixels, at full weight. The uberseg
+    neighbour side stays at weight 0 under every option. The metacal noise
+    image is interpolated by the same operator in fixnoise's quarter-turned
+    frame.
+
+    Failure modes: the orbit is not zero-weighted under fourfold_zero (a
+    one-sided hole in the likelihood biases c), or its light is replaced;
+    the copies are not interpolated under des_y6, or a noise-filled pixel
+    is; an interpolated pixel on the neighbour side gets weight; wide
+    defects or edge bands are extrapolated; raw defect values leak; the
+    noise image is interpolated in the detector frame
+    (noise-image-in-the-fixnoise-frame).
     """
     gal, weight, flag = _hot_stamp()
     defect = flag != 0
@@ -583,20 +606,100 @@ def test_interpolated_fill_and_its_weights(blend_handling):
     gal_out, w_out, noise_out = prepare_ngmix_weights(
         gal, weight, flag, np.random.RandomState(4),
         bkg_rms=np.ones((N_STAMP, N_STAMP)), blend_handling=blend_handling,
-        **kwargs,
+        defect_weighting=defect_weighting, **kwargs,
     )
 
     neighbour = (
         uberseg_mask(kwargs["seg"], 1, dilate_neighbour=1)
         if kwargs else np.zeros_like(defect)
     )
-    npt.assert_array_equal(w_out == 0.0, defect | fourfold(target) | neighbour)
-    npt.assert_array_equal(gal_out[~defect], gal[~defect])
-    expected = interpolate_defects(gal[None], defect, target)[0]
-    npt.assert_allclose(gal_out[target], expected[target], rtol=1e-5)
+    fill, zero = _expected_masks(target, defect, defect_weighting)
+    if defect_weighting == "des_y6":
+        assert (fill & ~defect).any()
+    npt.assert_array_equal(w_out == 0.0, zero | neighbour)
+    npt.assert_array_equal(w_out[~(zero | neighbour)], 1.0)
+    kept = ~defect & ~fill
+    npt.assert_array_equal(gal_out[kept], gal[kept])
+    expected = interpolate_defects(gal[None], defect | fill, fill)[0]
+    npt.assert_allclose(gal_out[fill], expected[fill], rtol=1e-5)
     assert np.all(np.abs(gal_out[defect & ~target]) < 10.0)
-    refilled = interpolate_defects(noise_out[None], defect, target)[0]
-    npt.assert_allclose(noise_out[target], refilled[target], atol=1e-5)
+    turned = np.rot90(noise_out)
+    refilled = interpolate_defects(turned[None], defect | fill, fill)[0]
+    npt.assert_allclose(turned[fill], refilled[fill], atol=1e-5)
+
+
+def test_fixnoise_turns_the_noise_image_k1_then_k3():
+    """ngmix's fixnoise adds np.rot90(sheared(np.rot90(noise, 1)), 3) to
+    each sheared image: with an asymmetric noise image, the fixnoise output
+    minus the plain metacal output is exactly that.
+
+    Failure mode: an ngmix release changes the turn (k=3 first, or none),
+    and the noise image prepare_ngmix_weights interpolates in the k=1 frame
+    no longer lines up with the science image's interpolated pixels
+    (noise-image-in-the-fixnoise-frame).
+    """
+    from ngmix import DiagonalJacobian, Observation
+    from ngmix.metacal import get_all_metacal
+
+    n = 33
+    rows, cols = np.indices((n, n)) - (n - 1) / 2
+    psf_image = np.exp(-(rows ** 2 + cols ** 2) / (2 * 2.0 ** 2))
+    psf_image /= psf_image.sum()
+    galaxy = 100 * np.exp(-(rows ** 2 + cols ** 2) / (2 * 3.0 ** 2))
+    jacobian = DiagonalJacobian(row=(n - 1) / 2, col=(n - 1) / 2, scale=0.2)
+    noise = np.random.RandomState(3).normal(size=(n, n))
+    noise[:, 20] += 5.0
+
+    def metacal(image, noise_image=None):
+        obs = Observation(
+            image, weight=np.ones((n, n)), jacobian=jacobian,
+            psf=Observation(psf_image, jacobian=jacobian), noise=noise_image,
+        )
+        return get_all_metacal(
+            obs, psf="gauss", types=["noshear", "1p"],
+            fixnoise=noise_image is not None, use_noise_image=True,
+            rng=np.random.RandomState(0),
+        )
+
+    fixed = metacal(galaxy, noise)
+    plain = metacal(galaxy)
+    turned = metacal(np.rot90(noise, 1).copy())
+    for t in ("noshear", "1p"):
+        added = fixed[t].image - plain[t].image
+        npt.assert_allclose(added, np.rot90(turned[t].image, 3), atol=1e-9)
+        assert not np.allclose(added, np.rot90(turned[t].image, 1))
+
+
+def test_defect_diagnostics_summarise_the_kept_epochs():
+    """Over the epochs the veto keeps, ``n_epoch_interp`` counts those with
+    an interpolated pixel and the two distances are the nearest
+    interpolated and noise-filled defect pixels to the stamp centre; an
+    object without either has -1.
+
+    Failure modes: a vetoed epoch is counted; noise-filled and interpolated
+    pixels are swapped; the sentinel is 0, a valid distance
+    (defect-diagnostic-columns).
+    """
+    vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(_veto_epochs())
+    stamp = prepare_postage_stamps(
+        vignet, 1, 0, tile_cat, bkg_sub=False,
+        psf_obj=psf_obj, gal_obj=gal_obj,
+    )
+    assert stamp.defect_diagnostics() == {
+        "n_epoch_interp": 2,
+        "min_dist_interp": float(EPOCH_INTERPOLATED_DEFECT_RADIUS),
+        "min_dist_noisefill": float(EPOCH_CENTRAL_DEFECT_RADIUS),
+    }
+    clean = {"2100001-10": _veto_epochs()["2100001-10"]}
+    vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(clean)
+    stamp = prepare_postage_stamps(
+        vignet, 1, 0, tile_cat, bkg_sub=False,
+        psf_obj=psf_obj, gal_obj=gal_obj,
+    )
+    assert stamp.defect_diagnostics() == {
+        "n_epoch_interp": 0, "min_dist_interp": -1.0,
+        "min_dist_noisefill": -1.0,
+    }
 
 
 # --- The tile VIGNET's -1e30 neighbour markers are not defects -------------
@@ -831,8 +934,8 @@ def test_object_three_px_from_the_tile_edge_is_dropped():
 
 
 def test_the_central_veto_sees_off_tile_pixels(monkeypatch):
-    """An off-tile band 12 px from the object passes the central veto; one
-    9 px away is noise-filled inside the 10-px radius and vetoed.
+    """An off-tile band at EPOCH_CENTRAL_DEFECT_RADIUS from the object passes
+    the central veto; one 9 px away is noise-filled inside it and vetoed.
 
     Every off-tile band within reach of the veto also exceeds the 10%
     fraction cut (this one is 17 columns, 1/3 of the stamp), so the fraction
@@ -844,7 +947,8 @@ def test_the_central_veto_sees_off_tile_pixels(monkeypatch):
     monkeypatch.setattr(ngmix_module, "EPOCH_MASKED_FRACTION_CUT", 1.0)
     sky = np.random.default_rng(5).normal(0.0, 1.0, (N_STAMP, N_STAMP))
     far, near = sky.copy(), sky.copy()
-    far[:, :_CENTRE - 11] = _MARKER
+    rn = int(EPOCH_CENTRAL_DEFECT_RADIUS)
+    far[:, :_CENTRE - rn + 1] = _MARKER
     near[:, :_CENTRE - 8] = _MARKER
     assert (near == _MARKER).mean() > EPOCH_MASKED_FRACTION_CUT
     kept, _, _ = _marker_stamp(far)
@@ -1058,7 +1162,7 @@ def test_a_column_beside_a_noisefill_neighbour_is_vetoed_as_noise_filled():
 
     Failure mode: the veto decides which pixels are interpolated from the
     defect mask alone, so it keeps the epoch at the 7-px radius while the
-    fill noise-fills pixels 8 px from the object, inside the 10 px that
+    fill noise-fills pixels 8 px from the object, inside the radius that
     noise fill needs.
     """
     column = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)

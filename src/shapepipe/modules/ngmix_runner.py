@@ -12,6 +12,7 @@ from sqlitedict import SqliteDict
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.ngmix_package.ngmix import (
+    DEFECT_WEIGHTING,
     Ngmix,
     write_empty_tile_output,
 )
@@ -47,7 +48,7 @@ def ngmix_runner(
 ):
     """Define The Ngmix Runner.
 
-    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.centroid_source,decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme,decision:shape_measurement.galaxy_pixel_weights]
+    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.centroid_source,decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme,decision:shape_measurement.galaxy_pixel_weights,decision:shape_measurement.defect_weighting]
 
     @sc [label:operations] empty-tile-product
     A tile whose PSF or galaxy vignette store is entirely empty never
@@ -128,6 +129,18 @@ def ngmix_runner(
     else:
         blend_handling = "noisefill"
 
+    # DEFECT_WEIGHTING (optional, environment-expanded): how interpolated
+    # defects are weighted, one of DEFECT_WEIGHTINGS (see
+    # defect_weighting_masks). Absent or empty takes DEFECT_WEIGHTING; the
+    # workflow sets it from the run config's `defect_weighting`.
+    defect_weighting = DEFECT_WEIGHTING
+    if config.has_option(module_config_sec, "DEFECT_WEIGHTING"):
+        defect_weighting = (
+            config.getexpanded(module_config_sec, "DEFECT_WEIGHTING").strip()
+            or DEFECT_WEIGHTING
+        )
+    w_log.info(f"DEFECT_WEIGHTING = {defect_weighting}")
+
     # DILATE_NEIGHBOUR (optional): binary-dilation iterations enlarging the
     # uberseg neighbour mask, to absorb the few-pixel coadd-vs-epoch seg-overlay
     # offset. Ignored unless BLEND_HANDLING = uberseg. Default 1 (~one pixel).
@@ -195,6 +208,7 @@ def ngmix_runner(
         blend_handling=blend_handling,
         dilate_neighbour=dilate_neighbour,
         metacal_psf=metacal_psf,
+        defect_weighting=defect_weighting,
     )
 
     # Process ngmix shape measurement and metacalibration

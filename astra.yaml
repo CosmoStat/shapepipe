@@ -1385,7 +1385,7 @@ analyses:
            metacal_scheme, centroid_source, epoch_flux_rescaling,
            psf_epoch_averaging, galaxy_pixel_weights, psf_likelihood_noise,
            megacam_ccd_flip, defect_fill, blend_handling,
-           weight_symmetrization, epoch_masked_fraction_cut,
+           defect_weighting, epoch_masked_fraction_cut,
            central_defect_veto]
     decisions:
       ngmix_seed_mode:
@@ -1607,8 +1607,8 @@ analyses:
           (symmetrized_4fold_noise). The cost of not symmetrizing, a hole in
           the galaxy light, is bounded by central_defect_veto. Interpolation
           is the only fill because it lets interpolated defects come to 7 px
-          of the object, against a size-blind 10 px for noise fill, which a
-          0.7 arcsec galaxy through a 0.9 arcsec PSF needs widened to 14 px.
+          of the object, against 13 px for noise fill, which a 0.7 arcsec
+          galaxy through a 0.9 arcsec PSF needs.
           Values:
           VIGNETMAKER_RUNNER.MASKING = False.
         default: interpolate
@@ -1625,7 +1625,7 @@ analyses:
               (wider holes, edge bands, runs ending on a noisefill neighbour)
               get independent noise at the per-pixel background RMS when
               supplied, or the stamp's robust noise scale otherwise. The
-              interpolated pixels keep weight 0 (weight_symmetrization). For a
+              interpolated pixels are weighted by defect_weighting. For a
               3-px bleed 6 px from a 0.5 arcsec galaxy, PR #916 measures
               m11 = +0.89% when the fill is symmetrized, against +0.19%
               otherwise.
@@ -1639,10 +1639,10 @@ analyses:
             excluded_reason: >-
               A noise-filled defect leaves a hole in the object's light that
               metacal shears and the sky does not. Columns, 3-px bleeds and
-              single pixels then need the 10 px veto on 0.3 and 0.5 arcsec
-              galaxies through a 0.7 arcsec PSF, and 14 px on a 0.7 arcsec
+              single pixels then need a 10 px veto on 0.3 and 0.5 arcsec
+              galaxies through a 0.7 arcsec PSF, and 13 px on a 0.7 arcsec
               galaxy through a 0.9 arcsec PSF (a 3-px bleed at 10 px gives
-              m11 = -6.8%). Interpolated, the same defects pass from 7 px on
+              m11 = -6.5%). Interpolated, the same defects pass from 7 px on
               all three (PR #922 bias scan).
             insights: [mask_metacal_acts_on_whole_stamp, mask_bad_column_symmetrize]
           symmetrized_4fold_noise:
@@ -1741,61 +1741,74 @@ analyses:
               the ~2% uberseg-only bias in DES Y1 simulations, although Sheldon
               et al. 2020 found similar blend biases with and without MOF.
             insights: [mask_des_y1_uberseg_only, mask_blend_bias_detection]
-      weight_symmetrization:
-        label: Four-fold symmetric weight holes of interpolated defects
+      defect_weighting:
+        label: Weighting of interpolated defects (DEFECT_WEIGHTING)
         rationale: >-
           ngmix fits a Gaussian to a profile that is not one, so a zero-weight
-          hole on one side of the object pulls the fit: a spin-2 term.
-          [HARDCODED] prepare_ngmix_weights cancels it for the interpolated
-          defects, whose light stays: the weight is also zeroed on their three
-          quarter-turn copies about the stamp centre, which keep their light.
-          Pixels whose light is replaced (noise-filled defects, noisefill
-          neighbours) are not symmetrized: the hole is then in the image
-          metacal shears, and a weight orbit leaves m unchanged (-0.53%
-          against -0.54% for a noise-filled column 10 px from a 0.5 arcsec
-          galaxy) while moving c by about 1e-4 either way. The uberseg
-          neighbour side is not symmetrized either
-          (interpolated_and_neighbours). The rotation is about the stamp
-          centre, where the extractor places the object to within half a
-          pixel per axis; the measurements draw the object uniformly within
-          that half pixel. Measured with tests/helpers/defect_response.py (6
-          seeds, full response matrix, galaxy half-light radius 0.5 arcsec,
-          0.7 arcsec PSF).
-        default: interpolated
+          hole on one side of the object pulls the fit (a spin-2 term), while
+          interpolated light at full weight is a smooth guess the fit trusts
+          as data. DEFECT_WEIGHTING (prepare_ngmix_weights,
+          defect_weighting_masks; the workflow's `defect_weighting`) chooses
+          between them for the interpolated defects only: noise-filled pixels
+          and noisefill neighbours have no light to weight and keep weight 0,
+          and the uberseg neighbour side keeps weight 0 under every option.
+          Under every option the metacal noise image is interpolated in
+          fixnoise's quarter-turned frame (ngmix turns it k=1 before shearing
+          and k=3 after), by the operator that interpolates the science image.
+          Interpolated in the detector frame, its interpolated pixels sit a
+          quarter turn from the science image's, and the correlated noise of
+          the interpolant survives fixnoise as an additive bias that grows as
+          S/N falls: a 3-px bleed 7 px from a 0.7 arcsec galaxy through a 0.9
+          arcsec PSF gives c1 = 2.7e-3 +/- 0.5e-3 at S/N 30 under
+          fourfold_zero, and 4.6e-4 or less on every galaxy with the noise
+          image turned. Measured with paired, antithetic-noise seeds on 51-px
+          stamps, galaxies of half-light radius 0.3 and 0.5 arcsec through a
+          0.7 arcsec PSF and 0.7 arcsec through a 0.9 arcsec PSF, round and
+          (0.05, 0.02) PSFs, defects 7-12 px from the centre (sym-verify
+          harness, PR #922). The rotation is about the stamp centre, where the
+          extractor places the object to within half a pixel per axis.
+          Values:
+          ngmix.py::DEFECT_WEIGHTING = "fourfold_zero".
+        default: fourfold_zero
         options:
-          interpolated:
-            label: Symmetrize the interpolated defects
+          fourfold_zero:
+            label: Interpolate; zero the weight on the defect and its three quarter turns
             description: >-
-              An interpolated column 8 px from the galaxy gives c1 = -1.3e-3
-              unsymmetrized and +2e-6 symmetrized (PR #916).
+              The quarter-turn copies keep their light. An interpolated column
+              8 px from the galaxy gives c1 = -1.3e-3 with a one-sided hole and
+              +2e-6 symmetrized (PR #916, noiseless).
             insights: [mask_bad_column_symmetrize]
-          interpolated_and_neighbours:
-            label: Also symmetrize the uberseg neighbour side (#815)
-            excluded: true
-            excluded_reason: >-
-              Alone, the neighbour-side hole is a strong pull: a neighbour
-              footprint with no light 10 px away gives c1 = -7.8e-3
-              unsymmetrized and 2e-6 symmetrized. But a real neighbour leaves
-              light in the target's uberseg cell, which pulls the other way,
-              and the one-sided hole partly offsets it: for a neighbour of a
-              tenth of the target's flux at 10 px, c1 = +1.1e-3 unsymmetrized
-              and +1.2e-2 symmetrized; at equal flux, +0.13 and +0.21. The
-              symmetrized hole also keeps 117 of 1580 weighted pixels and 97%
-              of the target's S/N at 10 px (99% unsymmetrized), 25 pixels and
-              71% at 7 px, none at 5 px. Worth revisiting only on a
-              neighbour-subtracted image (blend_handling.mof_subtract).
-            insights: [mask_bad_column_symmetrize, mask_uberseg_neighbour_bias]
-          none:
-            label: No symmetrization
-            excluded: true
-            excluded_reason: >-
-              Every zero-weight hole stays one-sided: the interpolated column
-              above gives c1 = -1.3e-3.
+          des_y6:
+            label: "DES Y6 (pizza-cutter): mask OR its quarter turn, interpolated at full weight"
+            description: >-
+              The defect mask is ORed with its np.rot90 (k=1) copy about the
+              stamp centre and the union is interpolated, as pizza-cutter
+              symmetrizes the bit mask and weight of each SE slice before
+              interpolating; every interpolated pixel keeps full weight.
+              Departures forced by per-object stamps: the rotation is about
+              the object, not a cell centre; there is no mfrac cut, the epoch
+              cuts (10% masked fraction, central veto) stand in for it; the
+              noise image is interpolated in fixnoise's turned frame rather
+              than in the science frame; and copies that land on a
+              noise-filled pixel stay noise-filled. Without the turned noise
+              image it gives c1 = -5.5e-3 +/- 1.8e-3 for the bleed above at
+              S/N 30.
+            insights: [mask_des_defect_practice, mask_bad_column_symmetrize]
+          hole:
+            label: Interpolate; zero the weight on the defect only
+            description: >-
+              The one-sided hole pulls the fit: c1 = -5.7e-3 for the bleed
+              above, noiseless.
+          full:
+            label: Interpolate at full weight, no symmetrization
+            description: >-
+              c1 = 6.8e-4 for the bleed above through the elliptical PSF,
+              noiseless; 9.5e-3 at S/N 30 without the turned noise image.
       central_defect_veto:
         label: Per-epoch veto on a defect near the stamp centre
         rationale: >-
           [HARDCODED] An epoch is dropped when a defect pixel lies strictly
-          closer to the stamp centre than the radius of its fill: 10 px for
+          closer to the stamp centre than the radius of its fill: 13 px for
           noise-filled pixels (EPOCH_CENTRAL_DEFECT_RADIUS) and 7 px for
           interpolated ones (EPOCH_INTERPOLATED_DEFECT_RADIUS). The veto
           reads the same interpolated set as the fill, including the runs
@@ -1809,24 +1822,34 @@ analyses:
           the defects it keeps give |m11|, |m22| < 1% and |c1|, |c2| < 5e-4,
           on 51-px stamps at known RMS and high S/N, through a round and a
           (0.05, 0.02) elliptical 0.7 arcsec PSF, on galaxies of half-light
-          radius 0.3 and 0.5 arcsec, and for interpolated defects also 0.7
-          arcsec through a 0.9 arcsec PSF. Known limit: at 10 px the widest
-          edge band the veto keeps sits at the 1% bound through the
-          elliptical PSF (m11 = -0.94% +/- 0.06%). Guarded by
+          radius 0.3 and 0.5 arcsec, and 0.7 arcsec through a 0.9 arcsec
+          PSF. That largest galaxy sets both radii: 3-px bleeds the 7 px,
+          noise-filled holes the 13 px (a 4-column cluster at 13 px gives
+          m11 = -0.67% +/- 0.05%, c1 = 7e-5). Guarded by
           tests/science/test_defect_recovery.py.
           Values:
-          EPOCH_CENTRAL_DEFECT_RADIUS = 10;
+          EPOCH_CENTRAL_DEFECT_RADIUS = 13;
           EPOCH_INTERPOLATED_DEFECT_RADIUS = 7.
         default: fixed_radii
         options:
           fixed_radii:
-            label: Fixed radii, 10 px for noise-filled and 7 px for interpolated defects
+            label: Fixed radii, 13 px for noise-filled and 7 px for interpolated defects
+          noise_fill_10px:
+            label: 10 px for noise-filled defects
+            excluded: true
+            excluded_reason: >-
+              Enough for 0.3 and 0.5 arcsec galaxies through a 0.7 arcsec
+              PSF, not for a 0.7 arcsec galaxy through a 0.9 arcsec PSF. A
+              noise-filled 4-column cluster (8% of the stamp, so the 10%
+              masked-fraction cut keeps it) gives m11 = -6.6% +/- 0.3% and
+              c1 = -4.3e-3 at 10 px, -3.6% and -1.6e-3 at 11 px, -1.7% and
+              -3.7e-4 at 12 px, and first passes at 13 px (PR #922, 6 seeds).
           disabled:
             label: No central veto
             excluded: true
             excluded_reason: >-
-              A column two pixels inside the 10 px radius, noise-filled, gives
-              |m| > 2% and |c| > 1e-3 on a 0.5 arcsec galaxy; a 3-px bleed
+              A noise-filled column 8 px from a 0.5 arcsec galaxy gives
+              m11 = -3.7% and c1 = -3.6e-3; a 3-px bleed
               three pixels inside the 7 px radius, interpolated, gives
               |c| > 1e-3 on a 0.3 arcsec galaxy.
           size_scaled_radius:
@@ -1854,9 +1877,9 @@ analyses:
           of the stamp (two-sided bands, corner Ls and frames 12 px or more
           from the centre), give |m11|, |m22| <= 0.05% and |c| < 7e-5 on 0.3
           and 0.5 arcsec galaxies through a round and an elliptical 0.7
-          arcsec PSF (PR #922). The one biased far-field case, a one-sided
-          edge band reaching 10 px (31%), is the veto radius's own bound
-          (m11 = -0.83%). The 10% cut is chosen for comparability with DES
+          arcsec PSF (PR #922). A one-sided edge band reaching the 13 px
+          radius (25%) gives |m| <= 0.01% on those galaxies through the
+          round PSF and m11 = -0.64% on a 0.7 arcsec galaxy through a 0.9 arcsec PSF. The 10% cut is chosen for comparability with DES
           and as a margin against real-data effects the simulations do not
           model, and its measured cost is small. On real tile 202.301
           (interior shape-proxy objects), it drops 5.08% of epochs, leaves

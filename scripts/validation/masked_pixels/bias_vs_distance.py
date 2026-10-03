@@ -3,7 +3,7 @@ under the production defect treatment and under noise fill.
 
 Production interpolates the defects ``interpolable_defects`` selects
 (columns, 3-px bleeds, finite bleeds, single pixels) and noise-fills the
-rest (edge bands). The counterfactual noise-fills every defect, by making
+rest (4-column clusters, edge bands). The counterfactual noise-fills every defect, by making
 ``interpolated_defects`` select none. The recovery is the full-matrix
 metacal measurement of ``tests/helpers/defect_response``; the figure plots
 the worse axis of |m| and |c| with the veto radii and the bounds
@@ -11,10 +11,10 @@ the worse axis of |m| and |c| with the veto radii and the bounds
 
 Run from the shapepipe checkout root inside the shapepipe container:
   PYTHONPATH=src:. python scripts/validation/masked_pixels/bias_vs_distance.py \
-      scan OUT.json NPROC
+      scan OUT.json NPROC [KIND,KIND...]
   PYTHONPATH=src:scripts/validation/masked_pixels \
     python scripts/validation/masked_pixels/bias_vs_distance.py \
-      plot IN.json OUT.png
+      plot OUT.png IN.json [IN.json ...]
 """
 import json
 import sys
@@ -26,7 +26,7 @@ DISTANCES = range(3, 17)
 SEEDS = range(6)
 GALAXIES = [(0.3, 0.7), (0.5, 0.7), (0.7, 0.9)]  # (hlr, PSF FWHM) arcsec
 INTERPOLATED = ("column", "bleed", "finite_bleed", "pixel")
-KINDS = INTERPOLATED + ("edge",)
+KINDS = INTERPOLATED + ("cluster4", "edge")
 BOUND_M, BOUND_C = 0.01, 5e-4
 
 
@@ -43,6 +43,8 @@ def geometry(kind, distance):
         bad[:, near:near + 3] = True
     elif kind == "finite_bleed":
         bad[CENTRE - 5:CENTRE + 6, near:near + 3] = True
+    elif kind == "cluster4":
+        bad[:, near:near + 4] = True
     elif kind == "edge":
         bad[:, near:] = True
     return bad
@@ -66,11 +68,11 @@ def one(job):
     return row
 
 
-def scan(out_path, nproc):
+def scan(out_path, nproc, kinds=KINDS):
     from multiprocessing import get_context
 
     jobs = [(k, f, d, h, p) for h, p in GALAXIES for d in DISTANCES
-            for k in KINDS
+            for k in kinds
             for f in (("production", "noise") if k in INTERPOLATED
                       else ("production",))]
     # spawn: each worker imports ngmix afresh, so the noise-fill patch
@@ -97,7 +99,7 @@ def smallest_passing(rows):
     return passing
 
 
-def plot(in_path, out_path):
+def plot(out_path, *in_paths):
     import matplotlib
 
     matplotlib.use("Agg")
@@ -111,14 +113,16 @@ def plot(in_path, out_path):
         EPOCH_MASKED_FRACTION_CUT as FRAC_CUT,
     )
 
-    rows = [r for r in json.load(open(in_path))]
+    rows = [r for path in in_paths for r in json.load(open(path))]
     grid, fail, bad_ink = "#e4e3df", "#f6e3dc", "#a8462a"
+    GOLD = "#c49a1c"
     series = {
         "column": ("bad column", BLUE),
         "bleed": ("3-px bleed", ORANGE),
         "finite_bleed": ("finite 3-px bleed (11 rows)", VIOLET),
         "pixel": ("single pixel", AQUA),
         "edge": ("edge band (noise-filled)", INK),
+        "cluster4": ("4-column cluster (noise-filled)", GOLD),
     }
     plt.rcParams.update({"font.size": 10.5, "axes.edgecolor": INK2,
                          "xtick.color": INK2, "ytick.color": INK2,
@@ -185,10 +189,9 @@ def plot(in_path, out_path):
                  color=INK2, fontsize=10, y=0.965)
     handles = [Line2D([], [], color=c, lw=2, marker="o", ms=3.5, label=l)
                for l, c in series.values()]
-    handles += [Line2D([], [], lw=0, label=" ")]  # keeps styles in column 3
     handles += [
         Line2D([], [], color=INK2, lw=2, marker="o", ms=3.5,
-               label="production (interpolated; edge band noise-filled)"),
+               label="production (narrow defects interpolated)"),
         Line2D([], [], color=INK2, lw=1.4, ls=(0, (3, 2)),
                label="noise fill (not used for narrow defects)"),
         Line2D([], [], color=INK2, lw=0, marker="o", mfc="white", mec=INK2,
@@ -201,11 +204,12 @@ def plot(in_path, out_path):
 
 if __name__ == "__main__":
     if sys.argv[1] == "scan":
-        scan(sys.argv[2], int(sys.argv[3]))
+        scan(sys.argv[2], int(sys.argv[3]),
+             *([tuple(sys.argv[4].split(","))] if len(sys.argv) > 4 else []))
     elif sys.argv[1] == "plot":
-        plot(sys.argv[2], sys.argv[3])
+        plot(sys.argv[2], *sys.argv[3:])
     elif sys.argv[1] == "summary":
-        rows = json.load(open(sys.argv[2]))
+        rows = [r for path in sys.argv[2:] for r in json.load(open(path))]
         for hlr, psf in GALAXIES:
             for kind in KINDS:
                 for fill in ("production", "noise"):

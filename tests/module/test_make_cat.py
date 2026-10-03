@@ -58,6 +58,7 @@ NGMIX_KEYS = [
     "n_epoch_model",
     "mcal_types_fail",
     "neighbour_flag",
+    "n_epoch_interp", "min_dist_interp", "min_dist_noisefill",
     "nfev_fit",
     "g1", "g1_err", "g2", "g2_err",
     "T", "T_err",
@@ -87,6 +88,8 @@ def _ngmix_row(obj_id):
         "n_epoch_model": 3,
         "mcal_types_fail": 0,
         "neighbour_flag": 1,
+        "n_epoch_interp": 2, "min_dist_interp": 7.5,
+        "min_dist_noisefill": 14.25,
         "nfev_fit": 7,
         "g1": 0.10, "g1_err": 0.011, "g2": -0.20, "g2_err": 0.022,
         "T": 0.30, "T_err": 0.033,
@@ -118,7 +121,8 @@ def _write_ngmix_cat(path, obj_ids):
             fits.Column(
                 name=key,
                 format="K" if key in ("id", "n_epoch_model", "mcal_types_fail",
-                                       "nfev_fit", "flags", "mcal_flags") else "D",
+                                       "n_epoch_interp", "nfev_fit", "flags",
+                                       "mcal_flags") else "D",
                 array=np.array([row[key] for row in rows]),
             )
             for key in NGMIX_KEYS
@@ -176,7 +180,8 @@ def test_save_ngmix_data_uses_new_grammar_and_no_old_names(tmp_path):
     # Object-level metadata columns carry no OBJECT/SHEAR token.
     for col in (
         "NGMIX_MCAL_FLAGS", "NGMIX_N_EPOCH", "NGMIX_MCAL_TYPES_FAIL",
-        "NGMIX_NEIGHBOUR_FLAG",
+        "NGMIX_NEIGHBOUR_FLAG", "NGMIX_N_EPOCH_INTERP",
+        "NGMIX_MIN_DIST_INTERP", "NGMIX_MIN_DIST_NOISEFILL",
     ):
         assert col in out, f"missing {col}"
 
@@ -275,6 +280,15 @@ def test_save_ngmix_data_fills_sentinels_for_absent_objects(tmp_path):
     npt.assert_allclose(n_epoch[present], row["n_epoch_model"])
     npt.assert_allclose(n_epoch[absent], [0.0, 0.0])
 
+    for col, key, never_fit in (
+        ("NGMIX_N_EPOCH_INTERP", "n_epoch_interp", 0.0),
+        ("NGMIX_MIN_DIST_INTERP", "min_dist_interp", -1.0),
+        ("NGMIX_MIN_DIST_NOISEFILL", "min_dist_noisefill", -1.0),
+    ):
+        values = np.asarray(out[col])
+        npt.assert_allclose(values[present], row[key])
+        npt.assert_allclose(values[absent], [never_fit, never_fit])
+
 
 def test_low_match_fraction_warns_and_continues_with_sentinels(tmp_path):
     """A low match count warns while unmatched detections stay in the output."""
@@ -314,6 +328,9 @@ def _metacal_result(obj_id):
         "obj_id": obj_id,
         "n_epoch_model": row["n_epoch_model"],
         "neighbour_flag": row["neighbour_flag"],
+        "n_epoch_interp": row["n_epoch_interp"],
+        "min_dist_interp": row["min_dist_interp"],
+        "min_dist_noisefill": row["min_dist_noisefill"],
     }
     for key in NGMIX_KEYS:
         if key.endswith("_psf_orig") or key.endswith("_psf_reconv"):
