@@ -37,9 +37,12 @@ BLEND_HANDLINGS = ("noisefill", "uberseg")
 # of its stamp is in :func:`defect_mask`, or when a noise-filled
 # (interpolated) defect pixel lies closer than EPOCH_CENTRAL_DEFECT_RADIUS
 # (EPOCH_INTERPOLATED_DEFECT_RADIUS) pixels to the stamp centre (see
-# :func:`central_defect_vetoes`).
+# :func:`central_defect_vetoes`). The central veto is the bias control: defects
+# outside it bias nothing measured up to 58% of the stamp. The 10% fraction
+# cut matches DES Y3/Y6 and guards against real-data effects the simulations
+# do not model, at the cost of about 5% of epochs on a real tile.
 # @sc [decision:shape_measurement.epoch_masked_fraction_cut]
-EPOCH_MASKED_FRACTION_CUT = 1 / 3
+EPOCH_MASKED_FRACTION_CUT = 0.10
 # @sc [decision:shape_measurement.central_defect_veto]
 EPOCH_CENTRAL_DEFECT_RADIUS = 10
 # @sc [decision:shape_measurement.central_defect_veto]

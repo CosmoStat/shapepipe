@@ -1,6 +1,6 @@
-"""Shear recovery for the defects the epoch cuts keep.
+"""Shear recovery for the defects the central veto keeps.
 
-Physics invariant: every defect the cuts keep leaves both additive terms
+Physics invariant: every defect the central veto keeps leaves both additive terms
 |c1|, |c2| < 5e-4 and both diagonal multiplicative terms |m11|, |m22| < 1%,
 from the full 2x2 response matrix. A filled defect biases m anisotropically
 (m11 and m22 can differ tenfold), so a scalar m would hide it.
@@ -14,6 +14,12 @@ c1 = -1.3e-3. Defects too wide to interpolate (a 5-px bleed, edge bands)
 are noise-filled, and are checked at ``EPOCH_CENTRAL_DEFECT_RADIUS``. The
 cases sit at the radii themselves, so lowering either below its calibrated
 value turns this red.
+
+The bound is checked against the veto alone, not the masked-fraction cut:
+the edge bands at the noise-fill radius cover about 30% of the stamp, which
+``EPOCH_MASKED_FRACTION_CUT`` (10%) drops in production. That they stay
+within the bound is the evidence that the fraction cut is not a bias
+control, so it can be chosen for DES comparability and robustness alone.
 
 Positive control: a 3-px bleed three pixels inside the interpolated-defect
 radius breaks the bound.
@@ -30,7 +36,6 @@ from shapepipe.modules.ngmix_package.defect_interpolation import (
 from shapepipe.modules.ngmix_package.ngmix import (
     EPOCH_CENTRAL_DEFECT_RADIUS,
     EPOCH_INTERPOLATED_DEFECT_RADIUS,
-    EPOCH_MASKED_FRACTION_CUT,
     central_defect_vetoes,
     defect_mask,
 )
@@ -109,7 +114,6 @@ def test_kept_defects_recover_shear_on_both_axes(kind, distance, hlr, fwhm,
     np.testing.assert_array_equal(masked, bad)
     interpolated = interpolable_defects(masked)
     assert interpolated.any() == (kind in INTERPOLATED)
-    assert masked.mean() <= EPOCH_MASKED_FRACTION_CUT
     assert not central_defect_vetoes(masked, interpolated)
     m, c, result = recover(bad, hlr, fwhm, psf_shear, tmp_path)
     assert m < 0.01, result
