@@ -1,5 +1,6 @@
 """Resolved-job checks for campaign scope, product paths, and PSF custody."""
 
+import re
 from collections import Counter
 from pathlib import Path
 
@@ -15,6 +16,7 @@ BASE_RULES = {
     "tile_ngmix", "tile_merge_cats", "tile_make_cat", "clean_tile",
     "final_cat_merge",
 }
+TILE_SHAPE_STORE_RULES = ("tile_vignets", "tile_ngmix", "tile_make_cat")
 PSF_RULES = {"exp_persist", "star_cat_merge"}
 CATALOGUE_RULES = {"tile_get_catalogue"}
 
@@ -118,6 +120,29 @@ def test_products_use_products_dir_and_run_name(campaign, dag):
             assert f"--campaign '{campaign.name}'" in job.shellcmd
     assert dag.namespace["CAMPAIGN"] == campaign.name
     assert Path(dag.namespace["INDEX_DB"]) == campaign.index_db
+
+
+def test_tile_store_is_unique_per_campaign(campaign, tmp_path, resolve_dag):
+    """Concurrent campaigns over the same tiles get distinct node-local stores;
+    within a campaign, every tile_shape member of a tile names the same one."""
+    other = Campaign(tmp_path / "another-campaign", campaign.input_type,
+                     campaign.psf_model)
+    stores = []
+    for each in (campaign, other):
+        by_tile = {}
+        with resolve_dag(each) as dag:
+            for rule in TILE_SHAPE_STORE_RULES:
+                for job in dag.jobs_for(rule):
+                    match = re.search(r'^export SP_LOCAL="([^"]+)"$',
+                                      job.params.pre, re.MULTILINE)
+                    assert match, (rule, job.wildcards_dict)
+                    by_tile.setdefault(job.wildcards.tile, set()).add(
+                        match.group(1))
+        assert by_tile.keys() == set(each.ready)
+        assert all(len(paths) == 1 for paths in by_tile.values()), by_tile
+        stores.append({tile: paths.pop() for tile, paths in by_tile.items()})
+    first, second = stores
+    assert all(first[tile] != second[tile] for tile in first), (first, second)
 
 
 def test_missing_run_fails_during_parse(campaign, resolve_dag):

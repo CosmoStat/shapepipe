@@ -146,8 +146,7 @@ is what downstream selections cut on.
 # consumer-set staleness detection (which rides on params) is off for that
 # invocation.
 # Per-campaign prefix of the node-local store name; see tile_local().
-LOCAL_TAG = (hashlib.sha1(str(RUN_DIR).encode()).hexdigest()[:8] + "-"
-             if INPUT_TYPE == "image_sims" else "")
+LOCAL_TAG = hashlib.sha1(str(RUN_DIR).encode()).hexdigest()[:8] + "-"
 
 
 def tile_local(tile):
@@ -165,18 +164,19 @@ def tile_local(tile):
     snakemake substitutes at DAG time, so the shell string carries a concrete
     path with no `$` left for anything to escape. One group job per tile means
     the name cannot collide within a campaign; the sticky bit means nobody else
-    can remove it. Across campaigns it can: the image-simulation shear branches
-    are concurrent campaigns over the SAME tile IDs, and on candide
-    `/local/scratch` is the node's shared `/tmp`. Two branches' fused jobs on one
-    node then share one store -- a second `tile_vignets` wipes and rewrites it
-    under the first branch's ngmix, and the first `tile_make_cat`'s EXIT trap
-    deletes it under the second (seen on candide n09). So image_sims prefixes
-    the name with LOCAL_TAG, a hash of the run dir. Data campaigns keep the
-    bare tile name, so their shell commands -- a rerun trigger -- are unchanged.
+    can remove it. Across campaigns the tile alone would collide: the
+    image-simulation shear branches and two-arm A/B data runs are concurrent
+    campaigns over the SAME tile IDs, and nothing keeps their same-tile jobs off
+    one node (on candide `/local/scratch` is the node's shared `/tmp`). Two
+    campaigns' fused jobs on one node would share one store -- a second
+    `tile_vignets` wipes and rewrites it under the first campaign's ngmix, and
+    the first `tile_make_cat`'s EXIT trap deletes it under the second (seen on
+    candide n09, between image-sim branches). So every store name is prefixed
+    with LOCAL_TAG, a hash of the run dir, and is unique per campaign and tile.
 
     What we give up is Slurm's own cleanup of `$SLURM_TMPDIR`. TILE_VIGNET_FRESH
-    reclaims a stale directory on the next attempt for the same tile, the trap
-    in the last group member removes it on the way out, and the sweep below
+    reclaims a stale directory on the campaign's next attempt at the tile, the
+    trap in the last group member removes it on the way out, and the sweep below
     catches what a hard kill leaves behind -- on a shared node that last one is
     manners, not housekeeping.
 
