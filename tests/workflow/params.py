@@ -15,11 +15,14 @@ def params_pin(dag):
     Script hashes and other non-pre params are outside this pin's scope.
     """
     campaign = dag.campaign
+    # The node-local store name carries a run-dir hash; it moves with the root.
+    run_hash = hashlib.sha1(str(campaign.run_dir).encode()).hexdigest()[:8]
 
     def normalize(value):
         if value is None:
             return None
-        return (value.replace(str(campaign.root), "<CAMPAIGN_ROOT>")
+        return (value.replace(run_hash, "<RUN_DIR_SHA1>")
+                .replace(str(campaign.root), "<CAMPAIGN_ROOT>")
                 .replace(str(REPO), "<REPO>"))
 
     def digest(value):
