@@ -1,5 +1,6 @@
 """Resolved-job checks for campaign scope, product paths, and PSF custody."""
 
+import hashlib
 import os
 import re
 from collections import Counter
@@ -225,6 +226,11 @@ def _surface(campaign, resolve_dag):
         }
 
 
+def _run_hash(campaign):
+    """The run-dir hash in the campaign's node-local store names (LOCAL_TAG)."""
+    return hashlib.sha1(str(campaign.run_dir).encode()).hexdigest()[:8]
+
+
 def _committed_value(shell, config_dir, option, env, monkeypatch):
     """``option`` of the module section of the ini ``shell`` runs, expanded
     under ``env`` as ShapePipe expands it."""
@@ -250,7 +256,7 @@ def test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg(
     tile_ngmix's prologues and the seg stamps' memory to both, and each
     export turns its committed ini's option from the noise-fill default to
     the uberseg value."""
-    surfaces = {}
+    surfaces, run_hashes = {}, {}
     for blend in (None, "noisefill", "uberseg"):
         campaign = Campaign(tmp_path / str(blend), "data", "psfex")
         campaign.config["tile_detection"] = detection
@@ -258,11 +264,13 @@ def test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg(
             campaign.config["blend_handling"] = blend
         campaign.write_config()
         surfaces[blend] = _surface(campaign, resolve_dag)
+        run_hashes[blend] = _run_hash(campaign)
 
     def normalized(blend):
         rules, jobs = surfaces[blend]
         root = str(tmp_path / str(blend))
         return rules, {key: tuple(v.replace(root, "<ROOT>")
+                                  .replace(run_hashes[blend], "<RUN_DIR_SHA1>")
                                   if isinstance(v, str) else v for v in value)
                        for key, value in jobs.items()}
 
@@ -342,13 +350,13 @@ def test_noisefill_ignores_blend_variables_in_the_launch_shell(
         }
     assert leaked == []
 
-    def normalized(jobs, root):
-        return {key: tuple(v.replace(str(root), "<ROOT>")
+    def normalized(jobs, campaign):
+        return {key: tuple(v.replace(str(campaign.root), "<ROOT>")
+                           .replace(_run_hash(campaign), "<RUN_DIR_SHA1>")
                            if isinstance(v, str) else v for v in value)
                 for key, value in jobs.items()}
 
-    assert (normalized(dirty_jobs, tmp_path / "dirty")
-            == normalized(clean_jobs, tmp_path / "clean"))
+    assert normalized(dirty_jobs, dirty) == normalized(clean_jobs, clean)
     for _, shell, _ in dirty_jobs.values():
         assert "SP_BLEND_HANDLING" not in (shell or "")
         assert "SP_SEG_VIGNET" not in (shell or "")
