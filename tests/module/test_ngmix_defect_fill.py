@@ -781,8 +781,8 @@ def test_object_three_px_from_the_tile_edge_is_dropped():
 
 
 def test_the_central_veto_sees_off_tile_pixels(monkeypatch):
-    """An off-tile band 12 px from the object passes the central veto; one
-    9 px away is noise-filled inside the 10-px radius and vetoed.
+    """An off-tile band at EPOCH_CENTRAL_DEFECT_RADIUS from the object passes
+    the central veto; one 9 px away is noise-filled inside it and vetoed.
 
     Every off-tile band within reach of the veto also exceeds the 10%
     fraction cut (this one is 17 columns, 1/3 of the stamp), so the fraction
@@ -794,7 +794,8 @@ def test_the_central_veto_sees_off_tile_pixels(monkeypatch):
     monkeypatch.setattr(ngmix_module, "EPOCH_MASKED_FRACTION_CUT", 1.0)
     sky = np.random.default_rng(5).normal(0.0, 1.0, (N_STAMP, N_STAMP))
     far, near = sky.copy(), sky.copy()
-    far[:, :_CENTRE - 11] = _MARKER
+    rn = int(EPOCH_CENTRAL_DEFECT_RADIUS)
+    far[:, :_CENTRE - rn + 1] = _MARKER
     near[:, :_CENTRE - 8] = _MARKER
     assert (near == _MARKER).mean() > EPOCH_MASKED_FRACTION_CUT
     kept, _, _ = _marker_stamp(far)
@@ -1019,7 +1020,7 @@ def test_a_column_beside_a_noisefill_neighbour_is_vetoed_as_noise_filled():
 
     Failure mode: the veto decides which pixels are interpolated from the
     defect mask alone, so it keeps the epoch at the 7-px radius while the
-    fill noise-fills pixels 8 px from the object, inside the 10 px that
+    fill noise-fills pixels 8 px from the object, inside the radius that
     noise fill needs.
     """
     column = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)

@@ -38,13 +38,15 @@ BLEND_HANDLINGS = ("noisefill", "uberseg")
 # (interpolated) defect pixel lies closer than EPOCH_CENTRAL_DEFECT_RADIUS
 # (EPOCH_INTERPOLATED_DEFECT_RADIUS) pixels to the stamp centre (see
 # :func:`central_defect_vetoes`). The central veto is the bias control: defects
-# outside it bias nothing measured up to 58% of the stamp. The 10% fraction
+# outside it bias nothing measured up to 58% of the stamp. The noise-fill
+# radius is set by the largest galaxy tested (0.7" through a 0.9" PSF), the
+# interpolated radius by 3-px bleeds on the same galaxy. The 10% fraction
 # cut matches DES Y3/Y6 and guards against real-data effects the simulations
 # do not model, at the cost of about 5% of epochs on a real tile.
 # @sc [decision:shape_measurement.epoch_masked_fraction_cut]
 EPOCH_MASKED_FRACTION_CUT = 0.10
 # @sc [decision:shape_measurement.central_defect_veto]
-EPOCH_CENTRAL_DEFECT_RADIUS = 10
+EPOCH_CENTRAL_DEFECT_RADIUS = 13
 # @sc [decision:shape_measurement.central_defect_veto]
 EPOCH_INTERPOLATED_DEFECT_RADIUS = 7
 

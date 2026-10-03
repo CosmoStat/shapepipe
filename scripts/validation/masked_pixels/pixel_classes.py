@@ -132,7 +132,8 @@ def main(real_path, out_path):
     axs[0, 0].set_ylabel("image ngmix sees", color=INK, fontsize=11)
     axs[1, 0].set_ylabel("pixel class / weight", color=INK, fontsize=11)
     c = 25
-    axs[1, 0].text(c, c + 10.8, "10 px", ha="center", va="bottom",
+    rn = EPOCH_CENTRAL_DEFECT_RADIUS
+    axs[1, 0].text(c, c + rn + 0.8, f"{rn:g} px", ha="center", va="bottom",
                    fontsize=8, color=INK)
     axs[1, 0].text(c, c - 6.3, "7 px", ha="center", va="bottom",
                    fontsize=8, color=INK)
@@ -172,7 +173,7 @@ def main(real_path, out_path):
         Patch(color=BLUE, label="neighbour (−1e30 in tile)"),
         Patch(color=ORANGE, label="defect (flag / weight / RMS)"),
         Patch(color=AQUA, label="off-tile (a defect)"),
-        Line2D([], [], color=INK, ls="--", lw=1, label="10 px veto"),
+        Line2D([], [], color=INK, ls="--", lw=1, label=f"{EPOCH_CENTRAL_DEFECT_RADIUS:g} px veto"),
         Line2D([], [], color=INK, ls=":", lw=1,
                label="7 px veto (interpolated)"),
     ] + WEIGHT_LEGEND

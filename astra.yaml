@@ -1445,8 +1445,8 @@ analyses:
           (symmetrized_4fold_noise). The cost of not symmetrizing, a hole in
           the galaxy light, is bounded by central_defect_veto. Interpolation
           is the only fill because it lets interpolated defects come to 7 px
-          of the object, against a size-blind 10 px for noise fill, which a
-          0.7 arcsec galaxy through a 0.9 arcsec PSF needs widened to 14 px.
+          of the object, against 13 px for noise fill, which a 0.7 arcsec
+          galaxy through a 0.9 arcsec PSF needs.
           Values:
           VIGNETMAKER_RUNNER_RUN_1.MASKING = False;
           VIGNETMAKER_RUNNER_RUN_2.MASKING = False.
@@ -1478,10 +1478,10 @@ analyses:
             excluded_reason: >-
               A noise-filled defect leaves a hole in the object's light that
               metacal shears and the sky does not. Columns, 3-px bleeds and
-              single pixels then need the 10 px veto on 0.3 and 0.5 arcsec
-              galaxies through a 0.7 arcsec PSF, and 14 px on a 0.7 arcsec
+              single pixels then need a 10 px veto on 0.3 and 0.5 arcsec
+              galaxies through a 0.7 arcsec PSF, and 13 px on a 0.7 arcsec
               galaxy through a 0.9 arcsec PSF (a 3-px bleed at 10 px gives
-              m11 = -6.8%). Interpolated, the same defects pass from 7 px on
+              m11 = -6.5%). Interpolated, the same defects pass from 7 px on
               all three (PR #922 bias scan).
             insights: [mask_metacal_acts_on_whole_stamp, mask_bad_column_symmetrize]
           symmetrized_4fold_noise:
@@ -1632,7 +1632,7 @@ analyses:
         label: Per-epoch veto on a defect near the stamp centre
         rationale: >-
           [HARDCODED] An epoch is dropped when a defect pixel lies strictly
-          closer to the stamp centre than the radius of its fill: 10 px for
+          closer to the stamp centre than the radius of its fill: 13 px for
           noise-filled pixels (EPOCH_CENTRAL_DEFECT_RADIUS) and 7 px for
           interpolated ones (EPOCH_INTERPOLATED_DEFECT_RADIUS). The veto
           reads the same interpolated set as the fill, including the runs
@@ -1646,24 +1646,34 @@ analyses:
           the defects it keeps give |m11|, |m22| < 1% and |c1|, |c2| < 5e-4,
           on 51-px stamps at known RMS and high S/N, through a round and a
           (0.05, 0.02) elliptical 0.7 arcsec PSF, on galaxies of half-light
-          radius 0.3 and 0.5 arcsec, and for interpolated defects also 0.7
-          arcsec through a 0.9 arcsec PSF. Known limit: at 10 px the widest
-          edge band the veto keeps sits at the 1% bound through the
-          elliptical PSF (m11 = -0.94% +/- 0.06%). Guarded by
+          radius 0.3 and 0.5 arcsec, and 0.7 arcsec through a 0.9 arcsec
+          PSF. That largest galaxy sets both radii: 3-px bleeds the 7 px,
+          noise-filled holes the 13 px (a 4-column cluster at 13 px gives
+          m11 = -0.67% +/- 0.05%, c1 = 7e-5). Guarded by
           tests/science/test_defect_recovery.py.
           Values:
-          EPOCH_CENTRAL_DEFECT_RADIUS = 10;
+          EPOCH_CENTRAL_DEFECT_RADIUS = 13;
           EPOCH_INTERPOLATED_DEFECT_RADIUS = 7.
         default: fixed_radii
         options:
           fixed_radii:
-            label: Fixed radii, 10 px for noise-filled and 7 px for interpolated defects
+            label: Fixed radii, 13 px for noise-filled and 7 px for interpolated defects
+          noise_fill_10px:
+            label: 10 px for noise-filled defects
+            excluded: true
+            excluded_reason: >-
+              Enough for 0.3 and 0.5 arcsec galaxies through a 0.7 arcsec
+              PSF, not for a 0.7 arcsec galaxy through a 0.9 arcsec PSF. A
+              noise-filled 4-column cluster (8% of the stamp, so the 10%
+              masked-fraction cut keeps it) gives m11 = -6.6% +/- 0.3% and
+              c1 = -4.3e-3 at 10 px, -3.6% and -1.6e-3 at 11 px, -1.7% and
+              -3.7e-4 at 12 px, and first passes at 13 px (PR #922, 6 seeds).
           disabled:
             label: No central veto
             excluded: true
             excluded_reason: >-
-              A column two pixels inside the 10 px radius, noise-filled, gives
-              |m| > 2% and |c| > 1e-3 on a 0.5 arcsec galaxy; a 3-px bleed
+              A noise-filled column 8 px from a 0.5 arcsec galaxy gives
+              m11 = -3.7% and c1 = -3.6e-3; a 3-px bleed
               three pixels inside the 7 px radius, interpolated, gives
               |c| > 1e-3 on a 0.3 arcsec galaxy.
           size_scaled_radius:
@@ -1691,9 +1701,9 @@ analyses:
           of the stamp (two-sided bands, corner Ls and frames 12 px or more
           from the centre), give |m11|, |m22| <= 0.05% and |c| < 7e-5 on 0.3
           and 0.5 arcsec galaxies through a round and an elliptical 0.7
-          arcsec PSF (PR #922). The one biased far-field case, a one-sided
-          edge band reaching 10 px (31%), is the veto radius's own bound
-          (m11 = -0.83%). The 10% cut is chosen for comparability with DES
+          arcsec PSF (PR #922). A one-sided edge band reaching the 13 px
+          radius (25%) gives |m| <= 0.01% on those galaxies through the
+          round PSF and m11 = -0.64% on a 0.7 arcsec galaxy through a 0.9 arcsec PSF. The 10% cut is chosen for comparability with DES
           and as a margin against real-data effects the simulations do not
           model, and its measured cost is small. On real tile 202.301
           (interior shape-proxy objects), it drops 5.08% of epochs, leaves
