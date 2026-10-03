@@ -32,6 +32,13 @@ from shapepipe.pipeline import file_io
 # Neighbour treatments selectable with the BLEND_HANDLING option.
 BLEND_HANDLINGS = ("noisefill", "uberseg")
 
+# How interpolated defects enter the image and the weight map, selectable
+# with the DEFECT_WEIGHTING option (see :func:`defect_weighting_masks`), and
+# the value an absent or empty option takes.
+DEFECT_WEIGHTINGS = ("des_y6", "fourfold_zero", "hole", "full")
+# @sc [decision:shape_measurement.defect_weighting]
+DEFECT_WEIGHTING = "fourfold_zero"
+
 # The epoch cuts (see :func:`prepare_postage_stamps`). Calibration outputs,
 # not options: an epoch is dropped when more than EPOCH_MASKED_FRACTION_CUT
 # of its stamp is in :func:`defect_mask`, or when a noise-filled
@@ -753,6 +760,12 @@ class Ngmix(object):
     dilate_neighbour : int, optional
         Neighbour-mask dilation iterations for ``"uberseg"`` (see
         :func:`uberseg_mask`); the default is ``1``.
+    metacal_psf : str, optional
+        Metacal reconvolution-kernel scheme (see :func:`do_ngmix_metacal`).
+    defect_weighting : str, optional
+        How interpolated defects are weighted, one of ``DEFECT_WEIGHTINGS``
+        (see :func:`defect_weighting_masks`); the default is
+        ``DEFECT_WEIGHTING``.
 
     Notes
     -----
@@ -764,8 +777,8 @@ class Ngmix(object):
     IndexError
         If the length of the input file list is incorrect
     ValueError
-        If ``blend_handling`` is unknown, or ``"uberseg"`` is selected
-        without ``seg_cat_path``.
+        If ``blend_handling`` or ``defect_weighting`` is unknown, or
+        ``"uberseg"`` is selected without ``seg_cat_path``.
 
     """
 
@@ -786,6 +799,7 @@ class Ngmix(object):
         seg_cat_path=None,
         dilate_neighbour=1,
         metacal_psf="fitgauss",
+        defect_weighting=DEFECT_WEIGHTING,
     ):
 
         # Base count = catalogue + vignets, excluding the f_wcs headers (passed
@@ -803,6 +817,12 @@ class Ngmix(object):
             raise ValueError(
                 f"Unknown BLEND_HANDLING '{blend_handling}'; expected one of"
                 + f" {BLEND_HANDLINGS}"
+            )
+
+        if defect_weighting not in DEFECT_WEIGHTINGS:
+            raise ValueError(
+                f"Unknown DEFECT_WEIGHTING '{defect_weighting}'; expected one"
+                + f" of {DEFECT_WEIGHTINGS}"
             )
 
         # Fail fast at construction (not deep in the per-epoch loop) when
@@ -855,6 +875,7 @@ class Ngmix(object):
         self._seg_cat_path = seg_cat_path
         self._dilate_neighbour = dilate_neighbour
         self._metacal_psf = metacal_psf
+        self._defect_weighting = defect_weighting
 
         self._w_log = w_log
 
@@ -1337,6 +1358,7 @@ class Ngmix(object):
                     object_number=obj_id,
                     dilate_neighbour=self._dilate_neighbour,
                     metacal_psf=self._metacal_psf,
+                    defect_weighting=self._defect_weighting,
                 )
             except Exception as ee:
                 self._w_log.info(
@@ -1441,8 +1463,8 @@ def prepare_postage_stamps(
     An epoch is dropped when more than ``EPOCH_MASKED_FRACTION_CUT`` of its
     stamp lies in :func:`defect_mask`, the set :func:`prepare_ngmix_weights`
     zero-weights and fills, or when :func:`central_defect_vetoes` finds a
-    defect near the object. The quarter-turn weight copies of interpolated
-    pixels keep their light and are not counted.
+    defect near the object. The quarter-turn copies of interpolated pixels
+    that ``DEFECT_WEIGHTING`` zero-weights or interpolates are not counted.
 
     @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
     The tile VIGNET's -1e30 markers on other detections' footprints
@@ -2053,31 +2075,93 @@ def central_defect_vetoes(defect, interpolated):
     bool
         ``True`` if the epoch should be dropped.
     """
-    rows, cols = np.indices(defect.shape)
-    distance = np.hypot(
-        rows - (defect.shape[0] - 1) / 2, cols - (defect.shape[1] - 1) / 2
-    )
     radius = np.where(
         interpolated,
         EPOCH_INTERPOLATED_DEFECT_RADIUS,
         EPOCH_CENTRAL_DEFECT_RADIUS,
     )
-    return bool(np.any(defect & (distance < radius)))
+    return bool(np.any(defect & (centre_distance(defect.shape) < radius)))
+
+
+def centre_distance(shape):
+    """Distance of every stamp pixel from the stamp centre, in pixels."""
+    rows, cols = np.indices(shape)
+    return np.hypot(rows - (shape[0] - 1) / 2, cols - (shape[1] - 1) / 2)
+
+
+def defect_weighting_masks(interpolated, clean, defect_weighting):
+    """The pixels each DEFECT_WEIGHTING interpolates, re-weights and zeroes.
+
+    @sc [decision:shape_measurement.defect_weighting,label:physics] one-place-decides-defect-weights
+    ``interpolated`` (:func:`interpolated_defects`) starts at weight 0, like
+    every defect. The options:
+
+    * ``"fourfold_zero"``: interpolate it; the weight is also zeroed on its
+      three quarter-turn copies about the stamp centre, which keep their
+      light, so the likelihood hole has no spin-2 part.
+    * ``"des_y6"``: DES Y6's pizza-cutter symmetrization on a per-object
+      stamp. The mask is ORed with its quarter turn (``np.rot90``, k=1)
+      about the stamp centre, the union is interpolated, and every
+      interpolated pixel keeps its full weight. Copies that land on a pixel
+      whose light is already replaced (a noise-filled defect, a noisefill
+      neighbour) stay as they are.
+    * ``"hole"``: interpolate it and leave it at weight 0.
+    * ``"full"``: interpolate it at full weight.
+
+    Parameters
+    ----------
+    interpolated : numpy.ndarray of bool
+        The interpolable defect pixels of a square stamp.
+    clean : numpy.ndarray of bool
+        Pixels whose light the image keeps raw.
+    defect_weighting : str
+        One of ``DEFECT_WEIGHTINGS``.
+
+    Returns
+    -------
+    fill : numpy.ndarray of bool
+        Pixels to replace by the interpolant.
+    restore : numpy.ndarray of bool
+        Defect pixels that get their full inverse-variance weight back.
+    zero : numpy.ndarray of bool
+        Pixels whose weight is zeroed though their light stays.
+
+    Raises
+    ------
+    ValueError
+        If ``defect_weighting`` is unknown.
+    """
+    none = np.zeros_like(interpolated)
+    if defect_weighting == "des_y6":
+        fill = interpolated | (np.rot90(interpolated) & clean)
+        return fill, interpolated, none
+    if defect_weighting == "fourfold_zero":
+        return interpolated, none, fourfold(interpolated)
+    if defect_weighting == "hole":
+        return interpolated, none, none
+    if defect_weighting == "full":
+        return interpolated, interpolated, none
+    raise ValueError(
+        f"Unknown DEFECT_WEIGHTING '{defect_weighting}'; expected one of"
+        + f" {DEFECT_WEIGHTINGS}"
+    )
 
 
 def prepare_ngmix_weights(
     gal, weight, flag, rng, bkg_rms=None,
     blend_handling="noisefill", seg=None, object_number=None,
-    dilate_neighbour=0, neighbour=None,
+    dilate_neighbour=0, neighbour=None, defect_weighting=DEFECT_WEIGHTING,
 ):
     """Build one epoch's image, weight map and noise image for ngmix.
 
-    Every stamp pixel falls in one of three classes. A clean pixel keeps its
+    Every stamp pixel falls in one of four classes. A clean pixel keeps its
     light and its weight. A pixel whose light is replaced by noise keeps
     neither: a defect that is not interpolated, or under ``"noisefill"`` a
-    marked neighbour pixel. A pixel whose light stays at zero weight is a
-    hole in the likelihood only: an interpolated defect and its quarter-turn
-    copies, or under ``"uberseg"`` a neighbour-side pixel.
+    marked neighbour pixel. An interpolated pixel takes the interpolant, at
+    the weight ``defect_weighting`` gives it. A pixel whose light stays at
+    zero weight is a hole in the likelihood only: under ``"fourfold_zero"``
+    the quarter-turn copies of the interpolated defects, under ``"uberseg"``
+    a neighbour-side pixel.
 
     @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.blend_handling] defects-filled-whatever-the-blend-handling
     Every pixel of :func:`defect_mask` gets weight 0 and is filled the same
@@ -2099,13 +2183,26 @@ def prepare_ngmix_weights(
     sky that metacal shears with the target and which supports the
     interpolant.
 
-    @sc [decision:shape_measurement.weight_symmetrization,label:physics] symmetrized-weight-holes
-    A one-sided zero-weight hole pulls the Gaussian fit toward its side, so
-    the weight is also zeroed on the three quarter-turn copies, about the
-    stamp centre, of every interpolated pixel, and their light stays.
-    Noise-filled pixels and the uberseg neighbour side are not symmetrized.
-    Measurements: astra decision ``shape_measurement.weight_symmetrization``;
-    guarded by ``tests/science/test_defect_recovery.py``.
+    @sc [decision:shape_measurement.defect_weighting] defect-weighting-option
+    ``defect_weighting`` decides which pixels are interpolated and how they
+    and their quarter-turn copies are weighted
+    (:func:`defect_weighting_masks`). Noise-filled pixels and the uberseg
+    neighbour side are never symmetrized, and an interpolated pixel on the
+    uberseg neighbour side stays at weight 0. Measurements: astra decision
+    ``shape_measurement.defect_weighting``; guarded by
+    ``tests/science/test_defect_recovery.py``.
+
+    @sc [decision:shape_measurement.defect_weighting,label:physics] noise-image-in-the-fixnoise-frame
+    Metacal's ``fixnoise`` turns the noise image a quarter turn
+    (``np.rot90``, k=1) before shearing it and turns the result back (k=3)
+    before adding it to the sheared image. The noise image is therefore
+    interpolated in that turned frame, by the operator that interpolates the
+    science image: in the frame where both are sheared, the interpolated
+    pixels and their correlated noise coincide. Interpolating it in the
+    detector frame instead puts its interpolated pixels a quarter turn away
+    from the science image's, and the correlated noise of an interpolated
+    column then survives the cancellation as an additive bias.
+    ``tests/module/test_ngmix_defect_fill.py`` pins ngmix's k=1/k=3.
 
     Parameters
     ----------
@@ -2140,6 +2237,8 @@ def prepare_ngmix_weights(
     neighbour : numpy.ndarray of bool, optional
         The epoch's neighbour mask (``Postage_stamp.neighbours``); read only
         under ``blend_handling="noisefill"``. ``None`` marks no pixel.
+    defect_weighting : str, optional
+        One of ``DEFECT_WEIGHTINGS``; the default is ``DEFECT_WEIGHTING``.
 
     Returns
     -------
@@ -2150,22 +2249,28 @@ def prepare_ngmix_weights(
         Inverse-variance weight map for ngmix.
     numpy.ndarray
         Noise image: an independent realisation over the whole stamp, for
-        metacal's ``fixnoise``, interpolated where the galaxy image is.
+        metacal's ``fixnoise``, interpolated in fixnoise's quarter-turned
+        frame where the galaxy image is interpolated.
 
     Raises
     ------
     ValueError
-        If ``blend_handling`` is unknown, or ``"uberseg"`` lacks ``seg`` or
-        ``object_number``.
+        If ``blend_handling`` or ``defect_weighting`` is unknown, or
+        ``"uberseg"`` lacks ``seg`` or ``object_number``.
     RuntimeError
         If the interpolant does not reach a pixel :func:`interpolated_defects`
         selected (degenerate support, or non-finite image values in it).
-    @sc [decision:masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights,decision:shape_measurement.weight_symmetrization]
+    @sc [decision:masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights,decision:shape_measurement.defect_weighting]
     """
     if blend_handling not in BLEND_HANDLINGS:
         raise ValueError(
             f"Unknown blend_handling '{blend_handling}'; expected one of"
             + f" {BLEND_HANDLINGS}"
+        )
+    if defect_weighting not in DEFECT_WEIGHTINGS:
+        raise ValueError(
+            f"Unknown defect_weighting '{defect_weighting}'; expected one of"
+            + f" {DEFECT_WEIGHTINGS}"
         )
     if blend_handling == "uberseg" and (seg is None or object_number is None):
         raise ValueError(
@@ -2225,19 +2330,26 @@ def prepare_ngmix_weights(
     gal_filled = np.where(clean, gal, noise_img_gal).astype(gal.dtype)
     interpolated = interpolated_defects(defect, neighbour, blend_handling)
     if interpolated.any():
-        # One operator for the image and the noise image, so fixnoise
-        # mirrors the science image's interpolated noise.
+        fill, restore, zero = defect_weighting_masks(
+            interpolated, clean, defect_weighting
+        )
+        # One operator for the image and the noise image, the latter in
+        # fixnoise's quarter-turned frame (noise-image-in-the-fixnoise-frame).
         filled = interpolate_defects(
-            [gal, noise_img], ~clean, interpolated
-        )[:, interpolated]
-        if not np.all(np.isfinite(filled)):
+            [gal, np.rot90(noise_img)], ~clean | fill, fill
+        )
+        if not np.all(np.isfinite(filled[:, fill])):
             raise RuntimeError(
                 "The defect interpolant is not finite on pixels"
-                + " interpolated_defects selected."
+                + " defect_weighting_masks selected."
             )
-        gal_filled[interpolated] = filled[0]
-        noise_img[interpolated] = filled[1]
-        weight_map[fourfold(interpolated)] = 0.0
+        gal_filled[fill] = filled[0, fill]
+        noise_img = np.rot90(filled[1], -1)
+        restore = restore & ~neighbour_side
+        weight_map[restore] = np.broadcast_to(
+            1.0 / np.asarray(sig_noise) ** 2, gal.shape
+        )[restore]
+        weight_map[zero] = 0.0
 
     return gal_filled, weight_map, noise_img
 
@@ -2246,7 +2358,7 @@ def make_ngmix_observation(
     gal, weight, flag, psf, wcs, rng,
     bkg_rms=None, centroid_source="wcs", offset=None,
     blend_handling="noisefill", seg=None, object_number=None,
-    dilate_neighbour=0, neighbour=None,
+    dilate_neighbour=0, neighbour=None, defect_weighting=DEFECT_WEIGHTING,
 ):
     """Build an ngmix Observation for a single galaxy epoch.
 
@@ -2303,6 +2415,9 @@ def make_ngmix_observation(
         :func:`prepare_ngmix_weights` under ``blend_handling="uberseg"``.
     neighbour : numpy.ndarray of bool, optional
         Neighbour mask passed through to :func:`prepare_ngmix_weights`.
+    defect_weighting : str, optional
+        Interpolated-defect weighting passed through to
+        :func:`prepare_ngmix_weights`.
 
     Returns
     -------
@@ -2332,6 +2447,7 @@ def make_ngmix_observation(
         gal, weight, flag, rng, bkg_rms=bkg_rms,
         blend_handling=blend_handling, seg=seg, object_number=object_number,
         dilate_neighbour=dilate_neighbour, neighbour=neighbour,
+        defect_weighting=defect_weighting,
     )
 
     if centroid_source == "hsm":
@@ -2562,7 +2678,7 @@ def make_runners(prior, flux_guess, rng):
 def do_ngmix_metacal(
     stamp, prior, flux_guess, rng, centroid_source="wcs",
     blend_handling="noisefill", object_number=None, dilate_neighbour=0,
-    metacal_psf="fitgauss",
+    metacal_psf="fitgauss", defect_weighting=DEFECT_WEIGHTING,
 ):
     """Do Ngmix Metacal.
 
@@ -2609,6 +2725,9 @@ def do_ngmix_metacal(
         round PSF that metacal reconvolves with after shearing, so it moves the
         metacal *response* (and therefore the recovered shear) but never reaches
         the deconvolution, which is by the PSF image.
+    defect_weighting : str, optional
+        Interpolated-defect weighting (one of ``DEFECT_WEIGHTINGS``) passed
+        through to :func:`make_ngmix_observation`.
 
     Returns
     -------
@@ -2619,7 +2738,7 @@ def do_ngmix_metacal(
         dict (:func:`average_original_psf`). The two PSF dicts share keys but
         describe different PSFs; the named fields guard against transposing
         them. Unpacks positionally as ``resdict, psf_res, psf_orig_res``.
-    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme,decision:shape_measurement.weight_symmetrization]
+    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme,decision:shape_measurement.defect_weighting]
     """
     n_epoch = len(stamp.gals)
     if n_epoch == 0:
@@ -2645,6 +2764,7 @@ def do_ngmix_metacal(
             neighbour=(
                 stamp.neighbours[n_e] if n_e < len(stamp.neighbours) else None
             ),
+            defect_weighting=defect_weighting,
         )
         gal_obs_list.append(gal_obs)
 

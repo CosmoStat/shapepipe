@@ -54,7 +54,7 @@ analyses:
       megacam_ccd_flip: megapipe_flip
       defect_fill: interpolate
       blend_handling: noisefill
-      weight_symmetrization: interpolated
+      defect_weighting: fourfold_zero
       epoch_masked_fraction_cut: ten_percent
       central_defect_veto: fixed_radii
   catalogue_assembly:
