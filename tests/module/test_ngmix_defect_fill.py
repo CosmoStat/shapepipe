@@ -620,6 +620,38 @@ def test_fixnoise_turns_the_noise_image_k1_then_k3():
         assert not np.allclose(added, np.rot90(turned[t].image, 1))
 
 
+def test_defect_diagnostics_summarise_the_kept_epochs():
+    """Over the epochs the veto keeps, ``n_epoch_interp`` counts those with
+    an interpolated pixel and the two distances are the nearest
+    interpolated and noise-filled defect pixels to the stamp centre; an
+    object without either has -1.
+
+    Failure modes: a vetoed epoch is counted; noise-filled and interpolated
+    pixels are swapped; the sentinel is 0, a valid distance
+    (defect-diagnostic-columns).
+    """
+    vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(_veto_epochs())
+    stamp = prepare_postage_stamps(
+        vignet, 1, 0, tile_cat, bkg_sub=False,
+        psf_obj=psf_obj, gal_obj=gal_obj,
+    )
+    assert stamp.defect_diagnostics() == {
+        "n_epoch_interp": 2,
+        "min_dist_interp": float(EPOCH_INTERPOLATED_DEFECT_RADIUS),
+        "min_dist_noisefill": float(EPOCH_CENTRAL_DEFECT_RADIUS),
+    }
+    clean = {"2100001-10": _veto_epochs()["2100001-10"]}
+    vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(clean)
+    stamp = prepare_postage_stamps(
+        vignet, 1, 0, tile_cat, bkg_sub=False,
+        psf_obj=psf_obj, gal_obj=gal_obj,
+    )
+    assert stamp.defect_diagnostics() == {
+        "n_epoch_interp": 0, "min_dist_interp": -1.0,
+        "min_dist_noisefill": -1.0,
+    }
+
+
 # --- The tile VIGNET's -1e30 neighbour markers are not defects -------------
 #
 # The tile VIGNET carries -1e30 on the footprints of other detections. Every

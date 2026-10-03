@@ -259,6 +259,10 @@ def empty_metacal_output():
         'n_epoch_model',
         'mcal_types_fail',
         'neighbour_flag',
+        # defect diagnostics (Postage_stamp.record_defects)
+        'n_epoch_interp',
+        'min_dist_interp',
+        'min_dist_noisefill',
         'nfev_fit',
         # galaxy
         'g1',
@@ -661,8 +665,58 @@ class Postage_stamp():
         self.epoch_cuts = Counter(
             considered=0, masked_fraction=0, central_veto=0
         )
+        # Defect diagnostics over the epochs kept (see
+        # :meth:`record_defects`).
+        self.n_epoch_interp = 0
+        self.min_dist_interp = np.inf
+        self.min_dist_noisefill = np.inf
         self.bkg_sub = bkg_sub
         self.megacam_flip = megacam_flip
+
+    def record_defects(self, defect, interpolated):
+        """Add one kept epoch to the defect diagnostics.
+
+        @sc [label:schema] defect-diagnostic-columns
+        Per object, over the epochs handed to the fit: ``n_epoch_interp``
+        counts those with an interpolated defect pixel, and
+        ``min_dist_interp`` (``min_dist_noisefill``) is the smallest distance
+        in pixels from the stamp centre to an interpolated (noise-filled)
+        defect pixel (:func:`centre_distance`). A distance is -1 when no
+        kept epoch has such a pixel. They read only masks, so splitting a
+        catalogue on them selects on nothing shear-responsive.
+
+        Parameters
+        ----------
+        defect : numpy.ndarray of bool
+            The epoch's defect mask (:func:`defect_mask`).
+        interpolated : numpy.ndarray of bool
+            Its interpolated defect pixels (:func:`interpolated_defects`).
+        """
+        distance = centre_distance(defect.shape)
+        noisefill = defect & ~interpolated
+        if interpolated.any():
+            self.n_epoch_interp += 1
+            self.min_dist_interp = min(
+                self.min_dist_interp, distance[interpolated].min()
+            )
+        if noisefill.any():
+            self.min_dist_noisefill = min(
+                self.min_dist_noisefill, distance[noisefill].min()
+            )
+
+    def defect_diagnostics(self):
+        """The defect diagnostic columns, -1 for an absent distance."""
+        return {
+            "n_epoch_interp": self.n_epoch_interp,
+            "min_dist_interp": (
+                float(self.min_dist_interp)
+                if np.isfinite(self.min_dist_interp) else -1.0
+            ),
+            "min_dist_noisefill": (
+                float(self.min_dist_noisefill)
+                if np.isfinite(self.min_dist_noisefill) else -1.0
+            ),
+        }
 
 class Vignet():
     """Vignet.
@@ -985,6 +1039,12 @@ class Ngmix(object):
                 output_dict[name]["neighbour_flag"].append(
                     results[idx]["neighbour_flag"]
                 )
+                # Defect diagnostics (Postage_stamp.record_defects), likewise
+                # object-level and replicated.
+                for key in (
+                    "n_epoch_interp", "min_dist_interp", "min_dist_noisefill"
+                ):
+                    output_dict[name][key].append(results[idx][key])
                 # ngmix 2.x reports the solver's function-evaluation count
                 # (nfev, ~tens-hundreds; -1 on some failures), not the v1
                 # 1-5 retry count, so the column is named accordingly. Fits
@@ -1379,6 +1439,7 @@ class Ngmix(object):
             # epochs that survived the PSF fit and entered the model,
             # not the number of epochs submitted (v1 contract)
             res['n_epoch_model'] = psf_res['n_epoch']
+            res.update(stamp.defect_diagnostics())
             # The mcal flag columns are derived from the per-type results in
             # compile_results; here they only feed the run-health count.
             if get_mcal_flags(res) != 0:
@@ -1583,11 +1644,11 @@ def prepare_postage_stamps(
         if defect.mean() > EPOCH_MASKED_FRACTION_CUT:
             stamp.epoch_cuts["masked_fraction"] += 1
             continue
-        if central_defect_vetoes(
-            defect, interpolated_defects(defect, neighbour, blend_handling)
-        ):
+        interpolated = interpolated_defects(defect, neighbour, blend_handling)
+        if central_defect_vetoes(defect, interpolated):
             stamp.epoch_cuts["central_veto"] += 1
             continue
+        stamp.record_defects(defect, interpolated)
 
         # One unpickle per exposure (all CCDs), reused across this object's
         # epochs; the cache is per-call, so bounded by the object's exposures
