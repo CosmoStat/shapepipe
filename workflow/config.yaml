@@ -211,6 +211,10 @@ max_mem_mb: 750000
 # ngmix chunks per tile.
 ngmix_chunks: 8
 
+# How ngmix weights interpolated defects: des_y6, fourfold_zero, hole or full
+# (astra decision shape_measurement.defect_weighting). Unset: ngmix's default.
+# defect_weighting: des_y6
+
 # Node-local tile store (vignets, WCS). Unset: the profile's /local/scratch
 # bind (nibi NVMe, candide node /tmp). Dense image-sim campaigns on candide
 # want a shared directory instead.
