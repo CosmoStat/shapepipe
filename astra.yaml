@@ -331,7 +331,7 @@ analyses:
           On exposures SExtractor reads the split flag image, producing
           IMAFLAGS_ISO, which the PSF star selection requires to be zero. The
           multi-epoch vignet run cuts flag stamps from the same image; ngmix
-          gives flagged pixels weight 0 and drops epochs more than a third
+          gives flagged pixels weight 0 and drops epochs more than 10%
           flagged (shape_measurement.defect_fill,
           shape_measurement.epoch_masked_fraction_cut). Tiles have no flag
           image, and ShapePipe's tile SExtractor run requests no IMAFLAGS_ISO
@@ -1620,8 +1620,8 @@ analyses:
               pixels whose neighbours beyond both ends are kept pixels (on
               the stamp, not defects, and not noisefill neighbours) are
               Clough-Tocher interpolated from the kept pixels within
-              SUPPORT_RADIUS = 4 px, averaged over the stamp's quarter turns,
-              in the image and the metacal noise image alike. Other defects
+              SUPPORT_RADIUS = 4 px, with one triangulation for the image
+              and the metacal noise image. Other defects
               (wider holes, edge bands, runs ending on a noisefill neighbour)
               get independent noise at the per-pixel background RMS when
               supplied, or the stamp's robust noise scale otherwise. The
@@ -1839,46 +1839,55 @@ analyses:
         label: Per-epoch masked-fraction cut
         rationale: >-
           [HARDCODED] An epoch whose stamp has more than
-          EPOCH_MASKED_FRACTION_CUT = 1/3 of its pixels in the raw,
+          EPOCH_MASKED_FRACTION_CUT = 10% of its pixels in the raw,
           unsymmetrized defect set is dropped from the multi-epoch fit:
           flagged pixels (any nonzero exposure flag bit), zero-weight pixels
           (off-tile pixels included) and invalid-RMS pixels, the set
-          defect_fill fills. On a 51-px stamp an object within about 8.5 px
-          of the tile edge fails the 1/3 cut. Neighbour footprints are not
+          defect_fill fills. On a 51-px stamp an object within about 20 px
+          of the tile edge fails the cut. Neighbour footprints are not
           counted: every epoch shares the tile VIGNET, so a large neighbour
           would drop them all. An object with no surviving epoch has no
           shape. Before the cut, an epoch is dropped silently if its galaxy
           stamp is all zeros or its background-subtracted sigma_mad is not
-          positive. The cut guards no shear bias that was measured: defects
-          the central veto keeps, covering up to 58% of the stamp (two-sided
-          bands, corner Ls and frames 12 px or more from the centre), give
-          |m11|, |m22| <= 0.05% and |c| < 7e-5 on 0.3 and 0.5 arcsec galaxies
-          through a round and an elliptical 0.7 arcsec PSF (PR #922). The one
-          biased far-field case, a one-sided edge band reaching 10 px (31%),
-          is the veto radius's own bound (m11 = -0.83%). So 1/3 is a
-          robustness margin, and what it costs is the number of epochs the
-          real-tile tally shows it dropping. DES was stricter: Y1 rejected any
-          epoch with a masked or zero-weight pixel, or with its central
-          4-pixel region masked; Y3 cut at 10% raw zero-weight pixels; Y6
-          drops images more than 10% missing and keeps objects at
-          mfrac < 0.1 (mask_multi_epoch_drop). A defect near the centre is
-          handled separately (central_defect_veto).
-        default: one_third
+          positive. The cut is not a bias control; the central veto is
+          (central_defect_veto). Defects the veto keeps, covering up to 58%
+          of the stamp (two-sided bands, corner Ls and frames 12 px or more
+          from the centre), give |m11|, |m22| <= 0.05% and |c| < 7e-5 on 0.3
+          and 0.5 arcsec galaxies through a round and an elliptical 0.7
+          arcsec PSF (PR #922). The one biased far-field case, a one-sided
+          edge band reaching 10 px (31%), is the veto radius's own bound
+          (m11 = -0.83%). The 10% cut is chosen for comparability with DES
+          and as a margin against real-data effects the simulations do not
+          model, and its measured cost is small. On real tile 202.301
+          (interior shape-proxy objects), it drops 5.08% of epochs, leaves
+          0.55% of objects with no epoch and costs 13.7% of objects at least
+          one epoch. Every epoch it removes beyond a 1/3 cut is a CCD-edge or
+          off-tile band whose nearest defect is 10-20 px from the object;
+          bad-column clusters cover 2-8% of a stamp, and only 4 epochs
+          exceed 10% because of them. DES Y1 rejected any epoch with a
+          masked or zero-weight pixel, or with its central 4-pixel region
+          masked; Y3 cut at 10% raw zero-weight pixels; Y6 drops images more
+          than 10% missing and keeps objects at mfrac < 0.1
+          (mask_multi_epoch_drop).
+        default: ten_percent
         options:
-          one_third:
-            label: 1/3 of the stamp in the defect set
-            description: >-
-              Drop an epoch only if more than 1/3 of the stamp pixels are
-              defects.
           ten_percent:
             label: 10% (DES Y3 / Y6)
+            description: >-
+              Drop an epoch if more than 10% of the stamp pixels are defects,
+              matching DES Y3 max_zero_weight_frac and Y6
+              max_masked_fraction.
+            insights: [mask_multi_epoch_drop]
+          one_third:
+            label: 1/3 of the stamp in the defect set
             excluded: true
             excluded_reason: >-
-              Matches DES Y3 max_zero_weight_frac and Y6 max_masked_fraction,
-              but far-field defects bias nothing measured up to 58% of the
-              stamp, so 10% would only discard epochs, among them every edge
-              band more than 5 px wide.
-            insights: [mask_multi_epoch_drop]
+              Equally unbiased in simulations, since far-field defects bias
+              nothing measured up to 58% of the stamp, and it keeps more
+              epochs (3.38% dropped on tile 202.301 against 5.08% at 10%).
+              But the extra epochs it keeps are CCD-edge and off-tile bands
+              10-20 px from the object, where effects the simulations do not
+              model are likeliest, and it departs from the DES convention.
           any_masked:
             label: Any masked pixel (DES Y1)
             description: >-
@@ -2139,7 +2148,7 @@ analyses:
           (Sheldon & Huff 2017). DES Y6 drops input images more than 10%
           missing and cuts objects at masked fraction mfrac < 0.1, which its
           image simulations show avoids shear calibration bias. ShapePipe's
-          cut is 1/3.
+          cut is also 10%.
         created_at: "2026-09-26T00:00:00Z"
         derived: true
         evidence:

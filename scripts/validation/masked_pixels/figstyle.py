@@ -26,19 +26,22 @@ def show_image(ax, img, vmax=120.0, soft=3.0):
 WEIGHT_CMAP = ListedColormap([PAPER, DARK, VIOLET])
 
 
-def weight_classes(w, interpolated):
+def weight_classes(w, interpolated, zeroed=None):
     """0 = weighted, 1 = zero weight, 2 = zero weight only as a quarter-turn
-    copy of an interpolated pixel."""
+    copy of an interpolated pixel. ``zeroed`` marks the pixels that have
+    zero weight for another reason (defects, neighbours); they stay 1."""
     cls = np.where(w > 0, 0, 1)
     copies = fourfold(interpolated) & ~interpolated
+    if zeroed is not None:
+        copies &= ~zeroed
     cls[(w == 0) & copies] = 2
     return cls
 
 
-def show_weight(ax, w, interpolated=None):
+def show_weight(ax, w, interpolated=None, zeroed=None):
     if interpolated is None:
         interpolated = np.zeros(w.shape, bool)
-    ax.imshow(weight_classes(w, interpolated), origin="lower",
+    ax.imshow(weight_classes(w, interpolated, zeroed), origin="lower",
               cmap=WEIGHT_CMAP, vmin=-0.5, vmax=2.5, interpolation="nearest")
 
 

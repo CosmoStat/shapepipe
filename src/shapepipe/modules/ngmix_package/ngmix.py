@@ -37,9 +37,12 @@ BLEND_HANDLINGS = ("noisefill", "uberseg")
 # of its stamp is in :func:`defect_mask`, or when a noise-filled
 # (interpolated) defect pixel lies closer than EPOCH_CENTRAL_DEFECT_RADIUS
 # (EPOCH_INTERPOLATED_DEFECT_RADIUS) pixels to the stamp centre (see
-# :func:`central_defect_vetoes`).
+# :func:`central_defect_vetoes`). The central veto is the bias control: defects
+# outside it bias nothing measured up to 58% of the stamp. The 10% fraction
+# cut matches DES Y3/Y6 and guards against real-data effects the simulations
+# do not model, at the cost of about 5% of epochs on a real tile.
 # @sc [decision:shape_measurement.epoch_masked_fraction_cut]
-EPOCH_MASKED_FRACTION_CUT = 1 / 3
+EPOCH_MASKED_FRACTION_CUT = 0.10
 # @sc [decision:shape_measurement.central_defect_veto]
 EPOCH_CENTRAL_DEFECT_RADIUS = 10
 # @sc [decision:shape_measurement.central_defect_veto]
@@ -1577,9 +1580,8 @@ def prepare_postage_stamps(
         if defect.mean() > EPOCH_MASKED_FRACTION_CUT:
             stamp.epoch_cuts["masked_fraction"] += 1
             continue
-        removed = neighbour if blend_handling == "noisefill" else None
         if central_defect_vetoes(
-            defect, interpolable_defects(defect, removed)
+            defect, interpolated_defects(defect, neighbour, blend_handling)
         ):
             stamp.epoch_cuts["central_veto"] += 1
             continue
@@ -2013,6 +2015,35 @@ def defect_mask(weight, flag, bkg_rms=None):
     return defect
 
 
+def interpolated_defects(defect, neighbour, blend_handling):
+    """The defect pixels :func:`prepare_ngmix_weights` interpolates.
+
+    Under ``"noisefill"`` the neighbour pixels' light is replaced, so they
+    neither support the interpolant nor are interpolated
+    (:func:`interpolable_defects` with ``removed=neighbour``); under
+    ``"uberseg"`` their light stays and supports it. The epoch cuts
+    (:func:`central_defect_vetoes`) read the same set.
+
+    Parameters
+    ----------
+    defect : numpy.ndarray of bool
+        Defect mask of one epoch stamp (:func:`defect_mask`).
+    neighbour : numpy.ndarray of bool or None
+        The epoch's neighbour mask (``Postage_stamp.neighbours``); ``None``
+        marks no pixel.
+    blend_handling : {"noisefill", "uberseg"}
+        Neighbour treatment.
+
+    Returns
+    -------
+    numpy.ndarray of bool
+        ``True`` on the defect pixels to interpolate; the other defect
+        pixels are noise-filled.
+    """
+    removed = neighbour if blend_handling == "noisefill" else None
+    return interpolable_defects(defect, removed)
+
+
 def central_defect_vetoes(defect, interpolated):
     """Whether a defect near the stamp centre drops the epoch.
 
@@ -2033,8 +2064,8 @@ def central_defect_vetoes(defect, interpolated):
     defect : numpy.ndarray of bool
         Defect mask of one epoch stamp (:func:`defect_mask`).
     interpolated : numpy.ndarray of bool
-        The defect pixels that are interpolated (:func:`interpolable_defects`
-        with the epoch's removed neighbour pixels); the rest are noise-filled.
+        The defect pixels that are interpolated
+        (:func:`interpolated_defects`); the rest are noise-filled.
 
     Returns
     -------
@@ -2070,7 +2101,7 @@ def prepare_ngmix_weights(
     @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.blend_handling] defects-filled-whatever-the-blend-handling
     Every pixel of :func:`defect_mask` gets weight 0 and is filled the same
     way under every ``blend_handling``. The short runs of
-    :func:`interpolable_defects` take a Clough-Tocher interpolant of the
+    :func:`interpolated_defects` take a Clough-Tocher interpolant of the
     pixels whose light the image keeps (:func:`interpolate_defects`), in the
     image and the noise image alike; the other defects take noise at the
     background RMS. Metacal shears the whole image whatever the weights, so
@@ -2146,7 +2177,7 @@ def prepare_ngmix_weights(
         If ``blend_handling`` is unknown, or ``"uberseg"`` lacks ``seg`` or
         ``object_number``.
     RuntimeError
-        If the interpolant does not reach a pixel :func:`interpolable_defects`
+        If the interpolant does not reach a pixel :func:`interpolated_defects`
         selected (degenerate support, or non-finite image values in it).
     @sc [decision:masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights,decision:shape_measurement.weight_symmetrization]
     """
@@ -2211,7 +2242,7 @@ def prepare_ngmix_weights(
     noise_img = rng.standard_normal(gal.shape) * sig_noise
     noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
     gal_filled = np.where(clean, gal, noise_img_gal).astype(gal.dtype)
-    interpolated = interpolable_defects(defect, removed_neighbour)
+    interpolated = interpolated_defects(defect, neighbour, blend_handling)
     if interpolated.any():
         # One operator for the image and the noise image, so fixnoise
         # mirrors the science image's interpolated noise.
@@ -2221,7 +2252,7 @@ def prepare_ngmix_weights(
         if not np.all(np.isfinite(filled)):
             raise RuntimeError(
                 "The defect interpolant is not finite on pixels"
-                + " interpolable_defects selected."
+                + " interpolated_defects selected."
             )
         gal_filled[interpolated] = filled[0]
         noise_img[interpolated] = filled[1]

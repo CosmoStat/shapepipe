@@ -3,9 +3,8 @@ of the interpolant.
 
 :func:`interpolable_defects` picks the defect pixels that lie in a short row
 or column run with support pixels at both ends; :func:`interpolate_defects`
-fills them from the nearby clean pixels with a Clough-Tocher interpolant,
-averaged over the four quarter turns of the stamp and shared by every plane
-(science image and metacal noise image).
+fills them from the nearby clean pixels with one Clough-Tocher interpolant
+shared by every plane (science image and metacal noise image).
 """
 
 import numpy as np
@@ -206,39 +205,13 @@ def test_interpolation_reproduces_planes_without_reading_defects(seed):
     )
 
 
-def test_interpolation_commutes_with_quarter_turns():
-    """Rotating the stamp and its mask rotates the fill. A regular grid's
-    Delaunay triangulation has degenerate diagonals, so a single-orientation
-    interpolant does not commute; the four-orientation average does.
-
-    Failure mode: the average over orientations is skipped, so the fill has a
-    preferred direction.
-    """
-    n = 31
-    rows, cols = np.indices((n, n))
-    image = np.exp(-((rows - 15.3) ** 2 + (cols - 14.6) ** 2) / 10.0)
-    image += 0.05 * np.random.RandomState(3).normal(size=(n, n))
-    planes = image[None]
-    defect = _mask(n)
-    target = interpolable_defects(defect)
-    out = interpolate_defects(planes, defect, target)
-    for k in range(1, 4):
-        rotated = interpolate_defects(
-            np.rot90(planes, k, axes=(1, 2)), np.rot90(defect, k),
-            np.rot90(target, k),
-        )
-        npt.assert_allclose(
-            rotated, np.rot90(out, k, axes=(1, 2)), atol=1e-12, rtol=0
-        )
-
-
 def test_every_plane_sees_the_same_operator():
     """The fill is one linear operator applied to every plane: filling
     a * image + b * noise gives a * fill(image) + b * fill(noise), up to the
     Clough-Tocher gradient solver's tolerance.
 
     Failure mode: the noise image is filled differently from the science
-    image (another support, triangulation or orientation set), so metacal's
+    image (another support or triangulation), so metacal's
     fixnoise no longer mirrors the science image's correlated noise.
     """
     n = 31

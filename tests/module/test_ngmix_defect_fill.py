@@ -37,7 +37,9 @@ from shapepipe.modules.ngmix_package.defect_interpolation import (
 from shapepipe.modules.ngmix_package.ngmix import (
     EPOCH_CENTRAL_DEFECT_RADIUS,
     EPOCH_INTERPOLATED_DEFECT_RADIUS,
+    EPOCH_MASKED_FRACTION_CUT,
     Ngmix,
+    defect_mask,
     make_ngmix_observation,
     prepare_ngmix_weights,
     prepare_postage_stamps,
@@ -264,7 +266,7 @@ def _fake_inputs(epochs):
 
 def _two_sided_band(width):
     """Mask of ``width`` columns on each side of the stamp, far from the
-    centre (at least 17 px for width 9)."""
+    centre (at least 23 px for width 3)."""
     band = np.zeros((N_STAMP, N_STAMP), dtype=bool)
     band[:, :width] = True
     band[:, -width:] = True
@@ -274,23 +276,23 @@ def _two_sided_band(width):
 def _epochs():
     """A clean epoch and four masked ones, all defects far from the centre.
 
-    * band10: 10 flagged columns on one side, 19.6% (39% if symmetrized);
-    * flag18: 2 x 9 flagged columns, 35.3%;
-    * dead18: the same columns at zero weight, no flags;
-    * rms18: the same columns with an invalid background RMS.
+    * band5: 5 flagged columns on one side, 9.8% (35% with its quarter turns);
+    * flag6: 2 x 3 flagged columns, 11.8%;
+    * dead6: the same columns at zero weight, no flags;
+    * rms6: the same columns with an invalid background RMS.
     """
     clean = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
     ones = np.ones((N_STAMP, N_STAMP))
-    band10 = clean.copy()
-    band10[:, -10:] = 1
-    two = _two_sided_band(9)
+    band5 = clean.copy()
+    band5[:, -5:] = 1
+    two = _two_sided_band(3)
     dead = ones.copy()
     dead[two] = 0.0
     rms = ones.copy()
     rms[two] = np.nan
     return {
         "2100001-10": (clean, ones),
-        "2100002-11": (band10, ones),
+        "2100002-11": (band5, ones),
         "2100003-12": (two.astype(np.int32), ones),
         "2100004-13": (clean.copy(), dead),
         "2100005-14": (clean.copy(), ones, rms),
@@ -308,15 +310,21 @@ def _surviving(epochs, **kwargs):
 
 
 def test_epoch_cut_counts_the_defect_set():
-    """At the default 1/3 cut, the three 35% epochs are dropped, whichever
-    defect source masks them, and the 20% band survives.
+    """At the 10% cut, the three 11.8% epochs are dropped, whichever defect
+    source masks them, and the 9.8% band survives.
 
-    Failure modes: the cut counts flags only (keeps dead18 and rms18), omits
-    one defect source, or counts a symmetrized set (drops band10); in each
+    Failure modes: the cut counts flags only (keeps dead6 and rms6), omits
+    one defect source, or counts a symmetrized set (drops band5); in each
     case the cut disagrees with the set that is zero-weighted and filled
     (epoch-cut-on-defect-mask).
     """
-    assert _surviving(_epochs()) == ["2100001-10", "2100002-11"]
+    epochs = _epochs()
+    fractions = [
+        defect_mask(weight, flag, *rms).mean()
+        for flag, weight, *rms in epochs.values()
+    ]
+    assert fractions[1] <= EPOCH_MASKED_FRACTION_CUT < min(fractions[2:])
+    assert _surviving(epochs) == ["2100001-10", "2100002-11"]
 
 
 # --- prepare_postage_stamps: the central-defect veto -----------------------
@@ -650,7 +658,7 @@ def test_neighbour_markers_near_the_centre_keep_every_epoch():
     # marked, so it is a neighbour, not off-tile.
     large = _tile_with_neighbour()
     large[1:-1, _CENTRE + 3:-1] = _MARKER
-    assert (large == _MARKER).mean() > 1 / 3
+    assert (large == _MARKER).mean() > EPOCH_MASKED_FRACTION_CUT
     for tile in (small, large):
         stamp, _, _ = _marker_stamp(tile)
         assert len(stamp.gals) == len(_MARKER_EPOCH_NAMES)
@@ -822,18 +830,23 @@ def test_object_three_px_from_the_tile_edge_is_dropped():
     )
 
 
-def test_the_central_veto_sees_off_tile_pixels():
-    """An off-tile band 12 px from the object passes both cuts; one 9 px
-    away (17 columns, exactly 1/3 of the stamp, which the fraction cut
-    keeps) is noise-filled inside the 10-px radius and vetoed.
+def test_the_central_veto_sees_off_tile_pixels(monkeypatch):
+    """An off-tile band 12 px from the object passes the central veto; one
+    9 px away is noise-filled inside the 10-px radius and vetoed.
+
+    Every off-tile band within reach of the veto also exceeds the 10%
+    fraction cut (this one is 17 columns, 1/3 of the stamp), so the fraction
+    cut is lifted here to isolate the veto, which is what keeps an edge
+    object's epochs safe if the fraction cut is ever relaxed.
 
     Failure mode: the central veto does not read the off-tile set.
     """
+    monkeypatch.setattr(ngmix_module, "EPOCH_MASKED_FRACTION_CUT", 1.0)
     sky = np.random.default_rng(5).normal(0.0, 1.0, (N_STAMP, N_STAMP))
     far, near = sky.copy(), sky.copy()
     far[:, :_CENTRE - 11] = _MARKER
     near[:, :_CENTRE - 8] = _MARKER
-    assert (near == _MARKER).mean() == 1 / 3
+    assert (near == _MARKER).mean() > EPOCH_MASKED_FRACTION_CUT
     kept, _, _ = _marker_stamp(far)
     assert len(kept.gals) == len(_MARKER_EPOCH_NAMES)
     vetoed, _, _ = _marker_stamp(near)
@@ -851,8 +864,8 @@ def test_corner_off_tile_region_and_border_neighbour_are_classified():
     neighbour is swallowed); the classification ignores the MegaCam flip.
     """
     tile = np.random.default_rng(5).normal(0.0, 1.0, (N_STAMP, N_STAMP))
-    tile[:5, :] = _MARKER
-    tile[:, -5:] = _MARKER
+    tile[:2, :] = _MARKER
+    tile[:, -2:] = _MARKER
     tile[40:, :6] = _MARKER  # neighbour on the bottom-left border
     stamp, epochs, _ = _marker_stamp(tile)
     names = {id(v[0]): name for name, v in epochs.items()}
@@ -862,7 +875,7 @@ def test_corner_off_tile_region_and_border_neighbour_are_classified():
     ):
         name = names[id(flag)]
         off_tile = _off_tile_expected(tile, name)
-        assert off_tile.sum() == 5 * N_STAMP * 2 - 25
+        assert off_tile.sum() == 2 * N_STAMP * 2 - 4
         npt.assert_array_equal(weight == 0, off_tile)
         npt.assert_array_equal(flag, 0)
         npt.assert_array_equal(
@@ -953,7 +966,7 @@ def test_dr6_marked_stamps_split_into_off_image_and_neighbours():
 
 
 def test_a_neighbour_completing_rows_beside_the_tile_edge_stays_a_neighbour():
-    """An object 14 px from the tile's left edge, with a wide neighbour
+    """An object 20 px from the tile's left edge, with a wide neighbour
     footprint that runs from the tile edge across the stamp: in the rows of
     that footprint every stamp pixel is -1e30, off the image or on the
     neighbour. Only the off-image columns are off-tile; the footprint is the
@@ -964,13 +977,13 @@ def test_a_neighbour_completing_rows_beside_the_tile_edge_stays_a_neighbour():
     fill interpolates (off-tile-is-marked-border-rows-and-columns).
     """
     seg = np.zeros((80, 80), np.int32)
-    seg[20:24, 0:45] = 5
-    seg[27:32, 13:18] = 1
-    x, y = np.array([15.0, 30.0]), np.array([30.0, 22.0])
+    seg[20:24, 0:50] = 5
+    seg[27:32, 19:24] = 1
+    x, y = np.array([21.0, 30.0]), np.array([30.0, 22.0])
     vignets, off_image = _marked_stamps(seg, x, y)
     tile, off = vignets[0], off_image[0]
     footprint = (tile == _MARKER) & ~off
-    assert footprint.sum() == 4 * (N_STAMP - 11)
+    assert footprint.sum() == 4 * (N_STAMP - 5)
     assert ((tile == _MARKER).all(axis=1) & ~off.all(axis=1)).sum() == 4
 
     stamp, epochs, _ = _marker_stamp(tile)

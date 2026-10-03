@@ -13,7 +13,8 @@ The epoch stamps are cut as vignetmaker does: 51x51 around the rounded
 pixel of the object's (XWIN_WORLD, YWIN_WORLD) in the CCD's own WCS, CCDs
 numbered as split_exp names them (HDU index - 1). The tile VIGNET and seg
 stamp are MegaCam-flipped onto the epoch and split into neighbour and
-off-tile pixels (split_tile_markers). The background is a sigma-clipped
+off-tile pixels (split_tile_markers); the off-tile pixels get zero weight,
+as prepare_postage_stamps gives them. The background is a sigma-clipped
 median over the clean pixels of a 257x257 box around the object, and the
 background RMS is constant over the stamp; the pipeline takes both from
 SExtractor's maps instead. Only the survey flag and weight maps mark
@@ -36,7 +37,6 @@ from astropy.wcs import WCS
 from scipy.ndimage import find_objects, label
 
 from shapepipe.modules.ngmix_package.ngmix import (
-    OFF_TILE_FLAG,
     Ngmix,
     defect_mask,
     split_tile_markers,
@@ -120,9 +120,10 @@ def cut(hdus, ext, pos, tile, i):
     _, bkg, rms = sigma_clipped_stats(img[box][good], sigma=3.0)
     stamps["gal"] = stamps["gal"] - bkg
     seg, neighbour, off_tile = tile_overlay(tile, i, ccd)
-    stamps["flag"][off_tile] = OFF_TILE_FLAG
+    stamps["weight"][off_tile] = 0
     stamps.update(
         bkg_rms=np.full((N, N), rms), seg=seg, neighbour=neighbour,
+        off_tile=off_tile,
         object_number=int(tile["NUMBER"][i]), ccd=ccd,
         offset=offset[0], int_pos=int_pos[0],
     )
@@ -139,7 +140,7 @@ def scan(hdus, tile):
         flg = get_stamps(hdus[2][ext].data, pos, RAD)[0].astype(np.int32)
         for i, w, f in zip(rows, wgt, flg):
             seg, neighbour, off_tile = tile_overlay(tile, i, ext - 1)
-            f[off_tile] = OFF_TILE_FLAG
+            w[off_tile] = 0
             defect = defect_mask(w, f)
             if not defect.any():
                 continue

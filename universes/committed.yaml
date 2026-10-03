@@ -58,7 +58,7 @@ analyses:
       defect_fill: interpolate
       blend_handling: uberseg
       weight_symmetrization: interpolated
-      epoch_masked_fraction_cut: one_third
+      epoch_masked_fraction_cut: ten_percent
       central_defect_veto: fixed_radii
   catalogue_assembly:
     decisions:
