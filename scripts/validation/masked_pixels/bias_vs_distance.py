@@ -192,7 +192,7 @@ def plot(in_path, out_path):
         Line2D([], [], color=INK2, lw=1.4, ls=(0, (3, 2)),
                label="noise fill (not used for narrow defects)"),
         Line2D([], [], color=INK2, lw=0, marker="o", mfc="white", mec=INK2,
-               ms=4, label="epoch dropped by the 1/3 masked-fraction cut"),
+               ms=4, label=f"epoch dropped by the {FRAC_CUT:.0%} masked-fraction cut"),
     ]
     fig.legend(handles=handles, frameon=False, fontsize=9.5, ncol=3,
                loc="lower center", bbox_to_anchor=(0.5, -0.075))
