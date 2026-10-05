@@ -52,18 +52,6 @@ single-ID mode implements ``check`` and ``remove``; ``add`` is accepted by the
 argument validator and then falls through to the ordinary walk, so it is not a
 way to add one tile by hand.)
 
-WHICH COLUMNS DEPEND ON WHERE THE TILE'S DETECTIONS CAME FROM. The param file
-lists the columns of a SExtractor-mode tile catalogue. Under ``tile_detection:
-unions_catalogue`` the detection columns are instead the UNIONS catalogue's own
-(read_ext_sexcat copies them as they are), and that catalogue lacks some of the
-SExtractor quantities the param file names; ``SEXTRACTOR_ONLY_COLUMNS`` lists
-them, and ``requested_columns`` subtracts exactly that list in that mode. The
-merge stays strict on everything else: a column still requested and absent
-from a tile stops the merge. tests/module/test_final_cat_columns.py derives the
-catalogue-mode columns by running the converter on the UNIONS catalogue's
-header and asserts the list is exactly the requested SExtractor columns the
-catalogue does not carry, so it cannot silently go stale in either direction.
-
 WHICH TILES — AND WHY THE JOB DERIVES THE SET RATHER THAN BEING TOLD IT. The set
 is the CAMPAIGN's: every tile both declared in ``tile_list`` and present in the
 index, which is exactly the Snakefile's TILES_READY, rebuilt here from the same
@@ -82,14 +70,13 @@ trigger would notice. A tile in the derived set whose catalogue is missing is a
 hard error here, not a skip — under the DAG it cannot happen, since every one of
 them is a declared input of this job.
 
-@sc [label:selection] never-fit-rows-pass-through
+@sc [decision:catalogue_assembly.failure_sentinels,label:selection] never-fit-rows-pass-through
 Every row of every tile catalogue reaches the merged file, unchanged,
 including objects ngmix never fit. Those carry `NGMIX_N_EPOCH == 0` with
-sentinel values (`NGMIX_MCAL_FLAGS == 0`, ellipticities `-10`, `T == 0`), so
-`NGMIX_MCAL_FLAGS == 0` is not a validity cut: consumers select fitted objects
-with `NGMIX_N_EPOCH > 0`. The merge neither fills these rows nor drops them;
-that selection belongs to the consumer. Enforced by
-tests/unit/test_final_cat_merge_invariants.py.
+sentinel values (ellipticities `-10`, `T == 0`), `NGMIX_MCAL_FLAGS` nonzero
+(`LM_FUNC_NOTFINITE`) and `NGMIX_MCAL_TYPES_FAIL == 5`, so the consumer's
+`NGMIX_MCAL_FLAGS == 0` cut rejects them. The merge neither fills these rows
+nor drops them. Enforced by tests/unit/test_final_cat_merge_invariants.py.
 """
 
 import argparse
@@ -100,39 +87,10 @@ from pathlib import Path
 # Same directory; the rule invokes this file by path, so it is sys.path[0].
 import build_index
 import hdf5_reconcile
-from completeness import TILE_DETECTIONS
 
 # <repo>/scripts/python/create_final_cat.py, from <repo>/workflow/scripts/this.
 CFC_PATH = (Path(__file__).resolve().parents[2]
             / "scripts" / "python" / "create_final_cat.py")
-
-
-# Requested SExtractor columns the UNIONS per-tile catalogue (DR6) does not
-# carry, so a unions_catalogue-mode tile catalogue cannot have them. None has a
-# DR6 column measuring the same quantity: DR6's MAG_APER is a magnitude through
-# its own aperture, not FLUX_APER; MAG_AUTO, MAGERR_AUTO and FLUX_RADIUS are
-# the same SExtractor measurements in both modes and stay requested.
-SEXTRACTOR_ONLY_COLUMNS = (
-    "MAG_WIN", "MAGERR_WIN",            # Gaussian-windowed magnitude
-    "FLUX_AUTO", "FLUXERR_AUTO",        # DR6 carries the AUTO magnitude only
-    "FLUX_APER", "FLUXERR_APER",        # ShapePipe's aperture, in flux
-    "SNR_WIN",                          # Gaussian-windowed SNR
-    "FWHM_IMAGE", "FWHM_WORLD",         # Gaussian-core FWHM
-)
-
-
-def requested_columns(param_list: list, tile_detection: str) -> list:
-    """The columns a tile catalogue of this detection mode must carry.
-
-    The param file's list, in its order, less ``SEXTRACTOR_ONLY_COLUMNS`` when
-    the detections are the UNIONS catalogue's (see the module docstring).
-    """
-    if tile_detection not in TILE_DETECTIONS:
-        raise ValueError(f"tile_detection {tile_detection!r} is not one of "
-                         f"{TILE_DETECTIONS}")
-    if tile_detection == "sextractor":
-        return list(param_list)
-    return [c for c in param_list if c not in SEXTRACTOR_ONLY_COLUMNS]
 
 
 def spval_group(campaign: str) -> str:
@@ -193,9 +151,6 @@ def main() -> None:
                    help="names the campaign's group in the output file")
     p.add_argument("--param-file", required=True, type=Path,
                    help="the input type's final_cat.param — the column list")
-    p.add_argument("--tile-detection", required=True, choices=TILE_DETECTIONS,
-                   help="where the tile detections came from (config "
-                        "tile_detection); selects the columns requested")
     p.add_argument("--hdu", type=int, default=1)
     p.add_argument("--snapshot-json", type=Path, default=None,
                    help="sp run's code snapshot (bin/sp's "
@@ -203,9 +158,7 @@ def main() -> None:
     args = p.parse_args()
 
     cfc = load_create_final_cat()
-    param_list = requested_columns(
-        cfc.read_param_file(str(args.param_file), verbose=False),
-        args.tile_detection)
+    param_list = cfc.read_param_file(str(args.param_file), verbose=False)
     if not param_list:
         sys.exit(f"merge_final_cat: no columns read from {args.param_file}")
     # read_data/copy_data read their knobs out of this dict, exactly as

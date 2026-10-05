@@ -69,7 +69,7 @@ software-deployment-method: [apptainer]
 # 
 #                      HOW the in-container shell LEARNS its node-local dir:
 #                      IT DOES NOT. It DERIVES the path from the tile wildcard
-#                      (tile.smk::tile_local -> /local/scratch/sp-<tile>), and
+#                      (tile.smk::tile_local -> /local/scratch/sp-<tag>-<tile>), and
 #                      that is the only mechanism that survives contact with
 #                      snakemake. Three alternatives were tried; all fail, and
 #                      the third failed IN PRODUCTION, so read this before

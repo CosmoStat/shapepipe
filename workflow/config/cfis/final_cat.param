@@ -3,13 +3,14 @@
 XWIN_WORLD
 YWIN_WORLD
 
-# tile ID, for plot of tile-dependent additive bias.
-# Can maybe be removed.
+# Tile of origin: sp_validation's overlap cut keeps each object only inside
+# its own tile's box (catalogue_assembly.tile_overlap_handling).
 # @sc [decision:catalogue_assembly.tile_overlap_handling]
 TILE_ID
 
-# Object number within the tile: sp_validation's extraction joins on it, and
-# the per-tile catalogue always carries it.
+# Object number within the tile, the UNIONS catalogue's under tile_detection:
+# unions_catalogue: sp_validation's extraction joins on it, and the per-tile
+# catalogue always carries it.
 NUMBER
 
 # Survey-wide object ID, tile_id * 10**6 + NUMBER (make_cat, both
@@ -232,10 +233,7 @@ NGMIX_FLUX_ERR_2P
 NGMIX_FLUX_ERR_NOSHEAR
 
 # magnitudes
-# SExtractor detection columns. Under tile_detection: unions_catalogue the
-# UNIONS catalogue supplies them, and the merge drops the ones it lacks
-# (merge_final_cat.SEXTRACTOR_ONLY_COLUMNS: the WIN, AUTO-flux, APER and FWHM
-# columns and SNR_WIN); MAG_AUTO, MAGERR_AUTO and FLUX_RADIUS are in both.
+# SExtractor detection columns, from the tile SExtractor run (tile_detect).
 MAG_AUTO
 MAGERR_AUTO
 MAG_WIN

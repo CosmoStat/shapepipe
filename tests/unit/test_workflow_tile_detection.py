@@ -1,13 +1,13 @@
-"""The two tile_detect modes agree on where the sexcat is.
+"""The two tile_detection modes run one tile_detect, and agree on its inputs.
 
-``tile_detection: unions_catalogue`` swaps the SExtractor rule for a fetch plus
-a conversion, and everything downstream of ``tile_detect`` is unchanged only
-because both modes write ``run_sp_tile_Sx`` and both are checked as the
-``tile_detect`` stage. The agreements that make that true are between files
-that never see each other at run time: the two inis' RUN_NAMEs,
-``completeness.STAGE_DIR``, the flavoured ``COMPLETENESS['tile_detect']``
-table, and ``run_report``'s stage list. They are asserted here, statically.
-Container-free: the scripts are stdlib-only.
+Both modes run SExtractor (config_tile_Sx.ini) in the ``run_sp_tile_Sx`` stage
+dir; ``tile_detection: unions_catalogue`` adds ``tile_get_catalogue`` and
+points the ini's MATCH_CATALOGUE at its output through the workflow's
+SP_MATCH_CATALOGUE. The agreements that make that work are between files that
+never see each other at run time: the inis' RUN_NAMEs and fetch patterns,
+``completeness``'s tables, ``run_report``'s stage list and tile.smk's path.
+They are asserted here, statically. Container-free: the scripts are
+stdlib-only.
 """
 
 import configparser
@@ -44,43 +44,35 @@ completeness = _load("completeness")
 
 def test_modes_are_the_two_the_rules_know():
     assert completeness.TILE_DETECTIONS == ("sextractor", "unions_catalogue")
-    assert set(completeness.COMPLETENESS["tile_detect"]) == set(
-        completeness.TILE_DETECTIONS)
 
 
-def test_both_detection_inis_write_the_stage_dir():
-    """config_tile_Sx and config_tile_Uc share the run dir STAGE_DIR names."""
+def test_detection_ini_writes_the_stage_dir():
     level, subdir = completeness.STAGE_DIR["tile_detect"]
     assert level == "tile"
-    for name in ("config_tile_Sx.ini", "config_tile_Uc.ini"):
-        assert _ini(name)["DEFAULT"]["RUN_NAME"].strip() == subdir, (
-            f"{name} writes a run dir other than {subdir}: unit_pre would clear "
-            "the wrong directory and the chain downstream would read nothing.")
-    assert _ini("config_tile_Uc.ini")["DEFAULT"]["RUN_DATETIME"].strip() == "False"
+    assert _ini("config_tile_Sx.ini")["DEFAULT"]["RUN_NAME"].strip() == subdir
 
 
-def test_fetch_ini_matches_its_stage_and_feeds_the_converter():
+def test_detection_joins_only_when_the_workflow_says_so():
+    """MATCH_CATALOGUE is empty unless SP_MATCH_CATALOGUE is exported."""
+    sx = _ini("config_tile_Sx.ini")["SEXTRACTOR_RUNNER"]
+    assert sx["MATCH_CATALOGUE"].strip() == "${SP_MATCH_CATALOGUE:-}"
+    assert float(sx["MATCH_RADIUS"]) == 1.0
+    assert 0.9 < float(sx["MATCH_MIN_FRACTION"]) <= 1
+    # The join renumbers before the post-processing keys epochs on NUMBER.
+    assert sx["MAKE_POST_PROCESS"].strip() == "True"
+
+
+def test_fetch_ini_writes_the_catalogue_tile_smk_joins():
+    """Gic's output is the path tile.smk exports as SP_MATCH_CATALOGUE."""
     level, gic = completeness.STAGE_DIR["tile_get_catalogue"]
     assert level == "tile"
     assert _ini("config_tile_Gic.ini")["DEFAULT"]["RUN_NAME"].strip() == gic
-    uc = _ini("config_tile_Uc.ini")["READ_EXT_SEXCAT_RUNNER"]
-    assert f"$SP_RUN/output/{gic}/get_images_runner/output" in uc["INPUT_DIR"]
-    assert uc["FILE_PATTERN"].split(",")[0].strip() == "CFIS_cat"
-    # The segmentation map rides the same fetch and is the converter's third
-    # input, the position SEGMENTATION = True reads it from.
     gi = _ini("config_tile_Gic.ini")["GET_IMAGES_RUNNER"]
-    assert [p.strip() for p in gi["OUTPUT_FILE_PATTERN"].split(",")] == [
-        "CFIS_cat-", "CFIS_seg-"]
-    assert [e.strip() for e in gi["INPUT_FILE_EXT"].split(",")] == [
-        ".cat", ".fits.fz"]
-    third = [[v.strip() for v in uc[k].split(",")][2]
-             for k in ("INPUT_DIR", "FILE_PATTERN", "FILE_EXT")]
-    assert third == [f"$SP_RUN/output/{gic}/get_images_runner/output",
-                     "CFIS_seg", ".fitsfz"]
-    assert uc["SEGMENTATION"].strip() == "True"
-    # The multi-epoch post-processing is what gives the sexcat its EPOCH_k
-    # extensions; ngmix_range.py refuses a sexcat without them.
-    assert uc["MAKE_POST_PROCESS"].strip() == "True"
+    assert gi["OUTPUT_FILE_PATTERN"].strip() == "CFIS_cat-"
+    assert gi["INPUT_FILE_EXT"].strip() == ".cat"
+    smk = (REPO_ROOT / "workflow" / "rules" / "tile.smk").read_text()
+    assert f'/output/{gic}/get_images_runner/output"' in smk
+    assert 'f"{gic}/CFIS_cat{unit_num(tile)}.cat"' in smk
 
 
 def _stage_dir(tmp_path, runner, n):
@@ -91,29 +83,14 @@ def _stage_dir(tmp_path, runner, n):
     return tmp_path
 
 
-@pytest.mark.parametrize("mode, runner, expect", [
-    ("sextractor", "sextractor_runner", 2),
-    ("unions_catalogue", "read_ext_sexcat_runner", 1),
+@pytest.mark.parametrize("stage, runner, expect", [
+    ("tile_detect", "sextractor_runner", 2),
+    ("tile_get_catalogue", "get_images_runner", 1),
 ])
-def test_tile_detect_is_checked_per_mode(tmp_path, monkeypatch, mode, runner, expect):
-    monkeypatch.setenv("SP_TILE_DETECTION", mode)
+def test_stage_counts(tmp_path, stage, runner, expect):
     ok, details = completeness.check_counts(
-        "tile_detect", _stage_dir(tmp_path, runner, expect))
+        stage, _stage_dir(tmp_path, runner, expect))
     assert ok and details == [(runner, expect, expect, False)]
-
-
-def test_unset_mode_is_sextractor(tmp_path, monkeypatch):
-    """A prologue without the export checks as before: data runs are unchanged."""
-    monkeypatch.delenv("SP_TILE_DETECTION", raising=False)
-    ok, details = completeness.check_counts(
-        "tile_detect", _stage_dir(tmp_path, "sextractor_runner", 2))
-    assert ok and details[0][0] == "sextractor_runner"
-
-
-def test_invalid_mode_is_fatal(tmp_path, monkeypatch):
-    monkeypatch.setenv("SP_TILE_DETECTION", "steven")
-    with pytest.raises(ValueError, match="SP_TILE_DETECTION"):
-        completeness.check_counts("tile_detect", tmp_path)
 
 
 @pytest.mark.parametrize("mode, present", [
