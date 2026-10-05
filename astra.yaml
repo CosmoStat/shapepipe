@@ -230,7 +230,7 @@ analyses:
           maps are configured), the flag stamps ngmix reads, and the final
           catalogue's MASK_<flag value>_<name> columns.
         inputs: [exposure_flags, sky_masks]
-        decisions: [pixel_mask_source, psf_star_mask_veto, sky_mask_application, mask_default_cut]
+        decisions: [pixel_mask_source, psf_star_mask_veto, sky_mask_application]
     decisions:
       pixel_mask_source:
         label: >-
@@ -299,7 +299,7 @@ analyses:
               Halos flag objects for the final catalogue; a star inside another
               star's halo is not thereby a bad PSF sample.
       sky_mask_application:
-        label: Sky masks written as catalogue columns; the cut is deferred downstream
+        label: Sky masks written as catalogue columns; any cut is downstream
         rationale: >-
           The final catalogue ships every detected object. MASK_EXT_PATHS lists
           label:path pairs, and make_cat queries each healsparse map at the
@@ -312,7 +312,8 @@ analyses:
           MASK_1_Faint_star_halos to MASK_2048_z2, matched line for line in
           final_cat.param. The flag value is the one in the map's file name;
           the names are the ones sp_validation uses for the same bits.
-          Nothing in the pipeline cuts on them (mask_default_cut).
+          ShapePipe makes no mask choice and cuts on none of them; which
+          columns to cut on is decided downstream, in sp_validation.
         default: catalogue_columns
         options:
           deferred_downstream:
@@ -325,46 +326,6 @@ analyses:
             excluded_reason: >-
               Location flags are analysis decisions; a pipeline cut would fix
               one mask version into the catalogue.
-      mask_default_cut:
-        label: Default external-mask cut — the r-mask columns of the MASK_* ladder without the star halos
-        rationale: >-
-          make_cat writes one boolean MASK_<flag value>_<name> column per map
-          in MASK_EXT_PATHS (11 maps: 1_Faint_star_halos, 2_Bright_star_halos,
-          4_Stars (star bodies), 8_Manual, the per-band no-data footprints
-          16_u, 32_g, 64_r, 128_i and 256_z (HSC z), 1024_Maximask, and
-          2048_z2 (the Pan-STARRS z footprint)) and cuts nothing; the cut is
-          the consumer's (sp_validation). The default is the OR of
-          MASK_4_Stars, MASK_8_Manual, MASK_64_r and MASK_1024_Maximask. The
-          star halos (MASK_1_Faint_star_halos, MASK_2_Bright_star_halos) stay
-          catalogue columns but out of the default: how far around a star to
-          reject galaxies is a selection choice the science analysis makes,
-          not a defect of the measurement. This departs from the published
-          2D-cosmic-shear mask (/n17data/UNIONS/WL/masks/mask_r_nside131072.hsp),
-          which is the default plus both halo columns: on three whole interior
-          coverage granules of the Feb-2025 r ladder beside it, default plus
-          halos is pixel-exact against mask_r, and the halos alone are about
-          half of mask_r's masked area (6-19% of area per granule; mask_r
-          masks 19-28%, the default 10-13%). The DR6 ladder MASK_EXT_PATHS
-          points at is not yet measured against the Feb-2025 one.
-        default: r_mask_no_halos
-        options:
-          r_mask_no_halos:
-            label: "OR of the 4, 8, 64 and 1024 columns — mask_r without the star halos"
-          r_mask_bits:
-            label: "OR of the 1, 2, 4, 8, 64 and 1024 columns — reproduces mask_r"
-          defects_only:
-            label: "OR of the defect columns 1, 2, 4, 8 and 1024"
-            excluded: true
-            excluded_reason: >-
-              Omits the r-footprint column 64_r, so positions with no r data
-              pass the cut.
-          all_bits:
-            label: OR of all 11 MASK_* columns
-            excluded: true
-            excluded_reason: >-
-              The u, g, i, HSC-z and Pan-STARRS-z (2048_z2) footprint columns
-              flag missing data in other filters, not r-band defects; OR-ing
-              them masks whole regions with no u or Pan-STARRS z coverage.
     prior_insights:
       farrens22_pipeline_masks:
         claim: >-
