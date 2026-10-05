@@ -590,8 +590,14 @@ rule tile_detect:
     # size (10000 x 10000 px); SExtractor alone on one takes 34 s and 0.74 GiB.
     # 4000 MB is 2.1x the worst tile, and an OOM retries at 8000. The runtime
     # is ~7x the slowest tile, for /scratch I/O on nibi (a 400 MB image and
-    # weight in, a ~430 MB catalogue out). nibi bills max(cores, mem_GB/4), so
-    # the job bills 1 core-equivalent; plus DETECT_SEG_MEM_MB above.
+    # weight in, the catalogue and check images out). The SEG_VIGNET cut, the
+    # join and the post-processing each rewrite the whole catalogue, so
+    # config_tile_Sx.ini's WORK_DIR keeps them on node-local disk: MEASURED on
+    # DR6 191.307 under uberseg (31,736 rows, 8 epochs), the step took 44 min
+    # in the loaded smk-g13-us allocation with the rewrites on /scratch, 112 s
+    # on idle /scratch, and 36 s through WORK_DIR. nibi bills
+    # max(cores, mem_GB/4), so the job bills 1 core-equivalent; plus
+    # DETECT_SEG_MEM_MB above.
     threads: 1
     retries: 1
     resources:
