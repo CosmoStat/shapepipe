@@ -79,6 +79,7 @@ Apply mutations only to a disposable checkout, run the named test without `--upd
 | `test_tile_store_is_unique_per_campaign` | Make `LOCAL_TAG` conditional on `image_sims` (or constant); give one tile_shape member a different store path. |
 | `test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg` | Make the Snakefile or config.yaml default `noisefill`; export `BLEND_ENV` under noisefill; drop `blend_env(...)` from either tile_detect or tile_ngmix; export the wrong value; set `NGMIX_SEG_MEM_MB` or `DETECT_SEG_MEM_MB` to 0; give a committed ini's `SEG_VIGNET` / `BLEND_HANDLING` a literal or the wrong default. |
 | `test_unknown_blend_handling_fails_during_parse` | Remove the Snakefile's `blend_handling` check. |
+| `test_module_logs_outlive_their_run_dirs` | Drop `post=` from tile_vignets or tile_ngmix; point the copy at `$SP_LOCAL` or `$SP_RUN/output`; move it after `exit $rc`. |
 | `test_missing_run_fails_during_parse` | Remove `run` from `run_config.REQUIRED`; literal paths must still receive the required-key diagnostic, not a later `KeyError`. |
 | `test_unit_pre_changes_at_campaign_boundary` | Append a line to `unit_pre`; change one rule's `params.pre`; change one shell; change a rendered thread count; make `LOCAL_TAG` empty for data. |
 | `test_noisefill_plan_changes_at_campaign_boundary` | Export anything under noisefill; change one rule's `params.pre` or shell. |
