@@ -157,13 +157,8 @@ class Campaign:
         return (self.products_dir / "tiles" / tile[:2] / tile
                 / f"final_cat-{tile}.fits")
 
-    def persist_manifest(self, exp):
-        """Return the expected persistent manifest for one exposure."""
-        return (self.products_dir / "exp" / exp[:2] / exp
-                / "manifests" / "exp_persist.json")
-
-    def exp_manifest(self, exp, stage):
-        """Return one exposure's persistent manifest for a named stage."""
+    def persist_manifest(self, exp, stage="exp_persist"):
+        """Return one exposure's manifest on the persistent root."""
         return (self.products_dir / "exp" / exp[:2] / exp
                 / "manifests" / f"{stage}.json")
 
