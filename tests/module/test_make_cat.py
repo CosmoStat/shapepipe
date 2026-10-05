@@ -56,6 +56,7 @@ class _CaptureLogger(_NullLogger):
 NGMIX_KEYS = [
     "id",
     "n_epoch_model",
+    "n_epoch_failed",
     "mcal_types_fail",
     "neighbour_flag",
     "n_epoch_interp", "min_dist_interp", "min_dist_noisefill",
@@ -86,6 +87,7 @@ def _ngmix_row(obj_id):
     return {
         "id": obj_id,
         "n_epoch_model": 3,
+        "n_epoch_failed": 1,
         "mcal_types_fail": 0,
         "neighbour_flag": 1,
         "n_epoch_interp": 2, "min_dist_interp": 7.5,
@@ -120,7 +122,8 @@ def _write_ngmix_cat(path, obj_ids):
         cols = [
             fits.Column(
                 name=key,
-                format="K" if key in ("id", "n_epoch_model", "mcal_types_fail",
+                format="K" if key in ("id", "n_epoch_model", "n_epoch_failed",
+                                       "mcal_types_fail",
                                        "n_epoch_interp", "nfev_fit", "flags",
                                        "mcal_flags") else "D",
                 array=np.array([row[key] for row in rows]),
@@ -180,7 +183,7 @@ def test_save_ngmix_data_uses_new_grammar_and_no_old_names(tmp_path):
     # Object-level metadata columns carry no OBJECT/SHEAR token.
     for col in (
         "NGMIX_MCAL_FLAGS", "NGMIX_N_EPOCH", "NGMIX_MCAL_TYPES_FAIL",
-        "NGMIX_NEIGHBOUR_FLAG", "NGMIX_N_EPOCH_INTERP",
+        "NGMIX_NEIGHBOUR_FLAG", "NGMIX_N_EPOCH_FAILED", "NGMIX_N_EPOCH_INTERP",
         "NGMIX_MIN_DIST_INTERP", "NGMIX_MIN_DIST_NOISEFILL",
     ):
         assert col in out, f"missing {col}"
@@ -281,6 +284,7 @@ def test_save_ngmix_data_fills_sentinels_for_absent_objects(tmp_path):
     npt.assert_allclose(n_epoch[absent], [0.0, 0.0])
 
     for col, key, never_fit in (
+        ("NGMIX_N_EPOCH_FAILED", "n_epoch_failed", 0.0),
         ("NGMIX_N_EPOCH_INTERP", "n_epoch_interp", 0.0),
         ("NGMIX_MIN_DIST_INTERP", "min_dist_interp", -1.0),
         ("NGMIX_MIN_DIST_NOISEFILL", "min_dist_noisefill", -1.0),
@@ -327,6 +331,7 @@ def _metacal_result(obj_id):
     res = {
         "obj_id": obj_id,
         "n_epoch_model": row["n_epoch_model"],
+        "n_epoch_failed": row["n_epoch_failed"],
         "neighbour_flag": row["neighbour_flag"],
         "n_epoch_interp": row["n_epoch_interp"],
         "min_dist_interp": row["min_dist_interp"],
