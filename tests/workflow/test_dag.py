@@ -168,10 +168,12 @@ def test_mccd_is_refused_during_parse(tmp_path, resolve_dag):
 
 # --- blend_handling ---------------------------------------------------------
 
-# The memory each stage adds under uberseg for SEG_VIGNET.
-SEG_MEM_MB = {"tile_detect": 3000, "tile_ngmix": 500}
-BLEND_EXPORTS = {"tile_detect": {"SP_SEG_VIGNET": "True"},
-                 "tile_ngmix": {"SP_BLEND_HANDLING": "uberseg"}}
+# First-attempt memory of the stages that hold SEG_VIGNET, under every
+# blend_handling: the base plus the seg stamps' share.
+SEG_MEM_MB = {"tile_detect": 4000 + 3000, "tile_ngmix": 5000 + 500}
+# The exports every blend_handling sets, and those uberseg adds.
+SEG_EXPORTS = {"tile_detect": {"SP_SEG_VIGNET": "True"}}
+BLEND_EXPORTS = {"tile_ngmix": {"SP_BLEND_HANDLING": "uberseg"}}
 # The option each stage's committed ini reads the export through, and the
 # value it must resolve to with and without it.
 BLEND_OPTIONS = {"tile_detect": ("SEG_VIGNET", "False", "True"),
@@ -222,13 +224,13 @@ def _committed_value(shell, config_dir, option, env, monkeypatch):
 
 
 @pytest.mark.parametrize("detection", ["sextractor", "unions_catalogue"])
-def test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg(
+def test_blend_handling_reaches_ngmix_only_under_uberseg(
         tmp_path, resolve_dag, monkeypatch, detection):
-    """A campaign without the knob plans exactly the uberseg campaign. Against
-    explicit noisefill, uberseg only adds its two exports to tile_detect's and
-    tile_ngmix's prologues and the seg stamps' memory to both, and each
-    export turns its committed ini's option from the noise-fill default to
-    the uberseg value."""
+    """A campaign without the knob plans exactly the uberseg campaign. Both
+    handlings export SP_SEG_VIGNET to tile_detect, which turns its ini's
+    SEG_VIGNET on, and carry the seg stamps' memory in tile_detect and
+    tile_ngmix. Against explicit noisefill, uberseg only adds its export to
+    tile_ngmix's prologue, which turns BLEND_HANDLING to uberseg."""
     surfaces = {}
     for blend in (None, "noisefill", "uberseg"):
         campaign = Campaign(tmp_path / str(blend), "data", "psfex")
@@ -270,7 +272,17 @@ def test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg(
                                     monkeypatch) == default
             assert _committed_value(shell, config_dir, option, exports,
                                     monkeypatch) == value
-        assert mem == nf_mem + SEG_MEM_MB.get(rule, 0), key
+        assert mem == nf_mem, key
+        if rule in SEG_MEM_MB:
+            assert mem == SEG_MEM_MB[rule], key
+        seg_exports = SEG_EXPORTS.get(rule, {})
+        if seg_exports:
+            assert {f"export {name}='{value}'"
+                    for name, value in seg_exports.items()} <= set(
+                        nf_pre.split("\n")), key
+            option, default, value = BLEND_OPTIONS[rule]
+            assert _committed_value(shell, config_dir, option, seg_exports,
+                                    monkeypatch) == value
 
 
 def test_unknown_blend_handling_fails_during_parse(tmp_path, resolve_dag):
@@ -311,4 +323,3 @@ def test_noisefill_ignores_blend_variables_in_the_launch_shell(
     assert dirty_jobs == clean_jobs
     for _, shell, _ in dirty_jobs.values():
         assert "SP_BLEND_HANDLING" not in (shell or "")
-        assert "SP_SEG_VIGNET" not in (shell or "")

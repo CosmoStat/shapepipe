@@ -583,8 +583,8 @@ class Tile_cat():
     cat_path : str
         Path to the tile SExtractor catalogue. Its optional ``SEG_VIGNET``
         column, one integer coadd segmentation stamp per object on the grid
-        of its ``VIGNET``, becomes ``self.seg`` for the ``"uberseg"`` blend
-        handling; without it ``self.seg`` is ``None``.
+        of its ``VIGNET``, becomes ``self.seg``, which defines the neighbours
+        under both blend handlings; without it ``self.seg`` is ``None``.
     row_min, row_max : int, optional
         First and last catalogue row of the chunk (1-based, inclusive; see
         :func:`chunk_rows`). The default, ``-1``, is unbounded, so the whole
@@ -628,8 +628,8 @@ class Tile_cat():
 
         # Coadd-frame segmentation stamp (integer labels, the catalogue's
         # NUMBER), one per object on the grid of its VIGNET, overlaid
-        # unchanged on every epoch for uberseg neighbour masking
-        # (shapepipe#776).
+        # unchanged on every epoch; it defines the neighbours (shapepipe#776,
+        # split_tile_markers, uberseg_mask).
         self.seg = (
             ChunkStamps(data['SEG_VIGNET'], self.rows)
             if 'SEG_VIGNET' in cols
@@ -1352,6 +1352,13 @@ class Ngmix(object):
                 + f" SEG_VIGNET column, which {self._tile_cat_path} lacks;"
                 + " write it at tile detection (SEG_VIGNET = True)."
             )
+        if tile_cat.seg is None and getattr(tile_cat, "vign", None) is not None:
+            self._w_log.warning(
+                f"{self._tile_cat_path} has no SEG_VIGNET column: every"
+                + " interior -1e30 marker is taken as a neighbour,"
+                + " including the object's own CLEAN-merged fragments"
+                + " (neighbours-are-other-footprints)."
+            )
 
         check_wcs_centroid_offset(
             self._centroid_source, tile_cat, vignet_cat.gal_vign_cat
@@ -1474,7 +1481,7 @@ class Ngmix(object):
             res['obj_id'] = obj_id
             # Neighbour flag: does the coadd seg stamp hold any non-central,
             # non-zero label? Systematics-test hook (shapepipe#776); computed
-            # from the raw coadd seg, 0 when uberseg is off / seg absent.
+            # from the raw coadd seg, 0 when the seg is absent.
             res['neighbour_flag'] = int(
                 seg_has_neighbour(tile_cat.seg[i_tile], obj_id)
                 if getattr(tile_cat, "seg", None) is not None
@@ -1574,8 +1581,8 @@ def prepare_postage_stamps(
     that ``DEFECT_WEIGHTING`` zero-weights or interpolates are not counted.
 
     @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
-    The tile VIGNET's -1e30 markers on other detections' footprints
-    (:func:`split_tile_markers`) are the epoch's neighbour mask
+    The tile VIGNET's -1e30 markers on other objects' segmentation
+    footprints (:func:`split_tile_markers`) are the epoch's neighbour mask
     (``stamp.neighbours``), not defects: every epoch shares the tile VIGNET,
     so counting them would drop every epoch of a blended object.
 
@@ -1678,7 +1685,9 @@ def prepare_postage_stamps(
         flag_vign = flag_obj[expccd_name]['VIGNET']
         # Off-tile pixels are defects (off-tile-pixels-are-defects); the
         # other -1e30 markers are neighbours (neighbour-markers-are-not-defects).
-        neighbour, off_tile = split_tile_markers(tile_vign, np.shape(gal_vign))
+        neighbour, off_tile = split_tile_markers(
+            tile_vign, np.shape(gal_vign), tile_seg, obj_id
+        )
         weight_vign = np.where(off_tile, 0, weight_obj[expccd_name]['VIGNET'])
         bkg_rms_vign = (
             bkg_rms_obj[expccd_name]['VIGNET']
@@ -1750,19 +1759,28 @@ def prepare_postage_stamps(
 
     return stamp
 
-def split_tile_markers(tile_vign, shape):
+def split_tile_markers(tile_vign, shape, seg=None, object_number=None):
     """Split the tile VIGNET's -1e30 markers into neighbour and off-tile.
 
     @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-marked-border-rows-and-columns
-    The tile VIGNET holds -1e30 on the footprints of other detections and on
-    stamp pixels beyond the tile's edge (SExtractor writes it). A stamp
-    clipped by the tile's rectangle loses whole rows and whole columns from
-    its border, so the off-tile pixels are the union of the runs of
-    entirely -1e30 rows and columns that start at a stamp border. The
-    remaining markers are
-    neighbour pixels: a footprint touching the stamp border, and a footprint
-    that completes an interior row or column beside an off-tile band, stay
-    neighbours.
+    SExtractor writes -1e30 into the tile VIGNET on stamp pixels beyond the
+    tile's edge and, under MASK_TYPE CORRECT, on every above-threshold pixel
+    that is not the object's own pre-CLEAN footprint. A stamp clipped by the
+    tile's rectangle loses whole rows and whole columns from its border, so
+    the off-tile pixels are the union of the runs of entirely -1e30 rows and
+    columns that start at a stamp border.
+
+    @sc [decision:shape_measurement.blend_handling] neighbours-are-other-footprints
+    The other markers also fall on pixels no other object owns: detections
+    smaller than DETECT_MINAREA (noise peaks, catalogued nowhere) and
+    fragments CLEAN merged into the object itself, which the segmentation
+    map labels as the object. With ``seg``, the neighbour pixels are the
+    markers on another label's footprint (any label but 0 and
+    ``object_number``; the catalogue join's -1 marks a detection that left
+    the catalogue). The markers left over are nothing: -1e30 is a flag in the
+    tile VIGNET only, and the epoch stamps hold real light there, the
+    object's own or sky. Without ``seg``, every interior marker is a
+    neighbour.
 
     Parameters
     ----------
@@ -1770,6 +1788,10 @@ def split_tile_markers(tile_vign, shape):
         Tile VIGNET stamp, oriented like the epoch; ``None`` marks nothing.
     shape : tuple of int
         Stamp shape, used when ``tile_vign`` is ``None``.
+    seg : numpy.ndarray, optional
+        The object's SEG_VIGNET stamp, oriented like ``tile_vign``.
+    object_number : int, optional
+        The object's label in ``seg``; required with ``seg``.
 
     Returns
     -------
@@ -1792,7 +1814,10 @@ def split_tile_markers(tile_vign, shape):
         border_runs(marker.all(axis=1))[:, None]
         | border_runs(marker.all(axis=0))[None, :]
     )
-    return marker & ~off_tile, off_tile
+    neighbour = marker & ~off_tile
+    if seg is not None:
+        neighbour &= (seg != 0) & (seg != object_number)
+    return neighbour, off_tile
 
 
 def background_subtract(gal,bkg):

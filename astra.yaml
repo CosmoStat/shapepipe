@@ -245,7 +245,8 @@ analyses:
           image, and ShapePipe's tile SExtractor run requests no IMAFLAGS_ISO
           (detection.detection_source_mode). Neighbour pixels are masked
           separately, from the -1e30 markers SExtractor writes into the tile
-          VIGNET (shape_measurement.blend_handling). Sky-fixed masks never touch
+          VIGNET and the coadd segmentation map
+          (shape_measurement.blend_handling). Sky-fixed masks never touch
           pixels: a star halo changes no stamp.
           Values:
           config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = True;
@@ -1466,11 +1467,15 @@ analyses:
           symmetrized mask as in DES, since symmetrizing quadruples m and
           leaves an additive c1 (symmetrized_4fold_noise); the hole this
           leaves near the galaxy is bounded by central_defect_veto. In the
-          tile VIGNET, SExtractor writes -1e30 over other detections and
-          beyond the tile edge. Rows and columns that are entirely -1e30 and
-          start at the stamp border are off-tile, hence defects (the epoch
-          has the object's light there); every other -1e30 pixel is a
-          neighbour, handled by blend_handling.
+          tile VIGNET, SExtractor writes -1e30 beyond the tile edge and over
+          every above-threshold pixel outside the object's pre-CLEAN
+          footprint. Rows and columns that are entirely -1e30 and start at
+          the stamp border are off-tile, hence defects (the epoch has the
+          object's light there); the other -1e30 pixels on another object's
+          segmentation footprint are neighbours, handled by blend_handling.
+          The rest (sub-MINAREA noise peaks, the object's own CLEAN-merged
+          fragments) are not defects either: the epoch stamps hold real
+          light there, so they keep their weight and image.
           Values:
           VIGNETMAKER_RUNNER_RUN_1.MASKING = False;
           VIGNETMAKER_RUNNER_RUN_2.MASKING = False.
@@ -1562,10 +1567,18 @@ analyses:
           sharp edge that rings in the FFTs. The alternative, noisefill
           (ngmix's own default, and the workflow's blend_handling:
           noisefill), gives weight 0 to the pixels marked -1e30 in the tile
-          VIGNET on other detections' footprints (about 93% of
-          neighbour-footprint pixels on a simulated tile), excluding the
-          off-tile rows and columns, which are defects, and replaces them with
-          noise; unmarked neighbour pixels keep their weight and light. It is
+          VIGNET (about 93% of neighbour-footprint pixels on a simulated
+          tile), excluding the off-tile rows and columns, which are defects,
+          and replaces them with noise; unmarked neighbour pixels keep their
+          weight and light. Under both handlings the neighbours are defined
+          by the coadd segmentation map: a marker counts only on a footprint
+          labelled neither 0 nor the target. SExtractor's MASK_TYPE CORRECT
+          also marks sub-MINAREA sky blobs and fragments CLEAN merged into
+          the target, which the seg labels as sky or as the target; noise-
+          filling those removed the target's own light (15% of
+          NEIGHBOUR_FLAG = 0 objects differed between the arms on 25 tiles).
+          tile_detect therefore writes SEG_VIGNET under both handlings.
+          Uberseg reads no marker, so its output is unchanged. It is
           the comparison arm, with defect_fill held equal across arms.
         default: uberseg
         options:

@@ -928,6 +928,140 @@ def test_do_ngmix_metacal_threads_each_epochs_neighbour_mask(monkeypatch):
         assert got is want
 
 
+# --- Neighbours are markers on another object's segmentation footprint -----
+#
+# Under MASK_TYPE CORRECT SExtractor also writes -1e30 over sub-MINAREA sky
+# blobs and over fragments CLEAN merged into the object itself. The seg map
+# labels those 0 and the object's own NUMBER, so they are not neighbours, and
+# the epoch stamps hold real light there: they keep weight and image.
+
+_OBJ = 1  # the object's NUMBER in _fake_inputs's stores
+
+
+def _seg_marked_tile():
+    """Tile VIGNET and SEG_VIGNET with four kinds of interior -1e30 marker.
+
+    Returns ``(tile, seg, kinds)``: a neighbour footprint (label 7), a
+    detection that left the catalogue (label -1), a fragment of the object
+    itself (label ``_OBJ``) and a sky blob (label 0); ``kinds`` maps each
+    name to its marker mask. All of them are off-centre, so the MegaCam flip
+    moves them.
+    """
+    c = _CENTRE
+    tile = _tile_with_neighbour()
+    seg = np.zeros_like(tile, dtype=np.int32)
+    yy, xx = np.mgrid[:N_STAMP, :N_STAMP]
+    seg[(yy - c) ** 2 + (xx - c) ** 2 <= 9] = _OBJ
+    kinds = {name: np.zeros_like(tile, dtype=bool) for name in
+             ("neighbour", "departed", "own_fragment", "sky")}
+    kinds["neighbour"][c - 2:c + 3, c + 3:c + 9] = True
+    kinds["departed"][c - 12:c - 9, c - 12:c - 9] = True
+    kinds["own_fragment"][c + 6:c + 9, c - 8:c - 5] = True
+    kinds["sky"][c - 10:c - 8, c + 10] = True
+    seg[kinds["neighbour"]] = 7
+    seg[kinds["departed"]] = -1
+    seg[kinds["own_fragment"]] = _OBJ
+    for mask in kinds.values():
+        tile[mask] = _MARKER
+    return tile, seg, kinds
+
+
+def test_split_tile_markers_keeps_only_other_footprints():
+    """With the seg stamp, the neighbour mask is the markers on a label other
+    than 0 and the object's; the object's own fragments and sky blobs are
+    dropped, and the off-tile split is unchanged. Without it, every interior
+    marker is a neighbour.
+
+    Failure mode: noisefill noise-fills the object's own CLEAN-merged light
+    and sky (neighbours-are-other-footprints).
+    """
+    tile, seg, kinds = _seg_marked_tile()
+    tile[:, :4] = _MARKER  # an off-tile band
+    neighbour, off_tile = split_tile_markers(tile, tile.shape, seg, _OBJ)
+    bare_neighbour, bare_off_tile = split_tile_markers(tile, tile.shape)
+    npt.assert_array_equal(off_tile, bare_off_tile)
+    assert off_tile[:, :4].all() and not off_tile[:, 4:].any()
+    npt.assert_array_equal(
+        neighbour, (kinds["neighbour"] | kinds["departed"]) & ~off_tile
+    )
+    npt.assert_array_equal(bare_neighbour, (tile == _MARKER) & ~off_tile)
+
+
+def _seg_marker_stamp(tile, seg, blend_handling="noisefill"):
+    clean = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+    ones = np.ones((N_STAMP, N_STAMP))
+    epochs = {name: (clean.copy(), ones) for name in _MARKER_EPOCH_NAMES}
+    vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(epochs)
+    tile_cat.vign = tile[np.newaxis]
+    tile_cat.seg = seg[np.newaxis]
+    return prepare_postage_stamps(
+        vignet, _OBJ, 0, tile_cat, bkg_sub=False,
+        psf_obj=psf_obj, gal_obj=gal_obj, blend_handling=blend_handling,
+    )
+
+
+def test_noisefill_keeps_light_under_non_neighbour_markers():
+    """Through prepare_postage_stamps, each epoch's neighbour mask is its
+    flipped other-footprint markers; noisefill zero-weights and noise-fills
+    those and keeps the weight and image of the object's own fragment and
+    the sky blob.
+    """
+    tile, seg, kinds = _seg_marked_tile()
+    stamp = _seg_marker_stamp(tile, seg)
+    assert len(stamp.gals) == len(_MARKER_EPOCH_NAMES)
+    for i, name in enumerate(stamp.epoch_names):
+        ccd = int(name.split("-")[1])
+        flip = lambda m: Ngmix.MegaCamFlip(m, ccd)
+        npt.assert_array_equal(
+            stamp.neighbours[i],
+            flip(kinds["neighbour"] | kinds["departed"]),
+        )
+        gal, weight, _ = _stamp_epoch_weights(stamp, i, seed=3)
+        kept = flip(kinds["own_fragment"] | kinds["sky"])
+        assert np.all(weight[kept] > 0)
+        npt.assert_array_equal(gal[kept], 1.0e3 + stamp.gals[i][kept])
+        assert np.all(weight[stamp.neighbours[i]] == 0)
+
+
+def test_uberseg_is_unchanged_by_seg_defined_neighbours(monkeypatch):
+    """Uberseg reads no marker, so defining neighbours by the seg map leaves
+    every epoch's observation bit-identical: the same epochs survive, with
+    the same image, weight and noise image. Noisefill does change.
+    """
+    tile, seg, _ = _seg_marked_tile()
+    marker_split = split_tile_markers
+
+    def observations(blend_handling):
+        stamp = _seg_marker_stamp(tile, seg, blend_handling)
+        out = []
+        for i in range(len(stamp.gals)):
+            obs = make_ngmix_observation(
+                1.0e3 + stamp.gals[i], stamp.weights[i], stamp.flags[i],
+                stamp.psfs[i], stamp.jacobs[i], np.random.RandomState(i),
+                bkg_rms=stamp.bkg_rms[i], offset=stamp.offsets[i],
+                blend_handling=blend_handling, seg=stamp.segs[i],
+                object_number=_OBJ, neighbour=stamp.neighbours[i],
+            )
+            out.append((obs.image, obs.weight, obs.noise))
+        return stamp.epoch_names, out
+
+    new = {b: observations(b) for b in ("uberseg", "noisefill")}
+    monkeypatch.setattr(
+        ngmix_module, "split_tile_markers",
+        lambda t, shape, seg=None, object_number=None: marker_split(t, shape),
+    )
+    old = {b: observations(b) for b in ("uberseg", "noisefill")}
+
+    assert new["uberseg"][0] == old["uberseg"][0]
+    for got, want in zip(new["uberseg"][1], old["uberseg"][1]):
+        for a, b in zip(got, want):
+            npt.assert_array_equal(a, b)
+    assert any(
+        not np.array_equal(got[1], want[1])
+        for got, want in zip(new["noisefill"][1], old["noisefill"][1])
+    )
+
+
 # --- Off-tile pixels are defects -------------------------------------------
 #
 # The tile VIGNET also holds -1e30 beyond the tile's edge, where the epoch
