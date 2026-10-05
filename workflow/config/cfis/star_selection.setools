@@ -54,12 +54,12 @@ NO_SAVE
 
 # @sc [decision:masking.psf_star_mask_veto,decision:star_selection_psf.star_selection_box]
 [MASK:star_selection]
-# Star selection using the FWHM mode
+# Star selection: FWHM within 3 locus widths of the stellar-locus peak
 
 MAG_AUTO > 18.
 MAG_AUTO < 22.
-FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
-FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
+FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 3 * locus_width(FWHM_IMAGE{preselect})
+FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 3 * locus_width(FWHM_IMAGE{preselect})
 # @sc [decision:detection.saturation_level]
 FLAGS == 0
 # @sc [decision:masking.pixel_mask_source]
@@ -144,5 +144,6 @@ YLABEL = "Y (pix)"
 "Mean star fwhm selected (arcsec)" = mean(FWHM_WORLD{star_selection})*3600
 "Standard deviation fwhm star selected (arcsec)" = std(FWHM_WORLD{star_selection})*3600
 "Mode fwhm used (pix)" = mode(FWHM_IMAGE{preselect})
-"Min fwhm cut (pix)" = mode(FWHM_IMAGE{preselect})-0.2
-"Max fwhm cut (pix)" = mode(FWHM_IMAGE{preselect})+0.2
+"Locus width (pix)" = locus_width(FWHM_IMAGE{preselect})
+"Min fwhm cut (pix)" = mode(FWHM_IMAGE{preselect})-3*locus_width(FWHM_IMAGE{preselect})
+"Max fwhm cut (pix)" = mode(FWHM_IMAGE{preselect})+3*locus_width(FWHM_IMAGE{preselect})

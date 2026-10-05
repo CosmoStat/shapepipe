@@ -13,6 +13,97 @@ import re
 import numpy as np
 from modopt.math.stats import sigma_mad
 
+# Kernel bandwidth, in the input's units (px for FWHM_IMAGE): close to the
+# median stellar-locus width over 80 CCDs in 0.53 and 0.69 arcsec seeing.
+# @sc [decision:star_selection_psf.star_selection_box]
+LOCUS_BANDWIDTH = 0.1
+# Smallest locus width returned, in the input's units.
+# @sc [decision:star_selection_psf.star_selection_box]
+LOCUS_WIDTH_FLOOR = 0.02
+# Below this many values the locus is the median and normalised MAD.
+# @sc [decision:star_selection_psf.star_selection_box]
+LOCUS_MIN_SIZE = 20
+FWHM_PER_SIGMA = 2.0 * np.sqrt(2.0 * np.log(2.0))
+
+
+def stellar_locus(values, bandwidth=LOCUS_BANDWIDTH, floor=LOCUS_WIDTH_FLOOR):
+    """Locate the stellar locus as the main peak of a 1D distribution.
+
+    The centre is the peak of the Gaussian kernel density estimate, refined
+    by a parabola through the maximum and its neighbours on a grid of
+    spacing ``bandwidth / 10``. The width is the peak's full width at half
+    maximum, converted to a Gaussian standard deviation and with the kernel
+    removed in quadrature, so it measures the locus and not the kernel.
+    Each half-maximum walk stops early at a density minimum, so a
+    neighbouring bump (galaxies next to a broad locus) does not widen it.
+
+    Parameters
+    ----------
+    values : array_like
+        Sample, e.g. the FWHM of a size-limited preselection.
+    bandwidth : float, optional
+        Standard deviation of the Gaussian kernel.
+    floor : float, optional
+        Smallest width returned.
+
+    Returns
+    -------
+    tuple of float
+        ``(centre, width)``; ``(median, max(normalised MAD, floor))`` below
+        ``LOCUS_MIN_SIZE`` values; ``(-1, -1)`` when empty.
+
+    """
+    data = np.asarray(values, dtype=float)
+    if len(data) == 0:
+        return -1.0, -1.0
+    if len(data) < LOCUS_MIN_SIZE:
+        centre = float(np.median(data))
+        return centre, max(float(sigma_mad(data)), floor)
+
+    step = bandwidth / 10.0
+    grid = np.arange(
+        data.min() - 3.0 * bandwidth, data.max() + 3.0 * bandwidth, step
+    )
+    density = np.zeros_like(grid)
+    # Chunk over the data to bound memory for large samples.
+    for chunk in np.array_split(data, max(1, len(data) // 1000)):
+        density += np.exp(
+            -0.5 * ((grid[:, None] - chunk[None, :]) / bandwidth) ** 2
+        ).sum(axis=1)
+
+    peak = int(np.argmax(density))
+    centre = grid[peak]
+    if 0 < peak < len(grid) - 1:
+        left, top, right = density[peak - 1:peak + 2]
+        curvature = left - 2.0 * top + right
+        if curvature < 0:
+            centre += 0.5 * step * (left - right) / curvature
+
+    half = density[peak] / 2.0
+    lo = peak
+    while lo > 0 and density[lo] > half and density[lo - 1] <= density[lo]:
+        lo -= 1
+    hi = peak
+    while (
+        hi < len(grid) - 1
+        and density[hi] > half
+        and density[hi + 1] <= density[hi]
+    ):
+        hi += 1
+    x_lo = (
+        np.interp(half, density[[lo, lo + 1]], grid[[lo, lo + 1]])
+        if density[lo] <= half
+        else grid[lo]
+    )
+    x_hi = (
+        np.interp(half, density[[hi, hi - 1]], grid[[hi, hi - 1]])
+        if density[hi] <= half
+        else grid[hi]
+    )
+    sigma_peak = (x_hi - x_lo) / FWHM_PER_SIGMA
+    width = np.sqrt(max(sigma_peak ** 2 - bandwidth ** 2, floor ** 2))
+    return float(centre), float(width)
+
 
 class StrInterpreter(object):
     """String Interpreter Class.
@@ -218,6 +309,7 @@ class StrInterpreter(object):
         self._stat_func["mean"] = np.mean
         self._stat_func["median"] = np.median
         self._stat_func["mode"] = self._mode
+        self._stat_func["locus_width"] = self._locus_width
         self._stat_func["sqrt"] = np.sqrt
         self._stat_func["pow"] = pow
         self._stat_func["log"] = np.log
@@ -253,10 +345,11 @@ class StrInterpreter(object):
         else:
             return np.mean()
 
-    def _mode(self, input, eps=0.001, iter_max=1000):
+    def _mode(self, input):
         """Get Mode.
 
-        Compute the mode, the most frequent value of a continuous distribution.
+        Compute the mode of a continuous distribution as the peak of its
+        Gaussian kernel density estimate; see :func:`stellar_locus`.
 
         @sc [decision:star_selection_psf.star_selection_box]
 
@@ -264,10 +357,6 @@ class StrInterpreter(object):
         ----------
         input : numpy.ndarray
             Numpy array containing the data.
-        eps : float, optional
-            Accuracy to achieve (default is 0.001)
-        iter_max : int, optional
-            Maximum number of iterations
 
         Returns
         -------
@@ -277,58 +366,30 @@ class StrInterpreter(object):
             -1, if input array has 0 elements
 
         """
-        cat_size = len(input)
-        if cat_size > 100:
-            bins = int(float(cat_size) / 10.0)
-        elif cat_size >= 20:
-            bins = int(float(cat_size) / 5.0)
-        elif cat_size > 0:
-            return np.median(input)
-        else:
-            return -1
+        return stellar_locus(input)[0]
 
-        data = input
-        diff = eps + 1.0
+    def _locus_width(self, input):
+        """Get Locus Width.
 
-        iteration = 0
-        while diff > eps:
-            if len(data) == 0:
-                raise ValueError(
-                    "Mode computation failed: zoom window emptied out"
-                    f" after {iteration} iterations"
-                )
-            if np.ptp(data) <= eps:
-                # The zoom window has degenerated: the remaining values span
-                # less than the requested accuracy (e.g. near-identical
-                # float32 values, for which np.histogram cannot construct
-                # distinct bin edges). The surviving sample localises the
-                # mode to within eps, so return its median.
-                return np.median(data)
+        Compute the Gaussian-equivalent standard deviation of the peak whose
+        centre ``mode`` returns; see :func:`stellar_locus`.
 
-            hist = np.histogram(data, bins)
-            if hist[0].max() == 1:
-                break
+        @sc [decision:star_selection_psf.star_selection_box]
 
-            b_min = hist[1][hist[0].argmax()]
-            b_max = hist[1][hist[0].argmax() + 1]
+        Parameters
+        ----------
+        input : numpy.ndarray
+            Numpy array containing the data.
 
-            diff = b_max - b_min
+        Returns
+        -------
+        float
+            width of the peak, if input array has 20 or more elements;
+            normalised MAD about the median, if it has >0 and <20 elements;
+            -1, if input array has 0 elements
 
-            data = data[(data > b_min) & (data < b_max)]
-
-            if iteration == iter_max:
-                break
-            iteration += 1
-
-        if iteration == iter_max:
-            raise ValueError(
-                f"Mode computation did not converge after {iter_max} "
-                f"iterations ({len(data)} objects left in zoom window, "
-                f"value range [{data.min()}, {data.max()}])"
-            )
-        else:
-            mode = (b_min + b_max) / 2.0
-            return mode
+        """
+        return stellar_locus(input)[1]
 
     def _sigma_mad(self, input):
         """Get Mean Absolute Deviation.
