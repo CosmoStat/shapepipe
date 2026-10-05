@@ -338,12 +338,9 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
         If SQL file not found
 
     """
-    cat = file_io.FITSCatalogue(
-        cat_path,
-        SEx_catalogue=True,
-        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-    )
-    cat.open()
+    with fits.open(cat_path) as hdul:
+        hdus = [hdu.copy() for hdu in hdul]
+    objects = next(h for h in hdus if h.name == "LDAC_OBJECTS")
 
     # One lock-free read of the whole header log: merge_headers wrote and
     # closed it in an earlier step, and keyed SqliteDict reads would take an
@@ -358,7 +355,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
     n_hdu = len(f_wcs[exp_keys[0]])
 
     history = []
-    for idx in cat.get_data(1)[0][0]:
+    for idx in hdus[1].data[0][0]:
         if re.split("HISTORY", idx)[0] == "":
             history.append(idx)
 
@@ -374,11 +371,13 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
 
     exp_list = list(dict.fromkeys(exp_list))
 
-    obj_id = np.copy(cat.get_data()["NUMBER"])
+    obj_id = np.copy(objects.data["NUMBER"])
 
-    ra = np.copy(cat.get_data()[pos_params[0]])
-    dec = np.copy(cat.get_data()[pos_params[1]])
+    ra = np.copy(objects.data[pos_params[0]])
+    dec = np.copy(objects.data[pos_params[1]])
 
+    column = file_io.FITSCatalogue.fits_column
+    epochs = []
     n_epoch = np.zeros(len(obj_id), dtype="int32")
     for idx, exp in enumerate(exp_list):
         if exp not in f_wcs:
@@ -418,21 +417,24 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
             ind[np.where(near)[0][ind_near]] = True
             pos_tmp[ind] = idx_j
             n_epoch[ind] += 1
-        exp_name = np.array([exp_list[idx] for n in range(len(obj_id))])
-        a = np.array(
-            [(obj_id[ii], exp_name[ii], pos_tmp[ii]) for ii in range(len(exp_name))],
-            dtype=[
-                ("NUMBER", obj_id.dtype),
-                ("EXP_NAME", exp_name.dtype),
-                ("CCD_N", pos_tmp.dtype),
+        epochs.append(fits.BinTableHDU.from_columns(
+            [
+                column("NUMBER", obj_id),
+                column("EXP_NAME", np.full(len(obj_id), exp)),
+                column("CCD_N", pos_tmp),
             ],
-        )
-        cat.save_as_fits(data=a, ext_name=f"EPOCH_{idx}")
-        cat.open()
+            name=f"EPOCH_{idx}",
+        ))
 
-    cat.add_col("N_EPOCH", n_epoch)
-
-    cat.close()
+    # One write of the whole catalogue: LDAC_OBJECTS with N_EPOCH appended
+    # (laid out as FITSCatalogue.add_col lays it out), then the EPOCH HDUs.
+    new = fits.BinTableHDU.from_columns(
+        objects.data.columns + fits.ColDefs([column("N_EPOCH", n_epoch)]),
+        name="LDAC_OBJECTS",
+    )
+    fits.HDUList(
+        [new if h is objects else h for h in hdus] + epochs
+    ).writeto(cat_path, overwrite=True)
 
 
 class SExtractorCaller:
