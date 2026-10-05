@@ -1,5 +1,7 @@
 """UNIT TESTS FOR MODULE PACKAGE: NGMIX."""
 
+from collections import Counter
+
 from astropy.io import fits
 from astropy.wcs import WCS
 import galsim
@@ -328,6 +330,9 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
         "n_epoch_model": 1,
         "mcal_types_fail": 0,
         "neighbour_flag": 0,
+        "n_epoch_interp": 0,
+        "min_dist_interp": -1.0,
+        "min_dist_noisefill": -1.0,
         # original image PSF (psfex/mccd) family
         "g1_psf_orig": ORIG_PSF_G[0],
         "g2_psf_orig": ORIG_PSF_G[1],
@@ -629,7 +634,11 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     galaxies = {str(i): {"exp-1": {"OFFSET": [0., 0.]}} for i in tile.obj_id}
     stamp = SimpleNamespace(
         gals=[np.ones((5, 5))], ra=[42.], dec=[30.], ccd=20,
+        epoch_cuts=Counter(considered=1),
         jacobs=[galsim.JacobianWCS(.186, 0., 0., .186)],
+        defect_diagnostics=lambda: dict(
+            n_epoch_interp=0, min_dist_interp=-1.0, min_dist_noisefill=-1.0,
+        ),
     )
     psf = dict(
         n_epoch=1, g_psf=[.01, -.01], g_psf_err=[.001, .001],
@@ -642,13 +651,14 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
         results.append((result, psf, psf))
     fits_to_return = iter(results)
     monkeypatch.setattr(module, "Tile_cat", lambda *args: tile)
-    monkeypatch.setattr(module, "prepare_postage_stamps", lambda *args: stamp)
+    monkeypatch.setattr(
+        module, "prepare_postage_stamps", lambda *args, **kwargs: stamp,
+    )
     monkeypatch.setattr(
         module, "do_ngmix_metacal", lambda *args, **kwargs: next(fits_to_return),
     )
     inst = object.__new__(Ngmix)
     inst._tile_cat_path = "in-memory-tile"
-    inst._seg_cat_path = None
     inst._vignet_cat = SimpleNamespace(
         gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
     )
@@ -658,6 +668,7 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     inst._blend_handling = "noisefill"
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
+    inst._defect_weighting = module.DEFECT_WEIGHTING
     inst._save_batch = 1
     inst._zero_point = 30.
     inst._output_dir = str(tmp_path)
@@ -725,6 +736,7 @@ def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
         obj_id: SimpleNamespace(
             gals=[np.ones((5, 5))] * len(jacobs), jacobs=jacobs,
             ra=[10. * obj_id], dec=[30.], ccd=obj_id,
+            epoch_cuts=Counter(considered=len(jacobs)),
         )
         for obj_id, jacobs in epochs.items()
     }
@@ -737,14 +749,13 @@ def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
     monkeypatch.setattr(module, "Tile_cat", lambda *args: tile)
     monkeypatch.setattr(
         module, "prepare_postage_stamps",
-        lambda vignet, obj_id, *args: stamps[obj_id],
+        lambda vignet, obj_id, *args, **kwargs: stamps[obj_id],
     )
     monkeypatch.setattr(module, "do_ngmix_metacal", capture)
     monkeypatch.setattr(Ngmix, "save_results", lambda self, res: None)
     monkeypatch.setattr(Ngmix, "log_mean_ellipticity", lambda self: None)
     inst = object.__new__(Ngmix)
     inst._tile_cat_path = "in-memory-tile"
-    inst._seg_cat_path = None
     inst._vignet_cat = SimpleNamespace(
         gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
     )
@@ -754,6 +765,7 @@ def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
     inst._blend_handling = "noisefill"
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
+    inst._defect_weighting = module.DEFECT_WEIGHTING
     inst._save_batch = -1
     inst._w_log = _RecordingLogger()
 
@@ -1112,10 +1124,12 @@ def test_background_rms_builds_per_pixel_inverse_variance():
         gal, weight, flag, np.random.RandomState(0), bkg_rms=bkg_rms
     )
 
+    # The bad-RMS pixel (1, 2) is interpolated from (0, 2) and (2, 2), so
+    # its quarter turns (0, 1) and (1, 0) lose their weight too.
     expected = np.array(
         [
-            [1.0, 0.25, 0.0625],
-            [4.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0625],
+            [0.0, 0.0, 0.0],
             [0.0, 0.0, 1.0],
         ]
     )

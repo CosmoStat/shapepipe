@@ -113,7 +113,8 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     sexcat_path : str
         Path to SExtractor catalogue to save
     remove_vignet : bool
-        If ``True`` will not save the ``VIGNET`` field into the final catalogue
+        If ``True`` will not save the ``VIGNET`` and ``SEG_VIGNET`` stamp
+        fields into the final catalogue
 
     Returns
     -------
@@ -127,6 +128,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     data = np.copy(sexcat_file.get_data())
     if remove_vignet:
         data = remove_field_name(data, "VIGNET")
+        data = remove_field_name(data, "SEG_VIGNET")
     cat_size = len(data)
 
     tile_name = os.path.basename(sexcat_path)
@@ -334,11 +336,14 @@ class SaveCatalogue:
         Save the NGMIX catalogue into the final one.
 
         Column grammar: ``NGMIX[m]_<COMPONENT>[_ERR][_<OBJECT>]_<SHEAR>``,
-        plus four OBJECT/SHEAR-less per-object metadata columns
+        plus OBJECT/SHEAR-less per-object metadata columns
         (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
-        ``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG`` — the last a blend
+        ``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG`` — a blend
         flag set when the coadd seg stamp held a non-central footprint,
-        shapepipe#776). The galaxy is the implicit default object
+        shapepipe#776 — and the defect diagnostics ``NGMIX_N_EPOCH_INTERP``,
+        ``NGMIX_MIN_DIST_INTERP``, ``NGMIX_MIN_DIST_NOISEFILL``, described
+        by ``Postage_stamp.record_defects``; -1 is their absent distance,
+        and a never-fit row carries 0 and -1). The galaxy is the implicit default object
         and carries NO ``OBJECT`` token (``NGMIX_G1_NOSHEAR``, dropping the
         ``GAL`` segment carried by the pre-#761 names). The explicit PSF
         objects are ``PSF_ORIG``
@@ -391,6 +396,16 @@ class SaveCatalogue:
         # Per-object blend flag (shapepipe#776): the seg stamp held a
         # non-central footprint. Galaxy-only (non-moments), like N_EPOCH.
         ngmix_neighbour_flag = ngmix_cat_file.get_data()["neighbour_flag"]
+        # Defect diagnostics (ngmix Postage_stamp.record_defects).
+        defect_columns = {
+            "NGMIX_N_EPOCH_INTERP": "n_epoch_interp",
+            "NGMIX_MIN_DIST_INTERP": "min_dist_interp",
+            "NGMIX_MIN_DIST_NOISEFILL": "min_dist_noisefill",
+        }
+        ngmix_defects = {
+            out: ngmix_cat_file.get_data()[col]
+            for out, col in defect_columns.items()
+        }
         # Needed in both moments and non-moments modes (used unconditionally
         # below), so read them outside the branch.
         ngmix_mcal_flags = ngmix_cat_file.get_data()["mcal_flags"]
@@ -413,6 +428,9 @@ class SaveCatalogue:
                 np.full(n_obj, get_mcal_types_fail(never_fit), dtype=float),
             )
             self._add2dict("NGMIX_NEIGHBOUR_FLAG", np.zeros(n_obj))
+            self._add2dict("NGMIX_N_EPOCH_INTERP", np.zeros(n_obj))
+            self._add2dict("NGMIX_MIN_DIST_INTERP", np.full(n_obj, -1.0))
+            self._add2dict("NGMIX_MIN_DIST_NOISEFILL", np.full(n_obj, -1.0))
 
         prefix = f"NGMIX{m}"
 
@@ -576,6 +594,8 @@ class SaveCatalogue:
                         ngmix_neighbour_flag[ind[0]],
                         idx,
                     )
+                    for out, values in ngmix_defects.items():
+                        self._add2dict(out, values[ind[0]], idx)
 
         ngmix_cat_file.close()
 

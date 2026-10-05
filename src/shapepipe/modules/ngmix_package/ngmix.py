@@ -8,6 +8,7 @@ This module contains a class for ngmix shape measurement.
 
 import os
 import re
+from collections import Counter
 from typing import NamedTuple
 
 import ngmix
@@ -21,10 +22,40 @@ from scipy.ndimage import binary_dilation
 from scipy.spatial import cKDTree
 from sqlitedict import SqliteDict
 
+from shapepipe.modules.ngmix_package.defect_interpolation import (
+    fourfold,
+    interpolable_defects,
+    interpolate_defects,
+)
 from shapepipe.pipeline import file_io
 
 # Neighbour treatments selectable with the BLEND_HANDLING option.
 BLEND_HANDLINGS = ("noisefill", "uberseg")
+
+# How interpolated defects enter the image and the weight map, selectable
+# with the DEFECT_WEIGHTING option (see :func:`defect_weighting_masks`), and
+# the value an absent or empty option takes.
+DEFECT_WEIGHTINGS = ("des_y6", "fourfold_zero", "hole", "full")
+# @sc [decision:shape_measurement.defect_weighting]
+DEFECT_WEIGHTING = "fourfold_zero"
+
+# The epoch cuts (see :func:`prepare_postage_stamps`). Calibration outputs,
+# not options: an epoch is dropped when more than EPOCH_MASKED_FRACTION_CUT
+# of its stamp is in :func:`defect_mask`, or when a noise-filled
+# (interpolated) defect pixel lies closer than EPOCH_CENTRAL_DEFECT_RADIUS
+# (EPOCH_INTERPOLATED_DEFECT_RADIUS) pixels to the stamp centre (see
+# :func:`central_defect_vetoes`). The central veto is the bias control: defects
+# outside it bias nothing measured up to 58% of the stamp. The noise-fill
+# radius is set by the largest galaxy tested (0.7" through a 0.9" PSF), the
+# interpolated radius by 3-px bleeds on the same galaxy. The 10% fraction
+# cut matches DES Y3/Y6 and guards against real-data effects the simulations
+# do not model, at the cost of about 5% of epochs on a real tile.
+# @sc [decision:shape_measurement.epoch_masked_fraction_cut]
+EPOCH_MASKED_FRACTION_CUT = 0.10
+# @sc [decision:shape_measurement.central_defect_veto]
+EPOCH_CENTRAL_DEFECT_RADIUS = 13
+# @sc [decision:shape_measurement.central_defect_veto]
+EPOCH_INTERPOLATED_DEFECT_RADIUS = 7
 
 # @sc [decision:shape_measurement.metacal_scheme]
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
@@ -228,6 +259,10 @@ def empty_metacal_output():
         'n_epoch_model',
         'mcal_types_fail',
         'neighbour_flag',
+        # defect diagnostics (Postage_stamp.record_defects)
+        'n_epoch_interp',
+        'min_dist_interp',
+        'min_dist_noisefill',
         'nfev_fit',
         # galaxy
         'g1',
@@ -500,30 +535,68 @@ def position_seed(ra, dec, ccd):
     return cantor % (2 ** 32)
 
 
+class ChunkStamps():
+    """One stamp column of the tile catalogue, held for one chunk's rows.
+
+    Indexed by tile-catalogue row like the full column it stands in for, so
+    ``stamps[i_tile]`` is the stamp of row ``i_tile``; rows outside the chunk
+    raise ``IndexError``.
+
+    Parameters
+    ----------
+    column : numpy.ndarray
+        Full stamp column, one stamp per catalogue row. A memory-mapped
+        column is read only over ``rows``.
+    rows : range
+        0-based catalogue rows to hold (see :func:`chunk_rows`).
+
+    """
+    def __init__(self, column, rows):
+        self.rows = rows
+        self._stamps = np.array(column[rows.start:rows.stop])
+
+    def __getitem__(self, i_tile):
+        if not self.rows.start <= i_tile < self.rows.stop:
+            raise IndexError(
+                f"tile-catalogue row {i_tile} is outside this chunk's rows"
+                + f" {self.rows.start}..{self.rows.stop - 1}"
+            )
+        return self._stamps[i_tile - self.rows.start]
+
+
 class Tile_cat():
     """Tile_cat.
 
     catalog measured on a tile
 
+    The per-object columns (``obj_id``, ``ra``, ``dec``, ``flux``) are held
+    for every row. The stamp columns (``vign``, ``seg``) are held only for
+    the chunk's rows (``self.rows``) as :class:`ChunkStamps`, still indexed
+    by tile-catalogue row: the catalogues are memory-mapped, so a chunk reads
+    only its own stamps.
+
     Parameters
     ----------
     cat_path : str
-        Path to the tile SExtractor catalogue.
-    seg_cat_path : str, optional
-        Path to the coadd-frame segmentation VIGNET catalogue (a CLASSIC-mode
-        vignetmaker output cut from the tile ``SEGMENTATION`` check image),
-        row-aligned to ``cat_path``. When given, ``self.seg`` holds one integer
-        seg stamp per object for the ``"uberseg"`` blend handling; ``None``
-        leaves ``self.seg`` unset (the noise-fill path is unaffected).
+        Path to the tile SExtractor catalogue. Its optional ``SEG_VIGNET``
+        column, one integer coadd segmentation stamp per object on the grid
+        of its ``VIGNET``, becomes ``self.seg`` for the ``"uberseg"`` blend
+        handling; without it ``self.seg`` is ``None``.
+    row_min, row_max : int, optional
+        First and last catalogue row of the chunk (1-based, inclusive; see
+        :func:`chunk_rows`). The default, ``-1``, is unbounded, so the whole
+        catalogue.
 
     """
     def __init__(
         self,
         cat_path,
-        seg_cat_path=None,
+        row_min=-1,
+        row_max=-1,
     ):
         self.cat_path = cat_path
-        self.seg_cat_path = seg_cat_path
+        self.row_min = row_min
+        self.row_max = row_max
         if cat_path:
             self.get_data(cat_path)
 
@@ -531,6 +604,7 @@ class Tile_cat():
         tile_cat = file_io.FITSCatalogue(
             cat_path,
             SEx_catalogue=True,
+            memmap=True,
         )
         tile_cat.open()
         data = tile_cat.get_data()
@@ -539,45 +613,27 @@ class Tile_cat():
         self.obj_id = np.copy(data['NUMBER'])
         self.ra = np.copy(data['XWIN_WORLD'])
         self.dec = np.copy(data['YWIN_WORLD'])
+        self.rows = chunk_rows(len(self.obj_id), self.row_min, self.row_max)
 
         # Optional columns — may be absent in external (non-SExtractor) catalogs
         self.flux = np.copy(data['FLUX_AUTO']) if 'FLUX_AUTO' in cols else None
-        self.vign = np.copy(data['VIGNET']) if 'VIGNET' in cols else None
+        self.vign = (
+            ChunkStamps(data['VIGNET'], self.rows)
+            if 'VIGNET' in cols
+            else None
+        )
+
+        # Coadd-frame segmentation stamp (integer labels, the catalogue's
+        # NUMBER), one per object on the grid of its VIGNET, overlaid
+        # unchanged on every epoch for uberseg neighbour masking
+        # (shapepipe#776).
+        self.seg = (
+            ChunkStamps(data['SEG_VIGNET'], self.rows)
+            if 'SEG_VIGNET' in cols
+            else None
+        )
 
         tile_cat.close()
-
-        # Coadd-frame SExtractor segmentation stamp (integer labels), one per
-        # object and row-aligned to the tile catalogue, overlaid unchanged on
-        # every epoch for uberseg neighbour masking (shapepipe#776). None ->
-        # uberseg unavailable; the noise-fill path is unaffected.
-        self.seg = None
-        if self.seg_cat_path:
-            seg_cat = file_io.FITSCatalogue(
-                self.seg_cat_path,
-                SEx_catalogue=True,
-            )
-            seg_cat.open()
-            seg_data = seg_cat.get_data()
-            # The seg VIGNETs are indexed by tile-catalogue row (self.seg[i]),
-            # so the two catalogues MUST be row-aligned. Fail loud at load if
-            # they are not — a silent length/order mismatch would hand every
-            # object the wrong footprint and quietly corrupt every mask.
-            if len(seg_data) != len(self.obj_id):
-                raise ValueError(
-                    f"SEG_VIGNET_PATH '{self.seg_cat_path}' has"
-                    + f" {len(seg_data)} rows but the tile catalogue has"
-                    + f" {len(self.obj_id)}; the segmentation vignets must be"
-                    + " row-aligned to the tile catalogue."
-                )
-            if 'NUMBER' in seg_data.dtype.names:
-                if not np.array_equal(seg_data['NUMBER'], self.obj_id):
-                    raise ValueError(
-                        f"SEG_VIGNET_PATH '{self.seg_cat_path}' NUMBER column"
-                        + " does not match the tile catalogue NUMBER; the"
-                        + " segmentation vignets are misaligned or reordered."
-                    )
-            self.seg = np.copy(seg_data['VIGNET'])
-            seg_cat.close()
 
 class Postage_stamp():
     """Galaxy Postage Stamp.
@@ -602,9 +658,15 @@ class Postage_stamp():
         self.psfs = []
         self.weights = []
         self.flags = []
+        # Neighbour masks, one per epoch: the pixels marked -1e30 in the tile
+        # VIGNET on other detections' footprints (off-tile markers get zero
+        # weight instead; see split_tile_markers), MegaCam-flipped to the
+        # epoch. noisefill zero-weights and noise-fills them, and the epoch
+        # cuts do not count them (see prepare_ngmix_weights).
+        self.neighbours = []
         self.bkg_rms = []
         # Segmentation stamps, one per epoch, used only by the "uberseg" blend
-        # handling; empty for the default noise-fill path. All epochs carry the
+        # handling; empty under the default "noisefill". All epochs carry the
         # SAME coadd-frame seg stamp (shapepipe#776: one coadd seg per object,
         # no per-epoch reprojection), each MegaCam-flipped to match its galaxy
         # stamp so the overlay stays registered.
@@ -621,8 +683,61 @@ class Postage_stamp():
         # CCD number of the first epoch, used only to build the per-object
         # position seed (see :func:`position_seed`).
         self.ccd = None
+        self.epoch_cuts = Counter(
+            considered=0, masked_fraction=0, central_veto=0
+        )
+        # Defect diagnostics over the epochs kept (see
+        # :meth:`record_defects`).
+        self.n_epoch_interp = 0
+        self.min_dist_interp = np.inf
+        self.min_dist_noisefill = np.inf
         self.bkg_sub = bkg_sub
         self.megacam_flip = megacam_flip
+
+    def record_defects(self, defect, interpolated):
+        """Add one kept epoch to the defect diagnostics.
+
+        @sc [label:schema] defect-diagnostic-columns
+        Per object, over the epochs handed to the fit: ``n_epoch_interp``
+        counts those with an interpolated defect pixel, and
+        ``min_dist_interp`` (``min_dist_noisefill``) is the smallest distance
+        in pixels from the stamp centre to an interpolated (noise-filled)
+        defect pixel (:func:`centre_distance`). A distance is -1 when no
+        kept epoch has such a pixel. They read only masks, so splitting a
+        catalogue on them selects on nothing shear-responsive.
+
+        Parameters
+        ----------
+        defect : numpy.ndarray of bool
+            The epoch's defect mask (:func:`defect_mask`).
+        interpolated : numpy.ndarray of bool
+            Its interpolated defect pixels (:func:`interpolated_defects`).
+        """
+        distance = centre_distance(defect.shape)
+        noisefill = defect & ~interpolated
+        if interpolated.any():
+            self.n_epoch_interp += 1
+            self.min_dist_interp = min(
+                self.min_dist_interp, distance[interpolated].min()
+            )
+        if noisefill.any():
+            self.min_dist_noisefill = min(
+                self.min_dist_noisefill, distance[noisefill].min()
+            )
+
+    def defect_diagnostics(self):
+        """The defect diagnostic columns, -1 for an absent distance."""
+        return {
+            "n_epoch_interp": self.n_epoch_interp,
+            "min_dist_interp": (
+                float(self.min_dist_interp)
+                if np.isfinite(self.min_dist_interp) else -1.0
+            ),
+            "min_dist_noisefill": (
+                float(self.min_dist_noisefill)
+                if np.isfinite(self.min_dist_noisefill) else -1.0
+            ),
+        }
 
 class Vignet():
     """Vignet.
@@ -708,15 +823,22 @@ class Ngmix(object):
         adaptive-moment centroid measured from the stamp pixels. See
         :func:`make_ngmix_observation`.
     blend_handling : {"noisefill", "uberseg"}, optional
-        Neighbour treatment; ``"noisefill"`` (default) is the historical
-        noise-fill, ``"uberseg"`` hard-masks neighbour-side pixels from the
-        coadd segmentation map and requires ``seg_cat_path``.
-    seg_cat_path : str, optional
-        Path to the coadd-frame segmentation VIGNET catalogue (see
-        :class:`Tile_cat`). Required when ``blend_handling="uberseg"``.
+        Neighbour treatment. ``"noisefill"`` (default) zero-weights and
+        noise-fills the pixels marked -1e30 in the tile VIGNET on other
+        detections' footprints; ``"uberseg"`` ignores those markers and
+        zeroes the weight of neighbour-side pixels from the coadd
+        segmentation stamps, the tile catalogue's ``SEG_VIGNET`` column (see
+        :class:`Tile_cat`), which it requires. Defect pixels are filled
+        under both (see :func:`prepare_ngmix_weights`).
     dilate_neighbour : int, optional
         Neighbour-mask dilation iterations for ``"uberseg"`` (see
-        :func:`uberseg_weight`); the default is ``1``.
+        :func:`uberseg_mask`); the default is ``1``.
+    metacal_psf : str, optional
+        Metacal reconvolution-kernel scheme (see :func:`do_ngmix_metacal`).
+    defect_weighting : str, optional
+        How interpolated defects are weighted, one of ``DEFECT_WEIGHTINGS``
+        (see :func:`defect_weighting_masks`); the default is
+        ``DEFECT_WEIGHTING``.
 
     Notes
     -----
@@ -728,8 +850,7 @@ class Ngmix(object):
     IndexError
         If the length of the input file list is incorrect
     ValueError
-        If ``blend_handling`` is unknown, or ``"uberseg"`` is selected without
-        ``seg_cat_path``.
+        If ``blend_handling`` or ``defect_weighting`` is unknown.
 
     """
 
@@ -747,9 +868,9 @@ class Ngmix(object):
         bkg_sub=True,
         centroid_source="wcs",
         blend_handling="noisefill",
-        seg_cat_path=None,
         dilate_neighbour=1,
         metacal_psf="fitgauss",
+        defect_weighting=DEFECT_WEIGHTING,
     ):
 
         # Base count = catalogue + vignets, excluding the f_wcs headers (passed
@@ -769,12 +890,10 @@ class Ngmix(object):
                 + f" {BLEND_HANDLINGS}"
             )
 
-        # Fail fast at construction (not deep in the per-epoch loop) when
-        # uberseg is requested without its segmentation input (shapepipe#776).
-        if blend_handling == "uberseg" and seg_cat_path is None:
+        if defect_weighting not in DEFECT_WEIGHTINGS:
             raise ValueError(
-                "blend_handling='uberseg' requires SEG_VIGNET_PATH (the coadd"
-                + " SExtractor segmentation vignets); none configured."
+                f"Unknown DEFECT_WEIGHTING '{defect_weighting}'; expected one"
+                + f" of {DEFECT_WEIGHTINGS}"
             )
 
         self._tile_cat_path = input_file_list[0]
@@ -816,9 +935,9 @@ class Ngmix(object):
         self._bkg_sub = bkg_sub
         self._centroid_source = centroid_source
         self._blend_handling = blend_handling
-        self._seg_cat_path = seg_cat_path
         self._dilate_neighbour = dilate_neighbour
         self._metacal_psf = metacal_psf
+        self._defect_weighting = defect_weighting
 
         self._w_log = w_log
 
@@ -928,6 +1047,12 @@ class Ngmix(object):
                 output_dict[name]["neighbour_flag"].append(
                     results[idx]["neighbour_flag"]
                 )
+                # Defect diagnostics (Postage_stamp.record_defects), likewise
+                # object-level and replicated.
+                for key in (
+                    "n_epoch_interp", "min_dist_interp", "min_dist_noisefill"
+                ):
+                    output_dict[name][key].append(results[idx][key])
                 # ngmix 2.x reports the solver's function-evaluation count
                 # (nfev, ~tens-hundreds; -1 on some failures), not the v1
                 # 1-5 retry count, so the column is named accordingly. Fits
@@ -1200,8 +1325,21 @@ class Ngmix(object):
 
         @sc [decision:shape_measurement.fit_initialisation,decision:shape_measurement.ngmix_seed_mode]
         """
-        tile_cat = Tile_cat(self._tile_cat_path, self._seg_cat_path)
+        tile_cat = Tile_cat(
+            self._tile_cat_path,
+            self._id_obj_min,
+            self._id_obj_max,
+        )
         vignet_cat = self._vignet_cat
+
+        # Fail before the per-object loop, whose try/except would otherwise
+        # drop every object one by one (shapepipe#776).
+        if self._blend_handling == "uberseg" and tile_cat.seg is None:
+            raise ValueError(
+                "BLEND_HANDLING = uberseg needs the tile catalogue's"
+                + f" SEG_VIGNET column, which {self._tile_cat_path} lacks;"
+                + " write it at tile detection (SEG_VIGNET = True)."
+            )
 
         check_wcs_centroid_offset(
             self._centroid_source, tile_cat, vignet_cat.gal_vign_cat
@@ -1218,6 +1356,8 @@ class Ngmix(object):
         id_first = -1
         id_last = -1
         count_batch = 0
+        epoch_cuts = Counter(considered=0, masked_fraction=0, central_veto=0)
+        n_emptied = 0
         saved_batch_cumul = 0
 
         rows = chunk_rows(
@@ -1251,10 +1391,13 @@ class Ngmix(object):
                 self._bkg_sub,
                 psf_obj,
                 gal_obj,
+                blend_handling=self._blend_handling,
             )
+            epoch_cuts.update(stamp.epoch_cuts)
 
             if len(stamp.gals) == 0:
                 n_no_epoch += 1
+                n_emptied += stamp.epoch_cuts["considered"] > 0
                 continue
 
             # Per-object RNG, seeded from (ra, dec, ccd) — see
@@ -1296,6 +1439,7 @@ class Ngmix(object):
                     object_number=obj_id,
                     dilate_neighbour=self._dilate_neighbour,
                     metacal_psf=self._metacal_psf,
+                    defect_weighting=self._defect_weighting,
                 )
             except Exception as ee:
                 self._w_log.info(
@@ -1316,6 +1460,7 @@ class Ngmix(object):
             # epochs that survived the PSF fit and entered the model,
             # not the number of epochs submitted (v1 contract)
             res['n_epoch_model'] = psf_res['n_epoch']
+            res.update(stamp.defect_diagnostics())
             # The mcal flag columns are derived from the per-type results in
             # compile_results; here they only feed the run-health count.
             if get_mcal_flags(res) != 0:
@@ -1364,6 +1509,13 @@ class Ngmix(object):
             + f" {n_fitted} fitted"
         )
 
+        self._w_log.info(
+            "epoch cuts:"
+            + f" considered={epoch_cuts['considered']}"
+            + f" masked_fraction={epoch_cuts['masked_fraction']}"
+            + f" central_veto={epoch_cuts['central_veto']}"
+            + f" objects_emptied={n_emptied}"
+        )
         log_run_health(self._w_log, count, n_fitted, n_flagged)
 
         vignet_cat.close()
@@ -1385,11 +1537,54 @@ def prepare_postage_stamps(
     bkg_sub=True,
     psf_obj=None,
     gal_obj=None,
+    blend_handling="noisefill",
 ):
-    """Prepare the per-object lists of exposures passed to ngmix.
+    """Gather one object's epoch stamps, dropping epochs its defects spoil.
 
-    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut]
+    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut] epoch-cut-on-defect-mask
+    An epoch is dropped when more than ``EPOCH_MASKED_FRACTION_CUT`` of its
+    stamp lies in :func:`defect_mask`, the set :func:`prepare_ngmix_weights`
+    zero-weights and fills, or when :func:`central_defect_vetoes` finds a
+    defect near the object. The quarter-turn copies of interpolated pixels
+    that ``DEFECT_WEIGHTING`` zero-weights or interpolates are not counted.
+
+    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
+    The tile VIGNET's -1e30 markers on other detections' footprints
+    (:func:`split_tile_markers`) are the epoch's neighbour mask
+    (``stamp.neighbours``), not defects: every epoch shares the tile VIGNET,
+    so counting them would drop every epoch of a blended object.
+
+    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.defect_fill] off-tile-pixels-are-defects
+    Beyond the tile's edge the epoch holds the object's own light, cut off by
+    the tile, so those pixels get zero exposure weight and join the defect
+    set under every ``blend_handling``. On a 51-px stamp an object within
+    about 8.5 px of the tile edge fails the masked-fraction cut.
+
+    Parameters
+    ----------
+    vignet : Vignet
+        Per-object vignet stores.
+    obj_id : int
+        Object ID (SExtractor ``NUMBER``).
+    i_tile : int
+        Row of the object in ``tile_cat``.
+    tile_cat : Tile_cat
+        Tile catalogue.
+    bkg_sub : bool, optional
+        Subtract the background vignet; the default is ``True``.
+    psf_obj, gal_obj : dict, optional
+        The object's PSF and galaxy vignet dicts, if already read.
+    blend_handling : {"noisefill", "uberseg"}, optional
+        The neighbour treatment :func:`prepare_ngmix_weights` will apply,
+        which decides which defects it can interpolate and so their veto
+        radius; the default is ``"noisefill"``.
+
+    Returns
+    -------
+    Postage_stamp
+        The surviving epochs' stamps.
     """
+    # define per-object lists of individual exposures to go into ngmix
     stamp = Postage_stamp(bkg_sub=bkg_sub)
     # Read each store's per-object dict ONCE: every sqlitedict access
     # unpickles the object's whole all-epoch dict, so keeping these out of
@@ -1456,19 +1651,25 @@ def prepare_postage_stamps(
             tile_seg = Ngmix.MegaCamFlip(tile_seg, int(ccd_n))
 
         flag_vign = flag_obj[expccd_name]['VIGNET']
-        if tile_vign is not None:
-            flag_vign[np.where(tile_vign == -1e30)] = 2**10
-        v_flag_tmp = flag_vign.ravel()
-        # remove objects that are more than 1/3 masked
-        if len(np.where(v_flag_tmp != 0)[0]) / v_flag_tmp.size > 1 / 3.0:
-            continue
-
-        weight_vign = weight_obj[expccd_name]['VIGNET']
+        # Off-tile pixels are defects (off-tile-pixels-are-defects); the
+        # other -1e30 markers are neighbours (neighbour-markers-are-not-defects).
+        neighbour, off_tile = split_tile_markers(tile_vign, np.shape(gal_vign))
+        weight_vign = np.where(off_tile, 0, weight_obj[expccd_name]['VIGNET'])
         bkg_rms_vign = (
             bkg_rms_obj[expccd_name]['VIGNET']
             if bkg_rms_obj is not None
             else None
         )
+        defect = defect_mask(weight_vign, flag_vign, bkg_rms_vign)
+        stamp.epoch_cuts["considered"] += 1
+        if defect.mean() > EPOCH_MASKED_FRACTION_CUT:
+            stamp.epoch_cuts["masked_fraction"] += 1
+            continue
+        interpolated = interpolated_defects(defect, neighbour, blend_handling)
+        if central_defect_vetoes(defect, interpolated):
+            stamp.epoch_cuts["central_veto"] += 1
+            continue
+        stamp.record_defects(defect, interpolated)
 
         # One unpickle per exposure (all CCDs), reused across this object's
         # epochs; the cache is per-call, so bounded by the object's exposures
@@ -1502,6 +1703,7 @@ def prepare_postage_stamps(
         stamp.psfs.append(psf_obj[expccd_name]['VIGNET'])
         stamp.weights.append(weight_vign_scaled)
         stamp.flags.append(flag_vign)
+        stamp.neighbours.append(neighbour)
         stamp.bkg_rms.append(bkg_rms_vign_scaled)
         if tile_seg is not None:
             stamp.segs.append(tile_seg)
@@ -1511,9 +1713,7 @@ def prepare_postage_stamps(
         # make_ngmix_observation), which raises if it is missing; the "hsm"
         # path ignores it, so read it leniently rather than coupling hsm to a
         # field it never uses.
-        stamp.offsets.append(
-            vignet.gal_vign_cat[str(obj_id)][expccd_name].get('OFFSET')
-        )
+        stamp.offsets.append(gal_obj[expccd_name].get('OFFSET'))
         stamp.ra.append(tile_cat.ra[i_tile])
         stamp.dec.append(tile_cat.dec[i_tile])
         # CCD of the first surviving epoch — Fabian's coord_list[0] convention
@@ -1523,6 +1723,51 @@ def prepare_postage_stamps(
             stamp.ccd = int(ccd_n)
 
     return stamp
+
+def split_tile_markers(tile_vign, shape):
+    """Split the tile VIGNET's -1e30 markers into neighbour and off-tile.
+
+    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-marked-border-rows-and-columns
+    The tile VIGNET holds -1e30 on the footprints of other detections and on
+    stamp pixels beyond the tile's edge (SExtractor writes it). A stamp
+    clipped by the tile's rectangle loses whole rows and whole columns from
+    its border, so the off-tile pixels are the union of the runs of
+    entirely -1e30 rows and columns that start at a stamp border. The
+    remaining markers are
+    neighbour pixels: a footprint touching the stamp border, and a footprint
+    that completes an interior row or column beside an off-tile band, stay
+    neighbours.
+
+    Parameters
+    ----------
+    tile_vign : numpy.ndarray or None
+        Tile VIGNET stamp, oriented like the epoch; ``None`` marks nothing.
+    shape : tuple of int
+        Stamp shape, used when ``tile_vign`` is ``None``.
+
+    Returns
+    -------
+    numpy.ndarray of bool
+        Neighbour pixels.
+    numpy.ndarray of bool
+        Off-tile pixels.
+    """
+    if tile_vign is None:
+        return np.zeros(shape, dtype=bool), np.zeros(shape, dtype=bool)
+    marker = tile_vign == -1e30
+
+    def border_runs(full):
+        # Lines in the unbroken run of marked lines from either border.
+        lead = np.logical_and.accumulate(full)
+        trail = np.logical_and.accumulate(full[::-1])[::-1]
+        return lead | trail
+
+    off_tile = (
+        border_runs(marker.all(axis=1))[:, None]
+        | border_runs(marker.all(axis=0))[None, :]
+    )
+    return marker & ~off_tile, off_tile
+
 
 def background_subtract(gal,bkg):
     """background subtraction.
@@ -1740,16 +1985,16 @@ def seg_has_neighbour(seg, object_number):
     return bool(labels.size and np.any(labels != object_number))
 
 
-def uberseg_weight(weight, seg, object_number, dilate_neighbour=0):
-    """Zero a stamp's weight on neighbour-side pixels — the UberSeg treatment.
+def uberseg_mask(seg, object_number, dilate_neighbour=0):
+    """Neighbour-side pixels of a stamp: the UberSeg mask.
 
     UberSeg is Erin Sheldon's MEDS/ngmix neighbour mask (``esheldon/meds``,
     https://github.com/esheldon/meds — ``MEDS.get_uberseg`` /
     ``meds._uberseg.uberseg_tree``, in MEDS itself "adapted from Niall MacCrann
     and Joe Zuntz", and used in the DES shear pipeline). Each stamp pixel is
     assigned to the object whose segmentation footprint it lies nearest to — a
-    nearest-segment Voronoi partition — and only pixels assigned to the central
-    object keep their weight.
+    nearest-segment Voronoi partition — and the pixels assigned to a neighbour
+    are masked.
 
     This function **reimplements** the partition rather than depending on
     ``meds``: it is a five-line ``scipy.spatial.cKDTree`` nearest-neighbour
@@ -1767,97 +2012,307 @@ def uberseg_weight(weight, seg, object_number, dilate_neighbour=0):
     Because the partition is by distance to the nearest footprint, the pixels
     surviving around a compact central object form a single connected,
     roughly circular core; the "circularisation" is emergent geometry, not a
-    separate aperture. Unlike the noise-fill treatment, masked pixels are
-    handed to ngmix as a hard mask (weight = 0), never replaced by a noise
-    realisation.
+    separate aperture. :func:`prepare_ngmix_weights` zeroes the weight of the
+    masked pixels and keeps their image values, so metacal shears the
+    neighbour's light along with the target's.
 
     Parameters
     ----------
-    weight : numpy.ndarray
-        Per-pixel weight (inverse variance) map for the stamp.
     seg : numpy.ndarray
-        Segmentation map on the same grid as ``weight``: 0 for sky, the
-        SExtractor object number for each detected object's footprint.
+        Segmentation stamp: 0 for sky, the SExtractor object number for each
+        detected object's footprint.
     object_number : int
         Segmentation label of the central object — its SExtractor ``NUMBER``
         (``obj_id``), authoritative because seg labels are the NUMBERs of the
         same SE run. Not the centre-pixel label, which a few-pixel coadd-vs-
         epoch offset can steal for a neighbour and so invert this mask.
     dilate_neighbour : int, optional
-        Enlarge the neighbour mask by this many binary-dilation iterations
-        (4-connected, ~one pixel per iteration) on top of the base Voronoi
-        partition, to absorb the few-pixel coadd-vs-epoch registration offset
-        the coadd-seg overlay accepts (shapepipe#776, decision on seg source).
-        ``0`` (the default) recovers the pure Sheldon UberSeg mask, byte-for-
-        byte. The dilation is additive: it only ever zeros more pixels, never
-        restores a base-masked one, so over-masking a boundary pixel costs a
-        little central-object S/N but never leaks neighbour flux into the fit.
+        Enlarge the mask by this many binary-dilation iterations of the
+        neighbour footprints (4-connected, ~one pixel per iteration) on top of
+        the Voronoi partition, to absorb the few-pixel coadd-vs-epoch
+        registration offset the coadd-seg overlay accepts (shapepipe#776,
+        decision on seg source). ``0`` (the default) is the pure Sheldon
+        UberSeg mask. The dilation only ever adds pixels, so over-masking a
+        boundary pixel costs a little central-object S/N but never leaks
+        neighbour flux into the fit.
 
     Returns
     -------
-    numpy.ndarray
-        Copy of ``weight`` with neighbour-side pixels zeroed.
+    numpy.ndarray of bool
+        ``True`` on pixels nearer a neighbour's footprint than the central
+        object's; all ``False`` when the stamp holds no neighbour.
     @sc [decision:shape_measurement.blend_handling]
     """
-    weight = np.copy(weight)
+    seg = np.asarray(seg)
+    masked = np.zeros(seg.shape, dtype=bool)
 
     obj_pix = np.argwhere(seg != 0)
-    # No detected footprint, or only sky plus the central object: there is
-    # no neighbour to mask, so the weight is unchanged (cf. MEDS' early
-    # ``len(np.unique(seg)) == 2`` return).
-    if obj_pix.shape[0] == 0:
-        return weight
     labels = seg[seg != 0]
+    # No neighbour footprint on the stamp: nothing to mask (cf. MEDS' early
+    # ``len(np.unique(seg)) == 2`` return).
     if np.all(labels == object_number):
-        return weight
+        return masked
 
-    # Nearest segmentation pixel for every stamp pixel; zero the weight
-    # wherever that nearest footprint belongs to a neighbour rather than to
-    # the central object.
+    # Nearest segmentation pixel for every stamp pixel; mask wherever that
+    # nearest footprint belongs to a neighbour rather than to the central
+    # object.
     grid = np.indices(seg.shape).reshape(2, -1).T
     _, nearest = cKDTree(obj_pix).query(grid)
-    nearest_label = labels[nearest].reshape(seg.shape)
-    weight[nearest_label != object_number] = 0.0
+    masked |= labels[nearest].reshape(seg.shape) != object_number
 
-    # Enlarge the neighbour mask to absorb the coadd-vs-epoch offset: zero any
-    # pixel within ``dilate_neighbour`` of a neighbour footprint. Purely
-    # additive over the base Voronoi result above.
     if dilate_neighbour > 0:
-        neighbour_mask = binary_dilation(
+        masked |= binary_dilation(
             (seg != 0) & (seg != object_number),
             iterations=dilate_neighbour,
         )
-        weight[neighbour_mask] = 0.0
 
-    return weight
+    return masked
+
+
+def defect_mask(weight, flag, bkg_rms=None):
+    """Defect pixels of one epoch stamp.
+
+    @sc [decision:shape_measurement.defect_fill,label:physics] defect-set-unsymmetrized
+    A defect is a pixel with zero exposure weight (off-tile pixels
+    included), a nonzero exposure flag, or, when a background RMS map is
+    given, a non-finite or non-positive RMS. This one set is zero-weighted
+    and filled by :func:`prepare_ngmix_weights` and counted by the epoch
+    cuts. It is not ORed with its rotations: a four-fold fill quadruples the
+    filled area near the object and with it m (astra option
+    ``defect_fill.symmetrized_4fold_noise``).
+
+    Parameters
+    ----------
+    weight : numpy.ndarray
+        Exposure weight stamp.
+    flag : numpy.ndarray
+        Exposure flag stamp.
+    bkg_rms : numpy.ndarray, optional
+        Background RMS stamp.
+
+    Returns
+    -------
+    numpy.ndarray of bool
+        ``True`` on defect pixels.
+    """
+    defect = (weight == 0) | (flag != 0)
+    if bkg_rms is not None:
+        defect |= ~(np.isfinite(bkg_rms) & (bkg_rms > 0))
+    return defect
+
+
+def interpolated_defects(defect, neighbour, blend_handling):
+    """The defect pixels :func:`prepare_ngmix_weights` interpolates.
+
+    Under ``"noisefill"`` the neighbour pixels' light is replaced, so they
+    neither support the interpolant nor are interpolated
+    (:func:`interpolable_defects` with ``removed=neighbour``); under
+    ``"uberseg"`` their light stays and supports it. The epoch cuts
+    (:func:`central_defect_vetoes`) read the same set.
+
+    Parameters
+    ----------
+    defect : numpy.ndarray of bool
+        Defect mask of one epoch stamp (:func:`defect_mask`).
+    neighbour : numpy.ndarray of bool or None
+        The epoch's neighbour mask (``Postage_stamp.neighbours``); ``None``
+        marks no pixel.
+    blend_handling : {"noisefill", "uberseg"}
+        Neighbour treatment.
+
+    Returns
+    -------
+    numpy.ndarray of bool
+        ``True`` on the defect pixels to interpolate; the other defect
+        pixels are noise-filled.
+    """
+    removed = neighbour if blend_handling == "noisefill" else None
+    return interpolable_defects(defect, removed)
+
+
+def central_defect_vetoes(defect, interpolated):
+    """Whether a defect near the stamp centre drops the epoch.
+
+    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.defect_fill] veto-radius-follows-the-fill
+    The epoch is dropped when an interpolated defect pixel lies closer than
+    ``EPOCH_INTERPOLATED_DEFECT_RADIUS`` to the stamp centre, or a
+    noise-filled one closer than ``EPOCH_CENTRAL_DEFECT_RADIUS``: the
+    smallest radii at which the defects kept recover shear within
+    |m| < 1% and |c| < 5e-4. ``interpolated`` is the set
+    :func:`prepare_ngmix_weights` interpolates, so each pixel is vetoed at
+    the radius of the fill it gets. The veto reads only masks, so it selects
+    on nothing that responds to shear. Calibration: astra decision
+    ``shape_measurement.central_defect_veto``; guarded by
+    ``tests/science/test_defect_recovery.py``.
+
+    Parameters
+    ----------
+    defect : numpy.ndarray of bool
+        Defect mask of one epoch stamp (:func:`defect_mask`).
+    interpolated : numpy.ndarray of bool
+        The defect pixels that are interpolated
+        (:func:`interpolated_defects`); the rest are noise-filled.
+
+    Returns
+    -------
+    bool
+        ``True`` if the epoch should be dropped.
+    """
+    radius = np.where(
+        interpolated,
+        EPOCH_INTERPOLATED_DEFECT_RADIUS,
+        EPOCH_CENTRAL_DEFECT_RADIUS,
+    )
+    return bool(np.any(defect & (centre_distance(defect.shape) < radius)))
+
+
+def centre_distance(shape):
+    """Distance of every stamp pixel from the stamp centre, in pixels."""
+    rows, cols = np.indices(shape)
+    return np.hypot(rows - (shape[0] - 1) / 2, cols - (shape[1] - 1) / 2)
+
+
+def defect_weighting_masks(interpolated, clean, defect_weighting):
+    """The pixels each DEFECT_WEIGHTING interpolates, re-weights and zeroes.
+
+    @sc [decision:shape_measurement.defect_weighting,label:physics] one-place-decides-defect-weights
+    ``interpolated`` (:func:`interpolated_defects`) starts at weight 0, like
+    every defect. The options:
+
+    * ``"fourfold_zero"``: interpolate it; the weight is also zeroed on its
+      three quarter-turn copies about the stamp centre, which keep their
+      light, so the likelihood hole has no spin-2 part.
+    * ``"des_y6"``: DES Y6's pizza-cutter symmetrization on a per-object
+      stamp. The mask is ORed with its quarter turn (``np.rot90``, k=1)
+      about the stamp centre, the union is interpolated, and every
+      interpolated pixel keeps its full weight. Copies that land on a pixel
+      whose light is already replaced (a noise-filled defect, a noisefill
+      neighbour) stay as they are, and so do copies the interpolant cannot
+      reach: a copy is interpolated only where it passes
+      :func:`interpolable_defects` among the pixels the image keeps, so a
+      copy wedged into a corner of the clean region (an edge band beside
+      the stamp edge) keeps its light rather than leaving the fill
+      non-finite.
+    * ``"hole"``: interpolate it and leave it at weight 0.
+    * ``"full"``: interpolate it at full weight.
+
+    Parameters
+    ----------
+    interpolated : numpy.ndarray of bool
+        The interpolable defect pixels of a square stamp.
+    clean : numpy.ndarray of bool
+        Pixels whose light the image keeps raw.
+    defect_weighting : str
+        One of ``DEFECT_WEIGHTINGS``.
+
+    Returns
+    -------
+    fill : numpy.ndarray of bool
+        Pixels to replace by the interpolant.
+    restore : numpy.ndarray of bool
+        Defect pixels that get their full inverse-variance weight back.
+    zero : numpy.ndarray of bool
+        Pixels whose weight is zeroed though their light stays.
+
+    Raises
+    ------
+    ValueError
+        If ``defect_weighting`` is unknown.
+    """
+    none = np.zeros_like(interpolated)
+    if defect_weighting == "des_y6":
+        copy = interpolable_defects(np.rot90(interpolated) & clean, ~clean)
+        return interpolated | copy, interpolated, none
+    if defect_weighting == "fourfold_zero":
+        return interpolated, none, fourfold(interpolated)
+    if defect_weighting == "hole":
+        return interpolated, none, none
+    if defect_weighting == "full":
+        return interpolated, interpolated, none
+    raise ValueError(
+        f"Unknown DEFECT_WEIGHTING '{defect_weighting}'; expected one of"
+        + f" {DEFECT_WEIGHTINGS}"
+    )
+
 
 def prepare_ngmix_weights(
     gal, weight, flag, rng, bkg_rms=None,
     blend_handling="noisefill", seg=None, object_number=None,
-    dilate_neighbour=0,
+    dilate_neighbour=0, neighbour=None, defect_weighting=DEFECT_WEIGHTING,
 ):
-    """bookkeeping for ngmix weights. runs on a single galaxy and epoch
-        pixel scale and galaxy guess
-        TO DO: decide if we want galaxy guess stuff
+    """Build one epoch's image, weight map and noise image for ngmix.
+
+    Every stamp pixel falls in one of four classes. A clean pixel keeps its
+    light and its weight. A pixel whose light is replaced by noise keeps
+    neither: a defect that is not interpolated, or under ``"noisefill"`` a
+    marked neighbour pixel. An interpolated pixel takes the interpolant, at
+    the weight ``defect_weighting`` gives it. A pixel whose light stays at
+    zero weight is a hole in the likelihood only: under ``"fourfold_zero"``
+    the quarter-turn copies of the interpolated defects, under ``"uberseg"``
+    a neighbour-side pixel.
+
+    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.blend_handling] defects-filled-whatever-the-blend-handling
+    Every pixel of :func:`defect_mask` gets weight 0 and is filled the same
+    way under every ``blend_handling``. The short runs of
+    :func:`interpolated_defects` take a Clough-Tocher interpolant of the
+    pixels whose light the image keeps (:func:`interpolate_defects`), in the
+    image and the noise image alike; the other defects take noise at the
+    background RMS. Metacal shears the whole image whatever the weights, so
+    no raw defect value may reach it.
+
+    @sc [decision:shape_measurement.blend_handling] noisefill-fills-markers
+    Under ``"noisefill"`` the ``neighbour`` pixels (the tile VIGNET's -1e30
+    neighbour markers) get weight 0 and noise. Their light is gone, so they
+    neither support the interpolant nor receive it.
+
+    @sc [decision:shape_measurement.blend_handling] uberseg-ignores-markers
+    Under ``"uberseg"`` the markers are ignored: the pixels of
+    :func:`uberseg_mask` get weight 0 and keep their light, which is real
+    sky that metacal shears with the target and which supports the
+    interpolant.
+
+    @sc [decision:shape_measurement.defect_weighting] defect-weighting-option
+    ``defect_weighting`` decides which pixels are interpolated and how they
+    and their quarter-turn copies are weighted
+    (:func:`defect_weighting_masks`). Noise-filled pixels and the uberseg
+    neighbour side are never symmetrized, and an interpolated pixel on the
+    uberseg neighbour side stays at weight 0. Measurements: astra decision
+    ``shape_measurement.defect_weighting``; guarded by
+    ``tests/science/test_defect_recovery.py``.
+
+    @sc [decision:shape_measurement.defect_weighting,label:physics] noise-image-in-the-fixnoise-frame
+    Metacal's ``fixnoise`` turns the noise image a quarter turn
+    (``np.rot90``, k=1) before shearing it and turns the result back (k=3)
+    before adding it to the sheared image. The noise image is therefore
+    interpolated in that turned frame, by the operator that interpolates the
+    science image: in the frame where both are sheared, the interpolated
+    pixels and their correlated noise coincide. Interpolating it in the
+    detector frame instead puts its interpolated pixels a quarter turn away
+    from the science image's, and the correlated noise of an interpolated
+    column then survives the cancellation as an additive bias.
+    ``tests/module/test_ngmix_defect_fill.py`` pins ngmix's k=1/k=3.
 
     Parameters
     ----------
     gal : numpy.ndarray
+        Background-subtracted galaxy stamp.
     weight : numpy.ndarray
+        Exposure weight stamp; zero marks a defect.
     flag : numpy.ndarray
+        Exposure flag stamp; nonzero marks a defect.
     rng : numpy.random.RandomState
         Random state for the noise realisations (seeded per object; see
         :func:`position_seed`).
     bkg_rms : numpy.ndarray, optional
-        Per-pixel background RMS map. If supplied, unmasked pixels use
-        ``1 / bkg_rms**2`` as the ngmix inverse variance.
+        Per-pixel background RMS map. If supplied, clean pixels use
+        ``1 / bkg_rms**2`` as the ngmix inverse variance, and non-finite or
+        non-positive values mark defects. Otherwise every clean pixel gets
+        ``1 / sigma_mad(gal)**2``.
     blend_handling : {"noisefill", "uberseg"}, optional
-        How to treat pixels shared with a neighbour. ``"noisefill"`` (default)
-        replaces flagged pixels with a noise realisation and keeps their
-        inverse-variance weight — the historical behaviour. ``"uberseg"``
-        instead hard-masks (weight = 0) every pixel closer to a neighbour's
-        segmentation footprint than to the central object's, leaving the
-        image untouched (see :func:`uberseg_weight`).
+        Neighbour treatment. ``"noisefill"`` (default) zero-weights and
+        noise-fills the ``neighbour`` pixels. ``"uberseg"`` ignores
+        ``neighbour``, zeroes the weight of the pixels of
+        :func:`uberseg_mask` and keeps their raw image values.
     seg : numpy.ndarray, optional
         Segmentation map on the stamp grid (object NUMBERs). Required for
         ``blend_handling="uberseg"``; ignored otherwise.
@@ -1865,51 +2320,89 @@ def prepare_ngmix_weights(
         Central object's segmentation label. Required for
         ``blend_handling="uberseg"``; ignored otherwise.
     dilate_neighbour : int, optional
-        Neighbour-mask dilation iterations, passed to :func:`uberseg_weight`
+        Neighbour-mask dilation iterations, passed to :func:`uberseg_mask`
         under ``blend_handling="uberseg"``; ignored otherwise.
+    neighbour : numpy.ndarray of bool, optional
+        The epoch's neighbour mask (``Postage_stamp.neighbours``); read only
+        under ``blend_handling="noisefill"``. ``None`` marks no pixel.
+    defect_weighting : str, optional
+        One of ``DEFECT_WEIGHTINGS``; the default is ``DEFECT_WEIGHTING``.
 
     Returns
     -------
     numpy.ndarray
-        Galaxy image. For ``"noisefill"`` masked pixels are replaced by noise;
-        for ``"uberseg"`` the image is returned untouched.
+        Galaxy image with defect pixels, and under noisefill marked
+        neighbour pixels, filled.
     numpy.ndarray
-        Variance map for NGMIX.
+        Inverse-variance weight map for ngmix.
     numpy.ndarray
-        Noise image.
-    @sc [decision:masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights]
+        Noise image: an independent realisation over the whole stamp, for
+        metacal's ``fixnoise``, interpolated in fixnoise's quarter-turned
+        frame where the galaxy image is interpolated.
+
+    Raises
+    ------
+    ValueError
+        If ``blend_handling`` or ``defect_weighting`` is unknown, or
+        ``"uberseg"`` lacks ``seg`` or ``object_number``.
+    RuntimeError
+        If the interpolant does not reach a pixel :func:`interpolated_defects`
+        selected (degenerate support, or non-finite image values in it).
+    @sc [decision:masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights,decision:shape_measurement.defect_weighting]
     """
     if blend_handling not in BLEND_HANDLINGS:
         raise ValueError(
             f"Unknown blend_handling '{blend_handling}'; expected one of"
             + f" {BLEND_HANDLINGS}"
         )
+    if defect_weighting not in DEFECT_WEIGHTINGS:
+        raise ValueError(
+            f"Unknown defect_weighting '{defect_weighting}'; expected one of"
+            + f" {DEFECT_WEIGHTINGS}"
+        )
+    if blend_handling == "uberseg" and (seg is None or object_number is None):
+        raise ValueError(
+            "blend_handling='uberseg' requires a segmentation map and the"
+            + " central object_number; none reached prepare_ngmix_weights."
+            + " The tile catalogue's SEG_VIGNET column carries the map (see"
+            + " CosmoStat/shapepipe#776)."
+        )
 
-    mask = np.copy(weight) != 0
-    mask[flag != 0] = False
+    defect = defect_mask(weight, flag, bkg_rms)
+    no_pixel = np.zeros_like(defect)
+    # Neighbour pixels whose light noisefill replaces (noisefill-fills-markers)
+    # or whose weight uberseg zeroes (uberseg-ignores-markers).
+    removed_neighbour, neighbour_side = no_pixel, no_pixel
+    if blend_handling == "noisefill" and neighbour is not None:
+        removed_neighbour = np.asarray(neighbour, dtype=bool)
+    elif blend_handling == "uberseg":
+        neighbour_side = uberseg_mask(seg, object_number, dilate_neighbour)
+    # Pixels whose light the image keeps raw.
+    clean = ~(defect | removed_neighbour)
+    weighted = clean & ~neighbour_side
 
     if bkg_rms is None:
         sig_noise = sigma_mad(gal)
         # Guard the degenerate constant stamp (sigma_mad == 0): 0 * inf
         # would otherwise put NaN in a fully-masked weight map.
         weight_map = (
-            mask.astype(float) / sig_noise ** 2
+            weighted.astype(float) / sig_noise ** 2
             if sig_noise > 0
             else np.zeros_like(gal, dtype=float)
         )
     else:
-        valid_rms = np.isfinite(bkg_rms) & (bkg_rms > 0)
-        mask &= valid_rms
         weight_map = np.zeros_like(gal, dtype=float)
-        weight_map[mask] = 1.0 / bkg_rms[mask] ** 2
+        weight_map[weighted] = 1.0 / bkg_rms[weighted] ** 2
         # Per-pixel noise sigma for the realisations below: metacal's
         # fixnoise bookkeeping (1/w + 1/w_noise) assumes the noise image
         # is a faithful realisation of the per-pixel variance the weights
         # claim; a scalar sigma there mis-reports errors and erodes the
         # inverse-variance advantage whenever the RMS map actually varies.
+        # Pixels without a valid RMS take the median over clean pixels.
+        valid_rms = np.isfinite(bkg_rms) & (bkg_rms > 0)
         sig_noise = (
-            np.where(valid_rms, bkg_rms, np.median(bkg_rms[mask]))
-            if mask.any()
+            np.where(valid_rms, bkg_rms, np.median(bkg_rms[clean]))
+            if clean.any()
             else sigma_mad(gal)
         )
 
@@ -1922,34 +2415,38 @@ def prepare_ngmix_weights(
 
     noise_img = rng.standard_normal(gal.shape) * sig_noise
     noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
-
-    gal_masked = np.copy(gal)
-    if blend_handling == "uberseg":
-        # Hard-mask neighbour-side pixels (weight -> 0) from the segmentation
-        # geometry; the image is left untouched (the masked pixels carry no
-        # weight, so ngmix ignores them in the likelihood). Bad/flagged
-        # pixels already sit at weight 0 from the mask above.
-        if seg is None or object_number is None:
-            raise ValueError(
-                "blend_handling='uberseg' requires a segmentation map and the"
-                + " central object_number; none reached prepare_ngmix_weights."
-                + " Set SEG_VIGNET_PATH on the ngmix run (see"
-                + " CosmoStat/shapepipe#776)."
-            )
-        weight_map = uberseg_weight(
-            weight_map, seg, object_number, dilate_neighbour=dilate_neighbour
+    gal_filled = np.where(clean, gal, noise_img_gal).astype(gal.dtype)
+    interpolated = interpolated_defects(defect, neighbour, blend_handling)
+    if interpolated.any():
+        fill, restore, zero = defect_weighting_masks(
+            interpolated, clean, defect_weighting
         )
-    elif (~mask).any():
-        # noisefill (default): replace masked pixels with a noise realisation.
-        gal_masked[~mask] = noise_img_gal[~mask]
+        # One operator for the image and the noise image, the latter in
+        # fixnoise's quarter-turned frame (noise-image-in-the-fixnoise-frame).
+        filled = interpolate_defects(
+            [gal, np.rot90(noise_img)], ~clean | fill, fill
+        )
+        if not np.all(np.isfinite(filled[:, fill])):
+            raise RuntimeError(
+                "The defect interpolant is not finite on pixels"
+                + " defect_weighting_masks selected."
+            )
+        gal_filled[fill] = filled[0, fill]
+        noise_img = np.rot90(filled[1], -1)
+        restore = restore & ~neighbour_side
+        weight_map[restore] = np.broadcast_to(
+            1.0 / np.asarray(sig_noise) ** 2, gal.shape
+        )[restore]
+        weight_map[zero] = 0.0
 
-    return gal_masked, weight_map, noise_img
+    return gal_filled, weight_map, noise_img
+
 
 def make_ngmix_observation(
     gal, weight, flag, psf, wcs, rng,
     bkg_rms=None, centroid_source="wcs", offset=None,
     blend_handling="noisefill", seg=None, object_number=None,
-    dilate_neighbour=0,
+    dilate_neighbour=0, neighbour=None, defect_weighting=DEFECT_WEIGHTING,
 ):
     """Build an ngmix Observation for a single galaxy epoch.
 
@@ -1993,7 +2490,8 @@ def make_ngmix_observation(
         ``"hsm"``).
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment passed through to :func:`prepare_ngmix_weights`;
-        the default ``"noisefill"`` is the historical behaviour.
+        the default ``"noisefill"`` zero-weights and noise-fills the
+        ``neighbour`` pixels.
     seg : numpy.ndarray, optional
         Segmentation map on the stamp grid. Required for
         ``blend_handling="uberseg"`` (ignored otherwise).
@@ -2003,6 +2501,11 @@ def make_ngmix_observation(
     dilate_neighbour : int, optional
         Neighbour-mask dilation iterations passed through to
         :func:`prepare_ngmix_weights` under ``blend_handling="uberseg"``.
+    neighbour : numpy.ndarray of bool, optional
+        Neighbour mask passed through to :func:`prepare_ngmix_weights`.
+    defect_weighting : str, optional
+        Interpolated-defect weighting passed through to
+        :func:`prepare_ngmix_weights`.
 
     Returns
     -------
@@ -2031,16 +2534,18 @@ def make_ngmix_observation(
     gal_masked, weight_map, noise_img = prepare_ngmix_weights(
         gal, weight, flag, rng, bkg_rms=bkg_rms,
         blend_handling=blend_handling, seg=seg, object_number=object_number,
-        dilate_neighbour=dilate_neighbour,
+        dilate_neighbour=dilate_neighbour, neighbour=neighbour,
+        defect_weighting=defect_weighting,
     )
 
     if centroid_source == "hsm":
         # Re-center the Jacobian on the HSM adaptive-moment centroid (pixel
-        # offset from the stamp center); fall back to the stamp center if
-        # HSM fails.
+        # offset from the stamp center), measured on the filled image so no
+        # raw defect value pulls it; fall back to the stamp center if HSM
+        # fails.
         try:
             _hsm = galsim.hsm.FindAdaptiveMom(
-                galsim.Image(gal, scale=1.0), strict=False
+                galsim.Image(gal_masked, scale=1.0), strict=False
             )
             if _hsm.error_message != "":
                 raise galsim.hsm.GalSimHSMError(_hsm.error_message)
@@ -2261,7 +2766,7 @@ def make_runners(prior, flux_guess, rng):
 def do_ngmix_metacal(
     stamp, prior, flux_guess, rng, centroid_source="wcs",
     blend_handling="noisefill", object_number=None, dilate_neighbour=0,
-    metacal_psf="fitgauss",
+    metacal_psf="fitgauss", defect_weighting=DEFECT_WEIGHTING,
 ):
     """Do Ngmix Metacal.
 
@@ -2286,9 +2791,9 @@ def do_ngmix_metacal(
         stamp pixels — see that function.
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment passed through to
-        :func:`make_ngmix_observation`; the default ``"noisefill"`` is the
-        historical behaviour. ``"uberseg"`` consumes ``stamp.segs`` and
-        ``object_number``.
+        :func:`make_ngmix_observation`; the default ``"noisefill"``
+        zero-weights and noise-fills the pixels of ``stamp.neighbours``.
+        ``"uberseg"`` consumes ``stamp.segs`` and ``object_number``.
     object_number : int, optional
         Central object's segmentation label — its SExtractor ``NUMBER``
         (``obj_id``), authoritative because seg labels are the NUMBERs of the
@@ -2308,6 +2813,9 @@ def do_ngmix_metacal(
         round PSF that metacal reconvolves with after shearing, so it moves the
         metacal *response* (and therefore the recovered shear) but never reaches
         the deconvolution, which is by the PSF image.
+    defect_weighting : str, optional
+        Interpolated-defect weighting (one of ``DEFECT_WEIGHTINGS``) passed
+        through to :func:`make_ngmix_observation`.
 
     Returns
     -------
@@ -2318,7 +2826,7 @@ def do_ngmix_metacal(
         dict (:func:`average_original_psf`). The two PSF dicts share keys but
         describe different PSFs; the named fields guard against transposing
         them. Unpacks positionally as ``resdict, psf_res, psf_orig_res``.
-    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]
+    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme,decision:shape_measurement.defect_weighting]
     """
     n_epoch = len(stamp.gals)
     if n_epoch == 0:
@@ -2341,6 +2849,10 @@ def do_ngmix_metacal(
             seg=stamp.segs[n_e] if n_e < len(stamp.segs) else None,
             object_number=object_number,
             dilate_neighbour=dilate_neighbour,
+            neighbour=(
+                stamp.neighbours[n_e] if n_e < len(stamp.neighbours) else None
+            ),
+            defect_weighting=defect_weighting,
         )
         gal_obs_list.append(gal_obs)
 
