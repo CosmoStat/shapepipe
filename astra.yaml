@@ -419,7 +419,7 @@ analyses:
               Location flags are analysis decisions; a pipeline cut would fix
               one mask version into the catalogue.
       mask_default_cut:
-        label: Default external-mask cut — the six r-mask columns of the MASK_* ladder
+        label: Default external-mask cut — the r-mask columns of the MASK_* ladder without the star halos
         rationale: >-
           make_cat writes one boolean MASK_<flag value>_<name> column per map
           in MASK_EXT_PATHS (11 maps: 1_Faint_star_halos, 2_Bright_star_halos,
@@ -427,29 +427,30 @@ analyses:
           16_u, 32_g, 64_r, 128_i and 256_z (HSC z), 1024_Maximask, and
           2048_z2 (the Pan-STARRS z footprint)) and cuts nothing; the cut is
           the consumer's (sp_validation). The default is the OR of
-          MASK_1_Faint_star_halos, MASK_2_Bright_star_halos, MASK_4_Stars,
-          MASK_8_Manual, MASK_64_r and MASK_1024_Maximask because it
-          reproduces the published 2D-cosmic-shear mask
-          (/n17data/UNIONS/WL/masks/mask_r_nside131072.hsp), so the
-          catalogue's footprint matches the 2D analysis'. Measured on candide
-          against the Feb-2025 r ladder beside it: pixel-exact on three whole
-          interior coverage granules; on 4M random footprint pixels the only
-          difference is 0.46% of area at footprint-edge granules where mask_r
-          has no coverage and reads unmasked. Every one of the six is needed:
-          dropping any one leaves mask_r-only area (2_Bright_star_halos most,
-          4.4%). The DR6 ladder MASK_EXT_PATHS points at is not
-          yet measured against the Feb-2025 one.
-        default: r_mask_bits
+          MASK_4_Stars, MASK_8_Manual, MASK_64_r and MASK_1024_Maximask. The
+          star halos (MASK_1_Faint_star_halos, MASK_2_Bright_star_halos) stay
+          catalogue columns but out of the default: how far around a star to
+          reject galaxies is a selection choice the science analysis makes,
+          not a defect of the measurement. This departs from the published
+          2D-cosmic-shear mask (/n17data/UNIONS/WL/masks/mask_r_nside131072.hsp),
+          which is the default plus both halo columns: on three whole interior
+          coverage granules of the Feb-2025 r ladder beside it, default plus
+          halos is pixel-exact against mask_r, and the halos alone are about
+          half of mask_r's masked area (6-19% of area per granule; mask_r
+          masks 19-28%, the default 10-13%). The DR6 ladder MASK_EXT_PATHS
+          points at is not yet measured against the Feb-2025 one.
+        default: r_mask_no_halos
         options:
+          r_mask_no_halos:
+            label: "OR of the 4, 8, 64 and 1024 columns — mask_r without the star halos"
           r_mask_bits:
             label: "OR of the 1, 2, 4, 8, 64 and 1024 columns — reproduces mask_r"
           defects_only:
             label: "OR of the defect columns 1, 2, 4, 8 and 1024"
             excluded: true
             excluded_reason: >-
-              Omits the r-footprint column 64_r (no r data) and so misses 9% of
-              mask_r's masked area; the footprint no longer matches the 2D
-              analysis'.
+              Omits the r-footprint column 64_r, so positions with no r data
+              pass the cut.
           all_bits:
             label: OR of all 11 MASK_* columns
             excluded: true

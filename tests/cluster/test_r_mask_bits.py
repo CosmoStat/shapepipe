@@ -1,14 +1,15 @@
-"""The OR of the six r-ladder bits is the published 2D-cosmic-shear r mask.
+"""The default external-mask cut plus the star halos is the 2D r mask.
 
-Decision ``mask_default_cut`` (astra.yaml, catalogue_assembly) makes the
-catalogue's default cut the OR of the six maps with flag values 1, 2, 4, 8,
-64 and 1024 (file suffixes ``n1`` ... ``n1024``), on the claim that this OR
-reproduces ``mask_r_nside131072.hsp``, the mask the 2D analysis used. This
-test checks that claim pixel-exactly on three whole coverage granules
-(nside_cov 128, 2^20 nside-131072 pixels each) lying fully inside the v1.6.x
-footprint. The granules sit in the interior on purpose: at the footprint
-edge ``mask_r`` has no coverage and reads unmasked where the ladder masks, a
-difference of order half a percent of area that carries no r data.
+Decision ``mask_default_cut`` (astra.yaml) makes the catalogue's default cut
+the OR of the maps with flag values 4, 8, 64 and 1024 (file suffixes ``n4``
+... ``n1024``) and leaves the star-halo maps 1 and 2 out of it. The published
+2D-cosmic-shear mask ``mask_r_nside131072.hsp`` is that default plus both
+halos. This test checks that claim pixel-exactly on three whole coverage
+granules (nside_cov 128, 2^20 nside-131072 pixels each) lying fully inside the
+v1.6.x footprint, and that the halos add masked area beyond the default. The
+granules sit in the interior on purpose: at the footprint edge ``mask_r`` has
+no coverage and reads unmasked where the ladder masks, a difference of order
+half a percent of area that carries no r data.
 
 It reads the Feb-2025 r-band ladder beside the published mask. The DR6 ladder
 that MASK_EXT_PATHS points at is not what this checks. Enforces contract
@@ -25,21 +26,21 @@ pytestmark = [pytest.mark.slow, pytest.mark.candide]
 
 MASK_DIR = "/n17data/UNIONS/WL/masks"
 R_MASK = f"{MASK_DIR}/mask_r_nside131072.hsp"
-R_BITS = ["n1", "n2", "n4", "n8", "n64", "n1024"]
+DEFAULT_BITS = ["n4", "n8", "n64", "n1024"]
+HALO_BITS = ["n1", "n2"]
 # Whole nside_cov=128 granules fully inside coverage_v1.6.x.
 INTERIOR_GRANULES = [32131, 29770, 43619]
 
 
-def _paths():
-    return [R_MASK] + [
-        f"{MASK_DIR}/mask_r_nside131072_{bit}.hsp" for bit in R_BITS
-    ]
+def _bit_path(bit):
+    return f"{MASK_DIR}/mask_r_nside131072_{bit}.hsp"
 
 
 @pytest.mark.parametrize("granule", INTERIOR_GRANULES)
-def test_six_bit_or_reproduces_mask_r(granule):
-    """OR of the six r-ladder bits equals mask_r on a whole granule."""
-    unreadable = [p for p in _paths() if not os.access(p, os.R_OK)]
+def test_default_plus_halos_reproduces_mask_r(granule):
+    """Default cut OR halo bits equals mask_r; the halos add area."""
+    paths = [R_MASK] + [_bit_path(b) for b in DEFAULT_BITS + HALO_BITS]
+    unreadable = [p for p in paths if not os.access(p, os.R_OK)]
     if unreadable:
         pytest.skip(f"mask maps not readable: {unreadable}")
     hsp = pytest.importorskip("healsparse")
@@ -54,12 +55,19 @@ def test_six_bit_or_reproduces_mask_r(granule):
         sub = hsp.HealSparseMap.read(path, pixels=[granule])
         return sub.get_values_pix(pixels, nest=True).astype(bool)
 
+    def or_of(bits):
+        return np.logical_or.reduce([read(_bit_path(b)) for b in bits])
+
     mask_r = read(R_MASK)
-    combined = np.logical_or.reduce([read(p) for p in _paths()[1:]])
+    default = or_of(DEFAULT_BITS)
+    halos = or_of(HALO_BITS)
 
     assert mask_r.any(), f"granule {granule}: mask_r masks nothing"
-    n_diff = int(np.count_nonzero(mask_r != combined))
+    n_diff = int(np.count_nonzero(mask_r != (default | halos)))
     assert n_diff == 0, (
-        f"mask_default_cut: granule {granule}: OR of {R_BITS} differs from "
-        f"mask_r on {n_diff} of {pixels.size} pixels"
+        f"mask_default_cut: granule {granule}: OR of {DEFAULT_BITS + HALO_BITS}"
+        f" differs from mask_r on {n_diff} of {pixels.size} pixels"
+    )
+    assert np.count_nonzero(halos & ~default), (
+        f"granule {granule}: the halo bits add no area beyond the default"
     )
