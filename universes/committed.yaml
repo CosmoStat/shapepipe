@@ -33,7 +33,7 @@ analyses:
       stamp_positioning_and_padding: round_and_zero_pad
   star_selection_psf:
     decisions:
-      star_selection_box: mode_centred_box
+      star_selection_box: locus_scaled_box
       psf_train_validation_split: split_80_20_seeded
       psfex_candidate_vetting: builtin_defaults
       psf_modelling_software: psfex
