@@ -2,14 +2,14 @@
 
 Covers the ``BLEND_HANDLING = uberseg`` option added to the ngmix module:
 
-* :func:`uberseg_weight` — the Sheldon/MEDS nearest-segment Voronoi mask.
+* :func:`uberseg_mask` — the Sheldon/MEDS nearest-segment Voronoi mask.
   Geometry assertions on a synthetic two-object stamp: neighbour-side pixels
-  are zeroed, the surviving central core is a *single connected* region (the
-  emergent "circularisation"), and the neighbour footprint is fully removed.
-* :func:`prepare_ngmix_weights` — the ``noisefill`` default is byte-for-byte
-  unchanged (asserted against an independent recomputation of the legacy
-  three-line noise-fill on a shared RNG), while ``uberseg`` hard-masks the
-  weight (weight -> 0) and leaves the image untouched.
+  are masked, the surviving central core is a *single connected* region (the
+  emergent "circularisation"), and the neighbour footprint is fully masked.
+* :func:`prepare_ngmix_weights` under ``uberseg`` — neighbour-side pixels
+  lose their weight and keep their raw image values, while defect pixels are
+  filled as under any blend handling (the defect fill itself is covered in
+  ``test_ngmix_defect_fill.py``).
 * The error contract when ``uberseg`` is selected without a segmentation map
   (the seg-map source is plumbing-gated upstream).
 """
@@ -25,7 +25,7 @@ from shapepipe.modules.ngmix_package.ngmix import (
     central_seg_label,
     prepare_ngmix_weights,
     seg_has_neighbour,
-    uberseg_weight,
+    uberseg_mask,
 )
 
 
@@ -53,33 +53,24 @@ def two_object_seg(npix=41, sep=12, r_central=3, r_neighbour=3):
     return seg, centre, neigh
 
 
-def test_uberseg_zeros_neighbour_side_keeps_centre():
-    """Neighbour-side pixels lose their weight; the central pixel keeps it."""
+def test_uberseg_masks_neighbour_side_keeps_centre():
+    """Neighbour-side pixels are masked; the central footprint is not."""
     seg, centre, neigh = two_object_seg()
-    weight = np.ones_like(seg, dtype=float)
 
-    out = uberseg_weight(weight, seg, object_number=1)
+    masked = uberseg_mask(seg, object_number=1)
 
-    # Central object pixel kept; deep-neighbour pixel zeroed.
-    assert out[centre] == 1.0
-    assert out[neigh] == 0.0
-    # Every neighbour-footprint pixel is removed from the fit.
-    assert np.all(out[seg == 2] == 0.0)
-    # Every central-footprint pixel survives.
-    assert np.all(out[seg == 1] == 1.0)
-    # The input weight is not mutated in place.
-    assert np.all(weight == 1.0)
+    assert not masked[centre]
+    assert masked[neigh]
+    assert np.all(masked[seg == 2])
+    assert not np.any(masked[seg == 1])
 
 
 def test_uberseg_core_is_single_connected_region():
     """The surviving (kept-weight) region is one connected component — the
     emergent circular core of the nearest-segment Voronoi partition."""
     seg, _, _ = two_object_seg()
-    weight = np.ones_like(seg, dtype=float)
 
-    out = uberseg_weight(weight, seg, object_number=1)
-
-    kept = out > 0
+    kept = ~uberseg_mask(seg, object_number=1)
     _, n_components = ndimage.label(kept)
     assert n_components == 1
     # The partition splits the stamp: some pixels survive, some are masked.
@@ -91,28 +82,26 @@ def test_uberseg_partition_is_the_perpendicular_bisector():
     half-plane beyond the footprint bisector: the left edge survives, the
     column past the neighbour is gone."""
     seg, centre, neigh = two_object_seg(npix=41, sep=12)
-    weight = np.ones_like(seg, dtype=float)
 
-    out = uberseg_weight(weight, seg, object_number=1)
+    masked = uberseg_mask(seg, object_number=1)
 
     c_row, c_col = centre
-    assert out[c_row, 0] == 1.0  # far side from the neighbour: kept
-    assert out[c_row, -1] == 0.0  # neighbour side edge: masked
+    assert not masked[c_row, 0]  # far side from the neighbour: kept
+    assert masked[c_row, -1]  # neighbour side edge: masked
 
 
 def test_uberseg_no_neighbour_is_passthrough():
-    """A stamp with only the central object (or empty seg) is unchanged."""
+    """A stamp with only the central object (or empty seg) masks nothing."""
     npix = 21
-    weight = np.random.default_rng(0).random((npix, npix)) + 0.1
 
     # Only the central object present.
     seg = np.zeros((npix, npix), dtype=np.int32)
     seg[8:13, 8:13] = 1
-    npt.assert_array_equal(uberseg_weight(weight, seg, object_number=1), weight)
+    assert not uberseg_mask(seg, object_number=1, dilate_neighbour=2).any()
 
     # Wholly empty seg (no detections).
     empty = np.zeros((npix, npix), dtype=np.int32)
-    npt.assert_array_equal(uberseg_weight(weight, empty, object_number=1), weight)
+    assert not uberseg_mask(empty, object_number=1).any()
 
 
 # --- central_seg_label: centre-pixel identification (#776 decision 3) -------
@@ -162,7 +151,7 @@ def test_seg_has_neighbour():
 # --- uberseg dilation: additive neighbour-mask enlargement (#776 dec. 2) ----
 
 def test_uberseg_dilation_grows_neighbour_mask():
-    """dilate_neighbour>0 zeros a strict superset of the base (dilate=0) mask,
+    """dilate_neighbour>0 masks a strict superset of the base (dilate=0) mask,
     and every base-masked pixel stays masked (additive-only).
 
     Geometric subtlety: for well-separated objects the base Voronoi cut (the
@@ -171,62 +160,53 @@ def test_uberseg_dilation_grows_neighbour_mask():
     crosses the bisector into the central Voronoi cell. A few iterations
     guarantee that crossing here (sep=8, r=3 -> ~2px footprint gap)."""
     seg, _, _ = two_object_seg(npix=41, sep=8)
-    weight = np.ones_like(seg, dtype=float)
 
-    out0 = uberseg_weight(weight, seg, object_number=1, dilate_neighbour=0)
-    out3 = uberseg_weight(weight, seg, object_number=1, dilate_neighbour=3)
+    out0 = uberseg_mask(seg, object_number=1, dilate_neighbour=0)
+    out3 = uberseg_mask(seg, object_number=1, dilate_neighbour=3)
 
-    # dilate=0 reproduces the validated no-dilation result byte-for-byte.
-    npt.assert_array_equal(
-        out0, uberseg_weight(weight, seg, object_number=1)
-    )
+    # dilate=0 reproduces the validated no-dilation result.
+    npt.assert_array_equal(out0, uberseg_mask(seg, object_number=1))
     # Every pixel masked at dilate=0 is still masked at dilate=3 (additive).
-    assert np.all(out3[out0 == 0.0] == 0.0)
+    assert np.all(out3[out0])
     # And strictly more pixels are masked once the dilation crosses the
     # bisector into the central cell.
-    assert (out3 == 0.0).sum() > (out0 == 0.0).sum()
+    assert out3.sum() > out0.sum()
 
 
 def test_uberseg_dilation_zero_is_pure_sheldon():
     """dilate_neighbour=0 is bit-identical to the default (no-kwarg) call and
     to the O(N^2) brute-force nearest-segment rule."""
     seg, _, _ = two_object_seg(npix=25, sep=8)
-    weight = np.ones_like(seg, dtype=float)
 
-    out = uberseg_weight(weight, seg, object_number=1, dilate_neighbour=0)
-    npt.assert_array_equal(out, uberseg_weight(weight, seg, object_number=1))
-
-    obj = np.argwhere(seg != 0)
-    labels = seg[seg != 0]
-    brute = np.ones_like(weight)
-    for i in range(seg.shape[0]):
-        for j in range(seg.shape[1]):
-            d2 = (i - obj[:, 0]) ** 2 + (j - obj[:, 1]) ** 2
-            if labels[np.argmin(d2)] != 1:
-                brute[i, j] = 0.0
-    npt.assert_array_equal(out, brute)
+    out = uberseg_mask(seg, object_number=1, dilate_neighbour=0)
+    npt.assert_array_equal(out, uberseg_mask(seg, object_number=1))
+    npt.assert_array_equal(out, _brute_force_uberseg(seg))
 
 
 def test_uberseg_matches_bruteforce_nearest_segment():
     """The cKDTree result equals the O(N^2) brute-force nearest-segment rule
     (Sheldon's non-C fallback) it stands in for."""
     seg, _, _ = two_object_seg(npix=25, sep=8)
-    weight = np.ones_like(seg, dtype=float)
 
-    out = uberseg_weight(weight, seg, object_number=1)
+    npt.assert_array_equal(
+        uberseg_mask(seg, object_number=1), _brute_force_uberseg(seg)
+    )
 
+
+def _brute_force_uberseg(seg):
+    """O(N^2) nearest-segment rule: True where the nearest footprint pixel
+    is not the central object's (label 1)."""
     obj = np.argwhere(seg != 0)
     labels = seg[seg != 0]
-    brute = np.ones_like(weight)
+    brute = np.zeros(seg.shape, dtype=bool)
     for i in range(seg.shape[0]):
         for j in range(seg.shape[1]):
             d2 = (i - obj[:, 0]) ** 2 + (j - obj[:, 1]) ** 2
-            if labels[np.argmin(d2)] != 1:
-                brute[i, j] = 0.0
-    npt.assert_array_equal(out, brute)
+            brute[i, j] = labels[np.argmin(d2)] != 1
+    return brute
 
 
-# --- prepare_ngmix_weights: default unchanged, uberseg hard-masks ----------
+# --- prepare_ngmix_weights: uberseg zeroes neighbour weights only ---------
 
 def _gal_flag_weight(npix=41, seed=7):
     rng = np.random.default_rng(seed)
@@ -239,35 +219,9 @@ def _gal_flag_weight(npix=41, seed=7):
     return gal, flag, weight
 
 
-def test_noisefill_default_is_byte_identical_to_legacy():
-    """The default path reproduces the legacy three-line noise-fill exactly
-    (same RNG stream): masked pixels replaced by noise, weight 1/sigma^2."""
-    gal, flag, weight = _gal_flag_weight()
-
-    gal_out, w_out, noise_out = prepare_ngmix_weights(
-        gal, weight, flag, np.random.RandomState(123),
-    )
-
-    # Independent recomputation of the legacy algorithm on the same stream.
-    from modopt.math.stats import sigma_mad
-    rng = np.random.RandomState(123)
-    mask = np.copy(weight) != 0
-    mask[flag != 0] = False
-    sig = sigma_mad(gal)
-    w_exp = mask.astype(float) / sig ** 2
-    noise_exp = rng.standard_normal(gal.shape) * sig
-    noise_gal = rng.standard_normal(gal.shape) * sig
-    gal_exp = np.copy(gal)
-    gal_exp[~mask] = noise_gal[~mask]
-
-    npt.assert_array_equal(gal_out, gal_exp)
-    npt.assert_array_equal(w_out, w_exp)
-    npt.assert_array_equal(noise_out, noise_exp)
-
-
 def test_noisefill_ignores_seg_and_dilate_kwargs():
-    """Under noisefill, passing seg / dilate_neighbour changes nothing: the
-    result matches the plain default call on the same RNG stream."""
+    """Under BLEND_HANDLING = noisefill, passing seg / dilate_neighbour changes
+    nothing: the result matches the plain default call on the same RNG stream."""
     gal, flag, weight = _gal_flag_weight()
     seg, _, _ = two_object_seg(npix=gal.shape[0], sep=12)
 
@@ -282,9 +236,16 @@ def test_noisefill_ignores_seg_and_dilate_kwargs():
         npt.assert_array_equal(a, b)
 
 
-def test_uberseg_hard_masks_weight_and_leaves_image_untouched():
-    """uberseg: image returned untouched, weight zeroed on neighbour-side and
-    flagged pixels, positive on the central core."""
+def test_uberseg_fills_defects_and_leaves_neighbour_pixels_raw():
+    """uberseg: flagged pixels are filled at weight 0; neighbour-side
+    pixels get weight 0 and keep their raw image values; the central core
+    keeps weight and image.
+
+    Failure modes: the defect fill is skipped under uberseg, so raw bad
+    pixels reach metacal; or the neighbour side is noise-filled
+    (defects-filled-whatever-the-blend-handling,
+    uberseg-ignores-markers).
+    """
     npix = 41
     gal, flag, weight = _gal_flag_weight(npix=npix)
     seg, centre, neigh = two_object_seg(npix=npix, sep=12)
@@ -294,13 +255,16 @@ def test_uberseg_hard_masks_weight_and_leaves_image_untouched():
         blend_handling="uberseg", seg=seg, object_number=1,
     )
 
-    # Image untouched under uberseg (no noise fill).
-    npt.assert_array_equal(gal_out, gal)
-    # Neighbour footprint hard-masked; central centre kept.
+    # Flagged pixels: zero weight, raw value replaced.
+    for pix in [(5, 5), (30, 12)]:
+        assert w_out[pix] == 0.0
+        assert gal_out[pix] != gal[pix]
+    # Neighbour footprint: zero weight, raw image (never noise-filled).
     assert np.all(w_out[seg == 2] == 0.0)
+    npt.assert_array_equal(gal_out[seg == 2], gal[seg == 2])
+    # Central core: weight and image untouched.
     assert w_out[centre] > 0.0
-    # Flagged bad pixels remain at weight 0 (folded into the base mask).
-    assert w_out[5, 5] == 0.0
+    assert gal_out[centre] == gal[centre]
 
 
 def test_uberseg_requires_seg_and_object_number():
@@ -422,3 +386,4 @@ def test_runner_missing_seg_vignet_file_raises(tmp_path):
             "NGMIX_RUNNER",
             _RecordingLogger(),
         )
+

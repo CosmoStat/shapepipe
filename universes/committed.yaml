@@ -52,10 +52,11 @@ analyses:
       galaxy_pixel_weights: rms_vignet_weights
       psf_likelihood_noise: psf_noise_1em5
       megacam_ccd_flip: megapipe_flip
-      defect_fill: noise
-      blend_handling: none
-      epoch_masked_fraction_cut: one_third
-      central_defect_veto: disabled
+      defect_fill: interpolate
+      blend_handling: noisefill
+      defect_weighting: fourfold_zero
+      epoch_masked_fraction_cut: ten_percent
+      central_defect_veto: fixed_radii
   catalogue_assembly:
     decisions:
       star_galaxy_classification: deferred_downstream
