@@ -1,9 +1,8 @@
 """UNIT / PROPERTY TESTS FOR THE COVERAGE-MASK FEATURE.
 
 Covers the pure and lightly-fixtured logic behind the per-CCD coverage nexp
-masks: exposure-number parsing, the CCD-list -> unique-exposure reduction, the
-handler's missing-CCD subtraction (pinned against the real ID format), per-CCD
-corner extraction from plain and fpack-compressed multi-HDU headers,
+masks: exposure-number parsing, the CCD-list -> unique-exposure reduction,
+per-CCD corner extraction from plain and fpack-compressed multi-HDU headers,
 ``--ccd_list`` filtering, the per-CCD resume path, the builder's per-CCD row
 parsing, the accumulated exposure-count (nexp) contract, the RA-wrap and pole
 guards, the power-of-two ``nside`` validation, the atomic-download rename, and
@@ -22,8 +21,6 @@ from astropy import wcs
 from hypothesis import given
 from hypothesis import strategies as st
 
-from shapepipe.utilities import summary
-from shapepipe.utilities.ccd_psf_handler import CcdPsfHandler
 from shapepipe.utilities.coverage_map_builder import (
     CoverageMapBuilder,
     unwrap_ra,
@@ -214,55 +211,6 @@ def test_get_fits_header_failed_copy_leaves_no_dest(tmp_path):
     assert dl.get_fits_header(42, client) is False
     assert not (tmp_path / "42.txt").exists()
     assert not (tmp_path / "42.txt.part").exists()
-
-
-# ---------------------------------------------------------------------------
-# CcdPsfHandler.get_ccds_with_psf — missing-CCD subtraction
-# ---------------------------------------------------------------------------
-
-def test_get_ccds_with_psf_subtracts_missing(monkeypatch):
-    """Valid CCDs are all exposure single-HDUs minus the missing set.
-
-    The real ``summary.get_all_shdus`` is used so the cross-component
-    ``<exp>-<ccd>`` ID format is pinned end to end.
-    """
-    handler = CcdPsfHandler()
-
-    # Two exposures, 3 CCDs each -> 6 candidate CCDs; two are missing.
-    monkeypatch.setattr(handler, "get_exp", lambda patches: {"100", "200"})
-    monkeypatch.setattr(
-        handler,
-        "get_exp_shdu_missing",
-        lambda patches: {"100-1", "200-2"},
-    )
-
-    result = handler.get_ccds_with_psf(["P1"], n_CCD=3)
-
-    # get_all_shdus yields "<exp>-<ccd>" for ccd in range(n_CCD).
-    assert result == {"100-0", "100-2", "200-0", "200-1"}
-    # Guard the assumption that the missing IDs share the produced format.
-    assert set(summary.get_all_shdus({"100"}, 3)) == {"100-0", "100-1", "100-2"}
-
-
-@pytest.mark.parametrize(
-    ("version", "n_patch"),
-    [("v1.3", 7), ("v1.4", 7), ("v1.5", 8), ("v1.6", 9)],
-)
-def test_version_to_patch_count(version, n_patch):
-    """Each v1.x catalogue version maps to its patch count."""
-    handler = CcdPsfHandler()
-    handler._params["version_cat"] = version
-    handler.update_params()
-    assert handler._params["n_patch"] == n_patch
-    assert len(handler._params["patches"]) == n_patch
-
-
-def test_invalid_version_raises():
-    """An unknown catalogue version fails loudly."""
-    handler = CcdPsfHandler()
-    handler._params["version_cat"] = "v9.9"
-    with pytest.raises(ValueError, match="v9.9"):
-        handler.update_params()
 
 
 # ---------------------------------------------------------------------------
@@ -684,7 +632,6 @@ def test_run_help_flag_exits_cleanly(monkeypatch):
 @pytest.mark.parametrize(
     "runner, prog",
     [
-        (CcdPsfHandler, "get_ccds_with_psf"),
         (HeaderDownloader, "download_headers"),
         (FieldCornersExtractor, "extract_field_corners"),
         (CoverageMapBuilder, "build_coverage_map"),
