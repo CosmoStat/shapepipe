@@ -1,5 +1,6 @@
 """Resolved-job checks for campaign scope, product paths, and PSF custody."""
 
+import hashlib
 import os
 import re
 from collections import Counter
@@ -177,15 +178,30 @@ BLEND_OPTIONS = {"tile_detect": ("SEG_VIGNET", "False", "True"),
                  "tile_ngmix": ("BLEND_HANDLING", "noisefill", "uberseg")}
 
 
+def _jobs(dag, campaign):
+    """Every job's prologue, shell and memory, keyed by rule and wildcards,
+    with the campaign root and the run-dir hash in the node-local store name
+    made location-free."""
+    run_hash = hashlib.sha1(str(campaign.run_dir).encode()).hexdigest()[:8]
+
+    def normalize(value):
+        if not isinstance(value, str):
+            return value
+        return (value.replace(run_hash, "<RUN_DIR_SHA1>")
+                .replace(str(campaign.root), "<ROOT>"))
+
+    return {
+        (job.rule.name, tuple(sorted(job.wildcards_dict.items()))): tuple(
+            normalize(v) for v in (getattr(job.params, "pre", None),
+                                   job.shellcmd, job.resources.get("mem_mb")))
+        for job in dag.jobs
+    }
+
+
 def _surface(campaign, resolve_dag):
-    """Every job's prologue, shell and memory, keyed by rule and wildcards."""
+    """The active rules and :func:`_jobs`."""
     with resolve_dag(campaign) as dag:
-        return dag.rule_names, {
-            (job.rule.name, tuple(sorted(job.wildcards_dict.items()))): (
-                getattr(job.params, "pre", None), job.shellcmd,
-                job.resources.get("mem_mb"))
-            for job in dag.jobs
-        }
+        return dag.rule_names, _jobs(dag, campaign)
 
 
 def _committed_value(shell, config_dir, option, env, monkeypatch):
@@ -222,16 +238,9 @@ def test_blend_handling_reaches_detection_and_ngmix_only_under_uberseg(
         campaign.write_config()
         surfaces[blend] = _surface(campaign, resolve_dag)
 
-    def normalized(blend):
-        rules, jobs = surfaces[blend]
-        root = str(tmp_path / str(blend))
-        return rules, {key: tuple(v.replace(root, "<ROOT>")
-                                  if isinstance(v, str) else v for v in value)
-                       for key, value in jobs.items()}
-
-    assert normalized("uberseg") == normalized(None)
-    rules, noisefill = normalized("noisefill")
-    uberseg_rules, uberseg = normalized("uberseg")
+    assert surfaces["uberseg"] == surfaces[None]
+    rules, noisefill = surfaces["noisefill"]
+    uberseg_rules, uberseg = surfaces["uberseg"]
     assert uberseg_rules == rules
     assert uberseg.keys() == noisefill.keys()
     config_dir = Path(__file__).parents[2] / "workflow" / "config" / "cfis"
@@ -297,21 +306,9 @@ def test_noisefill_ignores_blend_variables_in_the_launch_shell(
 
     with resolve_dag(dirty, launch_env=INHERITED_BLEND_ENV) as dag:
         leaked = sorted(set(INHERITED_BLEND_ENV) & set(os.environ))
-        dirty_jobs = {
-            (job.rule.name, tuple(sorted(job.wildcards_dict.items()))): (
-                getattr(job.params, "pre", None), job.shellcmd,
-                job.resources.get("mem_mb"))
-            for job in dag.jobs
-        }
+        dirty_jobs = _jobs(dag, dirty)
     assert leaked == []
-
-    def normalized(jobs, root):
-        return {key: tuple(v.replace(str(root), "<ROOT>")
-                           if isinstance(v, str) else v for v in value)
-                for key, value in jobs.items()}
-
-    assert (normalized(dirty_jobs, tmp_path / "dirty")
-            == normalized(clean_jobs, tmp_path / "clean"))
+    assert dirty_jobs == clean_jobs
     for _, shell, _ in dirty_jobs.values():
         assert "SP_BLEND_HANDLING" not in (shell or "")
         assert "SP_SEG_VIGNET" not in (shell or "")

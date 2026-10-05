@@ -31,6 +31,7 @@ the manifest says "this stage succeeded", the log says "here is what happened"
 (the contract is argued in completeness.py's docstring).
 """
 
+import ast
 import fnmatch
 import functools
 import hashlib
@@ -249,6 +250,24 @@ scattergather:
     ngmix=int(config.get("ngmix_chunks", 8))
 
 NGMIX_CHUNKS = workflow._scatter["ngmix"]
+
+# How ngmix weights interpolated defects (DEFECT_WEIGHTING in
+# config_tile_Ng_template.ini, exported by tile_ngmix as SP_DEFECT_WEIGHTING).
+# Unset: empty, and ngmix takes its own default. The allowed values are read
+# from the ngmix module this campaign runs, so a typo fails here, at parse time,
+# rather than in every tile's ngmix job.
+DEFECT_WEIGHTING = config.get("defect_weighting") or ""
+_NGMIX_PY = (Path(workflow.basedir).parent / "src" / "shapepipe" / "modules"
+             / "ngmix_package" / "ngmix.py")
+_ngmix_tree = ast.parse(_NGMIX_PY.read_text())
+DEFECT_WEIGHTINGS = next(
+    ast.literal_eval(node.value) for node in _ngmix_tree.body
+    if isinstance(node, ast.Assign)
+    and [getattr(t, "id", None) for t in node.targets] == ["DEFECT_WEIGHTINGS"])
+if DEFECT_WEIGHTING and DEFECT_WEIGHTING not in DEFECT_WEIGHTINGS:
+    raise WorkflowError(
+        f"Invalid defect_weighting={DEFECT_WEIGHTING!r}; expected one of "
+        f"{list(DEFECT_WEIGHTINGS)}.")
 
 # --- parse-time index build + load (D1) ------------------------------------
 # The COMPUTE invocation's parse IS the index build, and it runs UNCONDITIONALLY

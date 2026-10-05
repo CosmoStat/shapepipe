@@ -1,11 +1,10 @@
-"""Defect interpolation (``DEFECT_FILL = interpolate``): which pixels are
-interpolated, and the properties of the interpolant.
+"""Defect interpolation: which pixels are interpolated, and the properties
+of the interpolant.
 
 :func:`interpolable_defects` picks the defect pixels that lie in a short row
-or column run with clean pixels at both ends; :func:`interpolate_defects`
-fills them from the nearby clean pixels with a Clough-Tocher interpolant,
-averaged over the four quarter turns of the stamp and shared by every plane
-(science image and metacal noise image).
+or column run with support pixels at both ends; :func:`interpolate_defects`
+fills them from the nearby clean pixels with one Clough-Tocher interpolant
+shared by every plane (science image and metacal noise image).
 """
 
 import numpy as np
@@ -24,9 +23,11 @@ from shapepipe.modules.ngmix_package.defect_interpolation import (
 
 # --- interpolable_defects ---------------------------------------------------
 
-def _oracle(defect, max_run=MAX_INTERPOLATED_RUN):
-    """Brute force: walk each defect pixel's row and column run."""
+def _oracle(defect, removed, max_run=MAX_INTERPOLATED_RUN):
+    """Brute force: walk each kept defect pixel's row and column run."""
     n0, n1 = defect.shape
+    blocked = defect | removed
+    defect = defect & ~removed
     out = np.zeros_like(defect)
     for i, j in zip(*np.nonzero(defect)):
         for di, dj in ((0, 1), (1, 0)):
@@ -39,7 +40,9 @@ def _oracle(defect, max_run=MAX_INTERPOLATED_RUN):
                 hi = (hi[0] + di, hi[1] + dj)
             length = hi[0] - lo[0] + hi[1] - lo[1] + 1
             bounded = (lo[0] - di >= 0 and lo[1] - dj >= 0
-                       and hi[0] + di < n0 and hi[1] + dj < n1)
+                       and hi[0] + di < n0 and hi[1] + dj < n1
+                       and not blocked[lo[0] - di, lo[1] - dj]
+                       and not blocked[hi[0] + di, hi[1] + dj])
             if bounded and length <= max_run:
                 out[i, j] = True
     return out
@@ -48,27 +51,60 @@ def _oracle(defect, max_run=MAX_INTERPOLATED_RUN):
 @given(
     n=st.integers(5, 21),
     density=st.floats(0.0, 0.6),
+    removed_density=st.sampled_from([0.0, 0.1, 0.4]),
     seed=st.integers(0, 2**31 - 1),
 )
 @settings(max_examples=60, deadline=None)
-def test_interpolable_defects_are_the_short_bounded_runs(n, density, seed):
+def test_interpolable_defects_are_the_short_bounded_runs(
+    n, density, removed_density, seed,
+):
     """A defect pixel is interpolated exactly when its row or column run is
-    at most MAX_INTERPOLATED_RUN long and has clean pixels at both ends; the
-    rule commutes with quarter turns.
+    at most MAX_INTERPOLATED_RUN long and the pixels beyond both ends are on
+    the stamp and neither defects nor removed; the rule commutes with
+    quarter turns.
 
-    Failure modes: a run touching the stamp border (edge band, corner) or a
-    wide hole is interpolated from one side; a 3-px bleed is left to noise;
-    a clean pixel is selected; one axis is ignored, so the rule has a
-    preferred direction.
+    Failure modes: a run touching the stamp border (edge band, corner), a
+    wide hole, or a run ending on a removed neighbour pixel is interpolated
+    from one side; a 3-px bleed is left to noise; a clean or removed pixel
+    is selected; one axis is ignored, so the rule has a preferred direction.
     """
-    defect = np.random.RandomState(seed).uniform(size=(n, n)) < density
-    out = interpolable_defects(defect)
-    npt.assert_array_equal(out, _oracle(defect))
-    assert not out[~defect].any()
+    rng = np.random.RandomState(seed)
+    defect = rng.uniform(size=(n, n)) < density
+    removed = rng.uniform(size=(n, n)) < removed_density
+    out = interpolable_defects(defect, removed)
+    npt.assert_array_equal(out, _oracle(defect, removed))
+    assert not out[~defect | removed].any()
     for k in range(1, 4):
         npt.assert_array_equal(
-            interpolable_defects(np.rot90(defect, k)), np.rot90(out, k)
+            interpolable_defects(np.rot90(defect, k), np.rot90(removed, k)),
+            np.rot90(out, k),
         )
+
+
+@given(
+    n=st.integers(5, 31),
+    density=st.floats(0.0, 0.6),
+    removed_density=st.sampled_from([0.0, 0.1, 0.4]),
+    seed=st.integers(0, 2**31 - 1),
+)
+@settings(max_examples=60, deadline=None)
+def test_the_interpolant_reaches_every_interpolable_pixel(
+    n, density, removed_density, seed,
+):
+    """Each selected pixel lies between two support pixels, so the
+    interpolant is finite there; prepare_ngmix_weights relies on this to
+    veto and fill the same pixels.
+
+    Failure mode: a selected pixel falls outside the support's hull and gets
+    NaN, so the fill and the central-defect veto disagree on it.
+    """
+    rng = np.random.RandomState(seed)
+    defect = rng.uniform(size=(n, n)) < density
+    removed = rng.uniform(size=(n, n)) < removed_density
+    target = interpolable_defects(defect, removed)
+    planes = rng.normal(size=(2, n, n))
+    out = interpolate_defects(planes, defect | removed, target)
+    assert np.all(np.isfinite(out[:, target]))
 
 
 @pytest.mark.parametrize("kind,expected", [
@@ -169,39 +205,13 @@ def test_interpolation_reproduces_planes_without_reading_defects(seed):
     )
 
 
-def test_interpolation_commutes_with_quarter_turns():
-    """Rotating the stamp and its mask rotates the fill. A regular grid's
-    Delaunay triangulation has degenerate diagonals, so a single-orientation
-    interpolant does not commute; the four-orientation average does.
-
-    Failure mode: the average over orientations is skipped, so the fill has a
-    preferred direction.
-    """
-    n = 31
-    rows, cols = np.indices((n, n))
-    image = np.exp(-((rows - 15.3) ** 2 + (cols - 14.6) ** 2) / 10.0)
-    image += 0.05 * np.random.RandomState(3).normal(size=(n, n))
-    planes = image[None]
-    defect = _mask(n)
-    target = interpolable_defects(defect)
-    out = interpolate_defects(planes, defect, target)
-    for k in range(1, 4):
-        rotated = interpolate_defects(
-            np.rot90(planes, k, axes=(1, 2)), np.rot90(defect, k),
-            np.rot90(target, k),
-        )
-        npt.assert_allclose(
-            rotated, np.rot90(out, k, axes=(1, 2)), atol=1e-12, rtol=0
-        )
-
-
 def test_every_plane_sees_the_same_operator():
     """The fill is one linear operator applied to every plane: filling
     a * image + b * noise gives a * fill(image) + b * fill(noise), up to the
     Clough-Tocher gradient solver's tolerance.
 
     Failure mode: the noise image is filled differently from the science
-    image (another support, triangulation or orientation set), so metacal's
+    image (another support or triangulation), so metacal's
     fixnoise no longer mirrors the science image's correlated noise.
     """
     n = 31

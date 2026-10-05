@@ -330,6 +330,9 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
         "n_epoch_model": 1,
         "mcal_types_fail": 0,
         "neighbour_flag": 0,
+        "n_epoch_interp": 0,
+        "min_dist_interp": -1.0,
+        "min_dist_noisefill": -1.0,
         # original image PSF (psfex/mccd) family
         "g1_psf_orig": ORIG_PSF_G[0],
         "g2_psf_orig": ORIG_PSF_G[1],
@@ -633,6 +636,9 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
         gals=[np.ones((5, 5))], ra=[42.], dec=[30.], ccd=20,
         epoch_cuts=Counter(considered=1),
         jacobs=[galsim.JacobianWCS(.186, 0., 0., .186)],
+        defect_diagnostics=lambda: dict(
+            n_epoch_interp=0, min_dist_interp=-1.0, min_dist_noisefill=-1.0,
+        ),
     )
     psf = dict(
         n_epoch=1, g_psf=[.01, -.01], g_psf_err=[.001, .001],
@@ -662,12 +668,7 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     inst._blend_handling = "noisefill"
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
-    inst._epoch_central_defect_radius = module.EPOCH_CENTRAL_DEFECT_RADIUS
-    inst._epoch_masked_fraction_cut = module.EPOCH_MASKED_FRACTION_CUT
-    inst._defect_fill = "noise"
-    inst._epoch_interpolated_defect_radius = (
-        module.EPOCH_INTERPOLATED_DEFECT_RADIUS
-    )
+    inst._defect_weighting = module.DEFECT_WEIGHTING
     inst._save_batch = 1
     inst._zero_point = 30.
     inst._output_dir = str(tmp_path)
@@ -764,12 +765,7 @@ def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
     inst._blend_handling = "noisefill"
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
-    inst._epoch_central_defect_radius = module.EPOCH_CENTRAL_DEFECT_RADIUS
-    inst._epoch_masked_fraction_cut = module.EPOCH_MASKED_FRACTION_CUT
-    inst._defect_fill = "noise"
-    inst._epoch_interpolated_defect_radius = (
-        module.EPOCH_INTERPOLATED_DEFECT_RADIUS
-    )
+    inst._defect_weighting = module.DEFECT_WEIGHTING
     inst._save_batch = -1
     inst._w_log = _RecordingLogger()
 
@@ -1128,10 +1124,12 @@ def test_background_rms_builds_per_pixel_inverse_variance():
         gal, weight, flag, np.random.RandomState(0), bkg_rms=bkg_rms
     )
 
+    # The bad-RMS pixel (1, 2) is interpolated from (0, 2) and (2, 2), so
+    # its quarter turns (0, 1) and (1, 0) lose their weight too.
     expected = np.array(
         [
-            [1.0, 0.25, 0.0625],
-            [4.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0625],
+            [0.0, 0.0, 0.0],
             [0.0, 0.0, 1.0],
         ]
     )
