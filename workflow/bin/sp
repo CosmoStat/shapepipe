@@ -187,9 +187,20 @@ STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"
 #     cannot name $SLURM_TMPDIR (its `--bind /local` comment says why), but sp
 #     runs inside the job here and knows the value, so it rebinds
 #     /local/scratch there exactly as `tile_store_root:` does. Slurm reclaims
-#     it at job end. <run> keeps two campaigns over the same tiles apart when
-#     they share one allocation (one srun step each): data campaigns name
-#     their stores by bare tile id. An explicit `tile_store_root:` still wins.
+#     it at job end. <run> gives each campaign sharing one allocation (one
+#     srun step each) its own directory. An explicit `tile_store_root:` still
+#     wins.
+#   * A resume finds the previous job's store gone. A tile whose
+#     tile_vignets.json survived it but whose final_cat did not would trip
+#     tile.smk's "node-local vignette store is missing" guard, so that
+#     manifest is deleted first: tile_vignets reruns and rebuilds the store,
+#     and the tile's chunks rerun after it. Tiles with a final_cat are never
+#     touched.
+#   * A lock left by a killed in-allocation run is released. sp records the
+#     job that holds the state dir; when that job is no longer in the queue,
+#     its lock is stale. Any other lock (a run sp did not start in an
+#     allocation, or one still running) stops the run instead.
+#   With -n both only report.
 # Explicit --cores/--resources after it override the derived values.
 ALLOC_ARGS=()
 TILE_STORE_ROOT=""
@@ -226,6 +237,52 @@ PY
   [ -n "$TILE_STORE_ROOT" ] || TILE_STORE_ROOT="$SLURM_TMPDIR/tile-store/$(cfg run)"
   echo "sp: in allocation $SLURM_JOB_ID: ${ALLOC_ARGS[*]}" >&2
 fi
+
+# The resume housekeeping (a stale lock, then stale vignette manifests; the
+# lock goes first so a campaign still running is never swept). `sp run` calls
+# it before the snapshot, with its own arguments, so -n only reports.
+alloc_resume() {
+  local a alloc_dry=0 products_dir n_swept=0 tile m holder holder_file
+  local holder_state="" holder_rc=1
+  for a in "$@"; do
+    case "$a" in -n|--dry-run|--dryrun|-[a-zA-Z]*n*) alloc_dry=1 ;; esac
+  done
+  holder_file="$STATE_DIR/in-allocation.job"
+  if [ -n "$(ls -A "$STATE_DIR/.snakemake/locks" 2>/dev/null)" ]; then
+    holder="$(cat "$holder_file" 2>/dev/null || true)"
+    if [ -n "$holder" ]; then
+      holder_state="$(squeue -h -j "$holder" -o %T 2>&1)" && holder_rc=0 || holder_rc=$?
+    fi
+    # Ended: gone from the controller, or listed in a final state.
+    if [ -n "$holder" ] && [ "$holder" != "$SLURM_JOB_ID" ] && {
+         [[ "$holder_state" == *"Invalid job id"* ]] || { [ "$holder_rc" = 0 ] &&
+         [[ "$holder_state" =~ ^(|COMPLETED|FAILED|CANCELLED|TIMEOUT|OUT_OF_MEMORY|NODE_FAIL|PREEMPTED|BOOT_FAIL|DEADLINE)$ ]]; }; }; then
+      if [ "$alloc_dry" = 1 ]; then
+        echo "sp: stale lock of job $holder in $STATE_DIR (dry run, kept)" >&2
+      else
+        echo "sp: releasing the stale lock of job $holder in $STATE_DIR" >&2
+        sm --unlock >/dev/null
+      fi
+    else
+      echo "sp: $STATE_DIR is locked${holder:+ (job $holder: ${holder_state:-running})}." >&2
+      echo "    If nothing runs on this campaign, \`sp -c ... --unlock\` and resubmit." >&2
+      exit 2
+    fi
+  fi
+
+  products_dir="$(cfg outputs.products_dir)"
+  while read -r tile; do
+    [ -n "$tile" ] || continue
+    m="$RUN_DIR/tiles/${tile:0:2}/$tile/manifests/tile_vignets.json"
+    [ -e "$m" ] || continue
+    [ -e "$products_dir/tiles/${tile:0:2}/$tile/final_cat-$tile.hdf5" ] && continue
+    if [ "$alloc_dry" = 1 ]; then echo "sp: stale (dry run, kept): $m" >&2
+    else rm -f "$m"; echo "sp: deleted stale $m" >&2; fi
+    n_swept=$((n_swept + 1))
+  done < <(sed 's/[[:space:]]//g' "$(cfg tile_list)")
+  echo "sp: $n_swept stale tile_vignets.json (no final_cat, store gone with its job)" >&2
+  [ "$alloc_dry" = 1 ] || printf '%s\n' "$SLURM_JOB_ID" > "$holder_file"
+}
 
 # --- the launch code snapshot ----------------------------------------------
 # THE ONE HOME for this concept; everything else points here.
@@ -391,6 +448,7 @@ cmd="${1:-}"
 case "$cmd" in
   run)
     shift
+    [ "$IN_ALLOCATION" = 0 ] || alloc_resume "$@"
     snapshot_code
     # PREPARE failing is NOT fatal to the run: keep-going means a failed tile
     # poisons only its own cone, and the tiles that lost their exposure list are

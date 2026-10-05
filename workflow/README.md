@@ -271,11 +271,15 @@ allocation so the widest rule's last retry fits (a retry asking more than the
 allocation has stops the run), at no more than 4 GB per core so memory does
 not raise the billing. Keep it to one node: the tile store is node-local, so
 a multi-node allocation would split a tile's vignets from its ngmix chunks.
-For the same reason a time limit that ends the job mid-tile leaves that tile's
-`tile_vignets.json` without its store, and a resume trips tile.smk's
-"node-local vignette store is missing" guard. Delete the manifest of each tile
-that has no `final_cat` yet before resuming, as the guard's message says, and
-give the time limit room.
+
+A job cut short by its time limit is resumed by submitting the same script
+again. The store died with the job, so before it runs `sp` deletes
+`tile_vignets.json` for each listed tile that has no `final_cat` yet (tile.smk's
+"node-local vignette store is missing" guard would stop its chunks otherwise);
+tile_vignets rebuilds the store and the chunks rerun after it. `sp` also
+records the job holding the campaign's state dir, and releases that job's lock
+once the job has left the queue; any other lock stops the run. With `-n` both
+only report.
 
 ## Layout
 
