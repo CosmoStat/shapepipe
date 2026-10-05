@@ -2,12 +2,11 @@
 
 Exercises the optional per-band external healsparse mask lookup added to
 ``make_cat`` (PR #847 §4, the ShapePipe end of UNIONS-WL/spherex#38). A small
-synthetic ``final_cat`` FITS carrying known ``XWIN_WORLD`` / ``YWIN_WORLD``
+synthetic final catalogue carrying known ``XWIN_WORLD`` / ``YWIN_WORLD``
 object positions is queried against synthetic healsparse maps of known value,
 locking in: (1) the ``MASK_<BAND>`` column name and per-object values, (2) the
 off-map sentinel (``-1`` for integer maps) written verbatim for objects outside
-coverage, (3) multi-band handling, and (4) that absent config leaves the
-catalogue untouched.
+coverage, and (3) multi-band handling.
 """
 
 import numpy as np
@@ -17,7 +16,6 @@ import pytest
 healsparse = pytest.importorskip("healsparse")
 
 from shapepipe.modules.make_cat_package import make_cat
-from shapepipe.pipeline import file_io
 
 
 class _NullLogger:
@@ -48,26 +46,13 @@ def _make_map(value, dtype=np.int16, sentinel=-1):
     return smap
 
 
-def _write_final_cat(path):
-    """Write a synthetic final_cat FITS with a RESULTS ext of known positions."""
-    data = np.empty(
-        len(RA),
-        dtype=[
-            ("NUMBER", "i4"),
-            ("XWIN_WORLD", "f8"),
-            ("YWIN_WORLD", "f8"),
-        ],
-    )
-    data["NUMBER"] = np.arange(len(RA))
-    data["XWIN_WORLD"] = RA
-    data["YWIN_WORLD"] = DEC
-
-    cat = file_io.FITSCatalogue(
-        str(path),
-        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-    )
-    cat.save_as_fits(data, ext_name="RESULTS")
-    return cat
+def _final_cat():
+    """Synthetic final-catalogue columns with known positions."""
+    return {
+        "NUMBER": np.arange(len(RA)),
+        "XWIN_WORLD": RA,
+        "YWIN_WORLD": DEC,
+    }
 
 
 def test_parse_mask_ext_paths():
@@ -91,39 +76,19 @@ def test_mask_ext_columns(tmp_path):
     u_map.write(str(u_path))
     g_map.write(str(g_path))
 
-    cat_path = tmp_path / "final_cat-000.fits"
-    _write_final_cat(cat_path)
-
-    cat = file_io.FITSCatalogue(
-        str(cat_path),
-        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-    )
+    cat = _final_cat()
     make_cat.save_mask_ext_data(
         cat,
         {"u": str(u_path), "g": str(g_path)},
         _NullLogger(),
     )
 
-    cat.open()
-    data = cat.get_data()
     # On-map objects (first three) carry the map value; the off-map object
     # (last) carries the map's -1 sentinel.
-    npt.assert_array_equal(data["MASK_u"], [16, 16, 16, -1])
-    npt.assert_array_equal(data["MASK_g"], [32, 32, 32, -1])
+    npt.assert_array_equal(cat["MASK_u"], [16, 16, 16, -1])
+    npt.assert_array_equal(cat["MASK_g"], [32, 32, 32, -1])
     # Integer dtype preserved from the map.
-    assert np.issubdtype(data["MASK_u"].dtype, np.integer)
-    cat.close()
-
-
-def test_mask_ext_absent_is_noop(tmp_path):
-    """Not calling the lookup leaves the catalogue columns unchanged."""
-    cat_path = tmp_path / "final_cat-001.fits"
-    _write_final_cat(cat_path)
-
-    cat = file_io.FITSCatalogue(str(cat_path))
-    cat.open()
-    cols = set(cat.get_data().dtype.names)
-    cat.close()
-
-    assert cols == {"NUMBER", "XWIN_WORLD", "YWIN_WORLD"}
-    assert not any(name.startswith("MASK_") for name in cols)
+    assert np.issubdtype(cat["MASK_u"].dtype, np.integer)
+    assert list(cat) == [
+        "NUMBER", "XWIN_WORLD", "YWIN_WORLD", "MASK_u", "MASK_g"
+    ]
