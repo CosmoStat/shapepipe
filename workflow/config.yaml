@@ -203,6 +203,107 @@ machines:
 persist_exp:
   - psf_model
 
+# EXPOSURE-LEVEL HEALSPARSE MAPS. Two campaign products are built exposure by
+# exposure and combined once per campaign, on products_dir:
+#
+#   defect   <products_dir>/defect_map/defect_map_<run>.hsp   boolean, True = masked
+#   nexp     <products_dir>/nexp_map/nexp_map_<run>.hsp       uint16 exposure count
+#
+# nside / nside_coverage are SHARED, and they are the mask ladder's: 131072 over
+# 128 (~1.6"/pixel) matches every map under `inputs.masks` and every entry in
+# config_tile_Mc.ini's MASK_EXT_PATHS, so both maps drop into that ladder, and
+# align with each other, without a resolution change. A coarser map looks
+# entirely reasonable and does not align, and no consumer would notice. They are
+# config so a campaign against a different ladder can say so, not so one map can
+# drift from the other. Both must be powers of two, nside_coverage below nside;
+# the Snakefile checks at parse time.
+#
+# Neither map is an input: nothing in the workflow reads either back. In
+# particular config_tile_Mc.ini's MASK_EXT_PATHS names neither -- that ladder
+# names maps that exist before the run starts, and these exist only after it.
+# That file's header carries the recipe for adding the defect map once a
+# campaign has produced one.
+#
+# DEFECT (CosmoStat/shapepipe#878). The exposures' flag images -- bad columns,
+# saturated pixels, bleed trails -- are the one masking input this campaign has
+# that never leaves the pixel domain: exp_split splits them per CCD and
+# SExtractor reads them as IMAFLAGS_ISO, and that is the end of it. The survey
+# footprint is built from the CCD corner WCS in the headers, so it cannot
+# subtract them and would silently include defective pixels. So
+# `exp_defect_map` rasterizes each exposure's flags into a boolean healsparse
+# fragment on products_dir, at
+# <products_dir>/exp/<shard>/<exp>/defect/defect-<exp>.hsp -- its own subdir
+# beside the exposure's manifests/ and its PSF tar, not beside the tar itself --
+# and `defect_map_merge` unions the campaign's fragments. Data runs only: the
+# image simulations' flag images are blank (MAPS_DEFECTS, Snakefile).
+#
+# Measured on one real exposure (2079612p, 40 CCDs, 4.1% of pixels flagged) on
+# this login node inside the campaign container: 34 s at oversample 3, peak RSS
+# 0.62 GB, 359858 healpix pixels, a 2.0 MB fragment over 13 coverage pixels
+# (21 s / 0.41 GB / 357896 pixels at oversample 2; 95 s / 1.29 GB / 360840 at
+# oversample 5 -- so 3 is within 0.3% of 5 over the whole exposure, at a third
+# of the cost). The rasterization is BATCHED, so peak memory is the batch and
+# not the exposure: a fully flagged MegaCam chip -- 9.4M pixels, the worst case
+# there is, and one a real exposure carries whenever a chip is dead -- measures
+# 0.74 GB and 18 s on its own. At DR6 scale (~20k exposures) the products are
+# ~40 GB and ~60k inodes,
+# against a ~1 M-inode group quota: THREE per exposure, not one -- the defect/
+# directory, the fragment in it, and the manifest under manifests/.
+#
+# `defect.oversample` is samples per CCD pixel per axis, endpoints included, so
+# 2 means the four corners -- the geometric floor, since a healpix pixel at
+# nside 131072 (1.61") is ~74 times a MegaCam pixel (0.187") and cannot hide
+# inside one. Raising it only fills boundary and rounding gaps, at linear cost.
+# Measured on 2079612p CCD 0 (430886 flagged pixels) against a 12x12 interior
+# reference of 14229 healpix pixels:
+#
+#   oversample  samples/pixel  healpix pixels  missed vs reference
+#   2 (corners)       4            14081          169   (1.2%)
+#   3                 9            14198           54   (0.4%)
+#   5                25            14254            5   (0.04%)
+#
+# The rasterization is CONSERVATIVE by design -- a healpix pixel is masked if
+# any part of the flagged region touches it -- because the centre-based
+# alternative erases a one-pixel bad column, which is the geometry #878 exists
+# to keep.
+#
+# NEXP, the exposure-count map: per sky pixel, the number of exposures with a
+# VALID PSF MODEL covering it -- the count sp_validation's `npoint >= 3` cut
+# reads. `exp_footprint` records, per exposure, the sky corners of every CCD
+# with a PSF validation catalogue (psfex_interp writes validation_psf-*.fits on
+# success and returns WITHOUT writing on NOT_ENOUGH_STARS / BAD_CHI2 /
+# FILE_NOT_FOUND); exp_persist packs those catalogues whatever `persist_exp:`
+# says, so there is nothing to configure for the records, and they are written
+# all along whatever `enabled` says, because their input is on /scratch and the
+# purge takes it. ONE campaign-level job, `nexp_map`, stamps every footprint on
+# the products root into the map. Fitted-PSF runs only, like the defect map's
+# data-only rule: psf_model: fake writes no PSF model and records no
+# footprint, so an image-sims campaign on the true PSF skips the map.
+# `nexp.enabled: false` opts a fitted-PSF campaign out; the map is rebuilt whole
+# on every invocation that adds records, so a campaign appended in many small
+# batches may prefer to build it once at the end.
+#
+# Plot windows are the two UNIONS sky regions, with the colourbar clipped to the
+# 1-5 exposure range. Plotting stays OUT of the DAG (a human act on a durable
+# product) and nothing reads `plot:`; it records the windows to hand
+# `plot_coverage_map`.
+# @sc [decision:masking.defect_map_from_flags]
+exposure_maps:
+  nside: 131072
+  nside_coverage: 128
+  defect:
+    oversample: 3
+  # @sc [decision:masking.nexp_map_valid_psf_ccds]
+  nexp:
+    enabled: true
+    plot:
+      colorbar: true
+      n_exp_min: 1
+      n_exp_max: 5
+      regions:
+        SGC: {ra_min: -20, ra_max: 45, dec_min: 18, dec_max: 40}
+        NGC: {ra_min: 110, ra_max: 270, dec_min: 28, dec_max: 90}
+
 # Per-exposure store reclamation once every tile reading it has its vignets.
 clean: true
 
