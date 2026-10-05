@@ -315,8 +315,10 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   subtract it (#878). `exp_maps` writes one fragment per exposure beside its PSF
   tar, from the split's `DATASEC` (the overscan border is neither coverage nor
   defect) and the CCDs `exp_persist` packed a PSF for; `exposure_maps` sums the
-  campaign's fragments. Nothing in the workflow reads either map; the cut
-  (`nexp >= 3`, a threshold on `nflagged`) is the consumer's.
+  campaign's fragments. Nothing in the workflow reads either map. `nexp` is
+  what randoms need to match an `N_EPOCH` cut; `nflagged` is a diagnostic of
+  where the detector is bad, not a cut (it does not count exposures lost to
+  the defect veto).
 - **External masks are wired, on the tile side only (data runs).** `inputs.masks`
   is a third input root beside tiles and exposures, set per machine in the
   `machines:` table, exported as `$SP_INPUT_MASKS` and
