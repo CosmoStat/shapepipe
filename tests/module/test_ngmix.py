@@ -328,6 +328,7 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
     res = {
         "obj_id": 1,
         "n_epoch_model": 1,
+        "n_epoch_failed": 0,
         "mcal_types_fail": 0,
         "neighbour_flag": 0,
         "n_epoch_interp": 0,
@@ -634,7 +635,7 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     galaxies = {str(i): {"exp-1": {"OFFSET": [0., 0.]}} for i in tile.obj_id}
     stamp = SimpleNamespace(
         gals=[np.ones((5, 5))], ra=[42.], dec=[30.], ccd=20,
-        epoch_cuts=Counter(considered=1),
+        epoch_cuts=Counter(considered=1), epoch_failures=[],
         jacobs=[galsim.JacobianWCS(.186, 0., 0., .186)],
         defect_diagnostics=lambda: dict(
             n_epoch_interp=0, min_dist_interp=-1.0, min_dist_noisefill=-1.0,
@@ -736,7 +737,7 @@ def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
         obj_id: SimpleNamespace(
             gals=[np.ones((5, 5))] * len(jacobs), jacobs=jacobs,
             ra=[10. * obj_id], dec=[30.], ccd=obj_id,
-            epoch_cuts=Counter(considered=len(jacobs)),
+            epoch_cuts=Counter(considered=len(jacobs)), epoch_failures=[],
         )
         for obj_id, jacobs in epochs.items()
     }
@@ -1272,3 +1273,110 @@ def test_wcs_centroid_requires_offset():
             gal, weight, flag, psf, jacob, np.random.RandomState(7),
             centroid_source="wcs", offset=None,
         )
+
+
+def test_failed_epoch_is_dropped_not_the_object():
+    """Contract failed-epoch-dropped: one epoch whose observation raises is
+    dropped, and the object is fitted on its other epochs.
+
+    The poisoned epoch has one flagged pixel, so it is interpolated, beside
+    NaN pixels that support the interpolant: the non-finite-interpolant guard
+    in prepare_ngmix_weights raises a RuntimeError for that epoch alone.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import (
+        Postage_stamp,
+        do_ngmix_metacal,
+        get_prior,
+    )
+    from shapepipe.testing.simulate import make_data
+
+    rng = np.random.RandomState(5)
+    gals, psfs, _, weights, flags, jacobs = make_data(
+        rng=np.random.RandomState(123), shear=(0.02, 0.0), noise=1e-4,
+        n_epochs=3, img_size=51,
+    )
+    gals = [np.array(g, dtype=float) for g in gals]
+    flags = [np.array(f) for f in flags]
+    flags[1][5, 5] = 1
+    gals[1][4:7, 4:7] = np.nan
+    gals[1][5, 5] = 0.0
+    stamp = Postage_stamp(bkg_sub=False, megacam_flip=False)
+    stamp.gals, stamp.psfs, stamp.weights, stamp.flags, stamp.jacobs = (
+        gals, psfs, weights, flags, jacobs,
+    )
+    stamp.bkg_rms = [np.full(g.shape, 1e-4) for g in gals]
+    stamp.epoch_names = ["2000001-1", "2000002-1", "2000003-1"]
+
+    res, psf_res, _ = do_ngmix_metacal(
+        stamp, get_prior(0.1857, rng), 1.0, rng, centroid_source="hsm",
+    )
+
+    assert [name for name, _ in stamp.epoch_failures] == ["2000002-1"]
+    assert isinstance(stamp.epoch_failures[0][1], RuntimeError)
+    assert psf_res["n_epoch"] == 2
+    assert res["noshear"]["flags"] == 0
+    assert np.all(np.isfinite(res["noshear"]["g"]))
+
+
+def test_process_logs_and_counts_failed_epochs(tmp_path, monkeypatch):
+    """process logs each dropped epoch with tile, object and epoch, and
+    writes the count as n_epoch_failed (contract failed-epoch-dropped)."""
+    from types import SimpleNamespace
+    from shapepipe.modules.ngmix_package import ngmix as module
+
+    tile = SimpleNamespace(obj_id=[7], flux=None, seg=None)
+    galaxies = {"7": {"exp-1": {"OFFSET": [0., 0.]}}}
+    stamp = SimpleNamespace(
+        gals=[np.ones((5, 5))] * 2, ra=[42.], dec=[30.], ccd=20,
+        epoch_cuts=Counter(considered=3),
+        epoch_failures=[],
+        jacobs=[galsim.JacobianWCS(.186, 0., 0., .186)] * 2,
+        defect_diagnostics=lambda: dict(
+            n_epoch_interp=0, min_dist_interp=-1.0, min_dist_noisefill=-1.0,
+        ),
+    )
+    psf = dict(
+        n_epoch=2, g_psf=[.01, -.01], g_psf_err=[.001, .001],
+        T_psf=.1, T_psf_err=.01,
+    )
+
+    def fit(stamp, *args, **kwargs):
+        stamp.epoch_failures.append(("2000002-1", RuntimeError("poisoned")))
+        return _fake_metacal_result(.18, .02, .09, .001), psf, psf
+
+    monkeypatch.setattr(module, "Tile_cat", lambda *args: tile)
+    monkeypatch.setattr(
+        module, "prepare_postage_stamps", lambda *args, **kwargs: stamp,
+    )
+    monkeypatch.setattr(module, "do_ngmix_metacal", fit)
+    warnings = []
+    log = _RecordingLogger()
+    log.warning = lambda msg, *a, **k: warnings.append(msg)
+    inst = object.__new__(Ngmix)
+    inst._tile_cat_path = "in-memory-tile"
+    inst._seg_cat_path = None
+    inst._vignet_cat = SimpleNamespace(
+        gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
+    )
+    inst._centroid_source = "wcs"
+    inst._id_obj_min = inst._id_obj_max = -1
+    inst._bkg_sub = True
+    inst._blend_handling = "noisefill"
+    inst._dilate_neighbour = 1
+    inst._metacal_psf = "fitgauss"
+    inst._defect_weighting = module.DEFECT_WEIGHTING
+    inst._save_batch = -1
+    inst._zero_point = 30.
+    inst._output_dir = str(tmp_path)
+    inst._file_number_string = "-001-001"
+    inst._w_log = log
+
+    inst.process()
+
+    dropped = [msg for msg in warnings if "dropped" in msg]
+    assert len(dropped) == 1
+    for part in ("-001-001", "object 7", "epoch 2000002-1", "poisoned"):
+        assert part in dropped[0]
+    with fits.open(inst.get_output_path(str(tmp_path))) as hdul:
+        npt.assert_array_equal(hdul["NOSHEAR"].data["n_epoch_failed"], [1])
+        npt.assert_array_equal(hdul["NOSHEAR"].data["n_epoch_model"], [2])

@@ -257,6 +257,9 @@ def empty_metacal_output():
     names2 = [
         'id',
         'n_epoch_model',
+        # epochs dropped because building their observation raised
+        # (failed-epoch-dropped)
+        'n_epoch_failed',
         'mcal_types_fail',
         'neighbour_flag',
         # defect diagnostics (Postage_stamp.record_defects)
@@ -686,6 +689,12 @@ class Postage_stamp():
         self.epoch_cuts = Counter(
             considered=0, masked_fraction=0, central_veto=0
         )
+        # The exposure-CCD name of each kept epoch, for the log.
+        self.epoch_names = []
+        # ``(epoch name, exception)`` for each kept epoch whose observation
+        # raised while being built; :func:`do_ngmix_metacal` drops the epoch
+        # and records it here (failed-epoch-dropped).
+        self.epoch_failures = []
         # Defect diagnostics over the epochs kept (see
         # :meth:`record_defects`).
         self.n_epoch_interp = 0
@@ -1041,6 +1050,9 @@ class Ngmix(object):
                 output_dict[name]["n_epoch_model"].append(
                     results[idx]["n_epoch_model"]
                 )
+                output_dict[name]["n_epoch_failed"].append(
+                    results[idx]["n_epoch_failed"]
+                )
                 output_dict[name]["mcal_types_fail"].append(mcal_types_fail)
                 # Per-object blend flag (see process()); replicated across all
                 # shear types like id / n_epoch_model / mcal_types_fail.
@@ -1356,7 +1368,9 @@ class Ngmix(object):
         id_first = -1
         id_last = -1
         count_batch = 0
-        epoch_cuts = Counter(considered=0, masked_fraction=0, central_veto=0)
+        epoch_cuts = Counter(
+            considered=0, masked_fraction=0, central_veto=0, failed=0
+        )
         n_emptied = 0
         saved_batch_cumul = 0
 
@@ -1447,6 +1461,15 @@ class Ngmix(object):
                 )
                 n_ngmix_fail += 1
                 continue
+            finally:
+                # Epochs do_ngmix_metacal dropped (failed-epoch-dropped).
+                epoch_cuts["failed"] += len(stamp.epoch_failures)
+                for epoch_name, err in stamp.epoch_failures:
+                    self._w_log.warning(
+                        f"ngmix: tile {self._file_number_string} object"
+                        + f" {obj_id} epoch {epoch_name} dropped:"
+                        + f" {type(err).__name__}: {err}"
+                    )
 
             res['obj_id'] = obj_id
             # Neighbour flag: does the coadd seg stamp hold any non-central,
@@ -1460,6 +1483,7 @@ class Ngmix(object):
             # epochs that survived the PSF fit and entered the model,
             # not the number of epochs submitted (v1 contract)
             res['n_epoch_model'] = psf_res['n_epoch']
+            res['n_epoch_failed'] = len(stamp.epoch_failures)
             res.update(stamp.defect_diagnostics())
             # The mcal flag columns are derived from the per-type results in
             # compile_results; here they only feed the run-health count.
@@ -1514,6 +1538,7 @@ class Ngmix(object):
             + f" considered={epoch_cuts['considered']}"
             + f" masked_fraction={epoch_cuts['masked_fraction']}"
             + f" central_veto={epoch_cuts['central_veto']}"
+            + f" failed={epoch_cuts['failed']}"
             + f" objects_emptied={n_emptied}"
         )
         log_run_health(self._w_log, count, n_fitted, n_flagged)
@@ -1705,6 +1730,7 @@ def prepare_postage_stamps(
         stamp.flags.append(flag_vign)
         stamp.neighbours.append(neighbour)
         stamp.bkg_rms.append(bkg_rms_vign_scaled)
+        stamp.epoch_names.append(expccd_name)
         if tile_seg is not None:
             stamp.segs.append(tile_seg)
         stamp.jacobs.append(jacob)
@@ -2773,6 +2799,14 @@ def do_ngmix_metacal(
     Performs metacalibration on a single multi-epoch object and returns the
     joint shape measurement with NGMIX.
 
+    @sc [decision:shape_measurement.epoch_masked_fraction_cut,label:operations] failed-epoch-dropped
+    An epoch whose observation raises while being built (for example the
+    non-finite interpolant guard in :func:`prepare_ngmix_weights`) is
+    dropped and the object is fitted on its other epochs. The epoch's name
+    and exception are appended to ``stamp.epoch_failures``; the caller logs
+    them and writes their count as ``n_epoch_failed``. Errors outside
+    building the observations propagate.
+
     Parameters
     ----------
     stamp : Postage_stamp
@@ -2826,6 +2860,11 @@ def do_ngmix_metacal(
         dict (:func:`average_original_psf`). The two PSF dicts share keys but
         describe different PSFs; the named fields guard against transposing
         them. Unpacks positionally as ``resdict, psf_res, psf_orig_res``.
+
+    Raises
+    ------
+    ValueError
+        If the stamp has no epoch, or every epoch failed to build.
     @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme,decision:shape_measurement.defect_weighting]
     """
     n_epoch = len(stamp.gals)
@@ -2835,26 +2874,41 @@ def do_ngmix_metacal(
     gal_obs_list = ObsList()
     for n_e in range(n_epoch):
         bkg_rms = stamp.bkg_rms[n_e] if len(stamp.bkg_rms) > n_e else None
-        gal_obs = make_ngmix_observation(
-            stamp.gals[n_e],
-            stamp.weights[n_e],
-            stamp.flags[n_e],
-            stamp.psfs[n_e],
-            stamp.jacobs[n_e],
-            rng,
-            bkg_rms=bkg_rms,
-            centroid_source=centroid_source,
-            offset=stamp.offsets[n_e] if n_e < len(stamp.offsets) else None,
-            blend_handling=blend_handling,
-            seg=stamp.segs[n_e] if n_e < len(stamp.segs) else None,
-            object_number=object_number,
-            dilate_neighbour=dilate_neighbour,
-            neighbour=(
-                stamp.neighbours[n_e] if n_e < len(stamp.neighbours) else None
-            ),
-            defect_weighting=defect_weighting,
-        )
+        try:
+            gal_obs = make_ngmix_observation(
+                stamp.gals[n_e],
+                stamp.weights[n_e],
+                stamp.flags[n_e],
+                stamp.psfs[n_e],
+                stamp.jacobs[n_e],
+                rng,
+                bkg_rms=bkg_rms,
+                centroid_source=centroid_source,
+                offset=(
+                    stamp.offsets[n_e] if n_e < len(stamp.offsets) else None
+                ),
+                blend_handling=blend_handling,
+                seg=stamp.segs[n_e] if n_e < len(stamp.segs) else None,
+                object_number=object_number,
+                dilate_neighbour=dilate_neighbour,
+                neighbour=(
+                    stamp.neighbours[n_e]
+                    if n_e < len(stamp.neighbours) else None
+                ),
+                defect_weighting=defect_weighting,
+            )
+        except Exception as err:
+            stamp.epoch_failures.append((
+                stamp.epoch_names[n_e]
+                if n_e < len(stamp.epoch_names) else str(n_e),
+                err,
+            ))
+            continue
         gal_obs_list.append(gal_obs)
+    if len(gal_obs_list) == 0:
+        raise ValueError(
+            f"all {n_epoch} epochs failed to build an observation"
+        )
 
     runner, psf_runner = make_runners(prior, flux_guess, rng)
 

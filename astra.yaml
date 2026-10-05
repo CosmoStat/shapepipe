@@ -1735,7 +1735,10 @@ analyses:
           would drop them all. An object with no surviving epoch has no
           shape. Before the cut, an epoch is dropped silently if its galaxy
           stamp is all zeros or its background-subtracted sigma_mad is not
-          positive. The cut is not a bias control; the central veto is
+          positive. After it, an epoch whose ngmix observation raises while
+          being built (for example a non-finite defect interpolant) is
+          dropped, logged with its tile, object and epoch, and counted in
+          NGMIX_N_EPOCH_FAILED; the object is fitted on its other epochs. The cut is not a bias control; the central veto is
           (central_defect_veto). Defects the veto keeps, covering up to 58%
           of the stamp (two-sided bands, corner Ls and frames 12 px or more
           from the centre), give |m11|, |m22| <= 0.05% and |c| < 7e-5 on 0.3
