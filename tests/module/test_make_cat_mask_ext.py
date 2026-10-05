@@ -92,3 +92,31 @@ def test_mask_ext_columns(tmp_path):
     assert list(cat) == [
         "NUMBER", "XWIN_WORLD", "YWIN_WORLD", "MASK_u", "MASK_g"
     ]
+
+
+def test_boolean_halo_maps_preserve_bit_identity(tmp_path):
+    """Faint and bright halo columns preserve separate boolean maps."""
+    paths = {}
+    for label, values in (
+        ("2_Bright_star_halos", [False, True, True]),
+        ("1_Faint_star_halos", [True, False, True]),
+    ):
+        smap = healsparse.HealSparseMap.make_empty(
+            NSIDE_COVERAGE, NSIDE_SPARSE, np.bool_, sentinel=False
+        )
+        smap.update_values_pos(
+            RA[:3], DEC[:3], np.array(values, dtype=bool), lonlat=True
+        )
+        path = tmp_path / f"mask_{label}.hsp"
+        smap.write(str(path))
+        paths[label] = str(path)
+
+    cat = _final_cat()
+    make_cat.save_mask_ext_data(cat, paths, _NullLogger())
+
+    faint = cat["MASK_1_Faint_star_halos"]
+    bright = cat["MASK_2_Bright_star_halos"]
+    npt.assert_array_equal(faint, [True, False, True, False])
+    npt.assert_array_equal(bright, [False, True, True, False])
+    assert faint.dtype == np.dtype(bool)
+    assert bright.dtype == np.dtype(bool)
