@@ -1,0 +1,160 @@
+"""DEFECT INTERPOLATION.
+
+Clough-Tocher interpolation of short defect runs before metacal (see
+:func:`shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights`).
+
+"""
+
+import numpy as np
+from scipy.interpolate import CloughTocher2DInterpolator
+from scipy.ndimage import binary_dilation, label
+from scipy.spatial import QhullError
+
+# Longest row or column run of defect pixels that is interpolated.
+MAX_INTERPOLATED_RUN = 3
+
+# Clean pixels within this Chebyshev distance (pixels) of the interpolated
+# pixels support the interpolant.
+SUPPORT_RADIUS = 4
+
+_ROW_RUNS = np.array([[0, 0, 0], [1, 1, 1], [0, 0, 0]])
+
+
+def _short_row_runs(run, blocked, max_run):
+    """Pixels of ``run`` in row runs of at most ``max_run`` pixels whose
+    neighbours beyond both ends lie on the stamp and outside ``blocked``."""
+    labels, n_runs = label(run, structure=_ROW_RUNS)
+    if n_runs == 0:
+        return np.zeros_like(run)
+    short = np.bincount(labels.ravel(), minlength=n_runs + 1) <= max_run
+    short[0] = False
+    # A run pixel's left (right) neighbour must be in the run or open.
+    in_run = np.pad(run, ((0, 0), (1, 1)))
+    is_open = np.pad(~blocked, ((0, 0), (1, 1)))
+    closed_end = run & ~(
+        (in_run[:, :-2] | is_open[:, :-2]) & (in_run[:, 2:] | is_open[:, 2:])
+    )
+    short[labels[closed_end]] = False
+    return short[labels]
+
+
+def interpolable_defects(defect, removed=None, max_run=MAX_INTERPOLATED_RUN):
+    """Defect pixels that :func:`interpolate_defects` fills.
+
+    @sc [decision:shape_measurement.defect_fill] interpolable-defects
+    A defect pixel is interpolated when its row or its column run of defect
+    pixels is at most ``max_run`` (3) long and the pixels beyond both ends
+    support the interpolant: on the stamp, not a defect, and not
+    ``removed``. That covers columns, 3-px bleeds and isolated pixels.
+    Wider holes, edge bands and runs that end on a removed pixel are
+    noise-filled and vetoed at the noise-fill radius
+    (:func:`~shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes`).
+    Each interpolated pixel lies between two support pixels, so the
+    interpolant reaches it. The rule reads only the masks and commutes with
+    quarter turns of the stamp.
+
+    Parameters
+    ----------
+    defect : numpy.ndarray of bool
+        Defect mask of one epoch stamp.
+    removed : numpy.ndarray of bool, optional
+        Pixels whose light the image replaces (noisefill neighbours). They
+        neither support the interpolant nor are interpolated.
+    max_run : int, optional
+        Longest interpolated run; the default is ``MAX_INTERPOLATED_RUN``.
+
+    Returns
+    -------
+    numpy.ndarray of bool
+        ``True`` on the defect pixels to interpolate.
+    """
+    defect = np.asarray(defect, dtype=bool)
+    removed = (
+        np.zeros_like(defect) if removed is None
+        else np.asarray(removed, dtype=bool)
+    )
+    run, blocked = defect & ~removed, defect | removed
+    return (
+        _short_row_runs(run, blocked, max_run)
+        | _short_row_runs(run.T, blocked.T, max_run).T
+    )
+
+
+def fourfold(mask):
+    """Union of a square stamp mask with its quarter turns.
+
+    Parameters
+    ----------
+    mask : numpy.ndarray of bool
+        Square mask.
+
+    Returns
+    -------
+    numpy.ndarray of bool
+        ``mask`` ORed with its rotations by 90, 180 and 270 degrees about
+        the stamp centre.
+
+    Raises
+    ------
+    ValueError
+        If ``mask`` is not square.
+    """
+    mask = np.asarray(mask, dtype=bool)
+    if mask.ndim != 2 or mask.shape[0] != mask.shape[1]:
+        raise ValueError(
+            f"A quarter-turn orbit needs a square stamp, not {mask.shape}"
+        )
+    return mask | np.rot90(mask) | np.rot90(mask, 2) | np.rot90(mask, 3)
+
+
+def interpolate_defects(planes, excluded, target):
+    """Replace the ``target`` pixels of every plane by a Clough-Tocher
+    interpolant of the kept pixels around them.
+
+    @sc [decision:shape_measurement.defect_fill] shared-interpolant
+    The support is the pixels within ``SUPPORT_RADIUS`` (4 px) of the target
+    outside ``excluded``; no excluded pixel enters it, so their values are
+    never read. One Delaunay triangulation of the support serves every
+    plane, so the science image and the metacal noise image see the same
+    linear operator and fixnoise mirrors the science image's interpolated
+    noise.
+
+    Parameters
+    ----------
+    planes : array_like
+        Stamp planes, shape ``(n, ny, nx)``.
+    excluded : numpy.ndarray of bool
+        Pixels that never support the interpolant, shape ``(ny, nx)``: every
+        defect, and any pixel whose light the image does not keep.
+    target : numpy.ndarray of bool
+        Defect pixels to interpolate (:func:`interpolable_defects`).
+
+    Returns
+    -------
+    numpy.ndarray
+        A copy of ``planes`` with ``target`` pixels interpolated; NaN at a
+        target pixel the support cannot reach.
+    """
+    planes = np.asarray(planes, dtype=float)
+    excluded = np.asarray(excluded, dtype=bool)
+    target = np.asarray(target, dtype=bool)
+    out = planes.copy()
+    if not target.any():
+        return out
+    out[:, target] = np.nan
+    support = binary_dilation(
+        target, structure=np.ones((3, 3), dtype=bool),
+        iterations=SUPPORT_RADIUS,
+    ) & ~excluded
+    points = np.argwhere(support).astype(float)
+    if len(points) < 3:
+        return out
+    query = np.argwhere(target)
+    try:
+        interpolant = CloughTocher2DInterpolator(
+            points, planes[:, support].T, fill_value=np.nan,
+        )
+    except QhullError:
+        return out
+    out[:, query[:, 0], query[:, 1]] = interpolant(query.astype(float)).T
+    return out

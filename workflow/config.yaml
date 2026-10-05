@@ -20,6 +20,16 @@ input_type: data
 # campaign's merged catalogues. Required, and set by the run config.
 # run: smk-g6
 
+# How ngmix treats a stamp's neighbours (its BLEND_HANDLING): `uberseg` zeroes
+# their weight from the coadd segmentation map, whose stamps tile_detect writes
+# into the sexcat as SEG_VIGNET; `noisefill` is ngmix's own default, without
+# the segmentation stamps. Chosen per campaign: flipping it on an existing run
+# dir reruns tile_detect and everything after it for every finished tile, and
+# reclaimed exposures make that destructive -- a comparison needs its own
+# `run:`. A campaign that ran as noisefill resumes unchanged with
+# `blend_handling: noisefill` in its run config.
+blend_handling: uberseg
+
 # Default settings per input_type, can be overridden by a user-defined run config file.
 # - tile_detection: both run SExtractor on the tile. `unions_catalogue` (data)
 #   also fetches the UNIONS per-tile catalogue and joins the detections to it,
@@ -210,6 +220,10 @@ max_mem_mb: 750000
 
 # ngmix chunks per tile.
 ngmix_chunks: 8
+
+# How ngmix weights interpolated defects: des_y6, fourfold_zero, hole or full
+# (astra decision shape_measurement.defect_weighting). Unset: fourfold_zero.
+# defect_weighting: des_y6
 
 # Node-local tile store (vignets, WCS). Unset: the profile's /local/scratch
 # bind (nibi NVMe, candide node /tmp). Dense image-sim campaigns on candide
