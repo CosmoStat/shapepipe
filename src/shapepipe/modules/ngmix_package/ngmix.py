@@ -535,10 +535,45 @@ def position_seed(ra, dec, ccd):
     return cantor % (2 ** 32)
 
 
+class ChunkStamps():
+    """One stamp column of the tile catalogue, held for one chunk's rows.
+
+    Indexed by tile-catalogue row like the full column it stands in for, so
+    ``stamps[i_tile]`` is the stamp of row ``i_tile``; rows outside the chunk
+    raise ``IndexError``.
+
+    Parameters
+    ----------
+    column : numpy.ndarray
+        Full stamp column, one stamp per catalogue row. A memory-mapped
+        column is read only over ``rows``.
+    rows : range
+        0-based catalogue rows to hold (see :func:`chunk_rows`).
+
+    """
+    def __init__(self, column, rows):
+        self.rows = rows
+        self._stamps = np.array(column[rows.start:rows.stop])
+
+    def __getitem__(self, i_tile):
+        if not self.rows.start <= i_tile < self.rows.stop:
+            raise IndexError(
+                f"tile-catalogue row {i_tile} is outside this chunk's rows"
+                + f" {self.rows.start}..{self.rows.stop - 1}"
+            )
+        return self._stamps[i_tile - self.rows.start]
+
+
 class Tile_cat():
     """Tile_cat.
 
     catalog measured on a tile
+
+    The per-object columns (``obj_id``, ``ra``, ``dec``, ``flux``) are held
+    for every row. The stamp columns (``vign``, ``seg``) are held only for
+    the chunk's rows (``self.rows``) as :class:`ChunkStamps`, still indexed
+    by tile-catalogue row: the catalogues are memory-mapped, so a chunk reads
+    only its own stamps.
 
     Parameters
     ----------
@@ -547,13 +582,21 @@ class Tile_cat():
         column, one integer coadd segmentation stamp per object on the grid
         of its ``VIGNET``, becomes ``self.seg`` for the ``"uberseg"`` blend
         handling; without it ``self.seg`` is ``None``.
+    row_min, row_max : int, optional
+        First and last catalogue row of the chunk (1-based, inclusive; see
+        :func:`chunk_rows`). The default, ``-1``, is unbounded, so the whole
+        catalogue.
 
     """
     def __init__(
         self,
         cat_path,
+        row_min=-1,
+        row_max=-1,
     ):
         self.cat_path = cat_path
+        self.row_min = row_min
+        self.row_max = row_max
         if cat_path:
             self.get_data(cat_path)
 
@@ -561,6 +604,7 @@ class Tile_cat():
         tile_cat = file_io.FITSCatalogue(
             cat_path,
             SEx_catalogue=True,
+            memmap=True,
         )
         tile_cat.open()
         data = tile_cat.get_data()
@@ -569,19 +613,25 @@ class Tile_cat():
         self.obj_id = np.copy(data['NUMBER'])
         self.ra = np.copy(data['XWIN_WORLD'])
         self.dec = np.copy(data['YWIN_WORLD'])
+        self.rows = chunk_rows(len(self.obj_id), self.row_min, self.row_max)
 
-        # Optional columns — may be absent in external (non-SExtractor) catalogs.
-        # The stamp columns are the bulk of the table and are views into it,
-        # not copies, so it is held once (prepare_postage_stamps copies each
-        # object's stamp before changing it).
+        # Optional columns — may be absent in external (non-SExtractor) catalogs
         self.flux = np.copy(data['FLUX_AUTO']) if 'FLUX_AUTO' in cols else None
-        self.vign = data['VIGNET'] if 'VIGNET' in cols else None
+        self.vign = (
+            ChunkStamps(data['VIGNET'], self.rows)
+            if 'VIGNET' in cols
+            else None
+        )
 
         # Coadd-frame segmentation stamp (integer labels, the catalogue's
         # NUMBER), one per object on the grid of its VIGNET, overlaid
         # unchanged on every epoch for uberseg neighbour masking
         # (shapepipe#776).
-        self.seg = data['SEG_VIGNET'] if 'SEG_VIGNET' in cols else None
+        self.seg = (
+            ChunkStamps(data['SEG_VIGNET'], self.rows)
+            if 'SEG_VIGNET' in cols
+            else None
+        )
 
         tile_cat.close()
 
@@ -1275,7 +1325,11 @@ class Ngmix(object):
 
         @sc [decision:shape_measurement.fit_initialisation,decision:shape_measurement.ngmix_seed_mode]
         """
-        tile_cat = Tile_cat(self._tile_cat_path)
+        tile_cat = Tile_cat(
+            self._tile_cat_path,
+            self._id_obj_min,
+            self._id_obj_max,
+        )
         vignet_cat = self._vignet_cat
 
         # Fail before the per-object loop, whose try/except would otherwise
