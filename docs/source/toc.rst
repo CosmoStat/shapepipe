@@ -26,6 +26,7 @@
   configuration
   testing
   workflow
+  exposure_maps
   pipeline_tutorial
 
 .. toctree::
