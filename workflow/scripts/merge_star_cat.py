@@ -6,7 +6,9 @@ Run as the shell of the campaign-level ``star_cat_merge`` rule, never by hand.
 ``<products_dir>/full_starcat_<run>.hdf5``:
 one dataset per exposure at ``exposures/<exp>``, holding that exposure's every
 CCD's ``validation_psf-<exp>-<ccd>.fits`` rows stacked, with a ``CCD_NB`` column
-recording which CCD each row came from. It is the input to the rho/tau
+recording which CCD each row came from (under ``psf_model: mccd``, the
+exposure's one ``validation_psf-<exp>.fits``, converted to the same columns:
+see MCCD_HDU). It is the input to the rho/tau
 statistics. sp_validation reads it once CosmoStat/sp_validation#340 lands;
 until then it opens the flat ``full_starcat-0000000.fits``.
 
@@ -83,6 +85,24 @@ OPTIONAL = {"MAG": np.float32, "SNR": np.float32, "ACCEPTED": np.int32}
 CCD_COLUMN = "CCD_NB"
 ALL_COLUMNS = COLUMNS + tuple(OPTIONAL) + (CCD_COLUMN,)
 
+# MCCD'S VALIDATION CATALOGUE IS A DIFFERENT OBJECT under the same member name.
+# mccd_fit_val_runner writes ONE exposure-wide table, validation_psf-<exp>.fits,
+# in HDU 1 (empty primary, then the table, no image extension), carrying stamps
+# and moment vectors rather than named columns: per star a 4-vector
+# (g1, g2, sigma, flag) for the model (PSF_MOM_LIST) and for the star
+# (STAR_MOM_LIST), the focal-plane pixel position, RA/DEC and the CCD. The
+# conversion below is MergeStarCatMCCD's, sigma to T = 2 sigma^2 included, so
+# both PSF models' catalogues read alike. A member is MCCD-shaped when it has no
+# HDU 2 and its HDU 1 carries PSF_MOM_LIST.
+MCCD_HDU = 1
+MCCD_MARKER = "PSF_MOM_LIST"
+# MCCD measures no fourth moments: those columns are NaN, not 0, since 0 is a
+# value a measured moment can take. The rest take MCCD's own float64, flags as
+# int32 — a campaign fits one PSF model, so the exposures of one file agree.
+MCCD_MISSING = ("HSM_M4_1_PSF", "HSM_M4_2_PSF", "HSM_RHO4_PSF",
+                "HSM_M4_1_STAR", "HSM_M4_2_STAR", "HSM_RHO4_STAR")
+MCCD_DTYPES = {c: (np.int32 if "FLAG" in c else np.float64) for c in COLUMNS}
+
 
 def ccd_number(member_name: str) -> int:
     """The CCD this member's rows belong to: ``validation_psf-<exp>-<ccd>.fits``.
@@ -96,6 +116,34 @@ def ccd_number(member_name: str) -> int:
         sys.exit(f"merge_star_cat: cannot read a CCD number out of member "
                  f"name {member_name!r}")
     return int(ccd)
+
+
+def member_format(hdul, name: str) -> str:
+    """``"psfex"`` or ``"mccd"``: which validation table this member holds."""
+    if len(hdul) > HDU:
+        return "psfex"
+    if (len(hdul) > MCCD_HDU and hdul[MCCD_HDU].columns is not None
+            and MCCD_MARKER in hdul[MCCD_HDU].columns.names):
+        return "mccd"
+    sys.exit(f"merge_star_cat: {name} is neither a PSFEx validation table "
+             f"(HDU {HDU}) nor an MCCD one ({MCCD_MARKER} in HDU {MCCD_HDU})")
+
+
+def mccd_columns(rows) -> dict:
+    """An MCCD validation table as the merge's columns, CCD_NB included."""
+    pos = rows["GLOB_POSITION_IMG_LIST"]
+    psf, star = rows["PSF_MOM_LIST"], rows["STAR_MOM_LIST"]
+    out = {"X": pos[:, 0], "Y": pos[:, 1],
+           "RA": rows["RA_LIST"], "DEC": rows["DEC_LIST"]}
+    for suffix, mom in (("PSF", psf), ("STAR", star)):
+        out[f"HSM_G1_{suffix}"] = mom[:, 0]
+        out[f"HSM_G2_{suffix}"] = mom[:, 1]
+        out[f"HSM_T_{suffix}"] = 2 * mom[:, 2] ** 2
+        out[f"HSM_FLAG_{suffix}"] = mom[:, 3]
+    for col in MCCD_MISSING:
+        out[col] = np.nan
+    out[CCD_COLUMN] = rows["CCD_ID_LIST"]
+    return out
 
 
 def is_member(entry: dict) -> bool:
@@ -178,15 +226,21 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
             sys.exit(f"merge_star_cat: {tar_path} holds no {MEMBER_PATTERN}")
 
         # --- pass 1: row counts and dtypes, from headers alone --------------
-        counts, dtypes, n_total = [], None, 0
+        counts, dtypes, n_total, kind = [], None, 0, None
         for name in names:
             with fits.open(tf.extractfile(name), memmap=False,
                            ignore_missing_simple=True) as hdul:
-                hdu = hdul[HDU]
+                this = member_format(hdul, name)
+                if kind not in (None, this):
+                    sys.exit(f"merge_star_cat: {tar_path} mixes PSFEx and "
+                             f"MCCD validation tables")
+                kind = this
+                hdu = hdul[HDU if kind == "psfex" else MCCD_HDU]
                 counts.append(hdu.header["NAXIS2"])
                 # Unscaled columns only; see star-merge-unscaled-required-columns.
                 if dtypes is None:
-                    dtypes = hdu.columns.dtype
+                    dtypes = (hdu.columns.dtype if kind == "psfex"
+                              else MCCD_DTYPES)
             n_total += counts[-1]
 
         fields = [(c, dtypes[c]) for c in COLUMNS]
@@ -200,9 +254,19 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
         for name, n_rows in zip(names, counts):
             with fits.open(tf.extractfile(name), memmap=False,
                            ignore_missing_simple=True) as hdul:
+                sl = slice(at, at + n_rows)
+                if kind == "mccd":
+                    # One exposure-wide table: CCD_NB is per row, and the
+                    # optional three are absent by construction.
+                    cols = mccd_columns(hdul[MCCD_HDU].data)
+                    for col in COLUMNS + (CCD_COLUMN,):
+                        data[col][sl] = cols[col]
+                    for col in OPTIONAL:
+                        data[col][sl] = 0
+                    at += n_rows
+                    continue
                 rows = hdul[HDU].data
                 have = set(rows.dtype.names or ())
-                sl = slice(at, at + n_rows)
                 for col in COLUMNS:
                     data[col][sl] = rows[col]
                 for col in OPTIONAL:

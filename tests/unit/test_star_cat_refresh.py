@@ -92,3 +92,67 @@ def test_refit_with_equal_sizes_refreshes_the_exposure(tmp_path):
     with h5py.File(out) as f:
         rows = f[f"exposures/{EXP}"][:]
     np.testing.assert_allclose(rows["X"], [0.75, 0.75])
+
+
+def _mccd_validation(path):
+    """An MCCD-shaped validation table: one exposure, HDU 1, moment vectors."""
+    mom_psf = np.array([[0.01, -0.02, 1.5, 0], [0.03, 0.04, 2.0, 1]])
+    mom_star = np.array([[0.02, -0.01, 1.6, 0], [0.05, 0.06, 2.1, 0]])
+    cols = [
+        fits.Column(name="PSF_MOM_LIST", format="4D", array=mom_psf),
+        fits.Column(name="STAR_MOM_LIST", format="4D", array=mom_star),
+        fits.Column(name="GLOB_POSITION_IMG_LIST", format="2D",
+                    array=[[100.0, 200.0], [300.0, 400.0]]),
+        fits.Column(name="CCD_ID_LIST", format="1D", array=[3.0, 17.0]),
+        fits.Column(name="RA_LIST", format="1D", array=[10.0, 10.1]),
+        fits.Column(name="DEC_LIST", format="1D", array=[30.0, 30.1]),
+    ]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fits.HDUList([fits.PrimaryHDU(),
+                  fits.BinTableHDU.from_columns(cols)]).writeto(
+        path, overwrite=True)
+
+
+def test_mccd_validation_merges_into_the_same_columns(tmp_path):
+    """psf_model=mccd: one exposure-wide table becomes the PSFEx columns."""
+    store = tmp_path / "scratch" / EXP
+    src = (store / "output" / persist.RUN_NAME / "mccd_fit_val_runner"
+           / "output" / f"validation_psf-{EXP}.fits")
+    model = src.with_name(f"fitted_model-{EXP}.npy")
+    dest = tmp_path / "exp" / EXP[:2] / EXP / "psf"
+    manifest = dest.parent / "manifests" / "exp_persist.json"
+
+    tiles = tmp_path / "tiles.txt"
+    tiles.write_text("210.282\n")
+    db = tmp_path / "index.sqlite"
+    with sqlite3.connect(db) as con:
+        con.execute("CREATE TABLE tiles(tile_id TEXT PRIMARY KEY, "
+                    "ra_dir TEXT, n_exp INTEGER)")
+        con.execute("CREATE TABLE tile_exposures(tile_id TEXT, exp_id TEXT)")
+        con.execute("INSERT INTO tiles VALUES ('210.282', '210', 1)")
+        con.execute("INSERT INTO tile_exposures VALUES ('210.282', ?)", (EXP,))
+    out = tmp_path / "stars.h5"
+
+    _mccd_validation(src)
+    np.save(model, np.zeros(3))
+    _run("persist_exp", "--exp-dir", store, "--exp", EXP, "--dest", dest,
+         "--manifest", manifest, "--pattern", "mccd_model")
+    packed = {f["name"]: f["product"]
+              for f in json.loads(manifest.read_text())["files"]}
+    assert packed == {f"validation_psf-{EXP}.fits": "psf_validation",
+                      f"fitted_model-{EXP}.npy": "mccd_model"}
+
+    _run("merge_star_cat", "--products-dir", tmp_path, "--tile-list", tiles,
+         "--index-db", db, "--output", out, "--campaign", "t")
+    with h5py.File(out) as f:
+        rows = f[f"exposures/{EXP}"][:]
+    assert rows.dtype.names == merge.ALL_COLUMNS
+    np.testing.assert_allclose(rows["X"], [100.0, 300.0])
+    np.testing.assert_allclose(rows["DEC"], [30.0, 30.1])
+    np.testing.assert_allclose(rows["HSM_G2_PSF"], [-0.02, 0.04])
+    np.testing.assert_allclose(rows["HSM_T_PSF"], 2 * np.array([1.5, 2.0])**2)
+    np.testing.assert_allclose(rows["HSM_T_STAR"], 2 * np.array([1.6, 2.1])**2)
+    np.testing.assert_array_equal(rows["HSM_FLAG_PSF"], [0, 1])
+    np.testing.assert_array_equal(rows["CCD_NB"], [3, 17])
+    assert np.isnan(rows["HSM_RHO4_STAR"]).all()
+    np.testing.assert_array_equal(rows["ACCEPTED"], [0, 0])

@@ -111,8 +111,9 @@ container: _image
 
 # `fake` is the image-simulation true PSF: no exposure PSF fit; the tile's
 # galaxy_psf comes from `psf_dict` via fake_interp_runner (read by the
-# configs as ${SP_PSF}_interp_runner). Sims with stars may use psfex. mccd is
-# a valid chain but refused by refuse_unpersistable_psf below.
+# configs as ${SP_PSF}_interp_runner). Sims with stars may use psfex or mccd;
+# exp_persist and star_cat_merge read both models' products (persist_exp.py,
+# merge_star_cat.py).
 PSF_MODELS = {"psfex", "mccd", "fake"}
 PSF_MODEL = config.get("psf_model", "psfex")
 if PSF_MODEL not in PSF_MODELS:
@@ -605,24 +606,6 @@ PERSIST_EXP = list(config.get("persist_exp") or [])
 # unaffected. psf_exposures() below is where this gate acts.
 PERSISTS_PSF = PSF_MODEL != "fake"
 
-
-# @sc [decision:star_selection_psf.psf_modelling_software]
-def refuse_unpersistable_psf(psf_model):
-    """Refuse a PSF model whose products the persistence path cannot read.
-
-    See persist_exp.py for supported product patterns and merge_star_cat.py for
-    the per-CCD PSFEx validation reader. MCCD's exposure-wide products require a
-    different persistence table and reader, so reject that model before jobs run.
-    """
-    if psf_model == "mccd":
-        raise WorkflowError(
-            "psf_model=mccd: PSF persistence (workflow/scripts/persist_exp.py) "
-            "and the star-catalogue merge (workflow/scripts/merge_star_cat.py) "
-            "read PSFEx products only. An MCCD campaign needs an MCCD-aware "
-            "persist table and star-catalogue reader first (tracked in the PR).")
-
-
-refuse_unpersistable_psf(PSF_MODEL)
 
 # Resolve keep entries through persist_exp.py's product catalogue. Reject
 # unknown entries at parse time rather than failing once per exposure.

@@ -34,26 +34,6 @@ def _called(call):
     return re.search(rf"^{re.escape(call)}", SNAKEFILE.read_text(), re.M)
 
 
-# --- MCCD: persistence and the star-catalogue merge read PSFEx products only --
-
-def test_mccd_is_refused_naming_the_psfex_only_readers():
-    guard = _lift("refuse_unpersistable_psf")
-    with pytest.raises(WorkflowError) as exc:
-        guard("mccd")
-    msg = str(exc.value)
-    assert "persist_exp.py" in msg and "merge_star_cat.py" in msg
-    assert "PSFEx" in msg
-
-
-@pytest.mark.parametrize("model", ["psfex", "fake"])
-def test_psfex_and_fake_pass(model):
-    _lift("refuse_unpersistable_psf")(model)
-
-
-def test_psf_guard_runs_on_the_parsed_model():
-    assert _called("refuse_unpersistable_psf(PSF_MODEL)")
-
-
 # --- one root: the cleaners would reclaim the products ------------------------
 
 @pytest.mark.parametrize("clean,clean_tiles",

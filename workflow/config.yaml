@@ -36,7 +36,7 @@ blend_handling: uberseg
 #   taking its NUMBER (needs the DR6 tile image); `sextractor` keeps
 #   SExtractor's own (required for image_sims)
 # - psf_model: `psfex` (data default), `fake` (image_sims default, read from
-#   psf_dict). The Snakefile refuses `mccd`; see refuse_unpersistable_psf.
+#   psf_dict), or `mccd`.
 input_types:
   data:
     # @sc [decision:detection.tile_detection]
@@ -140,15 +140,19 @@ machines:
 #                       the PSFEx model itself. Keeping it means the PSF can be
 #                       re-interpolated at ANY position later without rebuilding the
 #                       exposure chain — the single most capability-adding entry here.
+#   mccd_model      fitted_model-*.npy          11.7 MB
+#                       the MCCD focal-plane model, one per exposure: psf_model's
+#                       counterpart under psf_model: mccd, which writes no *.psf.
 #   psfex_cat       psfex_cat-*.cat             unmeasured
 #                       PSFEx's own output catalogue (FITS_LDAC): the per-star FLAGS_PSF
 #                       and CHI2_PSF, i.e. WHICH stars outlier rejection clipped. Not
 #                       recoverable from anything else — the .psf header keeps only the
 #                       LOADED/ACCEPTED counts.
 #   psf_validation  validation_psf-*.fits       2.0 MB
-#                       the psfex_interp validation catalogue, one per CCD: the input to
-#                       the rho/tau statistics, and to the star_cat_merge rule that stacks
-#                       them into the campaign's full_starcat.
+#                       the psfex_interp validation catalogue, one per CCD (MCCD: one per
+#                       exposure, from mccd_fit_val): the input to the rho/tau statistics,
+#                       and to the star_cat_merge rule that stacks them into the
+#                       campaign's full_starcat.
 #
 # A RAW GLOB IS STILL ACCEPTED, as an escape hatch for a file the catalogue does
 # not name yet: anything carrying a glob metacharacter or a dot is taken as a
@@ -175,7 +179,10 @@ machines:
 # THE DEFAULT is psf_model (2.8 MB per exposure on top of psf_validation's 2.0):
 # the model that lets the PSF be re-interpolated at any position later without
 # rebuilding the exposure chain from VOS, which is the single most
-# capability-adding thing an exposure can keep. Add psfex_cat for a production
+# capability-adding thing an exposure can keep. Under psf_model: mccd there is
+# no *.psf, so psf_model matches nothing (a manifest warning, not an error):
+# name mccd_model instead, and expect psf_validation at ~28 MB per exposure,
+# since MCCD's validation table carries the star and model stamps. Add psfex_cat for a production
 # run if you want to know which stars PSFEx clipped; the star_* products are for
 # selection studies and cost an order of magnitude more.
 #

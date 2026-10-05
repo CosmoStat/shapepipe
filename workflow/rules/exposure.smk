@@ -78,7 +78,6 @@ rule exp_split:
 # The MCCD branch reserves 2 cores: a measured ~85 min focal-plane fit for
 # ~2500 stars uses one thread (8.3 GB), with only 1.75x speedup on 8 BLAS threads.
 # The per-CCD stages run 2 wide without reserving 8 cores for the serial fit.
-# MCCD campaigns are refused by Snakefile::refuse_unpersistable_psf.
 rule exp_psf:
     input:
         rules.exp_split.output.manifest

@@ -86,6 +86,10 @@ PRODUCTS = {
         "the PSFEx model itself. Keeping it means the PSF can be "
         "re-interpolated at ANY position later without rebuilding the exposure "
         "chain — the single most capability-adding entry here."),
+    "mccd_model": (
+        "fitted_model-*.npy", 11_700_000,
+        "the MCCD focal-plane model, one per exposure: psf_model's "
+        "counterpart under psf_model: mccd, which writes no *.psf."),
     "psfex_cat": (
         "psfex_cat-*.cat", None,
         "PSFEx's own output catalogue (FITS_LDAC): the per-star FLAGS_PSF and "
@@ -94,9 +98,10 @@ PRODUCTS = {
         "counts."),
     "psf_validation": (
         "validation_psf-*.fits", 2_000_000,
-        "the psfex_interp validation catalogue, one per CCD: the input to the "
-        "rho/tau statistics, and to the star_cat_merge rule that stacks them "
-        "into the campaign's full_starcat."),
+        "the psfex_interp validation catalogue, one per CCD (MCCD: one per "
+        "exposure, from mccd_fit_val): the input to the rho/tau statistics, "
+        "and to the star_cat_merge rule that stacks them into the campaign's "
+        "full_starcat."),
 }
 
 # PSFEx residual/check images and its XML diagnostics are deliberately absent:

@@ -241,14 +241,6 @@ def test_missing_run_fails_during_parse(campaign, resolve_dag):
             pytest.fail("a campaign without run: must fail at parse time")
 
 
-def test_mccd_is_refused_during_parse(tmp_path, resolve_dag):
-    """MCCD products are unreadable to persistence and the star merge."""
-    campaign = Campaign(tmp_path / "campaign", "data", "mccd")
-    with pytest.raises(WorkflowError, match=r"psf_model=mccd: PSF persistence"):
-        with resolve_dag(campaign):
-            pytest.fail("psf_model=mccd must be refused at parse time")
-
-
 # --- blend_handling ---------------------------------------------------------
 
 # First-attempt memory of the stages that hold SEG_VIGNET, under every

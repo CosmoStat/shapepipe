@@ -1177,8 +1177,9 @@ analyses:
           mccd_focal_plane:
             label: MCCD hybrid local+global focal-plane model
             description: >-
-              Refused by workflow/Snakefile (refuse_unpersistable_psf) until
-              persistence and star-catalogue merging read MCCD products.
+              exp_persist keeps its fitted model (mccd_model) and
+              star_cat_merge converts its exposure-wide validation table to
+              the PSFEx columns (no fourth moments: NaN).
             insights: [farrens22_two_psf_methods]
       psf_model_complexity:
         label: PSFEx pixel basis with degree-2 spatial variation per CCD
