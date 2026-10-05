@@ -324,11 +324,10 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   bit, nside 131072, `True` = masked. `config_tile_Mc.ini` names all 11 of them
   in `MASK_EXT_PATHS` under a `<flag value>_<name>` label, so `make_cat`
   writes `MASK_1_Faint_star_halos` … `MASK_2048_z2` and `final_cat.param`
-  carries the matching 11 names; the config holds the label table. The default
-  r-band selection is columns 4, 8, 64 and 1024; both halo columns are written
-  but left out of it. `MASK_2048_z2` is True where
-  there is *no* Pan-STARRS z data, so an OR over every column masks
-  everything. Nothing cuts on them here.
+  carries the matching 11 names; the config holds the label table.
+  `MASK_2048_z2` is True where there is *no* Pan-STARRS z data, so an OR over
+  every column masks everything. ShapePipe cuts on none of them; the mask
+  choice is sp_validation's.
 - **The index is parse-time data, never a rule input.** Appending tiles
   changes which jobs exist without invalidating completed work.
 - **Exposure products are not `temp()`.** Exposures overlap tiles, so
