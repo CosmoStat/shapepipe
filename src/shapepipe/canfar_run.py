@@ -4,25 +4,7 @@
 # executables are created by pyproject.toml.
 
 import sys
-from shapepipe.canfar import canfar_submit, canfar_monitor, canfar_log_monitor
-
-def run_job(args=None):
-    """Run Job.
-
-    Handles job submission with the canfar library
-
-    Parameters
-    ----------
-    args : list, optional
-        command line arguments, default is ``None``
-
-    """
-    # Create instance
-    obj = canfar_submit.Job()
-
-    # Run instance
-    obj.run(args=args)
-
+from shapepipe.canfar import canfar_monitor, canfar_log_monitor
 
 def run_log(args=None):
     """Run Log.
