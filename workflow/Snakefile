@@ -198,8 +198,8 @@ if BLEND_HANDLING not in run_config.BLEND_HANDLINGS:
         f"{sorted(run_config.BLEND_HANDLINGS)}.")
 
 # The committed inis read SP_SEG_VIGNET and SP_BLEND_HANDLING with the modules'
-# own noise-fill defaults, and only tile.smk's blend_env exports them (under
-# uberseg, the workflow's default). Drop any copy the
+# own defaults, and only tile.smk's blend_env exports them (SP_BLEND_HANDLING
+# under uberseg, the workflow's default). Drop any copy the
 # launching shell carries, bare or as the APPTAINERENV_/SINGULARITYENV_ forms
 # that survive --cleanenv, so a job inherits none: the slurm executor submits
 # with --export=ALL from this process's environment, and each job re-parses

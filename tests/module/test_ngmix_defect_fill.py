@@ -496,7 +496,8 @@ def test_process_logs_the_epoch_cut_tally(tmp_path, monkeypatch):
         (k, int(v)) for k, v in re.findall(r"(\w+)=(\d+)", lines[0])
     )
     assert tally == dict(
-        considered=5, masked_fraction=2, central_veto=2, objects_emptied=1
+        considered=5, masked_fraction=2, central_veto=2, failed=0,
+        objects_emptied=1,
     ), lines[0]
 
 
@@ -559,7 +560,8 @@ def _expected_masks(target, defect, defect_weighting):
     written out independently of ``defect_weighting_masks``."""
     noisefilled = defect & ~target
     if defect_weighting == "des_y6":
-        return target | (np.rot90(target) & ~defect), noisefilled
+        copy = interpolable_defects(np.rot90(target) & ~defect, defect)
+        return target | copy, noisefilled
     zero = {
         "fourfold_zero": defect | fourfold(target),
         "hole": defect,
@@ -621,6 +623,34 @@ def test_interpolated_fill_and_its_weights(blend_handling, defect_weighting):
     turned = np.rot90(noise_out)
     refilled = interpolate_defects(turned[None], defect | fill, fill)[0]
     npt.assert_allclose(turned[fill], refilled[fill], atol=1e-5)
+
+
+@pytest.mark.parametrize("band", [1, 2, 4])
+def test_des_y6_copy_in_a_corner_of_the_clean_region_keeps_its_light(band):
+    """An isolated defect whose quarter-turn copy lands where the top edge
+    band meets the stamp's right edge: under des_y6 the copy has no clean
+    pixel beyond the band or the stamp edge, so the interpolant cannot
+    reach it and it keeps its light; the defect itself is interpolated.
+
+    Failure mode: the copy is interpolated anyway, the interpolant is NaN
+    there and prepare_ngmix_weights raises, dropping every epoch of the
+    object.
+    """
+    n = N_STAMP
+    flag = np.zeros((n, n), dtype=np.int32)
+    flag[:band] = 1
+    flag[n - 1, n - 1 - band] = 1
+    gal = np.random.RandomState(1).normal(size=(n, n))
+    gal_out, w_out, _ = prepare_ngmix_weights(
+        gal, np.ones((n, n)), flag, np.random.RandomState(4),
+        bkg_rms=np.ones((n, n)), defect_weighting="des_y6",
+    )
+    corner = (band, n - 1)
+    assert np.rot90(flag != 0)[corner] and flag[corner] == 0
+    assert gal_out[corner] == gal[corner]
+    assert w_out[corner] == 1.0
+    assert np.all(np.isfinite(gal_out))
+    assert gal_out[n - 1, n - 1 - band] != gal[n - 1, n - 1 - band]
 
 
 def test_fixnoise_turns_the_noise_image_k1_then_k3():
@@ -879,20 +909,157 @@ def test_do_ngmix_metacal_threads_each_epochs_neighbour_mask(monkeypatch):
 
     def fake_observation(*args, **kwargs):
         seen.append(kwargs["neighbour"])
-        if len(seen) == len(stamp.gals):
-            raise _Stop
-        return None
+        return object()
+
+    def stop(*args, **kwargs):
+        raise _Stop
 
     monkeypatch.setattr(
         ngmix_module, "make_ngmix_observation", fake_observation,
     )
+    monkeypatch.setattr(ngmix_module, "make_runners", stop)
     monkeypatch.setattr(ngmix_module, "ObsList", list)
     with pytest.raises(_Stop):
         ngmix_module.do_ngmix_metacal(
             stamp, None, 1.0, np.random.RandomState(0),
         )
+    assert len(seen) == len(stamp.gals)
     for got, want in zip(seen, stamp.neighbours):
         assert got is want
+
+
+# --- Neighbours are markers on another object's segmentation footprint -----
+#
+# Under MASK_TYPE CORRECT SExtractor also writes -1e30 over sub-MINAREA sky
+# blobs and over fragments CLEAN merged into the object itself. The seg map
+# labels those 0 and the object's own NUMBER, so they are not neighbours, and
+# the epoch stamps hold real light there: they keep weight and image.
+
+_OBJ = 1  # the object's NUMBER in _fake_inputs's stores
+
+
+def _seg_marked_tile():
+    """Tile VIGNET and SEG_VIGNET with four kinds of interior -1e30 marker.
+
+    Returns ``(tile, seg, kinds)``: a neighbour footprint (label 7), a
+    detection that left the catalogue (label -1), a fragment of the object
+    itself (label ``_OBJ``) and a sky blob (label 0); ``kinds`` maps each
+    name to its marker mask. All of them are off-centre, so the MegaCam flip
+    moves them.
+    """
+    c = _CENTRE
+    tile = _tile_with_neighbour()
+    seg = np.zeros_like(tile, dtype=np.int32)
+    yy, xx = np.mgrid[:N_STAMP, :N_STAMP]
+    seg[(yy - c) ** 2 + (xx - c) ** 2 <= 9] = _OBJ
+    kinds = {name: np.zeros_like(tile, dtype=bool) for name in
+             ("neighbour", "departed", "own_fragment", "sky")}
+    kinds["neighbour"][c - 2:c + 3, c + 3:c + 9] = True
+    kinds["departed"][c - 12:c - 9, c - 12:c - 9] = True
+    kinds["own_fragment"][c + 6:c + 9, c - 8:c - 5] = True
+    kinds["sky"][c - 10:c - 8, c + 10] = True
+    seg[kinds["neighbour"]] = 7
+    seg[kinds["departed"]] = -1
+    seg[kinds["own_fragment"]] = _OBJ
+    for mask in kinds.values():
+        tile[mask] = _MARKER
+    return tile, seg, kinds
+
+
+def test_split_tile_markers_keeps_only_other_footprints():
+    """With the seg stamp, the neighbour mask is the markers on a label other
+    than 0 and the object's; the object's own fragments and sky blobs are
+    dropped, and the off-tile split is unchanged. Without it, every interior
+    marker is a neighbour.
+
+    Failure mode: noisefill noise-fills the object's own CLEAN-merged light
+    and sky (neighbours-are-other-footprints).
+    """
+    tile, seg, kinds = _seg_marked_tile()
+    tile[:, :4] = _MARKER  # an off-tile band
+    neighbour, off_tile = split_tile_markers(tile, tile.shape, seg, _OBJ)
+    bare_neighbour, bare_off_tile = split_tile_markers(tile, tile.shape)
+    npt.assert_array_equal(off_tile, bare_off_tile)
+    assert off_tile[:, :4].all() and not off_tile[:, 4:].any()
+    npt.assert_array_equal(
+        neighbour, (kinds["neighbour"] | kinds["departed"]) & ~off_tile
+    )
+    npt.assert_array_equal(bare_neighbour, (tile == _MARKER) & ~off_tile)
+
+
+def _seg_marker_stamp(tile, seg, blend_handling="noisefill"):
+    clean = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+    ones = np.ones((N_STAMP, N_STAMP))
+    epochs = {name: (clean.copy(), ones) for name in _MARKER_EPOCH_NAMES}
+    vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(epochs)
+    tile_cat.vign = tile[np.newaxis]
+    tile_cat.seg = seg[np.newaxis]
+    return prepare_postage_stamps(
+        vignet, _OBJ, 0, tile_cat, bkg_sub=False,
+        psf_obj=psf_obj, gal_obj=gal_obj, blend_handling=blend_handling,
+    )
+
+
+def test_noisefill_keeps_light_under_non_neighbour_markers():
+    """Through prepare_postage_stamps, each epoch's neighbour mask is its
+    flipped other-footprint markers; noisefill zero-weights and noise-fills
+    those and keeps the weight and image of the object's own fragment and
+    the sky blob.
+    """
+    tile, seg, kinds = _seg_marked_tile()
+    stamp = _seg_marker_stamp(tile, seg)
+    assert len(stamp.gals) == len(_MARKER_EPOCH_NAMES)
+    for i, name in enumerate(stamp.epoch_names):
+        ccd = int(name.split("-")[1])
+        flip = lambda m: Ngmix.MegaCamFlip(m, ccd)
+        npt.assert_array_equal(
+            stamp.neighbours[i],
+            flip(kinds["neighbour"] | kinds["departed"]),
+        )
+        gal, weight, _ = _stamp_epoch_weights(stamp, i, seed=3)
+        kept = flip(kinds["own_fragment"] | kinds["sky"])
+        assert np.all(weight[kept] > 0)
+        npt.assert_array_equal(gal[kept], 1.0e3 + stamp.gals[i][kept])
+        assert np.all(weight[stamp.neighbours[i]] == 0)
+
+
+def test_uberseg_is_unchanged_by_seg_defined_neighbours(monkeypatch):
+    """Uberseg reads no marker, so defining neighbours by the seg map leaves
+    every epoch's observation bit-identical: the same epochs survive, with
+    the same image, weight and noise image. Noisefill does change.
+    """
+    tile, seg, _ = _seg_marked_tile()
+    marker_split = split_tile_markers
+
+    def observations(blend_handling):
+        stamp = _seg_marker_stamp(tile, seg, blend_handling)
+        out = []
+        for i in range(len(stamp.gals)):
+            obs = make_ngmix_observation(
+                1.0e3 + stamp.gals[i], stamp.weights[i], stamp.flags[i],
+                stamp.psfs[i], stamp.jacobs[i], np.random.RandomState(i),
+                bkg_rms=stamp.bkg_rms[i], offset=stamp.offsets[i],
+                blend_handling=blend_handling, seg=stamp.segs[i],
+                object_number=_OBJ, neighbour=stamp.neighbours[i],
+            )
+            out.append((obs.image, obs.weight, obs.noise))
+        return stamp.epoch_names, out
+
+    new = {b: observations(b) for b in ("uberseg", "noisefill")}
+    monkeypatch.setattr(
+        ngmix_module, "split_tile_markers",
+        lambda t, shape, seg=None, object_number=None: marker_split(t, shape),
+    )
+    old = {b: observations(b) for b in ("uberseg", "noisefill")}
+
+    assert new["uberseg"][0] == old["uberseg"][0]
+    for got, want in zip(new["uberseg"][1], old["uberseg"][1]):
+        for a, b in zip(got, want):
+            npt.assert_array_equal(a, b)
+    assert any(
+        not np.array_equal(got[1], want[1])
+        for got, want in zip(new["noisefill"][1], old["noisefill"][1])
+    )
 
 
 # --- Off-tile pixels are defects -------------------------------------------

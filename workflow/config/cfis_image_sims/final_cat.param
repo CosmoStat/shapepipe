@@ -45,6 +45,8 @@ NGMIX_G2_PSF_ORIG_NOSHEAR
 # Number of epochs (exposures)
 N_EPOCH
 NGMIX_N_EPOCH
+# epochs dropped because building their ngmix observation raised
+NGMIX_N_EPOCH_FAILED
 
 ## Shape measurement outputs
 ## Ngmix: model fitting

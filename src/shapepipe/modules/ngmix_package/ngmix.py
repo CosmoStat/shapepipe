@@ -257,6 +257,9 @@ def empty_metacal_output():
     names2 = [
         'id',
         'n_epoch_model',
+        # epochs dropped because building their observation raised
+        # (failed-epoch-dropped)
+        'n_epoch_failed',
         'mcal_types_fail',
         'neighbour_flag',
         # defect diagnostics (Postage_stamp.record_defects)
@@ -580,8 +583,8 @@ class Tile_cat():
     cat_path : str
         Path to the tile SExtractor catalogue. Its optional ``SEG_VIGNET``
         column, one integer coadd segmentation stamp per object on the grid
-        of its ``VIGNET``, becomes ``self.seg`` for the ``"uberseg"`` blend
-        handling; without it ``self.seg`` is ``None``.
+        of its ``VIGNET``, becomes ``self.seg``, which defines the neighbours
+        under both blend handlings; without it ``self.seg`` is ``None``.
     row_min, row_max : int, optional
         First and last catalogue row of the chunk (1-based, inclusive; see
         :func:`chunk_rows`). The default, ``-1``, is unbounded, so the whole
@@ -625,8 +628,8 @@ class Tile_cat():
 
         # Coadd-frame segmentation stamp (integer labels, the catalogue's
         # NUMBER), one per object on the grid of its VIGNET, overlaid
-        # unchanged on every epoch for uberseg neighbour masking
-        # (shapepipe#776).
+        # unchanged on every epoch; it defines the neighbours (shapepipe#776,
+        # split_tile_markers, uberseg_mask).
         self.seg = (
             ChunkStamps(data['SEG_VIGNET'], self.rows)
             if 'SEG_VIGNET' in cols
@@ -686,6 +689,12 @@ class Postage_stamp():
         self.epoch_cuts = Counter(
             considered=0, masked_fraction=0, central_veto=0
         )
+        # The exposure-CCD name of each kept epoch, for the log.
+        self.epoch_names = []
+        # ``(epoch name, exception)`` for each kept epoch whose observation
+        # raised while being built; :func:`do_ngmix_metacal` drops the epoch
+        # and records it here (failed-epoch-dropped).
+        self.epoch_failures = []
         # Defect diagnostics over the epochs kept (see
         # :meth:`record_defects`).
         self.n_epoch_interp = 0
@@ -1041,6 +1050,9 @@ class Ngmix(object):
                 output_dict[name]["n_epoch_model"].append(
                     results[idx]["n_epoch_model"]
                 )
+                output_dict[name]["n_epoch_failed"].append(
+                    results[idx]["n_epoch_failed"]
+                )
                 output_dict[name]["mcal_types_fail"].append(mcal_types_fail)
                 # Per-object blend flag (see process()); replicated across all
                 # shear types like id / n_epoch_model / mcal_types_fail.
@@ -1340,6 +1352,13 @@ class Ngmix(object):
                 + f" SEG_VIGNET column, which {self._tile_cat_path} lacks;"
                 + " write it at tile detection (SEG_VIGNET = True)."
             )
+        if tile_cat.seg is None and getattr(tile_cat, "vign", None) is not None:
+            self._w_log.warning(
+                f"{self._tile_cat_path} has no SEG_VIGNET column: every"
+                + " interior -1e30 marker is taken as a neighbour,"
+                + " including the object's own CLEAN-merged fragments"
+                + " (neighbours-are-other-footprints)."
+            )
 
         check_wcs_centroid_offset(
             self._centroid_source, tile_cat, vignet_cat.gal_vign_cat
@@ -1356,7 +1375,9 @@ class Ngmix(object):
         id_first = -1
         id_last = -1
         count_batch = 0
-        epoch_cuts = Counter(considered=0, masked_fraction=0, central_veto=0)
+        epoch_cuts = Counter(
+            considered=0, masked_fraction=0, central_veto=0, failed=0
+        )
         n_emptied = 0
         saved_batch_cumul = 0
 
@@ -1447,11 +1468,20 @@ class Ngmix(object):
                 )
                 n_ngmix_fail += 1
                 continue
+            finally:
+                # Epochs do_ngmix_metacal dropped (failed-epoch-dropped).
+                epoch_cuts["failed"] += len(stamp.epoch_failures)
+                for epoch_name, err in stamp.epoch_failures:
+                    self._w_log.warning(
+                        f"ngmix: tile {self._file_number_string} object"
+                        + f" {obj_id} epoch {epoch_name} dropped:"
+                        + f" {type(err).__name__}: {err}"
+                    )
 
             res['obj_id'] = obj_id
             # Neighbour flag: does the coadd seg stamp hold any non-central,
             # non-zero label? Systematics-test hook (shapepipe#776); computed
-            # from the raw coadd seg, 0 when uberseg is off / seg absent.
+            # from the raw coadd seg, 0 when the seg is absent.
             res['neighbour_flag'] = int(
                 seg_has_neighbour(tile_cat.seg[i_tile], obj_id)
                 if getattr(tile_cat, "seg", None) is not None
@@ -1460,6 +1490,7 @@ class Ngmix(object):
             # epochs that survived the PSF fit and entered the model,
             # not the number of epochs submitted (v1 contract)
             res['n_epoch_model'] = psf_res['n_epoch']
+            res['n_epoch_failed'] = len(stamp.epoch_failures)
             res.update(stamp.defect_diagnostics())
             # The mcal flag columns are derived from the per-type results in
             # compile_results; here they only feed the run-health count.
@@ -1514,6 +1545,7 @@ class Ngmix(object):
             + f" considered={epoch_cuts['considered']}"
             + f" masked_fraction={epoch_cuts['masked_fraction']}"
             + f" central_veto={epoch_cuts['central_veto']}"
+            + f" failed={epoch_cuts['failed']}"
             + f" objects_emptied={n_emptied}"
         )
         log_run_health(self._w_log, count, n_fitted, n_flagged)
@@ -1549,8 +1581,8 @@ def prepare_postage_stamps(
     that ``DEFECT_WEIGHTING`` zero-weights or interpolates are not counted.
 
     @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
-    The tile VIGNET's -1e30 markers on other detections' footprints
-    (:func:`split_tile_markers`) are the epoch's neighbour mask
+    The tile VIGNET's -1e30 markers on other objects' segmentation
+    footprints (:func:`split_tile_markers`) are the epoch's neighbour mask
     (``stamp.neighbours``), not defects: every epoch shares the tile VIGNET,
     so counting them would drop every epoch of a blended object.
 
@@ -1653,7 +1685,9 @@ def prepare_postage_stamps(
         flag_vign = flag_obj[expccd_name]['VIGNET']
         # Off-tile pixels are defects (off-tile-pixels-are-defects); the
         # other -1e30 markers are neighbours (neighbour-markers-are-not-defects).
-        neighbour, off_tile = split_tile_markers(tile_vign, np.shape(gal_vign))
+        neighbour, off_tile = split_tile_markers(
+            tile_vign, np.shape(gal_vign), tile_seg, obj_id
+        )
         weight_vign = np.where(off_tile, 0, weight_obj[expccd_name]['VIGNET'])
         bkg_rms_vign = (
             bkg_rms_obj[expccd_name]['VIGNET']
@@ -1705,6 +1739,7 @@ def prepare_postage_stamps(
         stamp.flags.append(flag_vign)
         stamp.neighbours.append(neighbour)
         stamp.bkg_rms.append(bkg_rms_vign_scaled)
+        stamp.epoch_names.append(expccd_name)
         if tile_seg is not None:
             stamp.segs.append(tile_seg)
         stamp.jacobs.append(jacob)
@@ -1724,19 +1759,28 @@ def prepare_postage_stamps(
 
     return stamp
 
-def split_tile_markers(tile_vign, shape):
+def split_tile_markers(tile_vign, shape, seg=None, object_number=None):
     """Split the tile VIGNET's -1e30 markers into neighbour and off-tile.
 
     @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-marked-border-rows-and-columns
-    The tile VIGNET holds -1e30 on the footprints of other detections and on
-    stamp pixels beyond the tile's edge (SExtractor writes it). A stamp
-    clipped by the tile's rectangle loses whole rows and whole columns from
-    its border, so the off-tile pixels are the union of the runs of
-    entirely -1e30 rows and columns that start at a stamp border. The
-    remaining markers are
-    neighbour pixels: a footprint touching the stamp border, and a footprint
-    that completes an interior row or column beside an off-tile band, stay
-    neighbours.
+    SExtractor writes -1e30 into the tile VIGNET on stamp pixels beyond the
+    tile's edge and, under MASK_TYPE CORRECT, on every above-threshold pixel
+    that is not the object's own pre-CLEAN footprint. A stamp clipped by the
+    tile's rectangle loses whole rows and whole columns from its border, so
+    the off-tile pixels are the union of the runs of entirely -1e30 rows and
+    columns that start at a stamp border.
+
+    @sc [decision:shape_measurement.blend_handling] neighbours-are-other-footprints
+    The other markers also fall on pixels no other object owns: detections
+    smaller than DETECT_MINAREA (noise peaks, catalogued nowhere) and
+    fragments CLEAN merged into the object itself, which the segmentation
+    map labels as the object. With ``seg``, the neighbour pixels are the
+    markers on another label's footprint (any label but 0 and
+    ``object_number``; the catalogue join's -1 marks a detection that left
+    the catalogue). The markers left over are nothing: -1e30 is a flag in the
+    tile VIGNET only, and the epoch stamps hold real light there, the
+    object's own or sky. Without ``seg``, every interior marker is a
+    neighbour.
 
     Parameters
     ----------
@@ -1744,6 +1788,10 @@ def split_tile_markers(tile_vign, shape):
         Tile VIGNET stamp, oriented like the epoch; ``None`` marks nothing.
     shape : tuple of int
         Stamp shape, used when ``tile_vign`` is ``None``.
+    seg : numpy.ndarray, optional
+        The object's SEG_VIGNET stamp, oriented like ``tile_vign``.
+    object_number : int, optional
+        The object's label in ``seg``; required with ``seg``.
 
     Returns
     -------
@@ -1766,7 +1814,10 @@ def split_tile_markers(tile_vign, shape):
         border_runs(marker.all(axis=1))[:, None]
         | border_runs(marker.all(axis=0))[None, :]
     )
-    return marker & ~off_tile, off_tile
+    neighbour = marker & ~off_tile
+    if seg is not None:
+        neighbour &= (seg != 0) & (seg != object_number)
+    return neighbour, off_tile
 
 
 def background_subtract(gal,bkg):
@@ -2187,7 +2238,12 @@ def defect_weighting_masks(interpolated, clean, defect_weighting):
       about the stamp centre, the union is interpolated, and every
       interpolated pixel keeps its full weight. Copies that land on a pixel
       whose light is already replaced (a noise-filled defect, a noisefill
-      neighbour) stay as they are.
+      neighbour) stay as they are, and so do copies the interpolant cannot
+      reach: a copy is interpolated only where it passes
+      :func:`interpolable_defects` among the pixels the image keeps, so a
+      copy wedged into a corner of the clean region (an edge band beside
+      the stamp edge) keeps its light rather than leaving the fill
+      non-finite.
     * ``"hole"``: interpolate it and leave it at weight 0.
     * ``"full"``: interpolate it at full weight.
 
@@ -2216,8 +2272,8 @@ def defect_weighting_masks(interpolated, clean, defect_weighting):
     """
     none = np.zeros_like(interpolated)
     if defect_weighting == "des_y6":
-        fill = interpolated | (np.rot90(interpolated) & clean)
-        return fill, interpolated, none
+        copy = interpolable_defects(np.rot90(interpolated) & clean, ~clean)
+        return interpolated | copy, interpolated, none
     if defect_weighting == "fourfold_zero":
         return interpolated, none, fourfold(interpolated)
     if defect_weighting == "hole":
@@ -2768,6 +2824,14 @@ def do_ngmix_metacal(
     Performs metacalibration on a single multi-epoch object and returns the
     joint shape measurement with NGMIX.
 
+    @sc [decision:shape_measurement.epoch_masked_fraction_cut,label:operations] failed-epoch-dropped
+    An epoch whose observation raises while being built (for example the
+    non-finite interpolant guard in :func:`prepare_ngmix_weights`) is
+    dropped and the object is fitted on its other epochs. The epoch's name
+    and exception are appended to ``stamp.epoch_failures``; the caller logs
+    them and writes their count as ``n_epoch_failed``. Errors outside
+    building the observations propagate.
+
     Parameters
     ----------
     stamp : Postage_stamp
@@ -2821,6 +2885,11 @@ def do_ngmix_metacal(
         dict (:func:`average_original_psf`). The two PSF dicts share keys but
         describe different PSFs; the named fields guard against transposing
         them. Unpacks positionally as ``resdict, psf_res, psf_orig_res``.
+
+    Raises
+    ------
+    ValueError
+        If the stamp has no epoch, or every epoch failed to build.
     @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme,decision:shape_measurement.defect_weighting]
     """
     n_epoch = len(stamp.gals)
@@ -2830,26 +2899,41 @@ def do_ngmix_metacal(
     gal_obs_list = ObsList()
     for n_e in range(n_epoch):
         bkg_rms = stamp.bkg_rms[n_e] if len(stamp.bkg_rms) > n_e else None
-        gal_obs = make_ngmix_observation(
-            stamp.gals[n_e],
-            stamp.weights[n_e],
-            stamp.flags[n_e],
-            stamp.psfs[n_e],
-            stamp.jacobs[n_e],
-            rng,
-            bkg_rms=bkg_rms,
-            centroid_source=centroid_source,
-            offset=stamp.offsets[n_e] if n_e < len(stamp.offsets) else None,
-            blend_handling=blend_handling,
-            seg=stamp.segs[n_e] if n_e < len(stamp.segs) else None,
-            object_number=object_number,
-            dilate_neighbour=dilate_neighbour,
-            neighbour=(
-                stamp.neighbours[n_e] if n_e < len(stamp.neighbours) else None
-            ),
-            defect_weighting=defect_weighting,
-        )
+        try:
+            gal_obs = make_ngmix_observation(
+                stamp.gals[n_e],
+                stamp.weights[n_e],
+                stamp.flags[n_e],
+                stamp.psfs[n_e],
+                stamp.jacobs[n_e],
+                rng,
+                bkg_rms=bkg_rms,
+                centroid_source=centroid_source,
+                offset=(
+                    stamp.offsets[n_e] if n_e < len(stamp.offsets) else None
+                ),
+                blend_handling=blend_handling,
+                seg=stamp.segs[n_e] if n_e < len(stamp.segs) else None,
+                object_number=object_number,
+                dilate_neighbour=dilate_neighbour,
+                neighbour=(
+                    stamp.neighbours[n_e]
+                    if n_e < len(stamp.neighbours) else None
+                ),
+                defect_weighting=defect_weighting,
+            )
+        except Exception as err:
+            stamp.epoch_failures.append((
+                stamp.epoch_names[n_e]
+                if n_e < len(stamp.epoch_names) else str(n_e),
+                err,
+            ))
+            continue
         gal_obs_list.append(gal_obs)
+    if len(gal_obs_list) == 0:
+        raise ValueError(
+            f"all {n_epoch} epochs failed to build an observation"
+        )
 
     runner, psf_runner = make_runners(prior, flux_guess, rng)
 
