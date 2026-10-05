@@ -2,7 +2,7 @@
 
 The workflow reads ``defect_weighting`` (Snakefile), tile_ngmix exports it as
 ``SP_DEFECT_WEIGHTING``, and config_tile_Ng_template.ini expands it into
-``[NGMIX_RUNNER] DEFECT_WEIGHTING``; empty takes ngmix's default. These
+``[NGMIX_RUNNER] DEFECT_WEIGHTING``; empty takes the module default. These
 files never see each other at run time, so their agreement is asserted here,
 statically, plus the expansion through ShapePipe's own config parser.
 """

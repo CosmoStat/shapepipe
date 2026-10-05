@@ -1450,31 +1450,27 @@ analyses:
       defect_fill:
         label: Image content of defect pixels before metacal
         rationale: >-
-          A defect pixel (nonzero instrument flag, zero exposure weight,
-          invalid background RMS, or off-tile) gets weight 0 in
-          prepare_ngmix_weights. Its image value still matters: ngmix's
-          metacal deconvolves, shears and reconvolves an InterpolatedImage of
-          the whole image and copies the weights through, so a zero-weight
-          pixel's content spreads into the weighted pixels within about a PSF
-          width. DES's ngmixer fills for that reason: "it may be important for
-          codes that take moments or use FFTs". [HARDCODED] Under every
-          BLEND_HANDLING, short defect runs are interpolated and the rest are
-          noise-filled (interpolate). The tile VIGNET holds -1e30 on other
-          detections' footprints and beyond the tile's edge (written by
-          SExtractor). The runs of entirely -1e30 stamp rows and columns that
-          start at a stamp border (the off-image part of a rectangle clip) are
-          off-tile: the epoch holds the object's own light there, so they are
-          defects, at zero exposure weight. The other markers, including a
-          neighbour footprint that completes an interior row beside an
-          off-tile band, are neighbour pixels, not defects; blend_handling
-          decides their treatment. The fill uses the unsymmetrized defect
-          set: DES symmetrized its masks, but four-fold symmetrization
-          quadruples m and still leaves an additive c1
-          (symmetrized_4fold_noise). The cost of not symmetrizing, a hole in
-          the galaxy light, is bounded by central_defect_veto. Interpolation
-          is the only fill because it lets interpolated defects come to 7 px
-          of the object, against 13 px for noise fill, which a 0.7 arcsec
-          galaxy through a 0.9 arcsec PSF needs.
+          [HARDCODED] A defect is a pixel with no usable data: a nonzero
+          instrument flag, zero exposure weight, an invalid background RMS,
+          or off the tile. prepare_ngmix_weights gives it weight 0, and this
+          decision sets the image value it holds. That value matters because
+          metacal deconvolves, shears and reconvolves the whole stamp, which
+          spreads a zero-weight pixel's content into its weighted neighbours
+          within about a PSF width; DES fills defects for the same reason.
+          Short defect runs are interpolated from the surrounding good
+          pixels and the rest are filled with noise, under every
+          BLEND_HANDLING. Interpolation is used because an epoch can then
+          keep a defect as close as 7 px to the object, whereas a 0.7 arcsec
+          galaxy through a 0.9 arcsec PSF needs noise-filled defects at least
+          13 px away. Only the defect pixels are filled, not a four-fold
+          symmetrized mask as in DES, since symmetrizing quadruples m and
+          leaves an additive c1 (symmetrized_4fold_noise); the hole this
+          leaves near the galaxy is bounded by central_defect_veto. In the
+          tile VIGNET, SExtractor writes -1e30 over other detections and
+          beyond the tile edge. Rows and columns that are entirely -1e30 and
+          start at the stamp border are off-tile, hence defects (the epoch
+          has the object's light there); every other -1e30 pixel is a
+          neighbour, handled by blend_handling.
           Values:
           VIGNETMAKER_RUNNER_RUN_1.MASKING = False;
           VIGNETMAKER_RUNNER_RUN_2.MASKING = False.
