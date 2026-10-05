@@ -198,9 +198,10 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
     lines in ``workflow/config/cfis/final_cat.param`` must match those labels
     line for line: the post-processing merge fails every tile on a name this
     function did not write. Nothing here cuts; the catalogue's default cut,
-    applied by the consumer, is the OR of the six r-mask columns (flag values
-    1, 2, 4, 8, 64, 1024; astra decision ``masking.mask_default_cut``), not
-    the OR of every column.
+    applied by the consumer, is the OR of the r-mask columns without the star
+    halos (flag values 4, 8, 64, 1024; astra decision
+    ``masking.mask_default_cut``), not the OR of every column. The halo
+    columns 1 and 2 are written for an analysis that chooses to cut on them.
 
     Parameters
     ----------
