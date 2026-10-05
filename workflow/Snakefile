@@ -189,6 +189,25 @@ try:
 except ValueError as err:
     raise WorkflowError(str(err)) from None
 
+# How ngmix treats a stamp's neighbours; tile.smk's blend handling section
+# carries it to tile_detect and tile_ngmix.
+BLEND_HANDLING = config.get("blend_handling", "uberseg")
+if BLEND_HANDLING not in run_config.BLEND_HANDLINGS:
+    raise WorkflowError(
+        f"Invalid blend_handling={BLEND_HANDLING!r}; expected one of "
+        f"{sorted(run_config.BLEND_HANDLINGS)}.")
+
+# The committed inis read SP_SEG_VIGNET and SP_BLEND_HANDLING with the modules'
+# own noise-fill defaults, and only tile.smk's blend_env exports them (under
+# uberseg, the workflow's default). Drop any copy the
+# launching shell carries, bare or as the APPTAINERENV_/SINGULARITYENV_ forms
+# that survive --cleanenv, so a job inherits none: the slurm executor submits
+# with --export=ALL from this process's environment, and each job re-parses
+# this file before its shell runs.
+for _prefix in ("", "APPTAINERENV_", "SINGULARITYENV_"):
+    for _name in ("SP_SEG_VIGNET", "SP_BLEND_HANDLING"):
+        os.environ.pop(_prefix + _name, None)
+
 # SP_PHASE is set by bin/sp and NOWHERE else: `prepare`/`compute` on the two
 # invocations of `sp run`, `passthrough` on direct commands (`sp --unlock`, `sp
 # --dag`, `sp exp_psf ...`). It gates the two parse-time side effects — the index

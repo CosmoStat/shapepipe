@@ -53,7 +53,7 @@ analyses:
       psf_likelihood_noise: psf_noise_1em5
       megacam_ccd_flip: megapipe_flip
       defect_fill: interpolate
-      blend_handling: noisefill
+      blend_handling: uberseg
       defect_weighting: fourfold_zero
       epoch_masked_fraction_cut: ten_percent
       central_defect_veto: fixed_radii

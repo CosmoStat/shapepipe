@@ -113,7 +113,8 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     sexcat_path : str
         Path to SExtractor catalogue to save
     remove_vignet : bool
-        If ``True`` will not save the ``VIGNET`` field into the final catalogue
+        If ``True`` will not save the ``VIGNET`` and ``SEG_VIGNET`` stamp
+        fields into the final catalogue
 
     Returns
     -------
@@ -127,6 +128,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     data = np.copy(sexcat_file.get_data())
     if remove_vignet:
         data = remove_field_name(data, "VIGNET")
+        data = remove_field_name(data, "SEG_VIGNET")
     cat_size = len(data)
 
     tile_name = os.path.basename(sexcat_path)

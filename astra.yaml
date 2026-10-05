@@ -1537,16 +1537,12 @@ analyses:
           Covers only pixels shared with a neighbour; defect_fill does not
           depend on it: defects are filled the same way under every
           BLEND_HANDLING, and the epoch cuts never count neighbour pixels.
-          noisefill (the default; the committed config sets no key) gives
-          weight 0 to the pixels marked -1e30 in the tile VIGNET on other
-          detections' footprints (about 93% of neighbour-footprint pixels on
-          a sims tile), excluding the off-tile
-          rows and columns, which are defects, and replaces them with noise;
-          unmarked
-          neighbour pixels keep their weight and light. uberseg ignores the
-          markers and zeroes the weight of pixels nearer a neighbour's coadd
-          segmentation footprint than the target's (DILATE_NEIGHBOUR, default 1)
-          and leaves the image untouched, as official uberseg does:
+          The committed choice is uberseg (the workflow's default
+          blend_handling), which ignores the -1e30 neighbour markers in the
+          tile VIGNET and zeroes the weight of pixels nearer a neighbour's
+          coadd segmentation footprint than the target's (DILATE_NEIGHBOUR,
+          default 1), leaving the neighbour side's image untouched, as
+          official uberseg does:
           esheldon/meds get_uberseg returns a weight map (a
           nearest-segment-pixel Voronoi split). DES Y1's fiducial metacal and
           the last Y3 config ran on uberseg-weighted stamps with raw neighbour
@@ -1563,9 +1559,15 @@ analyses:
           with simulations (mask_des_y1_uberseg_only,
           mask_blend_bias_detection). Noise-filling the neighbour side would
           instead cut the target's own light along an unsheared boundary, a
-          sharp edge that rings in the FFTs. The recommended comparison arm is
-          uberseg (weight-only); defect_fill is the same in both arms.
-        default: noisefill
+          sharp edge that rings in the FFTs. The alternative, noisefill
+          (ngmix's own default, and the workflow's blend_handling:
+          noisefill), gives weight 0 to the pixels marked -1e30 in the tile
+          VIGNET on other detections' footprints (about 93% of
+          neighbour-footprint pixels on a simulated tile), excluding the
+          off-tile rows and columns, which are defects, and replaces them with
+          noise; unmarked neighbour pixels keep their weight and light. It is
+          the comparison arm, with defect_fill held equal across arms.
+        default: uberseg
         options:
           noisefill:
             label: Noise-fill the marked neighbour pixels (BLEND_HANDLING = noisefill)
@@ -1580,8 +1582,8 @@ analyses:
           uberseg:
             label: UberSeg, weight-only
             description: >-
-              As in DES Y1/Y3. Needs the coadd segmentation stamp
-              (SEG_VIGNET_PATH). DILATE_NEIGHBOUR absorbs the coadd-vs-epoch
+              As in DES Y1/Y3. Needs the coadd segmentation stamp (the tile
+              catalogue's SEG_VIGNET). DILATE_NEIGHBOUR absorbs the coadd-vs-epoch
               overlay offset: ShapePipe reuses one coadd seg stamp for every
               epoch where MEDS reprojects it.
             insights: [mask_uberseg_weight_only, mask_uberseg_neighbour_bias, mask_des_y1_uberseg_only, mask_blend_bias_detection]

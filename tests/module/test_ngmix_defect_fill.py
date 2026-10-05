@@ -47,6 +47,7 @@ from shapepipe.modules.ngmix_package.ngmix import (
     split_tile_markers,
     uberseg_mask,
 )
+from shapepipe.modules.sextractor_package.sextractor_script import cut_stamps
 
 
 # --- prepare_ngmix_weights: the filled set is the defect set ---------------
@@ -158,6 +159,50 @@ def test_uberseg_defect_in_neighbour_region_is_filled():
     assert w_out[1, 1] == 0.0 and gal_out[1, 1] != gal[1, 1]
     # A neighbour-side pixel that is not a defect: zero weight, raw value.
     assert w_out[0, 3] == 0.0 and gal_out[0, 3] == gal[0, 3]
+
+
+def test_committed_blend_handling_fills_defects():
+    """The committed universe's blend_handling is the workflow's default,
+    and under it every defect is zero-weighted and filled exactly as under
+    noisefill: the fill does not depend on the blend handling.
+
+    Failure mode: the committed blend handling skips or changes the defect
+    fill, so the record claims a fill the default campaign does not run
+    (raw defects, which astra excludes, reaching metacal).
+    """
+    import yaml
+
+    repo = Path(__file__).resolve().parents[2]
+    universe = yaml.safe_load((repo / "universes" / "committed.yaml").read_text())
+    decisions = universe["analyses"]["shape_measurement"]["decisions"]
+    blend_handling = decisions["blend_handling"]
+    assert blend_handling in ngmix_module.BLEND_HANDLINGS
+    workflow = yaml.safe_load((repo / "workflow" / "config.yaml").read_text())
+    assert workflow["blend_handling"] == blend_handling
+
+    n = 21
+    gal = 1.0e3 + np.random.default_rng(1).normal(0.0, 1.0, (n, n))
+    weight = np.ones((n, n))
+    flag = np.zeros((n, n), dtype=np.int32)
+    flag[3, 15] = 1
+    flag[10, 2:9] = 2**10
+    weight[17, 9] = 0.0
+    defect = (weight == 0) | (flag != 0)
+    kwargs = (
+        dict(seg=_uberseg_seg(n), object_number=1)
+        if blend_handling == "uberseg"
+        else {}
+    )
+    gal_out, w_out, _ = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(0), bkg_rms=np.ones((n, n)),
+        blend_handling=blend_handling, **kwargs,
+    )
+    ref_out, ref_w, _ = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(0), bkg_rms=np.ones((n, n)),
+    )
+    assert np.all(w_out[defect] == 0.0)
+    assert np.all(gal_out[defect] != gal[defect]), "defects are left raw"
+    npt.assert_array_equal(gal_out[defect], ref_out[defect])
 
 
 # --- prepare_postage_stamps: the fraction cut counts the defect set --------
@@ -969,54 +1014,43 @@ def test_off_tile_pixels_are_zero_weighted_and_filled(blend_handling):
         npt.assert_array_equal(w_out == 0.0, removed)
 
 
-# --- Tile VIGNETs cut from a segmentation map ------------------------------
+# --- Tile VIGNETs marked as SExtractor marks them ---------------------------
 #
-# SExtractor's tile VIGNET holds -1e30 off the image and on other objects'
-# segmentation footprints. Cutting stamps the same way from a segmentation
-# map gives the off-image pixels (off-tile defects) and the footprint pixels
-# (the neighbour mask) exactly.
+# SExtractor writes -1e30 into the tile VIGNET off the image and on the
+# segmentation footprints of other detections. The off-image pixels are the
+# off-tile defects and the footprint pixels are the neighbour mask, exactly.
 
 DR6_PATCH = Path(__file__).parent / "data" / "dr6_202.301_seg_patch.fits"
 
 
-def _segmap_stamps(seg, x, y):
-    """SExtractor-style tile VIGNETs on a unit image, and each stamp's
-    off-image mask. Each object owns the footprint under its centre pixel."""
-    half = N_STAMP // 2
-    ny, nx = seg.shape
-    vignets, off_image = [], []
-    for xi, yi in zip(x, y):
-        r0, c0 = int(np.rint(yi)) - 1, int(np.rint(xi)) - 1
-        rows = r0 - half + np.arange(N_STAMP)
-        cols = c0 - half + np.arange(N_STAMP)
-        off = (
-            ((rows < 0) | (rows >= ny))[:, None]
-            | ((cols < 0) | (cols >= nx))[None, :]
-        )
-        labels = seg[np.clip(rows, 0, ny - 1)[:, None],
-                     np.clip(cols, 0, nx - 1)[None, :]]
-        own = seg[r0, c0]
-        other = (labels != 0) & (labels != own)
-        vignets.append(
-            np.where(off | other, _MARKER, 1.0).astype(np.float32)
-        )
-        off_image.append(off)
-    return np.array(vignets), off_image
+def _marked_stamps(seg, x, y):
+    """Tile VIGNETs on a unit image, marked -1e30 off the image and on every
+    footprint but the one under the stamp's centre pixel, and each stamp's
+    off-image mask."""
+    col = np.rint(np.asarray(x)).astype(np.int64) - 1
+    row = np.rint(np.asarray(y)).astype(np.int64) - 1
+    seg_stamps = cut_stamps(seg.astype(np.int64), col, row, N_STAMP, -1)
+    off_image = [s == -1 for s in seg_stamps]
+    own = seg[row, col]
+    vignets = np.ones(seg_stamps.shape, np.float32)
+    for vign, s, o in zip(vignets, seg_stamps, own):
+        vign[(s == -1) | ((s != 0) & (s != o))] = _MARKER
+    return vignets, off_image
 
 
-def test_dr6_segmap_stamps_split_into_off_image_and_neighbours():
-    """On the real 202.301 segmentation patch, every stamp splits into its
-    off-image pixels (off-tile) and its other -1e30 pixels (neighbours).
+def test_dr6_marked_stamps_split_into_off_image_and_neighbours():
+    """On the real 202.301 segmentation patch, every marked stamp splits into
+    its off-image pixels (off-tile) and its other -1e30 pixels (neighbours).
 
-    Failure modes: a float32 -1e30 is not recognised as a marker;
-    off-image pixels of an edge stamp land in the neighbour mask;
+    Failure modes: a float32 -1e30 is not recognised as a
+    marker; off-image pixels of an edge stamp land in the neighbour mask;
     neighbour-footprint pixels become off-tile defects.
     """
     with fits.open(DR6_PATCH) as hdul:
         seg = hdul["SEG"].data
         objects = hdul["OBJECTS"].data
     x, y = np.array(objects["X_IMAGE"]), np.array(objects["Y_IMAGE"])
-    vignets, off_image = _segmap_stamps(seg, x, y)
+    vignets, off_image = _marked_stamps(seg, x, y)
     assert vignets.dtype == np.float32
     n_edge = 0
     for vign, off in zip(vignets, off_image):
@@ -1045,7 +1079,7 @@ def test_a_neighbour_completing_rows_beside_the_tile_edge_stays_a_neighbour():
     seg[20:24, 0:50] = 5
     seg[27:32, 19:24] = 1
     x, y = np.array([21.0, 30.0]), np.array([30.0, 22.0])
-    vignets, off_image = _segmap_stamps(seg, x, y)
+    vignets, off_image = _marked_stamps(seg, x, y)
     tile, off = vignets[0], off_image[0]
     footprint = (tile == _MARKER) & ~off
     assert footprint.sum() == 4 * (N_STAMP - 5)
