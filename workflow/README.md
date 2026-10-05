@@ -247,6 +247,57 @@ neighbours (queue-latency amortization, per the PRD) are **not yet wired**:
 they require labels in `workflow/rules/*.smk`, out of scope for this
 profile-only pass.
 
+## Execution mode: one allocation
+
+One SLURM job per rule pays one queue wait per job, and at a low fair share a
+small campaign is mostly queue wait. `sp run --in-allocation` runs both
+invocations under snakemake's local executor inside the allocation it is
+called from, so the campaign waits once:
+
+```bash
+#!/usr/bin/env bash
+#SBATCH --account=<account>
+#SBATCH --nodes=1 --ntasks=1
+#SBATCH --cpus-per-task=96 --mem=383000M
+#SBATCH --time=4:00:00
+SP_PROFILE=nibi /path/to/checkout/workflow/bin/sp run --in-allocation -c run.yaml
+```
+
+`sp` reads the budget from the allocation itself (cores from the cpuset,
+memory from the tightest cgroup limit, less a reserve for snakemake) and
+passes `--executor local --cores N --resources mem_mb=M`; later explicit
+flags override them. Everything else is the profile's. `group:` labels are
+inactive under local execution, so `--groups` does nothing; the tile_shape
+members still share their node-local store because every job runs on this
+node. That store defaults to `$SLURM_TMPDIR/tile-store/<run>`, which Slurm
+reclaims when the job ends (an explicit `tile_store_root:` wins).
+
+Two campaigns can share one allocation, one `srun` step each. Each step's
+cpuset and cgroup become that campaign's budget, and `<run>` keeps their
+stores apart:
+
+```bash
+srun --exact -n1 -c96 --mem=380000M sp run --in-allocation -c arm_a.yaml &
+srun --exact -n1 -c96 --mem=380000M sp run --in-allocation -c arm_b.yaml &
+wait
+```
+
+A rule's `mem_mb` becomes a packing budget rather than a per-job cgroup: a job
+over its share is killed only if the allocation as a whole runs out. Size the
+allocation so the widest rule's last retry fits (a retry asking more than the
+allocation has stops the run), at no more than 4 GB per core so memory does
+not raise the billing. Keep it to one node: the tile store is node-local, so
+a multi-node allocation would split a tile's vignets from its ngmix chunks.
+
+A job cut short by its time limit is resumed by submitting the same script
+again. The store died with the job, so before it runs `sp` deletes
+`tile_vignets.json` for each listed tile that has no `final_cat` yet (tile.smk's
+"node-local vignette store is missing" guard would stop its chunks otherwise);
+tile_vignets rebuilds the store and the chunks rerun after it. `sp` also
+records the job holding the campaign's state dir, and releases that job's lock
+once the job has left the queue; any other lock stops the run. With `-n` both
+only report.
+
 ## Layout
 
 ```

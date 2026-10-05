@@ -15,6 +15,11 @@
 #                      FILE is a user-specified config file that can be used
 #                       to add and/or overwrite entries in the default config
 #                       file workflow/config.yaml (read automatically)
+#   sp run --in-allocation [-c FILE] [ARGS...]
+#                      the same, but every job runs HERE, inside the SLURM
+#                      allocation sp is called from, under snakemake's local
+#                      executor (see "one allocation" below). Refuses to run
+#                      outside an allocation.
 #   sp report [ARGS...]  emit run_report.json now (mid-run is fine).
 #   sp container VERB    manage the image every job runs inside: pull, status,
 #                      sandbox, exec, resolve. `sp container --help` documents
@@ -68,13 +73,17 @@ PROFILE="${SP_PROFILE:-nibi}"
 # the delegated command (`sp container exec python -c ...`) or for snakemake's
 # own escape hatch (`sp -- ...`) is left alone. `--config` is NOT sp's: keeping
 # it free lets snakemake's own `--config k=v` (what the Snakefile's flag()
-# reads) pass through untouched.
+# reads) pass through untouched. --in-allocation is sp's too (see "one
+# allocation" below); snakemake never sees it.
 RUN_CONFIG="${SP_RUN_CONFIG:-}"
+IN_ALLOCATION=0
 _sp_args=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --)
       shift; _sp_args+=("$@"); break ;;
+    --in-allocation)
+      IN_ALLOCATION=1; shift ;;
     -c|--config-file)
       [ $# -ge 2 ] || { echo "sp: $1 needs a file" >&2; exit 2; }
       RUN_CONFIG="$2"; shift 2 ;;
@@ -153,6 +162,128 @@ fi
 STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"
 [ "$NEEDS_CAMPAIGN" = 0 ] || mkdir -p "$STATE_DIR"
 
+# --- one allocation (`sp run --in-allocation`) -----------------------------
+# The profile's SLURM executor submits one job per rule (or group) and so pays
+# one queue wait per job; at a low fair share a small campaign is mostly queue
+# wait. --in-allocation runs the same two invocations under snakemake's LOCAL
+# executor instead, inside the allocation sp is called from (an sbatch script
+# or salloc), so the campaign pays one wait. Everything else is the profile's:
+# the apptainer wrapping, the rerun triggers, keep-going.
+#
+# What changes in local execution, and why each is safe:
+#   * `group:` labels are inactive ("Group jobs: inactive (local execution)"),
+#     so --groups and the rule files' groups do nothing. tile_shape's members
+#     still share the node-local store because they all run on THIS node.
+#   * The allocation's cores and memory are the scheduler's global budget,
+#     read here: cores from the cpuset (`nproc`), memory from the tightest
+#     cgroup limit above this process (an srun step's own --mem, not the
+#     job's), less a reserve for snakemake and the localrules. A rule's mem_mb
+#     is then a packing budget, not a cgroup: a job over its share is killed
+#     only if the whole allocation runs out. Attempt-scaled retries still
+#     raise the budget, and a retry asking more than the allocation has stops
+#     the run (snakemake's "Job needs mem_mb=..."), so size the allocation for
+#     the widest rule's third attempt.
+#   * The tile store defaults to $SLURM_TMPDIR/tile-store/<run>. The profile
+#     cannot name $SLURM_TMPDIR (its `--bind /local` comment says why), but sp
+#     runs inside the job here and knows the value, so it rebinds
+#     /local/scratch there exactly as `tile_store_root:` does. Slurm reclaims
+#     it at job end. <run> gives each campaign sharing one allocation (one
+#     srun step each) its own directory. An explicit `tile_store_root:` still
+#     wins.
+#   * A resume finds the previous job's store gone. A tile whose
+#     tile_vignets.json survived it but whose final_cat did not would trip
+#     tile.smk's "node-local vignette store is missing" guard, so that
+#     manifest is deleted first: tile_vignets reruns and rebuilds the store,
+#     and the tile's chunks rerun after it. Tiles with a final_cat are never
+#     touched.
+#   * A lock left by a killed in-allocation run is released. sp records the
+#     job that holds the state dir; when that job is no longer in the queue,
+#     its lock is stale. Any other lock (a run sp did not start in an
+#     allocation, or one still running) stops the run instead.
+#   With -n both only report.
+# Explicit --cores/--resources after it override the derived values.
+ALLOC_ARGS=()
+TILE_STORE_ROOT=""
+[ "$NEEDS_CAMPAIGN" = 0 ] || TILE_STORE_ROOT="$(cfg tile_store_root)"
+if [ "$IN_ALLOCATION" = 1 ]; then
+  [ "${1:-}" = run ] || { echo "sp: --in-allocation applies to \`sp run\` only" >&2; exit 2; }
+  [ -n "${SLURM_JOB_ID:-}" ] && [ -n "${SLURM_TMPDIR:-}" ] || {
+    echo "sp: --in-allocation runs every job on this machine; call it inside a SLURM" >&2
+    echo "    allocation (an sbatch script, or salloc), never on a login node" >&2; exit 2; }
+  ALLOC_CORES="$(nproc)"
+  ALLOC_MEM_MB="$(python - <<'PY'
+import os, pathlib
+limits = []
+try:
+    rel = next(l.split(":", 2)[2].strip() for l in open("/proc/self/cgroup")
+               if l.startswith("0::"))
+    p = pathlib.Path("/sys/fs/cgroup" + rel)
+    while p != p.parent:
+        f = p / "memory.max"
+        if f.exists() and f.read_text().strip() not in ("", "max"):
+            limits.append(int(f.read_text()) // 2**20)
+        p = p.parent
+except (OSError, StopIteration, ValueError):
+    pass
+if not limits and os.environ.get("SLURM_MEM_PER_NODE"):
+    limits.append(int(os.environ["SLURM_MEM_PER_NODE"]))
+total = min(limits) if limits else 0
+print(total - max(4000, total // 20) if total else 0)
+PY
+)"
+  [ "$ALLOC_MEM_MB" -gt 0 ] || {
+    echo "sp: --in-allocation could not read this allocation's memory limit" >&2; exit 2; }
+  ALLOC_ARGS=(--executor local --cores "$ALLOC_CORES" --resources "mem_mb=$ALLOC_MEM_MB")
+  [ -n "$TILE_STORE_ROOT" ] || TILE_STORE_ROOT="$SLURM_TMPDIR/tile-store/$(cfg run)"
+  echo "sp: in allocation $SLURM_JOB_ID: ${ALLOC_ARGS[*]}" >&2
+fi
+
+# The resume housekeeping (a stale lock, then stale vignette manifests; the
+# lock goes first so a campaign still running is never swept). `sp run` calls
+# it before the snapshot, with its own arguments, so -n only reports.
+alloc_resume() {
+  local a alloc_dry=0 products_dir n_swept=0 tile m holder holder_file
+  local holder_state="" holder_rc=1
+  for a in "$@"; do
+    case "$a" in -n|--dry-run|--dryrun|-[a-zA-Z]*n*) alloc_dry=1 ;; esac
+  done
+  holder_file="$STATE_DIR/in-allocation.job"
+  if [ -n "$(ls -A "$STATE_DIR/.snakemake/locks" 2>/dev/null)" ]; then
+    holder="$(cat "$holder_file" 2>/dev/null || true)"
+    if [ -n "$holder" ]; then
+      holder_state="$(squeue -h -j "$holder" -o %T 2>&1)" && holder_rc=0 || holder_rc=$?
+    fi
+    # Ended: gone from the controller, or listed in a final state.
+    if [ -n "$holder" ] && [ "$holder" != "$SLURM_JOB_ID" ] && {
+         [[ "$holder_state" == *"Invalid job id"* ]] || { [ "$holder_rc" = 0 ] &&
+         [[ "$holder_state" =~ ^(|COMPLETED|FAILED|CANCELLED|TIMEOUT|OUT_OF_MEMORY|NODE_FAIL|PREEMPTED|BOOT_FAIL|DEADLINE)$ ]]; }; }; then
+      if [ "$alloc_dry" = 1 ]; then
+        echo "sp: stale lock of job $holder in $STATE_DIR (dry run, kept)" >&2
+      else
+        echo "sp: releasing the stale lock of job $holder in $STATE_DIR" >&2
+        sm --unlock >/dev/null
+      fi
+    else
+      echo "sp: $STATE_DIR is locked${holder:+ (job $holder: ${holder_state:-running})}." >&2
+      echo "    If nothing runs on this campaign, \`sp -c ... --unlock\` and resubmit." >&2
+      exit 2
+    fi
+  fi
+
+  products_dir="$(cfg outputs.products_dir)"
+  while read -r tile; do
+    [ -n "$tile" ] || continue
+    m="$RUN_DIR/tiles/${tile:0:2}/$tile/manifests/tile_vignets.json"
+    [ -e "$m" ] || continue
+    [ -e "$products_dir/tiles/${tile:0:2}/$tile/final_cat-$tile.hdf5" ] && continue
+    if [ "$alloc_dry" = 1 ]; then echo "sp: stale (dry run, kept): $m" >&2
+    else rm -f "$m"; echo "sp: deleted stale $m" >&2; fi
+    n_swept=$((n_swept + 1))
+  done < <(sed 's/[[:space:]]//g' "$(cfg tile_list)")
+  echo "sp: $n_swept stale tile_vignets.json (no final_cat, store gone with its job)" >&2
+  [ "$alloc_dry" = 1 ] || printf '%s\n' "$SLURM_JOB_ID" > "$holder_file"
+}
+
 # --- the launch code snapshot ----------------------------------------------
 # THE ONE HOME for this concept; everything else points here.
 #
@@ -227,7 +358,7 @@ PY
   # directory (NFS) trades ngmix read latency for room; the campaign-unique store
   # names (LOCAL_TAG) keep concurrent campaigns apart in one root. Profiles with
   # no `X:/local/scratch` bind (nibi's `--bind /local`) get one appended.
-  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$(cfg tile_store_root)" <<'PY'
+  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$TILE_STORE_ROOT" <<'PY'
 import os, pathlib, re, sys
 f, root = pathlib.Path(sys.argv[1]), sys.argv[2]
 if root:
@@ -317,6 +448,7 @@ cmd="${1:-}"
 case "$cmd" in
   run)
     shift
+    [ "$IN_ALLOCATION" = 0 ] || alloc_resume "$@"
     snapshot_code
     # PREPARE failing is NOT fatal to the run: keep-going means a failed tile
     # poisons only its own cone, and the tiles that lost their exposure list are
@@ -324,7 +456,7 @@ case "$cmd" in
     # the compute parse's index build enforces over the WHOLE tile list — so we
     # record the failure and go on rather than letting `set -e` abort here.
     prep_rc=0
-    SP_PHASE=prepare sm prepare_all_tiles "$@" || prep_rc=$?
+    SP_PHASE=prepare sm prepare_all_tiles ${ALLOC_ARGS[@]+"${ALLOC_ARGS[@]}"} "$@" || prep_rc=$?
     if [ "$prep_rc" -ne 0 ]; then
       echo "" >&2
       echo "############################################################" >&2
@@ -338,7 +470,7 @@ case "$cmd" in
     fi
 
     comp_rc=0
-    SP_PHASE=compute sm all "$@" || comp_rc=$?
+    SP_PHASE=compute sm all ${ALLOC_ARGS[@]+"${ALLOC_ARGS[@]}"} "$@" || comp_rc=$?
     if [ "$prep_rc" -ne 0 ] || [ "$comp_rc" -ne 0 ]; then
       exit "$([ "$comp_rc" -ne 0 ] && echo "$comp_rc" || echo "$prep_rc")"
     fi
