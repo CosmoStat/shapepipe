@@ -251,3 +251,38 @@ def test_module_sections_check_catches_a_missing_repeated_section():
     problems = _missing_required_keys(parser)
 
     assert any("VIGNETMAKER_RUNNER_RUN_1" in problem for problem in problems)
+
+
+def _expanded(value):
+    from shapepipe.pipeline.config import CustomParser
+
+    parser = CustomParser()
+    parser.read_dict({"S": {"K": value}})
+    return parser.getexpanded("S", "K")
+
+
+def test_env_default_applies_when_unset_or_empty(monkeypatch):
+    """${VAR:-x} is x when VAR is unset and when it is empty, as in the shell."""
+    monkeypatch.delenv("SP_TEST_VAR", raising=False)
+    assert _expanded("${SP_TEST_VAR:-x}") == "x"
+    monkeypatch.setenv("SP_TEST_VAR", "")
+    assert _expanded("${SP_TEST_VAR:-x}") == "x"
+    assert _expanded("${SP_TEST_VAR:-}") == ""
+    assert _expanded("${SP_TEST_VAR}") == ""
+
+
+def test_env_value_is_inserted_unexpanded(monkeypatch):
+    """A value holding '$' or '${' is inserted as is, not expanded again."""
+    monkeypatch.setenv("SP_TEST_VAR", "/a/$HOME/${X:=y}")
+    assert _expanded("$SP_TEST_VAR/b") == "/a/$HOME/${X:=y}/b"
+    assert _expanded("${SP_TEST_VAR:-z}") == "/a/$HOME/${X:=y}"
+
+
+@pytest.mark.parametrize(
+    "value", ["${SP_TEST_VAR-x}", "${SP_TEST_VAR:=x}", "${ SP_TEST_VAR }",
+              "/p/${SP_TEST_VAR"])
+def test_malformed_brace_is_rejected(monkeypatch, value):
+    """A '${' that is not $VAR, ${VAR} or ${VAR:-x} fails, set or not."""
+    monkeypatch.setenv("SP_TEST_VAR", "v")
+    with pytest.raises(ValueError, match="not \\$VAR"):
+        _expanded(value)

@@ -61,14 +61,6 @@ def ngmix_runner(
     # Photometric zero point
     zero_point = config.getfloat(module_config_sec, "MAG_ZP")
 
-    # Pixel scale -- optional override. When absent (or non-positive) it is
-    # derived from the image WCS inside Ngmix, so it cannot drift from the
-    # pixels. Only the centroid-prior width and noise window use it.
-    if config.has_option(module_config_sec, "PIXEL_SCALE"):
-        pixel_scale = config.getfloat(module_config_sec, "PIXEL_SCALE")
-    else:
-        pixel_scale = None
-
     # Background subtraction: disable for image sims, where there is no
     # background image to subtract. The background vignet occupies one input
     # slot, so the f_wcs headers -- and the optional background-rms vignet --
@@ -204,7 +196,6 @@ def ngmix_runner(
         run_dirs["output"],
         file_number_string,
         zero_point,
-        pixel_scale,
         f_wcs_path,
         w_log,
         save_batch=save_batch,
