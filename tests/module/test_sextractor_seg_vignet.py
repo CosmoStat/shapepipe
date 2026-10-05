@@ -444,9 +444,8 @@ def test_seg_vignet_stays_out_of_the_final_catalogue(tmp_path):
     _write_crowd(tmp_path / "sexcat-001-001.fits", tmp_path / "seg.fits")
     ss.add_seg_vignet(str(tmp_path / "sexcat-001-001.fits"),
                       str(tmp_path / "seg.fits"))
-    final = make_cat.prepare_final_cat_file(str(tmp_path), "-001-001")
-    make_cat.save_sextractor_data(final, str(tmp_path / "sexcat-001-001.fits"))
-    with fits.open(tmp_path / "final_cat-001-001.fits") as hdul:
-        names = hdul["RESULTS"].data.names
+    names = list(
+        make_cat.read_sextractor_data(str(tmp_path / "sexcat-001-001.fits"))
+    )
     assert "VIGNET" not in names and "SEG_VIGNET" not in names
     assert "NUMBER" in names
