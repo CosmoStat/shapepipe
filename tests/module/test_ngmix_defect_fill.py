@@ -514,7 +514,8 @@ def _expected_masks(target, defect, defect_weighting):
     written out independently of ``defect_weighting_masks``."""
     noisefilled = defect & ~target
     if defect_weighting == "des_y6":
-        return target | (np.rot90(target) & ~defect), noisefilled
+        copy = interpolable_defects(np.rot90(target) & ~defect, defect)
+        return target | copy, noisefilled
     zero = {
         "fourfold_zero": defect | fourfold(target),
         "hole": defect,
@@ -576,6 +577,34 @@ def test_interpolated_fill_and_its_weights(blend_handling, defect_weighting):
     turned = np.rot90(noise_out)
     refilled = interpolate_defects(turned[None], defect | fill, fill)[0]
     npt.assert_allclose(turned[fill], refilled[fill], atol=1e-5)
+
+
+@pytest.mark.parametrize("band", [1, 2, 4])
+def test_des_y6_copy_in_a_corner_of_the_clean_region_keeps_its_light(band):
+    """An isolated defect whose quarter-turn copy lands where the top edge
+    band meets the stamp's right edge: under des_y6 the copy has no clean
+    pixel beyond the band or the stamp edge, so the interpolant cannot
+    reach it and it keeps its light; the defect itself is interpolated.
+
+    Failure mode: the copy is interpolated anyway, the interpolant is NaN
+    there and prepare_ngmix_weights raises, dropping every epoch of the
+    object.
+    """
+    n = N_STAMP
+    flag = np.zeros((n, n), dtype=np.int32)
+    flag[:band] = 1
+    flag[n - 1, n - 1 - band] = 1
+    gal = np.random.RandomState(1).normal(size=(n, n))
+    gal_out, w_out, _ = prepare_ngmix_weights(
+        gal, np.ones((n, n)), flag, np.random.RandomState(4),
+        bkg_rms=np.ones((n, n)), defect_weighting="des_y6",
+    )
+    corner = (band, n - 1)
+    assert np.rot90(flag != 0)[corner] and flag[corner] == 0
+    assert gal_out[corner] == gal[corner]
+    assert w_out[corner] == 1.0
+    assert np.all(np.isfinite(gal_out))
+    assert gal_out[n - 1, n - 1 - band] != gal[n - 1, n - 1 - band]
 
 
 def test_fixnoise_turns_the_noise_image_k1_then_k3():

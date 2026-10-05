@@ -2165,7 +2165,12 @@ def defect_weighting_masks(interpolated, clean, defect_weighting):
       about the stamp centre, the union is interpolated, and every
       interpolated pixel keeps its full weight. Copies that land on a pixel
       whose light is already replaced (a noise-filled defect, a noisefill
-      neighbour) stay as they are.
+      neighbour) stay as they are, and so do copies the interpolant cannot
+      reach: a copy is interpolated only where it passes
+      :func:`interpolable_defects` among the pixels the image keeps, so a
+      copy wedged into a corner of the clean region (an edge band beside
+      the stamp edge) keeps its light rather than leaving the fill
+      non-finite.
     * ``"hole"``: interpolate it and leave it at weight 0.
     * ``"full"``: interpolate it at full weight.
 
@@ -2194,8 +2199,8 @@ def defect_weighting_masks(interpolated, clean, defect_weighting):
     """
     none = np.zeros_like(interpolated)
     if defect_weighting == "des_y6":
-        fill = interpolated | (np.rot90(interpolated) & clean)
-        return fill, interpolated, none
+        copy = interpolable_defects(np.rot90(interpolated) & clean, ~clean)
+        return interpolated | copy, interpolated, none
     if defect_weighting == "fourfold_zero":
         return interpolated, none, fourfold(interpolated)
     if defect_weighting == "hole":
