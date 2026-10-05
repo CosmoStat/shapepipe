@@ -942,7 +942,7 @@ rule tile_make_cat:
         ms    = rules.tile_merge_cats.output.manifest,
     output:
         manifest  = f"{TILE_DIR}/manifests/tile_make_cat.json",
-        final_cat = f"{PROD_TILE_DIR}/final_cat-{{tile}}.fits",
+        final_cat = f"{PROD_TILE_DIR}/final_cat-{{tile}}.hdf5",
     log:
         f"{TILE_DIR}/logs/tile_make_cat.json"
     params:
@@ -964,7 +964,7 @@ rule tile_make_cat:
         sp_shell("tile_make_cat", "config_tile_Mc.ini",
                  post="if [ $rc -eq 0 ]; then\n"
                       '  cp -f "$(ls -1 "$SP_RUN"/output/run_sp_tile_Mc/make_cat_runner'
-                      '/output/final_cat*.fits | head -1)" {output.final_cat}\n'
+                      '/output/final_cat*.hdf5 | head -1)" {output.final_cat}\n'
                       "fi\n")
 
 

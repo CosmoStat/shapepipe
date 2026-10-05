@@ -17,6 +17,7 @@ the pre-#749 code.
 import functools
 import operator
 
+import h5py
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -28,7 +29,6 @@ from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.make_cat_package.make_cat import SaveCatalogue
 from shapepipe.modules.make_cat_runner import make_cat_runner
 from shapepipe.modules.ngmix_package.ngmix import Ngmix
-from shapepipe.pipeline import file_io
 from shapepipe.pipeline.config import CustomParser
 from shapepipe.utilities import cfis
 
@@ -418,22 +418,12 @@ def _write_galaxy_psf_cat(path, per_obj):
     db.close()
 
 
-class _FinalCatStub:
-    """Stand-in for the FITSCatalogue ``_save_psf_data`` reads N_EPOCH from."""
-
-    def __init__(self, n_epoch):
-        self._n_epoch = np.asarray(n_epoch)
-
-    def get_data(self):
-        return {"N_EPOCH": self._n_epoch}
-
-
 def _run_save_psf(galaxy_psf_path, obj_id, n_epoch, n_epoch_slots=None):
     """Drive ``_save_psf_data`` and return its populated output dict."""
     inst = object.__new__(SaveCatalogue)
     inst._obj_id = np.asarray(obj_id)
     inst._output_dict = {}
-    inst._final_cat_file = _FinalCatStub(n_epoch)
+    inst._final_cat = {"N_EPOCH": np.asarray(n_epoch)}
 
     inst._save_psf_data(str(galaxy_psf_path), n_epoch_slots=n_epoch_slots)
     return inst._output_dict
@@ -544,15 +534,7 @@ def _write_sex_like_cat(path, data):
 
 
 def _numbered_data(obj_ids):
-    """A ``NUMBER`` + dummy second field structured array, one row per id.
-
-    A structured array with a single field gets collapsed by
-    ``file_io.FITSCatalogue._save_to_fits`` into one row holding a
-    vector-valued column (``len(names) == 1`` triggers a
-    ``data = np.array([data])`` wrap), so every SExtractor-like fixture
-    that ``save_sextractor_data`` re-saves through ``save_as_fits`` needs a
-    second field to keep one row per object.
-    """
+    """A minimal SExtractor-like table: ``NUMBER`` plus one position field."""
     return np.array(
         [(oid, 0.0) for oid in obj_ids],
         dtype=[("NUMBER", "i8"), ("X_IMAGE", "f8")],
@@ -586,39 +568,36 @@ def test_make_cat_runner_ships_every_detection_unclassified(tmp_path):
     )
 
     assert result == (None, None)
-    final_cat = file_io.FITSCatalogue(
-        str(make_cat.get_output_name(str(tmp_path), "-350-100"))
-    )
-    final_cat.open()
-    data = final_cat.get_data()
-    final_cat.close()
-    npt.assert_array_equal(data["NUMBER"], obj_ids)
-    assert not [name for name in data.dtype.names if "SPREAD" in name]
+    with h5py.File(tmp_path / "final_cat-350-100.hdf5", "r") as cat:
+        npt.assert_array_equal(cat["NUMBER"][()], obj_ids)
+        assert not [name for name in cat if "SPREAD" in name]
+        # No MASK_EXT_PATHS, no mask columns.
+        assert not [name for name in cat if name.startswith("MASK_")]
 
 
-def test_make_cat_runner_work_dir_publishes_same_catalogue(
-    tmp_path, monkeypatch
-):
-    """WORK_DIR moves the build elsewhere; the published catalogue is the same.
+def test_make_cat_runner_writes_one_hdf5_dataset_per_column(tmp_path):
+    """All save stages land in one hdf5 file, one lzf dataset per column.
 
-    All three save stages run (ngmix, per-epoch PSF slots, one external mask
-    band). The catalogue built in WORK_DIR is moved to the run's output
-    directory byte-identical to one built there directly, nothing is left in
-    WORK_DIR, and a work file a previous attempt left behind does not leak
-    into it (``save_as_fits`` appends to an existing file).
+    Runs every stage (ngmix, per-epoch PSF slots, one external mask band).
+    Columns keep the order the stages add them, a vector column is a 2-D
+    dataset with one row per object, and each column keeps the dtype its
+    stage built, in native byte order (the SExtractor input is big-endian
+    FITS).
     """
     healsparse = pytest.importorskip("healsparse")
 
     obj_ids = [1, 2, 3]
     ra = np.array([10.0, 10.1, 200.0])
     dec = np.array([20.0, 20.1, -40.0])
+    flux_aper = np.arange(9, dtype=np.float32).reshape(3, 3)
     sexcat = np.array(
-        list(zip(obj_ids, [1, 2, 0], ra, dec)),
+        list(zip(obj_ids, [1, 2, 0], ra, dec, flux_aper)),
         dtype=[
             ("NUMBER", "i8"),
             ("N_EPOCH", "i8"),
             ("XWIN_WORLD", "f8"),
             ("YWIN_WORLD", "f8"),
+            ("FLUX_APER", "f4", (3,)),
         ],
     )
     tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
@@ -643,48 +622,45 @@ def test_make_cat_runner_work_dir_publishes_same_catalogue(
     )
     mask_path = tmp_path / "mask_r.hsp"
     mask.write(str(mask_path))
-    inputs = [str(tile_sexcat_path), str(galaxy_psf_path), str(ngmix_path)]
-    stages = {
+
+    config = CustomParser()
+    config.read_dict({"MAKE_CAT_RUNNER": {
         "SHAPE_MEASUREMENT_TYPE": "ngmix",
         "SAVE_PSF_DATA": "True",
         "N_EPOCH_SLOTS": "3",
         "MASK_EXT_PATHS": f"r:{mask_path}",
-    }
+    }})
+    out_dir = tmp_path / "output"
+    out_dir.mkdir()
+    assert make_cat_runner(
+        [str(tile_sexcat_path), str(galaxy_psf_path), str(ngmix_path)],
+        {"output": str(out_dir)}, "-350-100", config,
+        "MAKE_CAT_RUNNER", _NullLogger(),
+    ) == (None, None)
+    assert [p.name for p in out_dir.iterdir()] == ["final_cat-350-100.hdf5"]
 
-    published = {}
-    for label, work_dir in (
-        ("direct", {}),
-        ("staged", {"WORK_DIR": "$SP_TEST_LOCAL/make_cat"}),
-    ):
-        out_dir = tmp_path / label
-        out_dir.mkdir()
-        config = CustomParser()
-        config.read_dict({"MAKE_CAT_RUNNER": {**stages, **work_dir}})
-        if work_dir:
-            local = tmp_path / "local"
-            monkeypatch.setenv("SP_TEST_LOCAL", str(local))
-            (local / "make_cat").mkdir(parents=True)
-            stale = make_cat.get_output_name(str(local / "make_cat"), "-350-100")
-            _write_sex_like_cat(stale, _numbered_data([7, 8]))
-        assert make_cat_runner(
-            inputs, {"output": str(out_dir)}, "-350-100", config,
-            "MAKE_CAT_RUNNER", _NullLogger(),
-        ) == (None, None)
-        path = make_cat.get_output_name(str(out_dir), "-350-100")
-        with open(path, "rb") as f:
-            published[label] = f.read()
-
-    assert published["staged"] == published["direct"]
-    assert list((tmp_path / "local" / "make_cat").iterdir()) == []
-
-    with fits.open(make_cat.get_output_name(str(tmp_path / "staged"), "-350-100")) as hdul:
-        data = hdul[1].data
-        names = data.columns.names
-        npt.assert_array_equal(data["NUMBER"], obj_ids)
-        for col in ("TILE_ID", "NGMIX_MCAL_FLAGS", "HSM_G1_PSF_3", "EXP_ID_2"):
-            assert col in names, col
-        npt.assert_allclose(data["HSM_G1_PSF_1"], [0.01, 0.05, -10.0])
-        npt.assert_array_equal(data["MASK_r"], [64, 64, -1])
+    with h5py.File(out_dir / "final_cat-350-100.hdf5", "r") as cat:
+        names = list(cat)
+        assert names[:7] == [
+            "NUMBER", "N_EPOCH", "XWIN_WORLD", "YWIN_WORLD", "FLUX_APER",
+            "TILE_ID", "TILE_UNIQUE_ID",
+        ]
+        assert names.index("NGMIX_G1_NOSHEAR") < names.index("HSM_G1_PSF_1")
+        assert names[-1] == "MASK_r"
+        for name in names:
+            assert cat[name].shape[0] == len(obj_ids), name
+            assert cat[name].compression == "lzf", name
+            assert cat[name].dtype.byteorder in "=|<", name
+        assert cat["FLUX_APER"].shape == (3, 3)
+        npt.assert_array_equal(cat["FLUX_APER"][()], flux_aper)
+        assert cat["NUMBER"].dtype == np.int64
+        assert cat["TILE_UNIQUE_ID"].dtype == np.int64
+        assert cat["HSM_FLAG_PSF_1"].dtype == np.int16
+        assert cat["EXP_ID_2"].dtype == np.int32
+        npt.assert_array_equal(cat["NUMBER"][()], obj_ids)
+        npt.assert_allclose(cat["HSM_G1_PSF_1"][()], [0.01, 0.05, -10.0])
+        npt.assert_array_equal(cat["EXP_ID_2"][()], [-1, 2358123, -1])
+        npt.assert_array_equal(cat["MASK_r"][()], [64, 64, -1])
 
 
 @pytest.mark.parametrize("shear", SHEAR_EXTS)
@@ -778,27 +754,6 @@ _PSF_SLOT_SENTINELS = {
 }
 
 
-class _ProcessCatStub(_FinalCatStub):
-    """FITSCatalogue stand-in for ``SaveCatalogue.process``; records add_cols."""
-
-    def __init__(self, obj_id, n_epoch):
-        super().__init__(n_epoch)
-        self._number = np.asarray(obj_id)
-        self.cols = {}
-
-    def open(self):
-        pass
-
-    def close(self):
-        pass
-
-    def get_data(self):
-        return {"NUMBER": self._number, "N_EPOCH": self._n_epoch}
-
-    def add_cols(self, columns):
-        self.cols.update(columns)
-
-
 def _slot_numbers(out, family):
     """The slot numbers ``n`` present in ``out`` for ``<family>_n`` columns."""
     prefix = f"{family}_"
@@ -830,10 +785,9 @@ def test_save_psf_data_fixed_slots_pad_every_family(tmp_path):
 
     # Driven through ``process``, the entry point the runner calls.
     n_slots = 7
-    cat = _ProcessCatStub([101, 202, 303], n_epoch=[1, 2, 0])
-    sc = SaveCatalogue(cat, 3, _NullLogger())
+    out = {"NUMBER": np.array([101, 202, 303]), "N_EPOCH": np.array([1, 2, 0])}
+    sc = SaveCatalogue(out, 3, _NullLogger())
     assert sc.process("psf", str(galaxy_psf_path), n_epoch_slots=n_slots) is None
-    out = cat.cols
 
     n_filled = [1, 2, 0]
     for family, sentinel in _PSF_SLOT_SENTINELS.items():
@@ -1000,7 +954,7 @@ def _write_sexcat(path, number):
     ]).writeto(path, overwrite=True)
 
 
-def test_save_sextractor_data_writes_tile_unique_id(tmp_path):
+def test_read_sextractor_data_adds_tile_unique_id(tmp_path):
     """SExtractor-mode final catalogue carries tile_id * 10**6 + NUMBER.
 
     ``NUMBER`` is deliberately gapped and unsorted: the ID is built from the
@@ -1010,28 +964,19 @@ def test_save_sextractor_data_writes_tile_unique_id(tmp_path):
     sexcat = tmp_path / "sexcat-301-279.fits"
     _write_sexcat(sexcat, number)
 
-    final_cat = make_cat.prepare_final_cat_file(str(tmp_path), "-301-279")
-    n_obj = make_cat.save_sextractor_data(final_cat, str(sexcat))
-    final_cat.close()
+    data = make_cat.read_sextractor_data(str(sexcat))
 
-    assert n_obj == len(number)
-    with fits.open(tmp_path / "final_cat-301-279.fits") as hdul:
-        data = hdul["RESULTS"].data
-        assert "VIGNET" not in data.names
-        npt.assert_array_equal(data["NUMBER"], number)
-        assert data["TILE_UNIQUE_ID"].dtype.newbyteorder("=") == np.int64
-        npt.assert_array_equal(
-            data["TILE_UNIQUE_ID"], 301279 * 10**6 + number
-        )
-        npt.assert_allclose(data["TILE_ID"], 301.279)
+    assert list(data) == ["NUMBER", "XWIN_WORLD", "TILE_ID", "TILE_UNIQUE_ID"]
+    npt.assert_array_equal(data["NUMBER"], number)
+    assert data["TILE_UNIQUE_ID"].dtype.newbyteorder("=") == np.int64
+    npt.assert_array_equal(data["TILE_UNIQUE_ID"], 301279 * 10**6 + number)
+    npt.assert_allclose(data["TILE_ID"], 301.279)
 
 
-def test_save_sextractor_data_refuses_number_beyond_id_range(tmp_path):
-    """A NUMBER that would overflow into the tile digits raises, writes nothing."""
+def test_read_sextractor_data_refuses_number_beyond_id_range(tmp_path):
+    """A NUMBER that would overflow into the tile digits raises."""
     sexcat = tmp_path / "sexcat-301-279.fits"
     _write_sexcat(sexcat, np.array([1, 10**6]))
 
-    final_cat = make_cat.prepare_final_cat_file(str(tmp_path), "-301-279")
     with pytest.raises(cfis.CfisError):
-        make_cat.save_sextractor_data(final_cat, str(sexcat))
-    assert not (tmp_path / "final_cat-301-279.fits").exists()
+        make_cat.read_sextractor_data(str(sexcat))
