@@ -21,9 +21,10 @@ input_type: data
 # run: smk-g6
 
 # Default settings per input_type, can be overridden by a user-defined run config file.
-# - tile_detection: allowed are `unions_catalogue` (fetch official UNIONS catalogue
-#   from vos; recommended for data); `sextractor` (detect objects via a SExtractor
-#   module run; required for image_sims)
+# - tile_detection: both run SExtractor on the tile. `unions_catalogue` (data)
+#   also fetches the UNIONS per-tile catalogue and joins the detections to it,
+#   taking its NUMBER (needs the DR6 tile image); `sextractor` keeps
+#   SExtractor's own (required for image_sims)
 # - psf_model: allowed are `psfex` (default), `mccd`; `fake` (image_sims only,
 #   PSF read from psf_dict)
 input_types:
@@ -68,8 +69,7 @@ machines:
         tiles: $base_dir/unions-wl/tiles
         exposures: $base_dir/unions-wl/exposures
         masks: $base_dir/unions-wl/masks/dr6-2026-08
-        # UNIONS per-tile catalogues and segmentation maps (CFIS.<tile>.r.cat,
-        # CFIS.<tile>.r.seg.fits.fz), fetched by vcp in
+        # UNIONS per-tile catalogues (CFIS.<tile>.r.cat), fetched by vcp in
         # the job: needs network from compute nodes and ~/.ssl/cadcproxy.pem.
         catalogues: vos:cfis/tiles_DR6
       outputs:
@@ -135,8 +135,8 @@ machines:
 #                       the 20% VALIDATION sample — the positions psf_validation's rows
 #                       correspond to. Rows duplicate star_selection.
 #   star_stats      star_stat-*.txt             unmeasured
-#                       setools' per-CCD STAT block: star counts, stars/deg^2, FWHM mode
-#                       and cuts. The selection's summary without its catalogue.
+#                       setools' per-CCD STAT block: star counts, FWHM mode and cuts.
+#                       The selection's summary without its catalogue.
 #   psf_model       *.psf                       2.8 MB
 #                       the PSFEx model itself. Keeping it means the PSF can be
 #                       re-interpolated at ANY position later without rebuilding the

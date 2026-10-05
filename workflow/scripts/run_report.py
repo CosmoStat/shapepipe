@@ -60,7 +60,7 @@ from pathlib import Path
 TILE_STAGES = ["tile_get_images", "tile_uncompress", "tile_find_exposures",
                "tile_merge_headers", "tile_detect", "tile_vignets",
                "tile_ngmix", "tile_merge_cats", "tile_make_cat"]
-# The catalogue fetch exists only when the run converts the UNIONS catalogue
+# The catalogue fetch exists only when the run joins the UNIONS catalogue
 # (config.yaml's tile_detection); the callers pass the mode in the environment
 # so a SExtractor run does not report the stage as not run.
 if os.environ.get("SP_TILE_DETECTION") == "unions_catalogue":
