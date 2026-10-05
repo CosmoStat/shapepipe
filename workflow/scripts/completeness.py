@@ -145,25 +145,22 @@ COMPLETENESS = {
     "tile_detect":        {"sextractor_runner":     dict(expect=2)},
     "tile_vignets": {
         "psfex": {
-            "psfex_interp_runner":     dict(expect=1),
-            "vignetmaker_runner_run_1": dict(expect=1),
-            # 5 sqlites/tile on nibi (image/weight/flag/background/background_rms);
-            # v2.0's 4 was the canfar flavor. every vignette feeds ngmix, so the expected count is all-or-nothing.
-            "vignetmaker_runner_run_2": dict(expect=5),
+            "psfex_interp_runner": dict(expect=1),
+            # 5 sqlites/tile (image/weight/flag/background/background_rms);
+            # every vignette feeds ngmix, so the expected count is all-or-nothing.
+            "vignetmaker_runner": dict(expect=5),
         },
         # As psfex: mccd_interp writes the tile's galaxy_psf store from the
         # exposures' focal-plane models (SKiLLS star sim 1z2z_1, 233.293).
         "mccd": {
-            "mccd_interp_runner":        dict(expect=1),
-            "vignetmaker_runner_run_1":   dict(expect=1),
-            "vignetmaker_runner_run_2":   dict(expect=5),
+            "mccd_interp_runner": dict(expect=1),
+            "vignetmaker_runner": dict(expect=5),
         },
         # Image simulations: fake_interp_runner writes the same galaxy_psf
         # sqlite psfex_interp_runner writes, from the simulation's PSF dictionary.
         "fake": {
-            "fake_interp_runner":       dict(expect=1),
-            "vignetmaker_runner_run_1": dict(expect=1),
-            "vignetmaker_runner_run_2": dict(expect=5),
+            "fake_interp_runner": dict(expect=1),
+            "vignetmaker_runner": dict(expect=5),
         },
     },
     # One check runs inside run_sp_tile_ngmix_Ng${SP_NGMIX_CHUNK}u per chunk,

@@ -133,8 +133,7 @@ decisions:
       Values:
       default_noimaflags.param#VIGNET = 51;
       default.param#VIGNET = 51;
-      VIGNETMAKER_RUNNER_RUN_1.STAMP_SIZE = 51;
-      VIGNETMAKER_RUNNER_RUN_2.STAMP_SIZE = 51;
+      VIGNETMAKER_RUNNER.STAMP_SIZE = 51;
       PSF_SIZE = 51.
     default: px_51
     options:
@@ -304,7 +303,7 @@ analyses:
           pixels: a star halo changes no stamp.
           Values:
           config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = True;
-          VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_PATTERN = flag, image, weight,
+          VIGNETMAKER_RUNNER.ME_IMAGE_PATTERN = flag, image, weight,
           background, background_rms.
         default: instrument_flags_only
         options:
@@ -875,12 +874,10 @@ analyses:
           blends and asymmetric galaxies, and the centroid feeds the position
           seed and the centroid prior.
           Values:
-          VIGNETMAKER_RUNNER_RUN_1.POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE;
-          VIGNETMAKER_RUNNER_RUN_1.COORD = PIX;
           config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS =
           XWIN_WORLD,YWIN_WORLD;
-          VIGNETMAKER_RUNNER_RUN_2.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD;
-          VIGNETMAKER_RUNNER_RUN_2.COORD = SPHE;
+          VIGNETMAKER_RUNNER.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD;
+          VIGNETMAKER_RUNNER.COORD = SPHE;
           config_exp_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS =
           XWIN_IMAGE,YWIN_IMAGE.
         default: xwin_windowed
@@ -1470,7 +1467,7 @@ analyses:
           (BKG_SUB, on unless set False).
           Values:
           NGMIX_RUNNER.BKG_RMS_VIGNET_PATH =
-          $NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output/background_rms_vignet{file_number_string}.sqlite;
+          $NGMIX_VIGNET_DIR/vignetmaker_runner/output/background_rms_vignet{file_number_string}.sqlite;
           NGMIX_RUNNER.BKG_SUB = absent.
         default: rms_vignet_weights
         options:
@@ -1537,8 +1534,7 @@ analyses:
           fragments) are not defects either: the epoch stamps hold real
           light there, so they keep their weight and image.
           Values:
-          VIGNETMAKER_RUNNER_RUN_1.MASKING = False;
-          VIGNETMAKER_RUNNER_RUN_2.MASKING = False.
+          VIGNETMAKER_RUNNER.MASKING = False.
         default: interpolate
         options:
           interpolate:
