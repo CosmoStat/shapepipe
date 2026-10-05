@@ -336,6 +336,8 @@ class SaveCatalogue:
         Column grammar: ``NGMIX[m]_<COMPONENT>[_ERR][_<OBJECT>]_<SHEAR>``,
         plus OBJECT/SHEAR-less per-object metadata columns
         (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
+        ``NGMIX_N_EPOCH_FAILED`` — epochs dropped because building their
+        observation raised, see ``ngmix.do_ngmix_metacal`` —
         ``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG`` — a blend
         flag set when the coadd seg stamp held a non-central footprint,
         shapepipe#776 — and the defect diagnostics ``NGMIX_N_EPOCH_INTERP``,
@@ -394,8 +396,10 @@ class SaveCatalogue:
         # Per-object blend flag (shapepipe#776): the seg stamp held a
         # non-central footprint. Galaxy-only (non-moments), like N_EPOCH.
         ngmix_neighbour_flag = ngmix_cat_file.get_data()["neighbour_flag"]
-        # Defect diagnostics (ngmix Postage_stamp.record_defects).
+        # Failed-epoch count (ngmix.do_ngmix_metacal) and defect diagnostics
+        # (ngmix Postage_stamp.record_defects).
         defect_columns = {
+            "NGMIX_N_EPOCH_FAILED": "n_epoch_failed",
             "NGMIX_N_EPOCH_INTERP": "n_epoch_interp",
             "NGMIX_MIN_DIST_INTERP": "min_dist_interp",
             "NGMIX_MIN_DIST_NOISEFILL": "min_dist_noisefill",
@@ -426,6 +430,7 @@ class SaveCatalogue:
                 np.full(n_obj, get_mcal_types_fail(never_fit), dtype=float),
             )
             self._add2dict("NGMIX_NEIGHBOUR_FLAG", np.zeros(n_obj))
+            self._add2dict("NGMIX_N_EPOCH_FAILED", np.zeros(n_obj))
             self._add2dict("NGMIX_N_EPOCH_INTERP", np.zeros(n_obj))
             self._add2dict("NGMIX_MIN_DIST_INTERP", np.full(n_obj, -1.0))
             self._add2dict("NGMIX_MIN_DIST_NOISEFILL", np.full(n_obj, -1.0))

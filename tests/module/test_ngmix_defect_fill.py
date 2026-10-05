@@ -451,7 +451,8 @@ def test_process_logs_the_epoch_cut_tally(tmp_path, monkeypatch):
         (k, int(v)) for k, v in re.findall(r"(\w+)=(\d+)", lines[0])
     )
     assert tally == dict(
-        considered=5, masked_fraction=2, central_veto=2, objects_emptied=1
+        considered=5, masked_fraction=2, central_veto=2, failed=0,
+        objects_emptied=1,
     ), lines[0]
 
 
@@ -863,18 +864,21 @@ def test_do_ngmix_metacal_threads_each_epochs_neighbour_mask(monkeypatch):
 
     def fake_observation(*args, **kwargs):
         seen.append(kwargs["neighbour"])
-        if len(seen) == len(stamp.gals):
-            raise _Stop
-        return None
+        return object()
+
+    def stop(*args, **kwargs):
+        raise _Stop
 
     monkeypatch.setattr(
         ngmix_module, "make_ngmix_observation", fake_observation,
     )
+    monkeypatch.setattr(ngmix_module, "make_runners", stop)
     monkeypatch.setattr(ngmix_module, "ObsList", list)
     with pytest.raises(_Stop):
         ngmix_module.do_ngmix_metacal(
             stamp, None, 1.0, np.random.RandomState(0),
         )
+    assert len(seen) == len(stamp.gals)
     for got, want in zip(seen, stamp.neighbours):
         assert got is want
 
