@@ -356,6 +356,25 @@ fi
 
 
 
+# THE MODULE LOGS OUTLIVE THE RUN DIRS THAT HOLD THEM. A chunk's ShapePipe run
+# dir is temp() (tile_merge_cats is its last reader) and tile_vignets' lives in
+# the node-local store, so both kinds of log went with their dirs: the
+# run's own logs/ and each module's logs/process-*.log, where ngmix writes its
+# per-chunk `epoch cuts:` line and every per-object "ngmix failed" message.
+# The rule copies them to $SP_RUN/logs/modules/<run name>/ (the tile dir on the
+# shared root) before it exits, whatever its rc, so a failed chunk keeps its
+# evidence too. A few KB per chunk; clean_tile reclaims them with the rest of
+# logs/. The copy never changes the rule's exit status.
+def keep_module_logs(run_root, run_name):
+    dest = f'"$SP_RUN/logs/modules/{run_name}"'
+    return (
+        f'rm -rf {dest} && mkdir -p {dest} && '
+        f'(cd "{run_root}" && find . -path "*/logs/*" -type f '
+        f'-exec cp -p --parents -t {dest} {{{{}}}} +) || '
+        f'echo "could not keep the module logs of {run_root}" >&2\n'
+    )
+
+
 def tile_exp(wc):
     return tile_exposures(wc.tile)
 
@@ -660,7 +679,8 @@ rule tile_vignets:
         # The completeness check is pointed at the NODE-LOCAL run root; see
         # sp_shell's check_args for what the two flags do.
         sp_shell("tile_vignets", f"config_tile_PiViVi_{PSF_MODEL}.ini",
-                 check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}')
+                 check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}',
+                 post=keep_module_logs("$NGMIX_VIGNET_DIR", "run_sp_tile_PiViVi"))
 
 # Each ngmix chunk's extra memory under uberseg: Tile_cat holding the tile's
 # SEG_VIGNET column, a view into the loaded table like VIGNET. Measured on DR6
@@ -888,7 +908,9 @@ rule tile_ngmix:
         runtime = lambda wc, attempt: 120 * attempt,
         slurm_extra = TILE_SLURM_EXTRA
     shell:
-        sp_shell("tile_ngmix", "config_tile_Ng_template.ini")
+        sp_shell("tile_ngmix", "config_tile_Ng_template.ini",
+                 post=keep_module_logs("{output.chunkdir}",
+                                       "run_sp_tile_ngmix_Ng{wildcards.chunk}u"))
 
 
 def ngmix_manifests(wc):
