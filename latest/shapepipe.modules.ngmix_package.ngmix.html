@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="05 Oct, 2026"/>
+    <meta name="docbuild:last-update" content="06 Oct, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -593,6 +593,7 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">get_prior()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.chunk_rows"><code class="docutils literal notranslate"><span class="pre">chunk_rows()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="docutils literal notranslate"><span class="pre">position_seed()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.ChunkStamps"><code class="docutils literal notranslate"><span class="pre">ChunkStamps</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat"><code class="docutils literal notranslate"><span class="pre">Tile_cat</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data"><code class="docutils literal notranslate"><span class="pre">Tile_cat.get_data()</span></code></a></li>
 </ul>
@@ -1042,11 +1043,35 @@ one object share them).</p></li>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.ChunkStamps">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ChunkStamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rows</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#ChunkStamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.ChunkStamps" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>One stamp column of the tile catalogue, held for one chunk’s rows.</p>
+<p>Indexed by tile-catalogue row like the full column it stands in for, so
+<code class="docutils literal notranslate"><span class="pre">stamps[i_tile]</span></code> is the stamp of row <code class="docutils literal notranslate"><span class="pre">i_tile</span></code>; rows outside the chunk
+raise <code class="docutils literal notranslate"><span class="pre">IndexError</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>column</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Full stamp column, one stamp per catalogue row. A memory-mapped
+column is read only over <code class="docutils literal notranslate"><span class="pre">rows</span></code>.</p></li>
+<li><p><strong>rows</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#range" title="(in Python v3.14)"><em>range</em></a>) – 0-based catalogue rows to hold (see <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.chunk_rows" title="shapepipe.modules.ngmix_package.ngmix.chunk_rows"><code class="xref py py-func docutils literal notranslate"><span class="pre">chunk_rows()</span></code></a>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Tile_cat">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Tile_cat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Tile_cat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Tile_cat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Tile_cat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Tile_cat.</p>
 <p>catalog measured on a tile</p>
+<p>The per-object columns (<code class="docutils literal notranslate"><span class="pre">obj_id</span></code>, <code class="docutils literal notranslate"><span class="pre">ra</span></code>, <code class="docutils literal notranslate"><span class="pre">dec</span></code>, <code class="docutils literal notranslate"><span class="pre">flux</span></code>) are held
+for every row. The stamp columns (<code class="docutils literal notranslate"><span class="pre">vign</span></code>, <code class="docutils literal notranslate"><span class="pre">seg</span></code>) are held only for
+the chunk’s rows (<code class="docutils literal notranslate"><span class="pre">self.rows</span></code>) as <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.ChunkStamps" title="shapepipe.modules.ngmix_package.ngmix.ChunkStamps"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChunkStamps</span></code></a>, still indexed
+by tile-catalogue row: the catalogues are memory-mapped, so a chunk reads
+only its own stamps.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1056,6 +1081,12 @@ vignetmaker output cut from the tile <code class="docutils literal notranslate">
 row-aligned to <code class="docutils literal notranslate"><span class="pre">cat_path</span></code>. When given, <code class="docutils literal notranslate"><span class="pre">self.seg</span></code> holds one integer
 seg stamp per object for the <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> blend handling; <code class="docutils literal notranslate"><span class="pre">None</span></code>
 leaves <code class="docutils literal notranslate"><span class="pre">self.seg</span></code> unset (the noise-fill path is unaffected).</p></li>
+<li><p><strong>row_min</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – First and last catalogue row of the chunk (1-based, inclusive; see
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.chunk_rows" title="shapepipe.modules.ngmix_package.ngmix.chunk_rows"><code class="xref py py-func docutils literal notranslate"><span class="pre">chunk_rows()</span></code></a>). The default, <code class="docutils literal notranslate"><span class="pre">-1</span></code>, is unbounded, so the whole
+catalogue.</p></li>
+<li><p><strong>row_max</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – First and last catalogue row of the chunk (1-based, inclusive; see
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.chunk_rows" title="shapepipe.modules.ngmix_package.ngmix.chunk_rows"><code class="xref py py-func docutils literal notranslate"><span class="pre">chunk_rows()</span></code></a>). The default, <code class="docutils literal notranslate"><span class="pre">-1</span></code>, is unbounded, so the whole
+catalogue.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1917,6 +1948,7 @@ them. Unpacks positionally as <code class="docutils literal notranslate"><span c
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_prior"><code class="docutils literal notranslate"><span class="pre">get_prior()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.chunk_rows"><code class="docutils literal notranslate"><span class="pre">chunk_rows()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="docutils literal notranslate"><span class="pre">position_seed()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.ChunkStamps"><code class="docutils literal notranslate"><span class="pre">ChunkStamps</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat"><code class="docutils literal notranslate"><span class="pre">Tile_cat</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data"><code class="docutils literal notranslate"><span class="pre">Tile_cat.get_data()</span></code></a></li>
 </ul>
@@ -1986,7 +2018,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 05 Oct, 2026.
+  Last updated on 06 Oct, 2026.
   <br/>
 </p>
   </div>
