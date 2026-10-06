@@ -728,6 +728,13 @@ shared with the <code class="docutils literal notranslate"><span class="pre">mas
 <p>&#64;sc [decision:masking.sky_mask_application,label:scope] mask-columns-verbatim
 Query <code class="docutils literal notranslate"><span class="pre">XWIN_WORLD</span></code> and <code class="docutils literal notranslate"><span class="pre">YWIN_WORLD</span></code> in catalogue order and pass the
 <code class="docutils literal notranslate"><span class="pre">query_map</span></code> result to <code class="docutils literal notranslate"><span class="pre">MASK_&lt;BAND&gt;</span></code> unchanged.</p>
+<p>&#64;sc [decision:masking.sky_mask_application,label:convention] mask-ext-ladder-columns
+The labels in <code class="docutils literal notranslate"><span class="pre">MASK_EXT_PATHS</span></code> are <code class="docutils literal notranslate"><span class="pre">&lt;flag</span> <span class="pre">value&gt;_&lt;name&gt;</span></code> for each map
+of the UNIONS mask ladder (<code class="docutils literal notranslate"><span class="pre">1_Faint_star_halos</span></code> … <code class="docutils literal notranslate"><span class="pre">2048_z2</span></code>), and
+this function writes <code class="docutils literal notranslate"><span class="pre">MASK_&lt;label&gt;</span></code> verbatim. The eleven <code class="docutils literal notranslate"><span class="pre">MASK_*</span></code>
+lines in <code class="docutils literal notranslate"><span class="pre">workflow/config/cfis/final_cat.param</span></code> must match those labels
+line for line: the post-processing merge fails every tile on a name this
+function did not write. Nothing here cuts on any column.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

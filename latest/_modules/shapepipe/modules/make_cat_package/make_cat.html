@@ -759,6 +759,14 @@
 <span class="sd">    Query ``XWIN_WORLD`` and ``YWIN_WORLD`` in catalogue order and pass the</span>
 <span class="sd">    ``query_map`` result to ``MASK_&lt;BAND&gt;`` unchanged.</span>
 
+<span class="sd">    @sc [decision:masking.sky_mask_application,label:convention] mask-ext-ladder-columns</span>
+<span class="sd">    The labels in ``MASK_EXT_PATHS`` are ``&lt;flag value&gt;_&lt;name&gt;`` for each map</span>
+<span class="sd">    of the UNIONS mask ladder (``1_Faint_star_halos`` ... ``2048_z2``), and</span>
+<span class="sd">    this function writes ``MASK_&lt;label&gt;`` verbatim. The eleven ``MASK_*``</span>
+<span class="sd">    lines in ``workflow/config/cfis/final_cat.param`` must match those labels</span>
+<span class="sd">    line for line: the post-processing merge fails every tile on a name this</span>
+<span class="sd">    function did not write. Nothing here cuts on any column.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    final_cat_file : file_io.FITSCatalogue</span>
