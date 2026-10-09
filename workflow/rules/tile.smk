@@ -592,10 +592,11 @@ rule tile_vignets:
         # the Snakefile's NGMIX_RANGE_HASH argues what it guards, and
         # tile_ngmix's copy below carries the mid-campaign-edit warning.
         range_hash = NGMIX_RANGE_HASH,
-        # tile_ngmix exports it, so it is a params change there; carried here
-        # too so that changing it reruns the whole group from tile_vignets,
-        # never the chunks alone (see the mid-campaign deletion note on
-        # tile_ngmix's range_hash).
+        # tile_ngmix exports them, so they are a params change there; carried
+        # here too so that changing either reruns the whole group from
+        # tile_vignets, never the chunks alone (see the mid-campaign deletion
+        # note on tile_ngmix's range_hash).
+        defect_fill = DEFECT_FILL,
         defect_weighting = DEFECT_WEIGHTING
     # 8, not 16, for the same reason tile_ngmix is 1: `-b {threads}` is SMP
     # batch size over input FILE SETS, and a tile is one set -- this run's own
@@ -650,6 +651,7 @@ rule tile_ngmix:
     params:
         pre = lambda wc: unit_pre("tile_ngmix", wc.tile,
             env={"SP_NGMIX_CHUNK": wc.chunk, "NGMIX_N_CHUNKS": NGMIX_CHUNKS,
+                 "SP_DEFECT_FILL": DEFECT_FILL,
                  "SP_DEFECT_WEIGHTING": DEFECT_WEIGHTING},
             # Two steps, not `eval "$(...)"`: a command substitution inside eval
             # discards the script's exit status, so a missing sexcat would fall
