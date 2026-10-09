@@ -5,7 +5,8 @@ A defect is a stamp pixel with a nonzero flag, zero exposure weight
 :func:`prepare_ngmix_weights` gives every defect weight 0 and fills it the
 same way whatever ``BLEND_HANDLING`` is: short defect runs take an
 interpolant of the kept pixels around them, and the rest take noise at the
-background RMS. Under uberseg, pixels on the neighbour side only lose their
+background RMS. Under ``DEFECT_FILL = "noise"`` every defect takes
+noise. Under uberseg, pixels on the neighbour side only lose their
 weight, and their image values stay raw. The per-epoch cuts in
 :func:`prepare_postage_stamps` act on the same defect set: the
 masked-fraction cut counts it, and the central-defect veto drops an epoch
@@ -370,6 +371,20 @@ def test_the_veto_radius_follows_the_fill():
     ]
 
 
+def test_under_noise_fill_every_defect_is_vetoed_at_the_noise_radius():
+    """With nothing interpolated, the column at 7 px and the pixel at 9 px
+    are noise-filled, so they drop their epochs as the 5-px bleed at 7 px
+    does; only the defect at EPOCH_CENTRAL_DEFECT_RADIUS is kept.
+
+    Failure mode: the veto reads a defect-mask-only interpolated set while
+    the fill noise-fills it, keeping noise-filled holes 7 px from the object
+    (veto-radius-follows-the-fill, fill-option).
+    """
+    assert _surviving(_veto_epochs(), defect_fill="noise") == [
+        "2100001-10", "2100006-15"
+    ]
+
+
 # --- prepare_postage_stamps: per-epoch OFFSET ------------------------------
 
 def test_each_surviving_epoch_carries_its_own_offset():
@@ -623,6 +638,43 @@ def test_interpolated_fill_and_its_weights(blend_handling, defect_weighting):
     turned = np.rot90(noise_out)
     refilled = interpolate_defects(turned[None], defect | fill, fill)[0]
     npt.assert_allclose(turned[fill], refilled[fill], atol=1e-5)
+
+
+@pytest.mark.parametrize("defect_weighting", DEFECT_WEIGHTINGS)
+def test_noise_fill_interpolates_nothing(defect_weighting):
+    """Under ``defect_fill="noise"`` every defect pixel takes the fill noise
+    and only the defects lose weight, whatever ``defect_weighting`` is: no
+    pixel is interpolated, so the image's clean pixels and the metacal noise
+    image are the raw realisations. ``"interpolate"`` is the default.
+
+    Failure modes: a short run is still interpolated, or its quarter turns
+    lose weight; a raw defect value leaks; an unknown fill is accepted
+    (fill-option).
+    """
+    gal, weight, flag = _hot_stamp()
+    defect = flag != 0
+
+    def run(**kwargs):
+        return prepare_ngmix_weights(
+            gal, weight, flag, np.random.RandomState(4),
+            bkg_rms=np.ones((N_STAMP, N_STAMP)),
+            defect_weighting=defect_weighting, **kwargs,
+        )
+
+    gal_out, w_out, noise_out = run(defect_fill="noise")
+    rng = np.random.RandomState(4)
+    noise_img, fill_noise = (rng.standard_normal(gal.shape) for _ in "ab")
+    npt.assert_array_equal(w_out == 0.0, defect)
+    npt.assert_array_equal(gal_out[~defect], gal[~defect])
+    npt.assert_array_equal(gal_out[defect], fill_noise[defect])
+    npt.assert_array_equal(noise_out, noise_img)
+
+    default = run()
+    for got, want in zip(run(defect_fill="interpolate"), default):
+        npt.assert_array_equal(got, want)
+    assert not np.array_equal(default[0][defect], fill_noise[defect])
+    with pytest.raises(ValueError, match="DEFECT_FILL"):
+        run(defect_fill="zero")
 
 
 @pytest.mark.parametrize("band", [1, 2, 4])

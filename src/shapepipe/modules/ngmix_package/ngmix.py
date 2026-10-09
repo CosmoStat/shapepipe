@@ -39,6 +39,14 @@ DEFECT_WEIGHTINGS = ("des_y6", "fourfold_zero", "hole", "full")
 # @sc [decision:shape_measurement.defect_weighting]
 DEFECT_WEIGHTING = "fourfold_zero"
 
+# What defect pixels hold before metacal, selectable with the DEFECT_FILL
+# option (see :func:`interpolated_defects`), and the value an absent or empty
+# option takes: "interpolate" interpolates short bounded runs and noise-fills
+# the rest, "noise" noise-fills every defect.
+DEFECT_FILLS = ("interpolate", "noise")
+# @sc [decision:shape_measurement.defect_fill]
+DEFECT_FILL = "interpolate"
+
 # The epoch cuts (see :func:`prepare_postage_stamps`). Calibration outputs,
 # not options: an epoch is dropped when more than EPOCH_MASKED_FRACTION_CUT
 # of its stamp is in :func:`defect_mask`, or when a noise-filled
@@ -848,6 +856,9 @@ class Ngmix(object):
         How interpolated defects are weighted, one of ``DEFECT_WEIGHTINGS``
         (see :func:`defect_weighting_masks`); the default is
         ``DEFECT_WEIGHTING``.
+    defect_fill : str, optional
+        What defect pixels hold before metacal, one of ``DEFECT_FILLS``
+        (see :func:`interpolated_defects`); the default is ``DEFECT_FILL``.
 
     Notes
     -----
@@ -859,7 +870,8 @@ class Ngmix(object):
     IndexError
         If the length of the input file list is incorrect
     ValueError
-        If ``blend_handling`` or ``defect_weighting`` is unknown.
+        If ``blend_handling``, ``defect_weighting`` or ``defect_fill`` is
+        unknown.
 
     """
 
@@ -880,6 +892,7 @@ class Ngmix(object):
         dilate_neighbour=1,
         metacal_psf="fitgauss",
         defect_weighting=DEFECT_WEIGHTING,
+        defect_fill=DEFECT_FILL,
     ):
 
         # Base count = catalogue + vignets, excluding the f_wcs headers (passed
@@ -903,6 +916,12 @@ class Ngmix(object):
             raise ValueError(
                 f"Unknown DEFECT_WEIGHTING '{defect_weighting}'; expected one"
                 + f" of {DEFECT_WEIGHTINGS}"
+            )
+
+        if defect_fill not in DEFECT_FILLS:
+            raise ValueError(
+                f"Unknown DEFECT_FILL '{defect_fill}'; expected one of"
+                + f" {DEFECT_FILLS}"
             )
 
         self._tile_cat_path = input_file_list[0]
@@ -947,6 +966,7 @@ class Ngmix(object):
         self._dilate_neighbour = dilate_neighbour
         self._metacal_psf = metacal_psf
         self._defect_weighting = defect_weighting
+        self._defect_fill = defect_fill
 
         self._w_log = w_log
 
@@ -1413,6 +1433,7 @@ class Ngmix(object):
                 psf_obj,
                 gal_obj,
                 blend_handling=self._blend_handling,
+                defect_fill=self._defect_fill,
             )
             epoch_cuts.update(stamp.epoch_cuts)
 
@@ -1461,6 +1482,7 @@ class Ngmix(object):
                     dilate_neighbour=self._dilate_neighbour,
                     metacal_psf=self._metacal_psf,
                     defect_weighting=self._defect_weighting,
+                    defect_fill=self._defect_fill,
                 )
             except Exception as ee:
                 self._w_log.info(
@@ -1570,6 +1592,7 @@ def prepare_postage_stamps(
     psf_obj=None,
     gal_obj=None,
     blend_handling="noisefill",
+    defect_fill=DEFECT_FILL,
 ):
     """Gather one object's epoch stamps, dropping epochs its defects spoil.
 
@@ -1610,6 +1633,10 @@ def prepare_postage_stamps(
         The neighbour treatment :func:`prepare_ngmix_weights` will apply,
         which decides which defects it can interpolate and so their veto
         radius; the default is ``"noisefill"``.
+    defect_fill : str, optional
+        One of ``DEFECT_FILLS``, which with ``blend_handling`` decides the
+        interpolated defects and so their veto radius; the default is
+        ``DEFECT_FILL``.
 
     Returns
     -------
@@ -1699,7 +1726,9 @@ def prepare_postage_stamps(
         if defect.mean() > EPOCH_MASKED_FRACTION_CUT:
             stamp.epoch_cuts["masked_fraction"] += 1
             continue
-        interpolated = interpolated_defects(defect, neighbour, blend_handling)
+        interpolated = interpolated_defects(
+            defect, neighbour, blend_handling, defect_fill
+        )
         if central_defect_vetoes(defect, interpolated):
             stamp.epoch_cuts["central_veto"] += 1
             continue
@@ -2152,14 +2181,19 @@ def defect_mask(weight, flag, bkg_rms=None):
     return defect
 
 
-def interpolated_defects(defect, neighbour, blend_handling):
+def interpolated_defects(defect, neighbour, blend_handling,
+                         defect_fill=DEFECT_FILL):
     """The defect pixels :func:`prepare_ngmix_weights` interpolates.
 
-    Under ``"noisefill"`` the neighbour pixels' light is replaced, so they
-    neither support the interpolant nor are interpolated
-    (:func:`interpolable_defects` with ``removed=neighbour``); under
+    @sc [decision:shape_measurement.defect_fill] fill-option
+    Under ``defect_fill="noise"`` no pixel is interpolated: every defect is
+    noise-filled. Under ``"interpolate"``, the short bounded runs of
+    :func:`interpolable_defects` are. There, under ``"noisefill"`` the
+    neighbour pixels' light is replaced, so they neither support the
+    interpolant nor are interpolated (``removed=neighbour``); under
     ``"uberseg"`` their light stays and supports it. The epoch cuts
-    (:func:`central_defect_vetoes`) read the same set.
+    (:func:`central_defect_vetoes`) and the defect diagnostics read the
+    same set, so each pixel is vetoed at the radius of the fill it gets.
 
     Parameters
     ----------
@@ -2170,13 +2204,27 @@ def interpolated_defects(defect, neighbour, blend_handling):
         marks no pixel.
     blend_handling : {"noisefill", "uberseg"}
         Neighbour treatment.
+    defect_fill : str, optional
+        One of ``DEFECT_FILLS``; the default is ``DEFECT_FILL``.
 
     Returns
     -------
     numpy.ndarray of bool
         ``True`` on the defect pixels to interpolate; the other defect
         pixels are noise-filled.
+
+    Raises
+    ------
+    ValueError
+        If ``defect_fill`` is unknown.
     """
+    if defect_fill not in DEFECT_FILLS:
+        raise ValueError(
+            f"Unknown DEFECT_FILL '{defect_fill}'; expected one of"
+            + f" {DEFECT_FILLS}"
+        )
+    if defect_fill == "noise":
+        return np.zeros_like(np.asarray(defect, dtype=bool))
     removed = neighbour if blend_handling == "noisefill" else None
     return interpolable_defects(defect, removed)
 
@@ -2191,7 +2239,9 @@ def central_defect_vetoes(defect, interpolated):
     smallest radii at which the defects kept recover shear within
     |m| < 1% and |c| < 5e-4. ``interpolated`` is the set
     :func:`prepare_ngmix_weights` interpolates, so each pixel is vetoed at
-    the radius of the fill it gets. The veto reads only masks, so it selects
+    the radius of the fill it gets; under ``DEFECT_FILL = "noise"`` that set
+    is empty and every defect is vetoed at ``EPOCH_CENTRAL_DEFECT_RADIUS``.
+    The veto reads only masks, so it selects
     on nothing that responds to shear. Calibration: astra decision
     ``shape_measurement.central_defect_veto``; guarded by
     ``tests/science/test_defect_recovery.py``.
@@ -2247,6 +2297,9 @@ def defect_weighting_masks(interpolated, clean, defect_weighting):
     * ``"hole"``: interpolate it and leave it at weight 0.
     * ``"full"``: interpolate it at full weight.
 
+    Under ``DEFECT_FILL = "noise"`` no pixel is interpolated, so every
+    option leaves the weights and the image as they are.
+
     Parameters
     ----------
     interpolated : numpy.ndarray of bool
@@ -2290,6 +2343,7 @@ def prepare_ngmix_weights(
     gal, weight, flag, rng, bkg_rms=None,
     blend_handling="noisefill", seg=None, object_number=None,
     dilate_neighbour=0, neighbour=None, defect_weighting=DEFECT_WEIGHTING,
+    defect_fill=DEFECT_FILL,
 ):
     """Build one epoch's image, weight map and noise image for ngmix.
 
@@ -2327,8 +2381,9 @@ def prepare_ngmix_weights(
     and their quarter-turn copies are weighted
     (:func:`defect_weighting_masks`). Noise-filled pixels and the uberseg
     neighbour side are never symmetrized, and an interpolated pixel on the
-    uberseg neighbour side stays at weight 0. Measurements: astra decision
-    ``shape_measurement.defect_weighting``; guarded by
+    uberseg neighbour side stays at weight 0. Under ``defect_fill="noise"``
+    there are no interpolated pixels for it to act on. Measurements: astra
+    decision ``shape_measurement.defect_weighting``; guarded by
     ``tests/science/test_defect_recovery.py``.
 
     @sc [decision:shape_measurement.defect_weighting,label:physics] noise-image-in-the-fixnoise-frame
@@ -2378,6 +2433,9 @@ def prepare_ngmix_weights(
         under ``blend_handling="noisefill"``. ``None`` marks no pixel.
     defect_weighting : str, optional
         One of ``DEFECT_WEIGHTINGS``; the default is ``DEFECT_WEIGHTING``.
+    defect_fill : str, optional
+        One of ``DEFECT_FILLS``; the default is ``DEFECT_FILL``. Under
+        ``"noise"`` every defect is noise-filled and none interpolated.
 
     Returns
     -------
@@ -2394,8 +2452,8 @@ def prepare_ngmix_weights(
     Raises
     ------
     ValueError
-        If ``blend_handling`` or ``defect_weighting`` is unknown, or
-        ``"uberseg"`` lacks ``seg`` or ``object_number``.
+        If ``blend_handling``, ``defect_weighting`` or ``defect_fill`` is
+        unknown, or ``"uberseg"`` lacks ``seg`` or ``object_number``.
     RuntimeError
         If the interpolant does not reach a pixel :func:`interpolated_defects`
         selected (degenerate support, or non-finite image values in it).
@@ -2467,7 +2525,9 @@ def prepare_ngmix_weights(
     noise_img = rng.standard_normal(gal.shape) * sig_noise
     noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
     gal_filled = np.where(clean, gal, noise_img_gal).astype(gal.dtype)
-    interpolated = interpolated_defects(defect, neighbour, blend_handling)
+    interpolated = interpolated_defects(
+        defect, neighbour, blend_handling, defect_fill
+    )
     if interpolated.any():
         fill, restore, zero = defect_weighting_masks(
             interpolated, clean, defect_weighting
@@ -2498,6 +2558,7 @@ def make_ngmix_observation(
     bkg_rms=None, centroid_source="wcs", offset=None,
     blend_handling="noisefill", seg=None, object_number=None,
     dilate_neighbour=0, neighbour=None, defect_weighting=DEFECT_WEIGHTING,
+    defect_fill=DEFECT_FILL,
 ):
     """Build an ngmix Observation for a single galaxy epoch.
 
@@ -2557,6 +2618,8 @@ def make_ngmix_observation(
     defect_weighting : str, optional
         Interpolated-defect weighting passed through to
         :func:`prepare_ngmix_weights`.
+    defect_fill : str, optional
+        Defect fill passed through to :func:`prepare_ngmix_weights`.
 
     Returns
     -------
@@ -2587,6 +2650,7 @@ def make_ngmix_observation(
         blend_handling=blend_handling, seg=seg, object_number=object_number,
         dilate_neighbour=dilate_neighbour, neighbour=neighbour,
         defect_weighting=defect_weighting,
+        defect_fill=defect_fill,
     )
 
     if centroid_source == "hsm":
@@ -2818,6 +2882,7 @@ def do_ngmix_metacal(
     stamp, prior, flux_guess, rng, centroid_source="wcs",
     blend_handling="noisefill", object_number=None, dilate_neighbour=0,
     metacal_psf="fitgauss", defect_weighting=DEFECT_WEIGHTING,
+    defect_fill=DEFECT_FILL,
 ):
     """Do Ngmix Metacal.
 
@@ -2875,6 +2940,9 @@ def do_ngmix_metacal(
     defect_weighting : str, optional
         Interpolated-defect weighting (one of ``DEFECT_WEIGHTINGS``) passed
         through to :func:`make_ngmix_observation`.
+    defect_fill : str, optional
+        Defect fill (one of ``DEFECT_FILLS``) passed through to
+        :func:`make_ngmix_observation`.
 
     Returns
     -------
@@ -2921,6 +2989,7 @@ def do_ngmix_metacal(
                     if n_e < len(stamp.neighbours) else None
                 ),
                 defect_weighting=defect_weighting,
+                defect_fill=defect_fill,
             )
         except Exception as err:
             stamp.epoch_failures.append((

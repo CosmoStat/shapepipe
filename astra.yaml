@@ -1451,19 +1451,22 @@ analyses:
       defect_fill:
         label: Image content of defect pixels before metacal
         rationale: >-
-          [HARDCODED] A defect is a pixel with no usable data: a nonzero
+          A defect is a pixel with no usable data: a nonzero
           instrument flag, zero exposure weight, an invalid background RMS,
           or off the tile. prepare_ngmix_weights gives it weight 0, and this
           decision sets the image value it holds. That value matters because
           metacal deconvolves, shears and reconvolves the whole stamp, which
           spreads a zero-weight pixel's content into its weighted neighbours
           within about a PSF width; DES fills defects for the same reason.
-          Short defect runs are interpolated from the surrounding good
-          pixels and the rest are filled with noise, under every
-          BLEND_HANDLING. Interpolation is used because an epoch can then
-          keep a defect as close as 7 px to the object, whereas a 0.7 arcsec
-          galaxy through a 0.9 arcsec PSF needs noise-filled defects at least
-          13 px away. Only the defect pixels are filled, not a four-fold
+          DEFECT_FILL (interpolated_defects; the workflow's `defect_fill`)
+          selects interpolate or noise, under every BLEND_HANDLING. The
+          central_defect_veto radius follows the fill each pixel gets: 7 px
+          for an interpolated pixel, 13 px for a noise-filled one, so under
+          noise every defect is vetoed at 13 px and defect_weighting has no
+          interpolated pixel to act on. Interpolation is the default because
+          an epoch can then keep a defect as close as 7 px to the object,
+          whereas a 0.7 arcsec galaxy through a 0.9 arcsec PSF needs
+          noise-filled defects at least 13 px away. Only the defect pixels are filled, not a four-fold
           symmetrized mask as in DES, since symmetrizing quadruples m and
           leaves an additive c1 (symmetrized_4fold_noise); the hole this
           leaves near the galaxy is bounded by central_defect_veto. In the
@@ -1478,7 +1481,8 @@ analyses:
           light there, so they keep their weight and image.
           Values:
           VIGNETMAKER_RUNNER_RUN_1.MASKING = False;
-          VIGNETMAKER_RUNNER_RUN_2.MASKING = False.
+          VIGNETMAKER_RUNNER_RUN_2.MASKING = False;
+          ngmix.py::DEFECT_FILL = "interpolate".
         default: interpolate
         options:
           interpolate:
@@ -1501,17 +1505,16 @@ analyses:
           noise:
             label: Independent noise on every defect
             description: >-
-              Every defect pixel gets independent noise; their
-              inverse-variance weights stay zero.
-            excluded: true
-            excluded_reason: >-
+              Every defect pixel gets independent noise and none is
+              interpolated; their inverse-variance weights stay zero, and
+              every defect is vetoed at EPOCH_CENTRAL_DEFECT_RADIUS = 13 px.
               A noise-filled defect leaves a hole in the object's light that
               metacal shears and the sky does not. Columns, 3-px bleeds and
               single pixels then need a 10 px veto on 0.3 and 0.5 arcsec
               galaxies through a 0.7 arcsec PSF, and 13 px on a 0.7 arcsec
               galaxy through a 0.9 arcsec PSF (a 3-px bleed at 10 px gives
               m11 = -6.5%). Interpolated, the same defects pass from 7 px on
-              all three (PR #922 bias scan).
+              all three (PR #922 bias scan), so noise drops more epochs.
             insights: [mask_metacal_acts_on_whole_stamp, mask_bad_column_symmetrize]
           symmetrized_4fold_noise:
             label: Four-fold-symmetrized defect set (M | rot90 | rot180 | rot270), then noise fill
@@ -1628,6 +1631,8 @@ analyses:
           between them for the interpolated defects only: noise-filled pixels
           and noisefill neighbours have no light to weight and keep weight 0,
           and the uberseg neighbour side keeps weight 0 under every option.
+          Under defect_fill noise no pixel is interpolated and the option has
+          nothing to act on.
           Under every option the metacal noise image is interpolated in
           fixnoise's quarter-turned frame (ngmix turns it k=1 before shearing
           and k=3 after), by the operator that interpolates the science image.
@@ -1688,7 +1693,9 @@ analyses:
           noise-filled pixels (EPOCH_CENTRAL_DEFECT_RADIUS) and 7 px for
           interpolated ones (EPOCH_INTERPOLATED_DEFECT_RADIUS). The veto
           reads the same interpolated set as the fill, including the runs
-          that end on a noisefill neighbour and so are noise-filled. The tile
+          that end on a noisefill neighbour and so are noise-filled. Under
+          defect_fill noise that set is empty, so every defect is vetoed at
+          13 px. The tile
           VIGNET's -1e30 neighbour markers are not defects: all epochs share
           the tile VIGNET, so a neighbour inside the radius would drop every
           epoch. Off-tile pixels are defects, so an object near the tile edge

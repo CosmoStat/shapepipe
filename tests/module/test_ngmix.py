@@ -670,6 +670,7 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
     inst._defect_weighting = module.DEFECT_WEIGHTING
+    inst._defect_fill = module.DEFECT_FILL
     inst._save_batch = 1
     inst._zero_point = 30.
     inst._output_dir = str(tmp_path)
@@ -767,6 +768,7 @@ def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
     inst._defect_weighting = module.DEFECT_WEIGHTING
+    inst._defect_fill = module.DEFECT_FILL
     inst._save_batch = -1
     inst._w_log = _RecordingLogger()
 
@@ -1365,6 +1367,7 @@ def test_process_logs_and_counts_failed_epochs(tmp_path, monkeypatch):
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
     inst._defect_weighting = module.DEFECT_WEIGHTING
+    inst._defect_fill = module.DEFECT_FILL
     inst._save_batch = -1
     inst._zero_point = 30.
     inst._output_dir = str(tmp_path)

@@ -225,6 +225,13 @@ ngmix_chunks: 8
 # (astra decision shape_measurement.defect_weighting). Unset: fourfold_zero.
 # defect_weighting: des_y6
 
+# What ngmix puts in defect pixels before metacal: interpolate (short bounded
+# runs interpolated, the rest noise-filled) or noise (every defect
+# noise-filled, vetoed at the noise-fill radius; defect_weighting then has
+# nothing to act on). Astra decision shape_measurement.defect_fill. Unset:
+# interpolate.
+# defect_fill: noise
+
 # Node-local tile store (vignets, WCS). Unset: the profile's /local/scratch
 # bind (nibi NVMe, candide node /tmp). Dense image-sim campaigns on candide
 # want a shared directory instead.

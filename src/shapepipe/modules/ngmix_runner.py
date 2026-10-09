@@ -12,6 +12,7 @@ from sqlitedict import SqliteDict
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.ngmix_package.ngmix import (
+    DEFECT_FILL,
     DEFECT_WEIGHTING,
     Ngmix,
     write_empty_tile_output,
@@ -142,6 +143,19 @@ def ngmix_runner(
         )
     w_log.info(f"DEFECT_WEIGHTING = {defect_weighting}")
 
+    # DEFECT_FILL (optional, environment-expanded): what defect pixels hold
+    # before metacal, one of DEFECT_FILLS (see interpolated_defects).
+    # "interpolate" interpolates short bounded runs and noise-fills the rest;
+    # "noise" noise-fills every defect. Absent or empty takes DEFECT_FILL; the
+    # workflow sets it from the run config's `defect_fill`.
+    defect_fill = DEFECT_FILL
+    if config.has_option(module_config_sec, "DEFECT_FILL"):
+        defect_fill = (
+            config.getexpanded(module_config_sec, "DEFECT_FILL").strip()
+            or DEFECT_FILL
+        )
+    w_log.info(f"DEFECT_FILL = {defect_fill}")
+
     # DILATE_NEIGHBOUR (optional): binary-dilation iterations enlarging the
     # uberseg neighbour mask, to absorb the few-pixel coadd-vs-epoch seg-overlay
     # offset. Ignored unless BLEND_HANDLING = uberseg. Default 1 (~one pixel).
@@ -210,6 +224,7 @@ def ngmix_runner(
         dilate_neighbour=dilate_neighbour,
         metacal_psf=metacal_psf,
         defect_weighting=defect_weighting,
+        defect_fill=defect_fill,
     )
 
     # Process ngmix shape measurement and metacalibration
