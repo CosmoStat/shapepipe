@@ -2,7 +2,7 @@
 
 These configuration files cover PSF validation (`Ms`, `Pl`, `MsPl`,
 `valjoint`) and assorted post-processing / statistics steps that are **not
-(yet) covered by the Snakemake workflow**.  They are kept here for reference
+covered by the Snakemake workflow**.  They are kept here for reference
 and manual use with `shapepipe_run -c <file>`.
 
 The per-module pipeline configurations driven by the Snakemake workflow live

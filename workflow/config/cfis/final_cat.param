@@ -257,6 +257,5 @@ NGMIX_T_PSF_ORIG_NOSHEAR
 # PSF size measured on reconvolved image
 # NGMIX_T_PSF_RECONV_NOSHEAR
 
-# ngmix metacalibration type failure flag (renamed from NGMIX_MOM_FAIL in
-# f0fca23e; catalogues written before that commit carry the old name)
+# ngmix metacalibration type failure flag
 NGMIX_MCAL_TYPES_FAIL
