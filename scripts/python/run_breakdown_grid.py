@@ -1,33 +1,32 @@
 #!/usr/bin/env python
-"""Statistically rigorous resolution x noise breakdown grid (v2).
+"""Paired-shear calibration grid over galaxy resolution and image noise.
 
-The Tier-1 companion of ``run_mbias.py``. Where that recipe reports the
+This complements ``run_mbias.py``. Where that recipe reports the
 multiplicative bias at a single well-resolved, high-S/N operating point, this
 one sweeps two axes to *map* where the metacal shear calibration stays within
 tolerance and where it breaks down: galaxy size relative to the PSF (the
 resolution ratio ``r = gal_hlr / psf_fwhm``) and image noise (three S/N bands).
 
-**What changed from v1.** v1 ran a single-signed arm per axis and reported bare
-``m = <g>/<R>/gamma - 1`` with no uncertainty; at moderate/low S/N the per-seed
-shear noise gives sigma_m ~ 0.5, so v1's scary S/N trends were *unmeasured*. v2
-makes every number carry an honest bootstrap error and cancels measurement noise
-by pairing signed arms that share an identical noise realisation:
+Signed arms share a noise realisation to reduce measurement noise; cell
+estimators carry bootstrap-over-seeds errors:
 
 * **Paired shear response.** Six arms per seed -- (g1+, g1-), (g2+, g2-),
-  (psf+, psf-) -- driven so the noise draw and sub-pixel shift are BIT-IDENTICAL
+  (psf+, psf-) -- driven so the noise draw and sub-pixel shift are identical
   across arms of a seed (same ``RandomState(seed+1000)`` into ``make_data``;
   galsim ``.shear()`` adds no rng draw). The +/- difference then cancels the
-  shared shape noise that dominated v1. ``m1 = (<g1[g1p]> - <g1[g1m]>)/(2 gamma
+  shared measurement noise. ``m1 = (<g1[g1p]> - <g1[g1m]>)/(2 gamma
   Rbar11) - 1`` with ``Rbar11`` the mean R11 over both g1 arms.
 * **Additive bias from a PSF-shear pair.** ``c1 = (<g1[psfp]> - <g1[psfm]>)/(2
   Rbar11_psf)``, leakage ``alpha = c1 / 0.05``. c2 (expected 0) is a null check.
 * **Bootstrap-over-seeds errors** (B=1000) on every cell estimator.
-* **Degeneracy guard.** When ``|Rbar| < 5 se(Rbar)`` the m is set null with
-  ``degenerate: true`` rather than dividing by a response consistent with zero.
-* **Legacy estimator** (v1's ratio-of-averages) carried alongside for continuity.
+* **Degeneracy guard.** When ``|Rbar| < 5 se(Rbar)``, the paired m and its
+  error are null and ``m{axis}_degenerate`` is true. Additive estimates use the
+  same guard and ``c_degenerate``; single-arm estimators are not guarded.
+* **Single-arm ratio-of-averages estimator**, stored in ``m*_legacy`` fields
+  alongside the paired results.
 
-**Production-parity knobs (S4).** Three CLI knobs turn the clean-room grid into
-production-settings ablations, each defaulting to the clean baseline:
+Production-setting ablations vary the centroid source, drawing WCS and epoch
+count:
 
 * ``--centroid-source {wcs,hsm}`` — "wcs" (default, as in production): the
   ngmix jacobian centre is the coadd centroid, the sub-pixel offset the stamp
@@ -39,25 +38,11 @@ production-settings ablations, each defaulting to the clean baseline:
 * ``--wcs-g1/--wcs-g2/--wcs-theta-deg`` — shear/rotate the drawing WCS jacobian
   away from a pure pixel scale (the esheldon/ngmix#72 sensitivity axis, where a
   mishandled jacobian produced m ~ -0.2 at wcs_g1=0.1).
-* ``--n-epochs`` — pre-existing; n_epochs=2 matches the old CI operating point.
+* ``--n-epochs`` — epochs per object (default 1).
 
-Estimator math is exact; the finite-difference response step is hardcoded to
-``do_ngmix_metacal``'s mainline value (Spec-Code Invariant: if that line moves,
-``STEP`` moves with it).
-
-Runs ONLY inside the ShapePipe apptainer container with the live source tree
-bound over the baked copy -- same invocation as ``run_mbias.py`` (two binds: the
-live shapepipe src AND the live cs_util, since mainline ngmix.py imports
-``cs_util.size``). Cells are embarrassingly parallel (``--jobs``); the full
-24-cell production grid is driven by the orchestrator on SLURM, not here.
-
-    apptainer exec \\
-      --bind /home,/scratch,/automnt,/n17data,/n23data1,/n09data \\
-      --bind /n17data/cdaley/unions/code/shapepipe/src/shapepipe:/app/src/shapepipe \\
-      --bind /n17data/cdaley/unions/code/cs_util/cs_util:/app/.venv/lib/python3.12/site-packages/cs_util \\
-      /n17data/cdaley/containers/shapepipe_ngmix_v2.0-dev.sif \\
-      python scripts/python/run_breakdown_grid.py \\
-      --output <run>/results/baseline/breakdown_grid
+See ``STEP`` for the finite-difference response coupling. Run in the supported
+ShapePipe container; ``docs/source/container.md`` describes source overrides.
+Cells run in parallel with ``--jobs``; the default grid has 24 cells.
 
 Emits ``<output>/breakdown_grid_v2.json`` (meta + provenance + per-cell summaries
 with all errors) plus a mirror ``breakdown_grid.json`` for the status-page reader,
@@ -85,9 +70,9 @@ from shapepipe.modules.ngmix_package.ngmix import (
 )
 from shapepipe.testing.simulate import make_data
 
-# Metacal finite-difference step: R = (g1p - g1m) / (2*step). Hardcoded to
-# do_ngmix_metacal's mainline value (ngmix.py); the Spec-Code Invariant says if
-# that line moves, this must move with it.
+# @sc [label:coupling] breakdown-grid-metacal-step
+# STEP must match do_ngmix_metacal's finite-difference step in
+# src/shapepipe/modules/ngmix_package/ngmix.py: R = (g1p - g1m) / (2*STEP).
 STEP = 0.01
 # PSF-shear amplitude for the additive-bias (leakage) arms; c1 = dgn / (2*this).
 PSF_SHEAR = 0.05
@@ -102,6 +87,8 @@ NOISE = {"high": 0.08, "moderate": 1.6, "low": 5.0}
 N_SEEDS_DEFAULT = {"high": 100, "moderate": 400, "low": 1600}
 # The six signed arms: (shear, psf_shear). g1/g2 probe multiplicative response;
 # psf probes additive leakage. Arms of one seed share a noise realisation.
+# Galaxy shear is fixed at +/-0.02 here; --gamma changes estimator
+# normalisation only, not the injected arms.
 ARMS = {
     "g1p": ((0.02, 0.0), (0.0, 0.0)), "g1m": ((-0.02, 0.0), (0.0, 0.0)),
     "g2p": ((0.0, 0.02), (0.0, 0.0)), "g2m": ((0.0, -0.02), (0.0, 0.0)),
@@ -113,11 +100,12 @@ RECORD_KEYS = ["g1", "g2", "R11", "R12", "R21", "R22", "s2n", "T", "T_psf_orig",
 
 
 def build_wcs(g1, g2, theta_deg):
-    """Uniform drawing WCS from the S4 parity knobs.
+    """Uniform drawing WCS from shear and rotation settings.
 
-    All-zero knobs return None -> make_data's bit-identical legacy PixelScale
-    path. Otherwise: shear the pixel scale (area-preserving, det = scale**2 --
-    the esheldon/ngmix#72 construction), then rotate by theta_deg."""
+    All-zero settings return None for make_data's PixelScale path. Otherwise,
+    shear the pixel scale with area preserved (det = scale**2), then rotate
+    by theta_deg.
+    """
     if g1 == g2 == theta_deg == 0.0:
         return None
     jac = galsim.ShearWCS(PIXEL_SCALE, galsim.Shear(g1=g1, g2=g2)).jacobian()
@@ -145,12 +133,13 @@ def one_stamp(noise, gal_hlr, psf_fwhm, img_size, n_epochs, shear, psf_shear,
               seed, true_noise, wcs=None, centroid_source="wcs"):
     """One injected-truth realisation -> per-arm record dict.
 
-    Uses ``RandomState(seed)`` for the fit rng and ``RandomState(seed+1000)`` for
-    make_data, so every arm of a given seed sees the IDENTICAL noise draw and
-    sub-pixel shift (galsim ``.shear()`` consumes no rng) -- the property the
-    paired estimator rests on. ``true_noise`` routes the per-pixel true-inverse-
-    variance path (see ``--true-noise``). ``wcs``/``centroid_source`` are the
-    S4 parity knobs (see module docstring)."""
+    @sc [label:coupling] breakdown-grid-paired-noise
+    Use ``RandomState(seed)`` for fitting and ``RandomState(seed+1000)`` for
+    drawing in every arm of a seed, so paired arms share noise and sub-pixel
+    shifts. GalSim ``.shear()`` consumes no random draw.
+
+    ``true_noise`` supplies per-pixel true inverse variance; ``wcs`` and
+    ``centroid_source`` control the ablations described in the module docstring."""
     rng = np.random.RandomState(seed)
     prior = get_prior(PIXEL_SCALE, rng)
     gals, psfs, _, weights, flags, jacobs, centers = make_data(
@@ -172,10 +161,8 @@ def one_stamp(noise, gal_hlr, psf_fwhm, img_size, n_epochs, shear, psf_shear,
         res = do_ngmix_metacal(stamp, prior, 1.0, rng,
                                centroid_source=centroid_source)
     except (BootPSFFailure, BootGalFailure):
-        # Production treats a bootstrap failure as a flagged object; the
-        # pair-drop policy drops the seed and fail_frac records the rate (a
-        # SYSTEMATIC failure mode still surfaces loudly there). Without this,
-        # one unlucky fit in ~1e5 kills the entire grid (job 808259).
+        # Record a failed fit rather than aborting the grid. Pair masks drop
+        # affected seeds from each estimator; fail_frac records the arm's rate.
         return dict(
             g1=np.nan, g2=np.nan, R11=np.nan, R12=np.nan, R21=np.nan,
             R22=np.nan, s2n=np.nan, T=np.nan, T_psf_orig=np.nan,
@@ -213,10 +200,10 @@ BOOTSTRAP_B = 1000
 def _boot_idx(n, B, rng):
     """One seed-index array per bootstrap replicate.
 
-    Every quantity inside a replicate must be computed from the SAME resampled
-    seed set: resampling each arm independently silently destroys the ±γ
-    pairing and inflates the reported error to the unpaired level (the bug this
-    replaces read paired σ_m = 0.23 where the per-seed pairs give 0.009)."""
+    @sc [label:coupling] breakdown-grid-joint-bootstrap
+    Within each estimator, compute both arms and their response denominator
+    from the same resampled seed indices. Independent arm resampling destroys the ±γ pairing and inflates uncertainty:
+    measured σ_m is 0.23 without pairing versus 0.009 with joint resampling."""
     return rng.integers(0, n, size=(B, n))
 
 
@@ -309,7 +296,7 @@ def harvest_cell(args):
     summary["alpha"] = None if summary["c1"] is None else float(summary["c1"] / PSF_SHEAR)
     summary["alpha_err"] = None if summary["c1_err"] is None else float(summary["c1_err"] / PSF_SHEAR)
 
-    # --- legacy ratio-of-averages (v1 continuity): m = <g[+arm]>/<R[+arm]>/gamma - 1 ---
+    # --- single-arm ratio-of-averages: m = <g[+arm]>/<R[+arm]>/gamma - 1 ---
     for axis, (ap, ri, comp) in {1: ("g1p", "R11", "g1"), 2: ("g2p", "R22", "g2")}.items():
         m = ok(ap)
         g, R = arr[ap][comp][m], arr[ap][ri][m]
@@ -375,7 +362,7 @@ def main():
     n_seeds = a.n_seeds or N_SEEDS_DEFAULT
     res_grid = np.geomspace(a.res_lo, a.res_hi, a.n_res)
     res_idx = a.res_index if a.res_index is not None else list(range(a.n_res))
-    # cell_index enumerates the FULL 8x3 grid in (res, band) order so seeds are
+    # cell_index enumerates the full n_res x 3 grid in (res, band) order so seeds are
     # stable regardless of which subset a given run selects.
     all_cells = [(ri, bi) for ri in range(a.n_res) for bi, _ in enumerate(NOISE)]
     cell_of = {(ri, bi): k for k, (ri, bi) in enumerate(all_cells)}
@@ -428,8 +415,8 @@ def main():
         ),
         cells=cells,
     )
-    # v2 JSON is primary; mirror to breakdown_grid.json so the status-page reader
-    # (build_status.py loads that exact name) stays green with no code change.
+    # breakdown_grid_v2.json is primary; build_status.py reads the mirror
+    # named breakdown_grid.json.
     for fname in ("breakdown_grid_v2.json", "breakdown_grid.json"):
         with open(os.path.join(a.output, fname), "w") as fh:
             json.dump(out, fh, indent=2)

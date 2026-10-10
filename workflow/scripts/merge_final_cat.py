@@ -1,74 +1,40 @@
 #!/usr/bin/env python3
-"""Collect the campaign's per-tile final catalogues into ONE hdf5 file.
+"""Collect the campaign's per-tile final catalogues into one HDF5 file.
 
 Run as the shell of the campaign-level ``final_cat_merge`` rule, never by hand.
 
-WHAT IT PRODUCES, AND FOR WHOM. ``<products_dir>/final_cat_<run>.hdf5``:
+``<products_dir>/final_cat_<run>.hdf5`` holds
 one dataset per tile, carrying the columns named by the input type's
 ``final_cat.param`` (``workflow/config/cfis/`` for data,
 ``workflow/config/cfis_image_sims/`` for image sims), plus an ``n_tiles`` attribute on the
 file root. sp_validation opens that file as its ``galaxy_cat_path``
-(``sp_validation/catalog.py``), so its SCHEMA is an interface and not a choice —
-see ``SPVAL_GROUP`` below for the one legacy literal in it.
+(``sp_validation/catalog.py``); see ``spval_group`` for the group-path interface.
 
 (sp_validation's own ``merge_catalogues`` is a different layer entirely: it
 works over already-calibrated ``shape_catalog_comprehensive_*.fits``. It does
 not do this merge, and this does not do that one.)
 
-WHAT IT REUSES, AND WHAT IT DOES NOT. The column extraction is
-``create_final_cat.py``'s — ``read_param_file`` for the parameter list,
-``read_data`` and ``copy_data`` for pulling those columns out of one catalogue
-with their stored dtypes — so the column grammar keeps exactly one definition.
-Those three are REPRODUCIBLE FUNCTIONS, and this PR is what made them so: the
-parameter list comes back ordered rather than through a set, ``copy_data``
-allocates the requested columns alone rather than leaving every other column of
-the source as uninitialised memory, and a missing column raises with its own
-name instead of falling out of a bare ``except:`` as an UnboundLocalError. The
-fixes are upstream, in that script, because a hand-run of it deserves them as
-much as this rule does.
-Its ``process()`` is NOT used and neither is any of its discovery: that function
-walks a directory tree the workflow does not have and never will, and it groups
-by a unit ShapePipe v2 no longer has. This script walks the workflow's own
-products tree instead (``tiles/<2-char prefix>/<ID>/final_cat-<ID>.hdf5``,
-one dataset per column) and writes the merged hdf5 itself.
+Column extraction uses ``scripts/python/create_final_cat.py``'s
+``read_param_file``, ``read_data`` and ``copy_data``; those functions define
+column selection and ordering. Discovery uses the workflow's products tree:
+``tiles/<2-char prefix>/<ID>/final_cat-<ID>.hdf5``, one dataset per column.
 
-WHERE ``create_final_cat.py`` IS FOUND. Beside this workflow, at
-``<repo>/scripts/python/create_final_cat.py`` — resolved relative to THIS file,
-so it follows the launch code snapshot (``bin/sp``) exactly as
-``workflow/scripts/*`` does, and a campaign never reads a mid-run edit. It is
-loaded by path rather than imported: it is a script, not an installed module,
-and the container's ``shapepipe`` install does not carry it.
+``create_final_cat.py`` is loaded by path relative to this file, so it follows
+``bin/sp``'s launch code snapshot. It is a script, not an installed module.
 
-IT RECONCILES, IT NEITHER REBUILDS NOR BLINDLY APPENDS, and the machinery for
-that is ``hdf5_reconcile.py``, shared with the star side so the campaign's two
-products cannot disagree about what an output owes its inputs. That module
-carries the argument in full: an append reads the appended tiles, a source that
-changed is re-read, a tile that left the campaign is deleted, a column-set
-change refreshes everything, and a no-op leaves the file untouched.
-``create_final_cat.py``'s own ``process()`` implements only the append-only half
-— it skips a tile already in the file, whatever the file on disk now says —
-which is right for a hand-driven update and wrong for a DAG output. (Its ``-s``
-single-ID mode implements ``check`` and ``remove``; ``add`` is accepted by the
-argument validator and then falls through to the ordinary walk, so it is not a
-way to add one tile by hand.)
+Reconciliation uses ``hdf5_reconcile.py``, shared with the star-catalogue merge;
+see that module for source tracking and update semantics. This script does not
+use ``create_final_cat.py``'s append-only ``process()``.
 
-WHICH TILES — AND WHY THE JOB DERIVES THE SET RATHER THAN BEING TOLD IT. The set
-is the CAMPAIGN's: every tile both declared in ``tile_list`` and present in the
-index, which is exactly the Snakefile's TILES_READY, rebuilt here from the same
-two files the Snakefile started from (``--tile-list`` and ``--index-db``, read
-through ``build_index.campaign_tiles`` so there is one definition and not two
-that can drift). It is derived rather than passed because at DR6 scale the set
-is ~20k paths and a shell command reaches ``execve`` as a SINGLE argv entry
-capped at 128 KiB by ``MAX_ARG_STRLEN``; the rule's ``input`` is the DAG edge
-and its ``params`` carries a fingerprint of that same list, which is the rerun
-trigger.
+``build_index.campaign_tiles`` derives membership from ``--tile-list`` and
+``--index-db`` rather than passing ~20k paths in a shell argument (limited to
+128 KiB by ``MAX_ARG_STRLEN``). See the Snakefile's ``final_cat_merge`` rule
+for dependencies and the membership fingerprint.
 
-THE TWO SETS ARE THE SAME SET, which is the point of deriving it this way rather
-than globbing ``<products_dir>/tiles``: a products root shared with an earlier,
-larger tile list would hand the job tiles the fingerprint never saw and no rerun
-trigger would notice. A tile in the derived set whose catalogue is missing is a
-hard error here, not a skip — under the DAG it cannot happen, since every one of
-them is a declared input of this job.
+@sc [label:coupling] final-merge-campaign-membership
+Merge only tiles in the tile-list/index intersection, not a glob of the shared
+products root: unrelated tiles would evade the rule's membership fingerprint.
+A selected tile with no catalogue is a hard error, not a skip.
 
 @sc [decision:catalogue_assembly.failure_sentinels,label:selection] never-fit-rows-pass-through
 Every row of every tile catalogue reaches the merged file, unchanged,
@@ -96,11 +62,10 @@ CFC_PATH = (Path(__file__).resolve().parents[2]
 def spval_group(campaign: str) -> str:
     """The hdf5 group the campaign's per-tile datasets live under.
 
-    ``patches/`` is a LEGACY KEY IN sp_validation's FILE SCHEMA, kept verbatim
-    only so its reader works unchanged (CosmoStat/sp_validation#340 tracks
-    removing it); it names nothing in this workflow, which has campaigns and
-    tiles and no other unit. This is the one place the literal appears —
-    everything else here says campaign.
+    @sc [label:schema] final-merge-spval-group-path
+    Keep ``patches/<campaign>`` as the group path required by sp_validation's
+    reader. CosmoStat/sp_validation#340 tracks the reader migration; ``patches``
+    is a file-schema key, not a workflow unit.
     """
     return f"patches/{campaign}"
 

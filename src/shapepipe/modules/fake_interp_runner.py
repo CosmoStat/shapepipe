@@ -7,8 +7,7 @@ The Snakemake workflow's configs read the galaxy PSF from
 (image simulations, true PSF) this runner stands where ``psfex_interp_runner``
 and ``mccd_interp_runner`` stand for the real data. It writes the same
 ``galaxy_psf`` SqliteDict, taken from the simulation's PSF dictionary instead
-of a fitted model. ``fake_psf_runner`` is the same module under its original
-name, used by the legacy bash job scripts.
+of a fitted model. Bash job scripts use the equivalent ``fake_psf_runner``.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 

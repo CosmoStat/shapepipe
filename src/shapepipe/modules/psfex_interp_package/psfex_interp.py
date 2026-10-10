@@ -108,7 +108,7 @@ def _fourth_moments(image, moms, wcs=None):
     that motivates the sky-coordinate measurement. When ``wcs`` is ``None`` the
     computation is done consistently in the pixel frame instead (the axes are
     then the CCD axes and the result is *not* frame-invariant); this path exists
-    only for the legacy pixel-frame branch.
+    only for the pixel-frame branch.
 
     Parameters
     ----------
@@ -711,8 +711,7 @@ class PSFExInterpolator(object):
 
         Read the CCD image WCS from the SExtractor FITS_LDAC galaxy catalogue.
         The original image header is stored as a card list in the ``LDAC_IMHEAD``
-        HDU (HDU 1); this is the same header the (now retired) pixel-to-world
-        conversion reconstructed to rotate shapes.
+        HDU (HDU 1).
 
         Returns
         -------

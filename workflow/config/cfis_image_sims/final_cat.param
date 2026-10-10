@@ -4,13 +4,9 @@
 # final catalogue into <products_dir>/final_cat_<run>.hdf5, and sp_validation's
 # extract step reads the same list; every entry must exist in that catalogue.
 #
-# A real file in this overlay dir, not a symlink into ../cfis/, because the
-# real-data list names columns make_cat does not write for the simulations:
-#   - IMAFLAGS_ISO   : the tile SExtractor runs without a flag image
-#                      (config_tile_Sx.ini: FLAG_IMAGE = False)
-#   - NGMIX_MOM_FAIL : make_cat writes it as NGMIX_MCAL_TYPES_FAIL
-# and it omits two that sp_validation's image-sim extract step reads: NUMBER and
-# NGMIX_MCAL_TYPES_FAIL (the metacal moments-failure cut).
+# This overlay has its own list: simulated tiles have no IMAFLAGS_ISO
+# (config_tile_Sx.ini: FLAG_IMAGE = False), and sp_validation's image-sim
+# extract step needs NUMBER and NGMIX_MCAL_TYPES_FAIL.
 
 # coordinates
 XWIN_WORLD

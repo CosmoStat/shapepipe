@@ -1,32 +1,14 @@
 ## SETools configuration file for star/galaxy separation based on size/mag properties
 ##
-## ONE mask cut, and it is the instrument flags:
-##   IMAFLAGS_ISO == 0  the instrument flag image (bad columns, saturation)
-##                      delivered with the exposure and read by SExtractor.
+## The mask cut is IMAFLAGS_ISO == 0: instrument flags identify corrupted
+## pixels, while sky-fixed external masks identify locations rather than
+## unusable measurements. PSF outlier rejection handles location-dependent
+## contamination without an external-mask veto.
 ##
-## That is deliberate, and it follows from what the two kinds of mask MEAN.
-## An instrument flag marks a CORRUPTED MEASUREMENT — the pixels carry no
-## usable signal — so a flagged star is not a star we could model badly, it is
-## one we cannot model at all. The healsparse masks are sky-fixed LOCATION
-## flags (a star halo, a manual region, a band with no data): they say where an
-## object sits, not that its pixels are broken, so whether one disqualifies a
-## PSF star is a judgement, not a fact about the data.
-##
-## So the star selection deliberately starts from OUTLIER REJECTION ALONE for
-## that judgement. mask_query still queries the external masks per detection
-## and writes MASK_EXT into this catalogue — carried for transparency and
-## measurement, so their effect on the star sample can be measured before it is
-## imposed. Flag transparently, cut downstream.
-##
-## MASK_EXT is the configurable pickup if outlier rejection proves
-## insufficient. To impose it, add
-##
-##     MASK_EXT == 0
-##
-## beside each IMAFLAGS_ISO line below — one line per mask block, and that is
-## the whole change. Which maps reach MASK_EXT is mask_query's MASK_PATHS
-## config, which ships commented out; SETools has no bitwise operators, so the
-## bit selection happens there and this file only ever tests for zero.
+## To veto external masks, enable the desired maps in mask_query's MASK_PATHS
+## and add MASK_EXT == 0 beside each IMAFLAGS_ISO line below. MASK_PATHS ships
+## commented out, so mask_query is a pass-through and writes no MASK_EXT.
+## SETools has no bitwise operators; select mask bits in MASK_PATHS.
 
 # @sc [decision:masking.psf_star_mask_veto,decision:star_selection_psf.star_selection_box]
 [MASK:preselect]

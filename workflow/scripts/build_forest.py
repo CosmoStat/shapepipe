@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """Build a tile's exposure symlink forest (the SP_EXP view).
 
-A plain script (not a run: block) so the tile chain stays group-compatible.
-Reads the tile's exposures from run_index.sqlite and symlinks each exposure's
-``exp/<prefix>/<base>/output`` into ``<forest>/<prefix>/<base>/output`` by exact
-name (no glob). The 2-char ``<prefix>`` shard level is NOT cosmetic: ShapePipe's
-``exp_utils.get_exp_output_files`` hardwires the sharded v2.0 layout into its
-$SP_EXP glob (``<SP_EXP>/<prefix>/<base>/output/run_sp_*/...``), so a flat
-forest makes every tile gather stage fail "No split_exp_runner output found".
-(The exposure STORE is sharded the same way, for the filesystem's sake.)
-The forest is a convenience view; the DAG edge to the exposures is declared in
-the rule's input (tile.smk), not here.
+A plain script rather than a ``run:`` block keeps the tile chain group-compatible.
+It reads the tile's exposures from run_index.sqlite and creates links by exact
+name, without globs. Links for current exposures are replaced; entries absent
+from the current index query are not pruned.
+The exposure dependencies belong to the rule's input in
+``workflow/rules/tile.smk``, not to this convenience view.
+
+@sc [label:coupling] exposure-forest-sharded-layout
+Link ``exp/<prefix>/<base>/output`` at ``<forest>/<prefix>/<base>/output``, with
+the first two base-ID characters as the shard. ``exp_utils.get_exp_output_files``
+expects this layout in its ``$SP_EXP`` glob; a flat forest makes gather stages
+fail to find exposure outputs.
 """
 
 import argparse
@@ -37,9 +39,8 @@ def main() -> None:
         src = args.run_dir / "exp" / e[:2] / e / "output"
         dst = args.forest / e[:2] / e / "output"   # sharded: the module glob's shape
         dst.parent.mkdir(parents=True, exist_ok=True)
-        # A symlink (the normal case) is unlinked; a REAL directory left behind
-        # by a hand-run or an older layout must be removed as a tree — unlink()
-        # raises IsADirectoryError on it and would kill the job.
+        # Unlink existing links; remove real directories as trees because
+        # unlink() cannot delete them.
         if dst.is_symlink() or dst.exists():
             if dst.is_dir() and not dst.is_symlink():
                 shutil.rmtree(dst)

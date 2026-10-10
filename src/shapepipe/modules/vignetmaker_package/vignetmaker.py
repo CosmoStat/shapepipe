@@ -25,10 +25,8 @@ def get_stamps(image, positions, rad):
 
     The image is zero-padded by ``rad`` on every side and a
     ``(2 * rad + 1, 2 * rad + 1)`` stamp is sliced around the integer pixel
-    nearest each position (``numpy.round``). The stamp values are
-    bit-identical to the ``sf_tools.image.stamp.FetchStamps`` this replaces
-    for in-bounds positions; unlike ``FetchStamps``, an out-of-bounds centre
-    raises rather than being silently wrapped modulo the image shape.
+    nearest each position (``numpy.round``). An out-of-bounds centre raises
+    rather than wrapping modulo the image shape.
 
     Parameters
     ----------
@@ -309,6 +307,12 @@ class VignetMaker(object):
             Dictionary containing object id and vignets for each epoch
 
         @sc [decision:preparation.stamp_positioning_and_padding]
+
+        @sc [label:coupling] vignette-centroid-rounding
+        Each epoch stores the [row, col] ``OFFSET`` and ``INT_POS`` from
+        extraction with its vignette. The ngmix "wcs" centroid prior must share
+        that rounding; ``INT_POS + OFFSET`` reconstructs the absolute exposure
+        centroid for diagnostics.
         """
         cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()
@@ -445,14 +449,7 @@ class VignetMaker(object):
                     output_dict[id_tmp][index]["VIGNET"] = final_list[j][1][
                         where_res[0]
                     ]
-                    # Sub-pixel [row, col] offset of the coadd centroid from
-                    # the integer pixel this stamp was extracted around, plus
-                    # that integer pixel itself. Both ride with the vignette
-                    # (no sidecar file); OFFSET is consumed by the ngmix "wcs"
-                    # (coadd) centroid source so the extraction and the
-                    # centroid prior share one rounding (see #767), and
-                    # INT_POS + OFFSET reconstruct the absolute exposure
-                    # centroid for diagnostics.
+                    # OFFSET and INT_POS: see vignette-centroid-rounding.
                     output_dict[id_tmp][index]["OFFSET"] = final_list[j][3][
                         where_res[0]
                     ]

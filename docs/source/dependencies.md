@@ -16,7 +16,7 @@ Scientific stack:
 |---------|------------|
 | [Astropy](https://www.astropy.org/) | {cite:p}`astropy:2013,astropy:2018` |
 | [GalSim](https://github.com/GalSim-developers/GalSim) | {cite:p}`rowe:15` |
-| [ngmix](https://github.com/aguinot/ngmix) | {cite:p}`sheldon:15` |
+| [ngmix](https://github.com/esheldon/ngmix) | {cite:p}`sheldon:15` |
 | [MCCD](https://github.com/CosmoStat/mccd) | {cite:p}`liaudat:21` |
 | [ModOpt](https://cea-cosmic.github.io/ModOpt/) | {cite:p}`farrens:20` |
 | [python-pysap](https://github.com/CEA-COSMIC/pysap) | |
@@ -26,7 +26,6 @@ Scientific stack:
 | [Matplotlib](https://matplotlib.org/) | {cite:p}`hunter:07` |
 | [Joblib](https://joblib.readthedocs.io/en/latest/) | {cite:p}`joblib:20` |
 | [mpi4py](https://mpi4py.readthedocs.io/en/stable/) | {cite:p}`dalcin:05,dalcin:08,dalcin:11` |
-| [reproject](https://reproject.readthedocs.io/) | |
 | [h5py](https://www.h5py.org/) | |
 
 Data access &amp; infrastructure (CANFAR / UNIONS):
@@ -36,21 +35,18 @@ Data access &amp; infrastructure (CANFAR / UNIONS):
 | [vos](https://github.com/opencadc/vostools) | CADC / CANFAR VOSpace access |
 | [skaha](https://github.com/shinybrar/skaha) | CANFAR Science Platform sessions |
 | canfar | CANFAR container-job submission |
-| [astroquery](https://astroquery.readthedocs.io/) | external catalogue queries |
 | [cs_util](https://github.com/CosmoStat/cs_util) | shared CosmoStat utilities |
 | [sqlitedict](https://github.com/RaRe-Technologies/sqlitedict) | on-disk pipeline state |
 
 ```{note}
-`ngmix` is pinned to the
-[`aguinot/ngmix@stable_version`](https://github.com/aguinot/ngmix/tree/stable_version)
-fork until the fixes land upstream — do not modernise that line (see the note in
-`pyproject.toml`).
+Git-sourced packages and their selected refs are declared in
+`pyproject.toml` under `[tool.uv.sources]`; `uv.lock` pins the resolved commits.
 ```
 
 ## System Dependencies
 
-The container also provides the non-Python tools ShapePipe calls, all from Debian
-packages (no source builds), plus the MPI stack:
+The container also provides the non-Python tools ShapePipe calls, from Debian
+packages, plus a source-built MPI stack (see `Dockerfile`):
 
 | Package | References |
 |---------|------------|

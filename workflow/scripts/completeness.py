@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 """The count-based completeness table — the single failure policy.
 
-This is the ported ``complete_check`` count table from the v2.0 bash layer
-(``run_job_sp_canfar_v2.0.bash`` job dispatch, survey §4): every non-warning
-runner is expected to produce exactly its ``expect`` count. Across smk-g6
-(127 exposures, 64 tiles, and 512 ngmix chunks), setools produced 80/80 in
-all 127 exposures, so ``setools_runner`` is mandatory with no tolerance for
-attrition. ``split_exp`` is likewise structurally all-or-nothing because it
-raises on an HDU-count mismatch.
+Each runner must meet its nominal ``expect`` count unless marked ``warn``;
+counts above nominal also pass. On a nibi run of 127 exposures, 64 tiles and
+512 ngmix chunks, setools produced 80/80 in every exposure, supporting a
+mandatory PSFEx-side ``setools_runner`` count. ``split_exp`` is structurally
+all-or-nothing because it raises on an HDU-count mismatch.
 
-A runner below ``expect`` fails its unit unless it has ``warn=True``; such a
-shortfall gives the unit status ``warn``. There is no 3-class taxonomy and no
-error-signature whitelist.
+A runner below ``expect`` fails its unit unless it has ``warn=True``.
+A warning-only shortfall gives the unit status ``warn``; any mandatory
+shortfall makes it ``failed``. Scraped error signatures explain shortfalls,
+but do not determine whether they pass.
 
-This file is also the ``check`` CLI, the second half of every rule's shell line
-(PRD D2/D3). The rules capture ShapePipe's return code rather than ``&&``-ing
+This file is also the ``check`` CLI, called after ShapePipe in each checked
+rule's shell line. The rules capture ShapePipe's return code rather than ``&&``-ing
 onto it, so the check runs — and the verdict is recorded — even when
 ``shapepipe_run`` failed::
 
@@ -24,45 +23,38 @@ onto it, so the check runs — and the verdict is recorded — even when
     exit $rc
 
 It counts the unit's products under ``$SP_RUN`` and exits nonzero iff a mandatory
-runner is below ``expect`` OR ``--job-rc`` is nonzero — the verdict is COMPOSED of
+runner is below ``expect`` or ``--job-rc`` is nonzero. The verdict combines
 the counts and shapepipe_run's own exit status, because a runner can raise after
 the counted ones have written their files.
 
 The verdict is written to two files with different jobs:
 
-  * the LOG (``--log``, the rule's snakemake ``log:``) gets the full verdict on
-    EVERY run, success or failure — counts against ``expect``, per-runner detail,
-    scraped failure reasons, ``job_rc`` when nonzero. Snakemake never deletes a
-    log file, so it survives the failed job that wrote it and is the post-mortem
-    evidence ``run_report.py`` reads.
-  * the MANIFEST (the rule's declared ``output:``) gets that same verdict ONLY
-    when it is a success. Snakemake deletes a failed job's declared output
-    natively, so nothing here has to unlink anything.
+  * The log (``--log``, the rule's Snakemake ``log:``) records every verdict:
+    counts, per-runner detail, scraped reasons and nonzero ``job_rc``.
+    It survives failed-job output cleanup for ``run_report.py`` to read.
+  * The manifest (the rule's declared ``output:``) receives that verdict only
+    on success, including warning-only success. Snakemake removes declared
+    outputs of failed jobs; this script does not unlink them.
 
-``<stage>.json`` therefore means "this stage succeeded": a resume cannot schedule
-a downstream stage on top of a failed one. The removal of a PREVIOUS success's
-manifest is snakemake's to do, not this script's, and the one gap that leaves is
-a head process SIGKILLed between the job's failure and that deletion — a
-success-named manifest then outlives the failure it no longer describes. The
-profile's ``rerun-incomplete`` covers the DAG side, and ``run_report.py`` takes
-the WORST status across a stage's log and manifest, so the report is right even
-in that window.
+A surviving ``<stage>.json`` represents success after Snakemake handles failed
+outputs. A head-process SIGKILL between failure and output cleanup can leave a
+stale success manifest. The profile's ``rerun-incomplete`` handles scheduling;
+``run_report.py`` takes the worst status across log and manifest for reporting.
 
-Neither file carries wall-clock, and each is rewritten ONLY when its content
-changes — identical on-disk state must leave a byte-identical manifest with an
-UNMOVED mtime, or the mtime rerun-trigger churns the cone on every unrelated
-``--forcerun``.
+Neither file carries wall-clock time. ``write_if_changed`` preserves unchanged
+content and mtime so unrelated ``--forcerun`` invocations do not trigger
+downstream reruns.
 
 Per-runner fields:
     expect   nominal file count for a fully complete unit; below it fails
-    warn     if True a shortfall warns instead of failing the unit (bash
-             ``:warn`` — e.g. ``exp_psf``'s ``psfex_interp_runner``; the
-             ``tile_vignets`` ``psfex_interp_runner`` is mandatory)
-    subpath  count files in ``<runner>/output/<subpath>/`` instead of
-             ``<runner>/output/`` (bash ``:rand_split`` — setools split cats)
+    warn     if True a shortfall warns instead of failing the unit (e.g.
+             exposure-side ``psfex_interp_runner``; its tile-side count is
+             mandatory)
+    subpath  count entries in ``<runner>/output/<subpath>/`` instead of
+             ``<runner>/output/`` (e.g. setools split catalogues)
 
-Counts are file counts in the runner's output dir, matching the bash
-``ls <out_dir>/ | wc -l`` semantics (broken symlinks excluded by the caller).
+Counts include directory entries as well as files and live symlinks.
+Dangling symlinks are excluded.
 """
 
 import argparse
@@ -82,10 +74,9 @@ TILE_DETECTIONS = ("sextractor", "unions_catalogue")
 # @sc [decision:per_unit_completeness]
 COMPLETENESS = {
     # --- tile prepare (phase A) ---
-    # get_images counts are CONFIG-FLAVOR-DEPENDENT: the v2.0 bash table said 4/6
-    # for the canfar vos flavor; the nibi symlink configs produce one file per
-    # INPUT_FILE_PATTERN entry (tile: image+weight=2; exp: image+weight+flag=3),
-    # verified against the p3-batch1 baseline tree (100 files / 50 tiles).
+    # The nibi symlink configs produce one file per INPUT_FILE_PATTERN entry:
+    # image+weight for tiles, image+weight+flag for exposures. Tile counts were
+    # verified on a nibi run (100 files across 50 tiles).
     "tile_get_images":     {"get_images_runner":      dict(expect=2)},
     "tile_uncompress":     {"uncompress_fits_runner": dict(expect=1)},
     "tile_find_exposures": {"find_exposures_runner":  dict(expect=1)},
@@ -93,13 +84,9 @@ COMPLETENESS = {
     # --- exposure chain ---
     "exp_get_images": {"get_images_runner": dict(expect=3)},
     "exp_split":      {"split_exp_runner":  dict(expect=121)},
-    # sextractor expect is nibi-flavor: 3 files/CCD (sexcat + background +
-    # background_rms; v2.0's 80 assumed 2/CCD), verified against the P0 tree
-    # AND the bash baseline (both 120/exposure).
-    #
-    # mask_query is one sexcat_ext per CCD — the count the deleted exp_mask
-    # stage used to carry, now inside this chain because querying a healsparse
-    # map at ~2k detections needs no rule of its own.
+    # SExtractor writes three files per CCD (sexcat, background, background_rms),
+    # measured at 120 per exposure on nibi. mask_query writes one sexcat_ext
+    # per CCD by querying the healsparse map at the detections.
     "exp_psf": {
         "psfex": {
             "sextractor_runner":   dict(expect=120),
@@ -147,12 +134,11 @@ COMPLETENESS = {
         "psfex": {
             "psfex_interp_runner":     dict(expect=1),
             "vignetmaker_runner_run_1": dict(expect=1),
-            # 5 sqlites/tile on nibi (image/weight/flag/background/background_rms);
-            # v2.0's 4 was the canfar flavor. every vignette feeds ngmix, so the expected count is all-or-nothing.
+            # Five stores per tile: image, weight, flag, background and rms.
+            # Each feeds ngmix, so all five are required.
             "vignetmaker_runner_run_2": dict(expect=5),
         },
-        # As psfex: mccd_interp writes the tile's galaxy_psf store from the
-        # exposures' focal-plane models (SKiLLS star sim 1z2z_1, 233.293).
+        # mccd_interp writes galaxy_psf from exposure-wide focal-plane models.
         "mccd": {
             "mccd_interp_runner":        dict(expect=1),
             "vignetmaker_runner_run_1":   dict(expect=1),
@@ -175,7 +161,7 @@ COMPLETENESS = {
 
 
 def count_products(run_dir, runner, spec):
-    """Count files in ``run_dir/<runner>/output[/<subpath>]/`` (live links only).
+    """Count entries in ``run_dir/<runner>/output[/<subpath>]/``, excluding dead links.
 
     scandir, not iterdir: the dirent already says whether an entry is a symlink,
     so only the symlinks need the follow-stat that drops dead links. A plain
@@ -192,10 +178,7 @@ def count_products(run_dir, runner, spec):
     try:
         with os.scandir(out) as entries:
             for e in entries:
-                # A dead symlink must not count (the bash
-                # `ls | wc -l` semantics this ports counted live files only), and
-                # a symlink is the only entry that can be dead — so it is the
-                # only one worth a follow-stat.
+                # Only symlinks need a follow-stat to exclude missing targets.
                 if not e.is_symlink() or os.path.exists(e.path):
                     n += 1
     except OSError:
@@ -230,16 +213,12 @@ def check_counts(stage, run_dir):
 # --- where a stage writes -------------------------------------------------
 #
 # stage -> (level, run_sp_<prefix> dir under $SP_RUN/output/). These are the
-# committed configs' RUN_NAMEs (RUN_DATETIME=False makes them fixed, PRD D2), so
+# committed configs' RUN_NAMEs (RUN_DATETIME=False makes them fixed), so
 # the check never resolves a run-log. The ngmix entry interpolates the same env
 # var its config does, so chunk K's check looks at chunk K's dir.
 #
-# EVERY ENTRY HERE (and in COMPLETENESS above) HAS A RULE. The table used to
-# carry stages that did not — `tile_mask` (run_sp_tile_Ma) and `tile_detect_uc`
-# (run_sp_tile_Uc) — and, until PR #847, an `exp_mask` stage that did. ShapePipe
-# now generates no masks at all: the sky-fixed healsparse maps are queried per
-# object inside the exp_psf and tile_make_cat chains, so masking has no stage
-# of its own on either side and is not coming back.
+# Entries correspond to workflow rules. Mask queries run inside exp_psf and
+# tile_make_cat, so there is no separate mask stage.
 STAGE_DIR = {
     "tile_get_images":     ("tile", "run_sp_tile_Git"),
     "tile_uncompress":     ("tile", "run_sp_tile_Uz"),
@@ -372,8 +351,9 @@ def build_manifest(stage, run_dir, unit, stage_subdir=None):
 def write_if_changed(path: Path, text: str) -> None:
     """Write only when the bytes differ (see the module docstring on mtime).
 
-    Atomic (temp file + os.replace): a reader such as run_report.py must never
-    see the file truncated mid-write.
+    @sc [label:operations] completeness-stable-verdict-publication
+    Leave identical content untouched to preserve mtime; publish changes by
+    atomic replacement so readers never see a truncated verdict.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists() or path.read_text() != text:
@@ -389,10 +369,8 @@ def write_if_changed(path: Path, text: str) -> None:
 def _unit_from_run_dir(run_dir):
     """The human unit ID: the basename of ``$SP_RUN`` (``210.282``, ``2605805``).
 
-    NOT ``SP_UNIT_NUM``, which carries ShapePipe's dashed numbering form
-    (``-210-282``) and would put ``210-282`` in the manifest — a key that joins
-    to nothing. ``run_report`` keys units on the store directory name, which is
-    exactly this basename, so the two now agree.
+    Use the store basename (``210.282``) rather than ShapePipe's dashed
+    ``SP_UNIT_NUM`` (``-210-282``).
     """
     return Path(str(run_dir)).name or "unknown"
 
@@ -431,16 +409,8 @@ def main(argv=None) -> int:
 
     manifest, ok = build_manifest(args.stage, Path(run_dir), unit, args.stage_dir)
 
-    # The verdict is COMPOSED of two independent statements: the count checks
-    # (above) and shapepipe_run's own exit status (here). Counts alone are not
-    # enough — a runner can raise AFTER the counted runners have written their
-    # files, so the counts are met while the job died. Without this, such a job
-    # publishes a SUCCESS manifest that snakemake then deletes as a failed job's
-    # output — and the log would claim "complete" for a stage with no manifest,
-    # which reads as a bookkeeping bug rather than as the failure it is.
-    #
-    # Recorded only when nonzero, which keeps every existing success manifest
-    # byte-identical (the mtime rerun-trigger reads those bytes).
+    # Compose job status with counts (see this function's verdict contract).
+    # Include job_rc only on failure; successful verdicts need no extra field.
     if args.job_rc != 0:
         ok = False
         manifest["status"] = "failed"
@@ -454,12 +424,7 @@ def main(argv=None) -> int:
 
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
-    # The log ALWAYS gets the verdict; the manifest gets it only on success. No
-    # unlink of anything: snakemake deletes a failed job's declared output, so
-    # the presence of <stage>.json IS the statement "this stage succeeded" and
-    # the DAG can never build on top of a failure. A failure->success transition
-    # publishes the manifest; a success->failure has the manifest removed for us,
-    # and the log is overwritten with the new verdict either way.
+    # See the function contract and module docstring for log/manifest custody.
     write_if_changed(args.log, text)
     if ok:
         write_if_changed(args.manifest, text)
