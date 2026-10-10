@@ -886,10 +886,12 @@ rule tile_make_cat:
     output:
         manifest  = f"{TILE_DIR}/manifests/tile_make_cat.json",
         final_cat = f"{PROD_TILE_DIR}/final_cat-{{tile}}.fits",
+        stats = f"{PROD_TILE_DIR}/tile_make_cat.json",
     log:
         f"{TILE_DIR}/logs/tile_make_cat.json"
     params:
         pre = lambda wc: unit_pre("tile_make_cat", wc.tile,
+                                  env={"NGMIX_N_CHUNKS": NGMIX_CHUNKS},
                                   pre_run=[tile_local(wc.tile), TILE_VIGNET_REQUIRED,
                                            TILE_CLEAN]),
         script_hash = SCRIPT_HASH
@@ -908,6 +910,8 @@ rule tile_make_cat:
                  post="if [ $rc -eq 0 ]; then\n"
                       '  cp -f "$(ls -1 "$SP_RUN"/output/run_sp_tile_Mc/make_cat_runner'
                       '/output/final_cat*.fits | head -1)" {output.final_cat}\n'
+                      '  cp -f {output.manifest} {output.stats}.tmp\n'
+                      '  mv -f {output.stats}.tmp {output.stats}\n'
                       "fi\n")
 
 
@@ -986,7 +990,8 @@ rule clean_tile:
         # the PROD_TILE_DIR pattern so there is exactly one definition of this
         # path (final_cat() in the Snakefile), the same way clean_exposure keys
         # off wildcards.exp alone.
-        lambda wc: final_cat(wc.tile)
+        cat = lambda wc: final_cat(wc.tile),
+        stats = rules.tile_make_cat.output.stats,
     output:
         tombstone = f"{TILE_DIR}/cleaned.json"
     params:
@@ -1000,7 +1005,7 @@ rule clean_tile:
     shell:
         f"python {SCRIPTS}/clean_tile.py"
         " --tile-dir $(dirname {output.tombstone}) --tile {wildcards.tile}"
-        " --tombstone {output.tombstone}"
+        " --tombstone {output.tombstone} --final-cat {input.cat}"
 
 
 # --- the campaign's shear catalogue -----------------------------------------
