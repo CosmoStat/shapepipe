@@ -96,9 +96,8 @@ def load_manifests(run_dir: Path, sub: str) -> dict:
     and never deleted by snakemake, so this is where a failure survives).
 
     The unit key is the record dir's *parent directory name* — shard-depth
-    agnostic, and the only form that joins to the index (the record's own
-    ``unit`` field carries ``SP_UNIT_NUM``'s dashed form, ``210-282``, which is
-    not the index's ``210.282``). The stage comes from the body, never the
+    agnostic, and the form that joins to the index; the record's own ``unit``
+    field is not used for this lookup. The stage comes from the body, never the
     filename: ngmix chunks share a stage under per-chunk filenames, and a log
     names the same stage as the manifest beside it.
 

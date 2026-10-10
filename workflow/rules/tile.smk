@@ -76,7 +76,8 @@ def tile_local(tile):
     hash), so concurrent campaigns over the same tile do not share a store.
     See profiles/nibi/config.yaml's /local bind note for container path handling
     and bin/sp's tile_store_root handling for the host-side bind.
-    The container's /tmp is RAM-backed; these stores belong on local disk.
+    On nibi the container's /tmp is RAM-backed, so these stores go on the
+    /local/scratch bind instead.
 
     The WCS store is small (11.3 MB), but ngmix reads it once per object per
     epoch. With local vignettes and remote WCS, 3,200 thread-state samples
@@ -558,9 +559,10 @@ rule tile_make_cat:
 # scope, and clean_tile.py for the measured footprint and survivor set.
 #
 # Rebuilding a cleaned tile must also rebuild its node-local stores. Deleting
-# final_cat schedules upstream jobs whose reruns propagate to tile_vignets;
-# preserving tile_detect.json or exp_forest would prevent that path and leave
-# readers without the writer. See clean_tile.py before changing the survivor set.
+# its upstream outputs makes their reruns propagate to tile_vignets, the store's
+# writer. Preserving enough upstream outputs to leave tile_vignets up to date
+# would instead schedule its readers without it. See clean_tile.py before
+# changing the survivor set.
 # This rule is a local DAG leaf (declared in the Snakefile), outside all groups.
 rule clean_tile:
     input:

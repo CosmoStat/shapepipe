@@ -301,8 +301,9 @@ class FieldCornersExtractor(object):
         Resume is keyed on individual CCD IDs, not exposure numbers, so missing
         CCDs in a partially written exposure and an expanded ``--ccd_list``
         remain eligible. A row's first column marks its CCD as done; the rest
-        of the row is not validated. If reading the IDs fails, return an empty
-        set.
+        of the row is not validated, so an interrupted row write can make resume
+        skip an incomplete CCD: remove any incomplete trailing row before
+        resuming. If reading the IDs fails, return an empty set.
 
         Returns
         -------

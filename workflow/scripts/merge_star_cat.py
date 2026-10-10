@@ -155,9 +155,14 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
     """One exposure's every CCD, stacked, as a structured array.
 
     Count rows from FITS headers, allocate once, then fill member slices in
-    sorted name order. Only one exposure is held in memory. Repacking any
-    retention product changes the archive source stamp and can refresh this
+    sorted name order. Only one exposure is held in memory. Changing the
+    retained archive's contents changes its source stamp, which can refresh this
     exposure even when its validation members are unchanged.
+
+    @sc [label:schema] star-merge-unscaled-required-columns
+    Required validation_psf columns must be unscaled: the allocation takes its
+    dtypes from ``ColDefs.dtype``, which ignores TSCAL/TZERO, so a scaled column
+    would be narrowed. Scaled columns would need dtypes from ``.data``.
     """
     try:
         tf = tarfile.open(tar_path)
@@ -179,10 +184,7 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
                            ignore_missing_simple=True) as hdul:
                 hdu = hdul[HDU]
                 counts.append(hdu.header["NAXIS2"])
-                # @sc [label:schema] star-merge-unscaled-required-columns
-                # Required validation_psf columns must be unscaled:
-                # ColDefs.dtype ignores TSCAL/TZERO. Scaled columns require
-                # dtypes from .data to avoid narrowing their decoded values.
+                # Unscaled columns only; see star-merge-unscaled-required-columns.
                 if dtypes is None:
                     dtypes = hdu.columns.dtype
             n_total += counts[-1]

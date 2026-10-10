@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Paired-shear calibration grid over galaxy resolution and image noise.
 
-The Tier-1 companion of ``run_mbias.py``. Where that recipe reports the
+This complements ``run_mbias.py``. Where that recipe reports the
 multiplicative bias at a single well-resolved, high-S/N operating point, this
 one sweeps two axes to *map* where the metacal shear calibration stays within
 tolerance and where it breaks down: galaxy size relative to the PSF (the
@@ -201,8 +201,8 @@ def _boot_idx(n, B, rng):
     """One seed-index array per bootstrap replicate.
 
     @sc [label:coupling] breakdown-grid-joint-bootstrap
-    Compute every quantity in a replicate from the same resampled seed set.
-    Independent arm resampling destroys the ±γ pairing and inflates uncertainty:
+    Within each estimator, compute both arms and their response denominator
+    from the same resampled seed indices. Independent arm resampling destroys the ±γ pairing and inflates uncertainty:
     measured σ_m is 0.23 without pairing versus 0.009 with joint resampling."""
     return rng.integers(0, n, size=(B, n))
 

@@ -369,10 +369,8 @@ def write_if_changed(path: Path, text: str) -> None:
 def _unit_from_run_dir(run_dir):
     """The human unit ID: the basename of ``$SP_RUN`` (``210.282``, ``2605805``).
 
-    @sc [label:coupling] completeness-report-unit-key
-    Use the store basename, matching ``run_report``'s unit keys.
-    ``SP_UNIT_NUM`` uses dashed ShapePipe numbering (``-210-282``), which
-    cannot join to a report keyed by ``210.282``.
+    Use the store basename (``210.282``) rather than ShapePipe's dashed
+    ``SP_UNIT_NUM`` (``-210-282``).
     """
     return Path(str(run_dir)).name or "unknown"
 

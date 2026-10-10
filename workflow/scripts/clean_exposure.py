@@ -30,7 +30,7 @@ between publication and deletion leaves the record and unreclaimed disk space;
 deleting first would risk losing manifests before their record is preserved.
 
 @sc [label:hazard] clean-exposure-no-follow-deletion
-Unlink symlink targets, including dangling links, rather than passing them to
+Unlink symlinks themselves, including dangling links, rather than passing them to
 ``rmtree``. Nested links are unlinked by ``rmtree`` itself so deletion does not
 follow them into shared stores.
 """

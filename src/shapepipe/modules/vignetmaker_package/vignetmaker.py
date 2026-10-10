@@ -307,6 +307,12 @@ class VignetMaker(object):
             Dictionary containing object id and vignets for each epoch
 
         @sc [decision:preparation.stamp_positioning_and_padding]
+
+        @sc [label:coupling] vignette-centroid-rounding
+        Each epoch stores the [row, col] ``OFFSET`` and ``INT_POS`` from
+        extraction with its vignette. The ngmix "wcs" centroid prior must share
+        that rounding; ``INT_POS + OFFSET`` reconstructs the absolute exposure
+        centroid for diagnostics.
         """
         cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()
@@ -443,11 +449,7 @@ class VignetMaker(object):
                     output_dict[id_tmp][index]["VIGNET"] = final_list[j][1][
                         where_res[0]
                     ]
-                    # @sc [label:coupling] vignette-centroid-rounding
-                    # Store the [row, col] OFFSET and INT_POS from extraction
-                    # with the vignette. The ngmix "wcs" centroid prior must
-                    # share that rounding; INT_POS + OFFSET reconstructs the
-                    # absolute exposure centroid for diagnostics.
+                    # OFFSET and INT_POS: see vignette-centroid-rounding.
                     output_dict[id_tmp][index]["OFFSET"] = final_list[j][3][
                         where_res[0]
                     ]

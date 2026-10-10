@@ -589,8 +589,9 @@ class MergeStarCatPSFEX(object):
 
         The first pass reads row counts (``NAXIS2``) and column dtypes from
         FITS headers without touching data blocks. The second allocates each
-        output column at its final length and fills it slice by slice. Peak
-        memory is one output plus one input catalogue.
+        output column at its final length and fills it slice by slice. During
+        the fill pass, retained arrays are the output columns and one input
+        catalogue; FITS serialization allocates additional copies.
 
         @sc [label:schema] psfex-starcat-columns-strict
         Every ``HSM_*`` column is read by name with no fallback, so the set

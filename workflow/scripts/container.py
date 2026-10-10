@@ -237,13 +237,15 @@ def compare_revision(revision, repo=None):
 
 
 def cmd_pull(args):
-    """Pull ``--tag`` into the cache, atomically."""
+    """Pull ``--tag`` into the cache, atomically.
+
+    @sc [label:operations] container-pull-atomic-publication
+    Pull beside the target and rename atomically so jobs never open a
+    half-written image. Jobs holding the existing inode can keep reading it.
+    """
     _require_apptainer()
     sif = local_sif()
     sif.parent.mkdir(parents=True, exist_ok=True)
-    # @sc [label:operations] container-pull-atomic-publication
-    # Pull beside the target and rename atomically so jobs never open a
-    # half-written image. Jobs holding the existing inode can keep reading it.
     tmp = sif.with_name(sif.name + f".pull.{os.getpid()}")
     print(f"pulling {args.tag}\n     -> {sif}")
     try:
@@ -264,7 +266,13 @@ def cmd_pull(args):
 
 
 def cmd_sandbox(args):
-    """Unpack the image into a writable directory -- the opt-in direct path."""
+    """Unpack the image into a writable directory -- the opt-in direct path.
+
+    @sc [label:operations] container-sandbox-staged-build
+    Build beside the target: resolve_image() accepts any sandbox directory,
+    including an incomplete one. A failed build leaves the existing sandbox
+    intact; replacement removes it only after staging succeeds.
+    """
     _require_apptainer()
     sandbox = local_sandbox()
     if sandbox.exists() and not args.force:
@@ -283,11 +291,7 @@ def cmd_sandbox(args):
         source = image or CONTAINER_URI
     sandbox.parent.mkdir(parents=True, exist_ok=True)
     print(f"building sandbox from {source}\n     -> {sandbox}")
-    # @sc [label:operations] container-sandbox-staged-build
-    # Build beside the target: resolve_image() accepts any sandbox directory,
-    # including an incomplete one. A failed build leaves the existing sandbox
-    # intact; replacement removes it only after staging succeeds.
-    #
+    # Stage beside the target; see container-sandbox-staged-build.
     # --fix-perms allows later deletion. The unprivileged build uses the
     # user namespaces provided by Alliance clusters, without --fakeroot.
     staging = sandbox.with_name(f"{sandbox.name}.build.{os.getpid()}")
