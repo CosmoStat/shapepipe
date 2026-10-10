@@ -3,8 +3,8 @@ ShapePipe
 
 |CI| |CD| |python312| |release|
 
-.. |CI| image:: https://github.com/CosmoStat/shapepipe/workflows/CI/badge.svg
-  :target: https://github.com/CosmoStat/shapepipe/actions?query=workflow%3ACI
+.. |CI| image:: https://github.com/CosmoStat/shapepipe/actions/workflows/deploy-image.yml/badge.svg
+  :target: https://github.com/CosmoStat/shapepipe/actions/workflows/deploy-image.yml
 
 .. |CD| image:: https://github.com/CosmoStat/shapepipe/actions/workflows/pages/pages-build-deployment/badge.svg
   :target: https://github.com/CosmoStat/shapepipe/actions/workflows/pages/pages-build-deployment
@@ -24,8 +24,8 @@ Quickstart
 ----------
 
 ShapePipe ships as a container image, so you can run the bundled example
-pipeline — a single CFIS tile through the full chain — without installing
-anything:
+pipeline — a chain of demonstration modules — without installing the
+scientific stack on the host:
 
 .. code-block:: bash
 
@@ -37,8 +37,8 @@ anything:
 
 The image is built, tested, and published on every push to the `GitHub
 Container Registry <https://github.com/CosmoStat/shapepipe/pkgs/container/shapepipe>`_:
-``:develop`` tracks the integration branch, release tags (e.g. ``:v1.1.0``) a
-stable cut.
+``:develop`` tracks the integration branch; branch tags support testing before
+merge. See ``.github/workflows/deploy-image.yml`` for publication triggers.
 
 Documentation
 -------------
