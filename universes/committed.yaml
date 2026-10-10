@@ -10,6 +10,8 @@ analyses:
       pixel_mask_source: instrument_flags_only
       psf_star_mask_veto: instrument_flags_only
       sky_mask_application: catalogue_columns
+      nexp_map_valid_psf_ccds: valid_psf_ccds
+      defect_map_from_flags: count_flagged_pixels
   detection:
     decisions:
       tile_detection: unions_catalogue
