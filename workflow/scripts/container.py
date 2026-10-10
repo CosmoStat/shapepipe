@@ -13,10 +13,8 @@ Two layers, and the second only exists when you ask for one:
 
 Resolution order, shared by this CLI and by the workflow: **sandbox if it
 exists, else the cached SIF if it exists, else the ``container:`` path in
-workflow/config.yaml**. That last one is the current shared /project image, so
-a checkout with an empty cache behaves exactly as it did before this verb
-existed, and a package installed into your sandbox is there for your workflow
-jobs too.
+workflow/config.yaml**. An empty cache uses the configured image; packages
+installed into your sandbox are available to workflow jobs too.
 
 Subcommands, exposed as ``sp container <verb>``::
 
@@ -243,10 +241,9 @@ def cmd_pull(args):
     _require_apptainer()
     sif = local_sif()
     sif.parent.mkdir(parents=True, exist_ok=True)
-    # Pull to a sibling temp name and rename: an atomic rename within one
-    # directory, so an in-flight job sees either the whole old image or the
-    # whole new one. Pulling in place leaves the file half-written for the many
-    # minutes the pull takes. Jobs already running hold the old inode open.
+    # @sc [label:operations] container-pull-atomic-publication
+    # Pull beside the target and rename atomically so jobs never open a
+    # half-written image. Jobs holding the existing inode can keep reading it.
     tmp = sif.with_name(sif.name + f".pull.{os.getpid()}")
     print(f"pulling {args.tag}\n     -> {sif}")
     try:
@@ -286,15 +283,13 @@ def cmd_sandbox(args):
         source = image or CONTAINER_URI
     sandbox.parent.mkdir(parents=True, exist_ok=True)
     print(f"building sandbox from {source}\n     -> {sandbox}")
-    # Build beside the target and swap it in, as `pull` does -- and for a
-    # sharper reason. A half-written .sif fails loudly, but a half-unpacked
-    # sandbox *directory* is still a directory, so resolve_image() would elect
-    # it and every job would silently run a broken tree. Staging also means a
-    # --force rebuild that fails leaves the sandbox you already had intact.
+    # @sc [label:operations] container-sandbox-staged-build
+    # Build beside the target: resolve_image() accepts any sandbox directory,
+    # including an incomplete one. A failed build leaves the existing sandbox
+    # intact; replacement removes it only after staging succeeds.
     #
-    # `--fix-perms` so the tree can be deleted again later. No `--fakeroot`: an
-    # unprivileged build from an existing image goes through user namespaces,
-    # which is what the Alliance clusters provide.
+    # --fix-perms allows later deletion. The unprivileged build uses the
+    # user namespaces provided by Alliance clusters, without --fakeroot.
     staging = sandbox.with_name(f"{sandbox.name}.build.{os.getpid()}")
     shutil.rmtree(staging, ignore_errors=True)
     try:
@@ -329,8 +324,7 @@ def cmd_status(args):
     """Report which image layer is live, its revision, and how current it is."""
     sif = local_sif()
     sandbox = local_sandbox()
-    # status is the verb you run WHEN something is wrong, so a broken override is
-    # reported here rather than raised.
+    # Report a broken override as status rather than raising it.
     try:
         active, kind = resolve_image()
     except ContainerError as exc:
@@ -399,8 +393,7 @@ def cmd_exec(args):
 
     # Same environment the workflow's jobs get: the profile's apptainer-args
     # verbatim (--cleanenv, the PYTHONPATH pin, --home, its binds). Explicit
-    # binds still win, and a profile that cannot be read falls back to the old
-    # standalone defaults.
+    # binds still win; an unreadable profile uses the standalone defaults.
     env_args = profile_apptainer_args()
     explicit_binds = args.bind or os.environ.get("SP_APPTAINER_BINDS")
     if not env_args:
