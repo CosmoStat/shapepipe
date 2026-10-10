@@ -650,6 +650,11 @@ object ID <code class="docutils literal notranslate"><span class="pre">TILE_UNIQ
 (<a class="reference internal" href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_unique_id" title="shapepipe.utilities.cfis.get_tile_unique_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">shapepipe.utilities.cfis.get_tile_unique_id()</span></code></a> of the tile and
 <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>). The tile is read from the catalogue’s file name, e.g.
 <code class="docutils literal notranslate"><span class="pre">sexcat-301-279.fits</span></code>.</p>
+<p>The SExtractor catalogue’s <code class="docutils literal notranslate"><span class="pre">N_EPOCH</span></code> counts the exposure CCDs whose
+footprint holds the object, before any PSF model exists; it is used
+internally for slot sizing and overwritten before output. The final catalogue’s <code class="docutils literal notranslate"><span class="pre">N_EPOCH</span></code> counts only the
+epochs with a validated PSF and is written by
+<a class="reference internal" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue.process" title="shapepipe.modules.make_cat_package.make_cat.SaveCatalogue.process"><code class="xref py py-meth docutils literal notranslate"><span class="pre">SaveCatalogue.process()</span></code></a> in <code class="docutils literal notranslate"><span class="pre">psf</span></code> mode.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -738,7 +743,7 @@ function did not write. Nothing here cuts on any column.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.SaveCatalogue.process">
-<span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epoch_slots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#SaveCatalogue.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue.process" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epoch_slots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch_slots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#SaveCatalogue.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue.process" title="Link to this definition">#</a></dt>
 <dd><p>Process Catalogue.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -747,7 +752,9 @@ function did not write. Nothing here cuts on any column.</p>
 <li><p><strong>cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Path to input catalogue</p></li>
 <li><p><strong>moments</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Option to run <code class="docutils literal notranslate"><span class="pre">ngmix</span></code> mode with moments</p></li>
 <li><p><strong>n_epoch_slots</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Number of per-epoch slots in <code class="docutils literal notranslate"><span class="pre">psf</span></code> mode; if <code class="docutils literal notranslate"><span class="pre">None</span></code>, the
-tile’s <code class="docutils literal notranslate"><span class="pre">max(N_EPOCH)</span> <span class="pre">+</span> <span class="pre">1</span></code></p></li>
+sexcat’s geometric <code class="docutils literal notranslate"><span class="pre">max(N_EPOCH)</span> <span class="pre">+</span> <span class="pre">1</span></code></p></li>
+<li><p><strong>epoch_slots</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a><em>, </em><em>optional</em>) – In <code class="docutils literal notranslate"><span class="pre">psf</span></code> mode, write the per-epoch column families as well as
+<code class="docutils literal notranslate"><span class="pre">N_EPOCH</span></code>; default <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -843,13 +850,20 @@ single aliased value of the pre-fix code (shapepipe#749).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_psf_data">
-<span class="sig-name descname"><span class="pre">_save_psf_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">galaxy_psf_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epoch_slots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#SaveCatalogue._save_psf_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_psf_data" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">_save_psf_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">galaxy_psf_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epoch_slots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch_slots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#SaveCatalogue._save_psf_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue._save_psf_data" title="Link to this definition">#</a></dt>
 <dd><p>Save PSF data.</p>
-<p>Save the PSF catalogue into the final one, as per-epoch column
+<p>Save the PSF catalogue into the final one: the per-object epoch
+count <code class="docutils literal notranslate"><span class="pre">N_EPOCH</span></code> and, if <code class="docutils literal notranslate"><span class="pre">epoch_slots</span></code>, the per-epoch column
 families <code class="docutils literal notranslate"><span class="pre">HSM_*_PSF_n</span></code> (<code class="docutils literal notranslate"><span class="pre">psf_shape_cols</span></code>), <code class="docutils literal notranslate"><span class="pre">EXP_ID_n</span></code> and
-<code class="docutils literal notranslate"><span class="pre">CCD_n</span></code>. Slot <code class="docutils literal notranslate"><span class="pre">n</span></code> of every
-family refers to the same epoch; slots no epoch fills keep the
-family’s sentinel.</p>
+<code class="docutils literal notranslate"><span class="pre">CCD_n</span></code>. Slot <code class="docutils literal notranslate"><span class="pre">n</span></code> of every family refers to the same epoch;
+slots no epoch fills keep the family’s sentinel.</p>
+<p><code class="docutils literal notranslate"><span class="pre">N_EPOCH</span></code> counts the object’s entries in the PSF catalogue, i.e.
+the epochs whose CCD passed PSF-model validation and so have an
+interpolated PSF; ngmix fits no other epoch. It is at most
+the sexcat’s geometric <code class="docutils literal notranslate"><span class="pre">N_EPOCH</span></code>, the count of CCDs whose footprint holds
+the object, and 0 for an object the PSF catalogue marks
+<code class="docutils literal notranslate"><span class="pre">&quot;empty&quot;</span></code>. An epoch whose PSF shape fit failed
+(<code class="docutils literal notranslate"><span class="pre">HSM_FLAG_PSF</span> <span class="pre">!=</span> <span class="pre">0</span></code>) still counts: its PSF exists.</p>
 <p>&#64;sc [label:schema] psf-epoch-slot-columns
 The per-epoch families are <code class="docutils literal notranslate"><span class="pre">psf_shape_cols</span></code> plus <code class="docutils literal notranslate"><span class="pre">EXP_ID</span></code>/<code class="docutils literal notranslate"><span class="pre">CCD</span></code>,
 all slot-aligned by the producer’s epoch enumeration; the names must
@@ -860,7 +874,9 @@ be a subset of what <code class="docutils literal notranslate"><span class="pre"
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>galaxy_psf_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Path to the PSF catalogue to save</p></li>
 <li><p><strong>n_epoch_slots</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Number of slots written per family; if <code class="docutils literal notranslate"><span class="pre">None</span></code>, the tile’s
-<code class="docutils literal notranslate"><span class="pre">max(N_EPOCH)</span> <span class="pre">+</span> <span class="pre">1</span></code></p></li>
+geometric <code class="docutils literal notranslate"><span class="pre">max(N_EPOCH)</span> <span class="pre">+</span> <span class="pre">1</span></code> from the sexcat, which bounds every object’s PSF
+epoch count</p></li>
+<li><p><strong>epoch_slots</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a><em>, </em><em>optional</em>) – Write the per-epoch column families; default <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>

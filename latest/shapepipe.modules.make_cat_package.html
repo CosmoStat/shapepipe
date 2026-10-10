@@ -613,7 +613,9 @@
 previous module runs. This gathers all relevant information on the measured
 galaxies for weak-lensing post-processing. This includes galaxy detection and
 basic measurement parameters, the PSF model at galaxy positions, and the
-shape measurement. Every detected object is kept: the catalogue carries no
+shape measurement. <code class="docutils literal notranslate"><span class="pre">N_EPOCH</span></code> counts the object’s epochs with a validated
+PSF model, the epochs ngmix can fit.
+The geometric count of covering CCDs is used internally, not written out. Every detected object is kept: the catalogue carries no
 star/galaxy classification, which is done downstream. Each object is
 tagged with its source tile via the <code class="docutils literal notranslate"><span class="pre">TILE_ID</span></code> column and carries the
 survey-wide object ID <code class="docutils literal notranslate"><span class="pre">TILE_UNIQUE_ID</span> <span class="pre">=</span> <span class="pre">tile_id</span> <span class="pre">*</span> <span class="pre">10**6</span> <span class="pre">+</span> <span class="pre">NUMBER</span></code>
@@ -634,7 +636,8 @@ retained as the extension point for a future estimator family)</p>
 (<code class="docutils literal notranslate"><span class="pre">HSM_*_PSF_n</span></code>, <code class="docutils literal notranslate"><span class="pre">EXP_ID_n</span></code>, <code class="docutils literal notranslate"><span class="pre">CCD_n</span></code>) when <code class="docutils literal notranslate"><span class="pre">SAVE_PSF_DATA</span></code> is
 <code class="docutils literal notranslate"><span class="pre">True</span></code>; unfilled slots hold the family’s sentinel, and an object with
 more epochs than slots raises an error. A fixed count gives every tile
-the same schema. Default is the tile’s maximum <code class="docutils literal notranslate"><span class="pre">N_EPOCH</span></code> plus one</p>
+the same schema. Default is the sexcat’s maximum geometric <code class="docutils literal notranslate"><span class="pre">N_EPOCH</span></code> plus
+one</p>
 </dd>
 </dl>
 </section>
