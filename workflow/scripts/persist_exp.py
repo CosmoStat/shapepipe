@@ -1,99 +1,42 @@
 #!/usr/bin/env python3
-"""Pack ONE exposure's keepable PSF products into a tar off scratch, and record what went.
+"""Pack one exposure's retained PSF products into a persistent tar and manifest.
 
-Run as the shell of the in-DAG ``exp_persist`` rule, never by hand.
+Run through the in-DAG ``exp_persist`` rule, never by hand.
+The rule copies products from ``run_dir`` to ``products_dir`` so they survive
+scratch's 60-day purge; see ``workflow/rules/exposure.smk`` for the dependency
+that orders persistence before cleanup. Keeping retention in a separate rule
+lets a keep-list edit repack products without rerunning the four-hour PSF chain.
 
-WHY A COPY AND NOT AN EXEMPTION FROM CLEANUP. The obvious alternative — teach
-``clean_exposure`` to spare these files — does not work, because reclamation is
-not what threatens them. The exposure store lives on ``run_dir``, which is
-/scratch: a 60-day purge takes everything there whether or not this workflow
-ever cleaned it. ``products_dir`` is /project, backed up and not purged. So the
-only way a per-exposure product outlives its campaign is to LEAVE THE
-FILESYSTEM, and that is a copy. Reclamation ordering then falls out for free:
-``clean_exposure`` takes this rule's manifest as an input, so the store is never
-deleted before its keepers have been written elsewhere.
+Product names resolve to file-name globs, searched recursively beneath
+``<exp-dir>/output/run_sp_exp_SxSePsf/*/output/``. Recursion includes setools'
+``rand_split/``, ``new_cat/``, ``plot/`` and ``stat/`` subdirectories.
+An optional product with no matches produces a warning; missing
+``psf_validation`` fails before publication, while the scratch store remains.
+An empty keep list still packs those mandatory star-catalogue inputs.
 
-WHY A SEPARATE RULE AND NOT A ``cp`` APPENDED TO ``exp_psf``. The list of what
-to keep is a decision that will be revisited — rho statistics want one file
-today, a residual study may want three tomorrow — and ``exp_psf`` is four hours
-per exposure. The list rides on this rule's ``params``, so editing it makes
-snakemake rerun THIS rule (seconds of cp) and leaves the PSF chain alone. Folded
-into ``exp_psf``, the same edit would re-derive every PSF model in the campaign.
+One uncompressed tar per exposure limits inode use on /project: loose copies
+of all candidates cost about 200 files per exposure, or 2 M at DR6 scale,
+against a group quota of about 1 M. A tar holds FITS, ``.psf`` and ``.txt``
+products together and lets readers open FITS members through ``io.BytesIO``.
+FITS compresses poorly, and an uncompressed archive is seekable.
+Flat member names support consumer globs; distinct sources sharing a name fail
+rather than overwrite. Ownership is zeroed, members are sorted, and source
+mtimes are kept for deterministic archives.
 
-WHAT IT SEARCHES. ``<exp-dir>/output/run_sp_exp_SxSePsf/*/output/`` — the four
-module output dirs of the PSF config (sextractor, setools, psfex, psfex_interp)
-— RECURSIVELY. The recursion is not laziness: setools does not write flat, it
-writes into ``mask/``, ``rand_split/``, ``new_cat/``, ``plot/`` and ``stat/``
-beneath its own output dir, so a caller who wrote ``star_split_ratio_80-*.fits``
-meaning "the training star sample" would match nothing under a non-recursive
-glob. Patterns are therefore plain FILE names and the layout is ours to know,
-not the config author's.
-
-RETENTION IS ADDITIVE, AND THAT IS A SAFETY PROPERTY. The keep list rides on
-the rule's ``params``, so SHRINKING it reruns this script — and a naive rerun
-would rewrite the tar without the products that were dropped, deleting them
-from the backed-up filesystem because someone edited a config, with the scratch
-store they came from usually long gone. An existing tar is therefore a FLOOR:
-its members are carried into the new one whatever the current list says, and a
-config change can only ever add. Removing a product is a deliberate act on
-products_dir, not a config edit.
-
-THE KEEP LIST IS WHAT THE CAMPAIGN KEEPS ON TOP OF THE MERGE'S INPUTS.
-``psf_validation`` is packed unconditionally (see ALWAYS below); ``persist_exp:``
-is purely optional retention, and an EMPTY one is a coherent instruction — the
-tar then holds the star catalogue's inputs and nothing else.
-
-ZERO MATCHES FOR ONE PATTERN IS A WARNING, NOT A FAILURE. setools rejects sparse
-CCDs (~0.2% attrition, tolerated by exp_psf's own count floor), so per-CCD
-counts are not fixed, and a pattern naming an optional diagnostic may legitimately
-find nothing. ZERO FILES IN TOTAL IS A FAILURE: it means the store was not what
-we think it is, and writing a green manifest over that would let
-``clean_exposure`` delete an exposure whose products were never saved.
-
-The manifest lists every member (name, pattern, source path, bytes, sha256),
-so a reader knows what the tar holds without opening it.
-
-ONE UNCOMPRESSED TAR PER EXPOSURE, ``<dest>/<exp>.tar``, NOT LOOSE COPIES.
-Inodes, not bytes, are what bind on /project: the group quota is ~1 M files,
-and loose per-CCD copies are ~200 per exposure with all candidates on — ~25k for
-a 64-tile campaign, ~2 M at DR6 scale, against ~7 GB of bytes. A tar collapses
-that to one inode per exposure and costs nothing to read: FITS members go
-``tarfile.open(t).extractfile(m).read()`` -> ``fits.open(io.BytesIO(...))``,
-which is why a tar rather than a multi-HDU FITS bundle (the keep list mixes
-FITS, ``.psf`` and ``.txt``; a FITS container could not hold the last two).
-Uncompressed because FITS barely compresses and a plain tar is seekable.
-
-Members are FLAT — file name only, no module subtree — because the module a
-file came from is already in its name and the consumer globs member names. A
-name collision between two modules is therefore a hard error rather than a
-silent overwrite; nothing in the current config can produce one, and if a
-future one can we want to hear about it.
-
-The tar is written DETERMINISTICALLY (ownership zeroed, members in sorted
-order, source mtimes kept), tmp-then-``cmp``-then-``mv``: a rerun over an
-unchanged store produces a byte-identical tar and leaves the existing one's
-mtime alone.
-
-The manifest is the rule's ONLY declared output, and it lives on the persistent
-root beside the tar (``<products_dir>/exp/<shard>/<exp>/manifests/``, beside the tar's ``psf/``), NOT in
-the exposure's scratch ``manifests/`` dir which ``clean_exposure`` deletes
-wholesale. It is deliberately NOT a ``directory()`` output: what was copied, and
-how big each file was, is provenance we want written down, and a directory
-output attests only that some directory exists.
-
-It carries no timestamp and is written tmp-then-``cmp``-then-``mv`` (the pattern
-``clean_exposure`` uses), so a rerun that packs the same files leaves the mtime
-alone — mtime is a rerun trigger, and an unconditional rewrite would make every
-downstream ``clean_exposure`` look out of date once per invocation.
+The manifest records each member's product, pattern, source, size and sha256.
+It is the rule's sole declared output, on the persistent root at
+``<products_dir>/exp/<shard>/<exp>/manifests/``, beside the tar's ``psf/`` directory.
+Neither archive nor manifest is replaced when its bytes are unchanged, keeping
+mtimes stable for downstream rerun checks. The manifest carries no timestamp.
 
 @sc [label:safety] persist-exp-additive-and-always-validation
-`persist_exp:` only ever adds: an existing tar is a floor whose members are
-carried into the rewrite whatever the current keep list says, and
-`psf_validation` is packed on every run whether or not the list names it. A
-keep-list edit reruns this script, so a subtractive rewrite would delete
-products from `products_dir` after their scratch store is gone, and a pack
-without `psf_validation` would leave `star_cat_merge` short an exposure.
-Enforced by tests/unit/test_persist_exp_props.py.
+`persist_exp:` only ever adds: existing tar members absent from the live match
+set are carried forward, and live sources replace matching members.
+`psf_validation` is packed on every run whether or not the list names it.
+A subtractive keep-list rewrite would delete persistent products whose scratch
+sources may be gone; omitting validation would deprive `star_cat_merge` of inputs.
+Removing retained products requires a deliberate act on `products_dir`, not a
+config edit. Enforced by tests/unit/test_persist_exp_props.py.
 """
 
 import argparse
@@ -104,40 +47,20 @@ import sys
 import tarfile
 from pathlib import Path
 
-# The PSF chain's run dir: RUN_NAME in config_exp_psfex.ini AND in
-# config_exp_mccd.ini, which carry the same name on purpose so nothing
-# downstream of exp_psf branches on the PSF model. Hardcoded rather than passed:
-# this rule persists the PSF stage's products and nothing else, and a knob here
-# would be a knob for "persist some other stage", which is a different rule.
-# tests/unit/test_workflow_run_names.py holds this equal to the configs.
+# The shared PSF run name from config_exp_psfex.ini and config_exp_mccd.ini.
+# This script persists only PSF-stage products; test_workflow_run_names.py
+# checks agreement with the configs.
 RUN_NAME = "run_sp_exp_SxSePsf"
 
-# --- the product catalogue (CosmoStat/shapepipe#844) ------------------------
-# THE SINGLE SOURCE OF TRUTH for what an exposure can keep. `persist_exp:` in
-# config.yaml names PRODUCTS, not globs: `psf_model`, not `*.psf`. The glob is
-# an implementation detail of the module that writes the file, and a keep list
-# written in globs is a keep list nobody can read — the argument that produced
-# #844 and the 2026-09-08 call's request to keep the PSF model, which had to be
-# spelled `*.psf` to be said at all.
+# --- product catalogue ----------------------------------------------------
+# Entries are (glob, per-exposure size, retention benefit), ordered by the
+# chain: sextractor, setools, psfex, psfex_interp. Sizes cover 40 CCDs, measured
+# on a nibi run of 127 exposures and 64 tiles; None means unmeasured.
+# --list-products renders this source table for users and config.yaml.
 #
-# Each entry is (glob, per-exposure size, what keeping it buys). Sizes are for
-# 40 CCDs, measured on smk-m2 (127 exposures, 64 tiles); "?" means not yet
-# measured. `persist_exp.py --list-products` renders this table, and
-# config.yaml's block is that rendering rather than a second copy of it.
-#
-# ORDER IS THE ORDER OF THE CHAIN — sextractor, setools, psfex, psfex_interp —
-# so the table reads as the pipeline runs.
-# THE STAR CATALOGUE'S INPUTS ARE NOT A USER CHOICE. star_cat_merge stacks
-# every CCD's psf_validation into the campaign's full_starcat, so exp_persist
-# ALWAYS packs it, whatever `persist_exp:` says. Two reasons, and neither is
-# about taste. It is the merged catalogue's PROVENANCE: a full_starcat with no
-# per-exposure inputs beside it cannot be audited, re-cut or recomputed after a
-# purge. And it is what keeps APPENDING TILES CHEAP: a tile added next month
-# brings exposures whose validation catalogues must join the existing stack, and
-# if the earlier ones are gone the merge either shrinks or rebuilds their chains
-# from VOS. ~2 MB per exposure, so ~40 GB and ~40k inodes at DR6 scale, against
-# a group quota of ~1 M inodes — the cost of being able to say where the number
-# came from.
+# Validation inputs support audit, re-cutting and incremental star-cat merges
+# after scratch is purged (~2 MB per exposure). See the module retention
+# contract for their mandatory inclusion.
 ALWAYS = "psf_validation"
 
 PRODUCTS = {
@@ -181,11 +104,9 @@ PRODUCTS = {
 # nothing is emitted to match. They are a config change first, a catalogue
 # entry second.
 
-# A raw glob is still accepted, as an escape hatch for a file the catalogue does
-# not name yet. The test is syntactic and deliberately cheap: a product name is
-# a bare identifier, so anything carrying a glob metacharacter or a dot is a
-# glob. That makes `*.psf`, `star_stat-*.txt` and `default.psfex` globs, and
-# `psf_model` a name, with no ambiguity a user could stumble into.
+# Raw globs cover products absent from the catalogue. Glob metacharacters,
+# dots and spaces distinguish them from bare product identifiers: `*.psf`
+# and `default.psfex` are globs; `psf_model` is a product name.
 _GLOBBY = set("*?[]. ")
 
 
@@ -208,7 +129,7 @@ def resolve(entry: str) -> str:
 
 
 def product_of(entry: str) -> str:
-    """The NAME to record for an entry — the entry itself for a raw glob."""
+    """Return the entry unchanged as the product label, including raw globs."""
     return entry
 
 
@@ -239,8 +160,10 @@ def _wrap(text: str, width: int) -> list:
 
 
 def collect(exp_dir: Path, patterns: list) -> tuple:
-    """Matched files per ENTRY, in a stable order, plus the entries that matched
-    nothing. Entries are product names or raw globs; resolve() takes either."""
+    """Return stable file lists per entry and the entries with no matches.
+
+    Entries are product names or raw globs; resolve() takes either.
+    """
     root = exp_dir / "output" / RUN_NAME
     found, empty = {}, []
     for entry in patterns:
@@ -274,9 +197,7 @@ def main() -> None:
                    help="print the product catalogue and exit")
     args = p.parse_args()
 
-    # --list-products is a QUERY, not a run: it answers "what can I keep?" and
-    # needs no exposure, so the run arguments are optional at the parser and
-    # required here instead.
+    # --list-products needs no exposure; require run arguments only below.
     if args.list_products:
         print(render_products())
         return
@@ -298,15 +219,9 @@ def main() -> None:
             sys.exit(f"persist_exp: {exc.args[0]}")
 
     found, empty = collect(args.exp_dir, entries)
-    # THE MERGE'S INPUTS ARE NOT ALLOWED TO BE MISSING, and this is a harder
-    # rule than "something matched". An exposure whose psfex_interp failed but
-    # whose PSFEx model landed has a non-empty match set under the default
-    # retention list, so it used to get a green manifest — and clean_exposure
-    # takes that manifest as its go-ahead and deletes the store, taking the
-    # stars with it. There is no recovering them afterwards short of rebuilding
-    # the chain from VOS, so a missing psf_validation fails the job here, while
-    # the store is still on disk. Retention products that match nothing stay
-    # warnings: they are optional by construction.
+    # Require validation even when optional PSF products matched: publishing
+    # without the merge's inputs would authorize cleanup and lose those stars.
+    # See the module retention contract.
     if ALWAYS not in found:
         sys.exit(f"persist_exp: {args.exp}: nothing matched {ALWAYS} "
                  f"({resolve(ALWAYS)}) under {args.exp_dir}/output/{RUN_NAME}. "
@@ -319,14 +234,8 @@ def main() -> None:
 
     args.dest.mkdir(parents=True, exist_ok=True)
     tar_path = args.dest / f"{args.exp}.tar"
-    # A file matched by TWO patterns is one file, not a collision. Keep lists
-    # overlap on purpose — `validation_psf-*.fits` alongside `*.fits` is a
-    # perfectly ordinary way to say "the validation catalogues, and everything
-    # else FITS while we are here" — and treating the second match as a name
-    # clash failed every exposure in the campaign. What must still be fatal is
-    # two DIFFERENT paths landing on one flat member name, which would silently
-    # overwrite; that is a same-name/different-source test, and the first
-    # pattern to match a file is the one recorded for it.
+    # Overlapping patterns may match the same file; record its first pattern.
+    # Distinct source paths with the same flat member name are a collision.
     seen, files = {}, []
     for pat, hits in found.items():
         for src in hits:
@@ -341,16 +250,7 @@ def main() -> None:
                           "pattern": resolve(pat),
                           "src": str(src), "bytes": src.stat().st_size})
 
-    # --- RETENTION IS ADDITIVE: an existing tar is a FLOOR, never a draft ----
-    # Shrinking `persist_exp:` used to rerun this rule (the list rides on
-    # params, which is the whole point of the rule) and overwrite the tar with
-    # a smaller one — deleting products from the BACKED-UP filesystem because
-    # someone edited a config. The scratch store they came from is usually gone
-    # by then, so nothing could put them back. Whatever is already in the tar
-    # therefore stays in it: a config change can only ever ADD.
-    #
-    # Removing a product is consequently not a config edit. It is a deliberate
-    # act on products_dir, and it should look like one.
+    # Carry unmatched members forward (see the module retention contract).
     carried, prior_products = [], {}
     if tar_path.exists():
         prior = args.manifest
@@ -387,9 +287,8 @@ def main() -> None:
         ti.uname = ti.gname = ""
         return ti
 
-    # tmp-then-cmp-then-mv, and the tmp NEVER outlives a failure: an orphaned
-    # .tmp on /project is an inode nothing revisits — the leak this whole tar
-    # design exists to avoid, one per failed attempt at DR6 scale.
+    # Compare before replacement; finally removes the tmp on ordinary failures
+    # so failed attempts do not consume persistent inodes.
     tmp = tar_path.with_name(tar_path.name + ".tmp")
     try:
         # One pass in sorted member order, taking each member from whichever
@@ -432,9 +331,7 @@ def main() -> None:
         "tar": str(tar_path),
         "products": entries,
         "patterns": [resolve(e) for e in entries],
-        # The warning the docstring argues for: named patterns that matched
-        # nothing. Present as a key even when empty, so a reader never has to
-        # wonder whether an old manifest predates the field.
+        # Always include unmatched optional entries, even when the list is empty.
         "patterns_unmatched": empty,
         "n_files": len(files),
         "bytes": sum(f["bytes"] for f in files),
