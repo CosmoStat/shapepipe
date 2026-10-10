@@ -4,38 +4,28 @@
     tile_merge_headers -> tile_detect -> tile_vignets -> tile_ngmix x N
                                                       -> tile_merge_cats -> tile_make_cat
 
-The DAG edge to the exposures is always the exposures' MANIFESTS, looked up
-through the index (TILE_EXP). The per-tile exposure "forest" — a symlink view of
-exactly this tile's exposures' products — exists only so the ShapePipe configs
-have one deterministic ``$SP_EXP`` to glob; it is NEVER the edge. Its 2-char
-shard level is not cosmetic: ``exp_utils.get_exp_output_files`` hardwires
-``<SP_EXP>/<prefix>/<base>/output/run_sp_*`` into its glob, so a flat forest
-makes every tile gather stage fail "No split_exp_runner output found".
+Exposure manifests, looked up through the index, provide the tile-to-exposure
+DAG edges. The per-tile exposure "forest" is a symlink view for ShapePipe's
+``$SP_EXP`` globs, not the exposure dependency. See build_forest.py and
+``exp_utils.get_exp_output_files`` for the required sharded layout.
 
-All rules are group-compatible (shell only, no mid-chain localrules), and the two
-short regions are grouped, per the composition rules in prepare.smk's docstring.
-Distinct tiles share no edge, so each is one group job per tile:
+The post-chain uses shell rules with no mid-chain localrules. Each connected
+component within a group label is one tile, so each group job covers one tile.
+See prepare.smk's docstring for Snakemake's group resource composition:
 
 * ``group: "tile_gather"`` — tile_exp_forest (2 GB, 20 min) and
   tile_merge_headers (median 0:38; 8 GB, 4 threads, 120 min). The group asks max
   mem_mb = 8000*attempt, max threads = 4, sum runtime = 140. tile_detect also
-  consumes the forest, but a consumer OUTSIDE the group is just an ordinary DAG
-  edge on the group job — it does not pull tile_detect (16 GB) in.
+  consumes the forest, but that edge does not pull it into the group.
 * ``group: TILE_GROUP`` ("tile_shape") — tile_vignets -> 8 x tile_ngmix ->
-  tile_merge_cats -> tile_make_cat, THE WHOLE SHAPE CHAIN AS ONE JOB. This is
-  not a latency optimisation; it is what lets the 5.6 GB vignette store live on
-  node-local NVMe and never touch /scratch (see tile_local() below).
-  Composition, verified against snakemake 9.23.1 and a real sbatch:
+  tile_merge_cats -> tile_make_cat in one allocation, so the vignette and WCS
+  stores can stay node-local (see tile_local() below).
+  First-attempt composition, verified against snakemake 9.23.1 and sbatch:
   cpus = max over levels of summed siblings = max(8, 8x1, 8, 8) = 8;
-  mem_mb = max(32000, 8x5000, 16000, 16000) = 40000, so nibi's
-  max(cores, mem_GB/4) bills the group 10 core-equivalents rather than the 28
-  it billed at 8x14000 (see the mem_mb note on tile_ngmix for the 31-tile
-  measurement that sized it); tile_vignets' own 32000 is now the second term
-  and becomes binding if the chunks ever go below 4000;
-  runtime = sum along the chain of each level's MAX = 20 + 120 + 10 + 15 = 165.
-  165 min is under the 180 min ceiling of ``cpubase_bycore_b1``, so the fused
-  job reaches the widest partition set (plus cpubackfill) — which is why each
-  member's runtime is measured p99 plus margin and not the old ceiling.
+  mem_mb = max(32000, 8x5000, 16000, 16000) = 40000;
+  runtime = sum of each level's maximum = 20 + 120 + 10 + 15 = 165 min.
+  See tile_ngmix's resource notes for the measurements behind these budgets.
+  The 165-minute total fits ``cpubase_bycore_b1``'s 180-minute ceiling.
 
 tile_detect stays out: the shape chain does not need it co-scheduled, and
 folding it in would add its runtime to a sum that has no room.
@@ -46,105 +36,35 @@ detection, windowed positions, VIGNET neighbour marking and columns.
 ``tile_detection: unions_catalogue`` (config.yaml, the data default) adds one
 rule and one step: tile_get_catalogue fetches the UNIONS per-tile catalogue
 (get_images_runner, config_tile_Gic.ini), and tile_detect joins its SExtractor
-rows to it before the multi-epoch post-processing (MATCH_CATALOGUE, set
-through SP_MATCH_CATALOGUE). Each row pairs with its mutual nearest catalogue
-object within 1 px and takes its NUMBER, from which make_cat builds
-``TILE_UNIQUE_ID``, the key shared with the photometry and photo-z
-catalogues; unpaired rows leave the catalogue. The catalogue is SExtractor run
-by MegaPipe on the same DR6 image with the same configuration, so the join is
-exact; on other pixels (a DR5 image) it fails loudly.
+rows to it before multi-epoch post-processing (MATCH_CATALOGUE, set through
+SP_MATCH_CATALOGUE). See config_tile_Sx.ini and sextractor_runner's catalogue
+matching implementation for the join contract and shared object identifiers.
 
-There is no `tile_mask` rule, and there will not be one (PR #847). ShapePipe
-generates no masks: tiles have no instrument flag image of their own, so
-tile_detect runs SExtractor with FLAG_IMAGE = False against
-default_noimaflags.param (config_tile_Sx.ini — what used to be the "sx_nomask"
-variant, now the only one). Sky-fixed masks reach the tile as CATALOGUE columns
-instead: ``tile_make_cat``'s make_cat queries the configured healsparse maps at
-every object's (RA, Dec) and writes one ``MASK_<band>`` column per band, which
-is what downstream selections cut on.
+There is no `tile_mask` rule. Tiles have no instrument flag image of their own,
+so tile_detect runs SExtractor with FLAG_IMAGE = False against
+default_noimaflags.param; see config_tile_Sx.ini for the detection settings.
+Sky-fixed mask columns are configured in config_tile_Mc.ini and written by
+make_cat for downstream selection.
 """
 
-# --- the node-local tile root (the I/O + scratch fix) ----------------------
+# --- node-local tile stores -----------------------------------------------
+# The shape group writes its vignette store on one node and keeps every reader
+# in that allocation. This avoids staging and ~163 GB of random NFS reads per
+# tile, and saves ~5.6 GB of shared scratch per tile (~190 GiB for 34 tiles).
+# Measured on nibi with remote stores: median 7h34m elapsed versus 52 min CPU,
+# with ~20 GB read per chunk at 0.78 MB/s. Per-read latency dominates; the
+# sequential local/shared bandwidth ratio is only ~3x.
 #
-# MEASURED PROBLEM. tile_ngmix was I/O-bound, not CPU-bound: median 7h34m
-# elapsed against 52 min of CPU (3% efficiency, 0.12 of 4 reserved cores).
-# Each chunk read ~20 GB at 0.78 MB/s and all 8 chunks of a tile re-read the
-# SAME 5.6 GB vignette store -- ~163 GB of small random sqlite preads per tile
-# against /scratch, which on nibi is NFS (VAST, 4.5 PB, 95% full). What hurts
-# is per-read LATENCY, not bandwidth: the sequential local-vs-scratch gap is
-# only ~3x and is NOT the argument for this change.
+# Manifests, verdict logs, chunk directories and final_cat stay on shared
+# storage as DAG outputs. The node-local paths are wired through
+# config_tile_PiViVi_<psf_model>.ini, config_tile_Ng_template.ini and
+# config_tile_Mc.ini. tile_local() also stages the WCS sqlite (see its docstring).
+# A group retry rebuilds the stores; they cannot be inherited by another job.
 #
-# THE FIX IS THE FUSE. tile_vignets -> 8 x tile_ngmix -> tile_merge_cats ->
-# tile_make_cat run as ONE group job on ONE node, and the vignette store is
-# WRITTEN to that node's NVMe and never lands on /scratch at all. So the store
-# is not copied, it is simply never remote: zero staging cost, zero NFS random
-# reads, and -- the reason this was chosen over per-chunk staging -- the
-# per-tile scratch high-water drops by the whole 5.6 GB store (~190 GiB across
-# 34 concurrent tiles). Scratch quota, not speed, is what caps batch size.
-#
-# WHAT STAYS ON SHARED STORAGE, and it is everything that is DAG currency:
-# every manifest (the success sentinels), every verdict log, the ngmix chunk
-# dirs merge_sep_cats gathers, and final_cat on the PERSISTENT root. Only the
-# bulk intra-tile intermediate is node-local. That split is possible because
-# ShapePipe's configs set input and output paths independently -- see
-# config_tile_PiViVi_<psf_model>.ini (OUTPUT_DIR = $SP_VIGNET_OUT) and
-# config_tile_Ng_template.ini and config_tile_Mc.ini ($NGMIX_VIGNET_DIR), and
-# config_tile_Ng_template.ini alone for $SP_WCS_DIR.
-#
-# TWO node-local stores, not one: the ~5-8 GB vignette store and the 11.3 MB
-# WCS sqlite, the same fix applied at the two ends of the size distribution
-# (tile_local()'s docstring carries the thread-state measurement).
-#
-# WHY IT NEEDS THE GROUP. The store is node-local, so it exists only on the
-# machine that wrote it and only while that job lives. Unfused, tile_vignets and
-# tile_ngmix are different jobs on (usually) different nodes, and the store would
-# have to be on shared storage -- which is the whole problem. Fused, all members
-# run in one allocation on one node, so the store the first member writes is
-# simply there for the rest. (Verified live: group members share the directory.)
-#
-# HOW THE PATH GETS IN HERE. Not through the environment: profiles/nibi passes
-# --bind /local and tile_local() below DERIVES the path from the tile wildcard.
-# Why nothing can be communicated instead is on that profile line. A campaign
-# that needs the store elsewhere (candide's 31 GB /tmp) moves the BIND, via the
-# run config's `tile_store_root` (bin/sp), never the path here -- see below.
-#
-# THE COST WE ACCEPT: a failure anywhere in the tile re-runs the WHOLE tile,
-# not one chunk, because the store dies with the job. At ~1 h per fused tile
-# that is a cheap trade for the scratch it buys. Noted, not engineered around.
-#
-# It lives in each rule's `pre_run`, i.e. in THAT RULE's params.pre. The shared
-# prologue (unit_pre) and completeness.py are untouched by design: both are
-# fingerprinted into every rule, and changing either would invalidate the whole
-# campaign, including the 117 finished exposure chains.
-#
-# EDITING THIS FUNCTION INVALIDATES FINISHED TILES. READ THIS BEFORE YOU DO.
-# The returned string lands in `params.pre`, `params` is an active rerun trigger
-# in profiles/nibi/config.yaml, and `params.pre` is a non-derived param (its
-# lambda takes only `wc`), so snakemake records it and compares it. Any edit
-# here therefore reschedules tile_vignets, all eight tile_ngmix chunks and
-# tile_make_cat for EVERY tile the campaign already finished.
-#
-# On a fresh campaign that is free. On a RESUME it is destructive, and the
-# mechanism is worth spelling out because it is not obvious:
-#   * clean_exposure has already reclaimed the exposure stores those tiles read,
-#     and tile_finished() deliberately drops the manifests of a finished tile's
-#     exposures, so the rerun is UNSATISFIABLE -- PiViVi runs against dangling
-#     symlinks and the group fails;
-#   * a failed group job's postprocess(error=True) fans out over every member in
-#     every toposort level and removes each member's EXISTING outputs. One of
-#     those is tile_make_cat's final_cat on the persistent root. So the failure
-#     deletes the science product of a tile that was finished and correct;
-#   * with final_cat gone, tile_finished() flips and the tile re-declares its
-#     whole exposure edge set, rebuilding the reclaimed chains from VOS. That is
-#     the rerun avalanche D5 exists to prevent, arriving through the params
-#     trigger instead of through inputs.
-# So: land changes to this function BETWEEN campaigns. An edit cannot reach a
-# RUNNING one (the launch code snapshot, bin/sp) -- the hazard is the `sp run`
-# after it, which is a resume against finished tiles. If that resume is genuinely
-# needed, run it once with
-# `--rerun-triggers mtime code software-env`, accepting that clean_exposure's
-# consumer-set staleness detection (which rides on params) is off for that
-# invocation.
+# EDITING PROLOGUE OUTPUT CAN DELETE FINISHED CATALOGUES ON RESUME.
+# tile_local() contributes to params.pre. See workflow/CONTRACTS,
+# unit-pre-changes-at-campaign-boundary, for the rerun hazard and pinned params.
+# Change emitted prologues only at a campaign boundary on a fresh root.
 # Per-campaign prefix of the node-local store name; see tile_local().
 LOCAL_TAG = hashlib.sha1(str(RUN_DIR).encode()).hexdigest()[:8] + "-"
 
@@ -152,75 +72,31 @@ LOCAL_TAG = hashlib.sha1(str(RUN_DIR).encode()).hexdigest()[:8] + "-"
 def tile_local(tile):
     """The node-local prologue, as bash, for one tile.
 
-    A FUNCTION of the tile rather than a constant, because the path has to be
-    literal by the time apptainer sees it. Nothing can be COMMUNICATED into the
-    container -- `$SLURM_TMPDIR`, `--env`, `APPTAINERENV_*` and
-    `{resources.tmpdir}` all fail, one of them in production; the post-mortem is
-    on the `--bind /local` line of profiles/nibi/config.yaml.
+    Derive a literal path from the tile wildcard and LOCAL_TAG (the run-dir
+    hash), so concurrent campaigns over the same tile do not share a store.
+    See profiles/nibi/config.yaml's /local bind note for container path handling
+    and bin/sp's tile_store_root handling for the host-side bind.
+    The container's /tmp is RAM-backed; these stores belong on local disk.
 
-    So the path is derived instead. `/local/scratch` on nibi is
-    `drwxrwxrwt root:root` -- world-writable with the sticky bit, verified in
-    the container (probe job 20798618) -- and the tile id is a wildcard
-    snakemake substitutes at DAG time, so the shell string carries a concrete
-    path with no `$` left for anything to escape. One group job per tile means
-    the name cannot collide within a campaign; the sticky bit means nobody else
-    can remove it. Across campaigns the tile alone would collide: the
-    image-simulation shear branches and two-arm A/B data runs are concurrent
-    campaigns over the SAME tile IDs, and nothing keeps their same-tile jobs off
-    one node (on candide `/local/scratch` is the node's shared `/tmp`). Two
-    campaigns' fused jobs on one node would share one store -- a second
-    `tile_vignets` wipes and rewrites it under the first campaign's ngmix, and
-    the first `tile_make_cat`'s EXIT trap deletes it under the second (seen on
-    candide n09, between image-sim branches). So every store name is prefixed
-    with LOCAL_TAG, a hash of the run dir, and is unique per campaign and tile.
+    The WCS store is small (11.3 MB), but ngmix reads it once per object per
+    epoch. With local vignettes and remote WCS, 3,200 thread-state samples
+    across eight chunks on nibi show 56% CPU and 44% rpc_wait_bit_killable;
+    147 of 176 D-state samples are in NFS RPC. Staging WCS avoids those
+    per-read round trips, with a measured ~1.8x gain for ngmix.
 
-    What we give up is Slurm's own cleanup of `$SLURM_TMPDIR`. TILE_VIGNET_FRESH
-    reclaims a stale directory on the campaign's next attempt at the tile, the
-    trap in the last group member removes it on the way out, and the sweep below
-    catches what a hard kill leaves behind -- on a shared node that last one is
-    manners, not housekeeping.
+    Copy WCS unconditionally to a temporary name, then rename it atomically.
+    A symlink would still read NFS; cp -u could preserve a truncated file with
+    a newer mtime. Concurrent group members can safely publish identical
+    copies: an open reader keeps its inode. tile_merge_headers is upstream,
+    so a missing source is an error rather than a reason to read another tree.
 
-    NOT `/tmp`: inside the container that is a 378 GB tmpfs, i.e. RAM charged to
-    the job's cgroup, so a 5.6 GB store there would be paid for twice.
-
-    TWO STORES, AND THE SECOND IS 11 MB. `$SP_WCS_DIR` holds one file,
-    `log_exp_headers-<tile>.sqlite`, and staging it is the rest of the same fix
-    rather than a refinement of it. Moving the 5.6 GB vignette store off NFS
-    bought 4.3x and did not solve the problem: thread-state sampling of the
-    fused job (3,200 samples across 8 chunks, campaign smk-g4 job 20799387) put
-    every chunk at 56% on CPU and 44% in `rpc_wait_bit_killable`, with 147 of
-    176 D-state samples inside NFS RPC and exactly one hot NFS file still open.
-    ngmix reads that file once per object PER EPOCH for the WCS, so what costs
-    is the operation count and not the byte count -- a network round trip per
-    read. The two stores are the same intervention at the two ends of the size
-    distribution, and the small one is worth ~1.8x on the rule that is 99.3% of
-    tile-side core-hours.
-
-    A copy, never a symlink: a link resolves straight back to NFS. The prologue
-    runs in `tile_vignets` and in each of the eight `tile_ngmix` chunks (not in
-    `tile_merge_cats`, which has no pre_run), so the staging is attempted nine
-    times per tile, eight of them concurrent siblings in one toposort level. It
-    is copy-to-a-temp-name plus `mv -f` -- an all-or-nothing publish, so a
-    reader never sees a partial file -- and it is UNCONDITIONAL,
-    no `cp -u` and no already-there test. An interrupted `cp` leaves a truncated
-    destination whose mtime is NEWER than the source, so `-u` would skip it
-    forever, and nothing downstream would catch it: TILE_VIGNET_FRESH and
-    TILE_VIGNET_REQUIRED both look only at the vignette store, and a truncated
-    WCS store reaches ngmix as wrong astrometry rather than as an error. Nine
-    unconditional copies of 11 MB per tile is not a cost worth reasoning about;
-    a staleness rule would be. Renaming over a file a sibling chunk already has
-    open is safe -- the open descriptor keeps the old inode, identical in
-    content.
-
-    `tile_merge_headers` is upstream of the whole group, so the file exists by
-    the time any member runs; failing loudly if it does not is correct, because
-    the alternative is ngmix silently reading a different tree.
+    tile_vignets clears its stale vignette run directory before writing, and
+    tile_make_cat removes the local root on exit. The age-based sweep below
+    removes this user's matching directories older than one day; SIGKILL can
+    leave stores behind because it bypasses the exit trap.
     """
-    # `log_exp_headers-<IDra>-<IDdec>.sqlite`, named from the tile in ShapePipe's
-    # dashed image-number form -- spelled out rather than globbed so a missing
-    # file is one precise error instead of an empty expansion. unit_num() owns
-    # that convention and supplies the SEPARATING DASH itself, so there is none
-    # in the literals below.
+    # unit_num() supplies the leading dash and dashed tile ID. Use an exact
+    # WCS filename so a missing source produces a precise error, not an empty glob.
     tile_num = unit_num(tile)
     return f'''
 if [ ! -d /local/scratch ]; then
@@ -255,81 +131,47 @@ find /local/scratch -maxdepth 1 -name 'sp-*.*' -user "$(id -u)" -mmin +1440 \
 '''
 
 
-# Every member of a group job must agree on a STRING resource or snakemake
-# raises "Resource slurm_extra is a string but not all jobs in group require
-# the same value" (resources.py::_is_string_resource). So the tmp-disk request
-# is one constant on all four members, not a property of tile_ngmix alone.
-#
-# --tmp is a node SELECTION FLOOR, not a reservation: Slurm matches it against
-# the node's configured TmpDisk (nibi: 1.67-12 TB, TmpFS=/local) and does not
-# decrement it per job. It buys exactly one thing, and it is the thing worth
-# having -- the fused job can no longer land on a node with no usable local
-# disk, which is the one configuration in which the whole design fails. 16 GB
-# against a measured 5.6 GB store leaves room for an unusually rich tile, and
-# filters no nibi node today, so it costs no queue time. Resources are not a
-# rerun trigger, so adding it invalidates nothing.
+# All group members must use the same string resource (Snakemake's
+# resources.py::_is_string_resource), so each uses this constant.
+# Slurm's --tmp selects nodes by configured TmpDisk; it does not reserve or
+# decrement disk space per job. 16 GB leaves room above the measured 5.6 GB
+# store and excludes nodes configured without sufficient temporary disk.
 TILE_SLURM_EXTRA = "--tmp=16000"
 
-# One label for the whole shape chain; the composition arithmetic is in this
-# file's docstring. The group's declared runtime is a SUM along the chain and
-# that sum gates partitions on nibi, so each member's runtime below is measured
-# p99 plus margin, not the old defensive ceiling.
+# One label for the whole shape chain; see this file's docstring for resource
+# composition. The summed runtime determines eligible partitions on nibi.
 TILE_GROUP = "tile_shape"
 
-# Cleanup, on the LAST member only. $SLURM_TMPDIR is Slurm's to reclaim, but
-# /local/scratch on nibi demonstrably carries stale directories from
-# long-finished jobs, so the epilog is not on its own reliable. tile_make_cat is
-# the last reader of the store, so its EXIT trap is the earliest moment the
-# 5.6 GB can go. It must NOT be set by the earlier members: their shells exit
-# while the store is still needed. Residual failure mode accepted: SIGKILL
-# (OOM-kill, node death) skips the trap, and if the epilog also misses it the
-# store leaks until the node drains -- 5.6 GB against a 3.3 TB disk.
+# Set cleanup only on tile_make_cat, the last store reader. Earlier members'
+# shells exit while other members still need the store. See tile_local() for
+# cleanup after a hard kill.
 TILE_CLEAN = r"""
 trap 'rm -rf "$SP_LOCAL"' EXIT
 """
 
-# tile_vignets ONLY. unit_pre clears each stage's own run dir on the shared root
-# ("the job clears its run dir at start" — ShapePipe's FileHandler raises on an
-# existing one); the node-local root needs the same treatment, and only the rule
-# that WRITES the store may do it. Putting this in TILE_LOCAL would have
-# tile_ngmix delete the store it is about to read.
+# Only tile_vignets may clear the vignette run directory before writing.
+# Putting this in tile_local() would make readers delete their own input.
 TILE_VIGNET_FRESH = r"""
 rm -rf "$SP_VIGNET_OUT/run_sp_tile_PiViVi"
 """
 
-# THE SINGLE WRITER OF THE ngmix CHUNK PARTITION, and tile_vignets ONLY.
-#
-# The ranges are materialised once per tile, here, and every chunk then looks
-# its own row up (TILE_NGMIX_RANGE_READ below). tile_vignets is the first member
-# of the fused group and strictly precedes all chunks in its DAG, so this is the
-# one place in the group where a single process can write something all chunks
-# read — no flock, no first-one-wins race. The sexcat it reads is tile_detect's,
-# upstream of the whole group and on the SHARED root ($SP_RUN); only the OUTPUT
-# is node-local.
-#
-# Group-internal plumbing, deliberately not a rule output: the file lives and
-# dies with the group job exactly as the vignette store does, so a chunk can
-# only ever read what its own group job wrote. ngmix_range.py owns the rest.
+# tile_vignets writes the partition once, before all chunks; each chunk reads
+# its row rather than recomputing boundaries. A measured mid-run splitter edit
+# with independent chunk splitting orphaned 520 objects and measured 831 twice;
+# merge_sep_cats would accept that inconsistent partition without error.
+# The input sexcat is on the shared root; the ranges are group-local plumbing,
+# not a rule output. See ngmix_range.py for the partition algorithm.
 NGMIX_RANGES = "$SP_LOCAL/ngmix_ranges.json"
 TILE_NGMIX_RANGES = (
     f'python {SCRIPTS}/ngmix_range.py --run-dir "$SP_RUN" '
     f'--n-chunks {NGMIX_CHUNKS} --write "{NGMIX_RANGES}" || exit 1'
 )
 
-# THE FUSE'S ONE SHARP EDGE, made loud rather than mysterious.
-#
-# The vignette store is not a declared output any more, so snakemake cannot see
-# it. tile_vignets' manifest CAN be up to date while the store does not exist on
-# this node — concretely, after a fused group job dies part-way: the manifest is
-# a success and survives, so a LATER invocation re-plans the group with only the
-# surviving members and the store is simply not there. (An in-flight `retries:`
-# resubmission is safe: it reruns the same member set, tile_vignets included.)
-#
-# Recovery is one line, and the message says it: delete the tile's
-# tile_vignets.json and resume — that puts tile_vignets back in the group and
-# the store comes back with it. The alternative fixes are worse: temp()-ing the
-# vignets manifest would break clean_exposure, which keys reclamation
-# eligibility on exactly that file.
+# Snakemake tracks the manifest, not the node-local store. After a partial
+# group failure, a resume can omit tile_vignets because its manifest exists,
+# leaving readers without a store. Delete tile_vignets.json and resume to put
+# the writer back in the group. An in-flight retry keeps the original member set.
+# Keep the manifest non-temp: clean_exposure uses it to establish eligibility.
 TILE_VIGNET_REQUIRED = r"""
 if [ ! -d "$NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output" ]; then
   echo "tile_shape: the node-local vignette store is missing." >&2
@@ -346,15 +188,11 @@ fi
 
 
 
-# THE MODULE LOGS OUTLIVE THE RUN DIRS THAT HOLD THEM. A chunk's ShapePipe run
-# dir is temp() (tile_merge_cats is its last reader) and tile_vignets' lives in
-# the node-local store, so both kinds of log went with their dirs: the
-# run's own logs/ and each module's logs/process-*.log, where ngmix writes its
-# per-chunk `epoch cuts:` line and every per-object "ngmix failed" message.
-# The rule copies them to $SP_RUN/logs/modules/<run name>/ (the tile dir on the
-# shared root) before it exits, whatever its rc, so a failed chunk keeps its
-# evidence too. A few KB per chunk; clean_tile reclaims them with the rest of
-# logs/. The copy never changes the rule's exit status.
+# Preserve run and module logs before temporary or node-local directories go.
+# This includes ngmix's epoch-cut counts and per-object failure messages.
+# Each rule copies logs to the tile's shared logs/modules/<run name>/ even on
+# failure; a copy failure does not change the rule's exit status. clean_tile
+# reclaims these logs with the rest of the tile store.
 def keep_module_logs(run_root, run_name):
     dest = f'"$SP_RUN/logs/modules/{run_name}"'
     return (
@@ -368,60 +206,22 @@ def keep_module_logs(run_root, run_name):
 def tile_exp(wc):
     return tile_exposures(wc.tile)
 
-# --- the tile->exposure edge, and why it is cut for finished tiles ----------
+# --- tile-to-exposure edges after reclamation -----------------------------
+# A tile with final_cat needs no reclaimed exposure store. Drop only missing
+# exposure manifests for finished tiles, so rebuilding a shared exposure for
+# one tile does not propagate reruns through the overlap component. Unfinished
+# tiles keep every edge and rebuild the exposures they need. ancient() suppresses
+# timestamp changes, but cannot suppress reruns propagated from upstream jobs.
 #
-# THE cascade fix. clean_exposure deletes the exposure's manifests on purpose:
-# that is what makes a tile appended later rebuild the chain instead of running
-# against an empty store. But those manifests are the tile side's inputs, and an
-# exposure is read by ~7-10 tiles. So the moment ONE tile's chain rebuilt an
-# exposure, every other tile reading it saw "input files updated by another job"
-# and reran — and that rerun rebuilt ITS exposures, which reran THEIR other
-# consumers, propagating across the whole exposure-overlap connected component.
-# On fixture t4, asking for one damaged tile scheduled all four tiles' chains.
+# The input rerun trigger must be off (see the profiles' trigger lists): it
+# treats the deliberate edge removal as a reason to rerun. On a four-tile
+# fixture with one damaged tile, job counts are 82 without these protections,
+# 70 with edge removal but the input trigger on, and 28 with both protections.
 #
-# Two mechanisms, and only the second one actually cuts it:
-#
-#  1. ancient() on every exposure-manifest edge. Correct on its own terms — a
-#     tile has no business rerunning because an exposure manifest is NEWER — and
-#     it is what keeps a pure-mtime disturbance (a re-touched manifest, a
-#     restored backup) from waking finished tiles. But ancient() governs
-#     TIMESTAMPS only. Snakemake propagates "my input is produced by a job that
-#     will run in this DAG" separately, and ancient does not suppress it
-#     (measured: t4 counts were identical with ancient alone).
-#
-#  2. Cutting the RECLAIMED edges of a FINISHED tile — the mechanism that works.
-#     A tile whose final_cat is on disk needs nothing further from its
-#     exposures: it has already extracted everything it will ever read. So for
-#     such a tile the input list drops the manifests that are GONE, and the
-#     propagation has nowhere to go. An UNfinished tile keeps its full edge set
-#     and therefore still drags in — and rebuilds — every exposure it needs,
-#     which is the accepted price of a late append, unchanged.
-#
-# Only the missing ones are dropped, never a manifest that still exists: a
-# campaign that has cleaned nothing then declares exactly the edges it always
-# did, and the cut cannot perturb it.
-#
-# The marker is final_cat, not the tile's own vignets manifest: on a tile whose
-# catalogue was lost, the vignets manifest still exists while the vignette store
-# (temp()) does not, so keying on vignets would cut the edge on exactly the tile
-# that has to rerun, and run it against a deleted exposure store.
-#
-# THE CUT REQUIRES THE `input` RERUN-TRIGGER TO BE OFF (profiles/nibi sets the
-# trigger list). Dropping an input is itself a change in the set of input files,
-# which that trigger reads as a reason to rerun — reinstating the very cascade,
-# now as "Set of input files has changed", and running finished tiles against a
-# store that is gone. Measured on fixture t4, one damaged tile of four: 82 jobs
-# with neither fix, 70 with the cut but the trigger on, 28 with both (= exactly
-# the damaged tile's own chain, its two exposures, and the clean jobs).
-#
-# The cost, stated plainly: `--forcerun` on a tile whose final_cat exists will
-# NOT rebuild its reclaimed exposures, because those edges are not in the DAG.
-# Delete that tile's final_cat first and the whole chain comes back.
-#
-# What none of this weakens: clean_exposure's own inputs are neither ancient nor
-# cut, so a tile that really did rebuild its vignets still reschedules the cleans
-# of the exposures it read, and a grown consumer set still travels through
-# params.consumers.
+# Use final_cat as the marker, not tile_vignets.json: the manifest can survive
+# without the node-local store. To rebuild reclaimed exposures with --forcerun,
+# delete the tile's final_cat first so its exposure edges return to the DAG.
+# See clean_exposure in exposure.smk for reclamation and consumer-set tracking.
 def tile_finished(tile):
     return Path(final_cat(tile)).exists()
 
@@ -439,7 +239,7 @@ def tile_exp_all(wc):    return tile_exp_split(wc) + tile_exp_psf(wc)
 
 # Build the per-tile symlink forest. Declaring the exposure manifests as input
 # makes this wait on its exposures; the forest itself is only the $SP_EXP view.
-# Its output stays a directory() (it has no ShapePipe run dir and no manifest —
+# Its output is a directory() (it has no ShapePipe run dir and no manifest —
 # it is not a shapepipe_run at all).
 rule tile_exp_forest:
     group: "tile_gather"
@@ -458,7 +258,7 @@ rule tile_exp_forest:
         runtime = 20
     shell:
         # --forest {output} lives in the shell string: snakemake formats shell
-        # ONCE, so an {output} placeholder inside params.cmd would survive
+        # once, so an {output} placeholder inside params.cmd would survive
         # literally and every forest job would race one './{output}'.
         "{params.cmd} --forest {output.forest}"
 
@@ -470,11 +270,8 @@ rule tile_merge_headers:
     input:
         forest = rules.tile_exp_forest.output.forest,
         split  = tile_exp_split,
-        # config_tile_Mh_exp.ini reads run_sp_tile_Fe output, which the PREPARE
-        # phase produced. Declaring the Fe manifest gives the COMPUTE DAG a
-        # regeneration path for it instead of a silent dependency on a
-        # previous invocation (prepare.smk is included in every parse, so the
-        # rule exists here too). Normally a satisfied no-op.
+        # config_tile_Mh_exp.ini reads the prepare phase's run_sp_tile_Fe output.
+        # Its manifest provides a regeneration edge in the compute DAG.
         fe     = f"{TILE_DIR}/manifests/tile_find_exposures.json",
     output:
         manifest = f"{TILE_DIR}/manifests/tile_merge_headers.json"
@@ -552,23 +349,12 @@ rule tile_detect:
         pre = lambda wc: unit_pre("tile_detect", wc.tile,
                                   env=detect_env(wc.tile)),
         script_hash = SCRIPT_HASH
-    # One core: the container's SExtractor is built without threads
-    # (NTHREADS 4 warns and runs in the same 36 s), default_tile.sex sets
-    # NTHREADS 1, the join and the post-processing are serial Python, and
-    # `-b {threads}` only sets the SMP batch over input sets, of which a tile
-    # is one.
-    #
-    # MEASURED on eight DR6 tiles chosen to span conditions (high latitude,
-    # b = 18 deg, the A2199 cluster, Alioth's halo, two survey-edge tiles at
-    # 96% zero weight; 1-10 exposures), the step as shapepipe_run runs it on
-    # candide: wall time 23-160 s (SExtractor + join <= 93 s, post-processing
-    # <= 97 s), peak RSS 1.84 GiB, set by the join holding the ~430 MB
-    # catalogue twice. Image simulations run the same step on tiles of the same
-    # size (10000 x 10000 px); SExtractor alone on one takes 34 s and 0.74 GiB.
-    # 4000 MB is 2.1x the worst tile, and an OOM retries at 8000. The runtime
-    # is ~7x the slowest tile, for /scratch I/O on nibi (a 400 MB image and
-    # weight in, a ~430 MB catalogue out). nibi bills max(cores, mem_GB/4), so
-    # the job bills 1 core-equivalent.
+    # One core: the container's SExtractor has no threading support, and the
+    # join and post-processing are serial. See default_tile.sex for NTHREADS.
+    # Across eight DR6 tiles on candide (1-10 exposures, including low latitude,
+    # a cluster, a bright-star halo and survey edges), wall time is 23-160 s
+    # and peak RSS is 1.84 GiB. 4000 MB gives ~2.1x memory margin; 20 min gives
+    # ~7x wall-time margin for shared-storage I/O on nibi. Both scale on retry.
     threads: 1
     retries: 1
     resources:
@@ -577,9 +363,8 @@ rule tile_detect:
     shell:
         sp_shell("tile_detect", "config_tile_Sx.ini")
 
-# Configured PSF interpolation to galaxies + vignet postage stamps: the last
-# stage that reads exposure products, and the bulk intra-tile intermediate. The store it
-# writes is node-local (see TILE_LOCAL above).
+# PSF interpolation and galaxy postage stamps: the last exposure-product reader.
+# The vignette store is node-local (see tile_local()).
 rule tile_vignets:
     group: TILE_GROUP
     input:
@@ -591,12 +376,9 @@ rule tile_vignets:
         # tile_merge_headers above.
         fe     = f"{TILE_DIR}/manifests/tile_find_exposures.json",
     output:
-        # THE MANIFEST IS THE ONLY DECLARED OUTPUT. The vignette store used to
-        # ride along as a second temp(directory()) so native temp() would
-        # reclaim it; node-local, it cannot be declared at all — and need not
-        # be. It was never DAG currency, its readers are all inside this group
-        # job, and TILE_CLEAN's trap reclaims it. Lost affordance: `--notemp`
-        # can no longer keep it for debugging.
+        # The manifest is the only declared output. The store is node-local,
+        # all readers are in this group, and TILE_CLEAN reclaims it regardless
+        # of --notemp.
         manifest = f"{TILE_DIR}/manifests/tile_vignets.json",
     log:
         f"{TILE_DIR}/logs/tile_vignets.json"
@@ -606,245 +388,91 @@ rule tile_vignets:
                                   pre_run=[tile_local(wc.tile), TILE_VIGNET_FRESH,
                                            TILE_NGMIX_RANGES]),
         script_hash = SCRIPT_HASH,
-        # tile_vignets now PRODUCES the chunk partition (TILE_NGMIX_RANGES), so
-        # it carries the splitter's fingerprint too. Same hash, same constant —
-        # the Snakefile's NGMIX_RANGE_HASH argues what it guards, and
-        # tile_ngmix's copy below carries the mid-campaign-edit warning.
+        # Fingerprint the partition writer and readers together; see the
+        # tile_ngmix range_hash note and the prologue hazard above.
         range_hash = NGMIX_RANGE_HASH
-    # 8, not 16, for the same reason tile_ngmix is 1: `-b {threads}` is SMP
-    # batch size over input FILE SETS, and a tile is one set -- this run's own
-    # log says "Batch size: 16 / Total number of processes: 1". 16 was the
-    # widest member and therefore set the whole GROUP's cpus_per_task; at 8 the
-    # group asks exactly what the eight-chunk ngmix wave needs. Billing is
-    # unchanged either way (nibi is MAX_TRES and the 112 GB memory term is
-    # 28 core-equivalents, well above both), but the group now packs onto a
-    # node in 8 cores instead of 16.
+    # Eight threads match the ngmix wave's width, without making this stage
+    # request a wider group allocation. ShapePipe's batch parallelism is over
+    # input file sets; a tile supplies one set (see tile_ngmix's thread note).
     threads: 8
     resources:
         mem_mb = lambda wc, attempt: 32000 * attempt,
-        # Measured median 3m29s, max 5:25 (this branch: 2m38s on 198.305).
-        # 20 min is p99 plus a wide margin, and it is a term in the GROUP's
-        # runtime sum, so the old defensive 240 is not free any more.
+        # Measured median 3m29s, max 5:25. The 20-minute budget includes
+        # margin and contributes to the group's summed runtime.
         runtime = 20,
         slurm_extra = TILE_SLURM_EXTRA
     shell:
-        # The completeness check is pointed at the NODE-LOCAL run root; see
+        # The completeness check is pointed at the node-local run root; see
         # sp_shell's check_args for what the two flags do.
         sp_shell("tile_vignets", f"config_tile_PiViVi_{PSF_MODEL}.ini",
                  check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}',
                  post=keep_module_logs("$NGMIX_VIGNET_DIR", "run_sp_tile_PiViVi"))
 
-# ngmix shape measurement — N chunks per tile (D4). Each chunk LOOKS UP its own
-# CLOSED catalogue-row range in the file tile_vignets materialised at the top of this
-# group job (TILE_NGMIX_RANGES); the ranges are knowable only at EXECUTION time,
-# from this tile's own sexcat, which is why a params function cannot supply them.
-# Closed, not open-ended: `ID_OBJ_MAX = -1` on the last chunk was the 13-hour
-# straggler's root cause (ngmix treats id_obj_max <= 0 as unbounded).
+# ngmix shape measurement: N chunks per tile, each reading its closed row range
+# from TILE_NGMIX_RANGES. The tile's sexcat supplies the bounds at execution time,
+# so a params function cannot determine them. ngmix treats ID_OBJ_MAX <= 0 as
+# unbounded; a closed upper bound prevents the last chunk from overrunning.
 #
-# Chunks write nothing shared: each has its own run_sp_tile_ngmix_Ng<k>u, and
+# Chunks write separate directories: each has its own run_sp_tile_ngmix_Ng<k>u, and
 # merge_sep_cats — DAG-serialised after all chunks — is the gather.
 rule tile_ngmix:
     group: TILE_GROUP
     input:
-        # The manifest, and only the manifest. The vignette store is no longer a
-        # declared input because it is no longer a declared output: it is
-        # node-local, produced by tile_vignets earlier in THIS SAME group job
-        # (see TILE_LOCAL). The manifest was always the real edge.
+        # The manifest is the DAG edge; see tile_vignets for store lifetime.
         vignets  = rules.tile_vignets.output.manifest,
         sx       = rules.tile_detect.output.manifest,
     output:
         manifest = f"{TILE_DIR}/manifests/tile_ngmix_{{chunk}}.json",
-        # STAYS ON SCRATCH, unlike the vignette store. It is DAG currency:
-        # tile_merge_cats reads it, and merge_sep_cats derives chunks 2..N from
-        # chunk 1's path. It is also small (~300 KB/chunk), so it costs the
-        # scratch high-water nothing worth chasing. temp() still reclaims it
-        # once merge_cats has run.
+        # Shared DAG output (~300 KB/chunk), reclaimed after tile_merge_cats.
+        # merge_sep_cats derives chunks 2..N from chunk 1's path.
         chunkdir = temp(directory(f"{TILE_DIR}/output/run_sp_tile_ngmix_Ng{{chunk}}u")),
     log:
         f"{TILE_DIR}/logs/tile_ngmix_{{chunk}}.json"
     params:
         pre = lambda wc: unit_pre("tile_ngmix", wc.tile,
             env={"SP_NGMIX_CHUNK": wc.chunk, "NGMIX_N_CHUNKS": NGMIX_CHUNKS},
-            # Two steps, not `eval "$(...)"`: a command substitution inside eval
-            # discards the script's exit status, so a missing sexcat would fall
-            # through to shapepipe_run with an unset range and fail as something
-            # else. Capture, check, then eval — the range script fails as itself.
-            # tile_local FIRST, because it is what exports $SP_LOCAL — and the
-            # ranges file the lookup reads lives there, written once by
-            # tile_vignets (TILE_NGMIX_RANGES). This chunk only looks its row
-            # up; it never recomputes, and the script refuses to.
-            #
-            # Two steps, not `eval "$(...)"`: a command substitution inside eval
-            # discards the script's exit status, so a missing ranges file would
-            # fall through to shapepipe_run with an unset range and fail as
-            # something else. Capture, check, then eval — the lookup fails as
-            # itself.
+            # tile_local exports SP_LOCAL before the range lookup. Capture and
+            # check the lookup before eval: eval "$(...)" would discard its
+            # failure status and let ShapePipe run with unset bounds.
             pre_run=[tile_local(wc.tile), TILE_VIGNET_REQUIRED,
                      f'ngmix_range_out=$(python {SCRIPTS}/ngmix_range.py '
                      f'--read "{NGMIX_RANGES}" --chunk {wc.chunk}) || exit 1',
                      'eval "$ngmix_range_out"']),
         script_hash = SCRIPT_HASH,
-        # `pre_run` already puts the INVOCATION in params, but the invocation is
-        # invariant to the script's body, and what that body decides is a
-        # PARTITION (the Snakefile's NGMIX_RANGE_HASH argues the corruption).
-        # Carried on tile_vignets too, since the split moved there.
-        #
-        # WHY THE PARTITION IS MATERIALISED ONCE, kept as history because the
-        # design only reads as over-careful until you have seen this. The eight
-        # chunks used to each run ngmix_range.py in their own shell and trust the
-        # others to have landed on the same boundaries. A fused group holds them
-        # open for hours (smk-g4: 6,236-7,762 s elapsed per chunk), and each chunk
-        # read the script only when its own shell started -- against the LIVE
-        # checkout, as every job did before the launch code snapshot (bin/sp) --
-        # so an edit landed mid-flight was read by some and not others.
-        # Seen once, live: an invocation four seconds after a rewrite returned
-        # chunk 5 of 186.307 as 17649..22060 where the other seven had been split
-        # 17129..21229 — 520 objects orphaned, 831 measured twice, and
-        # merge_sep_cats concatenates whatever it is handed, so the tile would
-        # have completed green. (Twelve sequential and thirty-six concurrent runs
-        # against a stable checkout gave the identical correct partition; the
-        # race was purely the edit.) That is now STRUCTURALLY closed: tile_vignets
-        # writes the ranges once and the chunks only look their row up, so there
-        # is nothing left for them to disagree about. The hash below no longer
-        # buys sibling agreement — it buys REPRODUCIBILITY across a resume.
-        #
-        # WHAT A ONE-RULE FINGERPRINT DOES MID-CAMPAIGN: IT DELETES SCIENCE
-        # PRODUCTS. Observed when range_hash lived on tile_ngmix ALONE, which is
-        # no longer the case -- tile_vignets carries it too now that it is the
-        # rule that runs the splitter, so an edit drags tile_vignets back into
-        # the group, the store and the ranges are rebuilt, and nothing trips.
-        # Kept because the mechanism is general and the next single-rule param is
-        # one edit away. A new param entry replans the fused group with "Params have changed since last
-        # execution", scheduling the eight chunks, tile_merge_cats and
-        # tile_make_cat but NOT tile_vignets or tile_detect (their manifests
-        # exist, so missing_output never queues them). That is exactly the state
-        # TILE_VIGNET_REQUIRED catches: every chunk trips the guard, the group
-        # fails, and GroupJob.postprocess(error=True) removes every member's
-        # EXISTING outputs -- tile_make_cat's final_cat on the persistent root
-        # among them.
-        #
-        # OBSERVED end to end, not derived: SLURM job 20818649 against smk-g5,
-        # 2026-08-30, 32 seconds. The dry run scheduled exactly that member set
-        # (the group's SLURM label came back
-        # tile_shape_tile_make_cat_tile_merge_cats_tile_ngmix, no tile_vignets);
-        # every chunk tripped the guard; the group failed; and
-        # final_cat-186.307.fits was GONE from /project afterwards, the tile's
-        # directory on the persistent root empty. It had never been seen before
-        # because "Group jobs: inactive (local execution)" puts it out of reach
-        # of any login-node fixture. (Restored from a copy taken first; design
-        # and transcript in sp-products/smk-g5/EXPERIMENT_postprocess_deletion.md.)
-        #
-        # WORTH SITTING WITH: the guard is what makes this loud rather than
-        # silent, and the loud failure is precisely what triggers the deletion.
-        # Still the right trade -- but it argues for never reaching this state,
-        # not for relaxing the guard.
-        #
-        # THE RULE THE INCIDENT LEFT BEHIND: a fingerprint that changes on the
-        # chunks but NOT on tile_vignets is the dangerous shape. tile_local()
-        # was always safe for exactly this reason -- it sits in three rules'
-        # params.pre, so an edit there pulls tile_vignets in and the store is
-        # rebuilt. range_hash is now the same shape by construction. job_head.sh's
-        # runbook sweep would not have helped either: it skips any tile with a
-        # final_cat, exactly the set this breaks.
-        #
-        # INVERTED BY clean_tiles, so read the default carefully. With
-        # reclamation ON the tombstoned tile has lost tile_detect.json and the
-        # structural "Input files updated by another job" propagation puts
-        # tile_vignets back in the group (measured at clean_tile below), so the
-        # store is rebuilt and nothing trips. The SHIPPED DEFAULT
-        # clean_tiles: false is the dangerous configuration -- the opposite of
-        # how reclamation reads everywhere else in this file.
-        #
-        # So: land this hash, and every later edit to ngmix_range.py, at a
-        # campaign boundary on a fresh root. The same rule and direct command as
-        # tile_local()'s -- `--rerun-triggers mtime code software-env`.
+        # Hash the script body, not just its invocation, for resume reproducibility.
+        # Keep this fingerprint on tile_vignets too: a readers-only params change
+        # can omit the writer, trip TILE_VIGNET_REQUIRED, and make failed-group
+        # cleanup delete an existing final_cat (observed in a nibi group job).
+        # See the prologue hazard above and workflow/CONTRACTS,
+        # unit-pre-changes-at-campaign-boundary, before changing params.
         range_hash = NGMIX_RANGE_HASH
-    # ONE core, not four. `-b {threads}` is shapepipe_run's SMP BATCH SIZE
-    # (pipeline/args.py) -- joblib Parallel(n_jobs=batch_size) over
-    # filehd.process_list, i.e. parallelism ACROSS INPUT FILE SETS. An ngmix
-    # chunk is one catalogue, so process_list has exactly one entry: every real
-    # log says "Batch size: 4 / Total number of processes: 1". There is no
-    # internal parallelism either (no multiprocessing/Pool/joblib/threading in
-    # ngmix_package/ngmix.py), and OMP/BLAS are pinned to 1 by both the prologue
-    # and the profile. The reserved cores 2-4 never had anything to run.
-    #
-    # Worth being precise about what this saves. nibi bills
-    # TRESBillingWeights=CPU=1000,Mem=250G under PriorityFlags=MAX_TRES, i.e.
-    # max(cores, mem_GB/4). At 14 GB the memory term alone is 3.5 core-
-    # equivalents, so 4 -> 1 core moves the reservation from 4.0 to 3.5, a 12%
-    # saving -- NOT 75%. The real core-hour win is the elapsed-time collapse
-    # from killing the NFS random reads, not this.
+    # One core per chunk: ShapePipe's -b controls parallelism over input file
+    # sets (pipeline/args.py), and a chunk is one catalogue. ngmix has no internal
+    # worker pool; the prologue and profile pin OMP/BLAS to one thread.
     threads: 1
     retries: 2
     benchmark:
         f"{TILE_DIR}/manifests/tile_ngmix_{{chunk}}.benchmark.tsv"
     resources:
-        # 5000, down from 14000, and this is the campaign's largest single cost
-        # saving — but read what the number means before moving it again.
+        # Across 31 nibi tiles, cgroup high-water is 27.40 GiB max, 22.14 GiB
+        # mean. Eight sibling chunks sum to 40000 MiB = 39.1 GiB, a 1.43x
+        # margin over the measured maximum. nibi's cgroup-based sacct MaxRSS
+        # includes reclaimable page cache, not just process memory.
+        # Prefer the larger per-worker memory estimate in config_tile_Ng_template.ini's
+        # SAVE_BATCH note over the ~1.25 GiB psutil benchmark: 30-second sampling
+        # can miss flush peaks. That leaves about 20 GiB for the local store's cache.
         #
-        # sacct's MaxRSS here is NOT process memory. nibi runs
-        # JobAcctGatherType=jobacct_gather/cgroup, so it reports the cgroup's
-        # memory.current, which under cgroup v2 CHARGES PAGE CACHE to the job.
-        # Cache is reclaimable — the kernel evicts it before it kills anything —
-        # so the cgroup high-water is an upper bound on what the job NEEDS, not
-        # a hard requirement. What a tight reservation can still do is squeeze the cache
-        # that keeps the node-local store resident, which is part of why the
-        # fused tile is fast.
-        #
-        # MEASURED ACROSS 31 TILES (campaign smk-g4, 2026-08-30): cgroup
-        # high-water 27.40 GiB max, 22.14 GiB mean, against the 109.4 GiB the
-        # group was reserving. The eight chunks are SIBLINGS in the group's
-        # toposort so snakemake SUMS their mem_mb; at 5000 the group asks
-        # 40000 MiB = 39.1 GiB, a 1.43x margin over the worst tile observed.
-        #
-        # The ANONYMOUS half of that, which is the part that can actually OOM,
-        # is the number to argue about, and this repo carries two estimates that
-        # disagree by 1.8x. Snakemake's psutil benchmark says ~1.25 GiB per
-        # chunk (~10 GiB for eight); config_tile_Ng_template.ini's own
-        # SAVE_BATCH note says ~2.3 GB per worker from an A/B test (job
-        # 17607877), i.e. ~18.4 GiB. Prefer the larger: snakemake samples RSS on
-        # a 30-second grid (BENCHMARK_INTERVAL), and a SAVE_BATCH = 250 flush
-        # cycle is exactly the sawtooth such a grid misses. So read the margin
-        # as ~2.1x over anonymous memory with ~20 GiB left for cache against an
-        # 8.1 GiB store — comfortable, but not the 4x a psutil-only reading
-        # would suggest. An OOM is also self-healing: mem_mb scales with
-        # attempt, so a retry asks 80000.
-        #
-        # WHY THIS IS THE BIG ONE. nibi bills max(cores, mem_GB/4), so at
-        # 112 GB the fused group billed 28 core-equivalents for 8 real cores —
-        # 3.4x, measured live at 905 billed against 266 allocated. At 40 GB it
-        # bills 10. That is not a saving so much as a schedule: the account's
-        # fairshare target is ~250 CE, which buys 9 tiles in flight at 28 and 25
-        # at 10, and DR6's wall clock is (tiles / tiles-in-flight) x elapsed.
-        #
-        # 4000 is the current lower bound and is NOT recommended yet: it would take the group
-        # to 32000 MiB, where tile_vignets' own 32000 becomes the binding term
-        # and the group finally bills its 8 real cores — but that is a 1.14x
-        # margin over the worst tile measured, and the first thing to give would
-        # be the page cache holding the store. Take it only with a measurement
-        # of cache behaviour under pressure, not on the arithmetic alone.
+        # nibi bills max(cores, mem_GB/4): 40 GB costs 10 core-equivalents for
+        # eight cores. Reducing chunks to 4000 would make tile_vignets' 32000
+        # the group limit, only 1.14x the measured maximum; measure cache
+        # behaviour under pressure before using that budget. Retries scale memory.
         mem_mb = lambda wc, attempt: 5000 * attempt,
-        # 120 on the FIRST attempt, and ATTEMPT-SCALED after it. MEASURED
-        # two ways, and the second is why the margin is thinner than it looks:
-        #   * alone (job 20795277, tile 198.305 chunk 1): ~76 min for 3547
-        #     objects = 1.29 s/object, against a 7h34m median on NFS -- the
-        #     same ~50 min of TotalCPU either way, so the collapse is pure I/O.
-        #   * EIGHT-WIDE on one node (job 20799387, tile 186.307, 4412
-        #     objects/chunk): 1.54 s/object steady-state, i.e. concurrency
-        #     costs ~19%, and the chunk lands at ~113 min. The campaign's
-        #     largest tile (198.306, 4678 objects/chunk) projects to ~120 --
-        #     exactly this number, with nothing left over.
-        #
-        # Inside a group SLURM enforces only the GROUP's wall (165 min), never
-        # a member's, so 120 is a budgeting term rather than a kill line and
-        # the worst tile still lands ~127 min inside 165. What is NOT safe is a
-        # flat retry: a group that TIMEOUTs re-queues against the identical
-        # wall and fails identically, burning three 165-minute allocations to
-        # learn nothing. Scaling with `attempt` keeps the happy path in
-        # cpubase_bycore_b1 (20+120+10+15 = 165 <= 180) and gives a retry real
-        # headroom (285 min, which is b2) instead of a rerun of the same
-        # failure. Attempt 1 is unchanged, so this does not perturb the
-        # benchmark -- it only makes the failure branch mean something.
+        # Measured on nibi: 1.29 s/object for one local chunk, 1.54 s/object
+        # for eight concurrent chunks (~19% slower). At 4678 objects/chunk,
+        # the latter projects to ~120 min. Slurm enforces the group's total,
+        # not this member budget: attempt 1 gets 165 min, attempt 2 gets 285.
+        # Scale retries so a timeout receives more wall time rather than
+        # repeating the same allocation; attempt 1 fits cpubase_bycore_b1.
         runtime = lambda wc, attempt: 120 * attempt,
         slurm_extra = TILE_SLURM_EXTRA
     shell:
@@ -888,14 +516,12 @@ rule tile_merge_cats:
 # The run's science product. make_cat also reads the vignette store's
 # configured PSF-interpolation output, so it — not ngmix — is the store's last reader.
 #
-# No protected(): the full default rerun-triggers govern, and protected() only
-# ever forced people through a `--forcerun` detour.
+# No protected(): the profile's rerun triggers govern catalogue regeneration.
 rule tile_make_cat:
     group: TILE_GROUP
     input:
-        # No store input: it is node-local, written by tile_vignets in this same
-        # group job. make_cat reads its configured PSF-interpolation output
-        # through $NGMIX_VIGNET_DIR (config_tile_Mc.ini).
+        # See tile_vignets for store lifetime, and config_tile_Mc.ini for
+        # make_cat's PSF-interpolation input through NGMIX_VIGNET_DIR.
         ms    = rules.tile_merge_cats.output.manifest,
     output:
         manifest  = f"{TILE_DIR}/manifests/tile_make_cat.json",
@@ -925,75 +551,17 @@ rule tile_make_cat:
                       "fi\n")
 
 
-# --- tile reclamation (D5) --------------------------------------------------
-# The tile-side counterpart of clean_exposure, and the differences are the whole
-# design. Read that rule's commentary in exposure.smk first; this one only says
-# where the tile case departs from it.
+# --- tile reclamation -----------------------------------------------------
+# Reclaim each ready tile after its persistent final_cat lands, keeping shared
+# scratch proportional to tiles in flight. The input is the tile-finished marker
+# defined by final_cat() in the Snakefile. See clean_tile_targets() there for
+# scope, and clean_tile.py for the measured footprint and survivor set.
 #
-# WHY IT EXISTS. clean_exposure reclaims exposure stores; nothing reclaimed
-# tiles, so a FINISHED tile held 1.19 GiB across 137 inodes on scratch forever
-# (measured on 186.307; the per-directory breakdown is in clean_tile.py). At
-# DR6's 23,114 tiles that is 26.9 TiB against a 1 TiB quota and 3.17M inodes
-# against a 1M one. BOTH BOUNDS BIND, and the byte one binds first: without this
-# rule no batch may exceed ~859 tiles.
-#
-# ELIGIBILITY IS TRIVIAL, AND THAT IS THE POINT: a tile's store has no consumer
-# outside that tile, so there is no consumer set, no eligibility test and no
-# staleness to detect — only an ordering edge on the tile's own final_cat
-# (clean_tile.py opens with the asymmetry; the survivor set is argued there too).
-#
-# THE INPUT IS final_cat, ON THE PERSISTENT ROOT, AND NOT ancient(). It is
-# already the campaign's designated tile-finished marker (see final_cat()'s
-# docstring and tile_finished() above), and an ordinary input is what orders the
-# clean after the tile — which is what makes reclamation ROLLING: within one
-# invocation a tile is reclaimed as soon as its own chain lands, so the scratch
-# high-water tracks the tiles in flight instead of the tiles in the batch. That
-# is the whole reason the rule is worth having; ancient() would keep the
-# dependency but drop the ordering, and the batch would peak at its full size.
-#
-# SCOPE: TILES_READY only, never every tile in the index — see
-# clean_tile_targets() in the Snakefile for what an out-of-scope tombstone drags
-# into the DAG.
-#
-# THE SURVIVING tile_vignets.json DOES NOT TRIP TILE_VIGNET_REQUIRED, AND THE
-# REASON IS WHAT GETS DELETED, NOT WHAT GETS KEPT. Read that guard above first.
-# A cleaned tile is, on its face, exactly the state it exists to catch: a valid
-# tile_vignets manifest over a node-local store that is not there (here because
-# it never outlived its job, rather than because a fused group half-ran).
-# smk-g4's job_head.sh carries a runbook sweep for that state, and it skips any
-# tile with a final_cat — i.e. every tile this rule ever touches — so a cleaned
-# tile is invisible to it either way.
-#
-# Force a cleaned tile back anyway (delete its final_cat) and tile_vignets IS
-# rescheduled, so the store is rebuilt and no chunk trips the guard. Measured on
-# the fixture: 19 jobs, the whole chain from tile_get_images, tile_vignets inside
-# the tile_shape group. Snakemake names the mechanism itself --
-#   reason: Input files updated by another job: .../exp_forest,
-#           .../manifests/tile_find_exposures.json, .../manifests/tile_detect.json
-# -- and it is NOT the `mtime` trigger. It is the structural propagation that
-# makes every dependent of a rerunning job rerun, the same edge the cascade
-# commentary above says ancient() cannot suppress. Worth the distinction: that
-# propagation is not in profiles/nibi's rerun-triggers list and so cannot be
-# switched off there, where an mtime argument could be.
-#
-# So the guard stays silent only because tile_detect.json and exp_forest/ GO.
-# Counterfactual on the same fixture, upstream manifests restored and mtimes
-# controlled so nothing reruns on timestamp -- i.e. the "delete only output/"
-# design -- schedules 8 x tile_ngmix + tile_merge_cats + tile_make_cat with
-# tile_vignets ABSENT, and every chunk trips the guard.
-# ADDING A MANIFEST TO THE SURVIVOR LIST IS THEREFORE NOT FREE: tile_vignets is
-# safe because nothing upstream of it survives, and tile_detect.json in
-# particular must never join the list.
-#
-# A LOCALRULE (declared in the Snakefile), same as clean_exposure. It is a DAG
-# LEAF, so being local can never make it both a dependency and a dependent of a
-# group — no `group:` label here, and none possible.
-#
-# WHAT THIS SHARPENS ELSEWHERE: the TILE_LOCAL warning above says an edit to
-# tile_local() mid-campaign reruns finished tiles unsatisfiably because their
-# EXPOSURE stores are reclaimed. With this rule on, the tile's own store is gone
-# too, so the rerun has even less to stand on. The recommendation is unchanged —
-# land those edits between campaigns — but the margin for being wrong is smaller.
+# Rebuilding a cleaned tile must also rebuild its node-local stores. Deleting
+# final_cat schedules upstream jobs whose reruns propagate to tile_vignets;
+# preserving tile_detect.json or exp_forest would prevent that path and leave
+# readers without the writer. See clean_tile.py before changing the survivor set.
+# This rule is a local DAG leaf (declared in the Snakefile), outside all groups.
 rule clean_tile:
     input:
         # The tile-finished marker, on the persistent root. A lambda rather than
@@ -1017,45 +585,17 @@ rule clean_tile:
         " --tombstone {output.tombstone}"
 
 
-# --- the campaign's shear catalogue -----------------------------------------
-# ONE job per campaign, the tile-side twin of exposure.smk's star_cat_merge, and
-# the same three design calls hold: the input is the list `rule all` already
-# requests (every ready tile's final_cat), the paths never reach the shell
-# (MAX_ARG_STRLEN), and a fingerprint on `params` is what makes it rerun when a
-# tile is appended. The job derives the same set the fingerprint was taken over
-# from the tile list and the index rather than globbing products_dir — on a
-# products root shared with an earlier, larger tile list a glob would merge tiles
-# no rerun trigger ever saw.
+# --- campaign shear catalogue --------------------------------------------
+# One job merges the same ready-tile final_cat list requested by rule all.
+# Pass the tile list and index, not every path (MAX_ARG_STRLEN), and fingerprint
+# that input set so an append triggers reconciliation. Globbing products_dir
+# could include tiles outside the campaign. See merge_final_cat.py for the
+# reconciliation algorithm and output schema, and workflow/CONTRACTS for
+# campaign-name-is-run and final-cat-param-is-exact-allow-list.
 #
-# THE OUTPUT SCHEMA IS AN INTERFACE, NOT A CHOICE. sp_validation opens this file
-# as its `galaxy_cat_path`: one dataset per tile under a named group, the
-# columns of CONFIG_DIR's final_cat.param, an `n_tiles` attribute on the
-# root. The group is named for the CAMPAIGN, which is the only unit this
-# workflow has above the tile. It is the merger for both input types: an
-# image-sims campaign reads config/cfis_image_sims/final_cat.param, whose
-# columns are what sp_validation's image-sims extract step reads. So the rule reuses
-# scripts/python/create_final_cat.py's column extraction rather than restating
-# it, and writes the file itself — merge_final_cat.py argues that split, the one
-# legacy literal in the schema, and the two places where the reference
-# implementation had to be pinned down to be reproducible.
-#
-# THE INPUT IS final_cat, NOT the tile_make_cat manifest, for the same reason
-# clean_tile's is: final_cat on the persistent root IS the campaign's
-# tile-finished marker (see final_cat() in the Snakefile), and it is the file
-# this rule actually reads.
-#
-# NOT A LOCALRULE, and here the reason is IO rather than memory: a first build
-# reads every tile's catalogue end to end — ~32-46 MB per tile, so ~2 GB for a
-# 64-tile campaign and ~800 GB at DR6's 23k tiles. It RECONCILES rather than
-# rebuilds or appends: a tile with no dataset is added, a dataset whose tile
-# left the campaign is deleted, a dataset whose source catalogue changed is
-# re-read, and one that agrees with its source is left alone. So an append
-# reads the appended tiles and nothing else, while the file still cannot drift
-# from its inputs the way an append-only tool does (merge_final_cat.py argues
-# what is and is not a function of the input set here). Memory is one tile's
-# catalogue at a time plus the hdf5 write buffer, which is why mem_mb is modest
-# where star_cat_merge's is not — and why runtime, which is sized on the whole
-# campaign, is the pessimistic first-build case.
+# Run on a compute node: the first build reads ~32-46 MB per tile (~800 GB for
+# DR6's 23k tiles). Memory holds one tile plus the HDF5 buffer; runtime budgets
+# the full first build. Reconciliation reads only new or changed source catalogues.
 rule final_cat_merge:
     input:
         lambda wc: [final_cat(t) for t in TILES_READY]
@@ -1072,15 +612,13 @@ rule final_cat_merge:
         script_hash  = MERGE_FINAL_HASH
     threads: 1
     resources:
-        # Sized on the LARGEST tile, not the total: the merge holds one
-        # catalogue at a time, and the measurement is flat in the tile count
-        # (the Snakefile's sizing block carries both points).
+        # See the Snakefile's sizing block for the largest-tile memory model.
         mem_mb = lambda wc, attempt: capped_mem(attempt * (
             FINAL_MEM_BASE_MB
             + FINAL_MEM_FACTOR * final_cat_max_bytes() // 1_000_000),
             "final_cat_merge"),
-        # Runtime, unlike memory, is the TOTAL: every tile is read end to end.
-        # ~1 min per 10 tiles on the measurement, triply generous, over a floor.
+        # First-build budget: ~1 min per 10 tiles measured, with 3x margin
+        # above a fixed floor. Reconciliation can read fewer tiles.
         runtime = lambda wc, attempt: attempt * (30 + len(TILES_READY) // 3)
     shell:
         "set -euo pipefail\n"
