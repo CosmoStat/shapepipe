@@ -250,7 +250,16 @@ def absorb_benchmarks(mdir: Path) -> dict:
     return out
 
 
-def prune(root: Path, keep: set, removed: list) -> None:
+def logical_bytes(path: Path) -> int:
+    """Count regular-file bytes without following any symlink, even a dangling one."""
+    if path.is_symlink():
+        return 0
+    if path.is_dir():
+        return sum(logical_bytes(p) for p in path.iterdir())
+    return path.stat().st_size if path.is_file() else 0
+
+
+def prune(root: Path, keep: set, removed: list, *, dry_run=False) -> int:
     """Delete everything under ``root`` except ``keep`` and the dirs leading to it.
 
     A whitelist walk rather than an rmtree-with-exceptions, so adding a survivor
@@ -262,19 +271,23 @@ def prune(root: Path, keep: set, removed: list) -> None:
     see the module docstring on the two symlink classes.
     """
     ancestors = {p for k in keep for p in k.parents}
+    freed = 0
     for entry in sorted(root.iterdir()):
         if entry in keep:
             continue
         if entry in ancestors and not entry.is_symlink():
-            prune(entry, keep, removed)
+            freed += prune(entry, keep, removed, dry_run=dry_run)
             continue
-        if entry.is_symlink():
+        if dry_run:
+            freed += logical_bytes(entry)
+        elif entry.is_symlink():
             entry.unlink()
         elif entry.is_dir():
             shutil.rmtree(entry)          # unlinks nested symlinks, never follows
         else:
             entry.unlink()
         removed.append(str(entry))
+    return freed
 
 
 def reclaim(tile_dir: Path, tile: str, tombstone: Path, final_cat: Path) -> None:
