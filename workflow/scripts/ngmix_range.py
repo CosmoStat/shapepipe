@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Materialise the ngmix chunk partition once per tile, then serve it.
 
-TWO MODES, ONE WRITER. The partition is computed ONCE, by tile_vignets — the
-first member of the fused tile_shape group — and written to the group's
-node-local scratch; each of the n_chunks chunk shells then only LOOKS UP its
-own row::
+``tile_vignets`` computes the partition and writes it to the ``tile_shape``
+group's node-local scratch. Each chunk shell reads its own row::
 
     # tile_vignets, once (see tile.smk's TILE_NGMIX_RANGES)
     ngmix_range.py --run-dir $SP_RUN --n-chunks 8 --write $SP_LOCAL/ngmix_ranges.json
@@ -13,95 +11,51 @@ own row::
     eval "$(ngmix_range.py --read $SP_LOCAL/ngmix_ranges.json --chunk 3)"
     # -> export NGMIX_ROW_MIN=751; export NGMIX_ROW_MAX=1125
 
-The file is group-internal plumbing, NOT DAG currency: it lives on $SP_LOCAL and
-dies with the group job, exactly like the vignette store. It is deliberately not
-a rule output — a chunk can only ever read the file its own group job wrote.
+The file lives on ``$SP_LOCAL`` for the group job's lifetime and is not a rule
+output; see ``workflow/rules/tile.smk`` for group scratch ownership. Ranges are
+computed at execution time because Snakemake params evaluate before the sexcat
+exists.
 
-Read mode does NOT fall back to recomputation when the file is absent; it exits
-non-zero. The fallback would restore the very failure this design removes (see
-DETERMINISM, below).
+@sc [label:coupling] ngmix-range-row-partition
+Ranges are closed, 1-based sexcat row positions, not NUMBER values, matching
+``ngmix_package.ngmix.chunk_rows``. They must cover [1, N] exactly once.
+Never use a nonpositive upper bound: ngmix treats it as unbounded and can
+re-measure the whole tile.
 
-The range is still only knowable at EXECUTION time (PRD D4) — a params function
-cannot compute it, because params evaluate before the sexcat exists.
-
-The ranges are 1-based ROW positions in the sexcat, not NUMBER values: ngmix
-selects its chunk by row (``ngmix_package.ngmix.chunk_rows``), so covering
-[1, N] processes every object exactly once however NUMBER is ordered or
-spaced (an external detection catalogue keeps its own NUMBER). The bounds are
-CLOSED, never ID_OBJ_MAX = -1 — ngmix treats ``id_obj_max <= 0`` as
-unbounded, so an open-ended last chunk silently
-re-measures the whole tile instead of its share; rule tile_ngmix carries the
-straggler that taught this.
-
-CHUNKS ARE BALANCED BY EPOCH-WEIGHTED COST, NOT BY OBJECT COUNT. ngmix fits an
-object jointly across every exposure it lands on, so its cost scales with
-(object, epoch) pairs, not objects: the campaign measured 0.2714 CPU-s per
-pair with an intercept consistent with zero, plus ~0.05 CPU-s per-object of
-setup. The old equal-count split therefore produced chunks whose cost varied
-1.6x within a single tile, tracking their epoch counts at R^2 0.91-1.000. Those
-chunks are siblings in the fused tile_shape group job, which ends when its
-slowest member does, so the spread was pure wall clock: 7.7 hours over the
-34-tile smk-g4 campaign, and on tile 196.307 the slowest chunk ran
-26.3 min past the median and took the group to 97.4% of its wall limit.
-
-Re-splitting all 34 of that campaign's sexcats: the old boundaries leave the
-slowest chunk at 1.131x-1.627x its tile's median predicted cost on tile 200.302; the new ones at 1.0000x-1.0002x, and the sum over tiles of
-slowest-chunk cost falls 132,875 -> 113,710 predicted CPU-s, 14.4%.
+Chunks balance epoch-weighted cost because ngmix fits each object jointly
+across its exposures and the group waits for its slowest chunk. Measurements
+on a 34-tile nibi run give 0.2714 CPU-s per (object, epoch) pair plus ~0.05
+CPU-s of per-object setup. Equal-count chunks vary in cost by 1.6x within a
+tile; epoch-weighted splitting reduces the sum of predicted slowest-chunk
+costs from 132,875 to 113,710 CPU-s (14.4%).
 
 Moving the boundaries does not change measurements: ngmix's RNG is seeded per object
 from its sky position, so which chunk an object falls in cannot change its
 measurement (see ``ngmix_package.ngmix.position_seed``).
 
-DETERMINISM HERE IS CORRECTNESS, NOT TIDINESS. A tile's chunk ranges are a
-PARTITION of its catalogue rows: if two chunks disagree about the boundaries,
-objects are silently measured twice or silently dropped and nothing downstream
-notices — merge_sep_cats concatenates whatever it is given.
+@sc [label:coupling] ngmix-range-single-writer
+All sibling chunks must read the partition written once by ``tile_vignets``.
+Read mode must fail rather than recompute missing ranges: disagreeing chunk
+boundaries silently duplicate or drop objects, and ``merge_sep_cats`` merely
+concatenates the results.
 
-SINGLE-WRITER IS WHY THAT NO LONGER DEPENDS ON AGREEMENT. Every chunk reads the
-same file, produced by one process from one read of the sexcat, so sibling
-chunks cannot disagree even in principle — the boundaries are a fact of the
-group job rather than a computation eight processes each have to land on. The
-mechanism that closes is a real one: this script used to run independently in
-each chunk's shell, and a group holds its chunks open for hours (smk-g4:
-6,236-7,762 s of elapsed per chunk), reading — as every job did before the launch
-code snapshot (bin/sp) — the LIVE checkout, so an edit landed mid-flight was read
-by some chunks and not others. Observed once, live — the transcript is at
-tile.smk's range_hash, which is the home for that history.
-
-The rest of the determinism discipline stays, because it is what makes the
-written file trustworthy rather than merely shared: integer arithmetic end to
-end (weights scale to milli-epochs so no float ever decides a boundary), and NO
-FALLBACK — if the EPOCH extensions cannot be read, or the ranges file is absent
-in read mode, this script exits non-zero. A fallback would be the worst
-available behaviour precisely because it would apply only to the processes that
-hit the failure, shredding the tile's coverage instead of failing it.
-
-What remains uncovered is the cross-TIME case, and NGMIX_RANGE_HASH (Snakefile)
-is what covers it: a RESUME that reruns some chunks after an edit to this script
-would otherwise mix old and new boundaries within one tile.
+Integer weights make partitioning reproducible across attempts. Missing EPOCH
+extensions fail write mode. See the Snakefile's ``NGMIX_RANGE_HASH`` for
+invalidation across resumes after splitter edits, and ``bin/sp`` for launch
+code snapshots.
 """
 
 import argparse
 import json
 from pathlib import Path
 
-# Weights are integers in milli-epochs (one epoch = 1000) so every boundary is
-# decided by exact integer comparison, identically on every run of the splitter
-# — which is now what makes the written file REPRODUCIBLE across attempts and
-# resumes, rather than what makes eight siblings agree.
+# Integer milli-epoch weights make boundary comparisons exact and reproducible.
 MILLI_EPOCH = 1000
 
-# The per-object setup cost, expressed in epochs so one integer weight carries
-# both terms of the measured cost law: 0.05 CPU-s of setup / 0.2714 CPU-s per
-# (object, epoch) = 0.184 epoch-equivalents. It is what keeps the zero-epoch
-# objects (13 of 35,298 on tile 186.307) from weighing nothing — they still
-# cost ~6% of a typical object, and a chunk handed thousands of them at no extra cost
-# would be a straggler of a new kind. Only the RATIO of the two costs moves a
-# boundary, which makes this robust: refitting on 186.307's eight measured
-# chunk CPU times with the setup term held fixed gives 0.2619 per GEOMETRIC
-# epoch (see object_epochs for why that is below 0.2714), i.e. ALPHA 0.191,
-# and every boundary on that tile then moves by at most one object. Zeroing
-# ALPHA entirely moves them by at most 44.
+# Setup cost in epoch-equivalents: 0.05 / 0.2714 = 0.184. This gives
+# zero-epoch objects nonzero weight (~6% of a typical object). On tile 186.307,
+# refitting with geometric epochs gives 0.191 and moves boundaries by at most
+# one object; zeroing the setup term moves them by at most 44.
 ALPHA_MILLI_EPOCHS = 184
 
 
@@ -109,7 +63,7 @@ def row_ranges(epochs, n_chunks: int) -> list[tuple[int, int]]:
     """Split catalogue rows ``1..len(epochs)`` into ``n_chunks`` closed ranges.
 
     ``epochs[i]`` is row ``i + 1``'s geometric epoch count. The ranges are
-    CONTIGUOUS — ``NGMIX_ROW_MIN``/``NGMIX_ROW_MAX`` is an interval, not a set —
+    contiguous — ``NGMIX_ROW_MIN``/``NGMIX_ROW_MAX`` is an interval, not a set —
     and tile ``[1, n_obj]`` exactly, so every object is measured once.
 
     The objective is the slowest chunk, not the average one, because the
@@ -119,12 +73,9 @@ def row_ranges(epochs, n_chunks: int) -> list[tuple[int, int]]:
     which is arbitrary but fixed, and fixed is the property that matters.
 
     With ``n_obj < n_chunks`` the first ``n_obj`` chunks take one object each
-    and the remainder are EMPTY, written ``(n_obj + 1, n_obj)``: ``lo = hi+1``
-    is the canonical empty closed interval and preserves the chain
-    ``ranges[k][0] == ranges[k-1][1] + 1``. Deliberately not ``(1, 0)``, which
-    is what the old equal-count split emitted here — ``ID_OBJ_MAX = 0`` is
-    ngmix's unbounded sentinel, so each empty chunk would have re-measured the
-    ENTIRE tile.
+    and the remainder are empty, written ``(n_obj + 1, n_obj)``. This preserves
+    ``ranges[k][0] == ranges[k-1][1] + 1`` and keeps the upper bound positive
+    as required by the module's row-partition contract.
     """
     if n_chunks < 1:
         raise ValueError(f"n_chunks must be >= 1, got {n_chunks}")
@@ -194,22 +145,19 @@ def object_epochs(run_dir: Path):
     ``LDAC_OBJECTS`` row order and ``CCD_N < 0`` where the object misses that
     exposure. Summing
     ``CCD_N >= 0`` across them reproduces the sexcat's geometric
-    ``N_EPOCH`` — checked row by row against the pre-change catalogue for 186.307,
-    ``run_sp_tile_Mc/.../final_cat-186-307.fits``, all 35,298 of them, 7 extensions,
+    ``N_EPOCH`` — verified on tile 186.307: 35,298 rows, 7 extensions,
     116,727 pairs, mean 3.31. The post-process is upstream of the whole
     tile_shape group, so the extensions always exist by the time ngmix runs;
     their absence is a broken tile, not a case to accommodate.
 
-    This is a GEOMETRIC count and mildly over-states the work, because ngmix
-    fits only epochs with a validated PSF (the final catalogue's N_EPOCH) and
+    This geometric count mildly overstates the work, because ngmix
+    fits only epochs with a validated PSF and
     drops epochs it cannot fit. The same catalogue's NGMIX_N_EPOCH is lower for
     2,203 of the 35,298 objects and never higher: 113,947 pairs against
-    116,727, 2.4%. That gap is the whole of the ~3.4% by which this cost model
-    over-predicts the tile's measured chunk times — refit on NGMIX_N_EPOCH the
-    law is 0.2681 CPU-s per pair at R^2 0.997, against 0.2619 at R^2 0.973 on
-    the geometric count. The better number is unavailable before ngmix runs and
-    is not worth wanting anyway: splitting on it moves boundaries by up to 177
-    objects and improves the slowest chunk by 1.07%.
+    116,727, a 2.4% difference. A fit using NGMIX_N_EPOCH gives 0.2681 CPU-s
+    per pair at R^2 0.997, against 0.2619 at R^2 0.973 using geometric counts.
+    Fitted epoch counts are unavailable before ngmix; on this tile they improve
+    the predicted slowest chunk by only 1.07%.
 
     Only the EPOCH extensions are read. ``LDAC_OBJECTS`` carries a 10 kB
     VIGNET per row (376 MB on 186.307) and pulling it in would cost more than
