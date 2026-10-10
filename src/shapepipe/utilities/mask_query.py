@@ -1,46 +1,33 @@
 """MASK QUERY.
 
-The one healsparse lookup in ShapePipe.
+Shared healsparse lookup at object sky positions.
 
-ShapePipe does not generate or rasterize masks. Sky-fixed masks are supplied
-as healsparse maps and are consumed by *querying them at object positions*:
-every object gets its mask value(s) as catalogue columns, and rejection happens
-at the catalogue level, never at the pixel level. The only mask that still
-reaches pixels is the per-exposure instrument flag image delivered with it.
-
-Two callers share the primitive defined here:
-
-* ``make_cat`` writes one ``MASK_<band>`` column per configured map, carrying
-  the map value verbatim (no interpretation, no filtering);
-* ``mask_query`` writes a single integer ``MASK_EXT`` column onto the exposure
-  SExtractor catalogue, combining the configured maps into "clean (0) or
-  flagged (nonzero)" so that ``setools`` — whose expression language has no
-  bitwise operators — *could* cut on ``MASK_EXT == 0``. The shipped selection
-  does not; the column is carried for measurement (see that module).
+``query_map`` returns map values verbatim; ``flag_positions`` combines maps
+into a clean (0) or flagged (nonzero) integer. Catalogue column definitions
+and selection policy belong to the callers in ``modules/make_cat_package``
+and ``modules/mask_query_package``.
 
 Partial reads
 -------------
-Never read a whole map. The UNIONS products are ~550 MB each and ``mask_query``
-runs PER CCD, so a full read would cost ~22 GB of I/O per 40-CCD exposure to
+Read only the coverage pixels needed by the catalogue. The UNIONS products
+are ~550 MB each and the mask-query runner operates per CCD, so a full read
+would cost ~22 GB of I/O per 40-CCD exposure to
 answer questions about a 0.06 deg² footprint. Instead the coverage index is
 read first (``HealSparseCoverage``, a few hundred kB), the coverage pixels the
 catalogue actually touches are computed with ``hpgeom.angle_to_pixel`` at the
 map's ``nside_coverage``, and only those get loaded.
 
 Every queried position falls inside exactly one coverage pixel and all of them
-are requested, so the padding by ``hpgeom.neighbors`` is insurance rather
-than necessity — at ``nside_coverage=128`` a coverage pixel of the star map
-is ~23 kB, so the padding costs under a megabyte and buys immunity to any
-edge convention we did not think of. ``test_partial_read_matches_full`` is
-what actually holds the two paths equal.
+are requested. Padding with ``hpgeom.neighbors`` guards against edge
+conventions; at ``nside_coverage=128`` a coverage pixel of the star map is
+~23 kB, so this costs under a megabyte for a CCD-sized query.
+``test_partial_read_matches_full`` checks equality with a full-map read.
 
-Measured on the DR6 star-body map — the bit-2 rung of the ladder the configs
-name ``mask_ugriz_nside131072_n4.hsp``, run against the staged single-band copy
-``mask_r_nside131072_n4.hsp``, 583 MB, ``nside_coverage=128`` — for 2000
+Measured on the DR6 star-body map's single-band copy
+``mask_r_nside131072_n4.hsp`` (583 MB, ``nside_coverage=128``), for 2000
 positions in one CCD-sized box, one process each: partial 0.102 s / 157 MiB
-peak RSS, full 12.8 s / 3364 MiB, identical values. Per 40-CCD exposure that
-is ~4 s against ~8.5 min of map reading, and the query adds ~0.15 GB to a rule
-already asking for 16 GB.
+peak RSS, full 12.8 s / 3364 MiB, identical values. Extrapolated to a 40-CCD
+exposure, map reading takes ~4 s rather than ~8.5 min.
 
 Coverage
 --------
@@ -49,22 +36,16 @@ positions outside its coverage: ``False`` for boolean maps, and typically
 ``-1`` for integer maps. ``make_cat`` passes that sentinel through verbatim,
 which is the documented off-map flag for the final catalogue.
 
-Coverage is reported from the COVERAGE MASK, not ``valid_mask=True``. For a
+@sc [label:schema] mask-coverage-index
+Coverage is reported from the coverage mask, not ``valid_mask=True``. For a
 boolean map — which is what the UNIONS per-bit products are — healsparse
 stores only the ``True`` pixels, so ``valid_mask`` returns the value itself
 and cannot tell "inside the footprint and clean" from "outside it entirely".
-The coverage mask can, at ``nside_coverage`` resolution, which is the scale the
-question is asked at anyway: does this map reach this exposure at all?
+The coverage mask distinguishes them at ``nside_coverage`` resolution.
 
-``flag_positions`` treats off-coverage as **not flagged**, for both map kinds.
-This makes the integer case agree with the boolean case (whose sentinel is
-literally ``False``) rather than diverge from it, and it keeps a map whose
-coverage does not reach an exposure from silently rejecting every star on it.
-That is also why the all-off-coverage case is logged as a WARNING: it is
-indistinguishable from "nothing is masked here" in the output column, so it has
-to be distinguishable in the log.
+See ``flag_positions`` for the off-coverage flag convention and warning.
 
-:Author: Claude Fable 5, for PR #847
+:Author: Claude Fable 5
 
 """
 
@@ -235,9 +216,6 @@ def flag_positions(paths, ra, dec, bits=None, w_log=None):
       (``value & bits``); ``0`` where the value is zero or the position is
       outside coverage.
 
-    Contributions are combined with a bitwise OR, so the returned flag is zero
-    for a clean object and carries the union of the bits that fired otherwise.
-
     Parameters
     ----------
     paths : list
@@ -272,8 +250,7 @@ def flag_positions(paths, ra, dec, bits=None, w_log=None):
             contribution = values.astype(np.int64)
         else:
             integer = values.astype(np.int64)
-            # Off-coverage: the sentinel, negative by healsparse convention.
-            # Zeroed rather than OR-ed in, see this module's docstring.
+            # Exclude negative sentinels from the OR; see the flag contract.
             integer = np.where(integer < 0, 0, integer)
             if bits is not None:
                 integer &= bits
