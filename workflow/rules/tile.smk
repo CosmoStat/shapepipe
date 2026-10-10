@@ -528,13 +528,19 @@ if TILE_DETECTION == "unions_catalogue":
 
 
 def detect_env(tile):
-    """tile_detect's prologue exports: the catalogue to join, if any.
+    """tile_detect's prologue exports: the catalogue to join, if any, and for
+    image simulations the epoch-membership CCD bounds.
 
-    Empty under tile_detection: sextractor (image simulations), so that no
-    value left exported in the submitting shell reaches the job.
+    SP_MATCH_CATALOGUE is empty under tile_detection: sextractor (image
+    simulations), so that no value left exported in the submitting shell
+    reaches the job. SP_CCD_SIZE is exported only for image simulations (their
+    trimmed CCDs); data runs take config_tile_Sx.ini's default.
     """
     if TILE_DETECTION != "unions_catalogue":
-        return {"SP_MATCH_CATALOGUE": ""}
+        env = {"SP_MATCH_CATALOGUE": ""}
+        if INPUT_TYPE == "image_sims":
+            env["SP_CCD_SIZE"] = config["ccd_size"]
+        return env
     gic = f"{tile_dir(tile)}/output/run_sp_tile_Gic/get_images_runner/output"
     return {"SP_MATCH_CATALOGUE": f"{gic}/CFIS_cat{unit_num(tile)}.cat"}
 
