@@ -19,26 +19,32 @@ TILE_UNIQUE_ID
 
 # flags
 FLAGS
-# NO IMAFLAGS_ISO, AND NO MASK COLUMN AT ALL — READ THIS BEFORE ADDING ONE.
 # The tile-side SExtractor runs with FLAG_IMAGE = False and DOT_PARAM_FILE =
-# default_noimaflags.param (config_tile_Sx.ini), so IMAFLAGS_ISO is never
-# written into a tile catalogue and asking for it here only made the merge
-# fail. Instrument flags reach the pipeline on the EXPOSURE side, where
+# default_noimaflags.param (config_tile_Sx.ini), so tile catalogues have no
+# IMAFLAGS_ISO column. Instrument flags enter on the exposure side, where
 # exp_split delivers the flag image and SExtractor reads it.
 #
-# Its intended replacement is make_cat's per-band MASK_<band> columns, queried
-# from the sky-fixed healsparse maps named by MASK_EXT_PATHS. THE WORKFLOW SETS
-# NO SUCH PATHS: config_tile_Mc.ini has no MASK_EXT_PATHS entry, so
-# save_mask_ext_data is never called, no MASK_<band> column exists in any tile
-# catalogue this workflow has produced, and smk-g6's carry none (checked).
-# Naming one here would fail every merge on every campaign.
+# make_cat writes one MASK_<flag value>_<name> column per sky-fixed UNIONS
+# healsparse map named by MASK_EXT_PATHS in config_tile_Mc.ini — which carries
+# the label table and coverage caveats. Those 11 labels and these 11 lines must
+# stay in step: a name here that make_cat did not write fails every merge, on
+# every campaign.
 #
-# So the merged catalogue carries NO mask information today, and that is a
-# CONFIG gap and not a gap in this file: turning it on is setting
-# MASK_EXT_PATHS in config_tile_Mc.ini (`band:path` pairs, the same grammar as
-# the commented MASK_PATHS in config_exp_psfex.ini) and adding the matching
-# MASK_<band> names here, in that order. No healsparse map is staged under
-# /project/def-mjhudson yet.
+# sp_validation selects which columns enter its mask cut. It cannot be a plain
+# OR of every column: MASK_2048_z2 is True where there is no Pan-STARRS z data,
+# so that OR masks the whole survey.
+MASK_1_Faint_star_halos
+MASK_2_Bright_star_halos
+MASK_4_Stars
+MASK_8_Manual
+MASK_16_u
+MASK_32_g
+MASK_64_r
+MASK_128_i
+MASK_256_z
+MASK_1024_Maximask
+MASK_2048_z2
+
 NGMIX_MCAL_FLAGS
 
 # PSF ellipticity (original image PSF)
