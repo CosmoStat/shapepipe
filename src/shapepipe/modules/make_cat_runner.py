@@ -76,8 +76,14 @@ def make_cat_runner(
             w_log.info(err_msg)
             return None, None
 
-    if save_psf:
-        sc_inst.process("psf", galaxy_psf_path, n_epoch_slots=n_epoch_slots)
+    # N_EPOCH (epochs with a validated PSF) always; the per-epoch PSF
+    # columns only when SAVE_PSF_DATA is set.
+    sc_inst.process(
+        "psf",
+        galaxy_psf_path,
+        n_epoch_slots=n_epoch_slots,
+        epoch_slots=save_psf,
+    )
 
     # Optional per-band external healsparse mask lookup (UNIONS-WL/spherex#38):
     # add one MASK_<BAND> column per band, queried at each object's world

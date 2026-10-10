@@ -31,7 +31,8 @@ NGMIX_MCAL_TYPES_FAIL
 NGMIX_G1_PSF_ORIG_NOSHEAR
 NGMIX_G2_PSF_ORIG_NOSHEAR
 
-# Number of epochs (exposures)
+# Number of epochs: N_EPOCH with a validated PSF model,
+# NGMIX_N_EPOCH fitted by ngmix
 N_EPOCH
 NGMIX_N_EPOCH
 

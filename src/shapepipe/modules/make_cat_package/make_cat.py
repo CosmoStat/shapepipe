@@ -81,6 +81,12 @@ def read_sextractor_data(sexcat_path, remove_vignet=True):
     ``NUMBER``). The tile is read from the catalogue's file name, e.g.
     ``sexcat-301-279.fits``.
 
+    The SExtractor catalogue's ``N_EPOCH`` counts the exposure CCDs whose
+    footprint holds the object, before any PSF model exists; it is used
+    internally for slot sizing and overwritten before output. The final catalogue's ``N_EPOCH`` counts only the
+    epochs with a validated PSF and is written by
+    :meth:`SaveCatalogue.process` in ``psf`` mode.
+
     Parameters
     ----------
     sexcat_path : str
@@ -214,6 +220,7 @@ class SaveCatalogue:
         cat_path=None,
         moments=False,
         n_epoch_slots=None,
+        epoch_slots=True,
     ):
         """Process Catalogue.
 
@@ -227,7 +234,10 @@ class SaveCatalogue:
             Option to run ``ngmix`` mode with moments
         n_epoch_slots : int, optional
             Number of per-epoch slots in ``psf`` mode; if ``None``, the
-            tile's ``max(N_EPOCH) + 1``
+            sexcat's geometric ``max(N_EPOCH) + 1``
+        epoch_slots : bool, optional
+            In ``psf`` mode, write the per-epoch column families as well as
+            ``N_EPOCH``; default ``True``
 
         Returns
         --------
@@ -242,7 +252,7 @@ class SaveCatalogue:
         if mode == "ngmix":
             err_msg = self._save_ngmix_data(cat_path, moments)
         elif mode == "psf":
-            self._save_psf_data(cat_path, n_epoch_slots)
+            self._save_psf_data(cat_path, n_epoch_slots, epoch_slots)
         else:
             err_msg = (
                 f"Invalid process mode ({mode}) for "
@@ -549,14 +559,24 @@ class SaveCatalogue:
 
         return None
 
-    def _save_psf_data(self, galaxy_psf_path, n_epoch_slots=None):
+    def _save_psf_data(
+        self, galaxy_psf_path, n_epoch_slots=None, epoch_slots=True
+    ):
         """Save PSF data.
 
-        Save the PSF catalogue into the final one, as per-epoch column
+        Save the PSF catalogue into the final one: the per-object epoch
+        count ``N_EPOCH`` and, if ``epoch_slots``, the per-epoch column
         families ``HSM_*_PSF_n`` (``psf_shape_cols``), ``EXP_ID_n`` and
-        ``CCD_n``. Slot ``n`` of every
-        family refers to the same epoch; slots no epoch fills keep the
-        family's sentinel.
+        ``CCD_n``. Slot ``n`` of every family refers to the same epoch;
+        slots no epoch fills keep the family's sentinel.
+
+        ``N_EPOCH`` counts the object's entries in the PSF catalogue, i.e.
+        the epochs whose CCD passed PSF-model validation and so have an
+        interpolated PSF; ngmix fits no other epoch. It is at most
+        the sexcat's geometric ``N_EPOCH``, the count of CCDs whose footprint holds
+        the object, and 0 for an object the PSF catalogue marks
+        ``"empty"``. An epoch whose PSF shape fit failed
+        (``HSM_FLAG_PSF != 0``) still counts: its PSF exists.
 
         @sc [label:schema] psf-epoch-slot-columns
         The per-epoch families are ``psf_shape_cols`` plus ``EXP_ID``/``CCD``,
@@ -570,7 +590,10 @@ class SaveCatalogue:
             Path to the PSF catalogue to save
         n_epoch_slots : int, optional
             Number of slots written per family; if ``None``, the tile's
-            ``max(N_EPOCH) + 1``
+            geometric ``max(N_EPOCH) + 1`` from the sexcat, which bounds every object's PSF
+            epoch count
+        epoch_slots : bool, optional
+            Write the per-epoch column families; default ``True``
 
         Raises
         ------
@@ -580,12 +603,15 @@ class SaveCatalogue:
         """
         galaxy_psf_cat = SqliteDict(galaxy_psf_path)
 
-        n_epoch = self._final_cat["N_EPOCH"]
-        if n_epoch_slots is None:
-            n_slots = np.max(n_epoch) + 1
+        n_obj = len(self._obj_id)
+        n_epoch = np.zeros(n_obj, dtype="int32")
+
+        if not epoch_slots:
+            n_slots = 0
+        elif n_epoch_slots is None:
+            n_slots = np.max(self._final_cat["N_EPOCH"]) + 1
         else:
             n_slots = n_epoch_slots
-        n_obj = len(self._obj_id)
 
         # Per-epoch PSF shape columns copied from the producer's SHAPES dict:
         # (column, empty-slot fill, dtype). Fills are out of physical range
@@ -613,15 +639,27 @@ class SaveCatalogue:
 
         for idx, id_tmp in enumerate(self._obj_id):
 
-            obj_epochs = galaxy_psf_cat[str(id_tmp)]
+            try:
+                obj_epochs = galaxy_psf_cat[str(id_tmp)]
+            except KeyError:
+                galaxy_psf_cat.close()
+                raise KeyError(
+                    f"Object {id_tmp} is missing from {galaxy_psf_path}; "
+                    "the galaxy PSF catalogue and the SExtractor catalogue "
+                    "do not match"
+                ) from None
             if obj_epochs == "empty":
+                continue
+
+            n_epoch[idx] = len(obj_epochs)
+            if not epoch_slots:
                 continue
 
             if len(obj_epochs) > n_slots:
                 galaxy_psf_cat.close()
                 raise ValueError(
-                    f"Object {id_tmp} has {len(obj_epochs)} PSF epochs"
-                    + f" (N_EPOCH={n_epoch[idx]}), more than the {n_slots}"
+                    f"Object {id_tmp} has N_EPOCH={n_epoch[idx]} PSF epochs,"
+                    + f" more than the {n_slots}"
                     + f" per-epoch slots (N_EPOCH_SLOTS={n_epoch_slots})"
                 )
 
@@ -649,3 +687,5 @@ class SaveCatalogue:
                     )
 
         galaxy_psf_cat.close()
+
+        self._output_dict = {"N_EPOCH": n_epoch, **self._output_dict}
