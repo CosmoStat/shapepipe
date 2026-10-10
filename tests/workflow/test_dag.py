@@ -146,6 +146,29 @@ def test_tile_store_is_unique_per_campaign(campaign, tmp_path, resolve_dag):
     assert all(first[tile] != second[tile] for tile in first), (first, second)
 
 
+def test_module_logs_outlive_their_run_dirs(campaign, dag):
+    """tile_vignets (node-local) and every ngmix chunk (temp()) copy their
+    module logs into the tile's logs/modules/ on the shared root, after
+    shapepipe_run and before the rule exits, whatever its rc."""
+    sources = {"tile_vignets": lambda job: '"$NGMIX_VIGNET_DIR"',
+               "tile_ngmix": lambda job: f'"{job.output.chunkdir}"'}
+    for rule, source in sources.items():
+        for job in dag.jobs_for(rule):
+            name = ("run_sp_tile_PiViVi" if rule == "tile_vignets" else
+                    f"run_sp_tile_ngmix_Ng{job.wildcards.chunk}u")
+            lines = job.shellcmd.splitlines()
+            keep = [i for i, line in enumerate(lines)
+                    if f'"$SP_RUN/logs/modules/{name}"' in line]
+            assert len(keep) == 1, (rule, job.wildcards_dict)
+            line = lines[keep[0]]
+            assert f"cd {source(job)}" in line
+            assert '-path "*/logs/*"' in line and line.rstrip().endswith(">&2")
+            run = next(i for i, l in enumerate(lines)
+                       if l.startswith("shapepipe_run "))
+            assert run < keep[0] < len(lines) - 1
+            assert lines[-1] == "exit $rc"
+
+
 def test_missing_run_fails_during_parse(campaign, resolve_dag):
     """Explicit paths cannot bypass the required campaign name diagnostic."""
     campaign.omit_run()
