@@ -97,6 +97,29 @@ class CustomParser(ConfigParser):
         """
         return self._get(section, _expandvars_strict, option, **kwargs)
 
+    def getexpandedboolean(self, section, option, **kwargs):
+        """Get Expanded Boolean.
+
+        Expand enviroment variables in the value, then read it as a boolean
+        the way ``getboolean`` does.
+
+        Parameters
+        ----------
+        section : str
+            Configuration file section
+        option : str
+            Configuration file option
+
+        Returns
+        -------
+        bool
+            The expanded value as a boolean
+
+        """
+        return self._convert_to_boolean(
+            self.getexpanded(section, option, **kwargs)
+        )
+
     def getlist(self, section, option, delimiter=",", **kwargs):
         """Get List.
 

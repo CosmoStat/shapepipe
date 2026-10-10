@@ -258,12 +258,18 @@ _SENTINELS = {
     "NGMIX_MCAL_FLAGS": LM_FUNC_NOTFINITE,
     "NGMIX_MCAL_TYPES_FAIL": len(METACAL_TYPES),
     "NGMIX_NEIGHBOUR_FLAG": 0.0,
+    "NGMIX_N_EPOCH_FAILED": 0.0,
+    "NGMIX_N_EPOCH_INTERP": 0.0,
+    "NGMIX_MIN_DIST_INTERP": -1.0,
+    "NGMIX_MIN_DIST_NOISEFILL": -1.0,
 }
 
 # Per-key write format and a measured value distinct from every sentinel, so a
 # matched row is unmistakably "overwritten" and an absent row unmistakably not.
 _NGMIX_KEYS = [
-    "id", "n_epoch_model", "mcal_types_fail", "neighbour_flag", "nfev_fit",
+    "id", "n_epoch_model", "n_epoch_failed", "mcal_types_fail",
+    "neighbour_flag",
+    "n_epoch_interp", "min_dist_interp", "min_dist_noisefill", "nfev_fit",
     "g1", "g1_err", "g2", "g2_err", "T", "T_err",
     "flux", "flux_err", "s2n", "mag", "mag_err", "flags", "mcal_flags",
     "g1_psf_orig", "g2_psf_orig", "g1_err_psf_orig", "g2_err_psf_orig",
@@ -272,8 +278,9 @@ _NGMIX_KEYS = [
     "T_psf_reconv", "T_err_psf_reconv",
 ]
 _INT_KEYS = {
-    "id", "n_epoch_model", "mcal_types_fail", "neighbour_flag", "nfev_fit",
-    "flags", "mcal_flags"
+    "id", "n_epoch_model", "n_epoch_failed", "mcal_types_fail",
+    "neighbour_flag",
+    "n_epoch_interp", "nfev_fit", "flags", "mcal_flags"
 }
 _SHEAR_EXTS = ["1M", "1P", "2M", "2P", "NOSHEAR"]
 

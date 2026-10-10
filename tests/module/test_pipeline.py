@@ -134,6 +134,46 @@ def test_custom_parser_getexpanded_expands_fallback(monkeypatch):
     )
 
 
+def test_custom_parser_expands_a_default_only_when_the_variable_is_unset(
+    monkeypatch,
+):
+    """``${VAR:-default}`` takes ``default`` when VAR is unset or empty, and
+    VAR's value otherwise; a bare unset ``$VAR`` still raises."""
+    parser = config.CustomParser()
+    parser.add_section("S")
+    parser.set("S", "MODE", "${SP_TEST_MODE:-noisefill}")
+    parser.set("S", "FLAG", "${SP_TEST_FLAG:-False}")
+    parser.set("S", "BARE", "$SP_TEST_MODE")
+
+    monkeypatch.delenv("SP_TEST_MODE", raising=False)
+    monkeypatch.delenv("SP_TEST_FLAG", raising=False)
+    assert parser.getexpanded("S", "MODE") == "noisefill"
+    assert parser.getexpandedboolean("S", "FLAG") is False
+    with pytest.raises(ValueError, match="SP_TEST_MODE"):
+        parser.getexpanded("S", "BARE")
+
+    monkeypatch.setenv("SP_TEST_MODE", "")
+    assert parser.getexpanded("S", "MODE") == "noisefill"
+
+    monkeypatch.setenv("SP_TEST_MODE", "uberseg")
+    monkeypatch.setenv("SP_TEST_FLAG", "True")
+    assert parser.getexpanded("S", "MODE") == "uberseg"
+    assert parser.getexpanded("S", "BARE") == "uberseg"
+    assert parser.getexpandedboolean("S", "FLAG") is True
+
+
+def test_custom_parser_expands_a_variable_value_once(monkeypatch):
+    """A variable's value is inserted as is, never expanded again."""
+    monkeypatch.setenv("SP_TEST_ROOT", "/data/$SP_TEST_OTHER")
+    monkeypatch.setenv("SP_TEST_OTHER", "expanded-again")
+    parser = config.CustomParser()
+    parser.add_section("S")
+    parser.set("S", "PATH", "${SP_TEST_ROOT:-/x}/a $SP_TEST_ROOT/b")
+    assert parser.getexpanded("S", "PATH") == (
+        "/data/$SP_TEST_OTHER/a /data/$SP_TEST_OTHER/b"
+    )
+
+
 def test_custom_parser_getlist_honours_custom_delimiter():
 
     parser = config.CustomParser()
