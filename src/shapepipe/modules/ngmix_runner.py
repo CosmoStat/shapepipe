@@ -11,7 +11,12 @@ import os
 from sqlitedict import SqliteDict
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.ngmix_package.ngmix import Ngmix, write_empty_tile_output
+from shapepipe.modules.ngmix_package.ngmix import (
+    DEFECT_FILL,
+    DEFECT_WEIGHTING,
+    Ngmix,
+    write_empty_tile_output,
+)
 
 
 @module_runner(
@@ -44,7 +49,7 @@ def ngmix_runner(
 ):
     """Define The Ngmix Runner.
 
-    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.centroid_source,decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme,decision:shape_measurement.galaxy_pixel_weights]
+    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.centroid_source,decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme,decision:shape_measurement.galaxy_pixel_weights,decision:shape_measurement.defect_weighting]
 
     @sc [label:operations] empty-tile-product
     A tile whose PSF or galaxy vignette store is entirely empty never
@@ -130,14 +135,43 @@ def ngmix_runner(
     else:
         centroid_source = "wcs"
 
-    # Neighbour treatment: "noisefill" (default, historical) replaces a
-    # neighbour's pixels with a noise realisation; "uberseg" hard-masks
-    # (weight -> 0) every pixel closer to a neighbour than to the central
-    # object, from the segmentation map. See the ngmix module docstrings.
+    # Neighbour treatment: "noisefill" (default) zero-weights and noise-fills
+    # the pixels marked -1e30 in the tile VIGNET (other detections'
+    # footprints); "uberseg" ignores those markers, zeroes the weight of every
+    # pixel closer to a neighbour than to the central object, from the
+    # segmentation map, and leaves its image raw. Defect pixels (flagged,
+    # zero-weight, invalid-RMS or off-tile) are zero-weighted and filled the
+    # same way under both, and the epoch cuts are fixed; see
+    # prepare_postage_stamps and prepare_ngmix_weights.
     if config.has_option(module_config_sec, "BLEND_HANDLING"):
         blend_handling = config.get(module_config_sec, "BLEND_HANDLING")
     else:
         blend_handling = "noisefill"
+
+    # DEFECT_WEIGHTING (optional, environment-expanded): how interpolated
+    # defects are weighted, one of DEFECT_WEIGHTINGS (see
+    # defect_weighting_masks). Absent or empty takes DEFECT_WEIGHTING; the
+    # workflow sets it from the run config's `defect_weighting`.
+    defect_weighting = DEFECT_WEIGHTING
+    if config.has_option(module_config_sec, "DEFECT_WEIGHTING"):
+        defect_weighting = (
+            config.getexpanded(module_config_sec, "DEFECT_WEIGHTING").strip()
+            or DEFECT_WEIGHTING
+        )
+    w_log.info(f"DEFECT_WEIGHTING = {defect_weighting}")
+
+    # DEFECT_FILL (optional, environment-expanded): what defect pixels hold
+    # before metacal, one of DEFECT_FILLS (see interpolated_defects).
+    # "interpolate" interpolates short bounded runs and noise-fills the rest;
+    # "noise" noise-fills every defect. Absent or empty takes DEFECT_FILL; the
+    # workflow sets it from the run config's `defect_fill`.
+    defect_fill = DEFECT_FILL
+    if config.has_option(module_config_sec, "DEFECT_FILL"):
+        defect_fill = (
+            config.getexpanded(module_config_sec, "DEFECT_FILL").strip()
+            or DEFECT_FILL
+        )
+    w_log.info(f"DEFECT_FILL = {defect_fill}")
 
     # DILATE_NEIGHBOUR (optional): binary-dilation iterations enlarging the
     # uberseg neighbour mask, to absorb the few-pixel coadd-vs-epoch seg-overlay
@@ -207,6 +241,8 @@ def ngmix_runner(
         seg_cat_path=seg_vignet_path,
         dilate_neighbour=dilate_neighbour,
         metacal_psf=metacal_psf,
+        defect_weighting=defect_weighting,
+        defect_fill=defect_fill,
     )
 
     # Process ngmix shape measurement and metacalibration
