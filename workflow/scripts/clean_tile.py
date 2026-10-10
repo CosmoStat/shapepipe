@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Reclaim one finished tile's scratch store and leave a tombstone (PRD #848 D5).
 
-Run as the shell of the in-DAG ``clean_tile`` rule, never by hand: the rule's
-``input:`` is the tile's ``final_cat`` on the PERSISTENT root, so by the time
-this executes the tile has published its final catalogue.
+Run as the shell of the in-DAG ``clean_tile`` rule, or through
+``backfill_epoch_cuts.py`` for an idle campaign. The rule's input is the tile's
+``final_cat`` on the PERSISTENT root. Before any deletion, validate the
+``tile_make_cat.json`` beside it, including all chunks' epoch-cut counts.
+The persistent manifest is not scratch DAG currency and is never pruned.
 A tile's scratch store has no reader outside that tile — tiles read exposures,
 nothing reads another tile's store — so unlike the exposure case there is no
 consumer set to close over and no eligibility test to make. Writer, then
@@ -113,7 +115,10 @@ the fixture: every link unlinked, no target followed. Whoever edits ``prune``
 next should know that the worst case is not a scratch store they could rebuild —
 it is a rmtree walking into half a terabyte of shared, backed-up survey data.
 
-Logs are deleted, not absorbed, as in ``clean_exposure``. Here the
+Module logs are deleted too: epoch-cut counts have already been captured in
+chunk completeness manifests and summed in the persistent make-cat manifest.
+No log is needed to recover these diagnostics after reclamation.
+Verdict logs are deleted, not absorbed, as in ``clean_exposure``. Here the
 duplication is exact: on a finished tile every ``logs/<stage>.json`` is
 BYTE-IDENTICAL to the ``manifests/<stage>.json`` beside it (verified across all
 16 stage records of 186.307), because a tile with a failed stage has no
@@ -272,37 +277,45 @@ def prune(root: Path, keep: set, removed: list) -> None:
         removed.append(str(entry))
 
 
-def main() -> None:
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--tile-dir", required=True, type=Path)
-    p.add_argument("--tile", required=True)
-    p.add_argument("--tombstone", required=True, type=Path)
-    args = p.parse_args()
+def reclaim(tile_dir: Path, tile: str, tombstone: Path, final_cat: Path) -> None:
+    """Validate durable diagnostics, write the tombstone, then prune scratch."""
+    from epoch_cuts import require_durable_manifest
 
-    survivors = survivor_paths(args.tile_dir, args.tile)
-    require_survivors(survivors, args.tile)
+    require_durable_manifest(final_cat, tile)
+    survivors = survivor_paths(tile_dir, tile)
+    require_survivors(survivors, tile)
 
-    mdir = args.tile_dir / "manifests"
-    manifests, benchmarks = previous_record(args.tombstone)
+    mdir = tile_dir / "manifests"
+    manifests, benchmarks = previous_record(tombstone)
     manifests.update(absorb_manifests(mdir))
     benchmarks.update(absorb_benchmarks(mdir))
 
     # Tombstone first, complete — then delete (see the module docstring).
-    args.tombstone.parent.mkdir(parents=True, exist_ok=True)
-    tmp = args.tombstone.with_suffix(".json.tmp")
+    tombstone.parent.mkdir(parents=True, exist_ok=True)
+    tmp = tombstone.with_suffix(".json.tmp")
     tmp.write_text(json.dumps({
-        "tile": args.tile,
+        "tile": tile,
         "cleaned_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "kept": sorted(str(p) for p in survivors.values()),
         "manifests": manifests,
         "benchmarks": benchmarks,
     }, indent=2, sort_keys=True) + "\n")
-    tmp.replace(args.tombstone)   # atomic: no half-written tombstone, ever
+    tmp.replace(tombstone)   # atomic: no half-written tombstone, ever
 
     removed: list = []
-    prune(args.tile_dir, set(survivors.values()) | {args.tombstone}, removed)
-    print(f"[clean_tile] {args.tile}: removed {len(removed)} path(s); kept "
+    prune(tile_dir, set(survivors.values()) | {tombstone}, removed)
+    print(f"[clean_tile] {tile}: removed {len(removed)} path(s); kept "
           f"{len(survivors)} survivor(s) + the tombstone")
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--tile-dir", required=True, type=Path)
+    p.add_argument("--tile", required=True)
+    p.add_argument("--tombstone", required=True, type=Path)
+    p.add_argument("--final-cat", required=True, type=Path)
+    args = p.parse_args()
+    reclaim(args.tile_dir, args.tile, args.tombstone, args.final_cat)
 
 
 if __name__ == "__main__":
