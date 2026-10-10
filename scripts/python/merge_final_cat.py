@@ -5,13 +5,13 @@
 """Script merge_final_cat.py
 
 Merge all final catalogues, created by ShapePipe module
-``make_catalogue_runner``, into a joined numpy binary file.
+``make_cat_runner`` (HDF5 or FITS, decided per file), into a joined numpy
+binary file.
 
 :Authors: Axel Guinot, Martin Kilbinger
 
 """
 
-from astropy.io import fits
 import numpy as np
 import os
 import sys
@@ -21,6 +21,7 @@ import copy
 from optparse import OptionParser
 
 from shapepipe.utilities import cfis
+from shapepipe.utilities.final_cat import read_final_cat
 
 
 class param:
@@ -118,7 +119,7 @@ def parse_options(p_def):
         dest="hdu_num",
         type="int",
         default=p_def.hdu_num,
-        help=f"input HDU number, default='{p_def.hdu_num}'",
+        help=f"input HDU number of FITS catalogues, default='{p_def.hdu_num}'",
     )
 
     parser.add_option(
@@ -247,43 +248,6 @@ def read_param_file(path, verbose=False):
     return param_list
 
 
-def get_data(path, hdu_num, param_list):
-    """Get Data.
-
-    Return data of selected columns from FITS file.
-
-    Parameters
-    ----------
-    path: str
-        input file name
-    hdu_num: int
-        HDU number
-    param_list: list of str
-        parameters to be extracted. If none, copy
-        all columns
-
-    Returns
-    -------
-    numpy array
-        data columns
-
-    """
-    hdu_list = fits.open(path)
-    hdu = hdu_list[hdu_num]
-
-    if param_list:
-        cols = []
-        for p in param_list:
-            cols.append(hdu.columns[p])
-        coldefs = fits.ColDefs(cols)
-        hdu_new = fits.BinTableHDU.from_columns(coldefs)
-        d = hdu_new.data
-    else:
-        d = hdu.data
-
-    return d
-
-
 def main(argv=None):
 
 
@@ -317,9 +281,9 @@ def main(argv=None):
         tile_ID_list = cfis.read_list(param.tile_ID_list_path)
 
     if param.verbose:
-        print("Find input catalogue FITS files")
+        print("Find input catalogue files")
     l = os.listdir(path=path)
-    ext = "fits"
+    ext = (".hdf5", ".fits")
     lpath = []
     for this_l in l:
 
@@ -348,7 +312,7 @@ def main(argv=None):
     count = 0
 
     # Determine number of columns and keys from first catalogue file
-    d_tmp = get_data(lpath[0], param.hdu_num, param.param_list)
+    d_tmp = read_final_cat(lpath[0], param.param_list, hdu=param.hdu_num)
     d = np.zeros(d_tmp.shape, dtype=d_tmp.dtype)
     for key in d_tmp.dtype.names:
         d[key] = d_tmp[key]
@@ -360,7 +324,7 @@ def main(argv=None):
     for fname in lpath[1:]:
 
         try:
-            d_tmp = get_data(fname, param.hdu_num, param.param_list)
+            d_tmp = read_final_cat(fname, param.param_list, hdu=param.hdu_num)
             dd = np.zeros(d_tmp.shape, dtype=d.dtype)
 
             for key in d_tmp.dtype.names:

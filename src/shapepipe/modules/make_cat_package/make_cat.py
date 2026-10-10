@@ -9,8 +9,8 @@ This module contains a class to create a shear catalogue.
 import os
 import re
 
+import h5py
 import numpy as np
-from numpy.lib.recfunctions import rename_fields
 from astropy import coordinates as coords
 from astropy import units as u
 from astropy.wcs import WCS
@@ -43,117 +43,83 @@ def get_output_name(output_dir, file_number_string):
         output path name
 
     """
-    return f"{output_dir}/final_cat{file_number_string}.fits"
+    return f"{output_dir}/final_cat{file_number_string}.hdf5"
 
 
-def prepare_final_cat_file(output_path, file_number_string):
-    """Prepare Final Catalogue File.
+def write_final_cat(output_path, columns):
+    """Write Final Catalogue.
 
-    Create a ``FITSCatalogue`` object for the current file.
+    Write the assembled catalogue to HDF5 in one pass: one dataset per
+    column, in ``columns`` order, each lzf-compressed. A vector column is a
+    2-D dataset with one row per object.
 
     Parameters
     ----------
     output_path : str
-        Output file path
-    file_number_string : str
-        String with current file numbering
-
-    Returns
-    -------
-    file_io.FITSCatalogue
-        Output FITS file
+        Output file path; an existing file is replaced
+    columns : dict
+        Column name to array, every array with one entry per object
 
     """
-
-    output_name = get_output_name(output_path, file_number_string)
-
-    return file_io.FITSCatalogue(
-        output_name,
-        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-    )
-
-
-def remove_field_name(arr, name):
-    """Remove Field Name.
-
-    Remove a column of a structured array from the given name.
-
-    Parameters
-    ----------
-    arr : numpy.ndarray
-        A numpy strucured array
-    name : str
-        Name of the field to remove
-
-    Returns
-    -------
-    numpy.ndarray
-        The structured array with the field removed
-
-    """
-    names = list(arr.dtype.names)
-    if name in names:
-        names.remove(name)
-    arr2 = arr[names]
-    return arr2
+    with h5py.File(output_path, "w", track_order=True) as cat:
+        for name, values in columns.items():
+            values = np.asarray(values)
+            cat.create_dataset(
+                name,
+                data=values.astype(values.dtype.newbyteorder("=")),
+                compression="lzf",
+            )
 
 
-def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
-    """Save SExtractor Data.
+def read_sextractor_data(sexcat_path, remove_vignet=True):
+    """Read SExtractor Data.
 
-    Save the SExtractor catalogue into the final one, adding the tile as
-    ``TILE_ID`` (float ``RRR.DDD``) and the survey-wide object ID
-    ``TILE_UNIQUE_ID`` (:func:`shapepipe.utilities.cfis.get_tile_unique_id`
-    of the tile and ``NUMBER``). The tile is read from the catalogue's file
-    name, e.g. ``sexcat-301-279.fits``.
+    Read the SExtractor catalogue as the final catalogue's first columns,
+    adding the tile as ``TILE_ID`` (float ``RRR.DDD``) and the survey-wide
+    object ID ``TILE_UNIQUE_ID``
+    (:func:`shapepipe.utilities.cfis.get_tile_unique_id` of the tile and
+    ``NUMBER``). The tile is read from the catalogue's file name, e.g.
+    ``sexcat-301-279.fits``.
 
     The SExtractor catalogue's ``N_EPOCH`` counts the exposure CCDs whose
-    footprint holds the object, before any PSF model exists; it is saved as
+    footprint holds the object, before any PSF model exists; it is kept as
     ``N_EPOCH_OVERLAP``. The final catalogue's ``N_EPOCH`` counts only the
     epochs with a validated PSF and is written by
     :meth:`SaveCatalogue.process` in ``psf`` mode.
 
     Parameters
     ----------
-    final_cat_file : file_io.FITSCatalogue
-        Final catalogue
     sexcat_path : str
-        Path to SExtractor catalogue to save
+        Path to SExtractor catalogue
     remove_vignet : bool
-        If ``True`` will not save the ``VIGNET`` field into the final catalogue
+        If ``True`` will not keep the ``VIGNET`` field
 
     Returns
     -------
-    int
-        Number of objects saved
+    dict
+        Column name to array, in the SExtractor catalogue's column order
 
     @sc [decision:catalogue_assembly.tile_overlap_handling]
     """
     sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
     sexcat_file.open()
-    data = rename_fields(
-        np.copy(sexcat_file.get_data()), {"N_EPOCH": "N_EPOCH_OVERLAP"}
-    )
-    if remove_vignet:
-        data = remove_field_name(data, "VIGNET")
-    cat_size = len(data)
+    data = np.copy(sexcat_file.get_data())
+    sexcat_file.close()
+
+    columns = {
+        "N_EPOCH_OVERLAP" if name == "N_EPOCH" else name: data[name]
+        for name in data.dtype.names
+        if not (remove_vignet and name == "VIGNET")
+    }
 
     tile_name = os.path.basename(sexcat_path)
     nix, niy = cfis.get_tile_number(tile_name)
-    tile_id_array = np.full(cat_size, float(f"{nix}.{niy}"))
-    unique_id = cfis.get_tile_unique_id(
+    columns["TILE_ID"] = np.full(len(data), float(f"{nix}.{niy}"))
+    columns["TILE_UNIQUE_ID"] = cfis.get_tile_unique_id(
         cfis.get_tile_id(tile_name), data["NUMBER"]
     )
 
-    final_cat_file.save_as_fits(data, ext_name="RESULTS")
-    final_cat_file.open()
-    final_cat_file.add_cols(
-        {"TILE_ID": tile_id_array, "TILE_UNIQUE_ID": unique_id}
-    )
-
-    sexcat_file.close()
-
-    return cat_size
+    return columns
 
 
 def parse_mask_ext_paths(paths_str):
@@ -181,17 +147,17 @@ def parse_mask_ext_paths(paths_str):
     return band_paths
 
 
-def save_mask_ext_data(final_cat_file, band_paths, w_log):
+def save_mask_ext_data(final_cat, band_paths, w_log):
     """Save External Mask Data.
 
     Query per-band external healsparse masks at each object's world position
     and write one ``MASK_<BAND>`` column per band into the final catalogue.
     Object positions are read from the SExtractor windowed world coordinates
-    (``XWIN_WORLD`` = RA, ``YWIN_WORLD`` = Dec, both in degrees) carried in the
-    ``RESULTS`` extension. Objects falling outside a map's coverage receive
-    that map's sentinel value (``healsparse.HealSparseMap.get_values_pos``
-    returns the map's sentinel — ``-1`` for integer maps — verbatim), which is
-    the documented off-map flag.
+    (``XWIN_WORLD`` = RA, ``YWIN_WORLD`` = Dec, both in degrees). Objects
+    falling outside a map's coverage receive that map's sentinel value
+    (``healsparse.HealSparseMap.get_values_pos`` returns the map's sentinel —
+    ``-1`` for integer maps — verbatim), which is the documented off-map
+    flag.
 
     The lookup itself is ``shapepipe.utilities.mask_query.query_map``,
     shared with the ``mask_query`` module: one primitive, two consumers.
@@ -210,36 +176,31 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
 
     Parameters
     ----------
-    final_cat_file : file_io.FITSCatalogue
-        Final catalogue
+    final_cat : dict
+        Final catalogue columns, updated in place
     band_paths : dict
         Mapping from band name to healsparse map path
     w_log : logging.Logger
         Logging instance
 
     """
-    final_cat_file.open()
-    ra = np.copy(final_cat_file.get_data()["XWIN_WORLD"])
-    dec = np.copy(final_cat_file.get_data()["YWIN_WORLD"])
+    ra = final_cat["XWIN_WORLD"]
+    dec = final_cat["YWIN_WORLD"]
 
-    mask_cols = {}
     for band, path in band_paths.items():
         w_log.info(f"Query external mask for band {band}: {path}")
-        mask_cols[f"MASK_{band}"] = mask_query.query_map(path, ra, dec)
-    final_cat_file.add_cols(mask_cols)
-
-    final_cat_file.close()
+        final_cat[f"MASK_{band}"] = mask_query.query_map(path, ra, dec)
 
 
 class SaveCatalogue:
     """Save Catalogue.
 
-    Class to save catalogue.
+    Add shape-measurement and PSF columns to the final catalogue.
 
     Parameters
     ----------
-    final_cat_file : str
-        Final catalogue file name
+    final_cat : dict
+        Final catalogue columns, updated in place; must hold ``NUMBER``
     cat_size_target : int
         target catalogue size
     w_log : logging.Logger
@@ -247,9 +208,9 @@ class SaveCatalogue:
 
     """
 
-    def __init__(self, final_cat_file, cat_size_target, w_log):
+    def __init__(self, final_cat, cat_size_target, w_log):
 
-        self._final_cat_file = final_cat_file
+        self._final_cat = final_cat
         self._cat_size_target = cat_size_target
         self._w_log = w_log
 
@@ -285,9 +246,7 @@ class SaveCatalogue:
 
         """
         self._output_dict = {}
-
-        self._final_cat_file.open()
-        self._obj_id = np.copy(self._final_cat_file.get_data()["NUMBER"])
+        self._obj_id = self._final_cat["NUMBER"]
 
         err_msg = None
         if mode == "ngmix":
@@ -302,9 +261,7 @@ class SaveCatalogue:
             )
 
         if err_msg is None:
-            self._final_cat_file.add_cols(self._output_dict)
-
-        self._final_cat_file.close()
+            self._final_cat.update(self._output_dict)
 
         return err_msg
 
@@ -543,9 +500,9 @@ class SaveCatalogue:
 
                     # Original image PSF (average_original_psf) and metacal
                     # reconvolution kernel (average_multiepoch_psf). Both PSF
-                    # families share ONE write template, so the FITS column
-                    # name (``{obj}``) and the res-key it reads (``{family}``)
-                    # are generated from the same pair and cannot drift apart.
+                    # families share ONE write template, so the column name
+                    # (``{obj}``) and the res-key it reads (``{family}``) are
+                    # generated from the same pair and cannot drift apart.
                     for family, obj in (
                         ("orig", "PSF_ORIG"),
                         ("reconv", "PSF_RECONV"),
@@ -652,9 +609,7 @@ class SaveCatalogue:
         if not epoch_slots:
             n_slots = 0
         elif n_epoch_slots is None:
-            n_slots = (
-                np.max(self._final_cat_file.get_data()["N_EPOCH_OVERLAP"]) + 1
-            )
+            n_slots = np.max(self._final_cat["N_EPOCH_OVERLAP"]) + 1
         else:
             n_slots = n_epoch_slots
 
