@@ -17,7 +17,7 @@ BASE_RULES = {
     "final_cat_merge",
 }
 TILE_SHAPE_STORE_RULES = ("tile_vignets", "tile_ngmix", "tile_make_cat")
-PSF_RULES = {"exp_persist", "star_cat_merge"}
+PSF_RULES = {"exp_persist", "star_cat_merge", "exp_maps", "exposure_maps"}
 CATALOGUE_RULES = {"tile_get_catalogue"}
 
 
@@ -63,6 +63,7 @@ def test_clean_exposure_waits_on_persist_iff_psf(campaign, dag):
         ]
         if campaign.psf_model != "fake":
             expected.append(campaign.persist_manifest(exp))
+            expected.append(campaign.persist_manifest(exp, "exp_maps"))
         assert Counter(map(str, job.input)) == Counter(map(str, expected)), (
             "clean-exposure-waits-on-persist-iff-psf", exp, list(job.input)
         )

@@ -231,7 +231,61 @@ analyses:
           catalogue's MASK_<flag value>_<name> columns.
         inputs: [exposure_flags, sky_masks]
         decisions: [pixel_mask_source, psf_star_mask_veto, sky_mask_application]
+      - id: exposure_maps
+        type: data
+        format: hsp
+        description: >-
+          nexp_<run>.hsp and nflagged_<run>.hsp at the mask ladder's
+          resolution: per sky pixel, the number of exposures whose CCD with a
+          valid PSF model covers it, and the flagged CCD pixels of those
+          exposures that fall in it. Products; nothing in the workflow reads
+          them.
+        inputs: [exposure_flags]
+        decisions: [nexp_map_valid_psf_ccds, defect_map_from_flags]
     decisions:
+      nexp_map_valid_psf_ccds:
+        label: The exposure count covers only CCDs with a valid PSF model
+        rationale: >-
+          exp_maps takes the CCDs whose validation_psf catalogue exp_persist
+          packed (psfex_interp writes it only when the fit succeeds) and marks
+          the sky pixels whose centres lie inside each CCD's corner polygon.
+          The CCDs of one exposure do not overlap, so summing fragments counts
+          exposures that can contribute a PSF-corrected epoch.
+        default: valid_psf_ccds
+        options:
+          valid_psf_ccds:
+            label: Count exposures whose CCD has a valid PSF model
+          all_ccds:
+            label: Count every exposure whose CCD covers the pixel
+            excluded: true
+            excluded_reason: >-
+              Counts epochs that cannot contribute a shape, overstating depth
+              exactly where the PSF fit failed.
+      defect_map_from_flags:
+        label: Instrument flags counted per sky pixel, inside the imaging area
+        rationale: >-
+          The per-CCD flag images otherwise never leave the pixel domain, so a
+          footprint built from CCD corners would include defective pixels.
+          exp_maps bins the centre of every nonzero-flag pixel inside DATASEC
+          into the sky pixel it falls in, and nflagged sums the counts over
+          exposures (~74 MegaCam pixels per sky pixel). The overscan border
+          (flag 3, 3.6% of a split) lies outside DATASEC and outside the
+          coverage polygon. On exposures 2603236/2603237 the remaining flags
+          are 0.28% of the imaging pixels; any-touch rasterization of them
+          masks 2.2% of the sky, because single-pixel columns and cosmics
+          widen to 1.6", so the map keeps the count and leaves the threshold
+          to the consumer (nflagged > 0 is the any-touch mask).
+        default: count_flagged_pixels
+        options:
+          count_flagged_pixels:
+            label: Count flagged CCD pixels per sky pixel, summed over exposures
+          any_touch_boolean:
+            label: Boolean mask of every sky pixel a flagged pixel touches
+            excluded: true
+            excluded_reason: >-
+              Widens one-pixel defects to the 1.6" sky pixel and loses how
+              much of each sky pixel is flagged; recoverable from the count as
+              nflagged > 0.
       pixel_mask_source:
         label: >-
           Of the external masks, only the instrument flag image reaches pixels
