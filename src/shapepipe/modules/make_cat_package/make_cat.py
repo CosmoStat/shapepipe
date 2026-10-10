@@ -82,8 +82,8 @@ def read_sextractor_data(sexcat_path, remove_vignet=True):
     ``sexcat-301-279.fits``.
 
     The SExtractor catalogue's ``N_EPOCH`` counts the exposure CCDs whose
-    footprint holds the object, before any PSF model exists; it is kept as
-    ``N_EPOCH_OVERLAP``. The final catalogue's ``N_EPOCH`` counts only the
+    footprint holds the object, before any PSF model exists; it is used
+    internally for slot sizing and overwritten before output. The final catalogue's ``N_EPOCH`` counts only the
     epochs with a validated PSF and is written by
     :meth:`SaveCatalogue.process` in ``psf`` mode.
 
@@ -107,7 +107,7 @@ def read_sextractor_data(sexcat_path, remove_vignet=True):
     sexcat_file.close()
 
     columns = {
-        "N_EPOCH_OVERLAP" if name == "N_EPOCH" else name: data[name]
+        name: data[name]
         for name in data.dtype.names
         if not (remove_vignet and name == "VIGNET")
     }
@@ -234,7 +234,7 @@ class SaveCatalogue:
             Option to run ``ngmix`` mode with moments
         n_epoch_slots : int, optional
             Number of per-epoch slots in ``psf`` mode; if ``None``, the
-            tile's ``max(N_EPOCH_OVERLAP) + 1``
+            sexcat's geometric ``max(N_EPOCH) + 1``
         epoch_slots : bool, optional
             In ``psf`` mode, write the per-epoch column families as well as
             ``N_EPOCH``; default ``True``
@@ -573,7 +573,7 @@ class SaveCatalogue:
         ``N_EPOCH`` counts the object's entries in the PSF catalogue, i.e.
         the epochs whose CCD passed PSF-model validation and so have an
         interpolated PSF; ngmix fits no other epoch. It is at most
-        ``N_EPOCH_OVERLAP``, the count of exposure CCDs whose footprint holds
+        the sexcat's geometric ``N_EPOCH``, the count of CCDs whose footprint holds
         the object, and 0 for an object the PSF catalogue marks
         ``"empty"``. An epoch whose PSF shape fit failed
         (``HSM_FLAG_PSF != 0``) still counts: its PSF exists.
@@ -590,7 +590,7 @@ class SaveCatalogue:
             Path to the PSF catalogue to save
         n_epoch_slots : int, optional
             Number of slots written per family; if ``None``, the tile's
-            ``max(N_EPOCH_OVERLAP) + 1``, which bounds every object's PSF
+            geometric ``max(N_EPOCH) + 1`` from the sexcat, which bounds every object's PSF
             epoch count
         epoch_slots : bool, optional
             Write the per-epoch column families; default ``True``
@@ -609,7 +609,7 @@ class SaveCatalogue:
         if not epoch_slots:
             n_slots = 0
         elif n_epoch_slots is None:
-            n_slots = np.max(self._final_cat["N_EPOCH_OVERLAP"]) + 1
+            n_slots = np.max(self._final_cat["N_EPOCH"]) + 1
         else:
             n_slots = n_epoch_slots
 

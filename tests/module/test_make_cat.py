@@ -403,7 +403,7 @@ def _run_save_psf(
     inst = object.__new__(SaveCatalogue)
     inst._obj_id = np.asarray(obj_id)
     inst._output_dict = {}
-    inst._final_cat = {"N_EPOCH_OVERLAP": np.asarray(n_overlap)}
+    inst._final_cat = {"N_EPOCH": np.asarray(n_overlap)}
 
     inst._save_psf_data(
         str(galaxy_psf_path),
@@ -479,7 +479,7 @@ def test_save_psf_data_identity_survives_failed_hsm_fit(tmp_path):
 def test_save_psf_data_fills_sentinel_for_absent_epochs(tmp_path):
     """Unused epoch slots and "empty" objects keep the -1 sentinel.
 
-    ``max_epoch`` (from the largest ``N_EPOCH_OVERLAP`` across the catalogue) can
+    ``max_epoch`` (from the largest geometric sexcat ``N_EPOCH``) can
     exceed a given object's own epoch count, and an object the PSF
     catalogue reports no epochs at all for is marked ``"empty"``; both
     cases must leave EXP_ID_n/CCD_n at -1, an exposure ID / CCD number no
@@ -492,7 +492,7 @@ def test_save_psf_data_fills_sentinel_for_absent_epochs(tmp_path):
     }
     _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
 
-    # max(N_EPOCH_OVERLAP) = 2 -> 3 slot columns, though obj 101 only fills slot 1.
+    # Geometric max(N_EPOCH) = 2 -> 3 slots; obj 101 only fills slot 1.
     out = _run_save_psf(galaxy_psf_path, [101, 303], n_overlap=[1, 2])
 
     assert out["EXP_ID_1"][0] == 2113864
@@ -607,7 +607,7 @@ def test_make_cat_runner_ships_every_detection_unclassified(tmp_path):
 
 
 def test_make_cat_runner_n_epoch_excludes_unvalidated_psf_epochs(tmp_path):
-    """The final N_EPOCH counts PSF-validated epochs; N_EPOCH_OVERLAP keeps the geometry.
+    """The final N_EPOCH counts only PSF-validated epochs.
 
     The SExtractor ``N_EPOCH`` counts every exposure CCD covering an object.
     Object 1 lies on two CCDs of which one failed PSF validation, object 3
@@ -650,7 +650,7 @@ def test_make_cat_runner_n_epoch_excludes_unvalidated_psf_epochs(tmp_path):
 
     with h5py.File(tmp_path / "final_cat-350-100.hdf5", "r") as cat:
         npt.assert_array_equal(cat["N_EPOCH"][()], [1, 3, 0])
-        npt.assert_array_equal(cat["N_EPOCH_OVERLAP"][()], [2, 3, 1])
+        assert "N_EPOCH_OVERLAP" not in cat
         assert "EXP_ID_1" not in cat
 
 
@@ -721,12 +721,12 @@ def test_make_cat_runner_writes_one_hdf5_dataset_per_column(tmp_path):
     with h5py.File(out_dir / "final_cat-350-100.hdf5", "r") as cat:
         names = list(cat)
         assert names[:7] == [
-            "NUMBER", "N_EPOCH_OVERLAP", "XWIN_WORLD", "YWIN_WORLD",
+            "NUMBER", "N_EPOCH", "XWIN_WORLD", "YWIN_WORLD",
             "FLUX_APER", "TILE_ID", "TILE_UNIQUE_ID",
         ]
         assert (
-            names.index("NGMIX_G1_NOSHEAR")
-            < names.index("N_EPOCH")
+            names.index("N_EPOCH")
+            < names.index("NGMIX_G1_NOSHEAR")
             < names.index("HSM_G1_PSF_1")
         )
         assert names[-1] == "MASK_r"
@@ -871,7 +871,7 @@ def test_save_psf_data_fixed_slots_pad_every_family(tmp_path):
     n_slots = 7
     out = {
         "NUMBER": np.array([101, 202, 303]),
-        "N_EPOCH_OVERLAP": np.array([1, 2, 0]),
+        "N_EPOCH": np.array([1, 2, 0]),
     }
     sc = SaveCatalogue(out, 3, _NullLogger())
     assert sc.process("psf", str(galaxy_psf_path), n_epoch_slots=n_slots) is None
@@ -931,7 +931,7 @@ def test_save_psf_data_exactly_slots_epochs_fits(tmp_path):
 
 
 def test_save_psf_data_unset_slots_uses_tile_max_n_overlap_plus_one(tmp_path):
-    """Without N_EPOCH_SLOTS the slot count is the tile's max(N_EPOCH_OVERLAP) + 1."""
+    """Without N_EPOCH_SLOTS use the sexcat's geometric max(N_EPOCH) + 1."""
     galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
     per_obj = {
         101: {"2113864-7": _psf_epoch(0.01, 0.02, 0.5)},

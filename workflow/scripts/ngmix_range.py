@@ -193,8 +193,8 @@ def object_epochs(run_dir: Path):
     discovered by name, never assumed — each with ``n_obj`` rows in
     ``LDAC_OBJECTS`` row order and ``CCD_N < 0`` where the object misses that
     exposure. Summing
-    ``CCD_N >= 0`` across them reproduces the final catalogue's
-    ``N_EPOCH_OVERLAP`` column exactly — checked row by row against 186.307's
+    ``CCD_N >= 0`` across them reproduces the sexcat's geometric
+    ``N_EPOCH`` — checked row by row against the pre-change catalogue for 186.307,
     ``run_sp_tile_Mc/.../final_cat-186-307.fits``, all 35,298 of them, 7 extensions,
     116,727 pairs, mean 3.31. The post-process is upstream of the whole
     tile_shape group, so the extensions always exist by the time ngmix runs;
