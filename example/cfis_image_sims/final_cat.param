@@ -31,8 +31,10 @@ NGMIX_MCAL_TYPES_FAIL
 NGMIX_G1_PSF_ORIG_NOSHEAR
 NGMIX_G2_PSF_ORIG_NOSHEAR
 
-# Number of epochs (exposures)
+# Number of epochs: N_EPOCH with a validated PSF model, N_EPOCH_OVERLAP
+# exposure CCDs covering the object, NGMIX_N_EPOCH fitted by ngmix
 N_EPOCH
+N_EPOCH_OVERLAP
 NGMIX_N_EPOCH
 
 ## Shape measurement outputs
