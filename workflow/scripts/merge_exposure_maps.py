@@ -9,10 +9,11 @@ shell of the ``exposure_maps`` rule.
   pixels, so ``nflagged / 74`` is the number of exposures' worth of area lost
   there, and ``nflagged > 0`` the any-touch defect mask.
 
-Both are 0 where nothing is counted. The campaign's exposures come from the tile list
-and the index (``build_index``), as for the star-catalogue merge; an exposure
-without a fragment (its store reclaimed before ``exp_maps`` existed) is left
-out and counted. The maps are rebuilt from every fragment on each run.
+Both are 0 where nothing is counted. Membership comes from
+``build_index.campaign_exposures``. Missing fragments are omitted and reported;
+this script does not determine why they are absent. The maps are rebuilt from
+every available campaign fragment on each run. See ``exp_maps.py`` for fragment
+encoding, coverage selection and count saturation.
 """
 
 import argparse
