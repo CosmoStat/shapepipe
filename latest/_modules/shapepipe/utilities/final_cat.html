@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>shapepipe.pipeline.args &#8212; ShapePipe v1.1</title>
+    <title>shapepipe.utilities.final_cat &#8212; ShapePipe v1.1</title>
   
   
   
@@ -42,7 +42,7 @@
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/shapepipe/pipeline/args';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/shapepipe/utilities/final_cat';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
@@ -488,7 +488,7 @@
       
       
       
-      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/pipeline/args.html&body=Your%20issue%20content%20here." target="_blank"
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/utilities/final_cat.html&body=Your%20issue%20content%20here." target="_blank"
    class="btn btn-sm btn-source-issues-button dropdown-item"
    title="Open an issue"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -549,165 +549,129 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <h1>Source code for shapepipe.pipeline.args</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""ARGUMENT HANDLING.</span>
+  <h1>Source code for shapepipe.utilities.final_cat</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""FINAL CATALOGUE.</span>
 
-<span class="sd">This module defines methods for handling the pipeline arguments.</span>
+<span class="sd">Read a per-tile final catalogue, the output of ``make_cat_runner``, in either</span>
+<span class="sd">of the formats it exists in:</span>
 
-<span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
+<span class="sd">* HDF5, as ``make_cat.write_final_cat`` writes it: one dataset per column, in</span>
+<span class="sd">  column order, a vector column as a 2-D dataset with one row per object;</span>
+<span class="sd">* FITS, a binary table (``RESULTS``, HDU 1), as catalogues made before the</span>
+<span class="sd">  HDF5 format are.</span>
+
+<span class="sd">The format is decided per file from its content (the HDF5 signature), not its</span>
+<span class="sd">name, so a campaign or a hand-made directory that mixes the two reads as one.</span>
 
 <span class="sd">"""</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ap</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.info</span><span class="w"> </span><span class="kn">import</span> <span class="n">shapepipe_logo</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.modules</span><span class="w"> </span><span class="kn">import</span> <span class="n">__module_list__</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 
-<div class="viewcode-block" id="cutomFormatter">
-<a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.cutomFormatter">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">cutomFormatter</span><span class="p">(</span>
-    <span class="n">ap</span><span class="o">.</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span>
-    <span class="n">ap</span><span class="o">.</span><span class="n">RawDescriptionHelpFormatter</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Custom Formatter.</span>
-
-<span class="sd">    This class combines the argparse ``ArgumentDefaultsHelpFormatter`` and</span>
-<span class="sd">    ``RawDescriptionHelpFormatter`` formatters.</span>
-
-<span class="sd">    """</span>
-
-    <span class="k">pass</span></div>
-
-
-
-<div class="viewcode-block" id="print_message">
-<a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.print_message">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">print_message</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Print Message.</span>
-
-<span class="sd">    This method returns a custom argparse action for printing a message.</span>
+<div class="viewcode-block" id="is_hdf5">
+<a class="viewcode-back" href="../../../shapepipe.utilities.final_cat.html#shapepipe.utilities.final_cat.is_hdf5">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_hdf5</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Is HDF5.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    message : str</span>
-<span class="sd">        Message to be displayed</span>
+<span class="sd">    path : str</span>
+<span class="sd">        Catalogue path</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    customAction</span>
-<span class="sd">        Custom action class object</span>
+<span class="sd">    bool</span>
+<span class="sd">        ``True`` if the file carries the HDF5 signature, ``False`` otherwise</span>
+<span class="sd">        (taken to be FITS)</span>
 
 <span class="sd">    """</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">customAction</span><span class="p">(</span><span class="n">ap</span><span class="o">.</span><span class="n">Action</span><span class="p">):</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">option_strings</span><span class="p">,</span>
-            <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">dest</span><span class="o">=</span><span class="n">ap</span><span class="o">.</span><span class="n">SUPPRESS</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="n">ap</span><span class="o">.</span><span class="n">SUPPRESS</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="n">help</span><span class="p">,</span>
-        <span class="p">):</span>
-            <span class="nb">super</span><span class="p">(</span><span class="n">customAction</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-                <span class="n">option_strings</span><span class="o">=</span><span class="n">option_strings</span><span class="p">,</span>
-                <span class="n">dest</span><span class="o">=</span><span class="n">dest</span><span class="p">,</span>
-                <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span>
-                <span class="n">nargs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">help</span><span class="o">=</span><span class="n">help</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-            <span class="n">exit</span><span class="p">()</span>
-
-    <span class="k">return</span> <span class="n">customAction</span></div>
+    <span class="k">return</span> <span class="n">h5py</span><span class="o">.</span><span class="n">is_hdf5</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
 
 
 
-<div class="viewcode-block" id="module_str">
-<a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.module_str">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">module_str</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">"""Format Module String.</span>
+<div class="viewcode-block" id="read_final_cat">
+<a class="viewcode-back" href="../../../shapepipe.utilities.final_cat.html#shapepipe.utilities.final_cat.read_final_cat">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_final_cat</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hdu</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Read Final Catalogue.</span>
 
-<span class="sd">    Format the list of modules as a single string.</span>
+<span class="sd">    Read a per-tile final catalogue, HDF5 or FITS, into a structured array.</span>
+<span class="sd">    Every field is in native byte order and a vector column is a sub-array</span>
+<span class="sd">    field, so the same catalogue reads to the same array from either format.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str</span>
+<span class="sd">        Catalogue path</span>
+<span class="sd">    columns : list of str, optional</span>
+<span class="sd">        Columns to read, in the order wanted; ``None`` or empty reads every</span>
+<span class="sd">        column, in file order</span>
+<span class="sd">    hdu : int, optional</span>
+<span class="sd">        HDU of the table in a FITS catalogue; default is ``1``</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    str</span>
-<span class="sd">        Formatted string of module names</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Structured array, one field per column</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    KeyError</span>
+<span class="sd">        If the catalogue lacks a requested column; the message names the file</span>
+<span class="sd">        and every missing column</span>
 
 <span class="sd">    """</span>
-    <span class="n">string</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="k">if</span> <span class="n">is_hdf5</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">cat</span><span class="p">:</span>
+            <span class="n">present</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">wanted</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span> <span class="k">if</span> <span class="n">columns</span> <span class="k">else</span> <span class="n">present</span>
+            <span class="n">_check_columns</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">wanted</span><span class="p">,</span> <span class="n">present</span><span class="p">)</span>
+            <span class="n">arrays</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">cat</span><span class="p">[</span><span class="n">col</span><span class="p">][()]</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">wanted</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">fits</span>
 
-    <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">__module_list__</span><span class="p">:</span>
-        <span class="n">string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">" - </span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdu_list</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">hdu_list</span><span class="p">[</span><span class="n">hdu</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">present</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+            <span class="n">wanted</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span> <span class="k">if</span> <span class="n">columns</span> <span class="k">else</span> <span class="n">present</span>
+            <span class="n">_check_columns</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">wanted</span><span class="p">,</span> <span class="n">present</span><span class="p">)</span>
+            <span class="n">arrays</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">col</span><span class="p">])</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">wanted</span><span class="p">}</span>
 
-    <span class="k">return</span> <span class="n">string</span></div>
+    <span class="k">return</span> <span class="n">_to_structured</span><span class="p">(</span><span class="n">arrays</span><span class="p">)</span></div>
 
 
 
-<div class="viewcode-block" id="create_arg_parser">
-<a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.create_arg_parser">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">create_arg_parser</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">"""Create Argument Parser.</span>
+<div class="viewcode-block" id="_check_columns">
+<a class="viewcode-back" href="../../../shapepipe.utilities.final_cat.html#shapepipe.utilities.final_cat._check_columns">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_columns</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">wanted</span><span class="p">,</span> <span class="n">present</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Raise ``KeyError`` naming every column of ``wanted`` not in ``present``."""</span>
+    <span class="n">present</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">present</span><span class="p">)</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">wanted</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">present</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: missing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2"> of the </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">wanted</span><span class="p">)</span><span class="si">}</span><span class="s2"> requested "</span>
+            <span class="sa">f</span><span class="s2">"column(s): </span><span class="si">{</span><span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span></div>
 
-<span class="sd">    This method returns an argument parser.</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    argparse.Namespace</span>
-<span class="sd">        Argument parser</span>
 
-<span class="sd">    """</span>
-    <span class="c1"># Create parser</span>
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">ap</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
-        <span class="n">add_help</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="n">shapepipe_logo</span><span class="p">(),</span>
-        <span class="n">formatter_class</span><span class="o">=</span><span class="n">cutomFormatter</span><span class="p">,</span>
+<div class="viewcode-block" id="_to_structured">
+<a class="viewcode-back" href="../../../shapepipe.utilities.final_cat.html#shapepipe.utilities.final_cat._to_structured">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">_to_structured</span><span class="p">(</span><span class="n">arrays</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Assemble column arrays, one row per object, into a structured array."""</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">newbyteorder</span><span class="p">(</span><span class="s2">"="</span><span class="p">),</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">arrays</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">]</span>
     <span class="p">)</span>
-    <span class="n">optional</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">"Optional Arguments"</span><span class="p">)</span>
-
-    <span class="c1"># Add arguments</span>
-    <span class="n">optional</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">"-h"</span><span class="p">,</span>
-        <span class="s2">"--help"</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s2">"help"</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">"show this help message and exit"</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="n">optional</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">"-v"</span><span class="p">,</span> <span class="s2">"--version"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"version"</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="sa">f</span><span class="s2">"%(prog)s v</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span>
-    <span class="p">)</span>
-
-    <span class="n">optional</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">"-l"</span><span class="p">,</span>
-        <span class="s2">"--list_modules"</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="n">print_message</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"ShapePipe modules currently available:</span><span class="se">\n</span><span class="si">{</span><span class="n">module_str</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
-        <span class="p">),</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">"list modules currently available and exit"</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="n">optional</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">"-c"</span><span class="p">,</span>
-        <span class="s2">"--config"</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">"config.ini"</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">"configuration file name"</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="n">optional</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">"-b"</span><span class="p">,</span>
-        <span class="s2">"--batch_size"</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">"SMP batch size; overrides SMP_BATCH_SIZE in the config file"</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="c1"># Return parser</span>
-    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
+    <span class="n">lengths</span> <span class="o">=</span> <span class="p">{</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">arrays</span><span class="o">.</span><span class="n">values</span><span class="p">()}</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"columns differ in length: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">lengths</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span> <span class="k">if</span> <span class="n">lengths</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">arrays</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+    <span class="k">return</span> <span class="n">out</span></div>
 
 </pre></div>
 

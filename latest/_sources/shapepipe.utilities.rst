@@ -19,6 +19,7 @@ Submodules
    shapepipe.utilities.coverage_plotter
    shapepipe.utilities.field_corners_extractor
    shapepipe.utilities.file_system
+   shapepipe.utilities.final_cat
    shapepipe.utilities.galaxy
    shapepipe.utilities.header_downloader
    shapepipe.utilities.mask_query

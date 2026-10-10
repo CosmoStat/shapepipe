@@ -390,6 +390,7 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html">shapepipe.utilities.coverage_plotter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.field_corners_extractor.html">shapepipe.utilities.field_corners_extractor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.final_cat.html">shapepipe.utilities.final_cat</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
@@ -569,9 +570,8 @@
             <nav aria-label="Page">
                 <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.get_output_name"><code class="docutils literal notranslate"><span class="pre">get_output_name()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.prepare_final_cat_file"><code class="docutils literal notranslate"><span class="pre">prepare_final_cat_file()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.remove_field_name"><code class="docutils literal notranslate"><span class="pre">remove_field_name()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_sextractor_data"><code class="docutils literal notranslate"><span class="pre">save_sextractor_data()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.write_final_cat"><code class="docutils literal notranslate"><span class="pre">write_final_cat()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.read_sextractor_data"><code class="docutils literal notranslate"><span class="pre">read_sextractor_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.parse_mask_ext_paths"><code class="docutils literal notranslate"><span class="pre">parse_mask_ext_paths()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data"><code class="docutils literal notranslate"><span class="pre">save_mask_ext_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue</span></code></a><ul class="nav section-nav flex-column">
@@ -624,67 +624,42 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.prepare_final_cat_file">
-<span class="sig-name descname"><span class="pre">prepare_final_cat_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#prepare_final_cat_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.prepare_final_cat_file" title="Link to this definition">#</a></dt>
-<dd><p>Prepare Final Catalogue File.</p>
-<p>Create a <code class="docutils literal notranslate"><span class="pre">FITSCatalogue</span></code> object for the current file.</p>
+<dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.write_final_cat">
+<span class="sig-name descname"><span class="pre">write_final_cat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#write_final_cat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.write_final_cat" title="Link to this definition">#</a></dt>
+<dd><p>Write Final Catalogue.</p>
+<p>Write the assembled catalogue to HDF5 in one pass: one dataset per
+column, in <code class="docutils literal notranslate"><span class="pre">columns</span></code> order, each lzf-compressed. A vector column is a
+2-D dataset with one row per object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Output file path</p></li>
-<li><p><strong>file_number_string</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – String with current file numbering</p></li>
+<li><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Output file path; an existing file is replaced</p></li>
+<li><p><strong>columns</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) – Column name to array, every array with one entry per object</p></li>
 </ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Output FITS file</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue" title="shapepipe.pipeline.file_io.FITSCatalogue">file_io.FITSCatalogue</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.remove_field_name">
-<span class="sig-name descname"><span class="pre">remove_field_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#remove_field_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.remove_field_name" title="Link to this definition">#</a></dt>
-<dd><p>Remove Field Name.</p>
-<p>Remove a column of a structured array from the given name.</p>
+<dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.read_sextractor_data">
+<span class="sig-name descname"><span class="pre">read_sextractor_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sexcat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_vignet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#read_sextractor_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.read_sextractor_data" title="Link to this definition">#</a></dt>
+<dd><p>Read SExtractor Data.</p>
+<p>Read the SExtractor catalogue as the final catalogue’s first columns,
+adding the tile as <code class="docutils literal notranslate"><span class="pre">TILE_ID</span></code> (float <code class="docutils literal notranslate"><span class="pre">RRR.DDD</span></code>) and the survey-wide
+object ID <code class="docutils literal notranslate"><span class="pre">TILE_UNIQUE_ID</span></code>
+(<a class="reference internal" href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_unique_id" title="shapepipe.utilities.cfis.get_tile_unique_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">shapepipe.utilities.cfis.get_tile_unique_id()</span></code></a> of the tile and
+<code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>). The tile is read from the catalogue’s file name, e.g.
+<code class="docutils literal notranslate"><span class="pre">sexcat-301-279.fits</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>arr</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – A numpy strucured array</p></li>
-<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Name of the field to remove</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The structured array with the field removed</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.save_sextractor_data">
-<span class="sig-name descname"><span class="pre">save_sextractor_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">final_cat_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sexcat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_vignet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#save_sextractor_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.save_sextractor_data" title="Link to this definition">#</a></dt>
-<dd><p>Save SExtractor Data.</p>
-<p>Save the SExtractor catalogue into the final one, adding the tile as
-<code class="docutils literal notranslate"><span class="pre">TILE_ID</span></code> (float <code class="docutils literal notranslate"><span class="pre">RRR.DDD</span></code>) and the survey-wide object ID
-<code class="docutils literal notranslate"><span class="pre">TILE_UNIQUE_ID</span></code> (<a class="reference internal" href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_unique_id" title="shapepipe.utilities.cfis.get_tile_unique_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">shapepipe.utilities.cfis.get_tile_unique_id()</span></code></a>
-of the tile and <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>). The tile is read from the catalogue’s file
-name, e.g. <code class="docutils literal notranslate"><span class="pre">sexcat-301-279.fits</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>final_cat_file</strong> (<a class="reference internal" href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue" title="shapepipe.pipeline.file_io.FITSCatalogue"><em>file_io.FITSCatalogue</em></a>) – Final catalogue</p></li>
-<li><p><strong>sexcat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Path to SExtractor catalogue to save</p></li>
-<li><p><strong>remove_vignet</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code> will not save the <code class="docutils literal notranslate"><span class="pre">VIGNET</span></code> field into the final catalogue</p></li>
+<li><p><strong>sexcat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Path to SExtractor catalogue</p></li>
+<li><p><strong>remove_vignet</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code> will not keep the <code class="docutils literal notranslate"><span class="pre">VIGNET</span></code> field</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><em>int</em> – Number of objects saved</p></li>
+<li><p><em>dict</em> – Column name to array, in the SExtractor catalogue’s column order</p></li>
 <li><p><strong>&#64;sc [decision</strong> (<em>catalogue_assembly.tile_overlap_handling]</em>)</p></li>
 </ul>
 </p>
@@ -713,16 +688,16 @@ name, e.g. <code class="docutils literal notranslate"><span class="pre">sexcat-3
 
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data">
-<span class="sig-name descname"><span class="pre">save_mask_ext_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">final_cat_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">band_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#save_mask_ext_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">save_mask_ext_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">final_cat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">band_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#save_mask_ext_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data" title="Link to this definition">#</a></dt>
 <dd><p>Save External Mask Data.</p>
 <p>Query per-band external healsparse masks at each object’s world position
 and write one <code class="docutils literal notranslate"><span class="pre">MASK_&lt;BAND&gt;</span></code> column per band into the final catalogue.
 Object positions are read from the SExtractor windowed world coordinates
-(<code class="docutils literal notranslate"><span class="pre">XWIN_WORLD</span></code> = RA, <code class="docutils literal notranslate"><span class="pre">YWIN_WORLD</span></code> = Dec, both in degrees) carried in the
-<code class="docutils literal notranslate"><span class="pre">RESULTS</span></code> extension. Objects falling outside a map’s coverage receive
-that map’s sentinel value (<code class="docutils literal notranslate"><span class="pre">healsparse.HealSparseMap.get_values_pos</span></code>
-returns the map’s sentinel — <code class="docutils literal notranslate"><span class="pre">-1</span></code> for integer maps — verbatim), which is
-the documented off-map flag.</p>
+(<code class="docutils literal notranslate"><span class="pre">XWIN_WORLD</span></code> = RA, <code class="docutils literal notranslate"><span class="pre">YWIN_WORLD</span></code> = Dec, both in degrees). Objects
+falling outside a map’s coverage receive that map’s sentinel value
+(<code class="docutils literal notranslate"><span class="pre">healsparse.HealSparseMap.get_values_pos</span></code> returns the map’s sentinel —
+<code class="docutils literal notranslate"><span class="pre">-1</span></code> for integer maps — verbatim), which is the documented off-map
+flag.</p>
 <p>The lookup itself is <code class="docutils literal notranslate"><span class="pre">shapepipe.utilities.mask_query.query_map</span></code>,
 shared with the <code class="docutils literal notranslate"><span class="pre">mask_query</span></code> module: one primitive, two consumers.</p>
 <p>&#64;sc [decision:masking.sky_mask_application,label:scope] mask-columns-verbatim
@@ -738,7 +713,7 @@ function did not write. Nothing here cuts on any column.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>final_cat_file</strong> (<a class="reference internal" href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue" title="shapepipe.pipeline.file_io.FITSCatalogue"><em>file_io.FITSCatalogue</em></a>) – Final catalogue</p></li>
+<li><p><strong>final_cat</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) – Final catalogue columns, updated in place</p></li>
 <li><p><strong>band_paths</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) – Mapping from band name to healsparse map path</p></li>
 <li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.15)"><em>logging.Logger</em></a>) – Logging instance</p></li>
 </ul>
@@ -748,14 +723,14 @@ function did not write. Nothing here cuts on any column.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.make_cat_package.make_cat.SaveCatalogue">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">SaveCatalogue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">final_cat_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cat_size_target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#SaveCatalogue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">SaveCatalogue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">final_cat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cat_size_target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/make_cat_package/make_cat.html#SaveCatalogue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Save Catalogue.</p>
-<p>Class to save catalogue.</p>
+<p>Add shape-measurement and PSF columns to the final catalogue.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>final_cat_file</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Final catalogue file name</p></li>
+<li><p><strong>final_cat</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) – Final catalogue columns, updated in place; must hold <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code></p></li>
 <li><p><strong>cat_size_target</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – target catalogue size</p></li>
 <li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.15)"><em>logging.Logger</em></a>) – Logging instance</p></li>
 </ul>
@@ -946,9 +921,8 @@ be a subset of what <code class="docutils literal notranslate"><span class="pre"
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.get_output_name"><code class="docutils literal notranslate"><span class="pre">get_output_name()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.prepare_final_cat_file"><code class="docutils literal notranslate"><span class="pre">prepare_final_cat_file()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.remove_field_name"><code class="docutils literal notranslate"><span class="pre">remove_field_name()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_sextractor_data"><code class="docutils literal notranslate"><span class="pre">save_sextractor_data()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.write_final_cat"><code class="docutils literal notranslate"><span class="pre">write_final_cat()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.read_sextractor_data"><code class="docutils literal notranslate"><span class="pre">read_sextractor_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.parse_mask_ext_paths"><code class="docutils literal notranslate"><span class="pre">parse_mask_ext_paths()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.save_mask_ext_data"><code class="docutils literal notranslate"><span class="pre">save_mask_ext_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.make_cat_package.make_cat.SaveCatalogue"><code class="docutils literal notranslate"><span class="pre">SaveCatalogue</span></code></a><ul class="nav section-nav flex-column">
