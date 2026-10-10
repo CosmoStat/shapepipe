@@ -190,6 +190,15 @@ STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"
 #     it at job end. <run> gives each campaign sharing one allocation (one
 #     srun step each) its own directory. An explicit `tile_store_root:` still
 #     wins.
+#   * The exposure stores' bulk (each exposure's output/, ~7 GB and ~1,000
+#     files) goes node-local too, under $SLURM_TMPDIR/exp-store/<run>: sp
+#     exports SP_EXP_STORE, and the exposure jobs link <exp_dir>/output to
+#     $SP_EXP_STORE/<exp> (sp_shell, Snakefile). The link names the real
+#     path, which /local's bind makes the same on the host and in the
+#     container. Manifests, logs and the tombstone stay on /scratch beside
+#     the link, so the DAG reads them as before; clean_exposure removes the
+#     node-local tree with the link. What downstream reads after the store
+#     goes is on the products root (exp_persist's tar, exp_maps' fragment).
 #   * A resume finds the previous job's store gone. A tile whose
 #     tile_vignets.json survived it but whose final_cat did not would trip
 #     tile.smk's "node-local vignette store is missing" guard, so that
@@ -235,6 +244,7 @@ PY
     echo "sp: --in-allocation could not read this allocation's memory limit" >&2; exit 2; }
   ALLOC_ARGS=(--executor local --cores "$ALLOC_CORES" --resources "mem_mb=$ALLOC_MEM_MB")
   [ -n "$TILE_STORE_ROOT" ] || TILE_STORE_ROOT="$SLURM_TMPDIR/tile-store/$(cfg run)"
+  export SP_EXP_STORE="$(realpath -m "$SLURM_TMPDIR")/exp-store/$(cfg run)"
   echo "sp: in allocation $SLURM_JOB_ID: ${ALLOC_ARGS[*]}" >&2
 fi
 
@@ -281,6 +291,20 @@ alloc_resume() {
     n_swept=$((n_swept + 1))
   done < <(sed 's/[[:space:]]//g' "$(cfg tile_list)")
   echo "sp: $n_swept stale tile_vignets.json (no final_cat, store gone with its job)" >&2
+
+  # An exposure whose node-local output went with an earlier job: its link
+  # dangles and its scratch manifests attest work that is gone. Dropping the
+  # link and the manifests reruns its chain; a cleaned exposure (tombstone)
+  # is reclaimed, not stale, and is never touched.
+  n_swept=0
+  for m in "$RUN_DIR"/exp/*/*/output; do
+    [ -L "$m" ] && [ ! -e "$m" ] || continue
+    [ -e "$(dirname "$m")/cleaned.json" ] && continue
+    if [ "$alloc_dry" = 1 ]; then echo "sp: stale (dry run, kept): $m" >&2
+    else rm -f "$m"; rm -rf "$(dirname "$m")/manifests"; echo "sp: deleted stale $m and its manifests" >&2; fi
+    n_swept=$((n_swept + 1))
+  done
+  echo "sp: $n_swept stale exposure store(s) (no tombstone, store gone with its job)" >&2
   [ "$alloc_dry" = 1 ] || printf '%s\n' "$SLURM_JOB_ID" > "$holder_file"
 }
 
@@ -378,6 +402,24 @@ if root:
     f.write_text(text)
     print(f"sp: tile store root {root} (bound to /local/scratch)", file=sys.stderr)
 PY
+
+  # The exposure jobs read SP_EXP_STORE (sp_shell); --cleanenv drops it unless
+  # the profile passes it. Like the bind above, an apptainer arg is no rerun
+  # trigger, so a new job's path never reschedules finished exposures.
+  if [ -n "${SP_EXP_STORE:-}" ]; then
+    mkdir -p "$SP_EXP_STORE"
+    python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$SP_EXP_STORE" <<'PY'
+import pathlib, re, sys
+f, store = pathlib.Path(sys.argv[1]), sys.argv[2]
+text, n = re.subn(r'(apptainer-args:\s*"[^"]*)"',
+                  lambda m: m.group(1) + f" --env SP_EXP_STORE={store}" + '"',
+                  f.read_text(), count=1)
+if not n:
+    sys.exit("sp: SP_EXP_STORE is set but the profile has no quoted apptainer-args")
+f.write_text(text)
+print(f"sp: exposure store {store} (node-local)", file=sys.stderr)
+PY
+  fi
 
   python - "$SNAPSHOT/snapshot.json" "$REPO" <<'PY'
 import json, pathlib, subprocess, sys, time
