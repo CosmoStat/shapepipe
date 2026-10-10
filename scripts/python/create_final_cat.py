@@ -22,10 +22,11 @@ import numpy as np
 import tqdm
 import glob
 import h5py
-from astropy.io import fits
 
 from cs_util import args as cs_args
 from cs_util import logging
+
+from shapepipe.utilities.final_cat import read_final_cat
 
 
 def params_from_run_config(params, defaults):
@@ -378,10 +379,10 @@ def get_patch_group(hdf5_file, patch, verbose=False):
 def read_data(cat_file, params):
     """Read the parameter list's columns out of one catalogue.
 
-    The catalogue is hdf5, one dataset per column (a vector column is 2-D),
-    or, for one with a ``.fits`` suffix, a FITS table at HDU
-    ``params["hdu_num"]``. Returns the requested columns and a structured
-    dtype describing them.
+    The catalogue is HDF5 or FITS, decided per file
+    (``shapepipe.utilities.final_cat.read_final_cat``); a FITS table is read
+    at HDU ``params["hdu_num"]`` (default 1). Returns the requested columns
+    and a structured dtype describing them.
 
     @sc [label:schema] read-data-raises-on-missing-column
     A requested column the catalogue lacks raises `KeyError` naming it; it is
@@ -391,31 +392,17 @@ def read_data(cat_file, params):
     silently narrower, with that slot's exposure identity gone. Enforced by
     tests/unit/test_final_cat_merge_invariants.py.
     """
-    if cat_file.endswith(".fits"):
-        with fits.open(cat_file) as hdu_list:
-            data = hdu_list[params["hdu_num"]].data
-        dtype = data.dtype
-    else:
-        with h5py.File(cat_file, "r") as cat:
-            dtype = np.dtype([(col, ds.dtype, ds.shape[1:])
-                              for col, ds in cat.items()])
-            wanted = params["param_list"] or dtype.names
-            data = {col: cat[col][()] for col in wanted if col in cat}
+    data = read_final_cat(
+        cat_file, params["param_list"], hdu=params.get("hdu_num", 1)
+    )
 
     # If columns not given on input: read all column names
     if params["param_list"] is None:
-        params["param_list"] = list(dtype.names)
+        params["param_list"] = list(data.dtype.names)
 
-    missing = [col for col in params["param_list"] if col not in dtype.names]
-    if missing:
-        raise KeyError(
-            f"{cat_file}: missing {len(missing)} of the "
-            f"{len(params['param_list'])} requested column(s): "
-            f"{' '.join(missing)}"
-        )
     extracted_data = {col: data[col] for col in params["param_list"]}
 
-    return extracted_data, dtype
+    return extracted_data, data.dtype
 
 
 def copy_data(param_list, extracted_data, dtype):
