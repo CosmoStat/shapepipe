@@ -174,8 +174,9 @@ machines:
 # selection studies and cost an order of magnitude more.
 #
 # THIS LIST IS EXPOSURE-SIDE ONLY. Tile-side retention is not configurable: the
-# only tile product that persists today is final_cat, written by tile_make_cat
-# straight to products_dir. A tile keep list is #844 follow-up.
+# tile products that persist are final_cat and tile_make_cat.json, written by
+# tile_make_cat straight to products_dir. The manifest contains epoch-cut
+# counts summed over all ngmix chunks. A tile keep list is #844 follow-up.
 #
 # NOTE ON products_dir DEFAULTING TO run_dir (a fixture or smoke test): the tar
 # then lands beside the store on the same filesystem and buys nothing, and
@@ -191,7 +192,10 @@ clean: true
 
 # Per-tile store reclamation after the tile's final_cat. Needed above ~850
 # tiles (scratch quota); deletes the per-tile data sp_tilecost/sp_costmodel
-# read. Set both false for a small control run you want to re-measure.
+# read. Epoch-cut counts survive in products_dir/tiles/<shard>/<tile>/
+# tile_make_cat.json; keeping module logs does NOT require disabling cleaning.
+# Cleaning refuses a tile without this complete durable count record.
+# Set both false for a small control run you want to re-measure timings on.
 clean_tiles: true
 
 # Failed tiles that should not keep their exposures from being cleaned.

@@ -317,6 +317,28 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   since the missing tombstones schedule exactly the outstanding clean jobs.
   The tombstone is written *before* anything is deleted, so a crash can cost
   disk but never the record.
+- **Tile epoch-cut diagnostics survive cleaning.**
+  `tile_ngmix` completeness checks capture PR #922's five counters before each chunk's temporary directory goes away.
+  `tile_make_cat` sums all configured chunks and publishes `tile_make_cat.json` beside the tile's persistent `final_cat`.
+  Its `epoch_cuts` field contains `schema_version`, `n_chunks`, per-chunk `chunks`, and tile `totals` for `considered`, `masked_fraction`, `central_veto`, `failed`, and `objects_emptied`.
+  Counts are sequential veto counts, not independent cut incidences; `objects_emptied` counts objects whose considered epochs were all removed before fitting.
+  Missing, malformed, or duplicate summaries fail completeness rather than becoming zeros.
+  `clean_tile` validates the durable count record before touching scratch, so `clean_tiles: true` needs no module-log retention override.
+  This requires an ngmix build with PR #922's end-of-loop `epoch cuts:` summary, including on empty chunks.
+  Older code without that summary fails the ngmix completeness check and leaves scratch intact.
+
+  For an **idle existing campaign** with kept logs, use `workflow/scripts/backfill_epoch_cuts.py --run-dir <run> --products-dir <products> --n-chunks <N> --dry-run` first.
+  Alternatively pass `--config <run_config.yaml>` to resolve products and chunk count from the run's frozen `workflow/config.yaml` plus its run config.
+  The script skips tiles without a nonempty persisted catalogue and refuses missing or ambiguous chunk evidence.
+  Without `--dry-run`, it publishes the same manifest schema and reclaims through `clean_tile.reclaim`, including its survivor checks and tombstone.
+  Don't use it while jobs or another cleaner are writing the campaign.
+  Dry-run reads metadata and small logs only, writes nothing, and reports logical regular-file bytes (not allocated blocks), without following symlinks.
+
+  **Deploy at a campaign boundary.**
+  The completeness/helper hash is part of every ShapePipe rule's `params`; this change also alters make-cat's params, outputs and shell, and clean-tile's inputs and shell.
+  An ordinary resume against old completed tiles can therefore schedule science stages again, even after their exposure stores have been reclaimed.
+  Backfill old campaigns without changing their frozen code or resuming them against this workflow; removing the log-retention override is appropriate for new campaigns running this contract.
+
 - **A finished tile declares no reclaimed exposures.** Deleting an exposure's
   manifests would otherwise rerun every other tile that reads it, and those
   reruns spread across the exposure-overlap component. So a tile whose

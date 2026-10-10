@@ -739,9 +739,9 @@ rule tile_ngmix:
         # reclamation ON the tombstoned tile has lost tile_detect.json and the
         # structural "Input files updated by another job" propagation puts
         # tile_vignets back in the group (measured at clean_tile below), so the
-        # store is rebuilt and nothing trips. The SHIPPED DEFAULT
-        # clean_tiles: false is the dangerous configuration -- the opposite of
-        # how reclamation reads everywhere else in this file.
+        # store is rebuilt and nothing trips. A campaign override setting
+        # clean_tiles: false leaves the dangerous configuration; the shipped
+        # default is true. Epoch-cut diagnostics no longer need that override.
         #
         # So: land this hash, and every later edit to ngmix_range.py, at a
         # campaign boundary on a fresh root. The same rule and direct command as
