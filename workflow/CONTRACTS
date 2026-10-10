@@ -44,11 +44,11 @@ Regenerate tests/workflow/params_pin.json only at that boundary with
 
 @sc [label:custody] clean-exposure-waits-on-persist-iff-psf
 `clean_exposure` waits on the exposure's persisted PSF products exactly when
-`PERSISTS_PSF` is true (`psf_model != "fake"`; `mccd` is refused at parse time
-by `refuse_unpersistable_psf`): on the `exp_persist` manifest for a
-live store, and on the tar (a leaf), or nothing, for a reclaimed one. Dropping
-the edge under psfex lets reclamation delete the scratch store before its PSF
-products reach `products_dir`; keeping it under `fake` makes every clean wait on
+`PERSISTS_PSF` (`psf_model != "fake"`, i.e. `psfex` or `mccd`): on the
+`exp_persist` manifest for a live store, and on the tar (a leaf), or nothing,
+for a reclaimed one. Dropping the edge under psfex or mccd lets reclamation
+delete the scratch store before its PSF products reach `products_dir`; keeping
+it under `fake` makes every clean wait on
 a rule that is not in the DAG; naming the manifest for a reclaimed store lets a
 `persist_exp:` edit rebuild the exposure from VOS. Enforced by
 tests/workflow/test_dag.py::test_clean_exposure_waits_on_persist_iff_psf,
