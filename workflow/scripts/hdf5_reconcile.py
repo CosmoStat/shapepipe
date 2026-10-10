@@ -106,8 +106,8 @@ def stamp(path: Path) -> tuple:
 
 def column_types(dtype) -> dict:
     """``{column: (kind, itemsize, shape)}``: a dataset's schema, as compared
-    across units. Byte order is left out: FITS sources are big-endian, hdf5
-    may hand them back either way, and neither changes a value."""
+    across units. Byte order is left out: a source may store either, and
+    neither changes a value."""
     return {n: (dtype[n].base.kind, dtype[n].base.itemsize, dtype[n].shape)
             for n in dtype.names}
 

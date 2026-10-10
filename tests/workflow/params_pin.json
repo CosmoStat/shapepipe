@@ -18,7 +18,7 @@
     "tile_find_exposures": "c883495a7ec196c61ef770507865f43834b08523793d337e8ddeaef0ad62f117",
     "tile_get_catalogue": "84ffd03c4bde248c06aa58a0f4b7f399390a0ff3ecbcf07e03d718df4fe0cd7f",
     "tile_get_images": "96e235dad9cdcde8ecf11f4516bc2303dbba1c8115ad343cdb26d3d1513da671",
-    "tile_make_cat": "1558e38ee60bf9d1e794c303567442b1d298898ab8d56bf1b30aa63974d212dd",
+    "tile_make_cat": "831f2b104d20326c3836e29d252118b8d2dd9a277be26857f47162b8250e3ca2",
     "tile_merge_cats": "0783c93deeb7f90bdb9772bbc4117851dff1a671518c81f67edd4c7c79cc7e6a",
     "tile_merge_headers": "3e674f961fd5bb93ce1f3b0e2bb072a25a421f2828315a3db45a960c44a42111",
     "tile_ngmix": "5b83650fe8fdfaf24b6f1045cd418e816f2c5a9851e3e35852864772298ea26a",
@@ -26,7 +26,7 @@
     "tile_vignets": "1d434b4a6a4bcdeb8f1e5e9a5e4f228b67ade400245b41b033a2c883fb6a3267"
   },
   "schema": 1,
-  "sha256": "daff4881d9516ad4a10094b9b8ce3bc01c591882b0e63d674b4332c73a72aa06",
+  "sha256": "389e2d5d5be672d4a6477a882e56eafb8a445e6280e95362d3c951bb126938f6",
   "unit_pre": {
     "exp_get_images": "dac6685a207dae3ea81d296ce53e9ba75d4636cf1f81e6399f2dda452680c992",
     "exp_psf": "87fc8ea1153a709ab7ba56542cfacc041f5f8b7f6cf2f38a9bc9d8004d1cecb4",
