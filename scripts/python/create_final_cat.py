@@ -2,9 +2,13 @@
 
 """Script create_final_cat.py
 
-Create and update hdf5 file of all per-tile final catalogues, the output of
-ShapePipe module ``make_cat_runner`` (hdf5, one dataset per column; FITS for
-catalogues written before that format). Supercedes `merge_final_cat.py`.
+Create or append per-tile final catalogues to an HDF5 file, one structured
+dataset per tile under ``patches/<patch>``. Inputs are ``make_cat_runner``
+outputs in HDF5 (one dataset per column) or FITS format.
+
+Existing tile datasets are skipped, even if their sources change. For a
+workflow output reconciled against campaign membership and source changes,
+use ``workflow/scripts/merge_final_cat.py``.
 
 Usage: in parent dir of patches:
 create_final_cat.py -p ~/shapepipe/workflow/config/cfis/final_cat.param -i . -P 7 -v -m final_cat_P7.hdf5
@@ -30,17 +34,13 @@ from shapepipe.utilities.final_cat import read_final_cat
 
 
 def params_from_run_config(params, defaults):
-    """Fill unset paths from a workflow run config.
+    """Replace default-valued paths from an image-simulation workflow run config.
 
-    The workflow already knows where a campaign writes, so a manual merge
-    should not have to restate it. Resolution goes through the workflow's own
-    resolver (workflow/scripts/run_config.py), layering the run config on
-    workflow/config.yaml and then the input_types: and machines: tables, so
-    what lands here is what the rules would have used.
+    Use ``workflow/scripts/run_config.py`` for config resolution and precedence.
+    Derive image-simulation paths only; data patch naming is not handled here.
 
-    Only values still at their default are filled -- an explicit flag always
-    wins. Nothing is derived for the data path: its patch naming differs and
-    is not this function's business.
+    Values equal to their defaults are replaced, including explicitly supplied
+    flags with default values. Nondefault flag values win.
     """
     repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     sys.path.insert(0, os.path.join(repo, "workflow", "scripts"))
@@ -111,8 +111,7 @@ def set_params_from_command_line(args):
                                                                                 
     del options                                                             
 
-    # A run config fills in whatever is still at its default
-    # (see the docstring); explicit flags always win.
+    # See params_from_run_config for default-value replacement semantics.
     if _params.get("run_config"):
         _defaults, _, _, _ = params_default()
         _params = params_from_run_config(_params, _defaults)
@@ -178,10 +177,7 @@ def params_default():
 
 
 def read_param_file(path, verbose=False):
-    """Read Param File.
-    MKDEBUG TODO: Move to cs_util. Also used in sp_val/cat.py.
-
-    Return parameter list read from file.
+    """Return unique parameter names in file order.
 
     Parameters
     ----------
@@ -218,10 +214,8 @@ def read_param_file(path, verbose=False):
             print("No parameters read", end="")
         print(" into merged catalogue")
 
-    # Ordered dedup. list(set(...)) reordered the columns by the process's
-    # string hash seed, so two runs of this tool over the same inputs produced
-    # files whose datasets differed in column ORDER — which is part of a
-    # structured dtype, and therefore part of the file.
+    # Preserve parameter-file order while removing duplicates; column order
+    # is part of the output's structured dtype.
     param_list_unique = list(dict.fromkeys(param_list))
 
     if verbose:
@@ -406,20 +400,14 @@ def read_data(cat_file, params):
 
 
 def copy_data(param_list, extracted_data, dtype):
-    """Copy Data.
+    """Copy requested columns into a structured array with their stored dtypes.
 
+    @sc [label:schema] final-copy-requested-column-order
+    Allocate only requested columns present in the source, in parameter-file
+    order. Unrequested fields must not enter the output as uninitialised memory,
+    and source column order must not make tile dtypes incompatible at
+    concatenation. ``read_data`` enforces missing-column errors before this call.
     """
-    # THE REQUESTED COLUMNS ONLY, IN THE PARAMETER FILE'S ORDER. Two things
-    # are being fixed here and they are easy to conflate. Allocating with the
-    # source's full dtype and filling only the requested columns left every
-    # other column as uninitialised memory — meaningless values, and different
-    # bytes on every run over the same inputs. And ordering the result by the
-    # SOURCE catalogue's columns made the output dtype a property of the
-    # catalogue rather than of the parameter file: two tiles written by
-    # different ShapePipe versions, whose catalogues order or extend their
-    # columns differently, then landed in one merged file with two different
-    # structured dtypes, which np.concatenate refuses. The parameter file is
-    # the schema; it says which columns AND in what order.
     wanted = set(dtype.names or ())
     columns = [col for col in param_list if col in wanted]
     subset = np.dtype([(col, dtype[col]) for col in columns])
@@ -465,10 +453,8 @@ def collect_tile_ids_image_sims(patch_path):
     list of (tile_id, tile_path) tuples
     """
     id_pattern = re.compile(r"^\d+\.\d+$")
-    # Two layouts. The Gen-2 / native runs keep tiles under the patch dir
-    # itself; the unified workflow (shapepipe #891) publishes to a separate
-    # products root, and clean_tile deletes the run-dir copies -- so on a
-    # reclaimed campaign <patch>/product/tiles holds the ONLY catalogues.
+    # Use the first existing tiles root: direct, product/, then products/.
+    # See workflow/scripts/clean_tile.py for persistent catalogue ownership.
     result = []
     for sub in ("tiles", os.path.join("product", "tiles"),
                 os.path.join("products", "tiles")):
@@ -487,7 +473,7 @@ def collect_tile_ids_image_sims(patch_path):
     return result
 
 
-# make_cat_runner writes hdf5; catalogues made before that are FITS.
+# Prefer HDF5 when both supported formats exist.
 FINAL_CAT_SUFFIXES = (".hdf5", ".fits")
 
 
@@ -588,9 +574,7 @@ def process(params):
 
                 structured_data = copy_data(params["param_list"], extracted_data, dtype)
 
-                # Create a new dataset. dtype comes from the array copy_data
-                # built, not from the source catalogue: they differ now that
-                # copy_data allocates the requested columns alone.
+                # Use copy_data's selected-column dtype, not the source dtype.
                 try:
                     patch_group.create_dataset(
                         str(id),
@@ -611,7 +595,8 @@ def process(params):
 def single_action(params):
     """Single Action.
 
-    Perform single-ID action.
+    Check or remove one ID. ``add`` returns ``None`` and lets ``main`` run the
+    ordinary catalogue walk; it does not restrict that walk to the requested ID.
 
     Parameters
     ----------
@@ -621,7 +606,8 @@ def single_action(params):
     Returns
     -------
     int
-        return value: 0 (success), 1 (failure), ``None`` (no action performed)
+        0 after check or remove; ``None`` when no single-ID action is performed.
+        The check branch returns 0 even if the ID is absent.
 
     """
     if params["single_op"] == "check":
@@ -631,7 +617,7 @@ def single_action(params):
         if found == "":
             # ID not found
             res = 1
-        # ID found
+        # This assignment also runs when the ID is absent.
         res = 0
 
     elif params["single_op"] == "remove":
