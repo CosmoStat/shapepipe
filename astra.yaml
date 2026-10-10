@@ -1120,9 +1120,11 @@ analyses:
           22-star floor to that accepted count. In the science path the CCD's
           epoch is dropped for every object on it, and an object left with no
           epoch has no shape.
-          The final catalogue's N_EPOCH counts the epochs that pass this
-          gate, N_EPOCH_OVERLAP the CCDs covering the object, so their
-          difference is the number of the object's CCDs the gate rejected.
+          The final catalogue's N_EPOCH counts the epochs with an
+          interpolated PSF (for psfex, those passing this gate; for mccd,
+          those with a model), N_EPOCH_OVERLAP the CCDs covering the object,
+          so their difference is the number of the object's CCDs without a
+          usable PSF.
           The pipeline has no minimum-epoch floor: NGMIX_N_EPOCH records what
           survived and epoch-count cuts happen downstream. Guinot+22 discards
           the CCD from PSF estimation rather than gating at interpolation.

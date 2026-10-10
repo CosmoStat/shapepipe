@@ -639,7 +639,15 @@ class SaveCatalogue:
 
         for idx, id_tmp in enumerate(self._obj_id):
 
-            obj_epochs = galaxy_psf_cat[str(id_tmp)]
+            try:
+                obj_epochs = galaxy_psf_cat[str(id_tmp)]
+            except KeyError:
+                galaxy_psf_cat.close()
+                raise KeyError(
+                    f"Object {id_tmp} is missing from {galaxy_psf_path}; "
+                    "the galaxy PSF catalogue and the SExtractor catalogue "
+                    "do not match"
+                ) from None
             if obj_epochs == "empty":
                 continue
 
