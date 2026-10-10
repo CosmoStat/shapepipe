@@ -345,8 +345,8 @@ class MergeStarCatMCCD(object):
             model_var.append(model_var_val)
             model_var_size.append(model_var_val.size)
 
-            # ONE ARRAY PER CATALOGUE PER COLUMN (see _stack): the per-value
-            # python lists this replaces cost ~10x the input bytes.
+            # Keep one array per catalogue per column (see _stack).
+            # Per-value Python lists cost ~10x the input bytes.
             # positions
             pos = starcat_j[self._hdu_table].data["GLOB_POSITION_IMG_LIST"]
             x.append(np.asarray(pos[:, 0]))
@@ -510,7 +510,7 @@ class MergeStarCatMCCD(object):
 
         # Write file
         output.save_as_fits(data, sex_cat_path=self._input_file_list[0][0])
-        # MKDEBUG; Implement this in file_io
+        # Record the input catalogue type in the output table header.
         if self._input_cat_type:
             with fits.open(out_path, mode="update") as hdu_list:
                 header = hdu_list[1].header
@@ -574,8 +574,8 @@ class MergeStarCatPSFEX(object):
         ("HSM_RHO4_STAR", "HSM_RHO4_STAR"),
         ("HSM_FLAG_PSF", "HSM_FLAG_PSF"), ("HSM_FLAG_STAR", "HSM_FLAG_STAR"),
     )
-    # Present in psfex_interp output, absent from pix2wcs-converted files
-    # (MKDEBUG); zero-filled when missing rather than failing the merge.
+    # Present in psfex_interp output, absent from pix2wcs-converted files;
+    # zero-filled when missing rather than failing the merge.
     _OPTIONAL = (("MAG", "MAG"), ("SNR", "SNR"), ("ACCEPTED", "ACCEPTED"))
 
     def _ccd_nb(self, path):
@@ -587,11 +587,10 @@ class MergeStarCatPSFEX(object):
 
         Process merging.
 
-        TWO PASSES, AND NEITHER HOLDS THE CAMPAIGN TWICE. The first reads only
-        the FITS HEADER of every input — NAXIS2, the row count — and never
-        touches a data block; the second allocates the output columns once, at
-        their exact final length, and fills them slice by slice. Peak memory is
-        therefore ONE output plus ONE input catalogue.
+        The first pass reads row counts (``NAXIS2``) and column dtypes from
+        FITS headers without touching data blocks. The second allocates each
+        output column at its final length and fills it slice by slice. Peak
+        memory is one output plus one input catalogue.
 
         @sc [label:schema] psfex-starcat-columns-strict
         Every ``HSM_*`` column is read by name with no fallback, so the set
@@ -599,33 +598,24 @@ class MergeStarCatPSFEX(object):
         ``PSFExInterpolator._write_output_validation`` writes
         (``test_hsm_column_seams``).
 
-        What this replaces, in two steps, is instructive about the cost of the
-        obvious code. Accumulating each column into a python LIST OF VALUES —
-        ``x += list(data["X"])`` — turned 4 bytes of float32 payload into a
-        32-byte object plus an 8-byte pointer, measured at ~10x the input bytes
-        end to end and putting a full-survey merge (~20k exposures x 40 CCDs) at
-        ~400 GB. Accumulating one ARRAY PER CATALOGUE and concatenating once
-        brought that to ~5.5x. This pass structure removes what was left of the
-        accumulation: there are no chunks, and no concatenate that must hold its
-        inputs and its result at the same time.
+        Per-value Python lists measure ~10x the input bytes (~400 GB for
+        ~20k exposures x 40 CCDs); arrays accumulated before concatenation
+        measure ~5.5x. Two passes avoid retaining both concatenation inputs
+        and their result.
 
-        ``self._input_file_list`` MUST BE ITERABLE TWICE, which the module
-        runner's list is. A one-shot generator is not, and would silently merge
-        nothing on the second pass — hence the explicit row-count check below.
+        @sc [label:operations] starcat-two-pass-input-stability
+        Inputs must remain unchanged across both passes, and
+        ``self._input_file_list`` must support repeated iteration. The final
+        row-count check rejects a mismatch rather than writing unfilled rows.
         """
         self._w_log.info(
             f"Merging {len(self._input_file_list)} star catalogues"
         )
 
         # --- pass 1: row counts and dtypes, from headers alone --------------
-        # THE OPTIONAL COLUMNS ARE A PER-FILE QUESTION, NOT A PER-MERGE ONE.
-        # A pix2wcs-converted catalogue has no MAG/SNR/ACCEPTED while an
-        # ordinary one does, and a merge can be handed both. Deciding from the
-        # first file alone got it wrong in both directions: converted-first
-        # zero-filled the real values of every ordinary file behind it, and
-        # ordinary-first raised KeyError on the first converted one. So the
-        # dtype comes from ANY file that carries the column, and pass 2 asks
-        # each file for itself.
+        # Optional MAG/SNR/ACCEPTED columns can differ between inputs:
+        # pix2wcs catalogues lack them. Take the dtype from any file carrying
+        # the column; pass 2 zero-fills only files that lack it.
         names, dtypes, opt_dtypes, n_total = [], None, {}, 0
         for name in self._input_file_list:
             try:
@@ -634,10 +624,9 @@ class MergeStarCatPSFEX(object):
                     hdu = starcat_j[self._hdu_table]
                     n_rows = hdu.header["NAXIS2"]
                     # ColDefs.dtype describes the table without reading it.
-                    # NOTE: it is the RAW storage dtype and ignores TSCAL/TZERO,
-                    # so a scaled column would be allocated narrower than the
-                    # values .data returns. Latent, not live: no validation_psf
-                    # column is scaled. Read the dtype off .data if one ever is.
+                    # This is the raw storage dtype, ignoring TSCAL/TZERO.
+                    # Validation columns must be unscaled; scaled columns need
+                    # the dtype of .data to preserve their decoded values.
                     cols = hdu.columns.dtype
                     if dtypes is None:
                         dtypes = cols
@@ -658,8 +647,8 @@ class MergeStarCatPSFEX(object):
         data = {out: np.empty(n_total, dtype=dtypes[col])
                 for out, col in self._COLUMNS}
         for out, col in self._OPTIONAL:
-            # A column no file carries still gets a column, zero-filled, in the
-            # positional dtype the old code used for it.
+            # Columns absent from every file use X's dtype and are zero-filled
+            # in pass 2.
             data[out] = np.empty(n_total, dtype=opt_dtypes.get(col, dtypes["X"]))
         # CCD_NB is one string per catalogue, repeated over its rows; its width
         # is the widest CCD number in the campaign, which pass 1 already knows.
@@ -682,7 +671,7 @@ class MergeStarCatPSFEX(object):
             for out, col in self._COLUMNS:
                 data[out][sl] = data_j[col]
             for out, col in self._OPTIONAL:
-                # THIS file's schema, not the merge's: zero-fill only the files
+                # Use this file's schema: zero-fill only the files
                 # that actually lack the column.
                 data[out][sl] = data_j[col] if col in have else 0
             data["CCD_NB"][sl] = self._ccd_nb(name[0])
@@ -698,8 +687,7 @@ class MergeStarCatPSFEX(object):
                 f"merge_starcat: pass 1 counted {n_total} rows, pass 2 filled "
                 f"{at} — is the input list iterable more than once?")
 
-        # Prepare output FITS catalogue
-        # MKDEBUG: SEx_cat=True -> False
+        # Prepare a plain FITS catalogue without copying a SExtractor HDU.
         out_path = f"{self._output_dir}/full_starcat-0000000.fits"
         output = file_io.FITSCatalogue(
             out_path,
@@ -707,18 +695,13 @@ class MergeStarCatPSFEX(object):
             SEx_catalogue=False,
         )
 
-        # `data` was built by the two passes above (size stored as T = 2
-        # sigma^2); every column is already an array of its final length.
-
-        # Write file
-        # MKDEBUG for psf conv (pix2WCS) files do not write as SExtractorCat;
-        # we do not want to copy the first input data content to HDU #1.
-        # sex_cat_path=self._input_file_list[0][0],
+        # Write the final-length arrays as a plain FITS table without copying
+        # an input SExtractor HDU (size stored as T = 2 sigma^2).
         output.save_as_fits(
             data,
             overwrite=True,
         )
-        # MKDEBUG; Implement this in file_io
+        # Record the input catalogue type in the output table header.
         if self._input_cat_type:
             with fits.open(out_path, mode="update") as hdu_list:
                 header = hdu_list[1].header
@@ -859,13 +842,8 @@ class MergeStarCatSetools(object):
             ra.append(np.asarray(data_j["XWIN_WORLD"]))
             dec.append(np.asarray(data_j["YWIN_WORLD"]))
 
-            # PRE-EXISTING BUG, LEFT ALONE DELIBERATELY: these four REBIND the
-            # accumulators initialised above rather than appending to them, so
-            # only the LAST input file's ellipticities reach the output while
-            # every other column carries the whole merge. Setools is not wired
-            # to any workflow path today; fixing it is its own change with its
-            # own verification, and doing it silently inside a memory rewrite
-            # would bury it.
+            # These assignments retain only this file's ellipticities;
+            # the other columns accumulate rows from every input.
             m11, m20, m02 = self.get_moments(data_j)
             eps1, eps2 = self.get_ellipticity(m11, m20, m02, "epsilon")
             chi1, chi2 = self.get_ellipticity(m11, m20, m02, "chi")

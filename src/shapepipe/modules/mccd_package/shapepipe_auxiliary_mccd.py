@@ -462,8 +462,7 @@ def shapepipe_write_output(
 ):
     r"""Write ShapePipe Output.
 
-    Save interpolated PSFs dictionary to FITS file. The saved files are
-    compatible with the previous ShapePipe's standard.
+    Save interpolated PSFs and optional shapes to a SExtractor FITS catalogue.
 
     Parameters
     ----------

@@ -27,10 +27,8 @@ def get_images_runner(
     """Define The Get Images Runner."""
     # Read config file section
 
-    # Copy/download method. getexpanded, not get: the workflow's ini sets
-    # RETRIEVE = $SP_RETRIEVE (a run-config key since d64f88ed), and plain get
-    # returns the literal "$SP_RETRIEVE", which then fails the check below.
-    # RETRIEVE_OPTIONS a few lines down already reads the same way.
+    # Expand environment variables such as RETRIEVE = $SP_RETRIEVE before
+    # validating the copy/download method.
     retrieve_method = config.getexpanded(module_config_sec, "RETRIEVE")
     retrieve_ok = ["vos", "symlink"]
     if retrieve_method not in retrieve_ok:
