@@ -76,8 +76,9 @@ each overlay file to its `cfis/` original confined to input naming.
 `psf_model: fake` is the simulations' true PSF: the exposure stage runs only
 SExtractor (for the background maps the vignets read), and `tile_vignets` runs
 `fake_interp_runner`, which writes the `galaxy_psf` product from `psf_dict`.
-With no PSF model there is nothing to persist per exposure, so `exp_persist` and
-`star_cat_merge` do not run and `clean_exposure` does not wait on them.
+With no PSF model there is nothing to persist per exposure, so `exp_persist`,
+`exp_maps` and the two merges after them do not run and `clean_exposure` does
+not wait on them.
 Simulations that contain stars can run `psfex` as the data do. `mccd` is
 refused until `persist_exp.py` and `merge_star_cat.py` read MCCD products.
 
@@ -246,7 +247,7 @@ workflow/
   bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
-    exposure.smk         per-exposure: get_images, split, psf, persist (no temp()); campaign star_cat_merge
+    exposure.smk         per-exposure: get_images, split, psf, persist, maps (no temp()); campaign star_cat_merge, exposure_maps
     tile.smk             per-tile: exp forest, merge_headers, detect (SExtractor, joined to the UNIONS catalogue on data), vignets, ngmix, merge, make_cat; campaign final_cat_merge
   scripts/
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
@@ -259,6 +260,8 @@ workflow/
     merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<run>.hdf5
     merge_final_cat.py   ALL tiles' final_cat -> final_cat_<run>.hdf5 (the final_cat_merge rule)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
+    exp_maps.py          ONE exposure's valid-PSF CCD footprints + flagged-pixel counts -> healsparse fragment (the exp_maps rule)
+    merge_exposure_maps.py  ALL fragments -> nexp_<run>.hsp, nflagged_<run>.hsp (the exposure_maps rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
 
@@ -309,6 +312,20 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   catalogue server, staged, or rasterized, which is why the old
   `star_catalogue` / `exp_star_cat` / `exp_mask` rules and their cache root are
   gone.
+- **Two HealSparse maps come out of the exposures.** At the mask ladder's
+  resolution (nside 131072), `nexp_<run>.hsp` counts per sky pixel the
+  exposures whose CCD with a valid PSF model covers it, and
+  `nflagged_<run>.hsp` counts the flagged CCD pixels (bad columns, saturated
+  pixels, bleed trails, cosmics) of those exposures that fall in it, ~74 CCD
+  pixels filling one sky pixel. The flag image is the one mask that otherwise
+  never leaves the pixel domain, so a footprint built from CCD corners could not
+  subtract it (#878). `exp_maps` writes one fragment per exposure beside its PSF
+  tar, from the split's `DATASEC` (the overscan border is neither coverage nor
+  defect) and the CCDs `exp_persist` packed a PSF for; `exposure_maps` sums the
+  campaign's fragments. Nothing in the workflow reads either map. `nexp` is
+  what randoms need to match an `N_EPOCH` cut; `nflagged` is a diagnostic of
+  where the detector is bad, not a cut (it does not count exposures lost to
+  the defect veto).
 - **External masks are wired, on the tile side only (data runs).** `inputs.masks`
   is a third input root beside tiles and exposures, set per machine in the
   `machines:` table, exported as `$SP_INPUT_MASKS` and
