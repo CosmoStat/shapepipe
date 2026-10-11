@@ -2,8 +2,8 @@
 
 Each ngmix chunk reads the tile catalogue for rows ``chunk_rows(n_obj,
 row_min, row_max)``. The per-object columns stay full length; the stamp
-columns (``VIGNET`` and the segmentation ``VIGNET``) are held for the chunk's
-rows only, indexed by tile-catalogue row exactly like the full column.
+columns (``VIGNET`` and ``SEG_VIGNET``) are held for the chunk's rows only,
+indexed by tile-catalogue row exactly like the full column.
 """
 
 import numpy as np
@@ -31,8 +31,8 @@ def _ldac(path, columns):
 
 
 @pytest.fixture
-def catalogues(tmp_path):
-    """A tile catalogue and its row-aligned segmentation catalogue."""
+def catalogue(tmp_path):
+    """A tile catalogue with VIGNET and SEG_VIGNET stamp columns."""
     rng = np.random.default_rng(3)
     number = rng.permutation(np.arange(1, 10 * N_OBJ, 10))[:N_OBJ]
     vign = rng.normal(size=(N_OBJ, STAMP, STAMP)).astype(np.float32)
@@ -48,14 +48,11 @@ def catalogues(tmp_path):
         fits.Column(
             name="VIGNET", format=f"{STAMP * STAMP}E", dim=dim, array=vign
         ),
-    ])
-    seg_cat = _ldac(tmp_path / "seg.fits", [
-        fits.Column(name="NUMBER", format="J", array=number),
         fits.Column(
-            name="VIGNET", format=f"{STAMP * STAMP}J", dim=dim, array=seg
+            name="SEG_VIGNET", format=f"{STAMP * STAMP}J", dim=dim, array=seg
         ),
     ])
-    return cat, seg_cat
+    return cat
 
 
 def _full_columns(path):
@@ -69,13 +66,11 @@ def _full_columns(path):
     "row_min, row_max",
     [(-1, -1), (1, 6), (7, 15), (16, N_OBJ), (20, -1), (N_OBJ + 1, N_OBJ)],
 )
-def test_chunk_holds_exactly_its_rows(catalogues, row_min, row_max):
-    cat, seg_cat = catalogues
-    full = _full_columns(cat)
-    full_seg = _full_columns(seg_cat)["VIGNET"]
+def test_chunk_holds_exactly_its_rows(catalogue, row_min, row_max):
+    full = _full_columns(catalogue)
     rows = chunk_rows(N_OBJ, row_min, row_max)
 
-    tile = Tile_cat(cat, seg_cat, row_min=row_min, row_max=row_max)
+    tile = Tile_cat(catalogue, row_min=row_min, row_max=row_max)
 
     assert tile.rows == rows
     # Per-object columns: full length, every row.
@@ -84,7 +79,8 @@ def test_chunk_holds_exactly_its_rows(catalogues, row_min, row_max):
     np.testing.assert_array_equal(tile.dec, full["YWIN_WORLD"])
     np.testing.assert_array_equal(tile.flux, full["FLUX_AUTO"])
 
-    for stamps, column in ((tile.vign, full["VIGNET"]), (tile.seg, full_seg)):
+    for stamps, column in ((tile.vign, full["VIGNET"]),
+                           (tile.seg, full["SEG_VIGNET"])):
         # Same stamps, bit for bit, at the same tile-catalogue rows.
         for i_tile in rows:
             assert stamps[i_tile].dtype == column[i_tile].dtype
@@ -98,15 +94,16 @@ def test_chunk_holds_exactly_its_rows(catalogues, row_min, row_max):
                 stamps[i_tile]
 
 
-def test_stamps_outlive_the_catalogue_file(catalogues, tmp_path):
+def test_stamps_outlive_the_catalogue_file(catalogue):
     """The held stamps are copies, not views into the memory-mapped file."""
-    cat, seg_cat = catalogues
-    expected = _full_columns(cat)["VIGNET"][4:9].tobytes()
-    tile = Tile_cat(cat, seg_cat, row_min=5, row_max=9)
+    full = _full_columns(catalogue)
+    tile = Tile_cat(catalogue, row_min=5, row_max=9)
     # Overwrite the file in place with different stamps.
-    with fits.open(cat, mode="update") as hdul:
+    with fits.open(catalogue, mode="update") as hdul:
         hdul[2].data["VIGNET"][:] = 0
-    assert tile.vign._stamps.tobytes() == expected
+        hdul[2].data["SEG_VIGNET"][:] = 0
+    assert tile.vign._stamps.tobytes() == full["VIGNET"][4:9].tobytes()
+    assert tile.seg._stamps.tobytes() == full["SEG_VIGNET"][4:9].tobytes()
 
 
 def test_chunk_stamps_index_by_tile_row():
@@ -117,17 +114,3 @@ def test_chunk_stamps_index_by_tile_row():
     for i_tile in (2, 6, -1):
         with pytest.raises(IndexError):
             stamps[i_tile]
-
-
-def test_misaligned_seg_catalogue_still_raises(catalogues, tmp_path):
-    cat, _ = catalogues
-    short = _ldac(tmp_path / "short_seg.fits", [
-        fits.Column(name="NUMBER", format="J", array=np.arange(1, 4)),
-        fits.Column(
-            name="VIGNET", format=f"{STAMP * STAMP}J",
-            dim=f"({STAMP}, {STAMP})",
-            array=np.zeros((3, STAMP, STAMP), dtype=np.int32),
-        ),
-    ])
-    with pytest.raises(ValueError, match="row-aligned"):
-        Tile_cat(cat, short, row_min=1, row_max=5)

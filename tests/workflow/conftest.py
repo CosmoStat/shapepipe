@@ -22,7 +22,7 @@ def campaign(request, tmp_path):
 @pytest.fixture
 def resolve_dag(monkeypatch):
     """Expose the resolver so tests can also assert parse-time failures."""
-    return lambda campaign: resolve(campaign, monkeypatch)
+    return lambda campaign, **kwargs: resolve(campaign, monkeypatch, **kwargs)
 
 
 @pytest.fixture
