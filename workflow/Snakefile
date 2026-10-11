@@ -1292,8 +1292,21 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
         # Also set via apptainer-args in the profile; kept here so a hand-run of
         # this same line outside snakemake behaves identically.
         f"export {_THREAD_CAPS}",
-        'mkdir -p "$SP_RUN/output" "$SP_RUN/manifests" "$SP_RUN/logs"',
     ]
+    if level == "exp":
+        # Under `sp run --in-allocation`, SP_EXP_STORE names a node-local root
+        # and the exposure's output/ is a link into it (sp's header says why).
+        # The link is made once, by whichever stage runs first; a dangling one
+        # is swept by sp before the run, with the manifests that attested it.
+        # An output/ already on /scratch (a store begun outside an allocation)
+        # stays where it is.
+        lines.append(
+            'if [ -n "${SP_EXP_STORE:-}" ] && [ ! -e "$SP_RUN/output" ] '
+            '&& [ ! -L "$SP_RUN/output" ]; then '
+            f'mkdir -p "$SP_EXP_STORE/{unit}" && '
+            f'ln -s "$SP_EXP_STORE/{unit}" "$SP_RUN/output"; fi')
+    # Unchanged text for the tile side: unit_pre is a params rerun trigger.
+    lines.append('mkdir -p "$SP_RUN/output" "$SP_RUN/manifests" "$SP_RUN/logs"')
     if PSF_DICT:
         lines.append(f"export PSF_DICT='{PSF_DICT}'")
     if INPUT_TYPE == "data":
