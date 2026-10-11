@@ -557,18 +557,21 @@ if TILE_DETECTION == "unions_catalogue":
 
 
 def detect_env(tile):
-    """tile_detect's prologue exports: the catalogue to join, if any, and
-    SP_SEG_VIGNET.
+    """tile_detect's prologue exports: the catalogue to join, if any,
+    SP_SEG_VIGNET, and for image simulations the epoch-membership CCD bounds.
 
     SP_MATCH_CATALOGUE is empty under tile_detection: sextractor (image
     simulations), so that no value left exported in the submitting shell
-    reaches the job.
+    reaches the job. SP_CCD_SIZE is exported only for image simulations (their
+    trimmed CCDs); data runs take config_tile_Sx.ini's default.
     """
-    match = ""
+    env = {"SP_MATCH_CATALOGUE": "", **blend_env("tile_detect")}
     if TILE_DETECTION == "unions_catalogue":
         gic = f"{tile_dir(tile)}/output/run_sp_tile_Gic/get_images_runner/output"
-        match = f"{gic}/CFIS_cat{unit_num(tile)}.cat"
-    return {"SP_MATCH_CATALOGUE": match, **blend_env("tile_detect")}
+        env["SP_MATCH_CATALOGUE"] = f"{gic}/CFIS_cat{unit_num(tile)}.cat"
+    elif INPUT_TYPE == "image_sims":
+        env["SP_CCD_SIZE"] = config["ccd_size"]
+    return env
 
 
 # tile_detect's extra memory for SEG_VIGNET: add_seg_vignet reads the 400 MB

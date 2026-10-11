@@ -735,9 +735,15 @@ analyses:
           WCS inversion failure skips that CCD, lowering N_EPOCH, which caps
           how many exposures enter each galaxy's multi-epoch fit. This geometric
           count remains internal; the final catalogue's N_EPOCH counts only
-          epochs with a validated PSF.
+          epochs with a validated PSF. Image
+          simulations' CCDs are trimmed to 2048x4612 with no overscan, so
+          their bounds are 0 < x < 2047, 0 < y < 4611 (input_types.image_sims
+          ccd_size, exported as SP_CCD_SIZE): under the data bounds an object
+          at 2048 < x < 2080 gains an epoch on pixels that do not exist, and
+          one at x < 33 loses a real one.
           Values:
-          SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
+          SEXTRACTOR_RUNNER.CCD_SIZE = ${SP_CCD_SIZE:-33,2080,1,4612};
+          input_types.image_sims.ccd_size = 0,2047,0,4611;
           SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True.
         default: trimmed_bounds_33_2080
         options:
