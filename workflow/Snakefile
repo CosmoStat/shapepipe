@@ -512,10 +512,13 @@ def path_hash(path):
                 f"that needs the file will say so when it runs.")
         return "missing"
 
-SCRIPT_HASH = script_hash("completeness.py")
+# Epoch-count parsing/aggregation is part of the completeness contract too.
+SCRIPT_HASH = ":".join((script_hash("completeness.py"),
+                        script_hash("epoch_cuts.py")))
 FOREST_HASH = script_hash("build_forest.py")
 CLEAN_HASH  = script_hash("clean_exposure.py")
-CLEAN_TILE_HASH = script_hash("clean_tile.py")
+CLEAN_TILE_HASH = ":".join((script_hash("clean_tile.py"),
+                            script_hash("epoch_cuts.py")))
 PERSIST_HASH = script_hash("persist_exp.py")
 EXP_MAPS_HASH = script_hash("exp_maps.py")
 MERGE_MAPS_HASH = script_hash("merge_exposure_maps.py")
