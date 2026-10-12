@@ -4,9 +4,10 @@ Drives ``SaveCatalogue._save_ngmix_data`` (the make_cat writer) under
 hypothesis to pin three invariants of the renamed grammar
 ``NGMIX[m]_<COMPONENT>[_ERR][_<OBJECT>]_<SHEAR>`` (shapepipe#749, #761): the
 galaxy is the implicit default object and carries NO ``OBJECT`` token
-(``NGMIX_G1_NOSHEAR``, never ``NGMIX_G1_GAL_NOSHEAR``), plus the four
+(``NGMIX_G1_NOSHEAR``, never ``NGMIX_G1_GAL_NOSHEAR``), plus the
 OBJECT/SHEAR-less metadata columns (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
-``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG``), where the ORIGINAL image
+``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG`` and the defect
+diagnostics), where the ORIGINAL image
 PSF (``PSF_ORIG``) and the
 metacal RECONVOLUTION kernel (``PSF_RECONV``) are independent fits of
 *different* PSFs:
@@ -63,11 +64,14 @@ SHEAR_EXTS = ["1M", "1P", "2M", "2P", "NOSHEAR"]
 # shear-type extension. Integer-typed keys carry FITS format "K", the rest
 # "D"; everything else mirrors test_make_cat._ngmix_row.
 INT_KEYS = {
-    "id", "n_epoch_model", "mcal_types_fail", "neighbour_flag", "nfev_fit",
-    "flags", "mcal_flags",
+    "id", "n_epoch_model", "n_epoch_failed", "mcal_types_fail",
+    "neighbour_flag",
+    "n_epoch_interp", "nfev_fit", "flags", "mcal_flags",
 }
 NGMIX_KEYS = [
-    "id", "n_epoch_model", "mcal_types_fail", "neighbour_flag", "nfev_fit",
+    "id", "n_epoch_model", "n_epoch_failed", "mcal_types_fail",
+    "neighbour_flag",
+    "n_epoch_interp", "min_dist_interp", "min_dist_noisefill", "nfev_fit",
     "g1", "g1_err", "g2", "g2_err",
     "T", "T_err",
     "flux", "flux_err", "s2n", "mag", "mag_err",
@@ -108,8 +112,9 @@ def _base_row(obj_id):
     """One object's per-key values; PSF keys overwritten by the caller."""
     return {
         "id": obj_id,
-        "n_epoch_model": 3, "mcal_types_fail": 0, "neighbour_flag": 1,
-        "nfev_fit": 7,
+        "n_epoch_model": 3, "n_epoch_failed": 1, "mcal_types_fail": 0, "neighbour_flag": 1,
+        "n_epoch_interp": 2, "min_dist_interp": 7.5,
+        "min_dist_noisefill": 14.25, "nfev_fit": 7,
         "g1": 0.10, "g1_err": 0.011, "g2": -0.20, "g2_err": 0.022,
         "T": 0.30, "T_err": 0.033,
         "flux": 100.0, "flux_err": 1.0, "s2n": 55.0,
@@ -178,7 +183,8 @@ _OBJECT = "PSF_ORIG|PSF_RECONV"
 _SHEAR = "NOSHEAR|1P|1M|2P|2M"
 GRAMMAR_RE = re.compile(
     rf"^NGMIXm?_(?:{_COMPONENT})(?:_ERR)?(?:_(?:{_OBJECT}))?_(?:{_SHEAR})$"
-    rf"|^NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH|NEIGHBOUR_FLAG)$"
+    rf"|^NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH|NEIGHBOUR_FLAG"
+    rf"|N_EPOCH_FAILED|N_EPOCH_INTERP|MIN_DIST_INTERP|MIN_DIST_NOISEFILL)$"
 )
 
 # The shipped final-catalogue param files, two levels up from tests/module/.
@@ -328,7 +334,7 @@ def test_emitted_column_names_match_grammar(obj_ids, tmp_path_factory):
     """Every column _save_ngmix_data emits matches the grammar regex.
 
     The grammar is ``NGMIX[m]_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>`` plus the
-    four metadata columns. The regex is anchored, so a legacy token (``_PSFo``,
+    metadata columns. The regex is anchored, so a legacy token (``_PSFo``,
     ``_Tpsf``, ``NGMIX_ELL_*``) or a malformed name would fail to match. Run
     over hypothesis-varied object sets to confirm the emitted name set is
     input-independent and always well-formed.
@@ -417,7 +423,8 @@ FROZEN_GRAMMAR_RE = re.compile(
     # ngmix: galaxy (no object token) or explicit PSF_ORIG/PSF_RECONV.
     r"NGMIXm?_(?:G1|G2|T|SNR|FLUX|MAG|FLAGS)(?:_ERR)?"
     r"(?:_(?:PSF_ORIG|PSF_RECONV))?_(?:NOSHEAR|1P|1M|2P|2M)"
-    r"|NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH|NEIGHBOUR_FLAG)"
+    r"|NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH|NEIGHBOUR_FLAG"
+    r"|N_EPOCH_FAILED|N_EPOCH_INTERP|MIN_DIST_INTERP|MIN_DIST_NOISEFILL)"
     # HSM: g-type, explicit PSF/STAR object, singular FLAG; the multi-epoch
     # sink in make_cat._save_psf_data appends a bare epoch index.
     r"|HSM_(?:G1|G2|T|M4_1|M4_2|RHO4)_(?:PSF|STAR)(?:_\d+)?"
