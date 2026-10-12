@@ -69,7 +69,7 @@ inputs:
 outputs:
   - id: final_cat
     type: data
-    format: fits
+    format: hdf5
     description: >-
       Per-tile shear catalogue family, the terminal science product
       (make_cat_runner).
@@ -228,10 +228,64 @@ analyses:
         description: >-
           Exposure detection catalogues carrying IMAFLAGS_ISO (and MASK_EXT when
           maps are configured), the flag stamps ngmix reads, and the final
-          catalogue's optional MASK_<band> columns.
+          catalogue's MASK_<flag value>_<name> columns.
         inputs: [exposure_flags, sky_masks]
         decisions: [pixel_mask_source, psf_star_mask_veto, sky_mask_application]
+      - id: exposure_maps
+        type: data
+        format: hsp
+        description: >-
+          nexp_<run>.hsp and nflagged_<run>.hsp at the mask ladder's
+          resolution: per sky pixel, the number of exposures whose CCD with a
+          valid PSF model covers it, and the flagged CCD pixels of those
+          exposures that fall in it. Products; nothing in the workflow reads
+          them.
+        inputs: [exposure_flags]
+        decisions: [nexp_map_valid_psf_ccds, defect_map_from_flags]
     decisions:
+      nexp_map_valid_psf_ccds:
+        label: The exposure count covers only CCDs with a valid PSF model
+        rationale: >-
+          exp_maps takes the CCDs whose validation_psf catalogue exp_persist
+          packed (psfex_interp writes it only when the fit succeeds) and marks
+          the sky pixels whose centres lie inside each CCD's corner polygon.
+          The CCDs of one exposure do not overlap, so summing fragments counts
+          exposures that can contribute a PSF-corrected epoch.
+        default: valid_psf_ccds
+        options:
+          valid_psf_ccds:
+            label: Count exposures whose CCD has a valid PSF model
+          all_ccds:
+            label: Count every exposure whose CCD covers the pixel
+            excluded: true
+            excluded_reason: >-
+              Counts epochs that cannot contribute a shape, overstating depth
+              exactly where the PSF fit failed.
+      defect_map_from_flags:
+        label: Instrument flags counted per sky pixel, inside the imaging area
+        rationale: >-
+          The per-CCD flag images otherwise never leave the pixel domain, so a
+          footprint built from CCD corners would include defective pixels.
+          exp_maps bins the centre of every nonzero-flag pixel inside DATASEC
+          into the sky pixel it falls in, and nflagged sums the counts over
+          exposures (~74 MegaCam pixels per sky pixel). The overscan border
+          (flag 3, 3.6% of a split) lies outside DATASEC and outside the
+          coverage polygon. On exposures 2603236/2603237 the remaining flags
+          are 0.28% of the imaging pixels; any-touch rasterization of them
+          masks 2.2% of the sky, because single-pixel columns and cosmics
+          widen to 1.6", so the map keeps the count and leaves the threshold
+          to the consumer (nflagged > 0 is the any-touch mask).
+        default: count_flagged_pixels
+        options:
+          count_flagged_pixels:
+            label: Count flagged CCD pixels per sky pixel, summed over exposures
+          any_touch_boolean:
+            label: Boolean mask of every sky pixel a flagged pixel touches
+            excluded: true
+            excluded_reason: >-
+              Widens one-pixel defects to the 1.6" sky pixel and loses how
+              much of each sky pixel is flagged; recoverable from the count as
+              nflagged > 0.
       pixel_mask_source:
         label: >-
           Of the external masks, only the instrument flag image reaches pixels
@@ -299,21 +353,27 @@ analyses:
               Halos flag objects for the final catalogue; a star inside another
               star's halo is not thereby a bad PSF sample.
       sky_mask_application:
-        label: Object-level sky masking deferred downstream
+        label: Sky masks written as catalogue columns; any cut is downstream
         rationale: >-
-          The final catalogue ships every detected object. When MASK_EXT_PATHS
-          lists band:path pairs, make_cat queries each healsparse map at the
+          The final catalogue ships every detected object. MASK_EXT_PATHS lists
+          label:path pairs, and make_cat queries each healsparse map at the
           object's windowed position and writes the map value verbatim into a
-          MASK_<band> column; an object off coverage gets the map's sentinel
+          MASK_<label> column; an object off coverage gets the map's sentinel
           (False for boolean maps, reading as unmasked; typically -1 for
-          integer maps). The committed config sets no MASK_EXT_PATHS, so no
-          mask column is written and all mask cuts happen downstream.
-        default: deferred_downstream
+          integer maps). The committed config names the UNIONS band-combined
+          ugriz mask ladder, one boolean map per bit (nside 131072, True =
+          masked), labelled <flag value>_<name>: eleven columns,
+          MASK_1_Faint_star_halos to MASK_2048_z2, matched line for line in
+          final_cat.param. The flag value is the one in the map's file name;
+          the names are the ones sp_validation uses for the same bits.
+          ShapePipe makes no mask choice and cuts on none of them; which
+          columns to cut on is decided downstream, in sp_validation.
+        default: catalogue_columns
         options:
           deferred_downstream:
             label: No mask columns; all objects shipped
           catalogue_columns:
-            label: Per-band MASK_<band> columns from MASK_EXT_PATHS, no cut
+            label: Per-bit MASK_<label> columns from MASK_EXT_PATHS, no cut
           pipeline_cut:
             label: Drop masked objects inside the pipeline
             excluded: true
@@ -673,7 +733,9 @@ analyses:
           admits its upper endpoint, column 2080. [HARDCODED] The comparisons
           are strict in make_post_process; CCD_SIZE sets only the bounds. A
           WCS inversion failure skips that CCD, lowering N_EPOCH, which caps
-          how many exposures enter each galaxy's multi-epoch fit.
+          how many exposures enter each galaxy's multi-epoch fit. This geometric
+          count remains internal; the final catalogue's N_EPOCH counts only
+          epochs with a validated PSF.
           Values:
           SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
           SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True.
@@ -1113,6 +1175,12 @@ analyses:
           22-star floor to that accepted count. In the science path the CCD's
           epoch is dropped for every object on it, and an object left with no
           epoch has no shape.
+          The final catalogue's N_EPOCH counts the epochs with an
+          interpolated PSF (for psfex, those passing this gate; for mccd,
+          those with a model). Only this count is written as N_EPOCH: one column
+          avoids downstream cuts on the geometric count by mistake.
+          PSF-gate rejections are studied per CCD in validation output and
+          the exposure maps (#887), rather than per object.
           The pipeline has no minimum-epoch floor: NGMIX_N_EPOCH records what
           survived and epoch-count cuts happen downstream. Guinot+22 discards
           the CCD from PSF estimation rather than gating at interpolation.
@@ -2160,7 +2228,7 @@ analyses:
     outputs:
       - id: tile_final_cat
         type: data
-        format: fits
+        format: hdf5
         description: The assembled per-tile science catalogue (final_cat family).
         inputs: [ngmix_chunks]
         decisions:

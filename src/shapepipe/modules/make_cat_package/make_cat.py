@@ -9,6 +9,7 @@ This module contains a class to create a shear catalogue.
 import os
 import re
 
+import h5py
 import numpy as np
 from astropy import coordinates as coords
 from astropy import units as u
@@ -42,109 +43,83 @@ def get_output_name(output_dir, file_number_string):
         output path name
 
     """
-    return f"{output_dir}/final_cat{file_number_string}.fits"
+    return f"{output_dir}/final_cat{file_number_string}.hdf5"
 
 
-def prepare_final_cat_file(output_path, file_number_string):
-    """Prepare Final Catalogue File.
+def write_final_cat(output_path, columns):
+    """Write Final Catalogue.
 
-    Create a ``FITSCatalogue`` object for the current file.
+    Write the assembled catalogue to HDF5 in one pass: one dataset per
+    column, in ``columns`` order, each lzf-compressed. A vector column is a
+    2-D dataset with one row per object.
 
     Parameters
     ----------
     output_path : str
-        Output file path
-    file_number_string : str
-        String with current file numbering
-
-    Returns
-    -------
-    file_io.FITSCatalogue
-        Output FITS file
+        Output file path; an existing file is replaced
+    columns : dict
+        Column name to array, every array with one entry per object
 
     """
+    with h5py.File(output_path, "w", track_order=True) as cat:
+        for name, values in columns.items():
+            values = np.asarray(values)
+            cat.create_dataset(
+                name,
+                data=values.astype(values.dtype.newbyteorder("=")),
+                compression="lzf",
+            )
 
-    output_name = get_output_name(output_path, file_number_string)
 
-    return file_io.FITSCatalogue(
-        output_name,
-        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-    )
+def read_sextractor_data(sexcat_path, remove_vignet=True):
+    """Read SExtractor Data.
 
+    Read the SExtractor catalogue as the final catalogue's first columns,
+    adding the tile as ``TILE_ID`` (float ``RRR.DDD``) and the survey-wide
+    object ID ``TILE_UNIQUE_ID``
+    (:func:`shapepipe.utilities.cfis.get_tile_unique_id` of the tile and
+    ``NUMBER``). The tile is read from the catalogue's file name, e.g.
+    ``sexcat-301-279.fits``.
 
-def remove_field_name(arr, name):
-    """Remove Field Name.
-
-    Remove a column of a structured array from the given name.
+    The SExtractor catalogue's ``N_EPOCH`` counts the exposure CCDs whose
+    footprint holds the object, before any PSF model exists; it is used
+    internally for slot sizing and overwritten before output. The final catalogue's ``N_EPOCH`` counts only the
+    epochs with a validated PSF and is written by
+    :meth:`SaveCatalogue.process` in ``psf`` mode.
 
     Parameters
     ----------
-    arr : numpy.ndarray
-        A numpy strucured array
-    name : str
-        Name of the field to remove
-
-    Returns
-    -------
-    numpy.ndarray
-        The structured array with the field removed
-
-    """
-    names = list(arr.dtype.names)
-    if name in names:
-        names.remove(name)
-    arr2 = arr[names]
-    return arr2
-
-
-def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
-    """Save SExtractor Data.
-
-    Save the SExtractor catalogue into the final one, adding the tile as
-    ``TILE_ID`` (float ``RRR.DDD``) and the survey-wide object ID
-    ``TILE_UNIQUE_ID`` (:func:`shapepipe.utilities.cfis.get_tile_unique_id`
-    of the tile and ``NUMBER``). The tile is read from the catalogue's file
-    name, e.g. ``sexcat-301-279.fits``.
-
-    Parameters
-    ----------
-    final_cat_file : file_io.FITSCatalogue
-        Final catalogue
     sexcat_path : str
-        Path to SExtractor catalogue to save
+        Path to SExtractor catalogue
     remove_vignet : bool
-        If ``True`` will not save the ``VIGNET`` field into the final catalogue
+        If ``True`` will not keep the ``VIGNET`` field
 
     Returns
     -------
-    int
-        Number of objects saved
+    dict
+        Column name to array, in the SExtractor catalogue's column order
 
     @sc [decision:catalogue_assembly.tile_overlap_handling]
     """
     sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
     sexcat_file.open()
     data = np.copy(sexcat_file.get_data())
-    if remove_vignet:
-        data = remove_field_name(data, "VIGNET")
-    cat_size = len(data)
+    sexcat_file.close()
+
+    columns = {
+        name: data[name]
+        for name in data.dtype.names
+        if not (remove_vignet and name == "VIGNET")
+    }
 
     tile_name = os.path.basename(sexcat_path)
     nix, niy = cfis.get_tile_number(tile_name)
-    tile_id_array = np.full(cat_size, float(f"{nix}.{niy}"))
-    unique_id = cfis.get_tile_unique_id(
+    columns["TILE_ID"] = np.full(len(data), float(f"{nix}.{niy}"))
+    columns["TILE_UNIQUE_ID"] = cfis.get_tile_unique_id(
         cfis.get_tile_id(tile_name), data["NUMBER"]
     )
 
-    final_cat_file.save_as_fits(data, ext_name="RESULTS")
-    final_cat_file.open()
-    final_cat_file.add_cols(
-        {"TILE_ID": tile_id_array, "TILE_UNIQUE_ID": unique_id}
-    )
-
-    sexcat_file.close()
-
-    return cat_size
+    return columns
 
 
 def parse_mask_ext_paths(paths_str):
@@ -172,17 +147,17 @@ def parse_mask_ext_paths(paths_str):
     return band_paths
 
 
-def save_mask_ext_data(final_cat_file, band_paths, w_log):
+def save_mask_ext_data(final_cat, band_paths, w_log):
     """Save External Mask Data.
 
     Query per-band external healsparse masks at each object's world position
     and write one ``MASK_<BAND>`` column per band into the final catalogue.
     Object positions are read from the SExtractor windowed world coordinates
-    (``XWIN_WORLD`` = RA, ``YWIN_WORLD`` = Dec, both in degrees) carried in the
-    ``RESULTS`` extension. Objects falling outside a map's coverage receive
-    that map's sentinel value (``healsparse.HealSparseMap.get_values_pos``
-    returns the map's sentinel — ``-1`` for integer maps — verbatim), which is
-    the documented off-map flag.
+    (``XWIN_WORLD`` = RA, ``YWIN_WORLD`` = Dec, both in degrees). Objects
+    falling outside a map's coverage receive that map's sentinel value
+    (``healsparse.HealSparseMap.get_values_pos`` returns the map's sentinel —
+    ``-1`` for integer maps — verbatim), which is the documented off-map
+    flag.
 
     The lookup itself is ``shapepipe.utilities.mask_query.query_map``,
     shared with the ``mask_query`` module: one primitive, two consumers.
@@ -191,38 +166,41 @@ def save_mask_ext_data(final_cat_file, band_paths, w_log):
     Query ``XWIN_WORLD`` and ``YWIN_WORLD`` in catalogue order and pass the
     ``query_map`` result to ``MASK_<BAND>`` unchanged.
 
+    @sc [decision:masking.sky_mask_application,label:convention] mask-ext-ladder-columns
+    The labels in ``MASK_EXT_PATHS`` are ``<flag value>_<name>`` for each map
+    of the UNIONS mask ladder (``1_Faint_star_halos`` ... ``2048_z2``), and
+    this function writes ``MASK_<label>`` verbatim. The eleven ``MASK_*``
+    lines in ``workflow/config/cfis/final_cat.param`` must match those labels
+    line for line: the post-processing merge fails every tile on a name this
+    function did not write. Nothing here cuts on any column.
+
     Parameters
     ----------
-    final_cat_file : file_io.FITSCatalogue
-        Final catalogue
+    final_cat : dict
+        Final catalogue columns, updated in place
     band_paths : dict
         Mapping from band name to healsparse map path
     w_log : logging.Logger
         Logging instance
 
     """
-    final_cat_file.open()
-    ra = np.copy(final_cat_file.get_data()["XWIN_WORLD"])
-    dec = np.copy(final_cat_file.get_data()["YWIN_WORLD"])
+    ra = final_cat["XWIN_WORLD"]
+    dec = final_cat["YWIN_WORLD"]
 
-    mask_cols = {}
     for band, path in band_paths.items():
         w_log.info(f"Query external mask for band {band}: {path}")
-        mask_cols[f"MASK_{band}"] = mask_query.query_map(path, ra, dec)
-    final_cat_file.add_cols(mask_cols)
-
-    final_cat_file.close()
+        final_cat[f"MASK_{band}"] = mask_query.query_map(path, ra, dec)
 
 
 class SaveCatalogue:
     """Save Catalogue.
 
-    Class to save catalogue.
+    Add shape-measurement and PSF columns to the final catalogue.
 
     Parameters
     ----------
-    final_cat_file : str
-        Final catalogue file name
+    final_cat : dict
+        Final catalogue columns, updated in place; must hold ``NUMBER``
     cat_size_target : int
         target catalogue size
     w_log : logging.Logger
@@ -230,9 +208,9 @@ class SaveCatalogue:
 
     """
 
-    def __init__(self, final_cat_file, cat_size_target, w_log):
+    def __init__(self, final_cat, cat_size_target, w_log):
 
-        self._final_cat_file = final_cat_file
+        self._final_cat = final_cat
         self._cat_size_target = cat_size_target
         self._w_log = w_log
 
@@ -242,6 +220,7 @@ class SaveCatalogue:
         cat_path=None,
         moments=False,
         n_epoch_slots=None,
+        epoch_slots=True,
     ):
         """Process Catalogue.
 
@@ -255,7 +234,10 @@ class SaveCatalogue:
             Option to run ``ngmix`` mode with moments
         n_epoch_slots : int, optional
             Number of per-epoch slots in ``psf`` mode; if ``None``, the
-            tile's ``max(N_EPOCH) + 1``
+            sexcat's geometric ``max(N_EPOCH) + 1``
+        epoch_slots : bool, optional
+            In ``psf`` mode, write the per-epoch column families as well as
+            ``N_EPOCH``; default ``True``
 
         Returns
         --------
@@ -264,15 +246,13 @@ class SaveCatalogue:
 
         """
         self._output_dict = {}
-
-        self._final_cat_file.open()
-        self._obj_id = np.copy(self._final_cat_file.get_data()["NUMBER"])
+        self._obj_id = self._final_cat["NUMBER"]
 
         err_msg = None
         if mode == "ngmix":
             err_msg = self._save_ngmix_data(cat_path, moments)
         elif mode == "psf":
-            self._save_psf_data(cat_path, n_epoch_slots)
+            self._save_psf_data(cat_path, n_epoch_slots, epoch_slots)
         else:
             err_msg = (
                 f"Invalid process mode ({mode}) for "
@@ -281,9 +261,7 @@ class SaveCatalogue:
             )
 
         if err_msg is None:
-            self._final_cat_file.add_cols(self._output_dict)
-
-        self._final_cat_file.close()
+            self._final_cat.update(self._output_dict)
 
         return err_msg
 
@@ -543,9 +521,9 @@ class SaveCatalogue:
 
                     # Original image PSF (average_original_psf) and metacal
                     # reconvolution kernel (average_multiepoch_psf). Both PSF
-                    # families share ONE write template, so the FITS column
-                    # name (``{obj}``) and the res-key it reads (``{family}``)
-                    # are generated from the same pair and cannot drift apart.
+                    # families share ONE write template, so the column name
+                    # (``{obj}``) and the res-key it reads (``{family}``) are
+                    # generated from the same pair and cannot drift apart.
                     for family, obj in (
                         ("orig", "PSF_ORIG"),
                         ("reconv", "PSF_RECONV"),
@@ -604,14 +582,24 @@ class SaveCatalogue:
 
         return None
 
-    def _save_psf_data(self, galaxy_psf_path, n_epoch_slots=None):
+    def _save_psf_data(
+        self, galaxy_psf_path, n_epoch_slots=None, epoch_slots=True
+    ):
         """Save PSF data.
 
-        Save the PSF catalogue into the final one, as per-epoch column
+        Save the PSF catalogue into the final one: the per-object epoch
+        count ``N_EPOCH`` and, if ``epoch_slots``, the per-epoch column
         families ``HSM_*_PSF_n`` (``psf_shape_cols``), ``EXP_ID_n`` and
-        ``CCD_n``. Slot ``n`` of every
-        family refers to the same epoch; slots no epoch fills keep the
-        family's sentinel.
+        ``CCD_n``. Slot ``n`` of every family refers to the same epoch;
+        slots no epoch fills keep the family's sentinel.
+
+        ``N_EPOCH`` counts the object's entries in the PSF catalogue, i.e.
+        the epochs whose CCD passed PSF-model validation and so have an
+        interpolated PSF; ngmix fits no other epoch. It is at most
+        the sexcat's geometric ``N_EPOCH``, the count of CCDs whose footprint holds
+        the object, and 0 for an object the PSF catalogue marks
+        ``"empty"``. An epoch whose PSF shape fit failed
+        (``HSM_FLAG_PSF != 0``) still counts: its PSF exists.
 
         @sc [label:schema] psf-epoch-slot-columns
         The per-epoch families are ``psf_shape_cols`` plus ``EXP_ID``/``CCD``,
@@ -625,7 +613,10 @@ class SaveCatalogue:
             Path to the PSF catalogue to save
         n_epoch_slots : int, optional
             Number of slots written per family; if ``None``, the tile's
-            ``max(N_EPOCH) + 1``
+            geometric ``max(N_EPOCH) + 1`` from the sexcat, which bounds every object's PSF
+            epoch count
+        epoch_slots : bool, optional
+            Write the per-epoch column families; default ``True``
 
         Raises
         ------
@@ -635,12 +626,15 @@ class SaveCatalogue:
         """
         galaxy_psf_cat = SqliteDict(galaxy_psf_path)
 
-        n_epoch = self._final_cat_file.get_data()["N_EPOCH"]
-        if n_epoch_slots is None:
-            n_slots = np.max(n_epoch) + 1
+        n_obj = len(self._obj_id)
+        n_epoch = np.zeros(n_obj, dtype="int32")
+
+        if not epoch_slots:
+            n_slots = 0
+        elif n_epoch_slots is None:
+            n_slots = np.max(self._final_cat["N_EPOCH"]) + 1
         else:
             n_slots = n_epoch_slots
-        n_obj = len(self._obj_id)
 
         # Per-epoch PSF shape columns copied from the producer's SHAPES dict:
         # (column, empty-slot fill, dtype). Fills are out of physical range
@@ -668,15 +662,27 @@ class SaveCatalogue:
 
         for idx, id_tmp in enumerate(self._obj_id):
 
-            obj_epochs = galaxy_psf_cat[str(id_tmp)]
+            try:
+                obj_epochs = galaxy_psf_cat[str(id_tmp)]
+            except KeyError:
+                galaxy_psf_cat.close()
+                raise KeyError(
+                    f"Object {id_tmp} is missing from {galaxy_psf_path}; "
+                    "the galaxy PSF catalogue and the SExtractor catalogue "
+                    "do not match"
+                ) from None
             if obj_epochs == "empty":
+                continue
+
+            n_epoch[idx] = len(obj_epochs)
+            if not epoch_slots:
                 continue
 
             if len(obj_epochs) > n_slots:
                 galaxy_psf_cat.close()
                 raise ValueError(
-                    f"Object {id_tmp} has {len(obj_epochs)} PSF epochs"
-                    + f" (N_EPOCH={n_epoch[idx]}), more than the {n_slots}"
+                    f"Object {id_tmp} has N_EPOCH={n_epoch[idx]} PSF epochs,"
+                    + f" more than the {n_slots}"
                     + f" per-epoch slots (N_EPOCH_SLOTS={n_epoch_slots})"
                 )
 
@@ -704,3 +710,5 @@ class SaveCatalogue:
                     )
 
         galaxy_psf_cat.close()
+
+        self._output_dict = {"N_EPOCH": n_epoch, **self._output_dict}

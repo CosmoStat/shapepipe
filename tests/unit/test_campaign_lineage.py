@@ -39,6 +39,9 @@ PRODUCT_HELPERS = {
     "prod_exp_dir": (("2605805",), False),
     "prod_exp_manifest": (("2605805", "exp_persist"), False),
     "prod_exp_tar": (("2605805",), False),
+    "prod_exp_maps": (("2605805",), False),
+    "nexp_map": ((), True),
+    "nflagged_map": ((), True),
 }
 PRODUCT_TEMPLATES = ("PROD_TILE_DIR", "PROD_EXP_DIR")
 

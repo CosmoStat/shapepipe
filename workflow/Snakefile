@@ -91,6 +91,15 @@ if _unresolved:
         f"$variable for machine={MACHINE!r}, "
         f"input_type={INPUT_TYPE!r}: {', '.join(_unresolved)}. Set them in "
         f"your run config (SP_RUN_CONFIG).")
+# The external masks are a data-only input: config_tile_Mc.ini's
+# MASK_EXT_PATHS reads $SP_INPUT_MASKS, and the sims Mc.ini carries no mask
+# block. Checked here rather than in run_config.REQUIRED because it depends on
+# input_type.
+if INPUT_TYPE == "data" and not config.get("inputs", {}).get("masks"):
+    raise WorkflowError(
+        f"inputs.masks is unset for machine={MACHINE!r}, input_type='data': "
+        "the tile chain queries the UNIONS sky-fixed masks (MASK_EXT_PATHS in "
+        "config/cfis/config_tile_Mc.ini). Set it in the run config.")
 
 # The image every job runs in: this user's sandbox, else their cached SIF,
 # else the run config's `container:`. Checked at parse time, since an empty
@@ -433,7 +442,7 @@ def final_cat(tile):
     stores that reclamation deleted — the rerun avalanche the cut exists to
     prevent, arriving by way of the purge instead.
     """
-    return f"{PRODUCTS_DIR}/tiles/{tile[:2]}/{tile}/final_cat-{tile}.fits"
+    return f"{PRODUCTS_DIR}/tiles/{tile[:2]}/{tile}/final_cat-{tile}.hdf5"
 
 def unit_num(unit):
     """$SP_UNIT_NUM: ShapePipe's image-number convention, dot -> dash, leading
@@ -492,6 +501,8 @@ CLEAN_HASH  = script_hash("clean_exposure.py")
 CLEAN_TILE_HASH = ":".join((script_hash("clean_tile.py"),
                             script_hash("epoch_cuts.py")))
 PERSIST_HASH = script_hash("persist_exp.py")
+EXP_MAPS_HASH = script_hash("exp_maps.py")
+MERGE_MAPS_HASH = script_hash("merge_exposure_maps.py")
 MERGE_STAR_HASH  = script_hash("merge_star_cat.py")
 # Three files, one trigger: the rule's script, the column extraction it calls,
 # and the parameter file that says which columns (path_hash argues why).
@@ -871,13 +882,19 @@ def star_cat_inputs():
     manifest and is in no set at all. Nothing short of rebuilding its chain from
     VOS recovers it; the merge reports how many exposures it found.
     """
-    live, reclaimed = [], []
-    for exp in psf_exposures():
-        if not exp_store_reclaimed(exp):
-            live.append(prod_exp_manifest(exp, "exp_persist"))
-        elif Path(prod_exp_tar(exp)).exists():
-            reclaimed.append(prod_exp_tar(exp))
-    return live + reclaimed
+    return [p for exp in psf_exposures()
+            for p in durable_edge(exp, "exp_persist", prod_exp_tar(exp))]
+
+
+def durable_edge(exp, stage, product):
+    """The DAG edge to a per-exposure product on the persistent root: the
+    stage's manifest while the scratch store is live, the product itself once
+    it is reclaimed (no rule declares it, so it is a leaf that builds nothing),
+    and nothing when a reclaimed store left no product. star_cat_inputs()
+    argues why a reclaimed exposure's manifest must never be named."""
+    if not exp_store_reclaimed(exp):
+        return [prod_exp_manifest(exp, stage)]
+    return [product] if Path(product).exists() else []
 
 
 @functools.lru_cache(maxsize=1)
@@ -895,6 +912,49 @@ def star_cat_exposures():
     return [e for e in psf_exposures()
             if Path(prod_exp_manifest(e, "exp_persist")).exists()
             or not exp_store_reclaimed(e)]
+
+
+# --- the exposure maps ------------------------------------------------------
+# exp_maps rasterizes each exposure's valid-PSF CCDs and their instrument flags
+# into one HealSparse fragment on the persistent root; exposure_maps sums the
+# campaign's fragments into nexp_<run>.hsp and nflagged_<run>.hsp. Fitted-PSF
+# runs only (psf_exposures()): the valid-PSF CCD set comes from exp_persist.
+# The fragment follows exp_persist's tar exactly: requested for live stores,
+# depended on through durable_edge() everywhere else.
+
+def prod_exp_maps(exp):
+    """The fragment exp_maps writes; not a declared output (see durable_edge)."""
+    return f"{prod_exp_dir(exp)}/maps/maps-{exp}.hsp"
+
+
+def nexp_map():
+    return f"{PRODUCTS_DIR}/nexp_{CAMPAIGN}.hsp"
+
+
+def nflagged_map():
+    return f"{PRODUCTS_DIR}/nflagged_{CAMPAIGN}.hsp"
+
+
+@functools.lru_cache(maxsize=1)
+def exposure_maps_inputs():
+    return [p for exp in psf_exposures()
+            for p in durable_edge(exp, "exp_maps", prod_exp_maps(exp))]
+
+
+def exposure_maps_exposures():
+    """The exposure ids exposure_maps sums: its rerun fingerprint."""
+    return [e for e in psf_exposures()
+            if Path(prod_exp_maps(e)).exists() or not exp_store_reclaimed(e)]
+
+
+def exposure_maps_targets():
+    """The per-exposure fragments to build, and the campaign maps when there is
+    at least one fragment to sum."""
+    if not workflow.is_main_process:
+        return []
+    inputs = exposure_maps_inputs()
+    live = [p for p in inputs if p.endswith("exp_maps.json")]
+    return live + ([nexp_map(), nflagged_map()] if inputs else [])
 
 
 # --- sizing the two merges (D4) ---------------------------------------------
@@ -1175,10 +1235,10 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     There is no per-unit ``cfis`` symlink any more: $SP_CONFIG points straight at
     the committed config dir.
 
-    It also exports the configured input roots as ``SP_INPUT_TILES`` and
-    ``SP_INPUT_EXPOSURES``, the retrieve mode as ``SP_RETRIEVE`` and the PSF
-    choice as ``SP_PSF`` for the committed ini chain (plus ``PSF_DICT`` for the
-    image-simulation true PSF).
+    It also exports the configured input roots as ``SP_INPUT_TILES``,
+    ``SP_INPUT_EXPOSURES`` and (data only) ``SP_INPUT_MASKS``, the retrieve
+    mode as ``SP_RETRIEVE`` and the PSF choice as ``SP_PSF`` for the committed
+    ini chain (plus ``PSF_DICT`` for the image-simulation true PSF).
 
     Every line here is part of each rule's ``params.pre`` and so of the
     ``params`` rerun trigger: a line added for every rule reruns every finished
@@ -1217,6 +1277,8 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     ]
     if PSF_DICT:
         lines.append(f"export PSF_DICT='{PSF_DICT}'")
+    if INPUT_TYPE == "data":
+        lines.append(f"export SP_INPUT_MASKS='{INPUTS['masks']}'")
     if forest:
         lines.append(f"export SP_EXP='{forest}'")
     for k, v in (env or {}).items():
@@ -1299,6 +1361,7 @@ rule all:
         [final_cat(t) for t in TILES_READY],
         persist_targets(),
         star_cat_targets(),
+        exposure_maps_targets(),
         final_cat_targets(),
         clean_targets(),
         clean_tile_targets(),

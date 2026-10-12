@@ -155,12 +155,12 @@ class Campaign:
     def final_cat(self, tile):
         """Return the expected persistent catalogue for one tile."""
         return (self.products_dir / "tiles" / tile[:2] / tile
-                / f"final_cat-{tile}.fits")
+                / f"final_cat-{tile}.hdf5")
 
-    def persist_manifest(self, exp):
-        """Return the expected persistent manifest for one exposure."""
+    def persist_manifest(self, exp, stage="exp_persist"):
+        """Return one exposure's manifest on the persistent root."""
         return (self.products_dir / "exp" / exp[:2] / exp
-                / "manifests" / "exp_persist.json")
+                / "manifests" / f"{stage}.json")
 
 
 @dataclass
