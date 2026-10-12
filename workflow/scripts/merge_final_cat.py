@@ -18,7 +18,7 @@ not do this merge, and this does not do that one.)
 WHAT IT REUSES, AND WHAT IT DOES NOT. The column extraction is
 ``create_final_cat.py``'s — ``read_param_file`` for the parameter list,
 ``read_data`` and ``copy_data`` for pulling those columns out of one catalogue
-with their FITS dtypes — so the column grammar keeps exactly one definition.
+with their stored dtypes — so the column grammar keeps exactly one definition.
 Those three are REPRODUCIBLE FUNCTIONS, and this PR is what made them so: the
 parameter list comes back ordered rather than through a set, ``copy_data``
 allocates the requested columns alone rather than leaving every other column of
@@ -29,8 +29,8 @@ much as this rule does.
 Its ``process()`` is NOT used and neither is any of its discovery: that function
 walks a directory tree the workflow does not have and never will, and it groups
 by a unit ShapePipe v2 no longer has. This script walks the workflow's own
-products tree instead (``tiles/<2-char prefix>/<ID>/final_cat-<ID>.fits``) and
-writes the hdf5 itself.
+products tree instead (``tiles/<2-char prefix>/<ID>/final_cat-<ID>.hdf5``,
+one dataset per column) and writes the merged hdf5 itself.
 
 WHERE ``create_final_cat.py`` IS FOUND. Beside this workflow, at
 ``<repo>/scripts/python/create_final_cat.py`` — resolved relative to THIS file,
@@ -70,14 +70,13 @@ trigger would notice. A tile in the derived set whose catalogue is missing is a
 hard error here, not a skip — under the DAG it cannot happen, since every one of
 them is a declared input of this job.
 
-@sc [label:selection] never-fit-rows-pass-through
+@sc [decision:catalogue_assembly.failure_sentinels,label:selection] never-fit-rows-pass-through
 Every row of every tile catalogue reaches the merged file, unchanged,
 including objects ngmix never fit. Those carry `NGMIX_N_EPOCH == 0` with
-sentinel values (`NGMIX_MCAL_FLAGS == 0`, ellipticities `-10`, `T == 0`), so
-`NGMIX_MCAL_FLAGS == 0` is not a validity cut: consumers select fitted objects
-with `NGMIX_N_EPOCH > 0`. The merge neither fills these rows nor drops them;
-that selection belongs to the consumer. Enforced by
-tests/unit/test_final_cat_merge_invariants.py.
+sentinel values (ellipticities `-10`, `T == 0`), `NGMIX_MCAL_FLAGS` nonzero
+(`LM_FUNC_NOTFINITE`) and `NGMIX_MCAL_TYPES_FAIL == 5`, so the consumer's
+`NGMIX_MCAL_FLAGS == 0` cut rejects them. The merge neither fills these rows
+nor drops them. Enforced by tests/unit/test_final_cat_merge_invariants.py.
 """
 
 import argparse
@@ -126,7 +125,7 @@ def catalogues(products_dir: Path, tile_list: Path, index_db: Path) -> list:
     out, missing = [], []
     for tile in sorted(build_index.campaign_tiles(tile_list, index_db)):
         path = (products_dir / "tiles" / tile[:2] / tile
-                / f"final_cat-{tile}.fits")
+                / f"final_cat-{tile}.hdf5")
         if path.exists():
             out.append((tile, path))
         else:
@@ -152,7 +151,6 @@ def main() -> None:
                    help="names the campaign's group in the output file")
     p.add_argument("--param-file", required=True, type=Path,
                    help="the input type's final_cat.param — the column list")
-    p.add_argument("--hdu", type=int, default=1)
     p.add_argument("--snapshot-json", type=Path, default=None,
                    help="sp run's code snapshot (bin/sp's "
                         "$STATE_DIR/code/snapshot.json); absent outside sp run")
@@ -164,7 +162,7 @@ def main() -> None:
         sys.exit(f"merge_final_cat: no columns read from {args.param_file}")
     # read_data/copy_data read their knobs out of this dict, exactly as
     # create_final_cat.py's own main() builds it.
-    params = {"hdu_num": args.hdu, "param_list": param_list, "verbose": False}
+    params = {"param_list": param_list, "verbose": False}
 
     tiles = catalogues(args.products_dir, args.tile_list, args.index_db)
     if not tiles:

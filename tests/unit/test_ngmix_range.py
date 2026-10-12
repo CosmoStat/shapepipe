@@ -77,7 +77,7 @@ def test_ranges_tile_the_catalogue(n_obj, n_chunks, data):
             max_size=n_obj,
         )
     )
-    assert_tiles(ngmix_range.id_ranges(epochs, n_chunks), n_obj, n_chunks)
+    assert_tiles(ngmix_range.row_ranges(epochs, n_chunks), n_obj, n_chunks)
 
 
 @settings(deadline=None)
@@ -99,8 +99,8 @@ def test_ranges_are_deterministic(n_obj, n_chunks, data):
             max_size=n_obj,
         )
     )
-    first = ngmix_range.id_ranges(epochs, n_chunks)
-    assert first == ngmix_range.id_ranges(list(epochs), n_chunks)
+    first = ngmix_range.row_ranges(epochs, n_chunks)
+    assert first == ngmix_range.row_ranges(list(epochs), n_chunks)
     assert all(isinstance(b, int) for lo, hi in first for b in (lo, hi))
 
 
@@ -124,7 +124,7 @@ def test_written_rows_reproduce_the_per_chunk_computation(n_obj, n_chunks, data)
     """THE INVARIANCE TEST for materialising the split.
 
     Writing the whole partition and reading chunk ``k``'s row back must give
-    byte-for-byte what the old per-chunk ``id_ranges(...)[k - 1]`` returned. If
+    byte-for-byte what the old per-chunk ``row_ranges(...)[k - 1]`` returned. If
     this ever fails, the two mechanisms have drifted and a tile's coverage is
     what pays.
     """
@@ -137,7 +137,7 @@ def test_written_rows_reproduce_the_per_chunk_computation(n_obj, n_chunks, data)
     )
     doc = _roundtrip(epochs, n_chunks)
     assert doc["n_obj"] == n_obj and doc["n_chunks"] == n_chunks
-    expected = ngmix_range.id_ranges(epochs, n_chunks)
+    expected = ngmix_range.row_ranges(epochs, n_chunks)
     got = [ngmix_range.chunk_range(doc, k) for k in range(1, n_chunks + 1)]
     assert got == expected
     assert_tiles(got, n_obj, n_chunks)
@@ -167,12 +167,12 @@ def test_reading_an_absent_ranges_file_is_fatal(tmp_path):
 
 def test_single_chunk_takes_everything():
     """n_chunks == 1: one range over the whole catalogue."""
-    assert ngmix_range.id_ranges([3] * 17, 1) == [(1, 17)]
+    assert ngmix_range.row_ranges([3] * 17, 1) == [(1, 17)]
 
 
 def test_one_object_per_chunk():
     """n_obj == n_chunks: one object each, however lopsided the weights."""
-    assert ngmix_range.id_ranges([0, 9, 1, 40], 4) == [
+    assert ngmix_range.row_ranges([0, 9, 1, 40], 4) == [
         (1, 1), (2, 2), (3, 3), (4, 4)
     ]
 
@@ -184,27 +184,27 @@ def test_fewer_objects_than_chunks_pads_with_empty_ranges():
     reads ``ID_OBJ_MAX = 0`` as unbounded — so each of them would have measured
     the entire tile rather than nothing.
     """
-    assert ngmix_range.id_ranges([2, 5, 1], 6) == [
+    assert ngmix_range.row_ranges([2, 5, 1], 6) == [
         (1, 1), (2, 2), (3, 3), (4, 3), (4, 3), (4, 3)
     ]
-    assert_tiles(ngmix_range.id_ranges([2, 5, 1], 6), 3, 6)
+    assert_tiles(ngmix_range.row_ranges([2, 5, 1], 6), 3, 6)
 
 
 def test_zero_objects_is_fatal():
     """No split is meaningful, and (1, 0) is ngmix's unbounded sentinel."""
     with pytest.raises(ValueError, match="zero objects"):
-        ngmix_range.id_ranges([], 8)
+        ngmix_range.row_ranges([], 8)
 
 
 def test_zero_chunks_is_fatal():
     """There is no zeroth chunk to hand a range to."""
     with pytest.raises(ValueError, match="n_chunks"):
-        ngmix_range.id_ranges([1, 2, 3], 0)
+        ngmix_range.row_ranges([1, 2, 3], 0)
 
 
 def test_equal_weights_reproduce_an_equal_count_split():
     """Uniform epochs: chunk sizes differ by at most one object."""
-    ranges = ngmix_range.id_ranges([3] * 1000, 8)
+    ranges = ngmix_range.row_ranges([3] * 1000, 8)
     assert_tiles(ranges, 1000, 8)
     sizes = [hi - lo + 1 for lo, hi in ranges]
     assert max(sizes) - min(sizes) <= 1
@@ -217,7 +217,7 @@ def test_zero_epoch_objects_still_weigh_something():
     Ninety-six zero-epoch objects and four 1-epoch ones. Weighing only epochs
     would let a single chunk swallow all ninety-six.
     """
-    ranges = ngmix_range.id_ranges([0] * 96 + [1] * 4, 4)
+    ranges = ngmix_range.row_ranges([0] * 96 + [1] * 4, 4)
     assert_tiles(ranges, 100, 4)
     assert max(hi - lo + 1 for lo, hi in ranges) < 96
 
@@ -225,7 +225,7 @@ def test_zero_epoch_objects_still_weigh_something():
 def test_one_enormously_heavy_object_is_isolated():
     """The heavy object gets a chunk to itself; the tail still tiles."""
     epochs = [1] * 20 + [10_000] + [1] * 20
-    ranges = ngmix_range.id_ranges(epochs, 4)
+    ranges = ngmix_range.row_ranges(epochs, 4)
     assert_tiles(ranges, 41, 4)
     assert (21, 21) in ranges
 
@@ -268,6 +268,6 @@ def test_slowest_chunk_is_minimal(epochs, n_chunks):
         ngmix_range.MILLI_EPOCH * e + ngmix_range.ALPHA_MILLI_EPOCHS
         for e in epochs
     ]
-    ranges = ngmix_range.id_ranges(epochs, n_chunks)
+    ranges = ngmix_range.row_ranges(epochs, n_chunks)
     loads = [sum(weights[lo - 1:hi]) for lo, hi in ranges]
     assert max(loads) == _brute_force_min_max(weights, n_chunks)

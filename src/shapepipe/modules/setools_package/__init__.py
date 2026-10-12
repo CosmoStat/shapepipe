@@ -58,15 +58,15 @@ First, a pre-selection is defined:
    [MASK:preselect]
    MAG_AUTO > 0
    MAG_AUTO < 21
-   FWHM_IMAGE > 0.3 / 0.187
-   FWHM_IMAGE < 1.5 / 0.187
+   FWHM_WORLD > 0.3 / 3600
+   FWHM_WORLD < 1.5 / 3600
    FLAGS == 0
    IMAFLAGS_ISO == 0
    NO_SAVE
 
 This selects objects within a magnitude (``MAG_AUTO``) and size
-(``FWHM_IMAGE``) ranges. The size limits of 0.3" and 1.5" are transformed from
-arcseconds to pixels. Additional flag criteria for ``FLAGS`` AND
+(``FWHM_WORLD``) ranges. ``FWHM_WORLD`` is in degrees, computed by SExtractor
+from the image WCS, so the size limits of 0.3" and 1.5" are divided by 3600. Additional flag criteria for ``FLAGS`` AND
 ``IMAFLAGS_ISO`` are specified. The keyword ``NO_SAVE`` indicates that this
 selection is not to be saved to disk.
 
@@ -77,13 +77,15 @@ Next, the final star selection is defined:
    [MASK:star_selection]
    MAG_AUTO > 18.
    MAG_AUTO < 22.
-   FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
-   FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
+   FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 3 * locus_width(FWHM_IMAGE{preselect})
+   FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 3 * locus_width(FWHM_IMAGE{preselect})
    FLAGS == 0
    IMAFLAGS_ISO == 0
 
-The size range is now refined using the mode of preselected objects. The
-preselection removes outliers before the mode computation.
+The size range is refined around the stellar locus of the preselected
+objects: ``mode`` returns the peak of their FWHM distribution and
+``locus_width`` the peak's width, as a Gaussian standard deviation. The
+preselection removes outliers before either is computed.
 
 An example of the definition of random subsamples is as follows:
 
@@ -133,7 +135,7 @@ is defined.
    MARKERSIZE_1 = 3
    MARKERSIZE_2 = 3
    LABEL_1 = All
-   LABEL_2 = "Stars, mean FWHM: @mean(FWHM_IMAGE{star_selection})*0.187@arcsec"
+   LABEL_2 = "Stars, mean FWHM: @mean(FWHM_WORLD{star_selection})*3600@arcsec"
    TITLE = "Stellar locus"
    XLABEL = "FWHM (pix)"
    YLABEL = Mag

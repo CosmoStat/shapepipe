@@ -1,6 +1,6 @@
 """Exposure chain — per exposure, keyed by exp base id (dedup is structural).
 
-    exp_get_images -> exp_split -> exp_psf -> exp_persist
+    exp_get_images -> exp_split -> exp_psf -> exp_persist -> exp_maps
 
 Each in the exposure's own sharded work dir, chained by manifests; every config
 reads fixed ``$SP_RUN/output/run_sp_exp_*`` INPUT_DIRs, so nothing resolves a
@@ -19,7 +19,11 @@ opt-in, see ``star_selection.setools``), and ``make_cat`` writes the per-band
 star catalogue, or a network fetch — hence no ``star_catalogue`` / ``exp_star_cat``
 here, and no ``exp_mask``.
 
-``exp_persist`` is the one rule here that writes to the PERSISTENT root: it
+``exp_maps`` exports that flag image, with the CCD footprints, into a
+HealSparse fragment so the survey footprint can subtract it; nothing in this
+workflow reads it back.
+
+``exp_persist`` and ``exp_maps`` write to the PERSISTENT root. ``exp_persist``
 packs the PSF products named by `persist_exp:` into one tar per exposure off
 /scratch before the purge (or clean_exposure) can take them. It is a separate
 rule from exp_psf precisely so that editing that list costs a re-pack and not a
@@ -178,6 +182,38 @@ rule exp_persist:
         " {params.patterns}"
 
 
+# --- the exposure's footprint and defects -----------------------------------
+# One HealSparse fragment per exposure on the persistent root: the sky pixels
+# its valid-PSF CCDs cover, and how many flagged CCD pixels fall in each
+# (workflow/scripts/exp_maps.py). It reads the split images' headers and flag
+# splits from the scratch store, so clean_exposure waits for it exactly as for
+# exp_persist; its one declared input is exp_persist's manifest, which names
+# the valid-PSF CCDs. ~8 s per exposure.
+# @sc [decision:masking.defect_map_from_flags]
+# @sc [decision:masking.nexp_map_valid_psf_ccds]
+rule exp_maps:
+    input:
+        persist = lambda wc: prod_exp_manifest(wc.exp, "exp_persist")
+    output:
+        manifest = f"{PROD_EXP_DIR}/manifests/exp_maps.json"
+    params:
+        exp_dir     = lambda wc: exp_dir(wc.exp),
+        fragment    = lambda wc: prod_exp_maps(wc.exp),
+        script_hash = EXP_MAPS_HASH
+    threads: 1
+    retries: 2
+    resources:
+        # 0.15 GB typical; 1.5 GB for a fully flagged CCD (9.4M pixels)
+        mem_mb = 3000,
+        runtime = 20
+    shell:
+        "set -euo pipefail\n"
+        f"python {SCRIPTS}/exp_maps.py"
+        " --exp-dir '{params.exp_dir}' --exp {wildcards.exp}"
+        " --persist-manifest {input.persist}"
+        " --fragment '{params.fragment}' --manifest {output.manifest}"
+
+
 # --- reclamation (D5) -------------------------------------------------------
 # The one exception to "no reclamation in this file": clean_exposure OWNS
 # exposure-level deletion, and it is a real job, not temp() bookkeeping, because
@@ -224,11 +260,11 @@ rule clean_exposure:
         # changes exp_persist's params, the manifest reruns, and it sits behind
         # exp_psf's manifest, which went with the store, so snakemake rebuilds
         # the exposure from VOS.
-        lambda wc: ([] if not PERSISTS_PSF
-                    else [prod_exp_manifest(wc.exp, "exp_persist")]
-                    if not exp_store_reclaimed(wc.exp)
-                    else [prod_exp_tar(wc.exp)]
-                    if Path(prod_exp_tar(wc.exp)).exists() else [])
+        lambda wc: (durable_edge(wc.exp, "exp_persist", prod_exp_tar(wc.exp))
+                    if PERSISTS_PSF else []),
+        # The exposure maps' fragment, by the same rule.
+        lambda wc: (durable_edge(wc.exp, "exp_maps", prod_exp_maps(wc.exp))
+                    if PERSISTS_PSF else [])
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"
     params:
@@ -325,3 +361,40 @@ rule star_cat_merge:
         " --output {output.star_cat}"
         " --campaign '{params.campaign}'"
         " --snapshot-json '{params.snapshot}'"
+
+
+# --- the campaign's exposure maps -------------------------------------------
+# ONE job per campaign: every fragment of the campaign's exposures, summed into
+# <products_dir>/nexp_<run>.hsp (exposures with a valid PSF model per sky pixel)
+# and nflagged_<run>.hsp (their flagged CCD pixels per sky pixel). Rebuilt
+# whole when the exposure set or a fragment changes; inputs, fingerprint and
+# the job's own rediscovery of the set follow star_cat_merge. Memory is the two
+# maps, 3 MiB per nside-128 coverage pixel the campaign touches: ~13 per
+# exposure, capped at the ~23k of the UNIONS footprint (~70 GB at DR6).
+# @sc [decision:masking.defect_map_from_flags]
+# @sc [decision:masking.nexp_map_valid_psf_ccds]
+rule exposure_maps:
+    input:
+        lambda wc: exposure_maps_inputs()
+    output:
+        nexp    = nexp_map(),
+        nflagged = nflagged_map()
+    params:
+        products_dir = str(PRODUCTS_DIR),
+        tile_list    = str(config["tile_list"]),
+        index_db     = str(INDEX_DB),
+        inputs       = unit_fingerprint(exposure_maps_exposures()),
+        script_hash  = MERGE_MAPS_HASH
+    threads: 1
+    resources:
+        mem_mb = lambda wc, attempt: capped_mem(attempt * (
+            1000 + 3.2 * min(13 * len(exposure_maps_exposures()), 23_000)),
+            "exposure_maps"),
+        runtime = lambda wc, attempt: attempt * (
+            30 + len(exposure_maps_exposures()) // 30)
+    shell:
+        "set -euo pipefail\n"
+        f"python {SCRIPTS}/merge_exposure_maps.py"
+        " --products-dir '{params.products_dir}'"
+        " --tile-list '{params.tile_list}' --index-db '{params.index_db}'"
+        " --nexp {output.nexp} --nflagged {output.nflagged}"

@@ -31,10 +31,18 @@ source /project/def-mjhudson/cdaley/snakemake-env/bin/activate
 uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 
 # Write a run config (see Run configuration below) that sets at least `run:`,
-# the campaign's name; workflow/config.yaml's machines: table supplies the rest.
+# the campaign's name; workflow/config.yaml's input_types: and machines: tables supply the rest.
 
-# `psf_model` is `psfex` or `mccd`. psfex is exercised by smk-g4 through smk-g6; mccd has run the full chain on
-# an image-sim star tile (one focal-plane model per exposure, ~1.5 CPU-hours each).
+# `psf_model` is `psfex` for data (`fake` for image sims). `mccd` is refused
+# until `persist_exp.py` and `merge_star_cat.py` read MCCD products. PSFEx is
+# exercised by smk-g4 through smk-g6.
+# Both `tile_detection` values run SExtractor on the tile image. Under
+# `unions_catalogue` (the input_types default for data) the UNIONS per-tile
+# catalogue at `inputs.catalogues` is fetched and the detections are joined
+# to it, taking its NUMBER; the tile image must be the catalogue's release
+# (DR6), or the join fails. `sextractor` (the default for image sims) keeps
+# SExtractor's own NUMBER. Either way make_cat writes
+# TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -69,9 +77,11 @@ each overlay file to its `cfis/` original confined to input naming.
 `psf_model: fake` is the simulations' true PSF: the exposure stage runs only
 SExtractor (for the background maps the vignets read), and `tile_vignets` runs
 `fake_interp_runner`, which writes the `galaxy_psf` product from `psf_dict`.
-With no PSF model there is nothing to persist per exposure, so `exp_persist` and
-`star_cat_merge` do not run and `clean_exposure` does not wait on them.
-Simulations that contain stars can run `psfex` or `mccd` exactly as the data do.
+With no PSF model there is nothing to persist per exposure, so `exp_persist`,
+`exp_maps` and the two merges after them do not run and `clean_exposure` does
+not wait on them.
+Simulations that contain stars can run `psfex` as the data do. `mccd` is
+refused until `persist_exp.py` and `merge_star_cat.py` read MCCD products.
 
 One campaign per shear branch, each with its own run config:
 
@@ -85,9 +95,11 @@ A run config passed with `-c/--config-file` is merged on top of
 `workflow/config.yaml` and snapshotted with the code. (`-c` is `sp`'s own flag;
 pass snakemake's cores as `--cores`/`-j`. `SP_RUN_CONFIG` still works and is what
 the jobs read.) `SP_PROFILE` (default `nibi`, or `machine:` in the run config, which must
-agree with it) and `input_type:` then select an entry of the `machines:` table, which supplies
-`tile_list`, `retrieve` (`symlink` or `vos`), `inputs`, `outputs` and
-`container` for any of these the run config leaves unset (`$base_dir` expands
+agree with it) and `input_type:` then select defaults for whatever the run
+config leaves unset: first the `input_types:` entry, which supplies what follows
+from the kind of input (`tile_detection`, `psf_model`), then, overriding it,
+the `machines:` entry, which supplies `tile_list`, `retrieve` (`symlink` or
+`vos`), `inputs`, `outputs`, `container` and `psf_dict` (`$base_dir` expands
 to that machine's `base_dir`, and `$name` or `${name}` to any top-level scalar
 of the run config, e.g. `$run` to `run:`; write `${name}` when word characters
 follow). `run:` is
@@ -100,8 +112,6 @@ SKiLLS shear branch on candide:
 machine: candide
 input_type: image_sims
 run: 1z2z_grid_3
-psf_model: fake
-psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle
 tile_list: /path/to/tiles.txt
 inputs:
   tiles: /n09data/hervas/skills_out/1z2z_grid_3/images/SP_tiles
@@ -238,8 +248,8 @@ workflow/
   bin/sp                 committed launcher (module load + /project venv + launch code snapshot + run/report/container/cancel)
   rules/
     prepare.smk          tile get_images/uncompress/find_exposures
-    exposure.smk         per-exposure: get_images, split, psf, persist (no temp()); campaign star_cat_merge
-    tile.smk             per-tile: exp forest, merge_headers, detect, vignets, ngmix, merge, make_cat; campaign final_cat_merge
+    exposure.smk         per-exposure: get_images, split, psf, persist, maps (no temp()); campaign star_cat_merge, exposure_maps
+    tile.smk             per-tile: exp forest, merge_headers, detect (SExtractor, joined to the UNIONS catalogue on data), vignets, ngmix, merge, make_cat; campaign final_cat_merge
   scripts/
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
@@ -252,6 +262,8 @@ workflow/
     merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<run>.hdf5
     merge_final_cat.py   ALL tiles' final_cat -> final_cat_<run>.hdf5 (the final_cat_merge rule)
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
+    exp_maps.py          ONE exposure's valid-PSF CCD footprints + flagged-pixel counts -> healsparse fragment (the exp_maps rule)
+    merge_exposure_maps.py  ALL fragments -> nexp_<run>.hsp, nflagged_<run>.hsp (the exposure_maps rule)
     clean_tile.py        ONE finished tile's store -> tombstone (the clean_tile rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
@@ -306,6 +318,31 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   catalogue server, staged, or rasterized, which is why the old
   `star_catalogue` / `exp_star_cat` / `exp_mask` rules and their cache root are
   gone.
+- **Two HealSparse maps come out of the exposures.** At the mask ladder's
+  resolution (nside 131072), `nexp_<run>.hsp` counts per sky pixel the
+  exposures whose CCD with a valid PSF model covers it, and
+  `nflagged_<run>.hsp` counts the flagged CCD pixels (bad columns, saturated
+  pixels, bleed trails, cosmics) of those exposures that fall in it, ~74 CCD
+  pixels filling one sky pixel. The flag image is the one mask that otherwise
+  never leaves the pixel domain, so a footprint built from CCD corners could not
+  subtract it (#878). `exp_maps` writes one fragment per exposure beside its PSF
+  tar, from the split's `DATASEC` (the overscan border is neither coverage nor
+  defect) and the CCDs `exp_persist` packed a PSF for; `exposure_maps` sums the
+  campaign's fragments. Nothing in the workflow reads either map. `nexp` is
+  what randoms need to match an `N_EPOCH` cut; `nflagged` is a diagnostic of
+  where the detector is bad, not a cut (it does not count exposures lost to
+  the defect veto).
+- **External masks are wired, on the tile side only (data runs).** `inputs.masks`
+  is a third input root beside tiles and exposures, set per machine in the
+  `machines:` table, exported as `$SP_INPUT_MASKS` and
+  pointing at the UNIONS DR6 ugriz bit ladder: one boolean healsparse map per
+  bit, nside 131072, `True` = masked. `config_tile_Mc.ini` names all 11 of them
+  in `MASK_EXT_PATHS` under a `<flag value>_<name>` label, so `make_cat`
+  writes `MASK_1_Faint_star_halos` … `MASK_2048_z2` and `final_cat.param`
+  carries the matching 11 names; the config holds the label table.
+  `MASK_2048_z2` is True where there is *no* Pan-STARRS z data, so an OR over
+  every column masks everything. ShapePipe cuts on none of them; the mask
+  choice is sp_validation's.
 - **The index is parse-time data, never a rule input.** Appending tiles
   changes which jobs exist without invalidating completed work.
 - **Exposure products are not `temp()`.** Exposures overlap tiles, so
@@ -400,7 +437,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   apart, and nothing else would notice if they did — a column added to one
   writer would just be missing from the other's product. `tests/unit/`
   `test_star_cat_columns.py` is what holds them together.
-  `final_cat_merge` collects every ready tile's `final_cat-<ID>.fits` into
+  `final_cat_merge` collects every ready tile's `final_cat-<ID>.hdf5` into
   `<products_dir>/final_cat_<run>.hdf5`: one dataset per tile under a group
   named for the campaign, the `final_cat.param` columns, an `n_tiles` attribute.
   That schema is what sp_validation's reader opens, so it is fixed; the column

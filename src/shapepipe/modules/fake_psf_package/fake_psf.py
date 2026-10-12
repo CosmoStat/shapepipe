@@ -61,7 +61,8 @@ class FakePsf:
             raise
 
         try:
-            n_gal = len(sex[3].data.field("NUMBER"))
+            numbers = np.asarray(sex[3].data.field("NUMBER"))
+            n_gal = len(numbers)
         except Exception as e:
             self._w_log.error(
                 f"Error reading catalogue data from HDU 3 in {self._sexcat_path}: {e}"
@@ -91,7 +92,7 @@ class FakePsf:
         output_file = SqliteDict(self._output_path)
         missing = 0
         for idx, gal_row in enumerate(masked):
-            galaxy_number = idx + 1  # 1-based, matches NUMBER field
+            galaxy_number = int(numbers[idx])
             gal_dict = {}
             for exp_ccd in gal_row.compressed():
                 if exp_ccd not in psf_dict:

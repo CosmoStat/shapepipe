@@ -64,7 +64,8 @@ MAKE_POST_PROCESS : bool
 WORLD_POSITION : list, optional
     List of world coordinates to use to match objects
 CCD_SIZE : list, optional
-    Size of a CCD in pixels ``[nx, ny]``
+    Accepted CCD pixel bounds ``[xmin, xmax, ymin, ymax]``, 0-based and
+    compared strictly
 
 """
 

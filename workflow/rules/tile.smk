@@ -37,9 +37,22 @@ Distinct tiles share no edge, so each is one group job per tile:
   job reaches the widest partition set (plus cpubackfill) — which is why each
   member's runtime is measured p99 plus margin and not the old ceiling.
 
-The heavy middle (tile_detect) stays out: it is a 16 GB / 8 thread SExtractor
-run that the shape chain does not need co-scheduled, and folding it in would add
-its runtime to a sum that has no room.
+tile_detect stays out: the shape chain does not need it co-scheduled, and
+folding it in would add its runtime to a sum that has no room.
+
+tile_detect runs SExtractor on the tile image (sextractor_runner,
+config_tile_Sx.ini) for data and image simulations alike, so both get the same
+detection, windowed positions, VIGNET neighbour marking and columns.
+``tile_detection: unions_catalogue`` (config.yaml, the data default) adds one
+rule and one step: tile_get_catalogue fetches the UNIONS per-tile catalogue
+(get_images_runner, config_tile_Gic.ini), and tile_detect joins its SExtractor
+rows to it before the multi-epoch post-processing (MATCH_CATALOGUE, set
+through SP_MATCH_CATALOGUE). Each row pairs with its mutual nearest catalogue
+object within 1 px and takes its NUMBER, from which make_cat builds
+``TILE_UNIQUE_ID``, the key shared with the photometry and photo-z
+catalogues; unpaired rows leave the catalogue. The catalogue is SExtractor run
+by MegaPipe on the same DR6 image with the same configuration, so the join is
+exact; on other pixels (a DR5 image) it fails loudly.
 
 There is no `tile_mask` rule, and there will not be one (PR #847). ShapePipe
 generates no masks: tiles have no instrument flag image of their own, so
@@ -133,8 +146,7 @@ is what downstream selections cut on.
 # consumer-set staleness detection (which rides on params) is off for that
 # invocation.
 # Per-campaign prefix of the node-local store name; see tile_local().
-LOCAL_TAG = (hashlib.sha1(str(RUN_DIR).encode()).hexdigest()[:8] + "-"
-             if INPUT_TYPE == "image_sims" else "")
+LOCAL_TAG = hashlib.sha1(str(RUN_DIR).encode()).hexdigest()[:8] + "-"
 
 
 def tile_local(tile):
@@ -152,18 +164,19 @@ def tile_local(tile):
     snakemake substitutes at DAG time, so the shell string carries a concrete
     path with no `$` left for anything to escape. One group job per tile means
     the name cannot collide within a campaign; the sticky bit means nobody else
-    can remove it. Across campaigns it can: the image-simulation shear branches
-    are concurrent campaigns over the SAME tile IDs, and on candide
-    `/local/scratch` is the node's shared `/tmp`. Two branches' fused jobs on one
-    node then share one store -- a second `tile_vignets` wipes and rewrites it
-    under the first branch's ngmix, and the first `tile_make_cat`'s EXIT trap
-    deletes it under the second (seen on candide n09). So image_sims prefixes
-    the name with LOCAL_TAG, a hash of the run dir. Data campaigns keep the
-    bare tile name, so their shell commands -- a rerun trigger -- are unchanged.
+    can remove it. Across campaigns the tile alone would collide: the
+    image-simulation shear branches and two-arm A/B data runs are concurrent
+    campaigns over the SAME tile IDs, and nothing keeps their same-tile jobs off
+    one node (on candide `/local/scratch` is the node's shared `/tmp`). Two
+    campaigns' fused jobs on one node would share one store -- a second
+    `tile_vignets` wipes and rewrites it under the first campaign's ngmix, and
+    the first `tile_make_cat`'s EXIT trap deletes it under the second (seen on
+    candide n09, between image-sim branches). So every store name is prefixed
+    with LOCAL_TAG, a hash of the run dir, and is unique per campaign and tile.
 
     What we give up is Slurm's own cleanup of `$SLURM_TMPDIR`. TILE_VIGNET_FRESH
-    reclaims a stale directory on the next attempt for the same tile, the trap
-    in the last group member removes it on the way out, and the sweep below
+    reclaims a stale directory on the campaign's next attempt at the tile, the
+    trap in the last group member removes it on the way out, and the sweep below
     catches what a hard kill leaves behind -- on a shared node that last one is
     manners, not housekeeping.
 
@@ -333,6 +346,25 @@ fi
 
 
 
+# THE MODULE LOGS OUTLIVE THE RUN DIRS THAT HOLD THEM. A chunk's ShapePipe run
+# dir is temp() (tile_merge_cats is its last reader) and tile_vignets' lives in
+# the node-local store, so both kinds of log went with their dirs: the
+# run's own logs/ and each module's logs/process-*.log, where ngmix writes its
+# per-chunk `epoch cuts:` line and every per-object "ngmix failed" message.
+# The rule copies them to $SP_RUN/logs/modules/<run name>/ (the tile dir on the
+# shared root) before it exits, whatever its rc, so a failed chunk keeps its
+# evidence too. A few KB per chunk; clean_tile reclaims them with the rest of
+# logs/. The copy never changes the rule's exit status.
+def keep_module_logs(run_root, run_name):
+    dest = f'"$SP_RUN/logs/modules/{run_name}"'
+    return (
+        f'rm -rf {dest} && mkdir -p {dest} && '
+        f'(cd "{run_root}" && find . -path "*/logs/*" -type f '
+        f'-exec cp -p --parents -t {dest} {{{{}}}} +) || '
+        f'echo "could not keep the module logs of {run_root}" >&2\n'
+    )
+
+
 def tile_exp(wc):
     return tile_exposures(wc.tile)
 
@@ -459,22 +491,89 @@ rule tile_merge_headers:
     shell:
         sp_shell("tile_merge_headers", "config_tile_Mh_exp.ini")
 
-# SExtractor object detection on the tile.
+# The UNIONS per-tile catalogue (CFIS.<tile>.r.cat), from a local mirror or
+# from vos, the way tile_get_images fetches the image; tile_detect joins its
+# SExtractor detections to it. Reads only tile_numbers.txt, which unit_pre
+# writes; the edge on the image manifest is what puts it after the prepare
+# phase.
+if TILE_DETECTION == "unions_catalogue":
+
+    rule tile_get_catalogue:
+        input:
+            git = f"{TILE_DIR}/manifests/tile_get_images.json",
+        output:
+            manifest = f"{TILE_DIR}/manifests/tile_get_catalogue.json"
+        log:
+            f"{TILE_DIR}/logs/tile_get_catalogue.json"
+        params:
+            pre = lambda wc: unit_pre(
+                "tile_get_catalogue", wc.tile,
+                env={"SP_INPUT_CATALOGUES": CATALOGUES,
+                     "SP_RETRIEVE_CATALOGUES": CATALOGUE_RETRIEVE}),
+            script_hash = SCRIPT_HASH
+        threads: 1
+        retries: 2
+        resources:
+            mem_mb = lambda wc, attempt: 4000 * attempt,
+            runtime = 60
+        shell:
+            sp_shell("tile_get_catalogue", "config_tile_Gic.ini")
+
+
+# tile_detect's inputs: the catalogue manifest too when it joins one.
+DETECT_INPUTS = {"uz": f"{TILE_DIR}/manifests/tile_uncompress.json",
+                 "mh": rules.tile_merge_headers.output.manifest}
+if TILE_DETECTION == "unions_catalogue":
+    DETECT_INPUTS["cat"] = rules.tile_get_catalogue.output.manifest
+
+
+def detect_env(tile):
+    """tile_detect's prologue exports: the catalogue to join, if any.
+
+    Empty under tile_detection: sextractor (image simulations), so that no
+    value left exported in the submitting shell reaches the job.
+    """
+    if TILE_DETECTION != "unions_catalogue":
+        return {"SP_MATCH_CATALOGUE": ""}
+    gic = f"{tile_dir(tile)}/output/run_sp_tile_Gic/get_images_runner/output"
+    return {"SP_MATCH_CATALOGUE": f"{gic}/CFIS_cat{unit_num(tile)}.cat"}
+
+
+# SExtractor object detection on the tile; under unions_catalogue joined to
+# the UNIONS catalogue (config_tile_Sx.ini, MATCH_CATALOGUE).
 rule tile_detect:
     input:
-        uz = f"{TILE_DIR}/manifests/tile_uncompress.json",
-        mh = rules.tile_merge_headers.output.manifest,
+        **DETECT_INPUTS
     output:
         manifest = f"{TILE_DIR}/manifests/tile_detect.json"
     log:
         f"{TILE_DIR}/logs/tile_detect.json"
     params:
-        pre = lambda wc: unit_pre("tile_detect", wc.tile),
+        pre = lambda wc: unit_pre("tile_detect", wc.tile,
+                                  env=detect_env(wc.tile)),
         script_hash = SCRIPT_HASH
-    threads: 8
+    # One core: the container's SExtractor is built without threads
+    # (NTHREADS 4 warns and runs in the same 36 s), default_tile.sex sets
+    # NTHREADS 1, the join and the post-processing are serial Python, and
+    # `-b {threads}` only sets the SMP batch over input sets, of which a tile
+    # is one.
+    #
+    # MEASURED on eight DR6 tiles chosen to span conditions (high latitude,
+    # b = 18 deg, the A2199 cluster, Alioth's halo, two survey-edge tiles at
+    # 96% zero weight; 1-10 exposures), the step as shapepipe_run runs it on
+    # candide: wall time 23-160 s (SExtractor + join <= 93 s, post-processing
+    # <= 97 s), peak RSS 1.84 GiB, set by the join holding the ~430 MB
+    # catalogue twice. Image simulations run the same step on tiles of the same
+    # size (10000 x 10000 px); SExtractor alone on one takes 34 s and 0.74 GiB.
+    # 4000 MB is 2.1x the worst tile, and an OOM retries at 8000. The runtime
+    # is ~7x the slowest tile, for /scratch I/O on nibi (a 400 MB image and
+    # weight in, a ~430 MB catalogue out). nibi bills max(cores, mem_GB/4), so
+    # the job bills 1 core-equivalent.
+    threads: 1
+    retries: 1
     resources:
-        mem_mb = lambda wc, attempt: 16000 * attempt,
-        runtime = 180
+        mem_mb = lambda wc, attempt: 4000 * attempt,
+        runtime = lambda wc, attempt: 20 * attempt
     shell:
         sp_shell("tile_detect", "config_tile_Sx.ini")
 
@@ -532,10 +631,11 @@ rule tile_vignets:
         # The completeness check is pointed at the NODE-LOCAL run root; see
         # sp_shell's check_args for what the two flags do.
         sp_shell("tile_vignets", f"config_tile_PiViVi_{PSF_MODEL}.ini",
-                 check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}')
+                 check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}',
+                 post=keep_module_logs("$NGMIX_VIGNET_DIR", "run_sp_tile_PiViVi"))
 
 # ngmix shape measurement — N chunks per tile (D4). Each chunk LOOKS UP its own
-# CLOSED object-ID range in the file tile_vignets materialised at the top of this
+# CLOSED catalogue-row range in the file tile_vignets materialised at the top of this
 # group job (TILE_NGMIX_RANGES); the ranges are knowable only at EXECUTION time,
 # from this tile's own sexcat, which is why a params function cannot supply them.
 # Closed, not open-ended: `ID_OBJ_MAX = -1` on the last chunk was the 13-hour
@@ -748,7 +848,9 @@ rule tile_ngmix:
         runtime = lambda wc, attempt: 120 * attempt,
         slurm_extra = TILE_SLURM_EXTRA
     shell:
-        sp_shell("tile_ngmix", "config_tile_Ng_template.ini")
+        sp_shell("tile_ngmix", "config_tile_Ng_template.ini",
+                 post=keep_module_logs("{output.chunkdir}",
+                                       "run_sp_tile_ngmix_Ng{wildcards.chunk}u"))
 
 
 def ngmix_manifests(wc):
@@ -797,7 +899,7 @@ rule tile_make_cat:
         ms    = rules.tile_merge_cats.output.manifest,
     output:
         manifest  = f"{TILE_DIR}/manifests/tile_make_cat.json",
-        final_cat = f"{PROD_TILE_DIR}/final_cat-{{tile}}.fits",
+        final_cat = f"{PROD_TILE_DIR}/final_cat-{{tile}}.hdf5",
     log:
         f"{TILE_DIR}/logs/tile_make_cat.json"
     params:
@@ -819,7 +921,7 @@ rule tile_make_cat:
         sp_shell("tile_make_cat", "config_tile_Mc.ini",
                  post="if [ $rc -eq 0 ]; then\n"
                       '  cp -f "$(ls -1 "$SP_RUN"/output/run_sp_tile_Mc/make_cat_runner'
-                      '/output/final_cat*.fits | head -1)" {output.final_cat}\n'
+                      '/output/final_cat*.hdf5 | head -1)" {output.final_cat}\n'
                       "fi\n")
 
 

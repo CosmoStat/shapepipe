@@ -14,7 +14,6 @@ import ngmix
 import galsim
 import numpy as np
 from astropy.io import fits
-from astropy.wcs.utils import proj_plane_pixel_scales
 from cs_util import size as cs_size
 from modopt.math.stats import sigma_mad
 from ngmix.observation import Observation, ObsList
@@ -71,7 +70,7 @@ def get_type_flags(fit):
     Fit flags of one metacal type, reading absence of evidence of success
     as failure.
 
-    @sc [label:convention] mcal-flags-zero-means-measured
+    @sc [decision:catalogue_assembly.failure_sentinels,label:convention] mcal-flags-zero-means-measured
     A flag of 0 means the fit ran, reported success and returned a finite
     shear; no default or fallback may produce 0. FLAGS_<SHEAR>, MCAL_FLAGS
     (OR) and MCAL_TYPES_FAIL (count) all derive from this function, and
@@ -420,13 +419,40 @@ def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     )
 
 
+def chunk_rows(n_obj, row_min, row_max):
+    """Catalogue rows of one ngmix chunk.
+
+    A chunk is a closed range of 1-based row positions in the tile
+    catalogue, independent of the ``NUMBER`` values those rows carry, so a
+    partition of ``1..n_obj`` covers every object once however ``NUMBER``
+    is ordered or spaced. A bound ``<= 0`` is unbounded on that side.
+
+    Parameters
+    ----------
+    n_obj : int
+        Number of rows in the tile catalogue
+    row_min, row_max : int
+        First and last row of the chunk (1-based, inclusive)
+
+    Returns
+    -------
+    range
+        0-based row indices of the chunk
+
+    """
+    start = row_min - 1 if row_min > 0 else 0
+    stop = min(row_max, n_obj) if row_max > 0 else n_obj
+    return range(start, max(start, stop))
+
+
 def position_seed(ra, dec, ccd):
     """Deterministic RNG seed from an object's sky position (ngmix#796).
 
     Position seeding gives the same object the same RNG stream in each image
     branch, provided its sky position falls in the same seed box. It also makes
     the result independent of how the tile is split into
-    ``ID_OBJ_MIN``/``ID_OBJ_MAX`` chunks, which is why it is now the only mode.
+    ``ID_OBJ_MIN``/``ID_OBJ_MAX`` row chunks, which is why it is now the only
+    mode.
 
     Box math (kept exactly as Fabian's issue #796)::
 
@@ -474,10 +500,45 @@ def position_seed(ra, dec, ccd):
     return cantor % (2 ** 32)
 
 
+class ChunkStamps():
+    """One stamp column of the tile catalogue, held for one chunk's rows.
+
+    Indexed by tile-catalogue row like the full column it stands in for, so
+    ``stamps[i_tile]`` is the stamp of row ``i_tile``; rows outside the chunk
+    raise ``IndexError``.
+
+    Parameters
+    ----------
+    column : numpy.ndarray
+        Full stamp column, one stamp per catalogue row. A memory-mapped
+        column is read only over ``rows``.
+    rows : range
+        0-based catalogue rows to hold (see :func:`chunk_rows`).
+
+    """
+    def __init__(self, column, rows):
+        self.rows = rows
+        self._stamps = np.array(column[rows.start:rows.stop])
+
+    def __getitem__(self, i_tile):
+        if not self.rows.start <= i_tile < self.rows.stop:
+            raise IndexError(
+                f"tile-catalogue row {i_tile} is outside this chunk's rows"
+                + f" {self.rows.start}..{self.rows.stop - 1}"
+            )
+        return self._stamps[i_tile - self.rows.start]
+
+
 class Tile_cat():
     """Tile_cat.
 
     catalog measured on a tile
+
+    The per-object columns (``obj_id``, ``ra``, ``dec``, ``flux``) are held
+    for every row. The stamp columns (``vign``, ``seg``) are held only for
+    the chunk's rows (``self.rows``) as :class:`ChunkStamps`, still indexed
+    by tile-catalogue row: the catalogues are memory-mapped, so a chunk reads
+    only its own stamps.
 
     Parameters
     ----------
@@ -489,15 +550,23 @@ class Tile_cat():
         row-aligned to ``cat_path``. When given, ``self.seg`` holds one integer
         seg stamp per object for the ``"uberseg"`` blend handling; ``None``
         leaves ``self.seg`` unset (the noise-fill path is unaffected).
+    row_min, row_max : int, optional
+        First and last catalogue row of the chunk (1-based, inclusive; see
+        :func:`chunk_rows`). The default, ``-1``, is unbounded, so the whole
+        catalogue.
 
     """
     def __init__(
         self,
         cat_path,
         seg_cat_path=None,
+        row_min=-1,
+        row_max=-1,
     ):
         self.cat_path = cat_path
         self.seg_cat_path = seg_cat_path
+        self.row_min = row_min
+        self.row_max = row_max
         if cat_path:
             self.get_data(cat_path)
 
@@ -505,6 +574,7 @@ class Tile_cat():
         tile_cat = file_io.FITSCatalogue(
             cat_path,
             SEx_catalogue=True,
+            memmap=True,
         )
         tile_cat.open()
         data = tile_cat.get_data()
@@ -513,10 +583,15 @@ class Tile_cat():
         self.obj_id = np.copy(data['NUMBER'])
         self.ra = np.copy(data['XWIN_WORLD'])
         self.dec = np.copy(data['YWIN_WORLD'])
+        self.rows = chunk_rows(len(self.obj_id), self.row_min, self.row_max)
 
         # Optional columns — may be absent in external (non-SExtractor) catalogs
         self.flux = np.copy(data['FLUX_AUTO']) if 'FLUX_AUTO' in cols else None
-        self.vign = np.copy(data['VIGNET']) if 'VIGNET' in cols else None
+        self.vign = (
+            ChunkStamps(data['VIGNET'], self.rows)
+            if 'VIGNET' in cols
+            else None
+        )
 
         tile_cat.close()
 
@@ -529,6 +604,7 @@ class Tile_cat():
             seg_cat = file_io.FITSCatalogue(
                 self.seg_cat_path,
                 SEx_catalogue=True,
+                memmap=True,
             )
             seg_cat.open()
             seg_data = seg_cat.get_data()
@@ -550,7 +626,7 @@ class Tile_cat():
                         + " does not match the tile catalogue NUMBER; the"
                         + " segmentation vignets are misaligned or reordered."
                     )
-            self.seg = np.copy(seg_data['VIGNET'])
+            self.seg = ChunkStamps(seg_data['VIGNET'], self.rows)
             seg_cat.close()
 
 class Postage_stamp():
@@ -646,44 +722,6 @@ class Vignet():
         if self.bkg_rms_vign_cat is not None:
             self.bkg_rms_vign_cat.close()
 
-def pixel_scale_from_wcs(f_wcs_file):
-    """Representative pixel scale (arcsec) from the tile's image WCS.
-
-    The ngmix fit builds each object's Jacobian from the full per-epoch WCS,
-    so this scalar only sets the centroid-prior width and the noise-window
-    scale (see :func:`get_prior`, :func:`get_noise`). A single value read from
-    the astrometry is therefore sufficient -- and, unlike a hard-coded config
-    constant, it cannot silently drift from the pixels it describes (this
-    mirrors SExtractor's ``PIXEL_SCALE 0`` convention).
-
-    Parameters
-    ----------
-    f_wcs_file : dict-like
-        Mapping ``exposure -> {ccd -> {"WCS": astropy.wcs.WCS, ...}}`` (the
-        merged single-exposure headers opened by :class:`Vignet`).
-
-    Returns
-    -------
-    float
-        Pixel scale in arcsec, averaged over the two axes of the first WCS.
-
-    Raises
-    ------
-    ValueError
-        If no WCS can be found in ``f_wcs_file``.
-    """
-    for exp_name in f_wcs_file:
-        for ccd_dict in f_wcs_file[exp_name].values():
-            # proj_plane_pixel_scales returns deg/pixel per world axis; the
-            # two axes are equal to sub-per-mille for survey astrometry.
-            scales = proj_plane_pixel_scales(ccd_dict["WCS"])
-            return float(np.mean(scales) * 3600.0)
-    raise ValueError(
-        "cannot derive PIXEL_SCALE from the WCS: the merged single-exposure "
-        "headers file contains no exposures"
-    )
-
-
 class Ngmix(object):
     """Ngmix.
 
@@ -699,10 +737,6 @@ class Ngmix(object):
         File numbering scheme
     zero_point : float
         Photometric zero point
-    pixel_scale : float or None
-        Pixel scale in arcsec. Optional override: when ``None`` or
-        non-positive, the pixel scale is derived from the image WCS (see
-        :func:`pixel_scale_from_wcs`).
     f_wcs_path : str
         Path to merged single-exposure single-HDU headers
     w_log : logging.Logger
@@ -711,11 +745,11 @@ class Ngmix(object):
         Save output catalogue in batches of this size; detaul is ``-1`` (no
         batch save)
     id_obj_min : int, optional
-        First galaxy ID to process, not used if the value is set to ``-1``;
-        the default is ``-1``
+        First catalogue row to process (1-based, see :func:`chunk_rows`),
+        not used if the value is set to ``-1``; the default is ``-1``
     id_obj_max : int, optional
-        Last galaxy ID to process, not used if the value is set to ``-1``;
-        the default is ``-1``
+        Last catalogue row to process (1-based, inclusive), not used if the
+        value is set to ``-1``; the default is ``-1``
     centroid_source : {"wcs", "hsm"}, optional
         How to place the galaxy Jacobian origin for the centroid prior. The
         default ``"wcs"`` places it at the coadd centroid: the sub-pixel
@@ -755,7 +789,6 @@ class Ngmix(object):
         output_dir,
         file_number_string,
         zero_point,
-        pixel_scale,
         f_wcs_path,
         w_log,
         save_batch=-1,
@@ -843,25 +876,6 @@ class Ngmix(object):
             'Per-object RNG seeded from sky position (ngmix#796): results are'
             ' invariant to how the tile is split into object chunks'
         )
-
-        # Pixel scale: an explicit positive PIXEL_SCALE overrides; otherwise
-        # derive it from the image WCS so it can never drift from the pixels
-        # (mirrors SExtractor's ``PIXEL_SCALE 0`` convention). Only the
-        # centroid-prior width and noise window use it -- the fit Jacobian is
-        # built per object from the full WCS.
-        if pixel_scale is None or pixel_scale <= 0:
-            self._pixel_scale = pixel_scale_from_wcs(
-                self._vignet_cat.f_wcs_file
-            )
-            self._w_log.info(
-                f'PIXEL_SCALE derived from image WCS = '
-                f'{self._pixel_scale:.6f} arcsec'
-            )
-        else:
-            self._pixel_scale = pixel_scale
-            self._w_log.info(
-                f'PIXEL_SCALE from config = {self._pixel_scale:.6f} arcsec'
-            )
 
     @classmethod
     def MegaCamFlip(self, vign, ccd_nb):
@@ -1236,7 +1250,12 @@ class Ngmix(object):
 
         @sc [decision:shape_measurement.fit_initialisation,decision:shape_measurement.ngmix_seed_mode]
         """
-        tile_cat = Tile_cat(self._tile_cat_path, self._seg_cat_path)
+        tile_cat = Tile_cat(
+            self._tile_cat_path,
+            self._seg_cat_path,
+            self._id_obj_min,
+            self._id_obj_max,
+        )
         vignet_cat = self._vignet_cat
 
         check_wcs_centroid_offset(
@@ -1256,11 +1275,11 @@ class Ngmix(object):
         count_batch = 0
         saved_batch_cumul = 0
 
-        for i_tile, obj_id in enumerate(tile_cat.obj_id):
-            if self._id_obj_min > 0 and obj_id < self._id_obj_min:
-                continue
-            if self._id_obj_max > 0 and obj_id > self._id_obj_max:
-                continue
+        rows = chunk_rows(
+            len(tile_cat.obj_id), self._id_obj_min, self._id_obj_max
+        )
+        for i_tile in rows:
+            obj_id = tile_cat.obj_id[i_tile]
             if id_first == -1:
                 id_first = obj_id
             id_last = obj_id
@@ -1298,11 +1317,12 @@ class Ngmix(object):
             # because the guesser draws its initial guess via prior.sample()
             # (ngmix guessers.py), which consumes the RNG the prior was
             # CONSTRUCTED with: a per-object rng alone would leave the guess
-            # drawing from a shared stream and break the invariance.
+            # drawing from a shared stream and break the invariance. The
+            # centroid prior is one pixel wide, in this object's own epochs.
             obj_rng = np.random.RandomState(
                 position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
             )
-            obj_prior = get_prior(self._pixel_scale, obj_rng)
+            obj_prior = get_prior(stamp_pixel_scale(stamp.jacobs), obj_rng)
 
             try:
                 flux_guess = (
@@ -1643,6 +1663,29 @@ def get_galsim_jacobian(wcs, ra, dec):
     return galsim_jacob
 
 
+def stamp_pixel_scale(jacobs):
+    """Pixel scale (arcsec) of one object's epochs, for its centroid prior.
+
+    Each epoch's linear scale is ``sqrt(|det J|)``: the side of a square
+    pixel of the same sky area, blind to the CCD's rotation and flip. The
+    object's scale is the mean over its epochs, because the centroid prior is
+    one Gaussian in the sky frame those epochs share.
+
+    Parameters
+    ----------
+    jacobs : list of galsim.JacobianWCS
+        The object's per-epoch Jacobians, from :func:`get_galsim_jacobian`.
+
+    Returns
+    -------
+    float
+        Pixel scale in arcsec.
+
+    @sc [decision:shape_measurement.fit_priors]
+    """
+    return float(np.mean([np.sqrt(abs(jac.pixelArea())) for jac in jacobs]))
+
+
 def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
     """Get Noise.
     TO DO: modify guess, pixel scale
@@ -1687,6 +1730,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
     sig_noise = sigma_mad(gal[gauss_win < thresh * sig_tmp][m_weight])
 
     return sig_noise
+
 
 def central_seg_label(seg):
     """Centre-pixel label of a seg stamp — a *diagnostic*, not the central id.

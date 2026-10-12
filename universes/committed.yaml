@@ -9,9 +9,12 @@ analyses:
     decisions:
       pixel_mask_source: instrument_flags_only
       psf_star_mask_veto: instrument_flags_only
-      sky_mask_application: deferred_downstream
+      sky_mask_application: catalogue_columns
+      nexp_map_valid_psf_ccds: valid_psf_ccds
+      defect_map_from_flags: count_flagged_pixels
   detection:
     decisions:
+      tile_detection: unions_catalogue
       detection_threshold_policy: megapipe_tiles
       deblending_policy: megapipe_tiles
       background_model: auto_megapipe_tiles
@@ -32,7 +35,7 @@ analyses:
       stamp_positioning_and_padding: round_and_zero_pad
   star_selection_psf:
     decisions:
-      star_selection_box: mode_centred_box
+      star_selection_box: locus_scaled_box
       psf_train_validation_split: split_80_20_seeded
       psfex_candidate_vetting: builtin_defaults
       psf_modelling_software: psfex

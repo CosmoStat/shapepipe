@@ -37,7 +37,8 @@
 #
 # Run config: -c FILE, also --config-file. Read after workflow/config.yaml and
 # merged on top; anything still unset comes from the machines: entry for
-# SP_PROFILE and input_type (workflow/scripts/run_config.py).
+# SP_PROFILE and input_type, then the input_types: entry
+# (workflow/scripts/run_config.py).
 # To check a resolved value without running:
 #
 #   python workflow/scripts/run_config.py workflow/config.yaml ~/my_run.yaml outputs.run_dir
@@ -348,6 +349,7 @@ case "$cmd" in
     # call it through the Snakefile's SCRIPTS, which is the snapshot). Read-only
     # either way -- this is consistency, not safety.
     shift
+    SP_TILE_DETECTION="$(cfg tile_detection)" \
     python "$(code_root)/workflow/scripts/run_report.py" \
       --run-dir "$RUN_DIR" --index "$INDEX_DB" \
       --status manual "$@"

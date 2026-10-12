@@ -44,7 +44,7 @@ def ngmix_runner(
 ):
     """Define The Ngmix Runner.
 
-    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.centroid_source,decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]
+    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.centroid_source,decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme,decision:shape_measurement.galaxy_pixel_weights]
 
     @sc [label:operations] empty-tile-product
     A tile whose PSF or galaxy vignette store is entirely empty never
@@ -60,14 +60,6 @@ def ngmix_runner(
 
     # Photometric zero point
     zero_point = config.getfloat(module_config_sec, "MAG_ZP")
-
-    # Pixel scale -- optional override. When absent (or non-positive) it is
-    # derived from the image WCS inside Ngmix, so it cannot drift from the
-    # pixels. Only the centroid-prior width and noise window use it.
-    if config.has_option(module_config_sec, "PIXEL_SCALE"):
-        pixel_scale = config.getfloat(module_config_sec, "PIXEL_SCALE")
-    else:
-        pixel_scale = None
 
     # Background subtraction: disable for image sims, where there is no
     # background image to subtract. The background vignet occupies one input
@@ -122,10 +114,10 @@ def ngmix_runner(
         # No batch saving
         save_batch = -1
 
-    # First and last galaxy ID to process. Read via ``getexpanded`` so an
-    # orchestrator can drive the chunk bounds from environment variables
-    # (``$SP_NGMIX_ID_OBJ_MIN`` and friends); ``getexpanded`` is the only
-    # accessor in ShapePipe's config that expands ``$VAR``.
+    # First and last catalogue row (1-based) to process. Read via
+    # ``getexpanded`` so an orchestrator can drive the chunk bounds from
+    # environment variables (``$NGMIX_ROW_MIN`` and friends); ``getexpanded``
+    # is the only accessor in ShapePipe's config that expands ``$VAR``.
     id_obj_min = int(config.getexpanded(module_config_sec, "ID_OBJ_MIN"))
     id_obj_max = int(config.getexpanded(module_config_sec, "ID_OBJ_MAX"))
 
@@ -204,7 +196,6 @@ def ngmix_runner(
         run_dirs["output"],
         file_number_string,
         zero_point,
-        pixel_scale,
         f_wcs_path,
         w_log,
         save_batch=save_batch,

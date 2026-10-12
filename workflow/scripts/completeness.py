@@ -72,6 +72,11 @@ import re
 import sys
 from pathlib import Path
 
+# How the tile's galaxy sample is defined: SExtractor on the tile image alone,
+# or those detections joined to the UNIONS per-tile catalogue, whose NUMBER
+# they take. The run config's `tile_detection:` picks one.
+TILE_DETECTIONS = ("sextractor", "unions_catalogue")
+
 # stage -> {runner_subdir: {expect, [warn], [subpath]}}
 # exp_psf and tile_vignets are selected by $SP_PSF at check time.
 # @sc [decision:per_unit_completeness]
@@ -135,7 +140,9 @@ COMPLETENESS = {
 
     # --- tile post ---
     "tile_merge_headers": {"merge_headers_runner": dict(expect=1)},
-    "tile_detect":        {"sextractor_runner":    dict(expect=2)},
+    # The fetched UNIONS catalogue.
+    "tile_get_catalogue": {"get_images_runner":     dict(expect=1)},
+    "tile_detect":        {"sextractor_runner":     dict(expect=2)},
     "tile_vignets": {
         "psfex": {
             "psfex_interp_runner":     dict(expect=1),
@@ -241,6 +248,7 @@ STAGE_DIR = {
     "exp_split":           ("exp",  "run_sp_exp_Sp"),
     "exp_psf":             ("exp",  "run_sp_exp_SxSePsf"),
     "tile_merge_headers":  ("tile", "run_sp_tile_Mh_exp"),
+    "tile_get_catalogue":  ("tile", "run_sp_tile_Gic"),
     "tile_detect":         ("tile", "run_sp_tile_Sx"),
     "tile_vignets":        ("tile", "run_sp_tile_PiViVi"),
     "tile_ngmix":          ("tile", "run_sp_tile_ngmix_Ng${SP_NGMIX_CHUNK}u"),
