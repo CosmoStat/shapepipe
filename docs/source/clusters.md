@@ -29,7 +29,7 @@ protocol as the host launcher (see the candide section below).
 
 ## candide (SLURM)
 
-candide uses **SLURM** (`sbatch`; the old `qsub`/PBS commands are gone). The repo
+candide uses **SLURM** (`sbatch`). The repo
 ships ready job scripts in `example/pbs/` — `candide_smp.sh` (single node,
 parallelised with joblib) and `candide_mpi.sh` (multi-node, hybrid MPI). To run
 the bundled single-tile example end to end:
@@ -88,14 +88,11 @@ post-processing — is documented in the
 [CANFAR production walkthrough](pipeline_canfar.md).
 
 ```{note}
-The CANFAR production submission scripts (`scripts/sh/job_sp_canfar*.bash`) still
-run under the pre-container environment and are slated for the same
-container-first cleanup the candide scripts received. Treat the walkthrough as
-the current-but-evolving production procedure.
+For the CANFAR production submission scripts (`scripts/sh/job_sp_canfar*.bash`),
+follow their environment requirements and the production walkthrough.
 ```
 
 ## ccin2p3
 
-ccin2p3 is not yet containerised. The `example/pbs/cc_{smp,mpi}.sh` scripts target
-the pre-container environment; a container-first path mirroring candide is future
-work.
+The `example/pbs/cc_{smp,mpi}.sh` scripts target a host-installed environment.
+See their headers for machine-specific requirements.

@@ -315,17 +315,15 @@ class SaveCatalogue:
         plus four OBJECT/SHEAR-less per-object metadata columns
         (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
         ``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG`` — the last a blend
-        flag set when the coadd seg stamp held a non-central footprint,
-        shapepipe#776). The galaxy is the implicit default object
-        and carries NO ``OBJECT`` token (``NGMIX_G1_NOSHEAR``, dropping the
-        ``GAL`` segment carried by the pre-#761 names). The explicit PSF
+        flag set when the coadd segmentation stamp contains a non-central
+        footprint). The galaxy is the implicit default object and carries no
+        ``OBJECT`` token (``NGMIX_G1_NOSHEAR``). The explicit PSF
         objects are ``PSF_ORIG``
         (the original image PSF, fit by
         :func:`ngmix.average_original_psf`) and ``PSF_RECONV`` (the metacal
         reconvolution kernel, fit by :func:`ngmix.average_multiepoch_psf`);
-        see those functions for what each PSF family IS. ``PSF_ORIG`` and
-        ``PSF_RECONV`` are independent fits of different PSFs, no longer the
-        single aliased value of the pre-fix code (shapepipe#749).
+        see those functions for the definitions of each PSF family. The two
+        families contain independent fits of different PSFs.
 
         Parameters
         ----------
@@ -366,8 +364,7 @@ class SaveCatalogue:
             self._w_log.warning(warning)
 
         ngmix_mcal_types_fail = ngmix_cat_file.get_data()["mcal_types_fail"]
-        # Per-object blend flag (shapepipe#776): the seg stamp held a
-        # non-central footprint. Galaxy-only (non-moments), like N_EPOCH.
+        # Per-object blend flag: galaxy-only (non-moments), like N_EPOCH.
         ngmix_neighbour_flag = ngmix_cat_file.get_data()["neighbour_flag"]
         # Needed in both moments and non-moments modes (used unconditionally
         # below), so read them outside the branch.

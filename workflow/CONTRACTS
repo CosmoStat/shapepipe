@@ -22,7 +22,7 @@ tests/workflow/test_dag.py::test_products_use_products_dir_and_run_name.
 Each input type's `config/*/final_cat.param` is the merged catalogue's exact
 column list, in order: `final_cat_merge` writes those columns and no others,
 and the reader raises on a listed column a tile lacks. So a name belongs there
-only if `make_cat` writes it on EVERY tile. A per-epoch family (`EXP_ID_n`,
+only if `make_cat` writes it on every tile. A per-epoch family (`EXP_ID_n`,
 `CCD_n`, `HSM_*_PSF_n`) qualifies only with a fixed slot count, since
 `make_cat` otherwise sizes it from the sexcat's maximum geometric `N_EPOCH`. Enforced
 by tests/unit/test_final_cat_merge_invariants.py (the merge) and
@@ -44,8 +44,8 @@ Regenerate tests/workflow/params_pin.json only at that boundary with
 
 @sc [label:custody] clean-exposure-waits-on-persist-iff-psf
 `clean_exposure` waits on the exposure's persisted PSF products exactly when
-`PERSISTS_PSF` (`psf_model != "fake"`, which is `psfex`: `mccd` is refused at
-parse time by `refuse_unpersistable_psf`): on the `exp_persist` manifest for a
+`PERSISTS_PSF` is true (`psf_model != "fake"`; `mccd` is refused at parse time
+by `refuse_unpersistable_psf`): on the `exp_persist` manifest for a
 live store, and on the tar (a leaf), or nothing, for a reclaimed one. Dropping
 the edge under psfex lets reclamation delete the scratch store before its PSF
 products reach `products_dir`; keeping it under `fake` makes every clean wait on

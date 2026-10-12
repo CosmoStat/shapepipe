@@ -1,9 +1,8 @@
 # Installation
 
 ```{attention}
-ShapePipe was not designed to be a stand-alone Python library. Instead users
-are expected to install the full ShapePipe environment on the system(s) where
-data should be processed.
+Running the pipeline requires both the Python package and system executables.
+Use the container for the complete supported environment.
 ```
 
 ## Container Installation (Recommended)
@@ -35,7 +34,7 @@ docker pull ghcr.io/cosmostat/shapepipe:develop
 ```
 
 ```{attention}
-We do not currently build images for Apple Silicon/amr64; however the amd64 images should work on these systems, albeit with reduced performance.
+We do not currently build images for Apple Silicon/arm64; however the amd64 images should work on these systems, albeit with reduced performance.
 ```
 
 The image bundles the astromatic binaries (`source-extractor`, `psfex`),

@@ -1,16 +1,22 @@
-"""Rasterize ONE exposure's footprint and instrument defects into a HealSparse
+"""Rasterize one exposure's footprint and instrument defects into a HealSparse
 fragment: the shell of the ``exp_maps`` rule.
 
 The fragment is a uint8 map at the UNIONS mask ladder's resolution (nside
 131072 over coverage 128, 1.6" pixels, ~74 MegaCam pixels each), so it aligns
-pixel for pixel with the sky masks. A sky pixel holds
+pixel for pixel with the sky masks.
 
-    0              not covered by a CCD of this exposure with a PSF model
-    1 + n          covered, and ``n`` flagged CCD pixels have their centre in it
+@sc [label:schema] exposure-map-fragment-encoding
+The merger must decode coverage separately from flagged counts. A sky pixel holds
+
+    0                 not covered by a CCD of this exposure with a PSF model
+    1 + min(n, 254)    covered, with ``n`` flagged CCD pixel centres in it
+
+Flag counts include only sky pixels whose centres are inside the coverage
+polygon; counts above 254 saturate in the uint8 fragment.
 
 ``merge_exposure_maps.py`` sums the fragments of a campaign into the
 exposure-count map (``nexp``) and the flagged-pixel map (``nflagged``). The
-CCDs of one exposure do not overlap, so the first sum counts exposures.
+fragment marks coverage once per exposure, so the first sum counts exposures.
 
 Flagged pixels are counted rather than OR-ed into a boolean mask because most
 of them are thin: bad columns and cosmic rays a single CCD pixel wide. Any-touch

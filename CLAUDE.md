@@ -5,15 +5,14 @@ runs the full chain from raw survey images to calibrated shear catalogues —
 object detection, PSF modelling, and shape measurement — and was used to produce
 the first UNIONS cosmic-shear release.
 
-The project is now entering a substantial rework of the shape-measurement
-pipeline, with the near-term goal of a tight loop between the pipeline and image
-simulations for validation and calibration. Development is by a small team;
+Development focuses on a tight loop between the shape-measurement pipeline and
+image simulations for validation and calibration. Development is by a small team;
 reproducibility and clarity matter more than breadth.
 
 ## Environment — the container is the source of truth
 
 ShapePipe is not a stand-alone library: it needs system tools (Source Extractor,
-PSFEx, WeightWatcher), MPI, and a specific scientific-Python stack. The supported
+PSFEx), MPI, and a specific scientific-Python stack. The supported
 way to get all of that is the container.
 
 - **Dependencies** are declared in `pyproject.toml` as **floor ranges**; exact
@@ -105,8 +104,8 @@ Full detail: `docs/source/installation.md` and `docs/source/container.md`.
   exercises exactly what ships — run them the same way, in the container.
 - **CI** (`.github/workflows/deploy-image.yml`): every PR and push builds the
   image and runs the test suite + the example pipeline + binary smokes; pushes to
-  `develop` / `main` / `master` additionally publish the images. API docs deploy
-  from `master` (`cd.yml`).
+  any branch additionally publish the images. See `cd.yml` for versioned API-doc
+  builds and deployment.
 - **Style**: PEP 8; numpydoc docstrings on public modules, classes, and methods.
   Match the surrounding code.
 

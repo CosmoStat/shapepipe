@@ -2,7 +2,7 @@
 
 Class to flag SExtractor detections against external healsparse masks.
 
-:Author: Claude Fable 5, for PR #847
+:Author: Claude Fable 5
 
 """
 
@@ -91,12 +91,9 @@ class MaskQuery(object):
         ori_cat.open()
         data = ori_cat.get_data()
 
-        # A CCD SExtractor found nothing on is tolerated all along this chain
-        # (setools' ~0.2% attrition, psfex_interp's floor=0 warn), so it must
-        # not be an error here either. An empty LDAC table has no columns to
-        # index, so read the positions only when there are rows, and still
-        # publish an output file — a missing sexcat_ext would look to the file
-        # handler like a crash rather than like an empty CCD.
+        # Empty CCD catalogues still need an output file so the file handler
+        # can distinguish an empty detection result from a failed module.
+        # Read position columns only when the table has rows.
         if len(data) == 0:
             ra = np.zeros(0)
             dec = np.zeros(0)

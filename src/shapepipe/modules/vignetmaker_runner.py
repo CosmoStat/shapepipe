@@ -106,7 +106,7 @@ def vignetmaker_runner(
             # Multi-epoch exposures
 
             if config.has_option(module_config_sec, "ME_IMAGE_EXP_DIR"):
-                # v2.0: locate runner output dirs via the $SP_EXP tree
+                # Locate runner output directories in the configured exposure tree.
                 exp_base_dir = config.getexpanded(
                     module_config_sec, "ME_IMAGE_EXP_DIR"
                 )
@@ -128,7 +128,7 @@ def vignetmaker_runner(
                     )
                     image_dirs.append(dirs)
             else:
-                # v1: run-log based lookup via symlinked exposure run dirs
+                # Locate symlinked exposure output directories via the run log.
                 modules = config.getlist(module_config_sec, "ME_IMAGE_DIR")
                 image_dirs = []
                 for module in modules:

@@ -1,7 +1,9 @@
 # cfis_image_sims — module configs for ShapePipe on simulated tiles
 
-This directory is the single `.ini` tree for image-simulation runs. It is
-selected by `run_job_sp_canfar_v2.0.bash -t image_sims` (which sets
+This directory holds the configs for bash-driven image-simulation runs.
+For Snakemake runs, use `workflow/config/cfis_image_sims/` and see
+[`workflow/README.md`](../../workflow/README.md).
+The bash config tree is selected by `run_job_sp_canfar_v2.0.bash -t image_sims` (which sets
 `config_dir = example/cfis_image_sims`, `retrieve = symlink`, and forces
 `tile_det = sx`) and consumed stage-by-stage by `job_sp_canfar_v2.0.bash`.
 
@@ -10,18 +12,15 @@ loops over the bits set in `-j`, initialises the tile/exposure work directories,
 runs each completeness check, and delegates the actual `shapepipe_run` calls to
 `job_sp_canfar_v2.0.bash -j <bit>`, which is where the `.ini` file for each bit
 is selected. A few bits are special-cased for sims *before* that delegation —
-those cases are documented in the last column below and, at more length, under
-[Sim special-casing](#sim-special-casing).
+those cases are documented in the last column below.
 
 ## Job-bit dispatch
 
 Every row is derived from the two bash scripts. "Module(s)" is the ShapePipe
 runner(s) the selected `.ini` names; "`.ini` selected" is what
 `job_sp_canfar_v2.0.bash` picks for that bit under sim settings
-(`retrieve=symlink`, `psf=psfex`, `tile_det=sx`). Bit 32 (mask exposures) is
-gone: ShapePipe generates no masks (PR #847), so the bash scripts'
-`star_cat_for_mask` setting and the `config_*_Ma_*.ini` configs it selected no
-longer exist.
+(`retrieve=symlink`, `psf=psfex`, `tile_det=sx`). There is no bit-32 masking
+stage: ShapePipe generates no masks.
 
 | Bit | Stage | Module(s) | `.ini` selected (sim settings) | Sim special-casing |
 |----:|-------|-----------|--------------------------------|--------------------|
@@ -50,22 +49,6 @@ Notes on cross-cutting conventions used above:
 - **Forced `tile_det=sx`.** The `image_sims` type branch forces `tile_det=sx`, so
   bit 256 always runs SExtractor detection and bit 512 selects the `_sx`-suffixed
   vignet/ngmix/PiViVi configs.
-
-## Sim special-casing
-
-Three bits diverge from the data chain, all handled in
-`run_job_sp_canfar_v2.0.bash` before the per-bit delegation:
-
-- **Bit 2 — faked weight-uncompress.** Sim weights ship uncompressed, so instead
-  of running `uncompress_fits_runner`, run_job fabricates the expected Uz output
-  directory and symlinks `CFIS_simu_weight-<ID-dashed>.fits` in, so downstream
-  `last:uncompress_fits_runner` references resolve.
-- **Bit 64 — placeholder.** run_job writes a placeholder completeness log and
-  runs nothing; the sim PSF is produced by `fake_psf_runner` inside bit 512.
-- **Bit 512 — fake PSF + vignets.** run_job runs `fake_psf_runner`
-  (`config_exp_psfex.ini`) followed by the two `vignetmaker_runner` runs
-  (`config_tile_PiViVi_canfar_sx.ini`). `fake_psf_runner` consumes the sexcat
-  from bit 256, so bit 256 must precede it.
 
 ## Parallelism model and the `PSF_DICT` requirement
 

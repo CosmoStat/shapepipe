@@ -7,51 +7,31 @@ reads fixed ``$SP_RUN/output/run_sp_exp_*`` INPUT_DIRs, so nothing resolves a
 run log. There is no `prepare_exposures` aggregation target: these chains hang
 off the compute DAG (`all` <- final_cat <- tile chain <- exposure manifests).
 
-NO MASK RULE, and that is the design (PR #847). ShapePipe generates no masks.
-The only mask that reaches pixels is the instrument flag image delivered with
-the exposure, which ``exp_split`` splits per CCD alongside image and weight and
-SExtractor reads directly. Sky-fixed masks are healsparse maps, queried once per
-object: ``mask_query`` (inside exp_psf's config chain) writes ``MASK_EXT`` onto
-each CCD's SExtractor catalogue, carried for transparency and measurement
-(selection's only mask cut is ``IMAFLAGS_ISO``; imposing ``MASK_EXT`` is
-opt-in, see ``star_selection.setools``), and ``make_cat`` writes the per-band
-``MASK_<band>`` columns on the tile side. Neither needs a rule, a
-star catalogue, or a network fetch — hence no ``star_catalogue`` / ``exp_star_cat``
-here, and no ``exp_mask``.
+There is no mask-generation rule. ``exp_split`` splits the delivered instrument
+flag image per CCD alongside image and weight; SExtractor reads it directly.
+Sky-fixed masks are queried within the PSF and tile config chains, not fetched
+or rasterized by a separate rule. See ``config/cfis/star_selection.setools``
+for star-selection mask cuts and ``config/cfis/config_tile_Mc.ini`` for the
+catalogue mask columns.
 
-``exp_maps`` exports that flag image, with the CCD footprints, into a
-HealSparse fragment so the survey footprint can subtract it; nothing in this
-workflow reads it back.
+``exp_persist`` and ``exp_maps`` write to the persistent root. Retention policy
+and tar layout are documented in workflow/scripts/persist_exp.py; the exposure
+map format is documented in workflow/scripts/exp_maps.py.
 
-``exp_persist`` and ``exp_maps`` write to the PERSISTENT root. ``exp_persist``
-packs the PSF products named by `persist_exp:` into one tar per exposure off
-/scratch before the purge (or clean_exposure) can take them. It is a separate
-rule from exp_psf precisely so that editing that list costs a re-pack and not a
-four-hour refit; the full
-argument is in workflow/scripts/persist_exp.py.
+NO temp() on exposure products: exposures overlap ~7-10 tiles each, so their
+consumer set spans the campaign, not one invocation. ``clean_exposure`` uses
+the accumulating index to reclaim them. A temp() would delete an exposure as
+soon as this invocation's readers finished, causing destructive reruns of
+neighbouring tiles when the tile list grows.
 
-NO temp() anywhere in this file, ever (D5). Exposures overlap tiles by
-construction (~7-10 tiles each), so their consumer set closes over the CAMPAIGN,
-not over one invocation — reclamation here is clean_exposure's job (S5), driven
-by the accumulating index. A temp() here would delete an exposure the moment
-this invocation's readers finished and cascade destructive reruns across spatial
-neighbours the next time a tile is appended.
-
-NO GROUPING. The ``exp_short`` group existed to fuse exp_split and exp_mask —
-two rules whose medians were 1:28 and 1:54, both well under the 15-minute floor
-Alliance policy asks us to bundle away — into one sbatch per exposure. With
-exp_mask gone there is nothing to fuse: a group of one rule submits exactly the
-job the ungrouped rule submits, and the label would only obscure that. The
-composition rules, should a second short rule ever appear here, are in
-prepare.smk's docstring. exp_get_images stays separate for the same reason it
-always did (a download, retried on its own), and exp_psf is heavy (16 GB, 4 h)
-and never fuses with a short rule.
+The exposure rules are ungrouped: exp_get_images is a separately retried
+download, exp_split has no adjacent short compute rule to fuse with, and
+exp_psf is a heavy job (16 GB, 4 h). Group resource composition is documented
+in prepare.smk.
 
 NUMBER_LIST ($SP_UNIT_NUM, see unit_num in the Snakefile) is set only for
-exp_split, whose numbering scheme IS the exposure id; never for get_images /
-exp_psf, whose per-CCD or download numbering would turn tolerated per-CCD
-attrition into a whole-exposure hard failure. It is a property of the committed
-configs (config_exp_Sp.ini alone carries the entry).
+exp_split, whose numbering scheme is the exposure id. The implementing config
+is config_exp_Sp.ini; get_images and exp_psf use different numbering schemes.
 """
 
 rule exp_get_images:
@@ -90,17 +70,14 @@ rule exp_split:
     shell:
         sp_shell("exp_split", "config_exp_Sp.ini")
 
-# SExtractor -> mask_query (MASK_EXT) -> setools star selection -> PSFEx model
-# -> psfex_interp, per CCD. Under SP_PSF=psfex, setools_runner is mandatory
-# (expect=80) and only psfex_interp_runner is :warn; under SP_PSF=mccd every
-# runner in the chain is :warn (see completeness.py's COMPLETENESS table).
+# PSFEx: SExtractor -> mask_query -> setools -> PSFEx -> psfex_interp, per CCD.
+# For the fake PSF, this stage runs SExtractor only. Failure policy lives in
+# completeness.py's COMPLETENESS table.
 #
-# MCCD instead fits ONE focal-plane model per exposure after the per-CCD
-# stages: ~85 min single-threaded for ~2500 stars (SKiLLS star sim, 8.3 GB),
-# and only 1.75x faster on 8 BLAS threads (which the thread caps forbid anyway).
-# With 8 cores reserved the fit would idle 7 of them for its whole length, so
-# the mccd chain takes 2: the per-CCD stages run 2 wide (minutes), the fit is
-# unchanged, and the exposure reserves a quarter of the core-hours.
+# The MCCD branch reserves 2 cores: a measured ~85 min focal-plane fit for
+# ~2500 stars uses one thread (8.3 GB), with only 1.75x speedup on 8 BLAS threads.
+# The per-CCD stages run 2 wide without reserving 8 cores for the serial fit.
+# MCCD campaigns are refused by Snakefile::refuse_unpersistable_psf.
 rule exp_psf:
     input:
         rules.exp_split.output.manifest
@@ -114,10 +91,8 @@ rule exp_psf:
     threads: 2 if PSF_MODEL == "mccd" else 8
     retries: 2
     benchmark:
-        # BESIDE manifests/, not inside it: clean_exposure deletes manifests/
-        # wholesale, and this tsv is the measured-memory feed for mem_mb sizing
-        # (D4). Inside manifests/ it died with the first reclamation and took
-        # the campaign's only record of exp_psf's real footprint with it.
+        # Keep the memory-sizing benchmark outside manifests/, which
+        # clean_exposure deletes wholesale.
         f"{EXP_DIR}/exp_psf.benchmark.tsv"
     resources:
         mem_mb = lambda wc, attempt: 16000 * attempt,
@@ -126,33 +101,11 @@ rule exp_psf:
         sp_shell("exp_psf", f"config_exp_{PSF_MODEL}.ini")
 
 
-# --- persistence (D5) -------------------------------------------------------
-# The counterpart of reclamation, and it must come first in the DAG: this packs
-# the exposure's keepable PSF products into one tar on the persistent root, and
-# clean_exposure below takes its manifest as an input so the store is never
-# reclaimed before the keepers have left /scratch. The purge would take them
-# anyway — that, not clean_exposure, is what this rule exists for
-# (persist_exp.py's docstring argues both halves, and config.yaml's
-# `persist_exp:` block carries the keep list and its candidates).
-#
-# A LOCALRULE (declared in the Snakefile), by exactly the arithmetic that made
-# clean_exposure one: the body is a `tar` of a few MB from one shared filesystem
-# to another, seconds of work, and one sbatch per exposure would be ~20k
-# submissions at DR6 scale for jobs shorter than the scheduling latency. The
-# grouping constraint that binds mid-chain localrules (this file's docstring)
-# does not bite here: exp_persist's only neighbours are exp_psf, which is too
-# heavy to ever fuse, and clean_exposure, which is local itself.
-#
-# ONE DECLARED OUTPUT, AND IT IS A MANIFEST, NOT THE TAR OR A directory(). The
-# tar is not declared: a directory output would attest that a directory exists,
-# where what we want written down is WHICH files were packed and how big each was —
-# the provenance a rho-statistics run months from now needs in order to know
-# what it is reading. The manifest is byte-stable, so a no-op rerun does not
-# move its mtime and does not make clean_exposure look out of date.
-#
-# THE KEEP LIST RIDES ON params. That is the entire reason this is not three
-# lines of tar appended to exp_psf's shell: `params` is a rerun trigger, so
-# adding a pattern reruns the packing and leaves the PSF chain alone.
+# --- persistence -----------------------------------------------------------
+# Packs PSF products into a tar on the persistent root; see persist_exp.py for
+# retention, provenance and byte-stable manifest semantics. This is a localrule
+# (Snakefile): seconds of packing do not warrant ~20k SLURM submissions at DR6.
+# The keep list is a params rerun trigger, so an edit re-packs without refitting.
 rule exp_persist:
     input:
         rules.exp_psf.output.manifest
@@ -162,9 +115,7 @@ rule exp_persist:
     # name collision, both of which it reports on stderr and neither of which
     # has a per-CCD verdict worth a completeness record.
     params:
-        # Only the OPTIONAL retention list travels: psf_validation is packed
-        # by persist_exp.py whatever this says. It still rides on params, so
-        # adding a product re-packs (seconds) rather than re-fitting the PSF.
+        # Optional products only; persist_exp.py always packs psf_validation.
         patterns    = " ".join(f"--pattern '{p}'" for p in PERSIST_EXP),
         exp_dir     = lambda wc: exp_dir(wc.exp),
         dest        = lambda wc: f"{prod_exp_dir(wc.exp)}/psf",
@@ -214,52 +165,23 @@ rule exp_maps:
         " --fragment '{params.fragment}' --manifest {output.manifest}"
 
 
-# --- reclamation (D5) -------------------------------------------------------
-# The one exception to "no reclamation in this file": clean_exposure OWNS
-# exposure-level deletion, and it is a real job, not temp() bookkeeping, because
-# an exposure's consumer set closes over the CAMPAIGN. The index supplies that
-# set (EXP_TILES, accumulated across invocations); the input is every consuming
-# tile's tile_vignets manifest — vignets is the last stage that reads exposure
-# products, everything after it reads tile-level files.
-#
-# What the job deletes, and why a late append still behaves, is argued in
-# clean_exposure.py's docstring; params.consumers is what makes a grown consumer
-# set stale (same file).
-#
-# The tile side reads the exposure manifests through ancient() and cuts the
-# reclaimed edges of finished tiles (see tile.smk), which is what keeps this
-# deletion from rebuilding every neighbouring tile. This rule's OWN inputs are
-# deliberately not ancient: a tile that really did rebuild its vignets must
-# reschedule the cleans of the exposures it read.
-#
-# A localrule (declared in the Snakefile). Local execution serialises the cleans
-# under local-cores, which costs nothing at rmtree speed and never blocks the
-# compute chains (this rule is in none of them).
+# --- reclamation -----------------------------------------------------------
+# Reclaims exposure stores after their in-scope consumers finish tile_vignets,
+# the last tile stage that reads exposure products. Deletion and consumer-set
+# staleness are documented in clean_exposure.py; tile.smk owns reclaimed-edge
+# handling. Inputs here are not ancient: rebuilt vignets must reschedule clean.
+# This is a localrule (Snakefile), serialized under local-cores.
 rule clean_exposure:
     input:
-        # ONLY the consumers this invocation may actually build. A consumer that
-        # is out of scope had its vignets manifest checked for existence at parse
-        # time (clean_targets' eligibility test) — declaring it here as well would
-        # pull that finished tile's whole chain into the DAG, where a rebuilt
-        # shared exposure then reruns it. That is how one damaged tile reached its
-        # spatial neighbours. In-scope consumers keep their edge: they may run in
-        # this DAG, so the clean must be ordered after them.
+        # In-scope consumers only; clean_targets checks out-of-scope vignets
+        # at parse time. Declaring them here would pull finished tiles back
+        # into the DAG. See workflow/CONTRACTS:
+        # clean-exposure-waits-on-persist-iff-psf.
         lambda wc: [tile_manifest(t, "tile_vignets")
                     for t in clean_consumers(wc.exp) if t in READY_SET],
-        # The keepers must be off /scratch before the store goes. No keep list
-        # removes this edge: exp_persist always packs the star catalogue's
-        # inputs. Only psf_model=fake does, which has no PSF products to keep
-        # (PERSISTS_PSF, Snakefile).
-        #
-        # A LIVE exposure is asked for its exp_persist manifest: the thing to
-        # build, and what orders this rule after the pack. A RECLAIMED one
-        # (exp_store_reclaimed, Snakefile) is asked for its TAR if it has one —
-        # on the persistent root, no rule's declared output, hence a leaf that
-        # requires nothing — and for nothing if it has none. Naming the
-        # manifest there reopens the reclaimed chain: a `persist_exp:` edit
-        # changes exp_persist's params, the manifest reruns, and it sits behind
-        # exp_psf's manifest, which went with the store, so snakemake rebuilds
-        # the exposure from VOS.
+        # Preserve-before-delete ordering, gated by PERSISTS_PSF. durable_edge
+        # (Snakefile) uses the manifest for a live store and the durable product
+        # for a reclaimed store; the custody contract above governs this edge.
         lambda wc: (durable_edge(wc.exp, "exp_persist", prod_exp_tar(wc.exp))
                     if PERSISTS_PSF else []),
         # The exposure maps' fragment, by the same rule.
@@ -281,49 +203,16 @@ rule clean_exposure:
 
 
 # --- the campaign's star catalogue ------------------------------------------
-# ONE job per campaign: every exposure's every CCD's `validation_psf-<exp>-<ccd>.fits`,
-# collected into `<products_dir>/full_starcat_<run>.hdf5`, one dataset per
-# exposure. That file is the rho/tau statistics input; the old bash chain built
-# a flat FITS table with `combine_runs.bash psf` + a `merge_starcat_runner`
-# pass, and the workflow emitted neither. sp_validation still opens the FITS
-# name today — CosmoStat/sp_validation#340 moves its readers to this file, the
-# same migration that retires the `patches/` key on the tile side.
+# One compute job per campaign writes <products_dir>/full_starcat_<run>.hdf5,
+# the rho/tau statistics input. merge_star_cat.py owns the reconciled format
+# and tar reading; star_cat_inputs/targets (Snakefile) select durable inputs
+# and suppress the job when none remain. sp_validation reads this format once
+# CosmoStat/sp_validation#340 lands; until then it opens the flat FITS catalogue.
 #
-# ONE DATASET PER EXPOSURE, NOT ONE TABLE, and it is the same decision as the
-# tile side's: it makes the file RECONCILABLE. A flat table had to be restacked
-# from every exposure the campaign had ever seen to add one — ~40 GB of members
-# at DR6 scale to add ~2 MB — and held the whole campaign in memory while it did
-# so. Reconciled, an append reads the appended exposures and nothing else, and
-# the job holds one exposure at a time. hdf5_reconcile.py is the shared
-# machinery; merge_star_cat.py argues the format and the tar reading.
-#
-# THE INPUT IS star_cat_inputs() (Snakefile): every exposure of TILES_READY whose
-# PSF products are on the persistent root — the live ones through the exp_persist
-# manifest edge `rule all` already requests, the RECLAIMED ones through their TAR,
-# which no rule declares and which therefore requires nothing to be built. That
-# asymmetry is not a flourish; requesting a reclaimed exposure's manifest
-# rebuilds its whole chain from VOS, and ancient() does not prevent it (measured
-# — the Snakefile carries the numbers). Nothing new enters the DAG either way. It
-# is read through an INPUT FUNCTION rather than at module level so that only a
-# parse which actually builds this job pays for the walk.
-#
-# THE PATHS DO NOT REACH THE SHELL, and that is not a style choice: ~20k manifest
-# paths is an order of magnitude over Linux's 128 KiB MAX_ARG_STRLEN for a single
-# argv entry, so `{input}` here would be a job that dies on exec at DR6 scale.
-# The job is handed the two small files the Snakefile itself started from — the
-# tile list and the index — and derives THE SAME SET from them; `params.inputs`
-# carries that set's FINGERPRINT, which is the rerun trigger. The equality is
-# the point: a job that stacked anything the fingerprint did not see would be
-# rows no rerun trigger could notice, which is what a glob over products_dir
-# would have given on a root shared with an earlier, larger tile list.
-#
-# NOT A LOCALRULE. exp_persist is local because it is 20k jobs of seconds; this
-# is one job that reads the campaign's tars end to end. Its MEMORY is flat in
-# the campaign (one exposure at a time) and sized on the largest exposure; its
-# RUNTIME is the total.
-#
-# NO JOB AT ALL when every exposure in scope is tombstoned with no tar left
-# behind: star_cat_targets() (Snakefile) simply does not request the output.
+# Input paths are DAG edges, not shell arguments: ~20k paths exceed Linux's
+# 128 KiB limit for one argv entry. The script derives the same exposure set
+# from the tile list and index; params.inputs fingerprints that set for reruns.
+# See star_cat_inputs (Snakefile) for the matching-set constraint.
 rule star_cat_merge:
     input:
         lambda wc: star_cat_inputs()
@@ -339,18 +228,15 @@ rule star_cat_merge:
         script_hash  = MERGE_STAR_HASH
     threads: 1
     resources:
-        # Sized on the campaign's own member bytes, slope and intercept
-        # measured (the Snakefile's sizing block carries both points, and the
-        # ceiling this rule runs into at DR6 scale). Still * attempt, because a
-        # measured slope on synthetic tars is not a guarantee about real ones.
-        # Sized on the LARGEST exposure, not the total: the merge holds one
-        # exposure at a time (the Snakefile's sizing block carries the history).
+        # Memory scales with the largest exposure, held one at a time;
+        # Snakefile's sizing block owns the measurements. Retry scaling allows
+        # for real catalogues exceeding the measured synthetic footprint.
         mem_mb = lambda wc, attempt: capped_mem(attempt * (
             STAR_MEM_BASE_MB
             + STAR_MEM_FACTOR * star_cat_max_bytes() // 1_000_000),
             "star_cat_merge"),
-        # ~2 min per GB of members on the measurement above, doubled, over a
-        # floor that covers the fixed cost of opening ~40 members per exposure.
+        # Runtime scales with total member bytes: ~2 min/GB measured, doubled,
+        # plus a floor for opening the per-CCD members.
         runtime = lambda wc, attempt: attempt * (
             30 + 4 * star_cat_bytes() // 1_000_000_000)
     shell:
