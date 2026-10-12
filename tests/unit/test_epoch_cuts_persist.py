@@ -177,7 +177,7 @@ def test_make_cat_gathers_structured_records_and_preserves_mtime(
     """Make-cat needs no logs, and identical manifests keep their mtime."""
     root = tmp_path / TILE
     stage = root / "output" / "run_sp_tile_Mc"
-    write(stage / "make_cat_runner/output/final_cat.fits", "fits fixture")
+    write(stage / "make_cat_runner/output/final_cat.hdf5", "hdf5 fixture")
     for k in (1, 2):
         write(
             root / f"manifests/tile_ngmix_{k}.json",
