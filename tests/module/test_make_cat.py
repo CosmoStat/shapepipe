@@ -17,6 +17,7 @@ the pre-#749 code.
 import functools
 import operator
 
+import h5py
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -28,7 +29,6 @@ from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.make_cat_package.make_cat import SaveCatalogue
 from shapepipe.modules.make_cat_runner import make_cat_runner
 from shapepipe.modules.ngmix_package.ngmix import Ngmix
-from shapepipe.pipeline import file_io
 from shapepipe.pipeline.config import CustomParser
 from shapepipe.utilities import cfis
 
@@ -396,24 +396,20 @@ def _write_galaxy_psf_cat(path, per_obj):
     db.close()
 
 
-class _FinalCatStub:
-    """Stand-in for the FITSCatalogue ``_save_psf_data`` reads N_EPOCH from."""
-
-    def __init__(self, n_epoch):
-        self._n_epoch = np.asarray(n_epoch)
-
-    def get_data(self):
-        return {"N_EPOCH": self._n_epoch}
-
-
-def _run_save_psf(galaxy_psf_path, obj_id, n_epoch, n_epoch_slots=None):
+def _run_save_psf(
+    galaxy_psf_path, obj_id, n_overlap, n_epoch_slots=None, epoch_slots=True
+):
     """Drive ``_save_psf_data`` and return its populated output dict."""
     inst = object.__new__(SaveCatalogue)
     inst._obj_id = np.asarray(obj_id)
     inst._output_dict = {}
-    inst._final_cat_file = _FinalCatStub(n_epoch)
+    inst._final_cat = {"N_EPOCH": np.asarray(n_overlap)}
 
-    inst._save_psf_data(str(galaxy_psf_path), n_epoch_slots=n_epoch_slots)
+    inst._save_psf_data(
+        str(galaxy_psf_path),
+        n_epoch_slots=n_epoch_slots,
+        epoch_slots=epoch_slots,
+    )
     return inst._output_dict
 
 
@@ -439,7 +435,7 @@ def test_save_psf_data_exp_id_ccd_align_with_hsm_psf_slots(tmp_path):
     }
     _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
 
-    out = _run_save_psf(galaxy_psf_path, [101], n_epoch=[2])
+    out = _run_save_psf(galaxy_psf_path, [101], n_overlap=[2])
 
     npt.assert_allclose(out["HSM_G1_PSF_1"], [0.03])
     npt.assert_allclose(out["HSM_G1_PSF_2"], [0.01])
@@ -468,7 +464,7 @@ def test_save_psf_data_identity_survives_failed_hsm_fit(tmp_path):
     }
     _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
 
-    out = _run_save_psf(galaxy_psf_path, [202], n_epoch=[2])
+    out = _run_save_psf(galaxy_psf_path, [202], n_overlap=[2])
 
     npt.assert_allclose(out["HSM_G1_PSF_1"], [0.05])
     # Sentinel: the epoch-2 HSM fit failed, so the pre-fill value stands.
@@ -483,7 +479,7 @@ def test_save_psf_data_identity_survives_failed_hsm_fit(tmp_path):
 def test_save_psf_data_fills_sentinel_for_absent_epochs(tmp_path):
     """Unused epoch slots and "empty" objects keep the -1 sentinel.
 
-    ``max_epoch`` (from the largest ``N_EPOCH`` across the catalogue) can
+    ``max_epoch`` (from the largest geometric sexcat ``N_EPOCH``) can
     exceed a given object's own epoch count, and an object the PSF
     catalogue reports no epochs at all for is marked ``"empty"``; both
     cases must leave EXP_ID_n/CCD_n at -1, an exposure ID / CCD number no
@@ -496,8 +492,8 @@ def test_save_psf_data_fills_sentinel_for_absent_epochs(tmp_path):
     }
     _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
 
-    # max(N_EPOCH) = 2 -> 3 slot columns, though obj 101 only fills slot 1.
-    out = _run_save_psf(galaxy_psf_path, [101, 303], n_epoch=[1, 2])
+    # Geometric max(N_EPOCH) = 2 -> 3 slots; obj 101 only fills slot 1.
+    out = _run_save_psf(galaxy_psf_path, [101, 303], n_overlap=[1, 2])
 
     assert out["EXP_ID_1"][0] == 2113864
     assert out["CCD_1"][0] == 7
@@ -505,6 +501,52 @@ def test_save_psf_data_fills_sentinel_for_absent_epochs(tmp_path):
         assert out[col][0] == -1, col
     for col in ("EXP_ID_1", "CCD_1", "EXP_ID_2", "CCD_2", "EXP_ID_3", "CCD_3"):
         assert out[col][1] == -1, col
+
+
+def test_save_psf_data_n_epoch_counts_only_psf_validated_epochs(tmp_path):
+    """N_EPOCH counts the epochs with an interpolated PSF, not the overlaps.
+
+    Object 101 overlaps three CCDs but one failed PSF-model validation, so
+    the PSF catalogue holds two epochs for it and ngmix sees two; object 202
+    has an epoch whose PSF shape fit failed, which still counts (its PSF
+    exists); object 303 overlaps a CCD with no validated PSF at all and is
+    ``"empty"``.
+    """
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    per_obj = {
+        101: {
+            "2603237-12": _psf_epoch(0.01, 0.02, 0.5),
+            "2603241-12": _psf_epoch(0.03, 0.04, 0.6),
+        },
+        202: {
+            "2603237-13": _psf_epoch(0.05, 0.06, 0.7),
+            "2603241-13": _psf_epoch(-10.0, -10.0, 0.0, flag=5),
+        },
+        303: "empty",
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    out = _run_save_psf(galaxy_psf_path, [101, 202, 303], n_overlap=[3, 2, 1])
+
+    npt.assert_array_equal(out["N_EPOCH"], [2, 2, 0])
+    assert out["EXP_ID_3"][0] == -1
+
+
+def test_save_psf_data_without_epoch_slots_writes_only_n_epoch(tmp_path):
+    """With per-epoch slots off, ``N_EPOCH`` is the only column written."""
+    galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
+    per_obj = {
+        101: {"2603237-12": _psf_epoch(0.01, 0.02, 0.5)},
+        303: "empty",
+    }
+    _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
+
+    out = _run_save_psf(
+        galaxy_psf_path, [101, 303], n_overlap=[2, 1], epoch_slots=False
+    )
+
+    assert list(out) == ["N_EPOCH"]
+    npt.assert_array_equal(out["N_EPOCH"], [1, 0])
 
 
 # --- make_cat_runner: end-to-end catalogue assembly ---
@@ -522,15 +564,7 @@ def _write_sex_like_cat(path, data):
 
 
 def _numbered_data(obj_ids):
-    """A ``NUMBER`` + dummy second field structured array, one row per id.
-
-    A structured array with a single field gets collapsed by
-    ``file_io.FITSCatalogue._save_to_fits`` into one row holding a
-    vector-valued column (``len(names) == 1`` triggers a
-    ``data = np.array([data])`` wrap), so every SExtractor-like fixture
-    that ``save_sextractor_data`` re-saves through ``save_as_fits`` needs a
-    second field to keep one row per object.
-    """
+    """A minimal SExtractor-like table: ``NUMBER`` plus one position field."""
     return np.array(
         [(oid, 0.0) for oid in obj_ids],
         dtype=[("NUMBER", "i8"), ("X_IMAGE", "f8")],
@@ -548,6 +582,7 @@ def test_make_cat_runner_ships_every_detection_unclassified(tmp_path):
     tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
     _write_sex_like_cat(tile_sexcat_path, _numbered_data(obj_ids))
     galaxy_psf_path = tmp_path / "galaxy_psf-350-100.sqlite"
+    _write_galaxy_psf_cat(galaxy_psf_path, dict.fromkeys(obj_ids, "empty"))
     ngmix_path = tmp_path / "ngmix-350-100.fits"
     _write_ngmix_cat(ngmix_path, obj_ids)
 
@@ -564,39 +599,84 @@ def test_make_cat_runner_ships_every_detection_unclassified(tmp_path):
     )
 
     assert result == (None, None)
-    final_cat = file_io.FITSCatalogue(
-        str(make_cat.get_output_name(str(tmp_path), "-350-100"))
+    with h5py.File(tmp_path / "final_cat-350-100.hdf5", "r") as cat:
+        npt.assert_array_equal(cat["NUMBER"][()], obj_ids)
+        assert not [name for name in cat if "SPREAD" in name]
+        # No MASK_EXT_PATHS, no mask columns.
+        assert not [name for name in cat if name.startswith("MASK_")]
+
+
+def test_make_cat_runner_n_epoch_excludes_unvalidated_psf_epochs(tmp_path):
+    """The final N_EPOCH counts only PSF-validated epochs.
+
+    The SExtractor ``N_EPOCH`` counts every exposure CCD covering an object.
+    Object 1 lies on two CCDs of which one failed PSF validation, object 3
+    on one such CCD only. Without SAVE_PSF_DATA the runner still writes
+    ``N_EPOCH`` from the PSF catalogue, and no per-epoch slot column.
+    """
+    obj_ids = [1, 2, 3]
+    sexcat = np.array(
+        list(zip(obj_ids, [2, 3, 1])),
+        dtype=[("NUMBER", "i8"), ("N_EPOCH", "i8")],
     )
-    final_cat.open()
-    data = final_cat.get_data()
-    final_cat.close()
-    npt.assert_array_equal(data["NUMBER"], obj_ids)
-    assert not [name for name in data.dtype.names if "SPREAD" in name]
+    tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
+    _write_sex_like_cat(tile_sexcat_path, sexcat)
+    galaxy_psf_path = tmp_path / "galaxy_psf-350-100.sqlite"
+    _write_galaxy_psf_cat(
+        galaxy_psf_path,
+        {
+            1: {"2603241-12": _psf_epoch(0.01, 0.02, 0.5)},
+            2: {
+                "2603237-12": _psf_epoch(0.05, 0.06, 0.7),
+                "2603241-12": _psf_epoch(0.07, 0.08, 0.9),
+                "2603246-12": _psf_epoch(0.03, 0.04, 0.6),
+            },
+            3: "empty",
+        },
+    )
+    ngmix_path = tmp_path / "ngmix-350-100.fits"
+    _write_ngmix_cat(ngmix_path, obj_ids)
+
+    config = CustomParser()
+    config.read_dict({"MAKE_CAT_RUNNER": {"SHAPE_MEASUREMENT_TYPE": "ngmix"}})
+    assert make_cat_runner(
+        [str(tile_sexcat_path), str(galaxy_psf_path), str(ngmix_path)],
+        {"output": str(tmp_path)},
+        "-350-100",
+        config,
+        "MAKE_CAT_RUNNER",
+        _NullLogger(),
+    ) == (None, None)
+
+    with h5py.File(tmp_path / "final_cat-350-100.hdf5", "r") as cat:
+        npt.assert_array_equal(cat["N_EPOCH"][()], [1, 3, 0])
+        assert "N_EPOCH_OVERLAP" not in cat
+        assert "EXP_ID_1" not in cat
 
 
-def test_make_cat_runner_work_dir_publishes_same_catalogue(
-    tmp_path, monkeypatch
-):
-    """WORK_DIR moves the build elsewhere; the published catalogue is the same.
+def test_make_cat_runner_writes_one_hdf5_dataset_per_column(tmp_path):
+    """All save stages land in one hdf5 file, one lzf dataset per column.
 
-    All three save stages run (ngmix, per-epoch PSF slots, one external mask
-    band). The catalogue built in WORK_DIR is moved to the run's output
-    directory byte-identical to one built there directly, nothing is left in
-    WORK_DIR, and a work file a previous attempt left behind does not leak
-    into it (``save_as_fits`` appends to an existing file).
+    Runs every stage (ngmix, per-epoch PSF slots, one external mask band).
+    Columns keep the order the stages add them, a vector column is a 2-D
+    dataset with one row per object, and each column keeps the dtype its
+    stage built, in native byte order (the SExtractor input is big-endian
+    FITS).
     """
     healsparse = pytest.importorskip("healsparse")
 
     obj_ids = [1, 2, 3]
     ra = np.array([10.0, 10.1, 200.0])
     dec = np.array([20.0, 20.1, -40.0])
+    flux_aper = np.arange(9, dtype=np.float32).reshape(3, 3)
     sexcat = np.array(
-        list(zip(obj_ids, [1, 2, 0], ra, dec)),
+        list(zip(obj_ids, [1, 2, 0], ra, dec, flux_aper)),
         dtype=[
             ("NUMBER", "i8"),
             ("N_EPOCH", "i8"),
             ("XWIN_WORLD", "f8"),
             ("YWIN_WORLD", "f8"),
+            ("FLUX_APER", "f4", (3,)),
         ],
     )
     tile_sexcat_path = tmp_path / "tile_sexcat-350-100.fits"
@@ -621,48 +701,50 @@ def test_make_cat_runner_work_dir_publishes_same_catalogue(
     )
     mask_path = tmp_path / "mask_r.hsp"
     mask.write(str(mask_path))
-    inputs = [str(tile_sexcat_path), str(galaxy_psf_path), str(ngmix_path)]
-    stages = {
+
+    config = CustomParser()
+    config.read_dict({"MAKE_CAT_RUNNER": {
         "SHAPE_MEASUREMENT_TYPE": "ngmix",
         "SAVE_PSF_DATA": "True",
         "N_EPOCH_SLOTS": "3",
         "MASK_EXT_PATHS": f"r:{mask_path}",
-    }
+    }})
+    out_dir = tmp_path / "output"
+    out_dir.mkdir()
+    assert make_cat_runner(
+        [str(tile_sexcat_path), str(galaxy_psf_path), str(ngmix_path)],
+        {"output": str(out_dir)}, "-350-100", config,
+        "MAKE_CAT_RUNNER", _NullLogger(),
+    ) == (None, None)
+    assert [p.name for p in out_dir.iterdir()] == ["final_cat-350-100.hdf5"]
 
-    published = {}
-    for label, work_dir in (
-        ("direct", {}),
-        ("staged", {"WORK_DIR": "$SP_TEST_LOCAL/make_cat"}),
-    ):
-        out_dir = tmp_path / label
-        out_dir.mkdir()
-        config = CustomParser()
-        config.read_dict({"MAKE_CAT_RUNNER": {**stages, **work_dir}})
-        if work_dir:
-            local = tmp_path / "local"
-            monkeypatch.setenv("SP_TEST_LOCAL", str(local))
-            (local / "make_cat").mkdir(parents=True)
-            stale = make_cat.get_output_name(str(local / "make_cat"), "-350-100")
-            _write_sex_like_cat(stale, _numbered_data([7, 8]))
-        assert make_cat_runner(
-            inputs, {"output": str(out_dir)}, "-350-100", config,
-            "MAKE_CAT_RUNNER", _NullLogger(),
-        ) == (None, None)
-        path = make_cat.get_output_name(str(out_dir), "-350-100")
-        with open(path, "rb") as f:
-            published[label] = f.read()
-
-    assert published["staged"] == published["direct"]
-    assert list((tmp_path / "local" / "make_cat").iterdir()) == []
-
-    with fits.open(make_cat.get_output_name(str(tmp_path / "staged"), "-350-100")) as hdul:
-        data = hdul[1].data
-        names = data.columns.names
-        npt.assert_array_equal(data["NUMBER"], obj_ids)
-        for col in ("TILE_ID", "NGMIX_MCAL_FLAGS", "HSM_G1_PSF_3", "EXP_ID_2"):
-            assert col in names, col
-        npt.assert_allclose(data["HSM_G1_PSF_1"], [0.01, 0.05, -10.0])
-        npt.assert_array_equal(data["MASK_r"], [64, 64, -1])
+    with h5py.File(out_dir / "final_cat-350-100.hdf5", "r") as cat:
+        names = list(cat)
+        assert names[:7] == [
+            "NUMBER", "N_EPOCH", "XWIN_WORLD", "YWIN_WORLD",
+            "FLUX_APER", "TILE_ID", "TILE_UNIQUE_ID",
+        ]
+        assert (
+            names.index("N_EPOCH")
+            < names.index("NGMIX_G1_NOSHEAR")
+            < names.index("HSM_G1_PSF_1")
+        )
+        assert names[-1] == "MASK_r"
+        for name in names:
+            assert cat[name].shape[0] == len(obj_ids), name
+            assert cat[name].compression == "lzf", name
+            assert cat[name].dtype.byteorder in "=|<", name
+        assert cat["FLUX_APER"].shape == (3, 3)
+        npt.assert_array_equal(cat["FLUX_APER"][()], flux_aper)
+        assert cat["NUMBER"].dtype == np.int64
+        assert cat["TILE_UNIQUE_ID"].dtype == np.int64
+        assert cat["HSM_FLAG_PSF_1"].dtype == np.int16
+        assert cat["EXP_ID_2"].dtype == np.int32
+        npt.assert_array_equal(cat["NUMBER"][()], obj_ids)
+        npt.assert_array_equal(cat["N_EPOCH"][()], [1, 2, 0])
+        npt.assert_allclose(cat["HSM_G1_PSF_1"][()], [0.01, 0.05, -10.0])
+        npt.assert_array_equal(cat["EXP_ID_2"][()], [-1, 2358123, -1])
+        npt.assert_array_equal(cat["MASK_r"][()], [64, 64, -1])
 
 
 @pytest.mark.parametrize("shear", SHEAR_EXTS)
@@ -756,27 +838,6 @@ _PSF_SLOT_SENTINELS = {
 }
 
 
-class _ProcessCatStub(_FinalCatStub):
-    """FITSCatalogue stand-in for ``SaveCatalogue.process``; records add_cols."""
-
-    def __init__(self, obj_id, n_epoch):
-        super().__init__(n_epoch)
-        self._number = np.asarray(obj_id)
-        self.cols = {}
-
-    def open(self):
-        pass
-
-    def close(self):
-        pass
-
-    def get_data(self):
-        return {"NUMBER": self._number, "N_EPOCH": self._n_epoch}
-
-    def add_cols(self, columns):
-        self.cols.update(columns)
-
-
 def _slot_numbers(out, family):
     """The slot numbers ``n`` present in ``out`` for ``<family>_n`` columns."""
     prefix = f"{family}_"
@@ -808,10 +869,12 @@ def test_save_psf_data_fixed_slots_pad_every_family(tmp_path):
 
     # Driven through ``process``, the entry point the runner calls.
     n_slots = 7
-    cat = _ProcessCatStub([101, 202, 303], n_epoch=[1, 2, 0])
-    sc = SaveCatalogue(cat, 3, _NullLogger())
+    out = {
+        "NUMBER": np.array([101, 202, 303]),
+        "N_EPOCH": np.array([1, 2, 0]),
+    }
+    sc = SaveCatalogue(out, 3, _NullLogger())
     assert sc.process("psf", str(galaxy_psf_path), n_epoch_slots=n_slots) is None
-    out = cat.cols
 
     n_filled = [1, 2, 0]
     for family, sentinel in _PSF_SLOT_SENTINELS.items():
@@ -841,7 +904,7 @@ def test_save_psf_data_more_epochs_than_slots_raises(tmp_path):
 
     with pytest.raises(ValueError) as excinfo:
         _run_save_psf(
-            galaxy_psf_path, [101, 404], n_epoch=[1, 3], n_epoch_slots=2
+            galaxy_psf_path, [101, 404], n_overlap=[1, 3], n_epoch_slots=2
         )
     msg = str(excinfo.value)
     assert "404" in msg
@@ -860,15 +923,15 @@ def test_save_psf_data_exactly_slots_epochs_fits(tmp_path):
     }
     _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
 
-    out = _run_save_psf(galaxy_psf_path, [404], n_epoch=[2], n_epoch_slots=2)
+    out = _run_save_psf(galaxy_psf_path, [404], n_overlap=[2], n_epoch_slots=2)
 
     assert _slot_numbers(out, "EXP_ID") == [1, 2]
     assert out["EXP_ID_2"][0] == 2229900
     npt.assert_allclose(out["HSM_G1_PSF_2"], [0.03])
 
 
-def test_save_psf_data_unset_slots_uses_tile_max_n_epoch_plus_one(tmp_path):
-    """Without N_EPOCH_SLOTS the slot count is the tile's max(N_EPOCH) + 1."""
+def test_save_psf_data_unset_slots_uses_tile_max_n_overlap_plus_one(tmp_path):
+    """Without N_EPOCH_SLOTS use the sexcat's geometric max(N_EPOCH) + 1."""
     galaxy_psf_path = tmp_path / "galaxy_psf.sqlite"
     per_obj = {
         101: {"2113864-7": _psf_epoch(0.01, 0.02, 0.5)},
@@ -880,7 +943,7 @@ def test_save_psf_data_unset_slots_uses_tile_max_n_epoch_plus_one(tmp_path):
     }
     _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
 
-    out = _run_save_psf(galaxy_psf_path, [101, 202], n_epoch=[1, 3])
+    out = _run_save_psf(galaxy_psf_path, [101, 202], n_overlap=[1, 3])
 
     for family in _PSF_SLOT_SENTINELS:
         assert _slot_numbers(out, family) == [1, 2, 3, 4], family
@@ -908,7 +971,7 @@ def test_save_psf_data_fixed_slots_keep_epoch_alignment(tmp_path):
 
     n_slots = 6
     out = _run_save_psf(
-        galaxy_psf_path, [505], n_epoch=[3], n_epoch_slots=n_slots
+        galaxy_psf_path, [505], n_overlap=[3], n_epoch_slots=n_slots
     )
 
     for n, (key, g1, g2, t, flag) in enumerate(epochs, start=1):
@@ -944,7 +1007,7 @@ def test_save_psf_data_carries_fourth_moments_per_epoch(tmp_path):
     }
     _write_galaxy_psf_cat(galaxy_psf_path, per_obj)
 
-    out = _run_save_psf(galaxy_psf_path, [101], n_epoch=[2])
+    out = _run_save_psf(galaxy_psf_path, [101], n_overlap=[2])
 
     npt.assert_allclose(out["HSM_M4_1_PSF_1"], [0.11])
     npt.assert_allclose(out["HSM_M4_2_PSF_1"], [-0.22])
@@ -978,7 +1041,7 @@ def _write_sexcat(path, number):
     ]).writeto(path, overwrite=True)
 
 
-def test_save_sextractor_data_writes_tile_unique_id(tmp_path):
+def test_read_sextractor_data_adds_tile_unique_id(tmp_path):
     """SExtractor-mode final catalogue carries tile_id * 10**6 + NUMBER.
 
     ``NUMBER`` is deliberately gapped and unsorted: the ID is built from the
@@ -988,28 +1051,19 @@ def test_save_sextractor_data_writes_tile_unique_id(tmp_path):
     sexcat = tmp_path / "sexcat-301-279.fits"
     _write_sexcat(sexcat, number)
 
-    final_cat = make_cat.prepare_final_cat_file(str(tmp_path), "-301-279")
-    n_obj = make_cat.save_sextractor_data(final_cat, str(sexcat))
-    final_cat.close()
+    data = make_cat.read_sextractor_data(str(sexcat))
 
-    assert n_obj == len(number)
-    with fits.open(tmp_path / "final_cat-301-279.fits") as hdul:
-        data = hdul["RESULTS"].data
-        assert "VIGNET" not in data.names
-        npt.assert_array_equal(data["NUMBER"], number)
-        assert data["TILE_UNIQUE_ID"].dtype.newbyteorder("=") == np.int64
-        npt.assert_array_equal(
-            data["TILE_UNIQUE_ID"], 301279 * 10**6 + number
-        )
-        npt.assert_allclose(data["TILE_ID"], 301.279)
+    assert list(data) == ["NUMBER", "XWIN_WORLD", "TILE_ID", "TILE_UNIQUE_ID"]
+    npt.assert_array_equal(data["NUMBER"], number)
+    assert data["TILE_UNIQUE_ID"].dtype.newbyteorder("=") == np.int64
+    npt.assert_array_equal(data["TILE_UNIQUE_ID"], 301279 * 10**6 + number)
+    npt.assert_allclose(data["TILE_ID"], 301.279)
 
 
-def test_save_sextractor_data_refuses_number_beyond_id_range(tmp_path):
-    """A NUMBER that would overflow into the tile digits raises, writes nothing."""
+def test_read_sextractor_data_refuses_number_beyond_id_range(tmp_path):
+    """A NUMBER that would overflow into the tile digits raises."""
     sexcat = tmp_path / "sexcat-301-279.fits"
     _write_sexcat(sexcat, np.array([1, 10**6]))
 
-    final_cat = make_cat.prepare_final_cat_file(str(tmp_path), "-301-279")
     with pytest.raises(cfis.CfisError):
-        make_cat.save_sextractor_data(final_cat, str(sexcat))
-    assert not (tmp_path / "final_cat-301-279.fits").exists()
+        make_cat.read_sextractor_data(str(sexcat))

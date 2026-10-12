@@ -69,7 +69,7 @@ inputs:
 outputs:
   - id: final_cat
     type: data
-    format: fits
+    format: hdf5
     description: >-
       Per-tile shear catalogue family, the terminal science product
       (make_cat_runner).
@@ -733,8 +733,10 @@ analyses:
           admits its upper endpoint, column 2080. [HARDCODED] The comparisons
           are strict in make_post_process; CCD_SIZE sets only the bounds. A
           WCS inversion failure skips that CCD, lowering N_EPOCH, which caps
-          how many exposures enter each galaxy's multi-epoch fit. Image
-          simulations' CCDs are trimmed to 2048x4612 with no overscan, so
+          how many exposures enter each galaxy's multi-epoch fit. This geometric
+          count remains internal; the final catalogue's N_EPOCH counts only
+          epochs with a validated PSF. Image simulations' CCDs are trimmed to
+          2048x4612 with no overscan, so
           their bounds are 0 < x < 2047, 0 < y < 4611 (input_types.image_sims
           ccd_size, exported as SP_CCD_SIZE): under the data bounds an object
           at 2048 < x < 2080 gains an epoch on pixels that do not exist, and
@@ -1179,6 +1181,12 @@ analyses:
           22-star floor to that accepted count. In the science path the CCD's
           epoch is dropped for every object on it, and an object left with no
           epoch has no shape.
+          The final catalogue's N_EPOCH counts the epochs with an
+          interpolated PSF (for psfex, those passing this gate; for mccd,
+          those with a model). Only this count is written as N_EPOCH: one column
+          avoids downstream cuts on the geometric count by mistake.
+          PSF-gate rejections are studied per CCD in validation output and
+          the exposure maps (#887), rather than per object.
           The pipeline has no minimum-epoch floor: NGMIX_N_EPOCH records what
           survived and epoch-count cuts happen downstream. Guinot+22 discards
           the CCD from PSF estimation rather than gating at interpolation.
@@ -2090,7 +2098,7 @@ analyses:
     outputs:
       - id: tile_final_cat
         type: data
-        format: fits
+        format: hdf5
         description: The assembled per-tile science catalogue (final_cat family).
         inputs: [ngmix_chunks]
         decisions:
