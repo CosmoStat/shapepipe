@@ -68,13 +68,12 @@ def main() -> None:
         if fragment.dtype != FRAGMENT_DTYPE:
             persist = path.parent.parent / "manifests" / "exp_persist.json"
             manifest = path.parent.parent / "manifests" / "exp_maps.json"
-            raw = Path("/project/def-mjhudson/unions-wl/exposures")
             raise SystemExit(
                 f"Exposure {exp}: incompatible fragment {path}. "
                 "Backfill with:\n"
                 f"python workflow/scripts/exp_maps.py --exp {exp} "
-                f"--image-mef {raw / (exp + 'p.fits.fz')} "
-                f"--flag-mef {raw / (exp + 'p.flag.fits.fz')} "
+                f"--image-mef <raw-dir>/{exp}p.fits.fz "
+                f"--flag-mef <raw-dir>/{exp}p.flag.fits.fz "
                 f"--persist-manifest {persist} --fragment {path} "
                 f"--manifest {manifest}")
         pixels = fragment.valid_pixels
