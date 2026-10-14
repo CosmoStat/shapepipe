@@ -31,8 +31,14 @@ def fragment_path(products_dir: Path, exp: str) -> Path:
 
 
 def add(acc, pixels, values):
-    """Add ``values`` to ``acc`` at ``pixels``."""
-    acc[pixels] = acc.get_values_pix(pixels) + values.astype(acc.dtype)
+    """Add ``values`` to ``acc`` at ``pixels``; a sum past the map's dtype
+    is an error, since a wrapped count reads as zero, i.e. uncovered."""
+    total = acc.get_values_pix(pixels).astype(np.int64) + values
+    if total.size and total.max() > np.iinfo(acc.dtype).max:
+        raise SystemExit(f"merge_exposure_maps: a pixel count exceeds "
+                         f"{np.iinfo(acc.dtype).max} ({acc.dtype}); widen "
+                         f"the map dtype")
+    acc[pixels] = total.astype(acc.dtype)
 
 
 def main() -> None:
