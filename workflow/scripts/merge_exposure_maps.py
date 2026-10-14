@@ -1,15 +1,16 @@
-"""Sum a campaign's per-exposure fragments into its two HealSparse maps: the
-shell of the ``exposure_maps`` rule.
+"""Sum per-exposure fragments into four campaign HealSparse maps.
+
+* ``npoint_<run>.hsp`` (uint8): filled main-array pointing hulls.
+* ``ntaken_<run>.hsp`` (uint8): CCD DATASEC coverage, including ears.
 
 * ``nexp_<run>.hsp`` (uint8): per sky pixel, the number of exposures whose CCD
-  with a valid PSF model covers it, the count behind sp_validation's
-  ``npoint`` cut.
+  with a valid PSF model covers it.
 * ``nflagged_<run>.hsp`` (uint16): per sky pixel, the flagged CCD pixels of
   those exposures whose centres fall in it. A sky pixel holds ~74 MegaCam
   pixels, so ``nflagged / 74`` is the number of exposures' worth of area lost
   there, and ``nflagged > 0`` the any-touch defect mask.
 
-Both are 0 where nothing is counted. The campaign's exposures come from the tile list
+All are 0 where nothing is counted. The campaign's exposures come from the tile list
 and the index (``build_index``), as for the star-catalogue merge; an exposure
 without a fragment (its store reclaimed before ``exp_maps`` existed) is left
 out and counted. The maps are rebuilt from every fragment on each run.
@@ -22,7 +23,7 @@ import healsparse as hsp
 import numpy as np
 
 import build_index
-from exp_maps import NSIDE, NSIDE_COVERAGE
+from exp_maps import FRAGMENT_DTYPE, NSIDE, NSIDE_COVERAGE
 
 
 def fragment_path(products_dir: Path, exp: str) -> Path:
@@ -41,11 +42,15 @@ def main() -> None:
     parser.add_argument("--products-dir", required=True, type=Path)
     parser.add_argument("--tile-list", required=True, type=Path)
     parser.add_argument("--index-db", required=True, type=Path)
+    parser.add_argument("--npoint", required=True, type=Path)
+    parser.add_argument("--ntaken", required=True, type=Path)
     parser.add_argument("--nexp", required=True, type=Path)
     parser.add_argument("--nflagged", required=True, type=Path)
     args = parser.parse_args()
 
     exposures = build_index.campaign_exposures(args.tile_list, args.index_db)
+    npoint = hsp.HealSparseMap.make_empty(NSIDE_COVERAGE, NSIDE, np.uint8)
+    ntaken = hsp.HealSparseMap.make_empty(NSIDE_COVERAGE, NSIDE, np.uint8)
     nexp = hsp.HealSparseMap.make_empty(NSIDE_COVERAGE, NSIDE, np.uint8)
     nflagged = hsp.HealSparseMap.make_empty(NSIDE_COVERAGE, NSIDE, np.uint16)
     missing = []
@@ -55,11 +60,23 @@ def main() -> None:
             missing.append(exp)
             continue
         fragment = hsp.HealSparseMap.read(str(path))
+        if fragment.dtype != FRAGMENT_DTYPE:
+            persist = path.parent.parent / "manifests" / "exp_persist.json"
+            manifest = path.parent.parent / "manifests" / "exp_maps.json"
+            raw = Path("/project/def-mjhudson/unions-wl/exposures")
+            raise SystemExit(
+                f"Exposure {exp}: incompatible fragment {path}. Backfill with:\n"
+                f"python workflow/scripts/exp_maps.py --exp {exp} "
+                f"--image-mef {raw / (exp + 'p.fits.fz')} "
+                f"--flag-mef {raw / (exp + 'p.flag.fits.fz')} "
+                f"--persist-manifest {persist} --fragment {path} --manifest {manifest}")
         pixels = fragment.valid_pixels
         values = fragment.get_values_pix(pixels)
-        add(nexp, pixels, np.ones_like(values))
-        flagged = values > 1
-        add(nflagged, pixels[flagged], values[flagged] - 1)
+        for acc, bit in ((npoint, 1), (ntaken, 2), (nexp, 4)):
+            selected = pixels[(values["cover"] & bit) != 0]
+            add(acc, selected, np.ones(selected.size, dtype=np.uint8))
+        flagged = values["nflagged"] > 0
+        add(nflagged, pixels[flagged], values["nflagged"][flagged])
         if i % 500 == 0:
             print(f"[exposure_maps] {i + 1}/{len(exposures)} {exp}", flush=True)
 
@@ -67,12 +84,14 @@ def main() -> None:
     if not used:
         raise SystemExit("merge_exposure_maps: no exposure of the campaign has "
                          "a fragment")
-    for acc, out in ((nexp, args.nexp), (nflagged, args.nflagged)):
+    for acc, out in ((npoint, args.npoint), (ntaken, args.ntaken),
+                     (nexp, args.nexp), (nflagged, args.nflagged)):
         out.parent.mkdir(parents=True, exist_ok=True)
         tmp = out.with_name(f"{out.stem}.tmp.hsp")
         acc.write(str(tmp), clobber=True)
         tmp.replace(out)
-    print(f"[exposure_maps] {used} exposure(s) -> {args.nexp.name}, "
+    print(f"[exposure_maps] {used} exposure(s) -> {args.npoint.name}, "
+          f"{args.ntaken.name}, {args.nexp.name}, "
           f"{args.nflagged.name}")
     if missing:
         print(f"[exposure_maps] WARNING: {len(missing)} exposure(s) in the "
