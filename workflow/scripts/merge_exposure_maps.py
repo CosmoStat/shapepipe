@@ -10,25 +10,23 @@
   pixels, so ``nflagged / 74`` is the number of exposures' worth of area lost
   there, and ``nflagged > 0`` the any-touch defect mask.
 
-All are 0 where nothing is counted. The campaign's exposures come from the tile list
-and the index (``build_index``), as for the star-catalogue merge; an exposure
-without a fragment (its store reclaimed before ``exp_maps`` existed) is left
-out and counted. The maps are rebuilt from every fragment on each run.
+All are 0 where nothing is counted. The campaign's exposures come from the
+tile list and the index (``build_index``), as for the star-catalogue merge.
+Missing fragments are omitted and reported; incompatible formats fail with a
+backfill command. The maps are rebuilt from every fragment on each run.
 """
 
 import argparse
 from pathlib import Path
 
+import build_index
 import healsparse as hsp
 import numpy as np
-
-import build_index
 from exp_maps import FLAG_SHIFT, FRAGMENT_DTYPE, NSIDE, NSIDE_COVERAGE
 
 
 def fragment_path(products_dir: Path, exp: str) -> Path:
-    """Where ``exp_maps`` writes an exposure's fragment (Snakefile:
-    ``prod_exp_maps``)."""
+    """Return the fragment path matching Snakefile's prod_exp_maps."""
     return products_dir / "exp" / exp[:2] / exp / "maps" / f"maps-{exp}.hsp"
 
 
@@ -38,6 +36,7 @@ def add(acc, pixels, values):
 
 
 def main() -> None:
+    """Sum compatible fragments into the four campaign maps."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--products-dir", required=True, type=Path)
     parser.add_argument("--tile-list", required=True, type=Path)
@@ -65,11 +64,13 @@ def main() -> None:
             manifest = path.parent.parent / "manifests" / "exp_maps.json"
             raw = Path("/project/def-mjhudson/unions-wl/exposures")
             raise SystemExit(
-                f"Exposure {exp}: incompatible fragment {path}. Backfill with:\n"
+                f"Exposure {exp}: incompatible fragment {path}. "
+                "Backfill with:\n"
                 f"python workflow/scripts/exp_maps.py --exp {exp} "
                 f"--image-mef {raw / (exp + 'p.fits.fz')} "
                 f"--flag-mef {raw / (exp + 'p.flag.fits.fz')} "
-                f"--persist-manifest {persist} --fragment {path} --manifest {manifest}")
+                f"--persist-manifest {persist} --fragment {path} "
+                f"--manifest {manifest}")
         pixels = fragment.valid_pixels
         values = fragment.get_values_pix(pixels)
         for acc, bit in ((npoint, 1), (ntaken, 2), (nexp, 4)):
@@ -79,12 +80,13 @@ def main() -> None:
         flagged = counts > 0
         add(nflagged, pixels[flagged], counts[flagged])
         if i % 500 == 0:
-            print(f"[exposure_maps] {i + 1}/{len(exposures)} {exp}", flush=True)
+            print(f"[exposure_maps] {i + 1}/{len(exposures)} {exp}",
+                  flush=True)
 
     used = len(exposures) - len(missing)
     if not used:
-        raise SystemExit("merge_exposure_maps: no exposure of the campaign has "
-                         "a fragment")
+        raise SystemExit("merge_exposure_maps: no exposure of the campaign "
+                         "has a fragment")
     for acc, out in ((npoint, args.npoint), (ntaken, args.ntaken),
                      (nexp, args.nexp), (nflagged, args.nflagged)):
         out.parent.mkdir(parents=True, exist_ok=True)

@@ -209,9 +209,9 @@ def test_merge_counts_exposures_and_flagged_pixels(maps, tmp_path,
 def test_pointing_fills_gaps_excludes_ears_and_matches_mef(maps, tmp_path,
                                                           monkeypatch):
     """A main-array grid has gaps, an unvalidated CCD, and an external ear."""
-    from astropy.io import fits
     import healsparse as hsp
     import hpgeom as hpg
+    from astropy.io import fits
 
     # Arrange centres in the rotated WCS's own pixel plane; 80-pixel gaps.
     base = _wcs((359.99, 31.7))
@@ -239,26 +239,31 @@ def test_pointing_fills_gaps_excludes_ears_and_matches_mef(maps, tmp_path,
             header = fits.getheader(split / f"image-{EXP}-{ccd}.fits")
             images.append(fits.ImageHDU(data=np.zeros(_split(_flags()).shape),
                                         header=header))
-            flags.append(fits.ImageHDU(data=_split(_flags())))
+            # Delivered floating flags follow split_exp's int16 conversion.
+            flags.append(fits.ImageHDU(
+                data=_split(_flags()).astype(np.float32) + 0.25))
         else:
             # Raw MEFs index every CCD; put absent grid CCDs at an existing
             # unvalidated footprint so coverage and flags remain unchanged.
             header = fits.getheader(split / f"image-{EXP}-1.fits")
             images.append(fits.ImageHDU(data=np.zeros(_split(_flags()).shape),
                                         header=header))
-            flags.append(fits.ImageHDU(data=_split(_flags())))
+            flags.append(fits.ImageHDU(
+                data=_split(_flags()).astype(np.float32) + 0.25))
     image_path, flag_path = tmp_path / "image.fits", tmp_path / "flag.fits"
     fits.HDUList(images).writeto(image_path)
     fits.HDUList(flags).writeto(flag_path)
     raw_path = tmp_path / "raw.hsp"
     monkeypatch.setattr(sys, "argv", [
-        "exp_maps.py", "--image-mef", str(image_path), "--flag-mef", str(flag_path),
+        "exp_maps.py", "--image-mef", str(image_path),
+        "--flag-mef", str(flag_path),
         "--exp", EXP, "--persist-manifest", str(tmp_path / "exp_persist.json"),
         "--fragment", str(raw_path), "--manifest", str(tmp_path / "raw.json")])
     maps.main()
     raw = hsp.HealSparseMap.read(str(raw_path))
     assert np.array_equal(raw.valid_pixels, fragment.valid_pixels)
-    assert np.array_equal(raw[raw.valid_pixels], fragment[fragment.valid_pixels])
+    assert np.array_equal(raw[raw.valid_pixels],
+                          fragment[fragment.valid_pixels])
 
     # Pointing and taken coverage do not depend on any PSF succeeding.
     manifest = tmp_path / "exp_persist.json"
@@ -273,7 +278,7 @@ def test_pointing_fills_gaps_excludes_ears_and_matches_mef(maps, tmp_path,
 
 def test_fragment_clips_flag_counts_and_preserves_mtime(maps, tmp_path,
                                                        monkeypatch):
-    """Flag counts saturate at 255; identical writes preserve durable mtimes."""
+    """Flag counts saturate at 255; identical writes preserve mtimes."""
     crval = (150.3, 31.7)
     pixel = _sky_pixels(maps, crval, NX // 2, NY // 2)
     monkeypatch.setattr(maps, "flagged_counts", lambda *_: (
@@ -295,10 +300,12 @@ def test_merge_refuses_plain_uint8(maps, tmp_path, monkeypatch):
     merge = _load("merge_exposure_maps")
     path = merge.fragment_path(tmp_path, EXP)
     path.parent.mkdir(parents=True)
-    old = hsp.HealSparseMap.make_empty(maps.NSIDE_COVERAGE, maps.NSIDE, np.uint8)
+    old = hsp.HealSparseMap.make_empty(
+        maps.NSIDE_COVERAGE, maps.NSIDE, np.uint8)
     old[np.array([10**9])] = np.array([1], dtype=np.uint8)
     old.write(str(path))
-    monkeypatch.setattr(merge.build_index, "campaign_exposures", lambda *_: [EXP])
+    monkeypatch.setattr(merge.build_index, "campaign_exposures",
+                        lambda *_: [EXP])
     monkeypatch.setattr(sys, "argv", [
         "merge_exposure_maps.py", "--products-dir", str(tmp_path),
         "--tile-list", "-", "--index-db", "-",

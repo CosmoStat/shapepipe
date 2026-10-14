@@ -24,11 +24,10 @@ from pathlib import Path
 import healsparse as hsp
 import hpgeom as hpg
 import numpy as np
+import persist_exp
 from astropy.io import fits
 from astropy.wcs import WCS
 from scipy.spatial import ConvexHull
-
-import persist_exp
 
 NSIDE = 131072
 NSIDE_COVERAGE = 128
@@ -40,7 +39,7 @@ PSF_PATTERN = persist_exp.resolve(persist_exp.ALWAYS)
 
 
 def valid_ccds(manifest: Path, exp: str) -> list:
-    """CCD numbers with a PSF model, from the exp_persist manifest's members."""
+    """Return CCD numbers with a PSF model from exp_persist members."""
     prefix = PSF_PATTERN.split("*")[0] + f"{exp}-"
     names = [f["name"] for f in json.loads(manifest.read_text())["files"]]
     return sorted(int(n[len(prefix):].removesuffix(".fits")) for n in names
@@ -133,12 +132,14 @@ def rasterize(ccds, validated):
             keep = np.isin(pixels, covered, assume_unique=True)
             values = fragment.get_values_pix(pixels[keep])
             flagged = np.minimum((values >> FLAG_SHIFT) + counts[keep], 255)
-            values = (values & COVER_MASK) | (flagged.astype(np.uint16) << FLAG_SHIFT)
+            values = ((values & COVER_MASK)
+                      | (flagged.astype(np.uint16) << FLAG_SHIFT))
             fragment[pixels[keep]] = values
             record["flagged_pixels"] = int(counts.sum())
         records[ccd] = record
     if set(validated) - present:
-        raise ValueError(f"Validated CCDs absent from source: {set(validated) - present}")
+        raise ValueError(
+            f"Validated CCDs absent from source: {set(validated) - present}")
     if not present:
         raise ValueError("No CCD images found")
     pixels = pointing_pixels(corners)
@@ -149,7 +150,7 @@ def rasterize(ccds, validated):
 
 
 def source_ccds(args):
-    """Yield CCD headers and flags from split files or paired delivered MEFs."""
+    """Yield CCD headers and flags from splits or paired delivered MEFs."""
     if args.exp_dir is not None:
         split = args.exp_dir / SPLIT_DIR
         images = sorted(split.glob(f"image-{args.exp}-*.fits"))
@@ -162,9 +163,13 @@ def source_ccds(args):
             images = stack.enter_context(fits.open(args.image_mef))
             flags = stack.enter_context(fits.open(args.flag_mef))
             if len(images) != len(flags):
-                raise ValueError("Image and flag MEFs have different HDU counts")
+                raise ValueError(
+                    "Image and flag MEFs have different HDU counts")
             for ccd in range(len(images) - 1):
-                yield ccd, images[ccd + 1].header, flags[ccd + 1].data
+                # Match split_exp's flag conversion, including delivered
+                # floating-point arrays and int16 overflow semantics.
+                yield (ccd, images[ccd + 1].header,
+                       flags[ccd + 1].data.astype(np.int16))
                 # Release decompressed flag arrays between CCDs.
                 del flags[ccd + 1].data
 
@@ -178,6 +183,7 @@ def write_stable(tmp: Path, dest: Path) -> None:
 
 
 def main() -> None:
+    """Write a fragment and completion manifest from the selected source."""
     parser = argparse.ArgumentParser(description=__doc__)
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--exp-dir", type=Path)
