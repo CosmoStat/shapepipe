@@ -23,7 +23,7 @@ import healsparse as hsp
 import numpy as np
 
 import build_index
-from exp_maps import FRAGMENT_DTYPE, NSIDE, NSIDE_COVERAGE
+from exp_maps import FLAG_SHIFT, FRAGMENT_DTYPE, NSIDE, NSIDE_COVERAGE
 
 
 def fragment_path(products_dir: Path, exp: str) -> Path:
@@ -73,10 +73,11 @@ def main() -> None:
         pixels = fragment.valid_pixels
         values = fragment.get_values_pix(pixels)
         for acc, bit in ((npoint, 1), (ntaken, 2), (nexp, 4)):
-            selected = pixels[(values["cover"] & bit) != 0]
+            selected = pixels[(values & bit) != 0]
             add(acc, selected, np.ones(selected.size, dtype=np.uint8))
-        flagged = values["nflagged"] > 0
-        add(nflagged, pixels[flagged], values["nflagged"][flagged])
+        counts = values >> FLAG_SHIFT
+        flagged = counts > 0
+        add(nflagged, pixels[flagged], counts[flagged])
         if i % 500 == 0:
             print(f"[exposure_maps] {i + 1}/{len(exposures)} {exp}", flush=True)
 

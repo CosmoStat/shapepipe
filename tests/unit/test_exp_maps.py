@@ -134,7 +134,7 @@ def test_fragment_counts_every_flagged_pixel(maps, tmp_path, monkeypatch):
     expected = dict(zip(*np.unique(_sky_pixels(maps, crval, cols, rows),
                                    return_counts=True)))
     pixels = fragment.valid_pixels
-    values = fragment.get_values_pix(pixels)["nflagged"].astype(int)
+    values = (fragment.get_values_pix(pixels) >> maps.FLAG_SHIFT).astype(int)
     got = {p: v for p, v in zip(pixels, values) if v > 0}
     # Centres on the very edge of DATASEC can fall in a sky pixel whose own
     # centre is outside the coverage polygon; those are dropped.
@@ -152,15 +152,15 @@ def test_coverage_is_the_imaging_area_of_valid_psf_ccds(maps, tmp_path,
                             ccds=[0, 1], crvals=crvals, valid=[0])
     yy, xx = np.mgrid[13:NY - 13:7, 13:NX - 13:7]   # > one sky pixel in
     inside = _sky_pixels(maps, crvals[0], xx.ravel(), yy.ravel())
-    assert (fragment.get_values_pix(inside)["cover"] & 4 != 0).all()
+    assert (fragment.get_values_pix(inside) & 4 != 0).all()
     overscan = _sky_pixels(maps, crvals[0], np.full(50, -PAD_X - 4.0),
                            np.linspace(20, NY - 20, 50))
-    assert (fragment.get_values_pix(overscan)["cover"] & 2 == 0).all()
+    assert (fragment.get_values_pix(overscan) & 2 == 0).all()
     other = _sky_pixels(maps, crvals[1], xx.ravel(), yy.ravel())
     values = fragment.get_values_pix(other)
-    assert (values["cover"] & 2 != 0).all()
-    assert (values["cover"] & 4 == 0).all()
-    assert (values["nflagged"] == 0).all()
+    assert (values & 2 != 0).all()
+    assert (values & 4 == 0).all()
+    assert (values >> maps.FLAG_SHIFT == 0).all()
     assert list(record["ccds"]) == ["0", "1"]
 
 
@@ -176,10 +176,9 @@ def test_merge_counts_exposures_and_flagged_pixels(maps, tmp_path,
     a = np.arange(1000, dtype=np.int64) + 10**9
     for exp, pix in (("2000001", a), ("2000002", a + 500)):
         frag = hsp.HealSparseMap.make_empty(maps.NSIDE_COVERAGE, maps.NSIDE,
-                                            maps.FRAGMENT_DTYPE, primary="cover")
-        values = np.zeros(pix.size, maps.FRAGMENT_DTYPE)
-        values["cover"] = 7
-        values["nflagged"][500:510] = 7
+                                            maps.FRAGMENT_DTYPE)
+        values = np.full(pix.size, 7, maps.FRAGMENT_DTYPE)
+        values[500:510] |= 7 << maps.FLAG_SHIFT
         frag[pix] = values
         path = merge.fragment_path(products, exp)
         path.parent.mkdir(parents=True)
@@ -226,12 +225,12 @@ def test_pointing_fills_gaps_excludes_ears_and_matches_mef(maps, tmp_path,
     ra, dec = base.all_pix2world(base.wcs.crpix[0] + (NX + 80) / 2,
                                 base.wcs.crpix[1], 1)
     gap = hpg.angle_to_pixel(maps.NSIDE, ra, dec)
-    assert fragment[gap]["cover"] == 1
+    assert fragment[gap] & maps.COVER_MASK == 1
     ear = _sky_pixels(maps, crvals[-1], NX // 2, NY // 2)
-    assert fragment[ear]["cover"] == 6
+    assert fragment[ear] & maps.COVER_MASK == 6
     unvalidated = _sky_pixels(maps, crvals[1], NX // 2, NY // 2)
-    assert fragment[unvalidated]["cover"] == 3
-    assert fragment[unvalidated]["nflagged"] == 0
+    assert fragment[unvalidated] & maps.COVER_MASK == 3
+    assert fragment[unvalidated] >> maps.FLAG_SHIFT == 0
 
     split = tmp_path / "store" / maps.SPLIT_DIR
     images, flags = [fits.PrimaryHDU()], [fits.PrimaryHDU()]
@@ -260,6 +259,33 @@ def test_pointing_fills_gaps_excludes_ears_and_matches_mef(maps, tmp_path,
     raw = hsp.HealSparseMap.read(str(raw_path))
     assert np.array_equal(raw.valid_pixels, fragment.valid_pixels)
     assert np.array_equal(raw[raw.valid_pixels], fragment[fragment.valid_pixels])
+
+    # Pointing and taken coverage do not depend on any PSF succeeding.
+    manifest = tmp_path / "exp_persist.json"
+    manifest.write_text(json.dumps({"files": []}))
+    maps.main()
+    empty_psf = hsp.HealSparseMap.read(str(raw_path))
+    values = empty_psf[raw.valid_pixels]
+    assert np.array_equal(values & 3, raw[raw.valid_pixels] & 3)
+    assert (values & 4 == 0).all()
+    assert (values >> maps.FLAG_SHIFT == 0).all()
+
+
+def test_fragment_clips_flag_counts_and_preserves_mtime(maps, tmp_path,
+                                                       monkeypatch):
+    """Flag counts saturate at 255; identical writes preserve durable mtimes."""
+    crval = (150.3, 31.7)
+    pixel = _sky_pixels(maps, crval, NX // 2, NY // 2)
+    monkeypatch.setattr(maps, "flagged_counts", lambda *_: (
+        np.atleast_1d(pixel), np.array([400])))
+    fragment, _ = _run(maps, tmp_path, monkeypatch,
+                       ccds=[0], crvals=[crval], valid=[0])
+    assert fragment[pixel] >> maps.FLAG_SHIFT == 255
+    assert fragment[pixel] & maps.COVER_MASK == 7
+    paths = [tmp_path / "maps" / f"maps-{EXP}.hsp", tmp_path / "exp_maps.json"]
+    mtimes = [p.stat().st_mtime_ns for p in paths]
+    maps.main()
+    assert [p.stat().st_mtime_ns for p in paths] == mtimes
 
 
 def test_merge_refuses_plain_uint8(maps, tmp_path, monkeypatch):

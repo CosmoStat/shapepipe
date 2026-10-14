@@ -1,8 +1,10 @@
-"""Rasterize one exposure into a HealSparse record-array fragment.
+"""Rasterize one exposure into a packed uint16 HealSparse fragment.
 
-``cover`` (uint8, primary) stores bits 1 = pointing hull, 2 = CCD DATASEC,
-4 = validated-PSF CCD DATASEC. ``nflagged`` (uint8) counts nonzero flagged
-CCD pixel centres inside validated CCDs' coverage, clipped at 255.
+Bits 0–2 store coverage: 1 = pointing hull, 2 = CCD DATASEC,
+4 = validated-PSF CCD DATASEC. Bits 3–10 store nonzero flagged CCD pixel
+centre counts inside validated CCDs' coverage, clipped at 255.
+A scalar map uses HealSparse's compressed image storage; record-array maps
+use uncompressed tables and cost about 13 times as much disk space.
 The maps use nside 131072 over coverage 128, aligned with the sky masks.
 
 Headers and flag arrays come from either the split scratch store or delivered
@@ -30,7 +32,9 @@ import persist_exp
 
 NSIDE = 131072
 NSIDE_COVERAGE = 128
-FRAGMENT_DTYPE = np.dtype([("cover", "u1"), ("nflagged", "u1")])
+FRAGMENT_DTYPE = np.dtype(np.uint16)
+COVER_MASK = 7
+FLAG_SHIFT = 3
 SPLIT_DIR = "output/run_sp_exp_Sp/split_exp_runner/output"
 PSF_PATTERN = persist_exp.resolve(persist_exp.ALWAYS)
 
@@ -111,7 +115,7 @@ def rasterize(ccds, validated):
     Flags count only inside validated CCD DATASEC coverage, not overscan.
     """
     fragment = hsp.HealSparseMap.make_empty(
-        NSIDE_COVERAGE, NSIDE, FRAGMENT_DTYPE, primary="cover")
+        NSIDE_COVERAGE, NSIDE, FRAGMENT_DTYPE)
     records, corners = {}, []
     present = set()
     for ccd, header, flags in ccds:
@@ -121,15 +125,15 @@ def rasterize(ccds, validated):
             corners.append(outer_corners(wcs, bounds))
         covered = coverage_pixels(wcs, bounds)
         values = fragment.get_values_pix(covered)
-        values["cover"] |= 2 | (4 if ccd in validated else 0)
+        values |= 2 | (4 if ccd in validated else 0)
         fragment[covered] = values
         record = {"covered": int(covered.size), "validated": ccd in validated}
         if ccd in validated:
             pixels, counts = flagged_counts(wcs, flags, bounds)
             keep = np.isin(pixels, covered, assume_unique=True)
             values = fragment.get_values_pix(pixels[keep])
-            values["nflagged"] = np.minimum(
-                values["nflagged"].astype(np.uint16) + counts[keep], 255)
+            flagged = np.minimum((values >> FLAG_SHIFT) + counts[keep], 255)
+            values = (values & COVER_MASK) | (flagged.astype(np.uint16) << FLAG_SHIFT)
             fragment[pixels[keep]] = values
             record["flagged_pixels"] = int(counts.sum())
         records[ccd] = record
@@ -139,7 +143,7 @@ def rasterize(ccds, validated):
         raise ValueError("No CCD images found")
     pixels = pointing_pixels(corners)
     values = fragment.get_values_pix(pixels)
-    values["cover"] |= 1
+    values |= 1
     fragment[pixels] = values
     return fragment, records
 
@@ -194,7 +198,7 @@ def main() -> None:
     write_stable(tmp, args.fragment)
     body = {"stage": "exp_maps", "level": "exp", "unit": args.exp,
             "status": "complete", "fragment": str(args.fragment),
-            "format": "cover-nflagged-v1", "nside": NSIDE, "ccds": ccds}
+            "format": "packed-cover-nflagged-v1", "nside": NSIDE, "ccds": ccds}
     args.manifest.parent.mkdir(parents=True, exist_ok=True)
     tmp = args.manifest.with_name(args.manifest.name + ".tmp")
     tmp.write_text(json.dumps(body, indent=1, sort_keys=True) + "\n")
