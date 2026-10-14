@@ -19,9 +19,10 @@ opt-in, see ``star_selection.setools``), and ``make_cat`` writes the per-band
 star catalogue, or a network fetch — hence no ``star_catalogue`` / ``exp_star_cat``
 here, and no ``exp_mask``.
 
-``exp_maps`` exports that flag image, with the CCD footprints, into a
-HealSparse fragment so the survey footprint can subtract it; nothing in this
-workflow reads it back.
+``exp_maps`` exports the pointing hull, all CCD DATASEC footprints,
+validated-PSF coverage and instrument flag counts into a HealSparse fragment.
+``exposure_maps`` sums these into four campaign maps; nothing in this
+workflow reads them back.
 
 ``exp_persist`` and ``exp_maps`` write to the PERSISTENT root. ``exp_persist``
 packs the PSF products named by `persist_exp:` into one tar per exposure off
@@ -184,13 +185,14 @@ rule exp_persist:
 
 # --- the exposure's footprint and defects -----------------------------------
 # One HealSparse fragment per exposure on the persistent root: the sky pixels
-# its valid-PSF CCDs cover, and how many flagged CCD pixels fall in each
+# covered by its pointing hull, all CCDs, and validated CCDs, with flag counts
 # (workflow/scripts/exp_maps.py). It reads the split images' headers and flag
 # splits from the scratch store, so clean_exposure waits for it exactly as for
 # exp_persist; its one declared input is exp_persist's manifest, which names
-# the valid-PSF CCDs. ~8 s per exposure.
+# the valid-PSF CCDs.
 # @sc [decision:masking.defect_map_from_flags]
 # @sc [decision:masking.nexp_map_valid_psf_ccds]
+# @sc [decision:masking.pointing_square]
 rule exp_maps:
     input:
         persist = lambda wc: prod_exp_manifest(wc.exp, "exp_persist")
@@ -365,18 +367,20 @@ rule star_cat_merge:
 
 # --- the campaign's exposure maps -------------------------------------------
 # ONE job per campaign: every fragment of the campaign's exposures, summed into
-# <products_dir>/nexp_<run>.hsp (exposures with a valid PSF model per sky pixel)
-# and nflagged_<run>.hsp (their flagged CCD pixels per sky pixel). Rebuilt
+# <products_dir>/{npoint,ntaken,nexp,nflagged}_<run>.hsp: pointing hulls,
+# all CCD DATASEC exposures, validated exposures, and their flag counts. Rebuilt
 # whole when the exposure set or a fragment changes; inputs, fingerprint and
-# the job's own rediscovery of the set follow star_cat_merge. Memory is the two
-# maps, 3 MiB per nside-128 coverage pixel the campaign touches: ~13 per
-# exposure, capped at the ~23k of the UNIONS footprint (~70 GB at DR6).
+# the job's own rediscovery of the set follow star_cat_merge. The four maps
+# require 5 MiB per nside-128 coverage pixel: ~13 per exposure, capped at
+# the ~23k of the UNIONS footprint.
 # @sc [decision:masking.defect_map_from_flags]
 # @sc [decision:masking.nexp_map_valid_psf_ccds]
 rule exposure_maps:
     input:
         lambda wc: exposure_maps_inputs()
     output:
+        npoint  = npoint_map(),
+        ntaken  = ntaken_map(),
         nexp    = nexp_map(),
         nflagged = nflagged_map()
     params:
@@ -388,7 +392,7 @@ rule exposure_maps:
     threads: 1
     resources:
         mem_mb = lambda wc, attempt: capped_mem(attempt * (
-            1000 + 3.2 * min(13 * len(exposure_maps_exposures()), 23_000)),
+            1000 + 5.3 * min(13 * len(exposure_maps_exposures()), 23_000)),
             "exposure_maps"),
         runtime = lambda wc, attempt: attempt * (
             30 + len(exposure_maps_exposures()) // 30)
@@ -397,4 +401,5 @@ rule exposure_maps:
         f"python {SCRIPTS}/merge_exposure_maps.py"
         " --products-dir '{params.products_dir}'"
         " --tile-list '{params.tile_list}' --index-db '{params.index_db}'"
+        " --npoint {output.npoint} --ntaken {output.ntaken}"
         " --nexp {output.nexp} --nflagged {output.nflagged}"
