@@ -315,3 +315,16 @@ def test_merge_refuses_plain_uint8(maps, tmp_path, monkeypatch):
         merge.main()
     assert "--image-mef" in str(error.value)
     assert "--persist-manifest" in str(error.value)
+
+
+def test_straighten_drops_nearly_collinear_hull_vertices():
+    """A hull vertex turning by ~1e-6 rad (CCD corners along one side) is
+    dropped, so ``query_polygon`` never sees a degenerate corner; real
+    corners stay."""
+    pytest.importorskip("healsparse")
+    exp_maps = _load("exp_maps")
+    square = np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=float)
+    nearly = np.array([[0, 0], [0.5, 1e-7], [1, 0], [1, 1], [0.5, 1 + 1e-6],
+                       [0, 1]], dtype=float)
+    np.testing.assert_array_equal(exp_maps.straighten(nearly), square)
+    np.testing.assert_array_equal(exp_maps.straighten(square), square)
