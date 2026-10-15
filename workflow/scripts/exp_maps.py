@@ -71,6 +71,30 @@ def coverage_pixels(wcs, bounds) -> np.ndarray:
     return hpg.query_polygon(NSIDE, ra, dec, nest=True)
 
 
+MIN_TURN = 1e-4
+
+
+def straighten(hull, min_turn=MIN_TURN):
+    """Drop hull vertices that turn by less than ``min_turn`` radians.
+
+    CCD corners along one side of the array are nearly collinear, and
+    ``hpg.query_polygon`` rejects a corner that turns by ~1e-6 rad as
+    degenerate. Dropping a vertex moves the boundary by less than half its
+    neighbouring edge times its turn, under 0.1" here, far below a 1.6" pixel.
+    """
+    hull = np.asarray(hull, dtype=float)
+    while len(hull) > 3:
+        before = hull - np.roll(hull, 1, axis=0)
+        after = np.roll(hull, -1, axis=0) - hull
+        turn = np.abs(before[:, 0] * after[:, 1] - before[:, 1] * after[:, 0]) / (
+            np.linalg.norm(before, axis=1) * np.linalg.norm(after, axis=1))
+        i = int(np.argmin(turn))
+        if turn[i] >= min_turn:
+            break
+        hull = np.delete(hull, i, axis=0)
+    return hull
+
+
 def pointing_pixels(corners):
     """Rasterize the main-array hull in a tangent plane about its centre.
 
@@ -90,7 +114,7 @@ def pointing_pixels(corners):
     tangent.wcs.crval = [np.rad2deg(np.arctan2(centre[1], centre[0])) % 360,
                          np.rad2deg(np.arcsin(centre[2]))]
     xy = np.column_stack(tangent.all_world2pix(ra, dec, 0))
-    hull = xy[ConvexHull(xy).vertices]
+    hull = straighten(xy[ConvexHull(xy).vertices])
     ra, dec = tangent.all_pix2world(hull[:, 0], hull[:, 1], 0)
     return hpg.query_polygon(NSIDE, ra, dec, nest=True)
 
