@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.27
+# syntax=docker/dockerfile:1.28
 #
 # One image: CI tests it, canfar batch jobs run it, downstream stacks (e.g.
 # sp_validation) build FROM it. Everyday CLI tools and all extras (test,

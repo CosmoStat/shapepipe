@@ -125,6 +125,21 @@ def test_products_use_products_dir_and_run_name(campaign, dag):
     assert Path(dag.namespace["INDEX_DB"]) == campaign.index_db
 
 
+def test_exposure_maps_are_campaign_targets(campaign, dag):
+    """Fitted-PSF campaigns publish all four maps on the persistent root."""
+    jobs = dag.jobs_for("exposure_maps")
+    if campaign.psf_model == "fake":
+        assert not jobs
+        return
+    assert len(jobs) == 1
+    expected = {campaign.products_dir / f"{name}_{campaign.name}.hsp"
+                for name in ("npoint", "ntaken", "nexp", "nflagged")}
+    assert set(map(Path, jobs[0].output)) == expected
+    assert expected <= set(map(Path, dag.namespace["exposure_maps_targets"]()))
+    for name in ("npoint", "ntaken", "nexp", "nflagged"):
+        assert f"--{name} " in jobs[0].shellcmd
+
+
 def test_tile_store_is_unique_per_campaign(campaign, tmp_path, resolve_dag):
     """Concurrent campaigns over the same tiles get distinct node-local stores;
     within a campaign, every tile_shape member of a tile names the same one."""

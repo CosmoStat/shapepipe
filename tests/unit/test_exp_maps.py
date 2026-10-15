@@ -1,7 +1,7 @@
 """The per-exposure fragment and the campaign sum (``exp_maps.py``,
 ``merge_exposure_maps.py``).
 
-The fixture is a synthetic store of two CCDs on a rotated TAN WCS at MegaCam's
+The fixture is a synthetic CCD grid on a rotated TAN WCS at MegaCam's
 0.187"/pixel, so a sky pixel covers ~74 CCD pixels as on the sky. Its flag
 image carries a one-pixel bad column, a saturated blob, isolated pixels on the
 CCD edges, a lattice of hot pixels, and a flagged overscan border outside
@@ -20,7 +20,9 @@ import numpy as np
 import pytest
 
 pytestmark = [pytest.mark.unions,
-              pytest.mark.decision("masking.defect_map_from_flags")]
+              pytest.mark.decision("masking.defect_map_from_flags"),
+              pytest.mark.decision("masking.nexp_map_valid_psf_ccds"),
+              pytest.mark.decision("masking.pointing_square")]
 
 SCRIPTS = Path(__file__).resolve().parents[2] / "workflow" / "scripts"
 EXP = "2079612"
@@ -132,8 +134,8 @@ def test_fragment_counts_every_flagged_pixel(maps, tmp_path, monkeypatch):
     expected = dict(zip(*np.unique(_sky_pixels(maps, crval, cols, rows),
                                    return_counts=True)))
     pixels = fragment.valid_pixels
-    values = fragment.get_values_pix(pixels).astype(int)
-    got = {p: v - 1 for p, v in zip(pixels, values) if v > 1}
+    values = (fragment.get_values_pix(pixels) >> maps.FLAG_SHIFT).astype(int)
+    got = {p: v for p, v in zip(pixels, values) if v > 0}
     # Centres on the very edge of DATASEC can fall in a sky pixel whose own
     # centre is outside the coverage polygon; those are dropped.
     assert set(got) <= set(expected)
@@ -144,20 +146,22 @@ def test_fragment_counts_every_flagged_pixel(maps, tmp_path, monkeypatch):
 
 def test_coverage_is_the_imaging_area_of_valid_psf_ccds(maps, tmp_path,
                                                         monkeypatch):
-    """Interior pixel centres are covered, the overscan is not, and a CCD
-    without a PSF model contributes nothing."""
+    """Validated CCD coverage excludes overscan; unvalidated CCDs are taken."""
     crvals = [(150.3, 31.7), (150.5, 31.7)]
     fragment, record = _run(maps, tmp_path, monkeypatch,
                             ccds=[0, 1], crvals=crvals, valid=[0])
     yy, xx = np.mgrid[13:NY - 13:7, 13:NX - 13:7]   # > one sky pixel in
     inside = _sky_pixels(maps, crvals[0], xx.ravel(), yy.ravel())
-    assert (fragment.get_values_pix(inside) > 0).all()
+    assert (fragment.get_values_pix(inside) & 4 != 0).all()
     overscan = _sky_pixels(maps, crvals[0], np.full(50, -PAD_X - 4.0),
                            np.linspace(20, NY - 20, 50))
-    assert (fragment.get_values_pix(overscan) == 0).all()
+    assert (fragment.get_values_pix(overscan) & 2 == 0).all()
     other = _sky_pixels(maps, crvals[1], xx.ravel(), yy.ravel())
-    assert (fragment.get_values_pix(other) == 0).all()
-    assert list(record["ccds"]) == ["0"]
+    values = fragment.get_values_pix(other)
+    assert (values & 2 != 0).all()
+    assert (values & 4 == 0).all()
+    assert (values >> maps.FLAG_SHIFT == 0).all()
+    assert list(record["ccds"]) == ["0", "1"]
 
 
 def test_merge_counts_exposures_and_flagged_pixels(maps, tmp_path,
@@ -172,19 +176,21 @@ def test_merge_counts_exposures_and_flagged_pixels(maps, tmp_path,
     a = np.arange(1000, dtype=np.int64) + 10**9
     for exp, pix in (("2000001", a), ("2000002", a + 500)):
         frag = hsp.HealSparseMap.make_empty(maps.NSIDE_COVERAGE, maps.NSIDE,
-                                            np.uint8)
-        frag[pix] = np.ones(pix.size, np.uint8)
-        frag[pix[500:510]] = np.full(10, 1 + 7, np.uint8)
+                                            maps.FRAGMENT_DTYPE)
+        values = np.full(pix.size, 7, maps.FRAGMENT_DTYPE)
+        values[500:510] |= 7 << maps.FLAG_SHIFT
+        frag[pix] = values
         path = merge.fragment_path(products, exp)
         path.parent.mkdir(parents=True)
         frag.write(str(path))
     monkeypatch.setattr(merge.build_index, "campaign_exposures",
                         lambda *_: ["2000001", "2000002", "2000003"])
-    out = {k: tmp_path / f"{k}.hsp" for k in ("nexp", "nflagged")}
+    out = {k: tmp_path / f"{k}.hsp" for k in
+           ("npoint", "ntaken", "nexp", "nflagged")}
     monkeypatch.setattr(sys, "argv", [
         "merge_exposure_maps.py", "--products-dir", str(products),
         "--tile-list", "-", "--index-db", "-",
-        "--nexp", str(out["nexp"]), "--nflagged", str(out["nflagged"])])
+        *[arg for k, path in out.items() for arg in (f"--{k}", str(path))]])
     merge.main()
 
     nexp = hsp.HealSparseMap.read(str(out["nexp"]))
@@ -195,3 +201,117 @@ def test_merge_counts_exposures_and_flagged_pixels(maps, tmp_path,
     assert nflagged.get_values_pix(a[500:510]).tolist() == [7] * 10
     assert nflagged.get_values_pix(a[500:510] + 500).tolist() == [7] * 10
     assert nflagged.valid_pixels.size == 20
+    for name in ("npoint", "ntaken"):
+        count = hsp.HealSparseMap.read(str(out[name]))
+        assert np.array_equal(count.get_values_pix(a), nexp.get_values_pix(a))
+
+
+def test_pointing_fills_gaps_excludes_ears_and_matches_mef(maps, tmp_path,
+                                                          monkeypatch):
+    """A main-array grid has gaps, an unvalidated CCD, and an external ear."""
+    import healsparse as hsp
+    import hpgeom as hpg
+    from astropy.io import fits
+
+    # Arrange centres in the rotated WCS's own pixel plane; 80-pixel gaps.
+    base = _wcs((359.99, 31.7))
+    offsets = [(0, 0), (NX + 80, 0), (0, NY + 80),
+               (NX + 80, NY + 80), (2 * (NX + 80), 0)]
+    crvals = [base.all_pix2world(base.wcs.crpix[0] + x,
+                               base.wcs.crpix[1] + y, 1) for x, y in offsets]
+    ccds = [0, 1, 9, 10, 36]
+    fragment, _ = _run(maps, tmp_path, monkeypatch,
+                       ccds=ccds, crvals=crvals, valid=[0, 9, 10, 36])
+    ra, dec = base.all_pix2world(base.wcs.crpix[0] + (NX + 80) / 2,
+                                base.wcs.crpix[1], 1)
+    gap = hpg.angle_to_pixel(maps.NSIDE, ra, dec)
+    assert fragment[gap] & maps.COVER_MASK == 1
+    ear = _sky_pixels(maps, crvals[-1], NX // 2, NY // 2)
+    assert fragment[ear] & maps.COVER_MASK == 6
+    unvalidated = _sky_pixels(maps, crvals[1], NX // 2, NY // 2)
+    assert fragment[unvalidated] & maps.COVER_MASK == 3
+    assert fragment[unvalidated] >> maps.FLAG_SHIFT == 0
+
+    split = tmp_path / "store" / maps.SPLIT_DIR
+    images, flags = [fits.PrimaryHDU()], [fits.PrimaryHDU()]
+    for ccd in range(37):
+        if ccd in ccds:
+            header = fits.getheader(split / f"image-{EXP}-{ccd}.fits")
+            images.append(fits.ImageHDU(data=np.zeros(_split(_flags()).shape),
+                                        header=header))
+            # Delivered floating flags follow split_exp's int16 conversion.
+            flags.append(fits.ImageHDU(
+                data=_split(_flags()).astype(np.float32) + 0.25))
+        else:
+            # Raw MEFs index every CCD; put absent grid CCDs at an existing
+            # unvalidated footprint so coverage and flags remain unchanged.
+            header = fits.getheader(split / f"image-{EXP}-1.fits")
+            images.append(fits.ImageHDU(data=np.zeros(_split(_flags()).shape),
+                                        header=header))
+            flags.append(fits.ImageHDU(
+                data=_split(_flags()).astype(np.float32) + 0.25))
+    image_path, flag_path = tmp_path / "image.fits", tmp_path / "flag.fits"
+    fits.HDUList(images).writeto(image_path)
+    fits.HDUList(flags).writeto(flag_path)
+    raw_path = tmp_path / "raw.hsp"
+    monkeypatch.setattr(sys, "argv", [
+        "exp_maps.py", "--image-mef", str(image_path),
+        "--flag-mef", str(flag_path),
+        "--exp", EXP, "--persist-manifest", str(tmp_path / "exp_persist.json"),
+        "--fragment", str(raw_path), "--manifest", str(tmp_path / "raw.json")])
+    maps.main()
+    raw = hsp.HealSparseMap.read(str(raw_path))
+    assert np.array_equal(raw.valid_pixels, fragment.valid_pixels)
+    assert np.array_equal(raw[raw.valid_pixels],
+                          fragment[fragment.valid_pixels])
+
+    # Pointing and taken coverage do not depend on any PSF succeeding.
+    manifest = tmp_path / "exp_persist.json"
+    manifest.write_text(json.dumps({"files": []}))
+    maps.main()
+    empty_psf = hsp.HealSparseMap.read(str(raw_path))
+    values = empty_psf[raw.valid_pixels]
+    assert np.array_equal(values & 3, raw[raw.valid_pixels] & 3)
+    assert (values & 4 == 0).all()
+    assert (values >> maps.FLAG_SHIFT == 0).all()
+
+
+def test_fragment_clips_flag_counts_and_preserves_mtime(maps, tmp_path,
+                                                       monkeypatch):
+    """Flag counts saturate at 255; identical writes preserve mtimes."""
+    crval = (150.3, 31.7)
+    pixel = _sky_pixels(maps, crval, NX // 2, NY // 2)
+    monkeypatch.setattr(maps, "flagged_counts", lambda *_: (
+        np.atleast_1d(pixel), np.array([400])))
+    fragment, _ = _run(maps, tmp_path, monkeypatch,
+                       ccds=[0], crvals=[crval], valid=[0])
+    assert fragment[pixel] >> maps.FLAG_SHIFT == 255
+    assert fragment[pixel] & maps.COVER_MASK == 7
+    paths = [tmp_path / "maps" / f"maps-{EXP}.hsp", tmp_path / "exp_maps.json"]
+    mtimes = [p.stat().st_mtime_ns for p in paths]
+    maps.main()
+    assert [p.stat().st_mtime_ns for p in paths] == mtimes
+
+
+def test_merge_refuses_plain_uint8(maps, tmp_path, monkeypatch):
+    """Legacy fragments require an explicit exposure-specific raw backfill."""
+    import healsparse as hsp
+
+    merge = _load("merge_exposure_maps")
+    path = merge.fragment_path(tmp_path, EXP)
+    path.parent.mkdir(parents=True)
+    old = hsp.HealSparseMap.make_empty(
+        maps.NSIDE_COVERAGE, maps.NSIDE, np.uint8)
+    old[np.array([10**9])] = np.array([1], dtype=np.uint8)
+    old.write(str(path))
+    monkeypatch.setattr(merge.build_index, "campaign_exposures",
+                        lambda *_: [EXP])
+    monkeypatch.setattr(sys, "argv", [
+        "merge_exposure_maps.py", "--products-dir", str(tmp_path),
+        "--tile-list", "-", "--index-db", "-",
+        *[arg for name in ("npoint", "ntaken", "nexp", "nflagged")
+          for arg in (f"--{name}", str(tmp_path / f"{name}.hsp"))]])
+    with pytest.raises(SystemExit, match=f"Exposure {EXP}.*") as error:
+        merge.main()
+    assert "--image-mef" in str(error.value)
+    assert "--persist-manifest" in str(error.value)
