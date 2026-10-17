@@ -646,10 +646,8 @@ rule tile_vignets:
 rule tile_ngmix:
     group: TILE_GROUP
     input:
-        # The manifest, and only the manifest. The vignette store is no longer a
-        # declared input because it is no longer a declared output: it is
-        # node-local, produced by tile_vignets earlier in THIS SAME group job
-        # (see TILE_LOCAL). The manifest was always the real edge.
+        # Unconditional: even a completed chunk can be invalidated by another
+        # input or rerun trigger. Every scheduled reader must wait for the store.
         vignets  = rules.tile_vignets.output.manifest,
         sx       = rules.tile_detect.output.manifest,
     output:
@@ -893,9 +891,9 @@ rule tile_merge_cats:
 rule tile_make_cat:
     group: TILE_GROUP
     input:
-        # No store input: it is node-local, written by tile_vignets in this same
-        # group job. make_cat reads its configured PSF-interpolation output
-        # through $NGMIX_VIGNET_DIR (config_tile_Mc.ini).
+        # The store is node-local, but its manifest is the ordering edge:
+        # after a resume sweep, rebuild it even when merge_cats is complete.
+        vignets = rules.tile_vignets.output.manifest,
         ms    = rules.tile_merge_cats.output.manifest,
     output:
         manifest  = f"{TILE_DIR}/manifests/tile_make_cat.json",
