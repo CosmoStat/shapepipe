@@ -435,13 +435,17 @@ sm() {
   local root; root="$(code_root)"
   # The run config the Snakefile reads: the snapshot's copy when this run has
   # one, so every parse of the campaign -- head and jobs -- sees the same file.
-  if [ -n "${SP_RUN_CONFIG:-}" ] && [ -f "$root/run_config.yaml" ]; then
-    export SP_RUN_CONFIG="$root/run_config.yaml"
-  fi
-  SP_PHASE="${SP_PHASE:-passthrough}" \
-    snakemake --snakefile "$root/workflow/Snakefile" \
-              --profile "$root/profiles/$PROFILE" \
-              --directory "$STATE_DIR" "$@"
+  # Scoped to this call (subshell): SP_RUN_CONFIG in the caller stays the
+  # external config, so a later snapshot refresh never copies the file onto itself.
+  (
+    if [ -n "${SP_RUN_CONFIG:-}" ] && [ -f "$root/run_config.yaml" ]; then
+      export SP_RUN_CONFIG="$root/run_config.yaml"
+    fi
+    SP_PHASE="${SP_PHASE:-passthrough}" \
+      snakemake --snakefile "$root/workflow/Snakefile" \
+                --profile "$root/profiles/$PROFILE" \
+                --directory "$STATE_DIR" "$@"
+  )
 }
 
 cmd="${1:-}"
