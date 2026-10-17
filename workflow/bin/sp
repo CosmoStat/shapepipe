@@ -256,9 +256,11 @@ fi
 # it before the snapshot, with its own arguments, so -n only reports.
 # This repairs ephemeral stores, not persistent products. In particular, do not
 # add an exp_maps sweep here: the map rule must declare its fragment as an
-# output and the campaign merge must require it, even after reclamation.
-# Missing fragments can then recover from staged raw MEFs without invalidating
-# exp_persist or refitting PSFs. The same DAG also protects non-allocation runs.
+# output while the store is live, and reclamation must require it first.
+# After reclamation, existing fragments must be producer-free immutable leaves;
+# missing ones must fail planning with an explicit out-of-DAG backfill command.
+# This prevents code/params edits from deleting products whose sources are gone.
+# The same lifecycle boundary also protects non-allocation runs.
 alloc_resume() {
   local a alloc_dry=0 products_dir n_swept=0 tile m holder holder_file
   local holder_state="" holder_rc=1
