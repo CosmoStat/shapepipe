@@ -10,7 +10,7 @@ The maps use nside 131072 over coverage 128, aligned with the sky masks.
 Headers and flag arrays come from either the split scratch store or delivered
 image/flag MEFs (CCD + 1 is the HDU index). The exp_persist manifest names the
 validated CCDs. Both the fragment and exp_maps manifest are written, including
-in raw-MEF backfills; durable_edge reads the fragment for reclaimed stores.
+in raw-MEF recovery after reclamation; the DAG requires the fragment itself.
 """
 
 import argparse

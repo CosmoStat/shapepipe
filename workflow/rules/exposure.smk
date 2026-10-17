@@ -187,20 +187,21 @@ rule exp_persist:
 # One HealSparse fragment per exposure on the persistent root: the sky pixels
 # covered by its pointing hull, all CCDs, and validated CCDs, with flag counts
 # (workflow/scripts/exp_maps.py). It reads the split images' headers and flag
-# splits from the scratch store, so clean_exposure waits for it exactly as for
-# exp_persist; its one declared input is exp_persist's manifest, which names
-# the valid-PSF CCDs.
+# splits from the scratch store, or staged raw MEFs after reclamation.
+# clean_exposure and the campaign merge both require the actual fragment.
+# exp_persist's manifest names the valid-PSF CCDs.
 # @sc [decision:masking.defect_map_from_flags]
 # @sc [decision:masking.nexp_map_valid_psf_ccds]
 # @sc [decision:masking.pointing_square]
 rule exp_maps:
     input:
-        persist = lambda wc: prod_exp_manifest(wc.exp, "exp_persist")
+        lambda wc: exp_maps_source(wc.exp)
     output:
-        manifest = f"{PROD_EXP_DIR}/manifests/exp_maps.json"
+        manifest = f"{PROD_EXP_DIR}/manifests/exp_maps.json",
+        fragment = f"{PROD_EXP_DIR}/maps/maps-{{exp}}.hsp"
     params:
-        exp_dir     = lambda wc: exp_dir(wc.exp),
-        fragment    = lambda wc: prod_exp_maps(wc.exp),
+        source      = lambda wc: exp_maps_source_args(wc.exp),
+        persist     = lambda wc: prod_exp_manifest(wc.exp, "exp_persist"),
         script_hash = EXP_MAPS_HASH
     threads: 1
     retries: 2
@@ -210,10 +211,11 @@ rule exp_maps:
         runtime = 20
     shell:
         "set -euo pipefail\n"
+        "{params.source}"
         f"python {SCRIPTS}/exp_maps.py"
-        " --exp-dir '{params.exp_dir}' --exp {wildcards.exp}"
-        " --persist-manifest {input.persist}"
-        " --fragment '{params.fragment}' --manifest {output.manifest}"
+        " \"${{source[@]}}\" --exp {wildcards.exp}"
+        " --persist-manifest '{params.persist}'"
+        " --fragment '{output.fragment}' --manifest {output.manifest}"
 
 
 # --- reclamation (D5) -------------------------------------------------------
@@ -264,8 +266,8 @@ rule clean_exposure:
         # the exposure from VOS.
         lambda wc: (durable_edge(wc.exp, "exp_persist", prod_exp_tar(wc.exp))
                     if PERSISTS_PSF else []),
-        # The exposure maps' fragment, by the same rule.
-        lambda wc: (durable_edge(wc.exp, "exp_maps", prod_exp_maps(wc.exp))
+        # Maps can be recovered from raw MEFs even after reclamation.
+        lambda wc: ([prod_exp_maps(wc.exp)]
                     if PERSISTS_PSF else [])
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"

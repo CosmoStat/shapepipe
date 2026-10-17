@@ -167,8 +167,7 @@ def test_coverage_is_the_imaging_area_of_valid_psf_ccds(maps, tmp_path,
 def test_merge_counts_exposures_and_flagged_pixels(maps, tmp_path,
                                                    monkeypatch):
     """Two fragments overlapping on half their pixels: nexp is 2 in the
-    overlap, nflagged sums the counts, and a fragment-less exposure is
-    skipped."""
+    overlap and nflagged sums the counts."""
     import healsparse as hsp
 
     merge = _load("merge_exposure_maps")
@@ -184,7 +183,7 @@ def test_merge_counts_exposures_and_flagged_pixels(maps, tmp_path,
         path.parent.mkdir(parents=True)
         frag.write(str(path))
     monkeypatch.setattr(merge.build_index, "campaign_exposures",
-                        lambda *_: ["2000001", "2000002", "2000003"])
+                        lambda *_: ["2000001", "2000002"])
     out = {k: tmp_path / f"{k}.hsp" for k in
            ("npoint", "ntaken", "nexp", "nflagged")}
     monkeypatch.setattr(sys, "argv", [
@@ -315,6 +314,42 @@ def test_merge_refuses_plain_uint8(maps, tmp_path, monkeypatch):
         merge.main()
     assert "--image-mef" in str(error.value)
     assert "--persist-manifest" in str(error.value)
+
+
+def test_merge_refuses_missing_processed_fragments(maps, tmp_path, monkeypatch):
+    """One good fragment cannot hide missing processed exposures."""
+    import healsparse as hsp
+
+    merge = _load("merge_exposure_maps")
+    missing = ["2243882", "2243883"]
+    path = merge.fragment_path(tmp_path, EXP)
+    path.parent.mkdir(parents=True)
+    fragment = hsp.HealSparseMap.make_empty(
+        maps.NSIDE_COVERAGE, maps.NSIDE, maps.FRAGMENT_DTYPE)
+    fragment[np.array([10**9])] = np.array([7], dtype=maps.FRAGMENT_DTYPE)
+    fragment.write(str(path))
+    for exp in missing:
+        manifest = (merge.fragment_path(tmp_path, exp).parent.parent
+                    / "manifests" / "exp_persist.json")
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text('{}')
+    monkeypatch.setattr(merge.build_index, "campaign_exposures",
+                        lambda *_: [EXP, *missing])
+    outputs = [tmp_path / f"{name}.hsp"
+               for name in ("npoint", "ntaken", "nexp", "nflagged")]
+    for output in outputs:
+        output.write_bytes(b"previous complete map")
+    monkeypatch.setattr(sys, "argv", [
+        "merge_exposure_maps.py", "--products-dir", str(tmp_path),
+        "--tile-list", "-", "--index-db", "-",
+        *[arg for out in outputs for arg in (f"--{out.stem}", str(out))]])
+    with pytest.raises(SystemExit, match="missing fragments") as error:
+        merge.main()
+    for exp in missing:
+        assert f"--exp {exp} " in str(error.value)
+        assert f"{exp}p.flag.fits.fz" in str(error.value)
+    assert "--persist-manifest" in str(error.value)
+    assert all(out.read_bytes() == b"previous complete map" for out in outputs)
 
 
 def test_straighten_drops_nearly_collinear_hull_vertices():
