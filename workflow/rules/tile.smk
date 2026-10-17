@@ -698,6 +698,30 @@ rule tile_vignets:
 # ~37.9k rows (~375 MiB) with a third to spare.
 NGMIX_SEG_MEM_MB = 500
 
+def ngmix_vignets(wc):
+    """Keep completed chunks when only the node-local store was swept.
+
+    A missing temp chunk directory is harmless after merge_cats succeeds, but
+    before that merge it must be rebuilt and therefore needs the store edge.
+    Unfinished tiles with existing vignets manifests retain normal rerun
+    propagation. Finished tiles also cut the edge, so a restored manifest's
+    newer timestamp cannot wake old chunks on the next invocation. As with
+    the finished-tile exposure cut above, the profile disables the input
+    trigger. To force a chunk to recompute after a sweep, remove its manifest
+    too; to rebuild a finished tile, remove its final catalogue first.
+    """
+    root = Path(tile_dir(wc.tile))
+    vignets = root / "manifests/tile_vignets.json"
+    chunk = root / f"manifests/tile_ngmix_{wc.chunk}.json"
+    chunkdir = root / f"output/run_sp_tile_ngmix_Ng{wc.chunk}u"
+    merged = root / "manifests/tile_merge_cats.json"
+    if (not vignets.exists() or tile_finished(wc.tile)) and chunk.exists() and (
+        chunkdir.exists() or merged.exists()
+    ):
+        return []
+    return [str(vignets)]
+
+
 # ngmix shape measurement — N chunks per tile (D4). Each chunk LOOKS UP its own
 # CLOSED catalogue-row range in the file tile_vignets materialised at the top of this
 # group job (TILE_NGMIX_RANGES); the ranges are knowable only at EXECUTION time,
@@ -710,11 +734,9 @@ NGMIX_SEG_MEM_MB = 500
 rule tile_ngmix:
     group: TILE_GROUP
     input:
-        # The manifest, and only the manifest. The vignette store is no longer a
-        # declared input because it is no longer a declared output: it is
-        # node-local, produced by tile_vignets earlier in THIS SAME group job
-        # (see TILE_LOCAL). The manifest was always the real edge.
-        vignets  = rules.tile_vignets.output.manifest,
+        # A completed chunk doesn't read a rebuilt store on resume. Missing
+        # chunks keep the manifest edge and wait for this group's writer.
+        vignets  = ngmix_vignets,
         sx       = rules.tile_detect.output.manifest,
     output:
         manifest = f"{TILE_DIR}/manifests/tile_ngmix_{{chunk}}.json",
@@ -963,9 +985,9 @@ rule tile_merge_cats:
 rule tile_make_cat:
     group: TILE_GROUP
     input:
-        # No store input: it is node-local, written by tile_vignets in this same
-        # group job. make_cat reads its configured PSF-interpolation output
-        # through $NGMIX_VIGNET_DIR (config_tile_Mc.ini).
+        # The store is node-local, but its manifest is the ordering edge:
+        # after a resume sweep, rebuild it even when merge_cats is complete.
+        vignets = rules.tile_vignets.output.manifest,
         ms    = rules.tile_merge_cats.output.manifest,
     output:
         manifest  = f"{TILE_DIR}/manifests/tile_make_cat.json",

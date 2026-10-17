@@ -288,14 +288,15 @@ allocation has stops the run), at no more than 4 GB per core so memory does
 not raise the billing. Keep it to one node: the tile store is node-local, so
 a multi-node allocation would split a tile's vignets from its ngmix chunks.
 
-A job cut short by its time limit is resumed by submitting the same script
-again. The store died with the job, so before it runs `sp` deletes
-`tile_vignets.json` for each listed tile that has no `final_cat` yet (tile.smk's
-"node-local vignette store is missing" guard would stop its chunks otherwise);
-tile_vignets rebuilds the store and the chunks rerun after it. `sp` also
-records the job holding the campaign's state dir, and releases that job's lock
-once the job has left the queue; any other lock stops the run. With `-n` both
-only report.
+A job cut short by its time limit is resumed by submitting the same script again.
+The store died with the job, so before it runs `sp` deletes `tile_vignets.json` for each listed tile that has no `final_cat` yet.
+`tile_make_cat` declares that manifest as an input, so `tile_vignets` rebuilds the store even if all chunks and their merge are complete.
+Completed chunks keep their products; only unfinished chunks wait for the rebuilt store and run again.
+A chunk whose temporary directory is missing must also rerun if its merge has not succeeded.
+This storage-only recovery trusts the chunk completion manifests: to explicitly recompute a completed chunk, remove its manifest too.
+To rebuild a finished tile, remove its final catalogue first, as for the exposure-edge cut in `tile.smk`.
+`sp` also records the job holding the campaign's state dir, and releases that job's lock once the job has left the queue; any other lock stops the run.
+With `-n` both only report.
 
 ## Layout
 
