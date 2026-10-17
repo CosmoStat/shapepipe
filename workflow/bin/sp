@@ -244,6 +244,11 @@ fi
 # The resume housekeeping (a stale lock, then stale vignette manifests; the
 # lock goes first so a campaign still running is never swept). `sp run` calls
 # it before the snapshot, with its own arguments, so -n only reports.
+# This repairs ephemeral stores, not persistent products. In particular, do not
+# add an exp_maps sweep here: the map rule must declare its fragment as an
+# output and the campaign merge must require it, even after reclamation.
+# Missing fragments can then recover from staged raw MEFs without invalidating
+# exp_persist or refitting PSFs. The same DAG also protects non-allocation runs.
 alloc_resume() {
   local a alloc_dry=0 products_dir n_swept=0 tile m holder holder_file
   local holder_state="" holder_rc=1
