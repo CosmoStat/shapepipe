@@ -12,8 +12,7 @@
 
 All are 0 where nothing is counted. The campaign's exposures come from the
 tile list and the index (``build_index``), as for the star-catalogue merge.
-Missing fragments are omitted and reported; incompatible formats fail with a
-backfill command. The maps are rebuilt from every fragment on each run.
+Missing fragments and incompatible formats fail with a backfill command. The maps are rebuilt from every fragment on each run.
 """
 
 import argparse
@@ -54,16 +53,30 @@ def main() -> None:
     args = parser.parse_args()
 
     exposures = build_index.campaign_exposures(args.tile_list, args.index_db)
+    missing = [exp for exp in exposures
+               if not fragment_path(args.products_dir, exp).exists()]
+    if missing:
+        commands = []
+        for exp in missing:
+            path = fragment_path(args.products_dir, exp)
+            manifests = path.parent.parent / "manifests"
+            commands.append(
+                f"python workflow/scripts/exp_maps.py --exp {exp} "
+                f"--image-mef <raw-dir>/{exp}p.fits.fz "
+                f"--flag-mef <raw-dir>/{exp}p.flag.fits.fz "
+                f"--persist-manifest {manifests / 'exp_persist.json'} "
+                f"--fragment {path} "
+                f"--manifest {manifests / 'exp_maps.json'}")
+        raise SystemExit(
+            "merge_exposure_maps: missing fragments for exposures: "
+            + ", ".join(missing) + "\nBackfill with:\n"
+            + "\n".join(commands))
     npoint = hsp.HealSparseMap.make_empty(NSIDE_COVERAGE, NSIDE, np.uint8)
     ntaken = hsp.HealSparseMap.make_empty(NSIDE_COVERAGE, NSIDE, np.uint8)
     nexp = hsp.HealSparseMap.make_empty(NSIDE_COVERAGE, NSIDE, np.uint8)
     nflagged = hsp.HealSparseMap.make_empty(NSIDE_COVERAGE, NSIDE, np.uint16)
-    missing = []
     for i, exp in enumerate(exposures):
         path = fragment_path(args.products_dir, exp)
-        if not path.exists():
-            missing.append(exp)
-            continue
         fragment = hsp.HealSparseMap.read(str(path))
         if fragment.dtype != FRAGMENT_DTYPE:
             persist = path.parent.parent / "manifests" / "exp_persist.json"
@@ -88,7 +101,7 @@ def main() -> None:
             print(f"[exposure_maps] {i + 1}/{len(exposures)} {exp}",
                   flush=True)
 
-    used = len(exposures) - len(missing)
+    used = len(exposures)
     if not used:
         raise SystemExit("merge_exposure_maps: no exposure of the campaign "
                          "has a fragment")
@@ -101,10 +114,6 @@ def main() -> None:
     print(f"[exposure_maps] {used} exposure(s) -> {args.npoint.name}, "
           f"{args.ntaken.name}, {args.nexp.name}, "
           f"{args.nflagged.name}")
-    if missing:
-        print(f"[exposure_maps] WARNING: {len(missing)} exposure(s) in the "
-              f"campaign have no fragment (reclaimed before exp_maps ran) and "
-              f"are not counted, e.g. {missing[:5]}")
 
 
 if __name__ == "__main__":

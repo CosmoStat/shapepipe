@@ -938,12 +938,50 @@ def star_cat_exposures():
 # CCD coverage and flags into one persistent fragment; exposure_maps sums these
 # into npoint, ntaken, nexp and nflagged campaign maps. Fitted-PSF
 # runs only (psf_exposures()): the valid-PSF CCD set comes from exp_persist.
-# The fragment follows exp_persist's tar exactly: requested for live stores,
-# depended on through durable_edge() everywhere else.
+# Fragments are declared outputs, including after scratch reclamation.
+# Unlike the PSF tar, they can be rebuilt from staged raw MEFs without a refit.
 
 def prod_exp_maps(exp):
-    """The fragment exp_maps writes; not a declared output (see durable_edge)."""
+    """The persistent fragment declared by exp_maps."""
     return f"{prod_exp_dir(exp)}/maps/maps-{exp}.hsp"
+
+
+def exp_maps_source(exp):
+    """Use the live split store, or staged raw MEFs after reclamation.
+
+    A reclaimed store's existing persist manifest is immutable metadata, not
+    a request to repack its vanished PSF products. Keep it out of the producer
+    chain, just as durable_edge does for the persisted PSF tar.
+    Missing raw files are explicit DAG inputs and fail planning, not omission.
+    """
+    persist = Path(prod_exp_manifest(exp, "exp_persist"))
+    split = Path(exp_dir(exp)) / 'output/run_sp_exp_Sp/split_exp_runner/output'
+    if not persist.exists() or split.is_dir():
+        return [str(persist)]
+    if Path(prod_exp_maps(exp)).exists():
+        return []
+    return exp_maps_raw(exp)
+
+
+def exp_maps_raw(exp):
+    """Return the staged raw image and instrument-flag MEFs."""
+    name = exp_name(exp)
+    root = INPUTS['exposures']
+    return [f"{root}/{name}.fits.fz", f"{root}/{name}.flag.fits.fz"]
+
+
+def exp_maps_source_args(exp):
+    """Stable shell setup: choose available source when the job starts.
+
+    Keeping both paths in params avoids invalidating completed maps merely
+    because a store was reclaimed between invocations.
+    """
+    image, flag = exp_maps_raw(exp)
+    store = exp_dir(exp)
+    return (f"source=(--exp-dir '{store}')\n"
+            f"if [ ! -d '{store}/output/run_sp_exp_Sp/split_exp_runner/output' ]; then\n"
+            f"  source=(--image-mef '{image}' --flag-mef '{flag}')\n"
+            "fi\n")
 
 
 def npoint_map():
@@ -964,14 +1002,12 @@ def nflagged_map():
 
 @functools.lru_cache(maxsize=1)
 def exposure_maps_inputs():
-    return [p for exp in psf_exposures()
-            for p in durable_edge(exp, "exp_maps", prod_exp_maps(exp))]
+    return [prod_exp_maps(exp) for exp in psf_exposures()]
 
 
 def exposure_maps_exposures():
     """The exposure ids exposure_maps sums: its rerun fingerprint."""
-    return [e for e in psf_exposures()
-            if Path(prod_exp_maps(e)).exists() or not exp_store_reclaimed(e)]
+    return psf_exposures()
 
 
 def exposure_maps_targets():
@@ -980,8 +1016,7 @@ def exposure_maps_targets():
     if not workflow.is_main_process:
         return []
     inputs = exposure_maps_inputs()
-    live = [p for p in inputs if p.endswith("exp_maps.json")]
-    return live + ([npoint_map(), ntaken_map(), nexp_map(), nflagged_map()]
+    return inputs + ([npoint_map(), ntaken_map(), nexp_map(), nflagged_map()]
                    if inputs else [])
 
 
