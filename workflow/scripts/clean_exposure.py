@@ -66,6 +66,7 @@ consumer set, not once per campaign.
 
 import argparse
 import json
+import os
 import shutil
 import time
 from pathlib import Path
@@ -114,6 +115,12 @@ def main() -> None:
     for target in targets:
         # NEVER rmtree a symlink (see the module docstring).
         if target.is_symlink():
+            # The one link we own: output/ into the node-local exposure store
+            # (SP_EXP_STORE, sp --in-allocation). Its tree goes with it.
+            store = os.environ.get("SP_EXP_STORE")
+            real = target.resolve()
+            if store and real.is_dir() and real.parent == Path(store).resolve():
+                shutil.rmtree(real)
             target.unlink()
         else:
             shutil.rmtree(target)
