@@ -178,7 +178,9 @@ def test_resume_missing_fragment_after_reclamation(
         # With stale scratch manifests other PSF consumers may request a
         # refit; map recovery itself must never depend on that chain.
         merge, = dag.jobs_for("exposure_maps")
+        assert dag.workflow.dag.needrun(merge)
         for job in jobs:
+            assert dag.workflow.dag.needrun(job)
             exp = job.wildcards.exp
             fragment = str(job.output.fragment)
             assert fragment in set(map(str, merge.input))
