@@ -275,10 +275,9 @@ a multi-node allocation would split a tile's vignets from its ngmix chunks.
 A job cut short by its time limit is resumed by submitting the same script again.
 The store died with the job, so before it runs `sp` deletes `tile_vignets.json` for each listed tile that has no `final_cat` yet.
 `tile_make_cat` declares that manifest as an input, so `tile_vignets` rebuilds the store even if all chunks and their merge are complete.
-Completed chunks keep their products; only unfinished chunks wait for the rebuilt store and run again.
-A chunk whose temporary directory is missing must also rerun if its merge has not succeeded.
-This storage-only recovery trusts the chunk completion manifests: to explicitly recompute a completed chunk, remove its manifest too.
-To rebuild a finished tile, remove its final catalogue first, as for the exposure-edge cut in `tile.smk`.
+Every ngmix chunk also declares the vignets manifest unconditionally, so all chunks rerun after the store is rebuilt, followed by their merge and `make_cat`.
+This spends ngmix time on swept tiles, but guarantees that every scheduled reader waits for the writer, even if another input or rerun trigger invalidates a previously completed chunk.
+A completion manifest alone cannot prove that a chunk will not run in this invocation.
 `sp` also records the job holding the campaign's state dir, and releases that job's lock once the job has left the queue; any other lock stops the run.
 With `-n` both only report.
 

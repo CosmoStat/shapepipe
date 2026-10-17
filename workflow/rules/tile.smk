@@ -614,30 +614,6 @@ rule tile_vignets:
         sp_shell("tile_vignets", f"config_tile_PiViVi_{PSF_MODEL}.ini",
                  check_args=' --run-dir "$SP_LOCAL" --unit {wildcards.tile}')
 
-def ngmix_vignets(wc):
-    """Keep completed chunks when only the node-local store was swept.
-
-    A missing temp chunk directory is harmless after merge_cats succeeds, but
-    before that merge it must be rebuilt and therefore needs the store edge.
-    Unfinished tiles with existing vignets manifests retain normal rerun
-    propagation. Finished tiles also cut the edge, so a restored manifest's
-    newer timestamp cannot wake old chunks on the next invocation. As with
-    the finished-tile exposure cut above, the profile disables the input
-    trigger. To force a chunk to recompute after a sweep, remove its manifest
-    too; to rebuild a finished tile, remove its final catalogue first.
-    """
-    root = Path(tile_dir(wc.tile))
-    vignets = root / "manifests/tile_vignets.json"
-    chunk = root / f"manifests/tile_ngmix_{wc.chunk}.json"
-    chunkdir = root / f"output/run_sp_tile_ngmix_Ng{wc.chunk}u"
-    merged = root / "manifests/tile_merge_cats.json"
-    if (not vignets.exists() or tile_finished(wc.tile)) and chunk.exists() and (
-        chunkdir.exists() or merged.exists()
-    ):
-        return []
-    return [str(vignets)]
-
-
 # ngmix shape measurement — N chunks per tile (D4). Each chunk LOOKS UP its own
 # CLOSED catalogue-row range in the file tile_vignets materialised at the top of this
 # group job (TILE_NGMIX_RANGES); the ranges are knowable only at EXECUTION time,
@@ -650,9 +626,9 @@ def ngmix_vignets(wc):
 rule tile_ngmix:
     group: TILE_GROUP
     input:
-        # A completed chunk doesn't read a rebuilt store on resume. Missing
-        # chunks keep the manifest edge and wait for this group's writer.
-        vignets  = ngmix_vignets,
+        # Unconditional: even a completed chunk can be invalidated by another
+        # input or rerun trigger. Every scheduled reader must wait for the store.
+        vignets  = rules.tile_vignets.output.manifest,
         sx       = rules.tile_detect.output.manifest,
     output:
         manifest = f"{TILE_DIR}/manifests/tile_ngmix_{{chunk}}.json",

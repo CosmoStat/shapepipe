@@ -195,9 +195,10 @@ STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"
 #     tile.smk's "node-local vignette store is missing" guard, so that
 #     manifest is deleted first. tile_make_cat declares it as an input, so
 #     tile_vignets rebuilds the store even if merge_cats is already complete.
-#     Completed chunks skip this storage-only rebuild (ngmix_vignets in
-#     tile.smk); unfinished chunks wait for it. Tiles with a final_cat are
-#     never touched.
+#     Every ngmix chunk retains its dependency on the writer and reruns after
+#     it, even if its previous output survived. This costs ngmix time on resume
+#     but ensures no reader can race the rebuild. Tiles with a final_cat are
+#     never swept.
 #   * A lock left by a killed in-allocation run is released. sp records the
 #     job that holds the state dir; when that job is no longer in the queue,
 #     its lock is stale. Any other lock (a run sp did not start in an
