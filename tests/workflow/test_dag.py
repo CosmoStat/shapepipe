@@ -172,27 +172,16 @@ def test_resume_missing_fragment_after_reclamation(
         final.parent.mkdir(parents=True)
         final.touch()
         campaign._manifest(tile, "tile_vignets")
-    with resolve_dag(campaign) as dag:
-        jobs = dag.jobs_for("exp_maps")
-        assert {job.wildcards.exp for job in jobs} == set(campaign.exposures)
-        # With stale scratch manifests other PSF consumers may request a
-        # refit; map recovery itself must never depend on that chain.
-        merge, = dag.jobs_for("exposure_maps")
-        assert dag.workflow.dag.needrun(merge)
-        for job in jobs:
-            assert dag.workflow.dag.needrun(job)
-            exp = job.wildcards.exp
-            fragment = str(job.output.fragment)
-            assert fragment in set(map(str, merge.input))
-            assert set(map(str, job.input)) == {
-                str(raw / f"{exp}p.fits.fz"),
-                str(raw / f"{exp}p.flag.fits.fz")}
-            assert not any(dep.rule.name in {"exp_persist", "exp_psf"}
-                           for dep in dag.workflow.dag.dependencies[job])
-            assert "--image-mef" in job.shellcmd
-            assert "--flag-mef" in job.shellcmd
-            # This is an actual dependency, not just two jobs in the same DAG.
-            assert job in dag.workflow.dag.dependencies[merge]
+    # Raw files being available must not opt a reclaimed campaign into
+    # automatic rasterization. Recovery is an explicit operator action.
+    with pytest.raises((WorkflowError, ValueError),
+                       match="missing reclaimed fragment") as error:
+        with resolve_dag(campaign):
+            pass
+    message = str(error.value)
+    assert "Backfill outside the DAG" in message
+    assert "--image-mef" in message and "--flag-mef" in message
+    assert "--persist-manifest" in message and "--fragment" in message
 
 
 def test_tile_store_is_unique_per_campaign(campaign, tmp_path, resolve_dag):

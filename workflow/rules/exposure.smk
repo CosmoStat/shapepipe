@@ -187,7 +187,8 @@ rule exp_persist:
 # One HealSparse fragment per exposure on the persistent root: the sky pixels
 # covered by its pointing hull, all CCDs, and validated CCDs, with flag counts
 # (workflow/scripts/exp_maps.py). It reads the split images' headers and flag
-# splits from the scratch store, or staged raw MEFs after reclamation.
+# splits from the live scratch store. Reclaimed fragments have no producer;
+# missing ones require deliberate raw-MEF backfill outside the DAG.
 # clean_exposure and the campaign merge both require the actual fragment.
 # exp_persist's manifest names the valid-PSF CCDs.
 # @sc [decision:masking.defect_map_from_flags]
@@ -195,14 +196,15 @@ rule exp_persist:
 # @sc [decision:masking.pointing_square]
 rule exp_maps:
     input:
-        lambda wc: exp_maps_source(wc.exp)
+        persist = lambda wc: prod_exp_manifest(wc.exp, "exp_persist")
     output:
         manifest = f"{PROD_EXP_DIR}/manifests/exp_maps.json",
         fragment = f"{PROD_EXP_DIR}/maps/maps-{{exp}}.hsp"
     params:
-        source      = lambda wc: exp_maps_source_args(wc.exp),
-        persist     = lambda wc: prod_exp_manifest(wc.exp, "exp_persist"),
+        exp_dir     = lambda wc: exp_dir(wc.exp),
         script_hash = EXP_MAPS_HASH
+    wildcard_constraints:
+        exp = exp_maps_live_pattern()
     threads: 1
     retries: 2
     resources:
@@ -211,10 +213,9 @@ rule exp_maps:
         runtime = 20
     shell:
         "set -euo pipefail\n"
-        "{params.source}"
         f"python {SCRIPTS}/exp_maps.py"
-        " \"${{source[@]}}\" --exp {wildcards.exp}"
-        " --persist-manifest '{params.persist}'"
+        " --exp-dir '{params.exp_dir}' --exp {wildcards.exp}"
+        " --persist-manifest '{input.persist}'"
         " --fragment '{output.fragment}' --manifest {output.manifest}"
 
 
@@ -266,8 +267,8 @@ rule clean_exposure:
         # the exposure from VOS.
         lambda wc: (durable_edge(wc.exp, "exp_persist", prod_exp_tar(wc.exp))
                     if PERSISTS_PSF else []),
-        # Maps can be recovered from raw MEFs even after reclamation.
-        lambda wc: ([prod_exp_maps(wc.exp)]
+        # Reclaimed maps are required leaves, never rasterization jobs.
+        lambda wc: ([exp_maps_edge(wc.exp)]
                     if PERSISTS_PSF else [])
     output:
         tombstone = f"{EXP_DIR}/cleaned.json"

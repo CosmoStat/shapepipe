@@ -938,50 +938,51 @@ def star_cat_exposures():
 # CCD coverage and flags into one persistent fragment; exposure_maps sums these
 # into npoint, ntaken, nexp and nflagged campaign maps. Fitted-PSF
 # runs only (psf_exposures()): the valid-PSF CCD set comes from exp_persist.
-# Fragments are declared outputs, including after scratch reclamation.
-# Unlike the PSF tar, they can be rebuilt from staged raw MEFs without a refit.
+# Live stores produce declared fragments before reclamation. Reclaimed
+# fragments are immutable leaves: no rasterization producer may reach them.
+# Missing reclaimed fragments require an explicit out-of-DAG raw-MEF backfill.
 
 def prod_exp_maps(exp):
     """The persistent fragment declared by exp_maps."""
     return f"{prod_exp_dir(exp)}/maps/maps-{exp}.hsp"
 
 
-def exp_maps_source(exp):
-    """Use the live split store, or staged raw MEFs after reclamation.
-
-    A reclaimed store's existing persist manifest is immutable metadata, not
-    a request to repack its vanished PSF products. Keep it out of the producer
-    chain, just as durable_edge does for the persisted PSF tar.
-    Missing raw files are explicit DAG inputs and fail planning, not omission.
-    """
-    persist = Path(prod_exp_manifest(exp, "exp_persist"))
+def exp_maps_reclaimed(exp):
+    """Recognize reclamation even when stale scratch manifests survive."""
     split = Path(exp_dir(exp)) / 'output/run_sp_exp_Sp/split_exp_runner/output'
-    if not persist.exists() or split.is_dir():
-        return [str(persist)]
-    if Path(prod_exp_maps(exp)).exists():
-        return []
-    return exp_maps_raw(exp)
+    return (exp_store_reclaimed(exp)
+            or (Path(prod_exp_manifest(exp, 'exp_persist')).exists()
+                and not split.is_dir()))
 
 
-def exp_maps_raw(exp):
-    """Return the staged raw image and instrument-flag MEFs."""
-    name = exp_name(exp)
-    root = INPUTS['exposures']
-    return [f"{root}/{name}.fits.fz", f"{root}/{name}.flag.fits.fz"]
+def exp_maps_live_pattern():
+    """Restrict the producer to live exposures, not merely its input edges.
 
-
-def exp_maps_source_args(exp):
-    """Stable shell setup: choose available source when the job starts.
-
-    Keeping both paths in params avoids invalidating completed maps merely
-    because a store was reclaimed between invocations.
+    An existing reclaimed fragment must have NO reachable producer: otherwise
+    code/params changes schedule it and Snakemake removes the fragment before
+    a failed rasterization can discover that its sources have been deleted.
+    Exposure IDs are numeric (the workflow-wide wildcard constraint).
     """
-    image, flag = exp_maps_raw(exp)
-    store = exp_dir(exp)
-    return (f"source=(--exp-dir '{store}')\n"
-            f"if [ ! -d '{store}/output/run_sp_exp_Sp/split_exp_runner/output' ]; then\n"
-            f"  source=(--image-mef '{image}' --flag-mef '{flag}')\n"
-            "fi\n")
+    live = [e for e in psf_exposures() if not exp_maps_reclaimed(e)]
+    return '(?:' + '|'.join(live) + ')' if live else '(?!)'
+
+
+def exp_maps_edge(exp):
+    """Require live production or an immutable reclaimed fragment; never omit."""
+    fragment = prod_exp_maps(exp)
+    if exp_maps_reclaimed(exp) and not Path(fragment).exists():
+        name = exp_name(exp)
+        raw = INPUTS['exposures']
+        raise ValueError(
+            f'Exposure {exp}: missing reclaimed fragment {fragment}. '
+            'Backfill outside the DAG with:\n'
+            f'python {SCRIPTS}/exp_maps.py --exp {exp} '
+            f'--image-mef {raw}/{name}.fits.fz '
+            f'--flag-mef {raw}/{name}.flag.fits.fz '
+            f'--persist-manifest {prod_exp_manifest(exp, "exp_persist")} '
+            f'--fragment {fragment} '
+            f'--manifest {prod_exp_manifest(exp, "exp_maps")}')
+    return fragment
 
 
 def npoint_map():
@@ -1002,7 +1003,7 @@ def nflagged_map():
 
 @functools.lru_cache(maxsize=1)
 def exposure_maps_inputs():
-    return [prod_exp_maps(exp) for exp in psf_exposures()]
+    return [exp_maps_edge(exp) for exp in psf_exposures()]
 
 
 def exposure_maps_exposures():
