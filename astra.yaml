@@ -293,13 +293,14 @@ analyses:
           On exposures SExtractor reads the split flag image, producing
           IMAFLAGS_ISO, which the PSF star selection requires to be zero. The
           multi-epoch vignet run cuts flag stamps from the same image; ngmix
-          gives flagged pixels weight 0 and drops epochs more than a third
+          gives flagged pixels weight 0 and drops epochs more than 10%
           flagged (shape_measurement.defect_fill,
           shape_measurement.epoch_masked_fraction_cut). Tiles have no flag
           image, and ShapePipe's tile SExtractor run requests no IMAFLAGS_ISO
           (detection.detection_source_mode). Neighbour pixels are masked
           separately, from the -1e30 markers SExtractor writes into the tile
-          VIGNET (shape_measurement.blend_handling). Sky-fixed masks never touch
+          VIGNET and the coadd segmentation map
+          (shape_measurement.blend_handling). Sky-fixed masks never touch
           pixels: a star halo changes no stamp.
           Values:
           config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = True;
@@ -1319,7 +1320,8 @@ analyses:
            metacal_scheme, centroid_source, epoch_flux_rescaling,
            psf_epoch_averaging, galaxy_pixel_weights, psf_likelihood_noise,
            megacam_ccd_flip, defect_fill, blend_handling,
-           epoch_masked_fraction_cut, central_defect_veto]
+           defect_weighting, epoch_masked_fraction_cut,
+           central_defect_veto]
     decisions:
       ngmix_seed_mode:
         label: Per-object RNG seeded from sky position
@@ -1517,49 +1519,71 @@ analyses:
       defect_fill:
         label: Image content of defect pixels before metacal
         rationale: >-
-          A defect pixel (nonzero instrument flag, zero exposure weight or
-          invalid background RMS) gets weight 0 in prepare_ngmix_weights. Its
-          image value still matters: ngmix's metacal deconvolves, shears and
-          reconvolves an InterpolatedImage of the whole image and copies the
-          weights through, so a zero-weight pixel's content spreads into the
-          weighted pixels within about a PSF width. DES's ngmixer fills for
-          that reason: "it may be important for codes that take moments or use
-          FFTs". In the committed default (`BLEND_HANDLING = noisefill`),
-          masked pixels are replaced with independent noise at the per-pixel
-          background RMS when supplied, or the stamp's robust noise scale
-          otherwise. With `BLEND_HANDLING = uberseg`, the image is left
-          untouched and weights are zeroed on defects and neighbour-side
-          pixels. [LINT] the prepare_ngmix_weights docstring says noisefill
-          keeps the weight of filled pixels (the code zeroes it), and the
-          ngmix_runner comment says noisefill fills neighbour pixels (it fills
-          flagged pixels and leaves neighbours untouched). The committed fill
-          uses the unsymmetrized defect set: DES symmetrized its masks, but
-          four-fold symmetrization quadruples m and still leaves an additive c1
-          (symmetrized_4fold_noise). The cost of not symmetrizing, a hole in
-          the galaxy light, is bounded by central_defect_veto. Noise stays the
-          default until a survey A/B against interpolation.
+          A defect is a pixel with no usable data: a nonzero
+          instrument flag, zero exposure weight, an invalid background RMS,
+          or off the tile. prepare_ngmix_weights gives it weight 0, and this
+          decision sets the image value it holds. That value matters because
+          metacal deconvolves, shears and reconvolves the whole stamp, which
+          spreads a zero-weight pixel's content into its weighted neighbours
+          within about a PSF width; DES fills defects for the same reason.
+          DEFECT_FILL (interpolated_defects; the workflow's `defect_fill`)
+          selects interpolate or noise, under every BLEND_HANDLING. The
+          central_defect_veto radius follows the fill each pixel gets: 7 px
+          for an interpolated pixel, 13 px for a noise-filled one, so under
+          noise every defect is vetoed at 13 px and defect_weighting has no
+          interpolated pixel to act on. Interpolation is the default because
+          an epoch can then keep a defect as close as 7 px to the object,
+          whereas a 0.7 arcsec galaxy through a 0.9 arcsec PSF needs
+          noise-filled defects at least 13 px away. Only the defect pixels are filled, not a four-fold
+          symmetrized mask as in DES, since symmetrizing quadruples m and
+          leaves an additive c1 (symmetrized_4fold_noise); the hole this
+          leaves near the galaxy is bounded by central_defect_veto. In the
+          tile VIGNET, SExtractor writes -1e30 beyond the tile edge and over
+          every above-threshold pixel outside the object's pre-CLEAN
+          footprint. Rows and columns that are entirely -1e30 and start at
+          the stamp border are off-tile, hence defects (the epoch has the
+          object's light there); the other -1e30 pixels on another object's
+          segmentation footprint are neighbours, handled by blend_handling.
+          The rest (sub-MINAREA noise peaks, the object's own CLEAN-merged
+          fragments) are not defects either: the epoch stamps hold real
+          light there, so they keep their weight and image.
           Values:
           VIGNETMAKER_RUNNER_RUN_1.MASKING = False;
-          VIGNETMAKER_RUNNER_RUN_2.MASKING = False.
-        default: noise
+          VIGNETMAKER_RUNNER_RUN_2.MASKING = False;
+          ngmix.py::DEFECT_FILL = "interpolate".
+        default: interpolate
         options:
-          noise:
-            label: Independent noise on the unsymmetrized defect set
-            description: >-
-              Masked pixels get independent noise using the per-pixel
-              background RMS when supplied, or the stamp's robust noise scale
-              otherwise; their inverse-variance weights stay zero. Metacal's
-              fixnoise noise image covers every pixel.
-            insights: [mask_metacal_acts_on_whole_stamp, mask_bad_column_symmetrize]
           interpolate:
             label: Interpolate short bounded runs; noise-fill the rest
             description: >-
-              Not implemented. PR #916 measures c1 = -1.3e-3 for a column
-              8 px from a 0.5 arcsec galaxy and +2e-6 when the weight is also
-              zeroed on its quarter-turn orbit. For a 3-px bleed 6 px from that
-              galaxy, PR #916 measures m11 = +0.89% when the fill is
-              symmetrized, against +0.19% otherwise.
+              Row or column runs of at most MAX_INTERPOLATED_RUN = 3 defect
+              pixels whose neighbours beyond both ends are kept pixels (on
+              the stamp, not defects, and not noisefill neighbours) are
+              Clough-Tocher interpolated from the kept pixels within
+              SUPPORT_RADIUS = 4 px, with one triangulation for the image
+              and the metacal noise image. Other defects
+              (wider holes, edge bands, runs ending on a noisefill neighbour)
+              get independent noise at the per-pixel background RMS when
+              supplied, or the stamp's robust noise scale otherwise. The
+              interpolated pixels are weighted by defect_weighting. For a
+              3-px bleed 6 px from a 0.5 arcsec galaxy, PR #916 measures
+              m11 = +0.89% when the fill is symmetrized, against +0.19%
+              otherwise.
             insights: [mask_interpolate_with_noise, mask_sharp_edges_ring]
+          noise:
+            label: Independent noise on every defect
+            description: >-
+              Every defect pixel gets independent noise and none is
+              interpolated; their inverse-variance weights stay zero, and
+              every defect is vetoed at EPOCH_CENTRAL_DEFECT_RADIUS = 13 px.
+              A noise-filled defect leaves a hole in the object's light that
+              metacal shears and the sky does not. Columns, 3-px bleeds and
+              single pixels then need a 10 px veto on 0.3 and 0.5 arcsec
+              galaxies through a 0.7 arcsec PSF, and 13 px on a 0.7 arcsec
+              galaxy through a 0.9 arcsec PSF (a 3-px bleed at 10 px gives
+              m11 = -6.5%). Interpolated, the same defects pass from 7 px on
+              all three (PR #922 bias scan), so noise drops more epochs.
+            insights: [mask_metacal_acts_on_whole_stamp, mask_bad_column_symmetrize]
           symmetrized_4fold_noise:
             label: Four-fold-symmetrized defect set (M | rot90 | rot180 | rot270), then noise fill
             description: Not implemented.
@@ -1572,11 +1596,11 @@ analyses:
               with symmetrization against 0.7e-4 without it.
             insights: [mask_bad_column_symmetrize, mask_des_defect_practice, mask_fixed_orientation]
           raw:
-            label: "No fill: raw defect values (BLEND_HANDLING = uberseg)"
+            label: "No fill: raw defect values"
             description: >-
-              With BLEND_HANDLING = uberseg, defect pixels keep weight 0 but
-              their image values stay untouched in the image that metacal
-              deconvolves, shears and reconvolves.
+              Defect pixels keep weight 0 but their image values stay
+              untouched in the image that metacal deconvolves, shears and
+              reconvolves.
             excluded: true
             excluded_reason: >-
               Metacal acts on every pixel regardless of weight, so raw defects
@@ -1586,12 +1610,15 @@ analyses:
       blend_handling:
         label: Neighbour treatment before metacal
         rationale: >-
-          Covers only pixels shared with a neighbour; defect_fill is coupled to
-          it through BLEND_HANDLING. noisefill (the default; the committed
-          config sets no key) leaves neighbours fully weighted and untouched.
-          uberseg zeroes the weight of pixels nearer a neighbour's coadd
-          segmentation footprint than the target's (DILATE_NEIGHBOUR, default 1)
-          and leaves the image untouched, as official uberseg does:
+          Covers only pixels shared with a neighbour; defect_fill does not
+          depend on it: defects are filled the same way under every
+          BLEND_HANDLING, and the epoch cuts never count neighbour pixels.
+          The committed choice is uberseg (the workflow's default
+          blend_handling), which ignores the -1e30 neighbour markers in the
+          tile VIGNET and zeroes the weight of pixels nearer a neighbour's
+          coadd segmentation footprint than the target's (DILATE_NEIGHBOUR,
+          default 1), leaving the neighbour side's image untouched, as
+          official uberseg does:
           esheldon/meds get_uberseg returns a weight map (a
           nearest-segment-pixel Voronoi split). DES Y1's fiducial metacal and
           the last Y3 config ran on uberseg-weighted stamps with raw neighbour
@@ -1608,24 +1635,39 @@ analyses:
           with simulations (mask_des_y1_uberseg_only,
           mask_blend_bias_detection). Noise-filling the neighbour side would
           instead cut the target's own light along an unsheared boundary, a
-          sharp edge that rings in the FFTs. The recommended comparison arm is
-          uberseg (weight-only), with defect_fill held equal across arms.
-        default: none
+          sharp edge that rings in the FFTs. The alternative, noisefill
+          (ngmix's own default, and the workflow's blend_handling:
+          noisefill), gives weight 0 to the pixels marked -1e30 in the tile
+          VIGNET (about 93% of neighbour-footprint pixels on a simulated
+          tile), excluding the off-tile rows and columns, which are defects,
+          and replaces them with noise; unmarked neighbour pixels keep their
+          weight and light. Under both handlings the neighbours are defined
+          by the coadd segmentation map: a marker counts only on a footprint
+          labelled neither 0 nor the target. SExtractor's MASK_TYPE CORRECT
+          also marks sub-MINAREA sky blobs and fragments CLEAN merged into
+          the target, which the seg labels as sky or as the target; noise-
+          filling those removed the target's own light (15% of
+          NEIGHBOUR_FLAG = 0 objects differed between the arms on 25 tiles).
+          tile_detect therefore writes SEG_VIGNET under both handlings.
+          Uberseg reads no marker, so its output is unchanged. It is
+          the comparison arm, with defect_fill held equal across arms.
+        default: uberseg
         options:
-          none:
-            label: No neighbour treatment (BLEND_HANDLING = noisefill)
+          noisefill:
+            label: Noise-fill the marked neighbour pixels (BLEND_HANDLING = noisefill)
             description: >-
-              Neighbour pixels keep their full weight and image values, so the
-              fit sees all neighbour light, which biases shapes toward
-              neighbours (Jarvis et al. 2016); this masks less than even their
-              plain segmentation map. A candidate cause of the FLAGS=2 B-modes
+              Pixels marked -1e30 in the tile VIGNET get weight 0 and noise.
+              The fill stops at the marked footprint, so unmarked neighbour
+              pixels and the neighbour's wings keep their weight and light,
+              which biases shapes toward neighbours (Jarvis et al. 2016). A
+              candidate cause of the FLAGS=2 B-modes
               investigated in #814.
             insights: [mask_uberseg_neighbour_bias]
           uberseg:
             label: UberSeg, weight-only
             description: >-
-              As in DES Y1/Y3. Needs the coadd segmentation stamp
-              (SEG_VIGNET_PATH). DILATE_NEIGHBOUR absorbs the coadd-vs-epoch
+              As in DES Y1/Y3. Needs the coadd segmentation stamp (the tile
+              catalogue's SEG_VIGNET). DILATE_NEIGHBOUR absorbs the coadd-vs-epoch
               overlay offset: ShapePipe reuses one coadd seg stamp for every
               epoch where MEDS reprojects it.
             insights: [mask_uberseg_weight_only, mask_uberseg_neighbour_bias, mask_des_y1_uberseg_only, mask_blend_bias_detection]
@@ -1646,34 +1688,121 @@ analyses:
               the ~2% uberseg-only bias in DES Y1 simulations, although Sheldon
               et al. 2020 found similar blend biases with and without MOF.
             insights: [mask_des_y1_uberseg_only, mask_blend_bias_detection]
+      defect_weighting:
+        label: Weighting of interpolated defects (DEFECT_WEIGHTING)
+        rationale: >-
+          ngmix fits a Gaussian to a profile that is not one, so a zero-weight
+          hole on one side of the object pulls the fit (a spin-2 term), while
+          interpolated light at full weight is a smooth guess the fit trusts
+          as data. DEFECT_WEIGHTING (prepare_ngmix_weights,
+          defect_weighting_masks; the workflow's `defect_weighting`) chooses
+          between them for the interpolated defects only: noise-filled pixels
+          and noisefill neighbours have no light to weight and keep weight 0,
+          and the uberseg neighbour side keeps weight 0 under every option.
+          Under defect_fill noise no pixel is interpolated and the option has
+          nothing to act on.
+          Under every option the metacal noise image is interpolated in
+          fixnoise's quarter-turned frame (ngmix turns it k=1 before shearing
+          and k=3 after), by the operator that interpolates the science image.
+          Interpolated in the detector frame, its interpolated pixels sit a
+          quarter turn from the science image's, and the correlated noise of
+          the interpolant survives fixnoise as an additive bias that grows as
+          S/N falls: a 3-px bleed 7 px from a 0.7 arcsec galaxy through a 0.9
+          arcsec PSF gives c1 = 2.7e-3 +/- 0.5e-3 at S/N 30 under
+          fourfold_zero, and 4.6e-4 or less on every galaxy with the noise
+          image turned. Measured with paired, antithetic-noise seeds on 51-px
+          stamps, galaxies of half-light radius 0.3 and 0.5 arcsec through a
+          0.7 arcsec PSF and 0.7 arcsec through a 0.9 arcsec PSF, round and
+          (0.05, 0.02) PSFs, defects 7-12 px from the centre (sym-verify
+          harness, PR #922). The rotation is about the stamp centre, where the
+          extractor places the object to within half a pixel per axis.
+          Values:
+          ngmix.py::DEFECT_WEIGHTING = "fourfold_zero".
+        default: fourfold_zero
+        options:
+          fourfold_zero:
+            label: Interpolate; zero the weight on the defect and its three quarter turns
+            description: >-
+              The quarter-turn copies keep their light. An interpolated column
+              8 px from the galaxy gives c1 = -1.3e-3 with a one-sided hole and
+              +2e-6 symmetrized (PR #916, noiseless).
+            insights: [mask_bad_column_symmetrize]
+          des_y6:
+            label: "DES Y6 (pizza-cutter): mask OR its quarter turn, interpolated at full weight"
+            description: >-
+              The defect mask is ORed with its np.rot90 (k=1) copy about the
+              stamp centre and the union is interpolated, as pizza-cutter
+              symmetrizes the bit mask and weight of each SE slice before
+              interpolating; every interpolated pixel keeps full weight.
+              Departures forced by per-object stamps: the rotation is about
+              the object, not a cell centre; there is no mfrac cut, the epoch
+              cuts (10% masked fraction, central veto) stand in for it; the
+              noise image is interpolated in fixnoise's turned frame rather
+              than in the science frame; and copies that land on a
+              noise-filled pixel stay noise-filled. Without the turned noise
+              image it gives c1 = -5.5e-3 +/- 1.8e-3 for the bleed above at
+              S/N 30.
+            insights: [mask_des_defect_practice, mask_bad_column_symmetrize]
+          hole:
+            label: Interpolate; zero the weight on the defect only
+            description: >-
+              The one-sided hole pulls the fit: c1 = -5.7e-3 for the bleed
+              above, noiseless.
+          full:
+            label: Interpolate at full weight, no symmetrization
+            description: >-
+              c1 = 6.8e-4 for the bleed above through the elliptical PSF,
+              noiseless; 9.5e-3 at S/N 30 without the turned noise image.
       central_defect_veto:
         label: Per-epoch veto on a defect near the stamp centre
         rationale: >-
-          Not on develop; implemented on feat/defect-fill-veto (7777181b).
-          There an epoch is dropped when a defect pixel lies strictly closer
-          to the stamp centre than its fill's radius, beside the
-          masked-fraction cut in the epoch loop. The veto reads only the
-          defect mask, so it selects on nothing shear-responsive; for the same
-          reason the radii are fixed rather than scaled by galaxy size: 10 px
-          for noise-filled pixels (EPOCH_CENTRAL_DEFECT_RADIUS) and 7 px for
-          interpolated ones (EPOCH_INTERPOLATED_DEFECT_RADIUS,
-          feat/defect-interpolation). Calibrated on 51-px stamps at known RMS
-          and high S/N, through a round and a (0.05, 0.02) elliptical 0.7
-          arcsec PSF, on galaxies of half-light radius 0.3 and 0.5 arcsec, and
-          for interpolation also 0.7 and 0.9 arcsec. Known limits: at 10 px,
-          wide defects through the elliptical PSF sit at the 1% bound (m11 =
-          -0.98%; -0.24% at 11 px), and noise fill needs 14 px for 0.7 and 0.9
-          arcsec galaxies. Measured on feat/defect-fill-veto and
-          feat/defect-interpolation.
-        default: disabled
+          [HARDCODED] An epoch is dropped when a defect pixel lies strictly
+          closer to the stamp centre than the radius of its fill: 13 px for
+          noise-filled pixels (EPOCH_CENTRAL_DEFECT_RADIUS) and 7 px for
+          interpolated ones (EPOCH_INTERPOLATED_DEFECT_RADIUS). The veto
+          reads the same interpolated set as the fill, including the runs
+          that end on a noisefill neighbour and so are noise-filled. Under
+          defect_fill noise that set is empty, so every defect is vetoed at
+          13 px. The tile
+          VIGNET's -1e30 neighbour markers are not defects: all epochs share
+          the tile VIGNET, so a neighbour inside the radius would drop every
+          epoch. Off-tile pixels are defects, so an object near the tile edge
+          is vetoed. The veto reads only masks, so it selects on nothing
+          shear-responsive; for the same reason the radii are fixed rather
+          than scaled by galaxy size. Each radius is the smallest at which
+          the defects it keeps give |m11|, |m22| < 1% and |c1|, |c2| < 5e-4,
+          on 51-px stamps at known RMS and high S/N, through a round and a
+          (0.05, 0.02) elliptical 0.7 arcsec PSF, on galaxies of half-light
+          radius 0.3 and 0.5 arcsec, and 0.7 arcsec through a 0.9 arcsec
+          PSF. That largest galaxy sets both radii: 3-px bleeds the 7 px,
+          noise-filled holes the 13 px (a 4-column cluster at 13 px gives
+          m11 = -0.67% +/- 0.05%, c1 = 7e-5). Guarded by
+          tests/science/test_defect_recovery.py.
+          Values:
+          EPOCH_CENTRAL_DEFECT_RADIUS = 13;
+          EPOCH_INTERPOLATED_DEFECT_RADIUS = 7.
+        default: fixed_radii
         options:
-          disabled:
-            label: No central veto (committed code)
           fixed_radii:
-            label: Fixed radii, 10 px for noise-filled and 7 px for interpolated defects
-            description: >-
-              Implemented on feat/defect-fill-veto and feat/defect-interpolation,
-              not on develop.
+            label: Fixed radii, 13 px for noise-filled and 7 px for interpolated defects
+          noise_fill_10px:
+            label: 10 px for noise-filled defects
+            excluded: true
+            excluded_reason: >-
+              Enough for 0.3 and 0.5 arcsec galaxies through a 0.7 arcsec
+              PSF, not for a 0.7 arcsec galaxy through a 0.9 arcsec PSF. A
+              noise-filled 4-column cluster (8% of the stamp, so the 10%
+              masked-fraction cut keeps it) gives m11 = -6.6% +/- 0.3% and
+              c1 = -4.3e-3 at 10 px, -3.6% and -1.6e-3 at 11 px, -1.7% and
+              -3.7e-4 at 12 px, and first passes at 13 px (PR #922, 6 seeds).
+          disabled:
+            label: No central veto
+            excluded: true
+            excluded_reason: >-
+              A noise-filled column 8 px from a 0.5 arcsec galaxy gives
+              m11 = -3.7% and c1 = -3.6e-3; a 3-px bleed
+              three pixels inside the 7 px radius, interpolated, gives
+              |c| > 1e-3 on a 0.3 arcsec galaxy.
           size_scaled_radius:
             label: Veto radius scaled by galaxy size
             excluded: true
@@ -1683,37 +1812,59 @@ analyses:
       epoch_masked_fraction_cut:
         label: Per-epoch masked-fraction cut
         rationale: >-
-          [HARDCODED] on develop, an epoch whose stamp has more than 1/3 of its
-          pixels flagged (any nonzero flag bit, including the tile-coverage bit
-          2**10 set where the tile vignet is off-image) is dropped from the
-          multi-epoch fit; an object with no surviving epoch has no shape.
-          Zero-weight and invalid-RMS pixels are not counted. On
-          feat/defect-fill-veto the cut counts the raw, unsymmetrized defect
-          set (flagged, zero-weight and invalid-RMS pixels) against
-          EPOCH_MASKED_FRACTION_CUT, default 1/3. Before the cut, an epoch is
-          dropped silently if its galaxy stamp is all zeros or its
-          background-subtracted sigma_mad is not positive. DES was stricter:
-          Y1 rejected any epoch with a masked or zero-weight pixel, or with
-          its central 4-pixel region masked; Y3 cut at 10% raw zero-weight
-          pixels; Y6 drops images more than 10% missing and keeps objects at
-          mfrac < 0.1 (mask_multi_epoch_drop). UNIONS has fewer epochs than
-          DES, so the cost in effective number density has to be measured,
-          not assumed. A defect near the centre is handled separately
-          (central_defect_veto).
-        default: one_third
+          [HARDCODED] An epoch whose stamp has more than
+          EPOCH_MASKED_FRACTION_CUT = 10% of its pixels in the raw,
+          unsymmetrized defect set is dropped from the multi-epoch fit:
+          flagged pixels (any nonzero exposure flag bit), zero-weight pixels
+          (off-tile pixels included) and invalid-RMS pixels, the set
+          defect_fill fills. On a 51-px stamp an object within about 20 px
+          of the tile edge fails the cut. Neighbour footprints are not
+          counted: every epoch shares the tile VIGNET, so a large neighbour
+          would drop them all. An object with no surviving epoch has no
+          shape. Before the cut, an epoch is dropped silently if its galaxy
+          stamp is all zeros or its background-subtracted sigma_mad is not
+          positive. After it, an epoch whose ngmix observation raises while
+          being built (for example a non-finite defect interpolant) is
+          dropped, logged with its tile, object and epoch, and counted in
+          NGMIX_N_EPOCH_FAILED; the object is fitted on its other epochs. The cut is not a bias control; the central veto is
+          (central_defect_veto). Defects the veto keeps, covering up to 58%
+          of the stamp (two-sided bands, corner Ls and frames 12 px or more
+          from the centre), give |m11|, |m22| <= 0.05% and |c| < 7e-5 on 0.3
+          and 0.5 arcsec galaxies through a round and an elliptical 0.7
+          arcsec PSF (PR #922). A one-sided edge band reaching the 13 px
+          radius (25%) gives |m| <= 0.01% on those galaxies through the
+          round PSF and m11 = -0.64% on a 0.7 arcsec galaxy through a 0.9 arcsec PSF. The 10% cut is chosen for comparability with DES
+          and as a margin against real-data effects the simulations do not
+          model, and its measured cost is small. On real tile 202.301
+          (interior shape-proxy objects), it drops 5.08% of epochs, leaves
+          0.55% of objects with no epoch and costs 13.7% of objects at least
+          one epoch. Every epoch it removes beyond a 1/3 cut is a CCD-edge or
+          off-tile band whose nearest defect is 10-20 px from the object;
+          bad-column clusters cover 2-8% of a stamp, and only 4 epochs
+          exceed 10% because of them. DES Y1 rejected any epoch with a
+          masked or zero-weight pixel, or with its central 4-pixel region
+          masked; Y3 cut at 10% raw zero-weight pixels; Y6 drops images more
+          than 10% missing and keeps objects at mfrac < 0.1
+          (mask_multi_epoch_drop).
+        default: ten_percent
         options:
-          one_third:
-            label: 1/3 of the stamp in the defect set
-            description: >-
-              Drop an epoch only if more than 1/3 of the stamp pixels are
-              defects (on develop, flagged pixels).
           ten_percent:
             label: 10% (DES Y3 / Y6)
             description: >-
-              Not a default; EPOCH_MASKED_FRACTION_CUT = 0.1 on
-              feat/defect-fill-veto. Matches DES Y3 max_zero_weight_frac and
-              Y6 max_masked_fraction.
+              Drop an epoch if more than 10% of the stamp pixels are defects,
+              matching DES Y3 max_zero_weight_frac and Y6
+              max_masked_fraction.
             insights: [mask_multi_epoch_drop]
+          one_third:
+            label: 1/3 of the stamp in the defect set
+            excluded: true
+            excluded_reason: >-
+              Equally unbiased in simulations, since far-field defects bias
+              nothing measured up to 58% of the stamp, and it keeps more
+              epochs (3.38% dropped on tile 202.301 against 5.08% at 10%).
+              But the extra epochs it keeps are CCD-edge and off-tile bands
+              10-20 px from the object, where effects the simulations do not
+              model are likeliest, and it departs from the DES convention.
           any_masked:
             label: Any masked pixel (DES Y1)
             description: >-
@@ -1974,7 +2125,7 @@ analyses:
           (Sheldon & Huff 2017). DES Y6 drops input images more than 10%
           missing and cuts objects at masked fraction mfrac < 0.1, which its
           image simulations show avoids shear calibration bias. ShapePipe's
-          cut is 1/3.
+          cut is also 10%.
         created_at: "2026-09-26T00:00:00Z"
         derived: true
         evidence:

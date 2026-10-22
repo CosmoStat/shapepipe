@@ -13,7 +13,7 @@
     "final_cat_merge": "e7f46859c4503a2220713d7bb2507555515d0a9632d780b20f14c59e32210023",
     "prepare_all_tiles": "b8f872a22adf014e25a7fa5198f49b71a6fe9e56042ed82b682bc8763970a844",
     "star_cat_merge": "6277450958474af5270982fa35360f2f237a29f7533c526ee9265dfd5acc07a0",
-    "tile_detect": "1df9ca86e0a22fa65615d4efbcdc90f9bf6f1a7cf71c0a4b9d8ab56b811b6c58",
+    "tile_detect": "faaf8b4a203229b99d2a8a73931e84b8cce4ab46f281cb74f5d0765c60f1d2b1",
     "tile_exp_forest": "7447ab4a1049de5f0b5c81e5f9ed2a8644c7bdab85cb0a060bfde81261a89b28",
     "tile_find_exposures": "c883495a7ec196c61ef770507865f43834b08523793d337e8ddeaef0ad62f117",
     "tile_get_catalogue": "84ffd03c4bde248c06aa58a0f4b7f399390a0ff3ecbcf07e03d718df4fe0cd7f",
@@ -21,12 +21,12 @@
     "tile_make_cat": "831f2b104d20326c3836e29d252118b8d2dd9a277be26857f47162b8250e3ca2",
     "tile_merge_cats": "0783c93deeb7f90bdb9772bbc4117851dff1a671518c81f67edd4c7c79cc7e6a",
     "tile_merge_headers": "3e674f961fd5bb93ce1f3b0e2bb072a25a421f2828315a3db45a960c44a42111",
-    "tile_ngmix": "5b83650fe8fdfaf24b6f1045cd418e816f2c5a9851e3e35852864772298ea26a",
+    "tile_ngmix": "3e6e2fdcd36ccbf42710c9075bce084d890c61d1fcf8f23c610df4711504b37c",
     "tile_uncompress": "4a013cdd04bc3e3c1082e477161d2b03e0eefe280b1aabb9af25c149a977f55b",
     "tile_vignets": "1d434b4a6a4bcdeb8f1e5e9a5e4f228b67ade400245b41b033a2c883fb6a3267"
   },
   "schema": 1,
-  "sha256": "389e2d5d5be672d4a6477a882e56eafb8a445e6280e95362d3c951bb126938f6",
+  "sha256": "48d486e579862a632e65897a32576e1259fdb3c1fb3436b1370be58ada56630e",
   "unit_pre": {
     "exp_get_images": "dac6685a207dae3ea81d296ce53e9ba75d4636cf1f81e6399f2dda452680c992",
     "exp_psf": "87fc8ea1153a709ab7ba56542cfacc041f5f8b7f6cf2f38a9bc9d8004d1cecb4",
