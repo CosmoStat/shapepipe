@@ -1,74 +1,45 @@
 #!/usr/bin/env python3
-"""Collect the campaign's per-CCD PSF validation catalogues into ONE hdf5 file.
+"""Collect the campaign's per-CCD PSF validation catalogues into one HDF5 file.
 
 Run as the shell of the campaign-level ``star_cat_merge`` rule, never by hand.
 
-WHAT IT PRODUCES, AND FOR WHOM. ``<products_dir>/full_starcat_<run>.hdf5``:
+``<products_dir>/full_starcat_<run>.hdf5``:
 one dataset per exposure at ``exposures/<exp>``, holding that exposure's every
 CCD's ``validation_psf-<exp>-<ccd>.fits`` rows stacked, with a ``CCD_NB`` column
 recording which CCD each row came from. It is the input to the rho/tau
-statistics. Historically this was ``combine_runs.bash psf`` plus a
-``merge_starcat_runner`` pass producing one flat FITS table,
-``full_starcat-0000000.fits``, and sp_validation still opens that name today;
-its readers move to this hdf5 under CosmoStat/sp_validation#340, the same
-migration that retires the ``patches/`` key on the galaxy side.
+statistics. sp_validation reads it once CosmoStat/sp_validation#340 lands;
+until then it opens the flat ``full_starcat-0000000.fits``.
 
-WHY HDF5, AND WHY ONE DATASET PER EXPOSURE. The campaign's two products should
-behave the same way, and one flat table cannot: appending a tile meant
-restacking every exposure the campaign had ever seen — ~40 GB of members at DR6
-scale to add ~2 MB. Per-exposure datasets make the file RECONCILABLE
-(hdf5_reconcile.py carries that argument, and merge_final_cat.py is the same
-machinery on the tile side), so an append reads the appended exposures and
-nothing else while the file still cannot drift from its inputs. Memory follows:
-one exposure at a time, not one campaign.
+Per-exposure datasets bound memory to one exposure and allow incremental
+updates rather than restacking ~40 GB of members at DR6 scale to add ~2 MB.
+See ``hdf5_reconcile.py`` for reconciliation semantics, shared with
+``merge_final_cat.py``.
 
-NATIVE DTYPES. Columns are written as the validation_psf files store them —
-float32 stays float32. The FITS writer this replaces widened every float column
-to ``1D``, doubling both the file and the peak memory of the job that wrote it,
-for no information.
+Required columns retain their stored dtypes; optional columns use ``OPTIONAL``'s
+fixed dtypes. ``CCD_NB`` is an int32 parsed from the member name
+(``validation_psf-<exp>-<ccd>.fits``).
 
-CCD_NB IS AN INTEGER. It is parsed out of the member name
-(``validation_psf-<exp>-<ccd>.fits``), where it is always digits, so a string
-buys nothing — and an int column costs 4 bytes a row against the 8 a
-two-character fixed-width string does.
+Members are read directly from the persistent tar, without unpacking ~20k
+archives x ~40 members into ~800k files. See ``persist_exp.py`` for archive
+layout and retention policy. The counting pass reads FITS headers only.
 
-IT READS THE TARS, IT DOES NOT UNPACK THEM. ``exp_persist`` packs each
-exposure's keepers into one uncompressed tar on the persistent root
-(``<products_dir>/exp/<shard>/<exp>/psf/<exp>.tar``) precisely because inodes,
-not bytes, bind on /project. Unpacking ~20k tars x ~40 members to merge them
-would materialise ~800k files on the filesystem that design exists to protect.
-Members are read through the archive's own file object — seekable, the tar
-being uncompressed by design — so the counting pass costs a header rather than
-a member.
+@sc [label:schema] star-merge-optional-column-fill
+Check MAG/SNR/ACCEPTED availability per member: a campaign can mix ordinary
+and pix2wcs-converted catalogues. Zero-fill only members lacking the column,
+so converted files remain readable without discarding ordinary files' values.
 
-THE OPTIONAL COLUMNS ARE A PER-FILE QUESTION. A pix2wcs-converted catalogue has
-no MAG/SNR/ACCEPTED where an ordinary one does, and a campaign can hold both.
-Deciding once for the merge is wrong in both directions: it either fails on the
-first converted file or silently zeroes the real values of every ordinary one.
-Each file is asked for its own schema, and only the files that lack a column are
-zero-filled.
+``build_index.campaign_exposures`` derives exposures from ``--tile-list`` and
+``--index-db`` rather than passing ~20k paths in a shell argument (limited to
+128 KiB by ``MAX_ARG_STRLEN``). See the Snakefile's ``star_cat_merge`` rule
+for dependencies and the membership fingerprint.
 
-WHICH EXPOSURES — AND WHY THE JOB DERIVES THE SET RATHER THAN BEING TOLD IT.
-The set is the CAMPAIGN's: every exposure read by a tile that is both declared
-in ``tile_list`` and present in the index, which is the Snakefile's TILES_READY
-walked one edge further. This script rebuilds it from the same two files the
-Snakefile started from (``--tile-list`` and ``--index-db``, both small, both on
-the persistent root, both read through ``build_index.campaign_exposures`` so
-there is one query and not two that can drift), and then takes the exposures
-whose ``exp_persist`` manifest is on the persistent root.
+@sc [label:coupling] star-merge-campaign-membership
+Consider only exposures used by the tile-list/index intersection, then select
+those with persistent manifests and matching validation members. Do not glob
+the shared products root: unrelated exposures would evade the rule's fingerprint.
 
-It is derived rather than passed because at DR6 scale the set is ~20k paths and
-a shell command reaches ``execve`` as a SINGLE argv entry capped at 128 KiB by
-``MAX_ARG_STRLEN``. So the rule's ``input`` is the DAG EDGE — what must exist
-before this runs — and its ``params`` carries a FINGERPRINT of the same set,
-which is what makes the merge rerun when the set changes. A glob over
-``<products_dir>/exp`` would NOT be the same set: it would sweep in exposures of
-an earlier, larger tile list sharing the products root, stacking rows the
-fingerprint never saw and no rerun trigger would notice.
-
-THE MANIFEST, NOT THE TAR, IS WHAT IT READS FIRST: the manifest records what was
-actually packed, member by member, with sizes, sha256 digests and the product
-each came from, so this script never guesses at tar contents.
+Manifests select archives; ``read_exposure`` selects matching member names from
+each archive. Member digests are not verified here.
 """
 
 import argparse
@@ -86,39 +57,28 @@ import build_index
 import hdf5_reconcile
 import persist_exp
 
-# The members this merge consumes, named as the keep list names them and
-# resolved through the same catalogue persist_exp packs by — so the glob has one
-# definition and adding a product cannot leave the two disagreeing. They are
-# always there to find: persist_exp packs this product for every exposure
-# whatever `persist_exp:` says, and fails the pack rather than writing a
-# manifest without it.
+# Use persist_exp's mandatory validation product and its pattern; see
+# persist_exp.py for the packing requirement.
 MEMBER_PRODUCT = persist_exp.ALWAYS
 MEMBER_PATTERN = persist_exp.resolve(MEMBER_PRODUCT)
 
-# The group holding the per-exposure datasets. Unlike the galaxy side's
-# `patches/`, this name is ours and says what it holds.
+# Group holding the per-exposure datasets.
 GROUP = "exposures"
 
-# The validation_psf table's HDU: what MergeStarCatPSFEX defaulted to and what
-# psfex_interp writes — a SExtractor-style file, empty primary, header-carrying
-# image extension, then the table.
+# psfex_interp writes a SExtractor-style file: empty primary, header-carrying
+# image extension, then the validation_psf table.
 HDU = 2
 
-# The columns, in the order the FITS full_starcat carried them, which is the
-# order every consumer has seen. The optional three are zero-filled per file.
+# Required columns in consumer order; optional columns follow below.
 COLUMNS = ("X", "Y", "RA", "DEC",
            "HSM_G1_PSF", "HSM_G2_PSF", "HSM_T_PSF",
            "HSM_M4_1_PSF", "HSM_M4_2_PSF", "HSM_RHO4_PSF",
            "HSM_G1_STAR", "HSM_G2_STAR", "HSM_T_STAR",
            "HSM_M4_1_STAR", "HSM_M4_2_STAR", "HSM_RHO4_STAR",
            "HSM_FLAG_PSF", "HSM_FLAG_STAR")
-# CANONICAL DTYPES, not whatever the first file that carries the column happens
-# to use. These three are absent from pix2wcs-converted catalogues, so an
-# exposure whose files all lack them would otherwise be allocated a fallback
-# dtype while its neighbours got the real one — and datasets under exposures/*
-# would then differ in dtype, which np.concatenate refuses and no digest can
-# repair, since nothing about the schema CHANGED. Pinning the dtype here is what
-# makes every exposure's dataset the same shape whatever its files carry.
+# @sc [label:schema] star-merge-optional-dtypes
+# Pin optional dtypes even when every member lacks these columns; otherwise
+# exposure datasets can have incompatible structured dtypes at concatenation.
 OPTIONAL = {"MAG": np.float32, "SNR": np.float32, "ACCEPTED": np.int32}
 CCD_COLUMN = "CCD_NB"
 ALL_COLUMNS = COLUMNS + tuple(OPTIONAL) + (CCD_COLUMN,)
@@ -141,14 +101,9 @@ def ccd_number(member_name: str) -> int:
 def is_member(entry: dict) -> bool:
     """Is this manifest entry one of the members this merge reads?
 
-    BY PRODUCT NAME, OR FAILING THAT BY FILE NAME. persist_exp records the
-    product every member came from and always packs psf_validation, so the name
-    is the answer for anything it writes today. The glob is the fallback, and it
-    earns its place twice over: a tar packed before the product field existed
-    has no label at all, and a keep list written as a raw glob
-    (`validation_psf-*.fits` rather than `psf_validation`) labels its members
-    with the glob. Neither should make the campaign's star catalogue silently
-    empty.
+    Accept the product label or matching filename. Filename matching supports
+    manifests with no product field and keep lists expressed as raw globs.
+    This check diagnoses labels; ``tars`` uses filenames for merge membership.
     """
     return (entry.get("product") == MEMBER_PRODUCT
             or fnmatch(entry["name"], MEMBER_PATTERN))
@@ -172,26 +127,17 @@ def manifests(products_dir: Path, tile_list: Path, index_db: Path) -> list:
 def tars(manifest_paths: list) -> tuple:
     """``[(exposure, tar path)]`` for the merge, and the exposures with nothing.
 
-    Every tar is checked for existence HERE, so a products root missing a file
-    fails before a single row is read rather than an hour in. The tar is also
-    the unit's SOURCE for reconciling: its size and mtime are what a later
-    invocation compares against to decide whether this exposure changed.
+    Check each selected tar's existence before reading rows. The tar is the
+    reconciliation source; see ``hdf5_reconcile.py`` for source stamps.
     """
     chosen, empty = [], []
     for exp, man_path in manifest_paths:
         man = json.loads(man_path.read_text())
-        # MEMBERSHIP IS THE MEMBER NAME, and only the member name. is_member()
-        # will also accept a manifest's own product LABEL, which is the right
-        # test for "did this exposure keep the product" — but a label is not
-        # what read_exposure() selects on, and a mislabeled entry whose name
-        # does not match would put this exposure in the merge and then abort
-        # the whole campaign when the tar turned out to hold nothing selectable.
-        # So the two agree by construction: both ask the name.
+        # Select by filename, as read_exposure does; a product label alone
+        # does not guarantee a selectable member in the tar.
         if not any(fnmatch(f["name"], MEMBER_PATTERN) for f in man["files"]):
             if any(is_member(f) for f in man["files"]):
-                # Labelled as the product, named as something else. Worth one
-                # line — it means a manifest we did not write, or a keep list
-                # whose glob does not match the member it matched.
+                # Report a product label inconsistent with the member name.
                 print(f"[merge_star_cat] {exp}: manifest labels a "
                       f"{MEMBER_PRODUCT} member whose name does not match "
                       f"{MEMBER_PATTERN}; not merging it")
@@ -208,18 +154,15 @@ def tars(manifest_paths: list) -> tuple:
 def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
     """One exposure's every CCD, stacked, as a structured array.
 
-    TWO PASSES over the tar's members, and neither holds the exposure twice:
-    the first reads only each member's FITS HEADER — NAXIS2, the row count —
-    and the second allocates the columns once at their exact final length and
-    fills them slice by slice. Members are visited in sorted name order, so the
-    row order is a function of the tar's contents alone.
+    Count rows from FITS headers, allocate once, then fill member slices in
+    sorted name order. Only one exposure is held in memory. Changing the
+    retained archive's contents changes its source stamp, which can refresh this
+    exposure even when its validation members are unchanged.
 
-    NOTE ON WHEN THIS IS CALLED AGAIN. The unit's source is the TAR, so adding a
-    retention product re-packs it, moves its mtime, and refreshes this exposure
-    even though its validation members are byte-for-byte what they were. Reading
-    one exposure is seconds and the alternative — stamping the members rather
-    than the archive — buys a rarely-taken shortcut for a per-member bookkeeping
-    cost on every exposure. Not worth it.
+    @sc [label:schema] star-merge-unscaled-required-columns
+    Required validation_psf columns must be unscaled: the allocation takes its
+    dtypes from ``ColDefs.dtype``, which ignores TSCAL/TZERO, so a scaled column
+    would be narrowed. Scaled columns would need dtypes from ``.data``.
     """
     try:
         tf = tarfile.open(tar_path)
@@ -241,19 +184,13 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
                            ignore_missing_simple=True) as hdul:
                 hdu = hdul[HDU]
                 counts.append(hdu.header["NAXIS2"])
-                # ColDefs.dtype describes the table without reading it. NOTE:
-                # it is the RAW storage dtype and ignores TSCAL/TZERO, so a
-                # scaled column would be allocated narrower than the values
-                # .data returns. Latent, not live: no validation_psf column is
-                # scaled. Read the dtype off .data if one ever is.
+                # Unscaled columns only; see star-merge-unscaled-required-columns.
                 if dtypes is None:
                     dtypes = hdu.columns.dtype
             n_total += counts[-1]
 
         fields = [(c, dtypes[c]) for c in COLUMNS]
-        # The optional three take their CANONICAL dtype, not one file's (see
-        # OPTIONAL): every exposure's dataset must have the same dtype whether
-        # or not its files carry the column.
+        # See OPTIONAL for the cross-exposure dtype contract.
         fields += list(OPTIONAL.items())
         fields += [(CCD_COLUMN, np.int32)]
         data = np.empty(n_total, dtype=np.dtype(fields))
@@ -269,7 +206,7 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
                 for col in COLUMNS:
                     data[col][sl] = rows[col]
                 for col in OPTIONAL:
-                    # THIS file's schema, not the exposure's.
+                    # See the module's per-member optional-column contract.
                     data[col][sl] = rows[col] if col in have else 0
                 data[CCD_COLUMN][sl] = ccd_number(name)
             at += n_rows

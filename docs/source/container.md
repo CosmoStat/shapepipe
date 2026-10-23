@@ -7,7 +7,7 @@ CANFAR), see [Running on a cluster](clusters.md).
 
 ## One image
 
-Every tag (`:develop`, a feature branch, `:v1.1.0`, …) is the same build:
+Every published branch tag (`:develop`, a feature branch, …) uses the same build:
 everyday CLI tools (`vim`, `tmux`, `htop`, `rg`, `fd`, `jq`, `bat`, `less`,
 `git-lfs`, …) and **all** Python extras (test, lint, doc, jupyter, fitsio,
 release) on top of core deps. CI runs the test suite inside it before
@@ -110,7 +110,7 @@ This is the **single source of truth** for *what kinds of environments
 shapepipe is compatible with*. Edit when:
 
 - adding a new dependency (`uv add foo` will edit it for you)
-- bumping a minimum after crossing a major version line
+- bumping a minimum when code requires a newer API
 - adding/restructuring extras
 - changing project metadata (scripts, version, etc.)
 
@@ -129,9 +129,9 @@ uv add 'foo>=1.2'                    # adds to pyproject AND uv.lock
 ```
 
 Commit `uv.lock` to the repo — that's how reproducibility transfers
-between machines. The Dockerfile uses `uv sync --frozen`, which fails if
-`pyproject.toml` and `uv.lock` have drifted. That's the discipline
-mechanism: a stale lockfile cannot ship.
+between machines. The Dockerfile uses `uv sync --frozen` to install from the
+lockfile without resolving dependencies or checking whether it is current.
+Regenerate the lock whenever requirements change.
 
 ### `Dockerfile` — the build recipe
 
@@ -161,18 +161,9 @@ The asymmetry is deliberate: Python deps go through pyproject + lockfile
 versioning). Don't `apt install` something that has a Python wheel; don't
 `pip install` something Debian packages directly (e.g. `source-extractor`).
 
-## Why this shape
+## Build choices
 
-- **No conda.** Earlier images double-installed packages via conda *and*
-  pip, ballooning the image and creating environment-resolution bugs.
-  Dropped in favour of plain Python + uv.
-- **`uv sync --frozen`** at build time means the image is bit-exactly
-  reproducible from a tagged commit, and impossible to ship with a stale
-  lockfile.
-- **Astromatic binaries from Debian** (`psfex`, `source-extractor`)
-  instead of source builds — Debian carries the
-  GCC-compatibility patches that the previous Dockerfile had to apply
-  inline with `sed`.
-- **One image** so a canfar batch job, a downstream `FROM` clause, and CI's
-  test run are never three different environments — `vim`, `pytest`, and
-  everything else ship on every tag.
+The image uses plain Python and uv for Python dependencies, and Debian's
+`psfex` and `source-extractor` packages for the Astromatic binaries.
+See `Dockerfile` for the source-built OpenMPI version and host-compatibility
+requirements.

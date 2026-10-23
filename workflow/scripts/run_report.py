@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """``sp report`` — the run's success/failure tables, read from the manifests.
 
-NOT a DAG node. A report rule that declared all tiles' outputs as inputs would be
-a descendant of every job, so one hard failure under --keep-going would poison
-its cone and the report would never run — the exact scenario it exists for. So it
-is a plain script, runnable at any time including mid-run; the Snakefile's
-onsuccess/onerror hooks call it so every invocation ends with one.
+This is a plain script, not a DAG node: depending on all tile outputs would
+prevent reporting after a hard failure under ``--keep-going``. It can run
+mid-run; the Snakefile's onsuccess/onerror hooks call it at invocation end.
 
-It reads two things and nothing else (PRD D3):
+It reads declared units and recorded verdicts:
 
   * the **index** (``run_index.sqlite``) — the units the run declared, and the
     tile->exposure edges that let an exposure failure be blamed on the tiles it
@@ -15,24 +13,16 @@ It reads two things and nothing else (PRD D3):
   * the **verdicts** written by ``completeness.py check`` — per-runner
     found/expect and log-scraped failure reasons — in the unit's
     ``logs/`` (every run) and ``manifests/`` (successes only; completeness.py
-    argues the split).
+    defines the record placement).
 
-Both dirs are read here and the status comes from the file BODY, so a failed
-stage speaks through its log while a successful one is corroborated by two
-identical files. A unit with neither ran nothing. Also read, for continuity with
-stores written before this convention: ``manifests/<stage>.failed.json``, which
-is where failure evidence used to go.
+Both directories are read and status comes from the file body. The manifest
+glob also accepts ``<stage>.failed.json`` records. No record means "not run"
+for reporting purposes; it is not evidence that no process executed.
 
-A reclaimed exposure has neither dir: ``clean_exposure`` deleted both, after
-copying the manifests into ``<exp dir>/cleaned.json``. That tombstone is read as the
-unit's record and the unit is reported as **cleaned** — not "not run", and it
-blocks no tile.
-
-A reclaimed TILE is the same story with one asymmetry: ``clean_tile`` deletes
-``logs/`` but cannot empty ``manifests/``, because two of those manifests are
-currency other mechanisms read (SURVIVING_TILE_STAGES). So the "records on disk
-mean a rebuilt chain" test takes that survivor set explicitly — see
-``absorb_tombstones``.
+Reclaimed units' records come from ``cleaned.json`` tombstones. See
+``clean_exposure.py`` and ``clean_tile.py`` for reclamation and surviving
+manifests, and ``absorb_tombstones`` for the generation boundary. Cleaned
+exposures block no tile.
 
 No disk scanning: counting products is the *check's* job, done once at the moment
 the products were fresh. A unit with no manifest for a stage is "not run" — which
@@ -41,10 +31,9 @@ is a real and distinct answer from "ran and produced nothing".
 Records are discovered by glob (``tiles/*/*/manifests/*.json`` and
 ``tiles/*/*/logs/*.json``), not by constructed path: units are found rather than
 named, so a store holding a unit the index never heard of still reports. The
-depth is FIXED at two, because the sharded layout is exactly two levels
-(``tiles/<prefix>/<ID>/``) — a ``**`` walked the whole tree, including every
-``output/`` a run has not reclaimed yet, to find records that can only ever be
-at one depth.
+depth is fixed at two, matching ``tiles/<prefix>/<ID>/`` and avoiding a
+recursive walk of unreclaimed ``output/`` trees. With an index, tallies cover
+indexed units; without one, they cover units discovered from records.
 """
 
 import argparse
@@ -67,50 +56,32 @@ if os.environ.get("SP_TILE_DETECTION") == "unions_catalogue":
     TILE_STAGES.insert(TILE_STAGES.index("tile_detect"), "tile_get_catalogue")
 EXP_STAGES = ["exp_get_images", "exp_split", "exp_psf"]
 
-# exp_persist is DELIBERATELY NOT in that list. This report disk-scans the
-# scratch run_dir, and exp_persist's manifest is the one exposure manifest that
-# lives on products_dir instead — that placement is what makes it survive
-# clean_exposure. Listed here it would read as "not run" for every exposure in
-# the campaign. Reporting on the persisted products means scanning the second
-# root, which is a report this one does not yet do.
+# exp_persist is excluded: its manifest lives on products_dir, while this
+# report reads only run_dir. Listing it would mark every exposure "not run".
 
-# The manifests clean_tile leaves on disk (workflow/scripts/clean_tile.py names
-# the mechanism that owns each). Their presence is therefore NOT evidence that a
-# tile's chain was rebuilt, which absorb_tombstones needs to know
-# to read a reclaimed tile's record out of its tombstone.
+# See clean_tile.py for ownership of these surviving manifests. Their
+# presence alone is not evidence of a rebuilt chain (absorb_tombstones).
 SURVIVING_TILE_STAGES = frozenset({"tile_vignets", "tile_find_exposures"})
 
 STATUSES = ("complete", "warn", "failed", "not_run")
 
 
 def _rank(m: dict) -> int:
-    """How BAD a record is, as a position in STATUSES; unknown sorts worst."""
+    """Severity as a position in STATUSES; unknown statuses sort worst."""
     return STATUSES.index(m["status"]) if m.get("status") in STATUSES else len(STATUSES)
 
 
 def keep_worst(records: dict, stage: str, m: dict) -> None:
-    """Collapse the several records of one stage into the WORST of them.
+    """Collapse a stage's records to the one with the worst status.
 
-    ONE rule, used by both readers in this module, and that is the point.
-    Several files map to one (unit, stage) either way: on disk, a stage's
-    manifest and its byte-identical log, plus the eight ngmix chunks, which all
-    carry ``stage: "tile_ngmix"`` under per-chunk filenames; inside a tombstone,
-    those same eight chunks again, keyed by file stem.
+    @sc [label:operations] report-worst-stage-status
+    Use the same severity reduction for on-disk and tombstone records so a
+    warning or failure in any ngmix chunk survives reclamation. Chunks share
+    ``stage: "tile_ngmix"`` even though their filenames differ.
 
-    absorb_tombstones used to resolve that collision by first-key-wins
-    (``setdefault`` over sorted stems), so only ``tile_ngmix_1`` survived and a
-    ``warn`` on any other chunk disappeared the moment the tile was reclaimed —
-    ``tile_ngmix ok 0 warn 1`` before the clean, ``ok 1 warn 0`` after, and the
-    tile silently left the "tiles not complete" table. The data was in the
-    tombstone the whole time; only the reader dropped it (found in review,
-    reproduced on 186.307 with chunk 5 flipped to warn).
-
-    What this does NOT fix, because it is not a reclamation bug: a stage's
-    per-runner ``products`` aggregate is taken from the single surviving record,
-    so tile_ngmix attrition is counted over one chunk of eight. That is true
-    before and after a clean, identically — it is the price of collapsing the
-    chunks to one stage row, and it is the same on both paths by construction
-    now.
+    Product counts come from the retained record only, not the sum of chunks;
+    ngmix attrition therefore describes one chunk, not a whole tile. Equal
+    severity keeps the first record encountered.
     """
     prev = records.get(stage)
     if prev is None or _rank(m) > _rank(prev):
@@ -120,18 +91,17 @@ def keep_worst(records: dict, stage: str, m: dict) -> None:
 def load_manifests(run_dir: Path, sub: str) -> dict:
     """``{unit: {stage: verdict}}`` for one store (``tiles`` or ``exp``).
 
-    Reads BOTH of a unit's record dirs: ``manifests/`` (the rules' declared
+    Reads both of a unit's record dirs: ``manifests/`` (the rules' declared
     outputs, success-only) and ``logs/`` (the rules' ``log:``, written every run
     and never deleted by snakemake, so this is where a failure survives).
 
     The unit key is the record dir's *parent directory name* — shard-depth
-    agnostic, and the only form that joins to the index (the record's own
-    ``unit`` field carries ``SP_UNIT_NUM``'s dashed form, ``210-282``, which is
-    not the index's ``210.282``). The stage comes from the body, never the
+    agnostic, and the form that joins to the index; the record's own ``unit``
+    field is not used for this lookup. The stage comes from the body, never the
     filename: ngmix chunks share a stage under per-chunk filenames, and a log
     names the same stage as the manifest beside it.
 
-    Several files therefore map to one (unit, stage), and the WORST status wins.
+    Several files therefore map to one (unit, stage), and the worst status wins.
     That is what collapses the ngmix chunks to one entry, and it is why a
     successful stage's two byte-identical records cost nothing while a failure
     always speaks. A body with no ``stage`` field is skipped: it is not one of
@@ -157,39 +127,15 @@ def absorb_tombstones(run_dir: Path, sub: str, manifests: dict,
                       survivors: frozenset = frozenset()) -> set:
     """Fill in reclaimed units from their ``cleaned.json``; return their ids.
 
-    A cleaned exposure has neither ``manifests/`` nor ``logs/``; every manifest
-    was copied verbatim into the tombstone first. Read them back, or the report
-    inverts the truth exactly when reclamation works: the exposure shows as "not
-    run" and blocks the very tiles whose completion authorised the deletion.
+    @sc [label:provenance] report-tombstone-generation-boundary
+    Absorb a tombstone only if no on-disk record belongs to a stage outside
+    ``survivors``. Such a record marks a rebuilt chain; mixing in tombstone
+    stages could report a previous generation's success during a rerun or
+    failure. Surviving manifests alone do not mark a rebuilt tile.
 
-    Manifests on disk win if both exist — that is a re-built chain, and the
-    tombstone is then a stale record of the previous generation.
-
-    ``survivors`` is what makes that test work for TILES. ``clean_tile`` cannot
-    empty ``manifests/`` the way ``clean_exposure`` does: two of the manifests
-    there are currency other mechanisms read (SURVIVING_TILE_STAGES below), so a
-    reclaimed tile ALWAYS has records on disk. Without this argument the
-    "manifests win" guard fires on every cleaned tile, the tombstone is ignored,
-    and a fully reclaimed campaign reports as one that ran two stages and
-    stopped. A unit counts as REBUILT — and keeps the guard — iff it has a record
-    for some stage that is not a survivor; the default empty set reproduces the
-    exposure test exactly.
-
-    KNOWN AND DELIBERATE: the guard is all-or-nothing, so a PARTIALLY rebuilt
-    cleaned tile loses its whole tombstone record. Force a rerun that restores
-    tile_detect..tile_make_cat but not the prepare stages (which only the
-    prepare invocation produces) and tile_get_images / tile_uncompress read
-    "not run" though they did run and nothing invalidated them.
-
-    Not fixed, because the obvious fix is wrong rather than long. Filling
-    per-stage from the tombstone would, on a unit whose chain is rebuilding,
-    report the PREVIOUS generation's "complete" for a stage whose manifest is
-    absent precisely because it is mid-rerun or failed — a stale complete is
-    invisibly wrong where "not run" is visibly incomplete, and the same hazard
-    reaches exposures, where the mixing would be silent and campaign-wide. The
-    all-or-nothing guard is a generation boundary and is worth more than the
-    cosmetics. A correct fix needs a per-stage notion of which generation a
-    record belongs to, which nothing here records today.
+    This guard is all-or-nothing. A partially rebuilt tile can report prepare
+    stages as "not run" even when they executed before reclamation. Per-stage
+    recovery would need generation identifiers, which these records lack.
     """
     cleaned = set()
     for path in sorted((run_dir / sub).glob("*/*/cleaned.json")):
@@ -201,18 +147,14 @@ def absorb_tombstones(run_dir: Path, sub: str, manifests: dict,
             continue
         if any(s not in survivors for s in manifests.get(unit, {})):
             continue
-        # Collapse the tombstone's per-stem records to one per stage FIRST,
-        # by the same rule the on-disk path uses (keep_worst), and only then
-        # merge. Reversing those two steps is what lost a warning chunk.
+        # Reduce chunk records by severity before merging with live records.
         absorbed: dict = {}
         for key, m in (tomb.get("manifests") or {}).items():
             if not isinstance(m, dict):
                 continue
             keep_worst(absorbed, m.get("stage", key), m)
         for stage, m in absorbed.items():
-            # setdefault, not assignment: the surviving on-disk records are the
-            # live ones and stay authoritative, even though the tombstone's
-            # copies of them are byte-identical today.
+            # Surviving on-disk records remain authoritative.
             manifests[unit].setdefault(stage, m)
         cleaned.add(unit)
     return cleaned
@@ -242,15 +184,11 @@ def tally_level(units, stages, manifests, cleaned=frozenset()) -> dict:
     exactly, including a warn on any one of the eight ngmix chunks (keep_worst
     is what makes that true on the tombstone path as well as on disk).
 
-    The per-runner ``products`` aggregate is NOT a per-chunk total: reading it
-    as a whole-tile figure over-states completeness by 8x (see ``keep_worst``).
+    See ``keep_worst`` for the single-record product-count limitation.
     """
     per_stage = {}
     for stage in stages:
-        # All five status keys are unit-id LISTS, "complete" included: it used
-        # to be a bare int, which made it the one key a caller had to special-
-        # case. The emitted JSON gains the complete-unit list; the printed
-        # counts are len() of it.
+        # All five status keys hold unit-ID lists; printed counts use len().
         t = {"complete": [], "warn": [], "failed": [], "not_run": [], "cleaned": []}
         agg = defaultdict(lambda: {"found": 0, "expect": 0, "by_unit": {}})
         for u in units:
@@ -354,9 +292,7 @@ def main() -> None:
 
     tile_m = load_manifests(args.run_dir, "tiles")
     exp_m = load_manifests(args.run_dir, "exp")
-    # Reclaimed units speak through their tombstones (D5, S5). Tiles pass the
-    # survivor set: clean_tile leaves two manifests on disk on purpose, and
-    # without that argument they would read as a rebuilt chain.
+    # See absorb_tombstones for the survivor-aware generation boundary.
     cleaned_exp = absorb_tombstones(args.run_dir, "exp", exp_m)
     cleaned_tiles = absorb_tombstones(args.run_dir, "tiles", tile_m,
                                       SURVIVING_TILE_STAGES)
@@ -378,20 +314,10 @@ def main() -> None:
         "exposures": unit_rows(exps, EXP_STAGES, exp_m),
     }
 
-    # Blame propagation: a BLOCKING exposure blocks every tile that reads it.
-    # Without this, a tile stalled at tile_vignets looks like its own failure.
-    #
-    # Blocking means "failed" or "never ran" — NOT "warn". Warn is the expected
-    # per-CCD attrition (setools rejecting a sparse CCD, psfex_interp short an
-    # epoch); it is present in essentially every exposure at production scale, so
-    # counting it here made every exposure block every tile and the table said
-    # nothing.
-    # Judged over ALL the exposure's stages, not just the first bad one, so an
-    # exposure that warns early and fails late still blocks.
-    # A CLEANED exposure never blocks: its store is gone precisely because every
-    # consuming tile already had its vignets. Its absorbed manifests are read
-    # above, so a cleaned exposure that genuinely failed still shows in the
-    # tables — it just does not get to hold complete tiles hostage.
+    # An exposure blocks its consuming tiles if any stage is missing or failed,
+    # not merely warned: per-CCD attrition is expected at production scale.
+    # Check every stage so an early warning cannot hide a later failure.
+    # Cleaned exposures never block; see clean_exposure.py for deletion gates.
     def _blocks(unit):
         if unit in cleaned_exp:
             return False

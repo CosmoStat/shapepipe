@@ -666,12 +666,7 @@ class SETools(object):
 
             cat_size = len(np.where(mask)[0])
             n_keep = int(np.ceil(cat_size * ratio))
-            # Deterministic split, seeded from the unit's file number: the
-            # train/validation assignment is a pure function of the input
-            # catalogue, so the PSF star sample (and everything downstream
-            # of the PSF model) is reproducible run-to-run. An unseeded
-            # np.random here made the shear catalogue non-reproducible
-            # upstream of ngmix's own position seeding.
+            # See the split-seeded-by-file-number contract above.
             seed = int(
                 re.sub(r"\D", "", self._file_number_string) or 0
             ) % (2 ** 32)

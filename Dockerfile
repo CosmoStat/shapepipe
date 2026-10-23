@@ -2,8 +2,8 @@
 #
 # One image: CI tests it, canfar batch jobs run it, downstream stacks (e.g.
 # sp_validation) build FROM it. Everyday CLI tools and all extras (test,
-# lint, doc, jupyter, fitsio, …) are baked in, so there is nothing a job
-# runs that CI did not already exercise.
+# lint, doc, jupyter, fitsio, …) are baked in. See
+# .github/workflows/deploy-image.yml for the checks run before publication.
 
 # ----------------------------------------------------------------------
 # base — system deps
@@ -61,7 +61,7 @@ RUN apt-get update -y --quiet && \
 # host's `mpirun` launches one container rank per slot, and the OpenMPI inside
 # the image wires the ranks together through PMIx. That handshake requires the
 # container's PMIx to be compatible with the host launcher's. Debian bookworm's
-# package is OpenMPI 4.1.4 with PMIx 2.x; modern clusters (e.g. candide) now run
+# package is OpenMPI 4.1.4 with PMIx 2.x; modern clusters (e.g. candide) run
 # OpenMPI 5.0.x with PMIx 5.x, and a PMIx 2 client cannot talk to a PMIx 5
 # server — so every rank silently degrades to a standalone "rank 0 of 1" and the
 # job runs N independent copies instead of one N-rank job. Building OpenMPI

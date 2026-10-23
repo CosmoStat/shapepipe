@@ -2,8 +2,7 @@
 
 The end-to-end CFIS production run is driven by a
 [Snakemake](https://snakemake.readthedocs.io) workflow that lives in the
-`workflow/` directory of the repository. It replaces the older bit-coded bash
-job chain (`job_sp`) that this documentation previously described.
+`workflow/` directory of the repository.
 
 The workflow owns:
 
@@ -19,6 +18,6 @@ repository.
 
 ```{note}
 The PSF-validation and post-processing configurations that the workflow does
-not yet cover are kept separately in `example/cfis/`; see the README there and
+not cover are kept separately in `example/cfis/`; see the README there and
 [Post-processing](post_processing.md).
 ```

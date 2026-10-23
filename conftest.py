@@ -3,7 +3,8 @@
 Markers, environment detection, and the candide skip policy live here so
 every test module — wherever it sits in the tree — sees the same rules.
 
-Markers (also declared in ``pyproject.toml`` so ``--strict-markers`` is on):
+See ``pyproject.toml`` for marker declarations and pytest defaults.
+Markers used by the suite include:
 
 * ``slow``    — heavy compute (minutes), not part of the fast inner loop.
 * ``candide`` — needs the candide cluster and/or its real on-disk data;
@@ -42,10 +43,7 @@ except ModuleNotFoundError:
 # Candide detection
 # --------------------------------------------------------------------------- #
 
-# Candide compute / login nodes are named c01, c03, n22..n36, etc. The login
-# host this suite is most often driven from is ``c03``. We match the candide
-# node-name families rather than a fixed list so new nodes are covered, and
-# allow an explicit override for CI or odd hostnames.
+# Match Candide node-name families rather than a fixed list of hosts.
 _CANDIDE_HOST_RE = re.compile(r"^(c\d{2}|n\d{2})$", re.IGNORECASE)
 
 
@@ -54,7 +52,7 @@ def on_candide():
 
     The check is, in order: an explicit ``SHAPEPIPE_ON_CANDIDE`` override
     (``1``/``0``), then the hostname against the candide node-name families
-    (``c0x`` login, ``nXX`` compute; whole bare hostname, so ``c6.nibi.sharcnet``
+    (``cXX`` login, ``nXX`` compute; whole bare hostname, so ``c6.nibi.sharcnet``
     does not match). Cheap, import-safe, no cluster calls.
     """
     override = os.environ.get("SHAPEPIPE_ON_CANDIDE")
@@ -106,9 +104,8 @@ def pytest_collection_modifyitems(config, items):
 def artifacts_dir():
     """Directory where guardrail tests drop plots + status summaries.
 
-    The artifacts SEAM: a later GitHub Pages / status step publishes from
-    here. Created on demand so a clean checkout has nothing to commit until
-    a test actually emits.
+    Create ``tests/_artifacts`` when the fixture is requested. Tests write
+    plots and status summaries here for inspection or publication.
     """
     from pathlib import Path
 
