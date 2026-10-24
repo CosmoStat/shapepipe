@@ -1351,7 +1351,7 @@ analyses:
            psf_epoch_averaging, galaxy_pixel_weights, psf_likelihood_noise,
            megacam_ccd_flip, defect_fill, blend_handling,
            defect_weighting, epoch_masked_fraction_cut,
-           central_defect_veto]
+           central_defect_veto, defect_flagging]
     decisions:
       ngmix_seed_mode:
         label: Per-object RNG seeded from sky position
@@ -1546,6 +1546,30 @@ analyses:
         options:
           megapipe_flip:
             label: Flip CCDs < 18 and 36/37 (MegaPipe orientation)
+      defect_flagging:
+        label: Adaptive exposure defects on tile objects
+        rationale: >-
+          [HARDCODED] We retain every instrument bit by OR'ing exposure flag
+          pixels on the object's coadd footprint (seg == obj_id), flipped to
+          each epoch, across epochs kept after the fraction cut and central
+          veto. NGMIX_IMAFLAGS_ISO invents no bit for unflagged zero-weight
+          or off-tile pixels. NGMIX_N_EPOCH_INTERP_ISO counts kept epochs
+          with an interpolated defect on that footprint, including those
+          unflagged pixels. Missing, empty, or stamp-edge-touching footprints
+          give -1 in both columns because completeness is unknown. Never-fit
+          rows retain the existing count convention of 0. The Napoli
+          collaboration decision requests adaptive exposure flags propagated
+          to tile objects. Stamp-wide diagnostics count a distant defect
+          equally for small and large objects. The coadd footprint avoids
+          exposure detection matching; it is not reprojected, consistent with
+          the existing segmentation overlay. These columns impose no cut
+          and do not alter the fits.
+        default: footprint_or_and_interp_epochs
+        options:
+          footprint_or_and_interp_epochs:
+            label: Footprint IMAFLAGS_ISO OR plus interpolated-epoch count
+          stamp_wide_only:
+            label: Stamp-wide interpolated count and minimum distances only
       defect_fill:
         label: Image content of defect pixels before metacal
         rationale: >-
