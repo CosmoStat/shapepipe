@@ -332,6 +332,7 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
         "mcal_types_fail": 0,
         "neighbour_flag": 0,
         "n_epoch_interp": 0,
+        "imaflags_iso": 0, "n_epoch_interp_iso": 0,
         "min_dist_interp": -1.0,
         "min_dist_noisefill": -1.0,
         # original image PSF (psfex/mccd) family
@@ -638,6 +639,7 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
         epoch_cuts=Counter(considered=1), epoch_failures=[],
         jacobs=[galsim.JacobianWCS(.186, 0., 0., .186)],
         defect_diagnostics=lambda: dict(
+            imaflags_iso=0, n_epoch_interp_iso=0,
             n_epoch_interp=0, min_dist_interp=-1.0, min_dist_noisefill=-1.0,
         ),
     )
@@ -1334,6 +1336,7 @@ def test_process_logs_and_counts_failed_epochs(tmp_path, monkeypatch):
         epoch_failures=[],
         jacobs=[galsim.JacobianWCS(.186, 0., 0., .186)] * 2,
         defect_diagnostics=lambda: dict(
+            imaflags_iso=0, n_epoch_interp_iso=0,
             n_epoch_interp=0, min_dist_interp=-1.0, min_dist_noisefill=-1.0,
         ),
     )
