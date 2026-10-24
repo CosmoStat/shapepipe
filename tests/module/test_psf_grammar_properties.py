@@ -67,11 +67,13 @@ INT_KEYS = {
     "id", "n_epoch_model", "n_epoch_failed", "mcal_types_fail",
     "neighbour_flag",
     "n_epoch_interp", "nfev_fit", "flags", "mcal_flags",
+    "imaflags_iso", "n_epoch_interp_iso",
 }
 NGMIX_KEYS = [
     "id", "n_epoch_model", "n_epoch_failed", "mcal_types_fail",
     "neighbour_flag",
     "n_epoch_interp", "min_dist_interp", "min_dist_noisefill", "nfev_fit",
+    "imaflags_iso", "n_epoch_interp_iso",
     "g1", "g1_err", "g2", "g2_err",
     "T", "T_err",
     "flux", "flux_err", "s2n", "mag", "mag_err",
@@ -113,6 +115,7 @@ def _base_row(obj_id):
     return {
         "id": obj_id,
         "n_epoch_model": 3, "n_epoch_failed": 1, "mcal_types_fail": 0, "neighbour_flag": 1,
+        "imaflags_iso": 1028, "n_epoch_interp_iso": 1,
         "n_epoch_interp": 2, "min_dist_interp": 7.5,
         "min_dist_noisefill": 14.25, "nfev_fit": 7,
         "g1": 0.10, "g1_err": 0.011, "g2": -0.20, "g2_err": 0.022,
@@ -184,7 +187,8 @@ _SHEAR = "NOSHEAR|1P|1M|2P|2M"
 GRAMMAR_RE = re.compile(
     rf"^NGMIXm?_(?:{_COMPONENT})(?:_ERR)?(?:_(?:{_OBJECT}))?_(?:{_SHEAR})$"
     rf"|^NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH|NEIGHBOUR_FLAG"
-    rf"|N_EPOCH_FAILED|N_EPOCH_INTERP|MIN_DIST_INTERP|MIN_DIST_NOISEFILL)$"
+    rf"|N_EPOCH_FAILED|N_EPOCH_INTERP|MIN_DIST_INTERP|MIN_DIST_NOISEFILL"
+    rf"|IMAFLAGS_ISO|N_EPOCH_INTERP_ISO)$"
 )
 
 # The shipped final-catalogue param files, two levels up from tests/module/.
@@ -424,7 +428,8 @@ FROZEN_GRAMMAR_RE = re.compile(
     r"NGMIXm?_(?:G1|G2|T|SNR|FLUX|MAG|FLAGS)(?:_ERR)?"
     r"(?:_(?:PSF_ORIG|PSF_RECONV))?_(?:NOSHEAR|1P|1M|2P|2M)"
     r"|NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH|NEIGHBOUR_FLAG"
-    r"|N_EPOCH_FAILED|N_EPOCH_INTERP|MIN_DIST_INTERP|MIN_DIST_NOISEFILL)"
+    r"|N_EPOCH_FAILED|N_EPOCH_INTERP|MIN_DIST_INTERP|MIN_DIST_NOISEFILL"
+    r"|IMAFLAGS_ISO|N_EPOCH_INTERP_ISO)"
     # HSM: g-type, explicit PSF/STAR object, singular FLAG; the multi-epoch
     # sink in make_cat._save_psf_data appends a bare epoch index.
     r"|HSM_(?:G1|G2|T|M4_1|M4_2|RHO4)_(?:PSF|STAR)(?:_\d+)?"

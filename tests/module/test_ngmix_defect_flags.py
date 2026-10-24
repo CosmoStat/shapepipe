@@ -15,7 +15,8 @@ def _run(kind="inside", seg_kind="valid", megacam_flip=True):
     if seg_kind == "clipped":
         seg[25, 36:] = 1
     epochs = {}
-    for i, (ccd, bit) in enumerate(((10, 4), (20, 1024), (21, 0))):
+    ccds = (10, 20, 21) if megacam_flip else (20, 21, 22)
+    for i, (ccd, bit) in enumerate(zip(ccds, (4, 1024, 0))):
         flag = np.zeros(seg.shape, dtype=np.float32)
         weight = np.ones(seg.shape)
         pixel = (25, 35) if kind != "outside" else (35, 35)
@@ -42,7 +43,6 @@ def _run(kind="inside", seg_kind="valid", megacam_flip=True):
     tile.seg = None if seg_kind == "missing" else seg[None]
     return prepare_postage_stamps(
         vignet, 1, 0, tile, bkg_sub=False, psf_obj=psf, gal_obj=gal,
-        megacam_flip=megacam_flip,
     )
 
 
@@ -71,3 +71,39 @@ def test_unknown_or_incomplete_footprint_is_not_clean(seg_kind):
     diagnostics = _run(seg_kind=seg_kind).defect_diagnostics()
     assert diagnostics["imaflags_iso"] == -1
     assert diagnostics["n_epoch_interp_iso"] == -1
+
+
+@pytest.mark.parametrize("value", [np.nan, np.inf, -1, 1.5, float(2**63)])
+def test_non_integral_or_unsafe_flags_raise(value):
+    """Do not silently truncate float flags or overflow the integer OR."""
+    from shapepipe.modules.ngmix_package.ngmix import Postage_stamp
+
+    stamp = Postage_stamp()
+    seg = np.zeros((5, 5), dtype=int)
+    seg[2, 2] = 7
+    flag = np.zeros(seg.shape)
+    flag[2, 2] = value
+    with pytest.raises(ValueError, match="footprint flags"):
+        stamp.record_footprint_defects(flag, flag != 0, seg, 7)
+
+
+def test_footprint_columns_survive_ngmix_fits(tmp_path):
+    """Every shear extension keeps integer diagnostics, including -1."""
+    from astropy.io import fits
+    from tests.module.test_ngmix import _fake_metacal_result
+
+    inst = object.__new__(Ngmix)
+    inst._zero_point = 30.0
+    inst._output_dir = str(tmp_path)
+    inst._file_number_string = "-001-001"
+    rows = []
+    for i, (bits, count) in enumerate(((1028, 2), (-1, -1)), start=1):
+        row = _fake_metacal_result(.18, .02, .09, .001)
+        row.update(obj_id=i, imaflags_iso=bits, n_epoch_interp_iso=count)
+        rows.append(row)
+    inst.save_results(inst.compile_results(rows))
+    with fits.open(inst.get_output_path(str(tmp_path))) as hdus:
+        for hdu in hdus[1:]:
+            assert hdu.data["imaflags_iso"].tolist() == [1028, -1]
+            assert hdu.data["n_epoch_interp_iso"].tolist() == [2, -1]
+            assert hdu.data["imaflags_iso"].dtype.kind == "i"
