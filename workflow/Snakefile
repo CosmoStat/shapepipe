@@ -611,8 +611,12 @@ def clean_consumers(exp):
                   if t not in CLEAN_IGNORE_TILES)
 
 
-def clean_targets():
+@functools.lru_cache(maxsize=1)
+def clean_exposures():
     """Which exposures this invocation may clean.
+
+    Shared with the exp_maps producer constraint: cleanup can request fragments
+    from campaign history, not just from this invocation's ready tiles.
 
     An exposure is eligible only when every consuming tile is either in this
     run's scope or has already produced its vignets on disk. Without that test,
@@ -626,13 +630,11 @@ def clean_targets():
     `clean_ignore_tiles` neither gates eligibility nor appears in the job's
     input — which is the purpose of that list.
 
-    HEAD PROCESS ONLY. This feeds `rule all` at module level, so it runs on every
-    parse — including the ~800 per-job re-parses under the slurm executor, none of
-    which can ever schedule `all`. Each of those was stat()ing the whole
-    campaign's tile_vignets manifests for nothing. The empty list a job parse
-    returns costs it exactly the target it could not have used anyway.
+    Unlike the target list, this selector must also work on job re-parses:
+    a historical exp_maps job needs the same producer constraint on the worker
+    as on the head. Cache the eligibility walk within each parse.
     """
-    if not CLEAN or not workflow.is_main_process:
+    if not CLEAN:
         return []
     out = []
     for exp, raw in EXP_TILES.items():
@@ -644,8 +646,15 @@ def clean_targets():
         tiles = clean_consumers(exp)
         if all(t in READY_SET or Path(tile_manifest(t, "tile_vignets")).exists()
                for t in tiles):
-            out.append(tombstone(exp))
+            out.append(exp)
     return sorted(out)
+
+
+def clean_targets():
+    """Only the head can schedule rule all's reclamation targets."""
+    if not workflow.is_main_process:
+        return []
+    return [tombstone(exp) for exp in clean_exposures()]
 
 # --- persisted exposure products (D5) --------------------------------------
 # The keep list is config, not a rule input, and it is READ HERE so that exactly
@@ -963,7 +972,14 @@ def exp_maps_live_pattern():
     a failed rasterization can discover that its sources have been deleted.
     Exposure IDs are numeric (the workflow-wide wildcard constraint).
     """
-    live = [e for e in psf_exposures() if not exp_maps_reclaimed(e)]
+    # These are exactly the two target selectors that request fragments. Use
+    # cleanup's selector itself so historical candidates cannot drift out of
+    # the producer set. The same reclamation predicate used by exp_maps_edge
+    # (including cleanup's edge) keeps reclaimed fragments producer-free.
+    requested = set(psf_exposures())
+    if PERSISTS_PSF:
+        requested.update(clean_exposures())
+    live = sorted(e for e in requested if not exp_maps_reclaimed(e))
     return '(?:' + '|'.join(live) + ')' if live else '(?!)'
 
 
