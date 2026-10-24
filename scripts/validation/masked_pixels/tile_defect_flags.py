@@ -3,7 +3,7 @@
 Run inside the ShapePipe container on a compute allocation, with PYTHONPATH=src::
 
     python scripts/validation/masked_pixels/tile_defect_flags.py \
-        --sexcat SEXCAT --segcat SEG_VIGNET_CAT --image IMAGE_SQLITE \
+        --sexcat SEXCAT --image IMAGE_SQLITE \
         --flag FLAG_SQLITE --weight WEIGHT_SQLITE --psf GALAXY_PSF_SQLITE \
         --headers HEADERS_SQLITE --background BACKGROUND_SQLITE \
         --rms BACKGROUND_RMS_SQLITE --blend-handling uberseg \
@@ -11,8 +11,8 @@ Run inside the ShapePipe container on a compute allocation, with PYTHONPATH=src:
         --plot scripts/validation/masked_pixels/tile_defect_flags-TILE.png
 
 All stores open read-only; nothing is written beneath an input directory.
-Omit --segcat only if SEXCAT itself carries SEG_VIGNET. Omit --background
-only for already background-subtracted images; omit --rms only when the run
+SEXCAT must carry the committed workflow's SEG_VIGNET column. Omit
+--background only for already background-subtracted images; omit --rms when the run
 used stamp-estimated RMS. Pass the production blend/fill choices explicitly.
 The output contains every tile row, including unavailable PSFs, zero-kept-
 epoch objects and unknown footprints, distinguished by status and -1.
@@ -28,7 +28,6 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-import fitsio
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -43,12 +42,7 @@ from shapepipe.modules.ngmix_package.ngmix import (
 
 def measure(args):
     """Read production stamps and invoke the pipeline's epoch preparation."""
-    tile = Tile_cat(args.sexcat, seg_cat_path=args.segcat)
-    if tile.seg is None:
-        with fitsio.FITS(args.sexcat) as cat:
-            objects = next(h for h in cat if h.get_extname() == "LDAC_OBJECTS")
-            if "SEG_VIGNET" in objects.get_colnames():
-                tile.seg = objects.read_column("SEG_VIGNET")
+    tile = Tile_cat(args.sexcat)
     if tile.seg is None:
         raise ValueError("A real-tile validation requires segmentation stamps")
     n = len(tile.obj_id)
@@ -56,6 +50,7 @@ def measure(args):
     for key in ("imaflags_iso", "n_epoch_interp_iso", "n_epoch_interp",
                 "n_kept", "area", "area_outside_veto"):
         data[key] = np.full(n, -1, dtype=np.int64)
+    data["footprint_clipped"] = np.zeros(n, dtype=bool)
     status, dtypes = Counter(), Counter()
     with ExitStack() as stack:
         def store(path):
@@ -77,6 +72,9 @@ def measure(args):
         for i, obj_id in enumerate(tile.obj_id):
             footprint = tile.seg[i] == obj_id
             data["area"][i] = footprint.sum()
+            data["footprint_clipped"][i] = (
+                footprint[[0, -1], :].any() or footprint[:, [0, -1]].any()
+            )
             data["area_outside_veto"][i] = (
                 footprint & (radius >= EPOCH_INTERPOLATED_DEFECT_RADIUS)
             ).sum()
@@ -113,6 +111,15 @@ def measure(args):
     summary = dict(
         inputs=vars(args), n_objects=n, status=dict(status),
         kept_flag_vignet_dtypes=dict(dtypes),
+        footprints=dict(
+            n_edge_touching=int(data["footprint_clipped"].sum()),
+            fraction_edge_touching=float(data["footprint_clipped"].mean()),
+            n_empty=int((data["area"] == 0).sum()),
+            n_edge_touching_with_kept_epoch=int(
+                (data["footprint_clipped"] & kept).sum()
+            ),
+            n_unknown_with_kept_epoch=int((~valid & kept).sum()),
+        ),
         n_interp_iso=int(interp.sum()), n_imaflags_iso=int(flagged.sum()),
         n_stamp_interp=int(wide.sum()),
         fractions_all_rows=dict(interp_iso=float(interp.mean()),
@@ -135,6 +142,7 @@ def measure(args):
         summary["mean_kept_epochs_known"] = float(data["n_kept"][valid].mean())
     if kept.any():
         summary["fraction_stamp_interp_kept"] = float(wide[kept].mean())
+        summary["fraction_unknown_footprint_kept"] = float((~valid)[kept].mean())
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(str(out) + ".npz", **data)
@@ -190,7 +198,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("sexcat", "image", "flag", "weight", "psf", "headers", "out"):
         parser.add_argument("--" + name, required=True)
-    for name in ("segcat", "background", "rms", "nflagged", "plot"):
+    for name in ("background", "rms", "nflagged", "plot"):
         parser.add_argument("--" + name)
     parser.add_argument("--blend-handling", choices=("noisefill", "uberseg"), required=True)
     parser.add_argument("--defect-fill", choices=("interpolate", "noise"), default="interpolate")
