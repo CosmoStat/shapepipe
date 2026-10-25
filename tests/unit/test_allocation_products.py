@@ -242,6 +242,14 @@ assert config["clean"] is False and config["clean_tiles"] is False
 with open(os.environ["CALLS"], "a") as stream:
     stream.write(os.environ["SP_PHASE"] + "\\n")
 if os.environ["SP_PHASE"] == "compute":
+    helper = pathlib.Path(os.environ["SNAPSHOT_PUBLISHER"])
+    source = helper.read_text()
+    helper.write_text(
+        "import os, pathlib, sys\\n"
+        "if len(sys.argv) > 1 and sys.argv[1] == 'publish':\\n"
+        "    pathlib.Path(os.environ['PUBLISH_MARKER']).touch()\\n"
+        + source
+    )
     root = pathlib.Path(config["outputs"]["products_dir"])
     (root / "catalogue").write_text("new complete catalogue")
     sys.exit(int(os.environ["FAIL_COMPUTE"]))
@@ -279,6 +287,10 @@ if os.environ["SP_PHASE"] == "compute":
         SLURM_MEM_PER_NODE="64000",
         CALLS=str(tmp_path / "calls"),
         FAIL_COMPUTE=str(int(failure)),
+        SNAPSHOT_PUBLISHER=str(
+            tmp_path / "run-state/code/workflow/scripts/allocation_products.py"
+        ),
+        PUBLISH_MARKER=str(tmp_path / "snapshot-publisher-called"),
     )
     environment.pop("SP_RUN_CONFIG", None)
     environment.pop("SP_STATE_DIR", None)
@@ -299,6 +311,8 @@ if os.environ["SP_PHASE"] == "compute":
         "prepare",
         "compute",
     ]
+    marker = tmp_path / "snapshot-publisher-called"
+    assert marker.exists() is (not failure)
     assert (destination / "catalogue").read_text() == (
         "previous catalogue" if failure else "new complete catalogue"
     )
@@ -334,6 +348,7 @@ if os.environ["SP_PHASE"] == "compute":
             text=True,
         )
         assert resumed.returncode == 0, resumed.stdout + resumed.stderr
+        assert marker.exists()
         assert not tile_manifest.exists()
         assert not (exposure / "output").is_symlink()
         assert not (exposure / "manifests").exists()

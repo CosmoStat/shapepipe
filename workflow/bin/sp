@@ -459,7 +459,7 @@ case "$cmd" in
       exit "$([ "$comp_rc" -ne 0 ] && echo "$comp_rc" || echo "$prep_rc")"
     fi
     if [ "$IN_ALLOCATION" = 1 ] && [ "$ALLOC_DRY" = 0 ]; then
-      python "$SCRIPTS/allocation_products.py" publish "$ALLOC_PRODUCTS_LOCAL" "$ALLOC_PRODUCTS_DEST"
+      python "$SNAPSHOT/workflow/scripts/allocation_products.py" publish "$ALLOC_PRODUCTS_LOCAL" "$ALLOC_PRODUCTS_DEST"
     fi
     ;;
   report)
