@@ -156,6 +156,50 @@ def test_small_tile_with_few_unpaired_children_passes(tmp_path):
     assert counts["n_paired"] == 100 and counts["n_external_only"] == 5
 
 
+@pytest.mark.parametrize("n_ext,n_sex,n_paired", [
+    (1968, 1922, 1919),  # 576.248
+    (2490, 2431, 2431),  # 577.246
+    (1680, 1625, 1625),  # 603.227
+    (2861, 2760, 2760),  # 618.220
+])
+@pytest.mark.decision("detection.tile_detection")
+def test_production_sparse_tiles_keep_only_the_pairs(
+        tmp_path, n_ext, n_sex, n_paired):
+    """Small DR6 footprints contain local halo/deblending losses, not bad WCS.
+
+    Counts are production fixtures, not reads of the real catalogues.
+    Acceptance must not manufacture shapes for the external-only objects.
+    """
+    x, y = _grid(n_ext + n_sex - n_paired)
+    sex_indices = np.r_[np.arange(n_paired),
+                        np.arange(n_ext, n_ext + n_sex - n_paired)]
+    cat = _sexcat(tmp_path / "sexcat.fits", x[sex_indices], y[sex_indices])
+    ext = _external(tmp_path / "ext.cat", np.arange(10001, 10001 + n_ext),
+                    x[:n_ext], y[:n_ext])
+    counts = mc.match_catalogue(cat, ext)
+    assert counts == dict(n_external=n_ext, n_sextractor=n_sex,
+                          n_paired=n_paired, n_dropped=n_sex - n_paired,
+                          n_external_only=n_ext - n_paired)
+    data = _objects(cat)
+    np.testing.assert_array_equal(data["NUMBER"],
+                                  np.arange(10001, 10001 + n_paired))
+    np.testing.assert_array_equal(data["XWIN_IMAGE"],
+                                  x[:n_paired] + 0.01)
+
+
+@pytest.mark.parametrize("n", [1680, 2861, 40000])
+@pytest.mark.decision("detection.tile_detection")
+def test_shifted_catalogue_stops_before_writing(tmp_path, n):
+    """A wrong grid still fails even on a sparse tile; no partial rewrite."""
+    x, y = _grid(n)
+    cat = _sexcat(tmp_path / "sexcat.fits", x, y)
+    ext = _external(tmp_path / "ext.cat", np.arange(1, n + 1), x + 2, y)
+    before = (tmp_path / "sexcat.fits").read_bytes()
+    with pytest.raises(ValueError, match="DR6"):
+        mc.match_catalogue(cat, ext)
+    assert (tmp_path / "sexcat.fits").read_bytes() == before
+
+
 def test_large_tile_with_unpaired_children_passes(tmp_path):
     """A cluster tile: 30 of 2000 catalogue objects unpaired (1.5%) is more
     than 20 but under 2%, so the run goes on with the default guard."""
