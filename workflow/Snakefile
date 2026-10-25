@@ -561,6 +561,14 @@ def flag(value, default=False):
 # a tombstone, so the missing tombstones schedule exactly the clean jobs.
 # Only ever active under SP_PHASE=compute: the prepare and passthrough parses
 # read no index of their own and must schedule no deletions.
+# @sc [label:safety] allocation-reclamation-refused
+# CLI config overrides cannot reclaim products before generation publication.
+# tests/workflow/test_allocation_policy.py exercises both cleaner selectors.
+if os.environ.get("SP_IN_ALLOCATION") == "1" and (
+        flag(config.get("clean", False)) or flag(config.get("clean_tiles", False))):
+    raise WorkflowError(
+        "Allocation mode requires clean=false and clean_tiles=false: "
+        "products remain node-local until successful generation publication.")
 CLEAN = flag(config.get("clean", False)) and PHASE == "compute"
 
 # Reclamation REQUIRES the `input` rerun-trigger to be off (see tile.smk's
@@ -1331,8 +1339,20 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
         # Also set via apptainer-args in the profile; kept here so a hand-run of
         # this same line outside snakemake behaves identically.
         f"export {_THREAD_CAPS}",
-        'mkdir -p "$SP_RUN/output" "$SP_RUN/manifests" "$SP_RUN/logs"',
     ]
+    if level == "exp":
+        # Under `sp run --in-allocation`, SP_EXP_STORE names a node-local root
+        # and the exposure's output/ is a link into it (sp's header says why).
+        # The link is made once, by whichever stage runs first; a dangling one
+        # is swept by sp before the run, with the manifests that attested it.
+        # An output/ already on /scratch (a store begun outside an allocation)
+        # stays where it is.
+        lines.append(
+            'if [ -n "${SP_EXP_STORE:-}" ] && [ ! -e "$SP_RUN/output" ] '
+            '&& [ ! -L "$SP_RUN/output" ]; then '
+            f'mkdir -p "$SP_RUN" "$SP_EXP_STORE/{unit}" && '
+            f'ln -s "$SP_EXP_STORE/{unit}" "$SP_RUN/output"; fi')
+    lines.append('mkdir -p "$SP_RUN/output" "$SP_RUN/manifests" "$SP_RUN/logs"')
     if PSF_DICT:
         lines.append(f"export PSF_DICT='{PSF_DICT}'")
     if INPUT_TYPE == "data":

@@ -206,7 +206,7 @@ def load_profile(name):
 
 
 @contextmanager
-def resolve(campaign, monkeypatch):
+def resolve(campaign, monkeypatch, environment=None):
     """Resolve ``all`` in an isolated state directory, without running jobs."""
     from snakemake import workflow as sm_workflow
 
@@ -232,6 +232,7 @@ def resolve(campaign, monkeypatch):
             "SP_SANDBOX": campaign.root / "no-sandbox",
             "SP_MISSING_THRESHOLD": "0.34",
             "XDG_CACHE_HOME": campaign.root / "cache",
+            **(environment or {}),
         }.items():
             patch.setenv(name, str(value))
         profile = load_profile("candide")

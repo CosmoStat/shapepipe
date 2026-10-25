@@ -231,6 +231,76 @@ neighbours (queue-latency amortization, per the PRD) are **not yet wired**:
 they require labels in `workflow/rules/*.smk`, out of scope for this
 profile-only pass.
 
+## Execution mode: one allocation
+
+One SLURM job per rule pays one queue wait per job, and at a low fair share a
+small campaign is mostly queue wait. `sp run --in-allocation` runs both
+invocations under snakemake's local executor inside the allocation it is
+called from, so the campaign waits once:
+
+```bash
+#!/usr/bin/env bash
+#SBATCH --account=<account>
+#SBATCH --nodes=1 --ntasks=1
+#SBATCH --cpus-per-task=96 --mem=383000M
+#SBATCH --time=4:00:00
+SP_PROFILE=nibi /path/to/checkout/workflow/bin/sp run --in-allocation -c run.yaml
+```
+
+`sp` reads the budget from the allocation itself (cores from process affinity, capped by `SLURM_CPUS_PER_TASK`,
+memory from the tightest cgroup limit, less a reserve for snakemake) and
+passes `--executor local --cores N --resources mem_mb=M`; later explicit
+flags override them. Everything else is the profile's. `group:` labels are
+inactive under local execution, so `--groups` does nothing; the tile_shape
+members still share their node-local store because every job runs on this
+node. That store defaults to `$SLURM_TMPDIR/tile-store/<campaign-key>`, which Slurm
+reclaims when the job ends (an explicit `tile_store_root:` wins).
+
+Two campaigns can share one allocation, one `srun` step each. Each step's
+cpuset and cgroup become that campaign's budget.
+The campaign key combines `run` with a hash of its absolute state-directory path, keeping even identical run labels in distinct state directories apart.
+This keeps their
+stores apart:
+
+```bash
+srun --exact -n1 -c48 --mem=180000M sp run --in-allocation -c arm_a.yaml &
+srun --exact -n1 -c48 --mem=180000M sp run --in-allocation -c arm_b.yaml &
+wait
+```
+
+A rule's `mem_mb` becomes a packing budget rather than a per-job cgroup: a job
+over its share is killed only if the allocation as a whole runs out. Size the
+allocation with room for its widest rule and retries.
+Use one node; the local executor runs on the machine hosting `sp`.
+
+A job cut short by its time limit is resumed by submitting the same script again.
+The store died with the job, so before it runs `sp` deletes `tile_vignets.json` for each listed tile that has no `final_cat` yet.
+`tile_make_cat` declares that manifest as an input, so `tile_vignets` rebuilds the store even if all chunks and their merge are complete.
+Every ngmix chunk also declares the vignets manifest unconditionally, so all chunks rerun after the store is rebuilt, followed by their merge and `make_cat`.
+This spends ngmix time on swept tiles, but guarantees that every scheduled reader waits for the writer, even if another input or rerun trigger invalidates a previously completed chunk.
+A completion manifest alone cannot prove that a chunk will not run in this invocation.
+`sp` also records the job holding the campaign's state dir, and releases that job's lock once the job has left the queue; any other lock stops the run.
+Exposure bulk outputs live under `$SLURM_TMPDIR/exp-store/<campaign-key>`, linked from their persistent exposure directories.
+Dangling links and their stale manifests are swept on a real resume.
+Products use the stable path `<state_dir>/products`, linked to `$SLURM_TMPDIR/products/<campaign-key>`.
+Before planning, `sp` hydrates that local tree from `outputs.products_dir`, restoring original nanosecond timestamps from a checksummed manifest when the destination filesystem truncates them.
+The launcher holds an exclusive lock through staging, both Snakemake invocations and publication.
+`-n` stages this local working copy and snapshots code, but does not delete stale manifests, unlock Snakemake or publish.
+
+In allocation mode, `clean` and `clean_tiles` are forced false.
+SLURM reclaims bulk stores when the allocation ends; persistent cleanup tombstones must not attest to unpublished products on a lost disk.
+Use a fresh campaign root when adopting this mode; existing reclaimed campaigns are not migrated.
+
+After successful compute, `sp` copies the complete product tree to a hidden sibling generation directory on the destination filesystem.
+It writes the checksummed timestamp manifest and `allocation-complete.json` before atomically replacing the public products-root symlink.
+Failed compute or interrupted publication leaves the previous published generation selected; a first failed publication leaves no public root.
+The completion marker identifies the published allocation, not an attempt still running or failed.
+Previous generations and interrupted staging directories are retained, so publication needs room for another full product tree.
+Readers needing a consistent multi-file snapshot should resolve the public root once and read that generation.
+The destination must be absent or a helper-owned generation symlink; ordinary directories are not migrated.
+Internal product symlinks are refused.
+Failed compute reports the local partial-product directory for diagnosis.
+
 ## Layout
 
 ```

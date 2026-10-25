@@ -15,6 +15,11 @@
 #                      FILE is a user-specified config file that can be used
 #                       to add and/or overwrite entries in the default config
 #                       file workflow/config.yaml (read automatically)
+#   sp run --in-allocation [-c FILE] [ARGS...]
+#                      the same, but every job runs HERE, inside the SLURM
+#                      allocation sp is called from, under snakemake's local
+#                      executor (see "one allocation" below). Refuses to run
+#                      outside an allocation.
 #   sp report [ARGS...]  emit run_report.json now (mid-run is fine).
 #   sp container VERB    manage the image every job runs inside: pull, status,
 #                      sandbox, exec, resolve. `sp container --help` documents
@@ -68,13 +73,18 @@ PROFILE="${SP_PROFILE:-nibi}"
 # the delegated command (`sp container exec python -c ...`) or for snakemake's
 # own escape hatch (`sp -- ...`) is left alone. `--config` is NOT sp's: keeping
 # it free lets snakemake's own `--config k=v` (what the Snakefile's flag()
-# reads) pass through untouched.
+# reads) pass through untouched. --in-allocation is sp's too (see "one
+# allocation" below); snakemake never sees it.
 RUN_CONFIG="${SP_RUN_CONFIG:-}"
+IN_ALLOCATION=0
+unset SP_IN_ALLOCATION
 _sp_args=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --)
       shift; _sp_args+=("$@"); break ;;
+    --in-allocation)
+      IN_ALLOCATION=1; shift ;;
     -c|--config-file)
       [ $# -ge 2 ] || { echo "sp: $1 needs a file" >&2; exit 2; }
       RUN_CONFIG="$2"; shift 2 ;;
@@ -153,6 +163,99 @@ fi
 STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"
 [ "$NEEDS_CAMPAIGN" = 0 ] || mkdir -p "$STATE_DIR"
 
+# Allocation resources pack local jobs; stores live until the allocation ends.
+ALLOC_ARGS=()
+TILE_STORE_ROOT=""
+[ "$NEEDS_CAMPAIGN" = 0 ] || TILE_STORE_ROOT="$(cfg tile_store_root)"
+if [ "$IN_ALLOCATION" = 1 ]; then
+  export SP_IN_ALLOCATION=1
+  [ "${1:-}" = run ] || { echo "sp: --in-allocation applies to \`sp run\` only" >&2; exit 2; }
+  [ -n "${SLURM_JOB_ID:-}" ] && [ -n "${SLURM_TMPDIR:-}" ] || {
+    echo "sp: --in-allocation runs every job on this machine; call it inside a SLURM" >&2
+    echo "    allocation (an sbatch script, or salloc), never on a login node" >&2; exit 2; }
+  ALLOC_CORES="$(python "$SCRIPTS/allocation_products.py" cpus)"
+  ALLOC_MEM_MB="$(python "$SCRIPTS/allocation_products.py" memory)"
+  [ "$ALLOC_MEM_MB" -gt 0 ] || {
+    echo "sp: --in-allocation could not read this allocation's memory limit" >&2; exit 2; }
+  ALLOC_ARGS=(--executor local --cores "$ALLOC_CORES" --resources "mem_mb=$ALLOC_MEM_MB")
+  ALLOC_STORE_KEY="$(python "$SCRIPTS/allocation_products.py" key "$(cfg run)" "$STATE_DIR")"
+  [ -n "$TILE_STORE_ROOT" ] || TILE_STORE_ROOT="$SLURM_TMPDIR/tile-store/$ALLOC_STORE_KEY"
+  export SP_EXP_STORE="$(realpath -m "$SLURM_TMPDIR")/exp-store/$ALLOC_STORE_KEY"
+  echo "sp: in allocation $SLURM_JOB_ID: ${ALLOC_ARGS[*]}" >&2
+fi
+
+# Check the previous owner before staging or repairing ephemeral stores.
+alloc_resume() {
+  local a alloc_dry=0 products_dir n_swept=0 tile m holder holder_file
+  local holder_state="" holder_rc=1
+  local unlock_needed=0 staged
+  for a in "$@"; do
+    case "$a" in -n|--dry-run|--dryrun|-[a-zA-Z]*n*) alloc_dry=1 ;; esac
+  done
+  holder_file="$STATE_DIR/in-allocation.job"
+  if [ -n "$(ls -A "$STATE_DIR/.snakemake/locks" 2>/dev/null)" ]; then
+    holder="$(cat "$holder_file" 2>/dev/null || true)"
+    if [ -n "$holder" ]; then
+      holder_state="$(squeue -h -j "$holder" -o %T 2>&1)" && holder_rc=0 || holder_rc=$?
+    fi
+    # Ended: gone from the controller, or listed in a final state.
+    if [ -n "$holder" ] && [ "$holder" != "$SLURM_JOB_ID" ] && {
+         [[ "$holder_state" == *"Invalid job id"* ]] || { [ "$holder_rc" = 0 ] &&
+         [[ "$holder_state" =~ ^(|COMPLETED|FAILED|CANCELLED|TIMEOUT|OUT_OF_MEMORY|NODE_FAIL|PREEMPTED|BOOT_FAIL|DEADLINE)$ ]]; }; }; then
+      if [ "$alloc_dry" = 1 ]; then
+        echo "sp: stale lock of job $holder in $STATE_DIR (dry run, kept)" >&2
+      else
+        echo "sp: releasing the stale lock of job $holder in $STATE_DIR" >&2
+        unlock_needed=1
+      fi
+    else
+      echo "sp: $STATE_DIR is locked${holder:+ (job $holder: ${holder_state:-running})}." >&2
+      echo "    If nothing runs on this campaign, \`sp -c ... --unlock\` and resubmit." >&2
+      exit 2
+    fi
+  fi
+
+  local stage_args=(prepare --config "$HERE/config.yaml" --state "$STATE_DIR"
+                    --temporary "$(realpath -m "$SLURM_TMPDIR")")
+  [ -z "${SP_RUN_CONFIG:-}" ] || stage_args+=(--run "$SP_RUN_CONFIG")
+  [ "$alloc_dry" = 0 ] || stage_args+=(--dry-run)
+  staged="$(python "$SCRIPTS/allocation_products.py" "${stage_args[@]}")" || return $?
+  mapfile -t staged_paths <<< "$staged"
+  export SP_RUN_CONFIG="${staged_paths[0]}"
+  ALLOC_PRODUCTS_LOCAL="${staged_paths[1]}"
+  ALLOC_PRODUCTS_DEST="${staged_paths[2]}"
+  ALLOC_DRY="$alloc_dry"
+  echo "sp: local products $ALLOC_PRODUCTS_LOCAL; publish to $ALLOC_PRODUCTS_DEST on success" >&2
+  [ "$alloc_dry" = 0 ] || echo "sp: dry run stages local products and code; no sweep, unlock or publication" >&2
+  [ "$unlock_needed" = 0 ] || sm --unlock >/dev/null
+  products_dir="$(cfg outputs.products_dir)"
+  while read -r tile; do
+    [ -n "$tile" ] || continue
+    m="$RUN_DIR/tiles/${tile:0:2}/$tile/manifests/tile_vignets.json"
+    [ -e "$m" ] || continue
+    [ -e "$products_dir/tiles/${tile:0:2}/$tile/final_cat-$tile.hdf5" ] && continue
+    if [ "$alloc_dry" = 1 ]; then echo "sp: stale (dry run, kept): $m" >&2
+    else rm -f "$m"; echo "sp: deleted stale $m" >&2; fi
+    n_swept=$((n_swept + 1))
+  done < <(sed 's/[[:space:]]//g' "$(cfg tile_list)")
+  echo "sp: $n_swept stale tile_vignets.json (no final_cat, store gone with its job)" >&2
+
+  # An exposure whose node-local output went with an earlier job: its link
+  # dangles and its scratch manifests attest work that is gone. Dropping the
+  # link and the manifests reruns its chain; a cleaned exposure (tombstone)
+  # is reclaimed, not stale, and is never touched.
+  n_swept=0
+  for m in "$RUN_DIR"/exp/*/*/output; do
+    [ -L "$m" ] && [ ! -e "$m" ] || continue
+    [ -e "$(dirname "$m")/cleaned.json" ] && continue
+    if [ "$alloc_dry" = 1 ]; then echo "sp: stale (dry run, kept): $m" >&2
+    else rm -f "$m"; rm -rf "$(dirname "$m")/manifests"; echo "sp: deleted stale $m and its manifests" >&2; fi
+    n_swept=$((n_swept + 1))
+  done
+  echo "sp: $n_swept stale exposure store(s) (no tombstone, store gone with its job)" >&2
+  [ "$alloc_dry" = 1 ] || printf '%s\n' "$SLURM_JOB_ID" > "$holder_file"
+}
+
 # --- the launch code snapshot ----------------------------------------------
 # THE ONE HOME for this concept; everything else points here.
 #
@@ -188,7 +291,7 @@ SNAPSHOT="$STATE_DIR/code"
 snapshot_code() {
   mkdir -p "$SNAPSHOT"
   if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete --copy-links --exclude '__pycache__' --exclude '*.egg-info' \
+    rsync -a --no-owner --no-group --delete --copy-links --exclude '__pycache__' --exclude '*.egg-info' \
       "$HERE" "$REPO/src" "$REPO/scripts" "$REPO/profiles" "$SNAPSHOT/"
   else
     rm -rf "$SNAPSHOT"; mkdir -p "$SNAPSHOT"
@@ -227,7 +330,7 @@ PY
   # directory (NFS) trades ngmix read latency for room; the campaign-unique store
   # names (LOCAL_TAG) keep concurrent campaigns apart in one root. Profiles with
   # no `X:/local/scratch` bind (nibi's `--bind /local`) get one appended.
-  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$(cfg tile_store_root)" <<'PY'
+  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$TILE_STORE_ROOT" <<'PY'
 import os, pathlib, re, sys
 f, root = pathlib.Path(sys.argv[1]), sys.argv[2]
 if root:
@@ -247,6 +350,11 @@ if root:
     f.write_text(text)
     print(f"sp: tile store root {root} (bound to /local/scratch)", file=sys.stderr)
 PY
+
+  if [ -n "${ALLOC_PRODUCTS_LOCAL:-}" ]; then
+    python "$SCRIPTS/allocation_products.py" bind \
+      "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$ALLOC_PRODUCTS_LOCAL" "$SP_EXP_STORE"
+  fi
 
   python - "$SNAPSHOT/snapshot.json" "$REPO" <<'PY'
 import json, pathlib, subprocess, sys, time
@@ -304,19 +412,26 @@ sm() {
   local root; root="$(code_root)"
   # The run config the Snakefile reads: the snapshot's copy when this run has
   # one, so every parse of the campaign -- head and jobs -- sees the same file.
-  if [ -n "${SP_RUN_CONFIG:-}" ] && [ -f "$root/run_config.yaml" ]; then
-    export SP_RUN_CONFIG="$root/run_config.yaml"
-  fi
-  SP_PHASE="${SP_PHASE:-passthrough}" \
-    snakemake --snakefile "$root/workflow/Snakefile" \
-              --profile "$root/profiles/$PROFILE" \
-              --directory "$STATE_DIR" "$@"
+  # Scoped to this call (subshell): SP_RUN_CONFIG in the caller stays the
+  # external config, so a later snapshot refresh never copies the file onto itself.
+  (
+    if [ -n "${SP_RUN_CONFIG:-}" ] && [ -f "$root/run_config.yaml" ]; then
+      export SP_RUN_CONFIG="$root/run_config.yaml"
+    fi
+    SP_PHASE="${SP_PHASE:-passthrough}" \
+      snakemake --snakefile "$root/workflow/Snakefile" \
+                --profile "$root/profiles/$PROFILE" \
+                --directory "$STATE_DIR" "$@"
+  )
 }
 
 cmd="${1:-}"
 case "$cmd" in
   run)
     shift
+    exec 9>"$STATE_DIR/launcher.lock"
+    flock -n 9 || { echo "sp: another launcher holds $STATE_DIR" >&2; exit 2; }
+    [ "$IN_ALLOCATION" = 0 ] || alloc_resume "$@"
     snapshot_code
     # PREPARE failing is NOT fatal to the run: keep-going means a failed tile
     # poisons only its own cone, and the tiles that lost their exposure list are
@@ -324,7 +439,7 @@ case "$cmd" in
     # the compute parse's index build enforces over the WHOLE tile list — so we
     # record the failure and go on rather than letting `set -e` abort here.
     prep_rc=0
-    SP_PHASE=prepare sm prepare_all_tiles "$@" || prep_rc=$?
+    SP_PHASE=prepare sm prepare_all_tiles ${ALLOC_ARGS[@]+"${ALLOC_ARGS[@]}"} "$@" || prep_rc=$?
     if [ "$prep_rc" -ne 0 ]; then
       echo "" >&2
       echo "############################################################" >&2
@@ -338,9 +453,13 @@ case "$cmd" in
     fi
 
     comp_rc=0
-    SP_PHASE=compute sm all "$@" || comp_rc=$?
+    SP_PHASE=compute sm all ${ALLOC_ARGS[@]+"${ALLOC_ARGS[@]}"} "$@" || comp_rc=$?
     if [ "$prep_rc" -ne 0 ] || [ "$comp_rc" -ne 0 ]; then
+      [ "$IN_ALLOCATION" = 0 ] || echo "sp: compute failed; unpublished partial products: $ALLOC_PRODUCTS_LOCAL" >&2
       exit "$([ "$comp_rc" -ne 0 ] && echo "$comp_rc" || echo "$prep_rc")"
+    fi
+    if [ "$IN_ALLOCATION" = 1 ] && [ "$ALLOC_DRY" = 0 ]; then
+      python "$SCRIPTS/allocation_products.py" publish "$ALLOC_PRODUCTS_LOCAL" "$ALLOC_PRODUCTS_DEST"
     fi
     ;;
   report)
