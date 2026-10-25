@@ -51,21 +51,101 @@ def geometry(kind, distance):
 
 
 def one(job):
-    kind, fill, distance, hlr, psf = job
-    from shapepipe.modules.ngmix_package import ngmix as ngm
+    import time
+    kind, fill, distance, hlr, psf, *extra = job
+    psf_shear = extra[0] if extra else (0.0, 0.0)
     from tests.helpers.defect_response import defect_response
 
-    if fill == "noise":
-        ngm.interpolated_defects = (
-            lambda defect, neighbour, blend: np.zeros_like(defect))
-    row = dict(kind=kind, fill=fill, d=distance, hlr=hlr, psf=psf)
+    row = dict(kind=kind, fill=fill, d=distance, hlr=hlr, psf=psf,
+               psf_shear=psf_shear)
+    start = time.monotonic()
     try:
+        # Use the public option: the historical three-argument monkeypatch
+        # no longer matches interpolated_defects' four-argument signature.
+        # This helper fits directly, bypassing BOTH epoch cuts deliberately.
         r = defect_response(geometry(kind, distance), hlr=hlr, psf=psf,
-                            seeds=SEEDS)
-        row.update(m=r["m"], m_err=r["m_err"], c=r["c"], c_err=r["c_err"])
+                            seeds=SEEDS, psf_shear=psf_shear,
+                            options={"defect_fill": "noise" if fill == "noise"
+                                     else "interpolate"})
+        row.update(r)
     except Exception as e:  # noqa: BLE001
         row["error"] = repr(e)
+    row["seconds"] = time.monotonic() - start
     return row
+
+
+def napoli_jobs():
+    """Same galaxy grid, round AND elliptical PSFs, inside the old radii.
+
+    Production narrow defects are interpolated (0..7 inclusive); the
+    counterfactual and production wide holes are noise-filled (0..13).
+    These are isolated high-S/N fixtures, not a survey calibration.
+    """
+    return [(k, f, d, h, p, e) for h, p in GALAXIES
+            for e in ((0.0, 0.0), (0.05, 0.02)) for k in KINDS
+            for f in (("production", "noise") if k in INTERPOLATED
+                      else ("production",))
+            for d in range(8 if f == "production" and k in INTERPOLATED else 14)]
+
+
+def napoli_scan(out_path, nproc):
+    """One pool/allocation; journal each completed case, including failures."""
+    from multiprocessing import get_context
+    jobs = napoli_jobs()
+    rows = []
+    with open(out_path + ".jsonl", "w", buffering=1) as journal:
+        with get_context("spawn").Pool(nproc, maxtasksperchild=1) as pool:
+            for row in pool.imap_unordered(one, jobs, chunksize=1):
+                rows.append(row)
+                journal.write(json.dumps(row) + "\n")
+                print(f'{len(rows)}/{len(jobs)} {row["kind"]} {row["fill"]} '
+                      f'd={row["d"]} {row.get("error", "ok")}', flush=True)
+    rows.sort(key=lambda r: (r["hlr"], r["psf_shear"], r["kind"], r["fill"], r["d"]))
+    with open(out_path, "w") as stream:
+        json.dump(rows, stream, indent=1)
+
+
+def napoli_plot(out_path, in_path):
+    """Signed diagonal m with bootstrap errors and historical veto radii."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    rows = json.load(open(in_path))
+    fig, axs = plt.subplots(2, 3, figsize=(14, 8), sharex=True, sharey=True)
+    colors = dict(zip(KINDS, ("#0072B2", "#D55E00", "#CC79A7", "#009E73",
+                              "#E69F00", "#333333")))
+    for j, (hlr, psf) in enumerate(GALAXIES):
+        for i, e in enumerate(((0., 0.), (0.05, 0.02))):
+            ax = axs[i, j]
+            ax.axhspan(-1, 1, color="#eeeeee")
+            ax.axvline(7, color="black", linestyle=":", label="old interpolation radius")
+            ax.axvline(13, color="black", linestyle="--", label="old noise radius")
+            for kind in KINDS:
+                for fill in ("production", "noise"):
+                    sel = sorted([r for r in rows if r["hlr"] == hlr and r["kind"] == kind
+                                  and r["fill"] == fill and tuple(r["psf_shear"]) == e
+                                  and "error" not in r], key=lambda r: r["d"])
+                    for axis, marker in ((0, "o"), (1, "s")):
+                        ax.errorbar([r["d"] for r in sel],
+                                    [100 * r["m"][axis] for r in sel],
+                                    yerr=[100 * r["m_err"][axis] for r in sel],
+                                    color=colors[kind], linestyle="-" if fill == "production" else "--",
+                                    marker=marker, ms=2, lw=.8, alpha=.8,
+                                    label=f'{kind} {fill} m{axis+1}{axis+1}' if i == j == 0 else None)
+            ax.set_yscale("symlog", linthresh=1)
+            ax.set_title(f'HLR {hlr}″, PSF {psf}″, e={e}')
+            ax.grid(alpha=.2)
+            ax.set_xticks(range(0, 14, 2))
+            if j == 0:
+                ax.set_ylabel("signed m [%] (symmetric log scale)")
+            if i == 1:
+                ax.set_xlabel("nearest defect pixel [px]")
+    fig.suptitle("No-veto fixtures: 6 paired seeds; bars = bootstrap 1σ; grey = |m| < 1%\n"
+                 "Solid: production (wide holes still noise-filled); dashed: noise counterfactual; o: m11, s: m22")
+    handles, labels = axs[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="lower center", ncol=6, fontsize=7)
+    fig.tight_layout(rect=(0, .17, 1, .93))
+    fig.savefig(out_path, dpi=160)
 
 
 def scan(out_path, nproc, kinds=KINDS):
@@ -203,7 +283,11 @@ def plot(out_path, *in_paths):
 
 
 if __name__ == "__main__":
-    if sys.argv[1] == "scan":
+    if sys.argv[1] == "napoli":
+        napoli_scan(sys.argv[2], int(sys.argv[3]))
+    elif sys.argv[1] == "napoli_plot":
+        napoli_plot(sys.argv[2], sys.argv[3])
+    elif sys.argv[1] == "scan":
         scan(sys.argv[2], int(sys.argv[3]),
              *([tuple(sys.argv[4].split(","))] if len(sys.argv) > 4 else []))
     elif sys.argv[1] == "plot":
