@@ -2,7 +2,7 @@
 
 ``shapepipe.utilities.final_cat.read_final_cat`` is what every final-catalogue
 helper reads through (``create_final_cat.py``, the workflow's
-``merge_final_cat.py`` by way of it, and ``scripts/python/merge_final_cat.py``).
+``merge_final_cat.py`` by way of it).
 One catalogue written both ways — HDF5 by make_cat's own writer, FITS as a
 binary table at HDU 1 — must read to the same structured array, with the format
 decided by content rather than file name.

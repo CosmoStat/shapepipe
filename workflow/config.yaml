@@ -20,6 +20,16 @@ input_type: data
 # campaign's merged catalogues. Required, and set by the run config.
 # run: my_campaign
 
+# How ngmix treats a stamp's neighbours (its BLEND_HANDLING). tile_detect
+# writes the coadd segmentation stamps into the sexcat as SEG_VIGNET under
+# both, and the neighbours are the other objects' footprints in them:
+# `uberseg` zeroes their weight; `noisefill`, ngmix's own default, zero-weights
+# and noise-fills the -1e30 VIGNET markers on them. Chosen per campaign:
+# flipping it on an existing run dir reruns tile_ngmix and everything after it
+# for every finished tile, and reclaimed exposures make that destructive -- a
+# comparison needs its own `run:`.
+blend_handling: uberseg
+
 # Default settings per input_type, can be overridden by a user-defined run config file.
 # - tile_detection: both run SExtractor on the tile. `unions_catalogue` (data)
 #   also fetches the UNIONS per-tile catalogue and joins the detections to it,
@@ -37,6 +47,12 @@ input_types:
     tile_detection: sextractor
     # @sc [decision:star_selection_psf.psf_modelling_software]
     psf_model: fake
+    # Epoch-membership CCD bounds (config_tile_Sx.ini CCD_SIZE, 0-based,
+    # strict): the simulated CCDs are 2048x4612 with no overscan, so a stamp
+    # centre rounds onto the image only for 0 < x < 2047, 0 < y < 4611. Data
+    # keeps the ini's MegaCam DATASEC default.
+    # @sc [decision:detection.epoch_membership_ccd_bounds]
+    ccd_size: 0,2047,0,4611
 
 # Entries per machine (SP_PROFILE, default nibi; implemented: nibi, candide)
 # and input_type. A run config may instead state `machine:`, which must
@@ -105,10 +121,68 @@ machines:
 #
 #     workflow/bin/sp container exec python workflow/scripts/persist_exp.py --list-products
 #
-# The default psf_model preserves the model for interpolation at other positions.
-# Add psfex_cat to inspect PSFEx's rejected stars, or star_* products for
-# selection studies. Changing this list re-packs live stores without refitting
-# PSFs; reclaimed stores cannot supply additional products (see exposure.smk).
+#   product         glob                        size/exposure
+#   --------------  --------------------------  -------------
+#   star_selection  star_selection-*.fits       24.5 MB
+#                       setools' PRE-SPLIT selection. The only file that answers which
+#                       stars the selection cuts rejected and why; the split samples have
+#                       already lost the rejects.
+#   star_train      star_split_ratio_80-*.fits  19.9 MB
+#                       the 80% TRAINING sample, the stars PSFEx actually fitted. Rows
+#                       duplicate star_selection.
+#   star_test       star_split_ratio_20-*.fits  7.1 MB
+#                       the 20% VALIDATION sample — the positions psf_validation's rows
+#                       correspond to. Rows duplicate star_selection.
+#   star_stats      star_stat-*.txt             unmeasured
+#                       setools' per-CCD STAT block: star counts, FWHM mode and cuts.
+#                       The selection's summary without its catalogue.
+#   psf_model       *.psf                       2.8 MB
+#                       the PSFEx model itself. Keeping it means the PSF can be
+#                       re-interpolated at ANY position later without rebuilding the
+#                       exposure chain — the single most capability-adding entry here.
+#   psfex_cat       psfex_cat-*.cat             unmeasured
+#                       PSFEx's own output catalogue (FITS_LDAC): the per-star FLAGS_PSF
+#                       and CHI2_PSF, i.e. WHICH stars outlier rejection clipped. Not
+#                       recoverable from anything else — the .psf header keeps only the
+#                       LOADED/ACCEPTED counts.
+#   psf_validation  validation_psf-*.fits       2.0 MB
+#                       the psfex_interp validation catalogue, one per CCD: the input to
+#                       the rho/tau statistics, and to the star_cat_merge rule that stacks
+#                       them into the campaign's full_starcat.
+#
+# A RAW GLOB IS STILL ACCEPTED, as an escape hatch for a file the catalogue does
+# not name yet: anything carrying a glob metacharacter or a dot is taken as a
+# glob rather than a name (`*.psf` is a glob, `psf_model` is the name for it).
+# An unknown NAME is a parse-time error listing the valid ones.
+#
+# Matches are packed, flat, into ONE uncompressed tar per exposure:
+# <products_dir>/exp/<shard>/<exp>/psf/<exp>.tar, with a manifest listing the
+# members (and the product each came from) beside it. One tar rather than loose
+# copies because inodes, not bytes, bind on /project. FITS members read straight
+# from the tar: fits.open(io.BytesIO(tarfile.open(t).extractfile(m).read())).
+#
+# WHY COPY RATHER THAN EXEMPT THESE FROM CLEANUP. Reclamation is not the threat.
+# run_dir is /scratch and is PURGED on a 60-day window whether or not
+# clean_exposure ever ran; products_dir is /project, backed up and not purged.
+# The only way a per-exposure product outlives its campaign is to leave the
+# filesystem. (Ordering is free: clean_exposure takes the exp_persist manifest
+# as an input, so a store is never reclaimed before its keepers are written.)
+#
+# EDITING THIS LIST IS CHEAP. It rides on exp_persist's `params`, so a change
+# reruns the packing (seconds) and NOT exp_psf (four hours per exposure). That
+# separation is the whole reason exp_persist is a rule of its own.
+#
+# THE DEFAULT is psf_model (2.8 MB per exposure on top of psf_validation's 2.0):
+# the model that lets the PSF be re-interpolated at any position later without
+# rebuilding the exposure chain from VOS, which is the single most
+# capability-adding thing an exposure can keep. Add psfex_cat for a production
+# run if you want to know which stars PSFEx clipped; the star_* products are for
+# selection studies and cost an order of magnitude more.
+#
+# THIS LIST IS EXPOSURE-SIDE ONLY. Tile-side retention is not configurable: the
+# tile products that persist are final_cat and tile_make_cat.json, written by
+# tile_make_cat straight to products_dir. The manifest contains epoch-cut
+# counts summed over all ngmix chunks. A tile keep list is #844 follow-up.
 #
 # @sc [label:hazard] shared-run-products-root-requires-no-clean
 # A one-root fixture (products_dir == run_dir) must disable both clean flags:
@@ -121,7 +195,10 @@ clean: true
 
 # Per-tile store reclamation after the tile's final_cat. Needed above ~850
 # tiles (scratch quota); deletes the per-tile data sp_tilecost/sp_costmodel
-# read. Set both false for a small control run you want to re-measure.
+# read. Epoch-cut counts survive in products_dir/tiles/<shard>/<tile>/
+# tile_make_cat.json; keeping module logs does NOT require disabling cleaning.
+# Cleaning refuses a tile without this complete durable count record.
+# Set both false for a small control run you want to re-measure timings on.
 clean_tiles: true
 
 # Failed tiles that should not keep their exposures from being cleaned.
@@ -137,8 +214,18 @@ max_mem_mb: 750000
 # ngmix chunks per tile.
 ngmix_chunks: 8
 
-# Tile store (vignets, WCS). Unset: the profile's /local/scratch bind
-# (nibi NVMe, candide node /tmp). Dense image-sim campaigns on candide can use
-# a larger shared directory, trading ngmix read latency for capacity. sp rewrites
-# the snapshot's bind source, not the tile path; see workflow/bin/sp.
+# How ngmix weights interpolated defects: des_y6, fourfold_zero, hole or full
+# (astra decision shape_measurement.defect_weighting). Unset: fourfold_zero.
+# defect_weighting: des_y6
+
+# What ngmix puts in defect pixels before metacal: interpolate (short bounded
+# runs interpolated, the rest noise-filled) or noise (every defect
+# noise-filled, vetoed at the noise-fill radius; defect_weighting then has
+# nothing to act on). Astra decision shape_measurement.defect_fill. Unset:
+# interpolate.
+# defect_fill: noise
+
+# Node-local tile store (vignets, WCS). Unset: the profile's /local/scratch
+# bind (nibi NVMe, candide node /tmp). Dense image-sim campaigns on candide
+# want a shared directory instead.
 # tile_store_root: /n23data1/<user>/shapepipe/tilestore

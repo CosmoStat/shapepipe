@@ -64,6 +64,8 @@ import re
 import sys
 from pathlib import Path
 
+from epoch_cuts import gather_manifests, read_chunk_logs
+
 # How the tile's galaxy sample is defined: SExtractor on the tile image alone,
 # or those detections joined to the UNIONS per-tile catalogue, whose NUMBER
 # they take. The run config's `tile_detection:` picks one.
@@ -132,24 +134,21 @@ COMPLETENESS = {
     "tile_detect":        {"sextractor_runner":     dict(expect=2)},
     "tile_vignets": {
         "psfex": {
-            "psfex_interp_runner":     dict(expect=1),
-            "vignetmaker_runner_run_1": dict(expect=1),
-            # Five stores per tile: image, weight, flag, background and rms.
-            # Each feeds ngmix, so all five are required.
-            "vignetmaker_runner_run_2": dict(expect=5),
+            "psfex_interp_runner": dict(expect=1),
+            # 5 sqlites/tile (image/weight/flag/background/background_rms);
+            # every vignette feeds ngmix, so the expected count is all-or-nothing.
+            "vignetmaker_runner": dict(expect=5),
         },
         # mccd_interp writes galaxy_psf from exposure-wide focal-plane models.
         "mccd": {
-            "mccd_interp_runner":        dict(expect=1),
-            "vignetmaker_runner_run_1":   dict(expect=1),
-            "vignetmaker_runner_run_2":   dict(expect=5),
+            "mccd_interp_runner": dict(expect=1),
+            "vignetmaker_runner": dict(expect=5),
         },
         # Image simulations: fake_interp_runner writes the same galaxy_psf
         # sqlite psfex_interp_runner writes, from the simulation's PSF dictionary.
         "fake": {
-            "fake_interp_runner":       dict(expect=1),
-            "vignetmaker_runner_run_1": dict(expect=1),
-            "vignetmaker_runner_run_2": dict(expect=5),
+            "fake_interp_runner": dict(expect=1),
+            "vignetmaker_runner": dict(expect=5),
         },
     },
     # One check runs inside run_sp_tile_ngmix_Ng${SP_NGMIX_CHUNK}u per chunk,
@@ -343,6 +342,20 @@ def build_manifest(stage, run_dir, unit, stage_subdir=None):
                 "runner": runner, "found": n, "expect": expect,
                 "warn": warn, "status": status,
                 "reasons": scrape_reasons(stage_dir, runner),
+            })
+    # Capture ngmix's diagnostics while its temp() directory still exists.
+    # Make-cat consumes only structured records, never the retained log copies.
+    if ok and stage in ("tile_ngmix", "tile_make_cat"):
+        try:
+            manifest["epoch_cuts"] = (
+                read_chunk_logs(stage_dir) if stage == "tile_ngmix" else
+                gather_manifests(run_dir, int(os.environ["NGMIX_N_CHUNKS"]))
+            )
+        except (OSError, ValueError, KeyError) as exc:
+            ok = False
+            manifest["failures"].append({
+                "runner": "epoch_cuts", "found": 0, "expect": 1,
+                "warn": False, "status": "failed", "reasons": [str(exc)],
             })
     manifest["status"] = "failed" if not ok else ("warn" if short else "complete")
     return manifest, ok

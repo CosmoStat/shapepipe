@@ -1,48 +1,137 @@
 #!/usr/bin/env python3
-"""Prune a finished tile's scratch store and preserve its tombstone and survivors.
+"""Reclaim one finished tile's scratch store and leave a tombstone (PRD #848 D5).
 
-Run through the in-DAG ``clean_tile`` rule, never by hand. The rule orders
-cleanup after publication of ``final_cat`` on the persistent root; see
-``workflow/rules/tile.smk``. Tiles do not read each other's scratch stores,
-so tile cleanup needs no consumer-set eligibility check.
+Run as the shell of the in-DAG ``clean_tile`` rule, or through
+``backfill_epoch_cuts.py`` for an idle campaign. The rule's input is the tile's
+``final_cat`` on the PERSISTENT root. Before any deletion, validate the
+``tile_make_cat.json`` beside it, including all chunks' epoch-cut counts.
+The persistent manifest is not scratch DAG currency and is never pruned.
+A tile's scratch store has no reader outside that tile — tiles read exposures,
+nothing reads another tile's store — so unlike the exposure case there is no
+consumer set to close over and no eligibility test to make. Writer, then
+cleaner, and the DAG edge is the whole ordering argument.
 
-Cleanup removes everything under ``<run_dir>/tiles/<shard>/<tile>/`` except
-four retained files and their parents. A finished tile measured on a nibi run
-held 1.28 GB across 137 inodes, including 62 inodes outside ``output/``.
-Deleting only ``output/`` would leave 1.43 M inodes across 23,114 DR6 tiles,
-exceeding the 1 M quota; preserving just the survivors needs about 231k.
+What it deletes: the tile's whole ``<run_dir>/tiles/<shard>/<tile>/`` directory.
+Measured on 186.307 (smk-g4, a finished 34-tile-campaign tile): 1,279,231,196
+bytes across 137 inodes (71 regular files, 9 symlinks, 57 directories) —
+``output/run_sp_tile_Sx`` 745 MB, ``run_sp_tile_Uz`` 382 MB, ``run_sp_tile_Mc``
+46 MB, ``run_sp_tile_Ms`` 39 MB, ``run_sp_tile_Mh_exp`` 11 MB, and a non-``output/``
+remainder of 62 inodes totalling 15,726 bytes. Deleting only ``output/`` is NOT
+enough: 62 x 23,114 DR6 tiles is 1.43M inodes against a 1M quota, so the inode
+bound binds on its own and the directory has to go as a whole.
 
-Retained paths
---------------
-The tombstone ``cleaned.json`` absorbs manifests and benchmark rows for later
-reporting; see ``run_report.absorb_tombstones``. The other three files must
-already exist before cleanup; ``survivor_paths`` defines them:
+The four retained paths
+------------------------
+The retained paths are used by other mechanisms after the tile is complete.
+after this tile is done. Nothing is kept for tidiness, and the three that
+already exist are required: ``require_survivors`` checks all of them before
+anything is deleted, because a silent drift in one of these paths would not show
+up as a broken clean — it would show up much later as a campaign that cannot
+resume. The fourth, ``cleaned.json``, is this job's own output and is the one
+thing here that cannot be pre-checked; it is written first instead (see ORDER
+below).
 
-  * ``manifests/tile_vignets.json`` attests completion for exposure-cleanup
-    eligibility; see ``clean_targets`` in the Snakefile and ``clean_exposure``
-    in ``workflow/rules/exposure.smk``.
-  * ``manifests/tile_find_exposures.json`` satisfies ``prepare_all_tiles`` in
-    the Snakefile, preventing preparation from recreating reclaimed products.
-  * ``output/run_sp_tile_Fe/find_exposures_runner/output/exp_numbers-*.txt``
-    supplies the index's tile-to-exposure edges; see ``build_index.exp_list_path``.
-    Removing it trips the default zero-missing-tile threshold on the next build.
+  1. ``cleaned.json`` — this script's own tombstone, and the tile's surviving
+     record. It absorbs every manifest verbatim so ``sp report`` can still
+     report a reclaimed tile as ``cleaned`` rather than as "not run"; see
+     ``run_report.absorb_tombstones``.
 
-Their parent directories survive too: ten inodes per cleaned tile in total.
+  2. ``manifests/tile_vignets.json`` — CLEAN_EXPOSURE'S CURRENCY, not ours.
+     Exposure reclamation keys campaign-wide eligibility on exactly this path:
+     ``clean_targets()`` tests it for out-of-scope consumers and ``rule
+     clean_exposure`` declares it as an input for in-scope ones. Deleting it
+     would silently strand every exposure shared with an out-of-scope tile
+     (~7-10 tiles read each exposure), and would fail an in-scope
+     ``clean_exposure`` job outright on a missing input if the tile finished
+     mid-invocation. It is also not stale in any dangerous sense: it attests
+     that ``tile_vignets`` succeeded, which stays true forever, and its product
+     — the vignette store — was node-local and died with its job, so it never
+     lived on scratch to be contradicted.
 
-Cleanup deletes the SExtractor catalogue and benchmark TSV files.
-Benchmark rows survive under ``benchmarks`` in the tombstone instead of costing
-eight extra inodes per tile (185k at DR6 scale). Object counts and ``EPOCH_k``
-extensions from the deleted catalogue do not survive; cost readers needing
-those inputs cannot reconstruct them from the tombstone.
+  3. ``manifests/tile_find_exposures.json`` — the PREPARE invocation's target.
+     ``rule prepare_all_tiles`` declares this manifest for EVERY tile in the
+     list, and the tile list accumulates across the campaign, so a cleaned tile
+     is still demanded by every later ``sp run``. Delete it and the whole
+     ``tile_prep`` group (get_images -> uncompress -> find_exposures) reruns per
+     cleaned tile per invocation, which does not merely cost jobs: uncompress
+     writes 382 MB back into the store this job just emptied.
 
-Symlink safety is enforced by ``prune``; links into exposure stores and staged
-survey imaging must be unlinked without touching their targets. Logs are deleted
-rather than absorbed; successful verdicts are already in the manifests (see
-``completeness.py``).
+  4. ``output/run_sp_tile_Fe/find_exposures_runner/output/exp_numbers-*.txt`` —
+     the campaign's tile->exposure edge data, and the reason this is a survivor
+     rather than a manifest is that NOTHING re-derives it. ``build_index.build()``
+     runs at the parse of EVERY compute invocation, over the whole declared tile
+     list, and checks this exact path (``build_index.exp_list_path``); a tile
+     whose file is gone counts as missing, and the default
+     ``SP_MISSING_THRESHOLD`` of 0.0 makes ONE missing tile a fatal parse. So
+     deleting it does not degrade the campaign, it stops it: the first `sp run`
+     after the first reclaimed tile cannot build a DAG at all.
+     Only the one file is kept — ``run_sp_tile_Fe``'s own ``logs/``, ``tmp/``
+     and the runner's process log are ordinary residue and go.
 
-The tombstone is published before deletion; see ``clean_exposure.py`` for the
-crash-window rationale. A rerun preserves absorbed records through
-``previous_record`` even when their source files have been reclaimed.
+The rest of ``run_sp_tile_Fe``'s parents come along because a file cannot
+outlive its directories: 10 inodes per cleaned tile in total (the tile dir,
+``cleaned.json``, ``manifests/`` + 2 manifests, and the 4-deep Fe path + its
+file), i.e. ~231k inodes at DR6 against the 1M scratch quota — versus 3.2M if
+nothing were reclaimed and 1.4M if only ``output/`` were.
+
+What is lost: the per-tile audit trail for both tools that
+read it — ``sp_tilecost.py`` and ``sp_costmodel.py``. They attribute the fused
+``tile_shape`` group job's cost per tile by reading the tile's SExtractor
+catalogue (NAXIS2 of the sexcat = the object count, the cost model's independent
+variable, ~380 MB and unkeepable; sp_costmodel also reads its ``EPOCH_k``
+extensions for the geometric epoch count) and the eight
+``tile_ngmix_<k>.benchmark.tsv`` files. The sexcat is gone for good; the
+benchmark ROWS are absorbed into the tombstone under ``benchmarks``, because
+they are two lines each and they are the measured-memory feed D4 sizes
+``mem_mb`` from — exposure.smk moves ``exp_psf``'s benchmark outside
+``manifests/`` for exactly this reason. They are absorbed rather than left on
+disk (8 more inodes per tile = 185k at DR6 buys nothing a JSON blob does not),
+so ``sp_tilecost.py`` will not find them at their old paths: the record
+survives, the tool's current reader does not. FOLLOW-UP, deliberately not done
+here: teach ``sp_tilecost.py`` to fall back to ``cleaned.json`` for a tile whose
+benchmark TSVs are gone. Until it does, per-chunk cost attribution stops at the
+first reclaimed tile even though the numbers are still on disk.
+
+Deletion is symlink-safe (``clean_exposure`` gives the general reason). A
+finished tile holds nine symlinks in two classes, and
+the second is the one that matters:
+
+  * ``exp_forest/<shard>/<exp>/output`` — 7 links into the EXPOSURE stores,
+    each shared with 7-10 other tiles. Rebuildable, but only by re-running those
+    chains from VOS.
+  * ``output/run_sp_tile_Git/get_images_runner/output/CFIS_{image,weight}-*``
+    — 2 links into ``$SP_INPUT_TILES``, the staged survey imaging: 621 GB across
+    2,536 files, on the backed-up, group-shared input filesystem, and not this
+    campaign's to lose. get_images RETRIEVE=symlink is what puts them there, so
+    every tile in every campaign carries a pair.
+
+Both classes are handed WHOLESALE to ``shutil.rmtree`` — ``exp_forest/`` as a
+top-level entry, ``run_sp_tile_Git/`` as one inside ``output/``, which ``prune``
+descends only because the Fe survivor lives there. So the safety rests on
+rmtree's own semantics (it unlinks a symlinked entry rather than recursing
+through it), NOT on ``prune``'s ``is_symlink()`` test, which fires only for a
+link that is itself a direct entry of a level prune walks. Both were verified on
+the fixture: every link unlinked, no target followed. Whoever edits ``prune``
+next should know that the worst case is not a scratch store they could rebuild —
+it is a rmtree walking into half a terabyte of shared, backed-up survey data.
+
+Module logs are deleted too: epoch-cut counts have already been captured in
+chunk completeness manifests and summed in the persistent make-cat manifest.
+No log is needed to recover these diagnostics after reclamation.
+Verdict logs are deleted, not absorbed, as in ``clean_exposure``. Here the
+duplication is exact: on a finished tile every ``logs/<stage>.json`` is
+BYTE-IDENTICAL to the ``manifests/<stage>.json`` beside it (verified across all
+16 stage records of 186.307), because a tile with a failed stage has no
+final_cat and so is never cleaned.
+
+Order: write the tombstone first, then delete — ``clean_exposure``'s docstring
+the crash window.
+
+There is no ``consumers`` field and no consumer-set staleness to detect, because
+a tile has no consumers. What reruns this job is the ordinary machinery
+(``script_hash``, and ``mtime`` if final_cat is rewritten). A rerun over an
+already-pruned tree deletes nothing and, because absorption is ADDITIVE, does
+not blank the record either — see ``previous_record``.
 """
 
 import argparse
@@ -150,7 +239,16 @@ def absorb_benchmarks(mdir: Path) -> dict:
     return out
 
 
-def prune(root: Path, keep: set, removed: list) -> None:
+def logical_bytes(path: Path) -> int:
+    """Count regular-file bytes without following any symlink, even a dangling one."""
+    if path.is_symlink():
+        return 0
+    if path.is_dir():
+        return sum(logical_bytes(p) for p in path.iterdir())
+    return path.stat().st_size if path.is_file() else 0
+
+
+def prune(root: Path, keep: set, removed: list, *, dry_run=False) -> int:
     """Delete everything under ``root`` except ``keep`` and the dirs leading to it.
 
     A whitelist walk rather than an rmtree-with-exceptions, so adding a survivor
@@ -165,19 +263,54 @@ def prune(root: Path, keep: set, removed: list) -> None:
     backed-up survey imaging outside this tile's ownership.
     """
     ancestors = {p for k in keep for p in k.parents}
+    freed = 0
     for entry in sorted(root.iterdir()):
         if entry in keep:
             continue
         if entry in ancestors and not entry.is_symlink():
-            prune(entry, keep, removed)
+            freed += prune(entry, keep, removed, dry_run=dry_run)
             continue
-        if entry.is_symlink():
+        if dry_run:
+            freed += logical_bytes(entry)
+        elif entry.is_symlink():
             entry.unlink()
         elif entry.is_dir():
             shutil.rmtree(entry)          # unlinks nested symlinks, never follows
         else:
             entry.unlink()
         removed.append(str(entry))
+    return freed
+
+
+def reclaim(tile_dir: Path, tile: str, tombstone: Path, final_cat: Path) -> None:
+    """Validate durable diagnostics, write the tombstone, then prune scratch."""
+    from epoch_cuts import require_durable_manifest
+
+    require_durable_manifest(final_cat, tile)
+    survivors = survivor_paths(tile_dir, tile)
+    require_survivors(survivors, tile)
+
+    mdir = tile_dir / "manifests"
+    manifests, benchmarks = previous_record(tombstone)
+    manifests.update(absorb_manifests(mdir))
+    benchmarks.update(absorb_benchmarks(mdir))
+
+    # Tombstone first, complete — then delete (see the module docstring).
+    tombstone.parent.mkdir(parents=True, exist_ok=True)
+    tmp = tombstone.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps({
+        "tile": tile,
+        "cleaned_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "kept": sorted(str(p) for p in survivors.values()),
+        "manifests": manifests,
+        "benchmarks": benchmarks,
+    }, indent=2, sort_keys=True) + "\n")
+    tmp.replace(tombstone)   # atomic: no half-written tombstone, ever
+
+    removed: list = []
+    prune(tile_dir, set(survivors.values()) | {tombstone}, removed)
+    print(f"[clean_tile] {tile}: removed {len(removed)} path(s); kept "
+          f"{len(survivors)} survivor(s) + the tombstone")
 
 
 def main() -> None:
@@ -185,32 +318,9 @@ def main() -> None:
     p.add_argument("--tile-dir", required=True, type=Path)
     p.add_argument("--tile", required=True)
     p.add_argument("--tombstone", required=True, type=Path)
+    p.add_argument("--final-cat", required=True, type=Path)
     args = p.parse_args()
-
-    survivors = survivor_paths(args.tile_dir, args.tile)
-    require_survivors(survivors, args.tile)
-
-    mdir = args.tile_dir / "manifests"
-    manifests, benchmarks = previous_record(args.tombstone)
-    manifests.update(absorb_manifests(mdir))
-    benchmarks.update(absorb_benchmarks(mdir))
-
-    # Tombstone first, complete — then delete (see the module docstring).
-    args.tombstone.parent.mkdir(parents=True, exist_ok=True)
-    tmp = args.tombstone.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps({
-        "tile": args.tile,
-        "cleaned_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "kept": sorted(str(p) for p in survivors.values()),
-        "manifests": manifests,
-        "benchmarks": benchmarks,
-    }, indent=2, sort_keys=True) + "\n")
-    tmp.replace(args.tombstone)   # atomic: no half-written tombstone, ever
-
-    removed: list = []
-    prune(args.tile_dir, set(survivors.values()) | {args.tombstone}, removed)
-    print(f"[clean_tile] {args.tile}: removed {len(removed)} path(s); kept "
-          f"{len(survivors)} survivor(s) + the tombstone")
+    reclaim(args.tile_dir, args.tile, args.tombstone, args.final_cat)
 
 
 if __name__ == "__main__":

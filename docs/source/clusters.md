@@ -1,10 +1,9 @@
 # Running on a Cluster
 
 ShapePipe runs the same way on every cluster: **through the container**. You
-pull the image once, bind-mount your clone, and run `shapepipe_run` (or the
-CANFAR submission tooling) inside it — there is no environment to install or
-activate on the host. This page covers the shared pattern, then the specifics
-for each supported machine.
+pull the image once, bind-mount your clone, and run `shapepipe_run` inside it —
+there is no environment to install or activate on the host. This page covers
+the shared pattern, then the specifics for each supported machine.
 
 For what is *inside* the image and how it is built, see
 [Container Workflow](container.md).
@@ -29,7 +28,7 @@ protocol as the host launcher (see the candide section below).
 
 ## candide (SLURM)
 
-candide uses **SLURM** (`sbatch`). The repo
+candide uses **SLURM** (`sbatch`; the old `qsub`/PBS commands are gone). The repo
 ships ready job scripts in `example/pbs/` — `candide_smp.sh` (single node,
 parallelised with joblib) and `candide_mpi.sh` (multi-node, hybrid MPI). To run
 the bundled single-tile example end to end:
@@ -67,32 +66,15 @@ over unchanged.
 
 ## CANFAR
 
-CANFAR submission does not go through a batch scheduler. Instead you submit
-container jobs to CANFAR's headless system with the `canfar_submit_job` console
-script (backed by the `canfar` library), and watch them with `canfar_monitor` /
-`canfar_monitor_log`. Pipeline steps are **bit-coded** through `-j` (the same
-scheme as `scripts/sh/job_sp_canfar.bash`), the PSF model is chosen with
-`-p psfex|mccd`, and `-V` selects the image version:
+ShapePipe has no CANFAR submission path. Production orchestration is the
+Snakemake workflow in `workflow/` — see `workflow/README.md`. It is SLURM-only and has no CANFAR execution mode, so a
+CANFAR campaign means moving to a SLURM site (nibi, candide).
 
-```bash
-# Submit pipeline step(s) for the configured tiles (bit-coded -j).
-canfar_submit_job -j 1 -p psfex -V 1.1
-
-# Monitor sessions/jobs and stream logs.
-canfar_monitor
-canfar_monitor_log
-```
-
-The full production run — input preparation, the per-step `-j` table, and
-post-processing — is documented in the
-[CANFAR production walkthrough](pipeline_canfar.md).
-
-```{note}
-For the CANFAR production submission scripts (`scripts/sh/job_sp_canfar*.bash`),
-follow their environment requirements and the production walkthrough.
-```
+`canfar_monitor` and `canfar_monitor_log` stay: they list, filter and destroy
+CANFAR sessions, independently of how those sessions were started.
 
 ## ccin2p3
 
-The `example/pbs/cc_{smp,mpi}.sh` scripts target a host-installed environment.
-See their headers for machine-specific requirements.
+ccin2p3 is not yet containerised. The `example/pbs/cc_{smp,mpi}.sh` scripts target
+the pre-container environment; a container-first path mirroring candide is future
+work.

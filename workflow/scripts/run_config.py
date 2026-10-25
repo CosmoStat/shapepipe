@@ -28,6 +28,10 @@ TABLES = ("input_types", "machines")
 # never mention `$run` must still set it.
 REQUIRED = ("run", "tile_list", "inputs.tiles", "inputs.exposures",
             "outputs.run_dir", "outputs.index_db")
+# ngmix's BLEND_HANDLING values, which `blend_handling` takes. A copy, because
+# the Snakefile validates it outside the container; tests/unit holds it equal
+# to ngmix_package.ngmix.BLEND_HANDLINGS.
+BLEND_HANDLINGS = ("noisefill", "uberseg")
 
 
 def merge(base, over):
