@@ -196,7 +196,7 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     if too_many_unpaired(len(ext), allowance):
         raise ValueError(
             f"Only {fraction_ext:.4f} of the objects of {ext_cat_path} pair"
-            + f" with a row of {cat_path} within {radius} px (minimum"
+            + f" with a row of {cat_path} within {radius} px (baseline"
             + f" {min_fraction} beyond {tolerated_unpaired} unpaired;"
             + f" additive external allowance {allowance};"
             + f" {summary}). SExtractor finds fewer objects"
