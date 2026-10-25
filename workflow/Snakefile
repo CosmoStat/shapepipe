@@ -512,10 +512,13 @@ def path_hash(path):
                 f"that needs the file will say so when it runs.")
         return "missing"
 
-SCRIPT_HASH = script_hash("completeness.py")
+# Epoch-count parsing/aggregation is part of the completeness contract too.
+SCRIPT_HASH = ":".join((script_hash("completeness.py"),
+                        script_hash("epoch_cuts.py")))
 FOREST_HASH = script_hash("build_forest.py")
 CLEAN_HASH  = script_hash("clean_exposure.py")
-CLEAN_TILE_HASH = script_hash("clean_tile.py")
+CLEAN_TILE_HASH = ":".join((script_hash("clean_tile.py"),
+                            script_hash("epoch_cuts.py")))
 PERSIST_HASH = script_hash("persist_exp.py")
 EXP_MAPS_HASH = script_hash("exp_maps.py")
 MERGE_MAPS_HASH = script_hash("merge_exposure_maps.py")
@@ -608,8 +611,12 @@ def clean_consumers(exp):
                   if t not in CLEAN_IGNORE_TILES)
 
 
-def clean_targets():
+@functools.lru_cache(maxsize=1)
+def clean_exposures():
     """Which exposures this invocation may clean.
+
+    Shared with the exp_maps producer constraint: cleanup can request fragments
+    from campaign history, not just from this invocation's ready tiles.
 
     An exposure is eligible only when every consuming tile is either in this
     run's scope or has already produced its vignets on disk. Without that test,
@@ -623,13 +630,11 @@ def clean_targets():
     `clean_ignore_tiles` neither gates eligibility nor appears in the job's
     input — which is the purpose of that list.
 
-    HEAD PROCESS ONLY. This feeds `rule all` at module level, so it runs on every
-    parse — including the ~800 per-job re-parses under the slurm executor, none of
-    which can ever schedule `all`. Each of those was stat()ing the whole
-    campaign's tile_vignets manifests for nothing. The empty list a job parse
-    returns costs it exactly the target it could not have used anyway.
+    Unlike the target list, this selector must also work on job re-parses:
+    a historical exp_maps job needs the same producer constraint on the worker
+    as on the head. Cache the eligibility walk within each parse.
     """
-    if not CLEAN or not workflow.is_main_process:
+    if not CLEAN:
         return []
     out = []
     for exp, raw in EXP_TILES.items():
@@ -641,8 +646,15 @@ def clean_targets():
         tiles = clean_consumers(exp)
         if all(t in READY_SET or Path(tile_manifest(t, "tile_vignets")).exists()
                for t in tiles):
-            out.append(tombstone(exp))
+            out.append(exp)
     return sorted(out)
+
+
+def clean_targets():
+    """Only the head can schedule rule all's reclamation targets."""
+    if not workflow.is_main_process:
+        return []
+    return [tombstone(exp) for exp in clean_exposures()]
 
 # --- persisted exposure products (D5) --------------------------------------
 # The keep list is config, not a rule input, and it is READ HERE so that exactly
@@ -931,16 +943,70 @@ def star_cat_exposures():
 
 
 # --- the exposure maps ------------------------------------------------------
-# exp_maps rasterizes each exposure's valid-PSF CCDs and their instrument flags
-# into one HealSparse fragment on the persistent root; exposure_maps sums the
-# campaign's fragments into nexp_<run>.hsp and nflagged_<run>.hsp. Fitted-PSF
+# exp_maps rasterizes pointing hulls, all CCD DATASEC footprints, and validated
+# CCD coverage and flags into one persistent fragment; exposure_maps sums these
+# into npoint, ntaken, nexp and nflagged campaign maps. Fitted-PSF
 # runs only (psf_exposures()): the valid-PSF CCD set comes from exp_persist.
-# The fragment follows exp_persist's tar exactly: requested for live stores,
-# depended on through durable_edge() everywhere else.
+# Live stores produce declared fragments before reclamation. Reclaimed
+# fragments are immutable leaves: no rasterization producer may reach them.
+# Missing reclaimed fragments require an explicit out-of-DAG raw-MEF backfill.
 
 def prod_exp_maps(exp):
-    """The fragment exp_maps writes; not a declared output (see durable_edge)."""
+    """The persistent fragment declared by exp_maps."""
     return f"{prod_exp_dir(exp)}/maps/maps-{exp}.hsp"
+
+
+def exp_maps_reclaimed(exp):
+    """Recognize reclamation even when stale scratch manifests survive."""
+    split = Path(exp_dir(exp)) / 'output/run_sp_exp_Sp/split_exp_runner/output'
+    return (exp_store_reclaimed(exp)
+            or (Path(prod_exp_manifest(exp, 'exp_persist')).exists()
+                and not split.is_dir()))
+
+
+def exp_maps_live_pattern():
+    """Restrict the producer to live exposures, not merely its input edges.
+
+    An existing reclaimed fragment must have NO reachable producer: otherwise
+    code/params changes schedule it and Snakemake removes the fragment before
+    a failed rasterization can discover that its sources have been deleted.
+    Exposure IDs are numeric (the workflow-wide wildcard constraint).
+    """
+    # These are exactly the two target selectors that request fragments. Use
+    # cleanup's selector itself so historical candidates cannot drift out of
+    # the producer set. The same reclamation predicate used by exp_maps_edge
+    # (including cleanup's edge) keeps reclaimed fragments producer-free.
+    requested = set(psf_exposures())
+    if PERSISTS_PSF:
+        requested.update(clean_exposures())
+    live = sorted(e for e in requested if not exp_maps_reclaimed(e))
+    return '(?:' + '|'.join(live) + ')' if live else '(?!)'
+
+
+def exp_maps_edge(exp):
+    """Require live production or an immutable reclaimed fragment; never omit."""
+    fragment = prod_exp_maps(exp)
+    if exp_maps_reclaimed(exp) and not Path(fragment).exists():
+        name = exp_name(exp)
+        raw = INPUTS['exposures']
+        raise ValueError(
+            f'Exposure {exp}: missing reclaimed fragment {fragment}. '
+            'Backfill outside the DAG with:\n'
+            f'python {SCRIPTS}/exp_maps.py --exp {exp} '
+            f'--image-mef {raw}/{name}.fits.fz '
+            f'--flag-mef {raw}/{name}.flag.fits.fz '
+            f'--persist-manifest {prod_exp_manifest(exp, "exp_persist")} '
+            f'--fragment {fragment} '
+            f'--manifest {prod_exp_manifest(exp, "exp_maps")}')
+    return fragment
+
+
+def npoint_map():
+    return f"{PRODUCTS_DIR}/npoint_{CAMPAIGN}.hsp"
+
+
+def ntaken_map():
+    return f"{PRODUCTS_DIR}/ntaken_{CAMPAIGN}.hsp"
 
 
 def nexp_map():
@@ -953,14 +1019,12 @@ def nflagged_map():
 
 @functools.lru_cache(maxsize=1)
 def exposure_maps_inputs():
-    return [p for exp in psf_exposures()
-            for p in durable_edge(exp, "exp_maps", prod_exp_maps(exp))]
+    return [exp_maps_edge(exp) for exp in psf_exposures()]
 
 
 def exposure_maps_exposures():
     """The exposure ids exposure_maps sums: its rerun fingerprint."""
-    return [e for e in psf_exposures()
-            if Path(prod_exp_maps(e)).exists() or not exp_store_reclaimed(e)]
+    return psf_exposures()
 
 
 def exposure_maps_targets():
@@ -969,8 +1033,8 @@ def exposure_maps_targets():
     if not workflow.is_main_process:
         return []
     inputs = exposure_maps_inputs()
-    live = [p for p in inputs if p.endswith("exp_maps.json")]
-    return live + ([nexp_map(), nflagged_map()] if inputs else [])
+    return inputs + ([npoint_map(), ntaken_map(), nexp_map(), nflagged_map()]
+                   if inputs else [])
 
 
 # --- sizing the two merges (D4) ---------------------------------------------
