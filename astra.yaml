@@ -1791,8 +1791,29 @@ analyses:
           radius 0.3 and 0.5 arcsec, and 0.7 arcsec through a 0.9 arcsec
           PSF. That largest galaxy sets both radii: 3-px bleeds the 7 px,
           noise-filled holes the 13 px (a 4-column cluster at 13 px gives
-          m11 = -0.67% +/- 0.05%, c1 = 7e-5). Guarded by
-          tests/science/test_defect_recovery.py.
+          m11 = -0.67% +/- 0.05%, c1 = 7e-5).
+          Napoli (16 Oct 2026) requested interpolation with adaptive,
+          SExtractor-style exposure-to-tile flags instead of fixed-radius
+          rejection; Cail requested removal on 25 Oct. This follow-up
+          conditions removal on an inside-radius bias scan. The earlier Napoli injection comparison
+          retained the veto and cannot establish safety inside it. The
+          no-veto follow-up (scripts/validation/masked_pixels/napoli_veto_scan.md)
+          retains this default: an interpolated 3-px bleed at 4 px on a
+          0.3 arcsec galaxy through a round 0.7 arcsec PSF gives
+          m11 = +2.64% +/- 0.25% and c1 = (4.46 +/- 0.44)e-3.
+          At 6 px on the 0.7/0.9 arcsec grid, m passes but
+          c1 = (6.90 +/- 0.33)e-4 does not. Noise fill at 10 px on that
+          grid gives m11 = -6.50% +/- 0.27% and
+          c1 = (-4.68 +/- 0.25)e-3. Errors bootstrap six paired seeds;
+          these high-S/N fixtures are not a survey calibration.
+          The counterfactual noise-filled 3-px bleed through the elliptical
+          0.9 arcsec PSF gives m11 = -1.022% +/- 0.072% at 13 px,
+          marginally outside the nominal 1% bound; the radius is not a
+          universal guarantee for every selectable fill. Production
+          interpolates this narrow defect. The scan does not establish
+          safety of rejecting only noise-filled defects on the segmentation
+          footprint: it contains no detection/footprint calibration.
+          Guarded by tests/science/test_defect_recovery.py.
           Values:
           EPOCH_CENTRAL_DEFECT_RADIUS = 13;
           EPOCH_INTERPOLATED_DEFECT_RADIUS = 7.
@@ -1800,6 +1821,25 @@ analyses:
         options:
           fixed_radii:
             label: Fixed radii, 13 px for noise-filled and 7 px for interpolated defects
+          noise_only_13px:
+            label: Keep only the 13 px noise-fill veto; flag interpolated defects
+            excluded: true
+            excluded_reason: >-
+              The no-veto scan fails the condition for removing the 7 px
+              interpolation veto: the interpolated bleed at 4 px gives
+              m11 = +2.64% +/- 0.25% and c1 = (4.46 +/- 0.44)e-3.
+              Flags expose affected objects but do not remove this bias
+              from an uncut catalogue.
+          adaptive_noise_footprint:
+            label: Drop an epoch only if a noise-filled defect touches its footprint
+            excluded: true
+            excluded_reason: >-
+              Not yet validated, rather than demonstrated unsafe: the scan
+              bypasses detection and has no segmentation footprint.
+              A footprint-only cut needs a detection-level bias test,
+              including defects outside the footprint whose fill propagates
+              through metacal. It also cannot cure the measured bias of
+              interpolated defects inside 7 px if those epochs are retained.
           noise_fill_10px:
             label: 10 px for noise-filled defects
             excluded: true
@@ -1814,10 +1854,12 @@ analyses:
             label: No central veto
             excluded: true
             excluded_reason: >-
-              A noise-filled column 8 px from a 0.5 arcsec galaxy gives
-              m11 = -3.7% and c1 = -3.6e-3; a 3-px bleed
-              three pixels inside the 7 px radius, interpolated, gives
-              |c| > 1e-3 on a 0.3 arcsec galaxy.
+              The no-veto scan gives m11 = -6.50% +/- 0.27% and
+              c1 = (-4.68 +/- 0.25)e-3 for a noise-filled 3-px bleed
+              at 10 px on the 0.7/0.9 arcsec grid. Interpolation alone
+              does not make removal safe: at 4 px on the 0.3/0.7 arcsec
+              grid, m11 = +2.64% +/- 0.25% and
+              c1 = (4.46 +/- 0.44)e-3.
           size_scaled_radius:
             label: Veto radius scaled by galaxy size
             excluded: true

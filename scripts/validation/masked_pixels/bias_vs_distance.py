@@ -9,6 +9,13 @@ metacal measurement of ``tests/helpers/defect_response``; the figure plots
 the worse axis of |m| and |c| with the veto radii and the bounds
 |m| < 1%, |c| < 5e-4.
 
+The ``napoli`` command extends production interpolation to 0..7 px and
+noise-filled defects to 0..13 px, through both round and elliptical PSFs.
+It deliberately bypasses epoch selection to test whether removal is safe.
+``napoli_plot OUT.png IN.json`` shows signed m with bootstrap errors and
+marks the historical radii independently of the current code constants.
+Submit the bundled scan with ``sbatch scripts/validation/masked_pixels/napoli_scan.sbatch``.
+
 Run from the shapepipe checkout root inside the shapepipe container:
   PYTHONPATH=src:. python scripts/validation/masked_pixels/bias_vs_distance.py \
       scan OUT.json NPROC [KIND,KIND...]
@@ -110,6 +117,7 @@ def napoli_plot(out_path, in_path):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
     rows = json.load(open(in_path))
     fig, axs = plt.subplots(2, 3, figsize=(14, 8), sharex=True, sharey=True)
     colors = dict(zip(KINDS, ("#0072B2", "#D55E00", "#CC79A7", "#009E73",
@@ -125,15 +133,16 @@ def napoli_plot(out_path, in_path):
                     sel = sorted([r for r in rows if r["hlr"] == hlr and r["kind"] == kind
                                   and r["fill"] == fill and tuple(r["psf_shear"]) == e
                                   and "error" not in r], key=lambda r: r["d"])
+                    if not sel:
+                        continue
                     for axis, marker in ((0, "o"), (1, "s")):
                         ax.errorbar([r["d"] for r in sel],
                                     [100 * r["m"][axis] for r in sel],
                                     yerr=[100 * r["m_err"][axis] for r in sel],
                                     color=colors[kind], linestyle="-" if fill == "production" else "--",
-                                    marker=marker, ms=2, lw=.8, alpha=.8,
-                                    label=f'{kind} {fill} m{axis+1}{axis+1}' if i == j == 0 else None)
+                                    marker=marker, ms=2, lw=.8, alpha=.8)
             ax.set_yscale("symlog", linthresh=1)
-            ax.set_title(f'HLR {hlr}″, PSF {psf}″, e={e}')
+            ax.set_title(f'HLR {hlr}″, PSF {psf}″, g={e}')
             ax.grid(alpha=.2)
             ax.set_xticks(range(0, 14, 2))
             if j == 0:
@@ -142,9 +151,17 @@ def napoli_plot(out_path, in_path):
                 ax.set_xlabel("nearest defect pixel [px]")
     fig.suptitle("No-veto fixtures: 6 paired seeds; bars = bootstrap 1σ; grey = |m| < 1%\n"
                  "Solid: production (wide holes still noise-filled); dashed: noise counterfactual; o: m11, s: m22")
-    handles, labels = axs[0, 0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncol=6, fontsize=7)
-    fig.tight_layout(rect=(0, .17, 1, .93))
+    handles = [Line2D([], [], color=color, label=kind.replace("_", " "))
+               for kind, color in colors.items()]
+    handles += [Line2D([], [], color="black", ls=ls, label=label)
+                for ls, label in (("-", "production fill"),
+                                  ("--", "noise counterfactual"),
+                                  (":", "old interpolation radius: 7 px"),
+                                  ("--", "old noise radius: 13 px"))]
+    handles += [Line2D([], [], color="black", ls="", marker=marker, label=label)
+                for marker, label in (("o", "m11"), ("s", "m22"))]
+    fig.legend(handles=handles, loc="lower center", ncol=4, fontsize=9, frameon=False)
+    fig.tight_layout(rect=(0, .12, 1, .93))
     fig.savefig(out_path, dpi=160)
 
 
@@ -155,8 +172,7 @@ def scan(out_path, nproc, kinds=KINDS):
             for k in kinds
             for f in (("production", "noise") if k in INTERPOLATED
                       else ("production",))]
-    # spawn: each worker imports ngmix afresh, so the noise-fill patch
-    # cannot leak into a production job.
+    # Spawn gives each fit a fresh scientific-library process.
     with get_context("spawn").Pool(nproc, maxtasksperchild=1) as pool:
         rows = pool.map(one, jobs, chunksize=1)
     with open(out_path, "w") as f:

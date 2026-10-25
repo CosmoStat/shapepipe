@@ -132,3 +132,30 @@ def test_vetoed_bleed_breaks_the_bound(tmp_path):
     m, c, result = recover(bad, 0.3, 0.7, ROUND, tmp_path)
     assert c > 1e-3, result
     assert m > 0.015, result
+
+
+@pytest.mark.decision("shape_measurement.central_defect_veto")
+@pytest.mark.parametrize("distance,hlr,psf,fill", [
+    (4, 0.3, 0.7, "interpolate"),
+    (6, 0.7, 0.9, "interpolate"),
+    (10, 0.7, 0.9, "noise"),
+])
+def test_inside_radius_bias_is_significant(distance, hlr, psf, fill):
+    """Napoli removal gate: m OR c exceeds the fixture bound by >5 sigma.
+
+    The 6-px case matters: its m passes but its c does not.
+    These are high-S/N, paired-seed numerical errors, not survey errors.
+    Removing a veto must not be justified by the previously vetoed injection
+    test, nor by looking at multiplicative bias alone.
+    """
+    bad = geometry("bleed", distance)
+    interpolated = (interpolable_defects(bad) if fill == "interpolate"
+                    else np.zeros_like(bad))
+    assert central_defect_vetoes(bad, interpolated)
+    r = defect_response(bad, hlr=hlr, psf=psf, seeds=SEEDS,
+                        options={"defect_fill": fill})
+    excess = np.concatenate([
+        (np.abs(r["m"]) - 0.01) / np.asarray(r["m_err"]),
+        (np.abs(r["c"]) - 5e-4) / np.asarray(r["c_err"]),
+    ])
+    assert excess.max() > 5, r
