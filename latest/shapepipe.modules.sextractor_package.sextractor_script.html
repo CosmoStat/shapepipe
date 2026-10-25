@@ -570,6 +570,11 @@
             </div>
             <nav aria-label="Page">
                 <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.cut_stamps"><code class="docutils literal notranslate"><span class="pre">cut_stamps()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_column"><code class="docutils literal notranslate"><span class="pre">seg_vignet_column()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.vignet_centre"><code class="docutils literal notranslate"><span class="pre">vignet_centre()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_param_file"><code class="docutils literal notranslate"><span class="pre">seg_vignet_param_file()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.add_seg_vignet"><code class="docutils literal notranslate"><span class="pre">add_seg_vignet()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.get_header_value"><code class="docutils literal notranslate"><span class="pre">get_header_value()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.ccd_candidate_mask"><code class="docutils literal notranslate"><span class="pre">ccd_candidate_mask()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.make_post_process"><code class="docutils literal notranslate"><span class="pre">make_post_process()</span></code></a></li>
@@ -603,6 +608,125 @@
 <dd class="field-odd"><p>Axel Guinot, Martin Kilbinger</p>
 </dd>
 </dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.sextractor_script.cut_stamps">
+<span class="sig-name descname"><span class="pre">cut_stamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stamp_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/sextractor_script.html#cut_stamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.sextractor_script.cut_stamps" title="Link to this definition">#</a></dt>
+<dd><p>Cut one square stamp per object from a 2-D array.</p>
+<p>Each stamp is <code class="docutils literal notranslate"><span class="pre">stamp_size</span></code> pixels on a side with the 0-based pixel
+(<code class="docutils literal notranslate"><span class="pre">row</span></code>, <code class="docutils literal notranslate"><span class="pre">col</span></code>) at index <code class="docutils literal notranslate"><span class="pre">stamp_size</span> <span class="pre">//</span> <span class="pre">2</span></code> on both axes; pixels off
+the array take <code class="docutils literal notranslate"><span class="pre">fill</span></code>. This is the window SExtractor cuts <code class="docutils literal notranslate"><span class="pre">VIGNET</span></code>
+with, so stamps cut at the same centres from arrays on one pixel grid are
+registered pixel for pixel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>array</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – 2-D array, shape <code class="docutils literal notranslate"><span class="pre">(ny,</span> <span class="pre">nx)</span></code></p></li>
+<li><p><strong>col</strong> (<em>array_like</em><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – 0-based column and row of each stamp’s centre pixel</p></li>
+<li><p><strong>row</strong> (<em>array_like</em><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – 0-based column and row of each stamp’s centre pixel</p></li>
+<li><p><strong>stamp_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Side length of the stamps</p></li>
+<li><p><strong>fill</strong> (<em>scalar</em>) – Value of the stamp pixels off the array</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Stamps, shape <code class="docutils literal notranslate"><span class="pre">(n_obj,</span> <span class="pre">stamp_size,</span> <span class="pre">stamp_size)</span></code>, dtype of <code class="docutils literal notranslate"><span class="pre">array</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_column">
+<span class="sig-name descname"><span class="pre">seg_vignet_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seg_vignets</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/sextractor_script.html#seg_vignet_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_column" title="Link to this definition">#</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">SEG_VIGNET</span></code> LDAC column: one int32 seg stamp per object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>seg_vignets</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Segmentation stamps, shape <code class="docutils literal notranslate"><span class="pre">(n_obj,</span> <span class="pre">stamp_size,</span> <span class="pre">stamp_size)</span></code>, cut
+on <code class="docutils literal notranslate"><span class="pre">VIGNET</span></code>’s grid (<a class="reference internal" href="#shapepipe.modules.sextractor_package.sextractor_script.cut_stamps" title="shapepipe.modules.sextractor_package.sextractor_script.cut_stamps"><code class="xref py py-func docutils literal notranslate"><span class="pre">cut_stamps()</span></code></a>)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The column, laid out as <code class="docutils literal notranslate"><span class="pre">VIGNET</span></code> is</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.astropy.org/en/latest/io/fits/api/tables.html#astropy.io.fits.Column" title="(in Astropy v8.1)">astropy.io.fits.Column</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.sextractor_script.vignet_centre">
+<span class="sig-name descname"><span class="pre">vignet_centre</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/sextractor_script.html#vignet_centre"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.sextractor_script.vignet_centre" title="Link to this definition">#</a></dt>
+<dd><p>The 0-based pixel SExtractor centres VIGNET on, along one axis.</p>
+<p>SExtractor 2.25.0 (<code class="docutils literal notranslate"><span class="pre">src/analyse.c</span></code>, <code class="docutils literal notranslate"><span class="pre">ix=(int)(obj-&gt;mx+0.49999)</span></code>,
+unchanged in Debian’s 2.25.0+ds-3) truncates the 0-based barycentre plus
+0.49999. That is not round-to-nearest: a fractional part in
+[0.5, 0.50001) goes down, where <code class="docutils literal notranslate"><span class="pre">np.rint</span></code> would go up (or to even).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pos</strong> (<em>array_like</em><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) – 1-based double-precision position (<code class="docutils literal notranslate"><span class="pre">X_IMAGE_DBL</span></code> or
+<code class="docutils literal notranslate"><span class="pre">Y_IMAGE_DBL</span></code>; SExtractor writes <code class="docutils literal notranslate"><span class="pre">mx</span> <span class="pre">+</span> <span class="pre">1</span></code>)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>0-based pixel index, int64</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_param_file">
+<span class="sig-name descname"><span class="pre">seg_vignet_param_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dot_param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/sextractor_script.html#seg_vignet_param_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_param_file" title="Link to this definition">#</a></dt>
+<dd><p>Write a SExtractor parameter file that also asks for the double
+positions.</p>
+<p>SExtractor centres VIGNET from its double-precision barycentre
+(<a class="reference internal" href="#shapepipe.modules.sextractor_package.sextractor_script.vignet_centre" title="shapepipe.modules.sextractor_package.sextractor_script.vignet_centre"><code class="xref py py-func docutils literal notranslate"><span class="pre">vignet_centre()</span></code></a>), which the float32 <code class="docutils literal notranslate"><span class="pre">X_IMAGE</span></code> / <code class="docutils literal notranslate"><span class="pre">Y_IMAGE</span></code>
+cannot resolve near half pixels; <code class="docutils literal notranslate"><span class="pre">X_IMAGE_DBL</span></code> / <code class="docutils literal notranslate"><span class="pre">Y_IMAGE_DBL</span></code>
+carry it.
+<a class="reference internal" href="#shapepipe.modules.sextractor_package.sextractor_script.add_seg_vignet" title="shapepipe.modules.sextractor_package.sextractor_script.add_seg_vignet"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_seg_vignet()</span></code></a> reads them and drops them again.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dot_param</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Path to the configured parameter file</p></li>
+<li><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Path to write the extended parameter file to</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">output_path</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.sextractor_script.add_seg_vignet">
+<span class="sig-name descname"><span class="pre">add_seg_vignet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/sextractor_script.html#add_seg_vignet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.sextractor_script.add_seg_vignet" title="Link to this definition">#</a></dt>
+<dd><p>Add the <code class="docutils literal notranslate"><span class="pre">SEG_VIGNET</span></code> column to a SExtractor catalogue.</p>
+<p>The SEGMENTATION check image, whose labels are the catalogue’s
+<code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>, is cut on the grid of each object’s VIGNET, centred where
+SExtractor centres VIGNET (<a class="reference internal" href="#shapepipe.modules.sextractor_package.sextractor_script.vignet_centre" title="shapepipe.modules.sextractor_package.sextractor_script.vignet_centre"><code class="xref py py-func docutils literal notranslate"><span class="pre">vignet_centre()</span></code></a> of <code class="docutils literal notranslate"><span class="pre">X_IMAGE_DBL</span></code> /
+<code class="docutils literal notranslate"><span class="pre">Y_IMAGE_DBL</span></code>, <a class="reference internal" href="#shapepipe.modules.sextractor_package.sextractor_script.cut_stamps" title="shapepipe.modules.sextractor_package.sextractor_script.cut_stamps"><code class="xref py py-func docutils literal notranslate"><span class="pre">cut_stamps()</span></code></a>), and written, int32 and 0 off the image, as
+<code class="docutils literal notranslate"><span class="pre">SEG_VIGNET</span></code> in <code class="docutils literal notranslate"><span class="pre">LDAC_OBJECTS</span></code>, which ngmix’s UberSeg blend handling
+reads. The double positions (<a class="reference internal" href="#shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_param_file" title="shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_param_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">seg_vignet_param_file()</span></code></a>) are dropped;
+every other HDU and column is kept.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Path to the SExtractor FITS-LDAC catalogue, rewritten in place</p></li>
+<li><p><strong>seg_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Path to the SEGMENTATION check image</p></li>
+<li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.15)"><em>logging.Logger</em></a><em>, </em><em>optional</em>) – Pipeline logger</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If the catalogue lacks the double positions</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.sextractor_script.get_header_value">
 <span class="sig-name descname"><span class="pre">get_header_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/sextractor_script.html#get_header_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.sextractor_script.get_header_value" title="Link to this definition">#</a></dt>
@@ -915,6 +1039,11 @@ the standard error.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.cut_stamps"><code class="docutils literal notranslate"><span class="pre">cut_stamps()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_column"><code class="docutils literal notranslate"><span class="pre">seg_vignet_column()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.vignet_centre"><code class="docutils literal notranslate"><span class="pre">vignet_centre()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_param_file"><code class="docutils literal notranslate"><span class="pre">seg_vignet_param_file()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.add_seg_vignet"><code class="docutils literal notranslate"><span class="pre">add_seg_vignet()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.get_header_value"><code class="docutils literal notranslate"><span class="pre">get_header_value()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.ccd_candidate_mask"><code class="docutils literal notranslate"><span class="pre">ccd_candidate_mask()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.sextractor_script.make_post_process"><code class="docutils literal notranslate"><span class="pre">make_post_process()</span></code></a></li>

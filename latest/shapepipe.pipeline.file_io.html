@@ -645,7 +645,7 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_formats"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_formats()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.add_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.add_col()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.add_cols"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.add_cols()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._make_fits_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._make_fits_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.fits_column"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.fits_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.remove_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.remove_col()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.remove_named_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.remove_named_col()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._append_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._append_col()</span></code></a></li>
@@ -1552,13 +1552,14 @@ appended in the dict’s order</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue._make_fits_col">
-<span class="sig-name descname"><span class="pre">_make_fits_col</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue._make_fits_col"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue._make_fits_col" title="Link to this definition">#</a></dt>
-<dd><p>Make FITS Column.</p>
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.fits_column">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fits_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.fits_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.fits_column" title="Link to this definition">#</a></dt>
+<dd><p>FITS Column.</p>
 <p>Build the <code class="docutils literal notranslate"><span class="pre">astropy.io.fits.Column</span></code> that <a class="reference internal" href="#shapepipe.pipeline.file_io.FITSCatalogue.add_cols" title="shapepipe.pipeline.file_io.FITSCatalogue.add_cols"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_cols()</span></code></a> appends
 for one array: the FITS type from <a class="reference internal" href="#shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type" title="shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_get_fits_col_type()</span></code></a>, a
 repeat count and <code class="docutils literal notranslate"><span class="pre">TDIM</span></code> for multi-dimensional arrays, and a width
-set by the longest entry for strings.</p>
+set by the longest entry for strings. <a class="reference internal" href="#shapepipe.pipeline.file_io.FITSCatalogue.save_as_fits" title="shapepipe.pipeline.file_io.FITSCatalogue.save_as_fits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save_as_fits()</span></code></a> lays out
+the columns of a new table HDU the same way.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1616,7 +1617,7 @@ set by the longest entry for strings.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type">
-<span class="sig-name descname"><span class="pre">_get_fits_col_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue._get_fits_col_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">_get_fits_col_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue._get_fits_col_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type" title="Link to this definition">#</a></dt>
 <dd><p>Get FITS Column Type.</p>
 <p>Get the FITS data type of a given column.</p>
 <dl class="field-list simple">
@@ -1900,7 +1901,7 @@ file.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_formats"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_formats()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.add_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.add_col()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.add_cols"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.add_cols()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._make_fits_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._make_fits_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.fits_column"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.fits_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.remove_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.remove_col()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.remove_named_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.remove_named_col()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._append_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._append_col()</span></code></a></li>

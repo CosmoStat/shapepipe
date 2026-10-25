@@ -658,9 +658,12 @@ leaves the catalogue</p></li>
 external catalogue (<code class="docutils literal notranslate"><span class="pre">X_IMAGE</span></code>, <code class="docutils literal notranslate"><span class="pre">Y_IMAGE</span></code>, same image grid) within
 <code class="docutils literal notranslate"><span class="pre">radius</span></code> pixels. Paired rows take the external <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>; unpaired
 rows leave the catalogue. A <code class="docutils literal notranslate"><span class="pre">SEG_VIGNET</span></code> column, when present, is
-relabelled to the new numbering, with the footprints of rows that left
-marked <code class="docutils literal notranslate"><span class="pre">UNMATCHED_LABEL</span></code>. The catalogue is rewritten in place; every
-other HDU and column is kept.</p>
+relabelled through the whole map from old to new numbers, with the
+footprints of rows that left marked <code class="docutils literal notranslate"><span class="pre">UNMATCHED_LABEL</span></code>: as the external
+numbers are unique integers in <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">MAX_NUMBER]</span></code>, each row’s own
+footprint carries its new <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> and no other footprint can,
+whatever the two numberings share.
+The catalogue is rewritten in place; every other HDU and column is kept.</p>
 <p>Both catalogues come from the same pixels, so pairs agree to ~1e-4
 pixel, and on eight DR6 tiles at least 99.2% of each side pairs; the
 shortfall is deblending that differs near very large objects (a cD
@@ -696,8 +699,10 @@ fraction; default 20</p></li>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If more than <code class="docutils literal notranslate"><span class="pre">tolerated_unpaired</span></code> rows of either side, and more
-than <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">min_fraction</span></code> of it, have no partner</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If the external <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> repeats or is not an integer in
+<code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">MAX_NUMBER]</span></code>, or if more
+than <code class="docutils literal notranslate"><span class="pre">tolerated_unpaired</span></code> rows of either side, and more than
+<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">min_fraction</span></code> of it, have no partner</p></li>
 <li><p><strong>&#64;sc</strong><strong> [</strong><strong>decision:detection.tile_detection</strong><strong>]</strong> – </p></li>
 </ul>
 </dd>

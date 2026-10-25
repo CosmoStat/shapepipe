@@ -569,6 +569,205 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline.sqlite_store</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_sqlitedict</span>
 
 
+<div class="viewcode-block" id="cut_stamps">
+<a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.cut_stamps">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cut_stamps</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">stamp_size</span><span class="p">,</span> <span class="n">fill</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Cut one square stamp per object from a 2-D array.</span>
+
+<span class="sd">    Each stamp is ``stamp_size`` pixels on a side with the 0-based pixel</span>
+<span class="sd">    (``row``, ``col``) at index ``stamp_size // 2`` on both axes; pixels off</span>
+<span class="sd">    the array take ``fill``. This is the window SExtractor cuts ``VIGNET``</span>
+<span class="sd">    with, so stamps cut at the same centres from arrays on one pixel grid are</span>
+<span class="sd">    registered pixel for pixel.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    array : numpy.ndarray</span>
+<span class="sd">        2-D array, shape ``(ny, nx)``</span>
+<span class="sd">    col, row : array_like of int</span>
+<span class="sd">        0-based column and row of each stamp's centre pixel</span>
+<span class="sd">    stamp_size : int</span>
+<span class="sd">        Side length of the stamps</span>
+<span class="sd">    fill : scalar</span>
+<span class="sd">        Value of the stamp pixels off the array</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Stamps, shape ``(n_obj, stamp_size, stamp_size)``, dtype of ``array``</span>
+
+<span class="sd">    """</span>
+    <span class="n">ny</span><span class="p">,</span> <span class="n">nx</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="n">stamp_size</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">stamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">),</span> <span class="n">stamp_size</span><span class="p">,</span> <span class="n">stamp_size</span><span class="p">),</span> <span class="n">fill</span><span class="p">,</span> <span class="n">array</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">yi</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">)):</span>
+        <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span> <span class="o">=</span> <span class="n">xi</span> <span class="o">-</span> <span class="n">half</span><span class="p">,</span> <span class="n">yi</span> <span class="o">-</span> <span class="n">half</span>
+        <span class="n">xc0</span><span class="p">,</span> <span class="n">xc1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">x0</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">x0</span> <span class="o">+</span> <span class="n">stamp_size</span><span class="p">)</span>
+        <span class="n">yc0</span><span class="p">,</span> <span class="n">yc1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">y0</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">ny</span><span class="p">,</span> <span class="n">y0</span> <span class="o">+</span> <span class="n">stamp_size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">xc0</span> <span class="o">&gt;=</span> <span class="n">xc1</span> <span class="ow">or</span> <span class="n">yc0</span> <span class="o">&gt;=</span> <span class="n">yc1</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">stamps</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">yc0</span> <span class="o">-</span> <span class="n">y0</span><span class="p">:</span><span class="n">yc1</span> <span class="o">-</span> <span class="n">y0</span><span class="p">,</span> <span class="n">xc0</span> <span class="o">-</span> <span class="n">x0</span><span class="p">:</span><span class="n">xc1</span> <span class="o">-</span> <span class="n">x0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">array</span><span class="p">[</span><span class="n">yc0</span><span class="p">:</span><span class="n">yc1</span><span class="p">,</span> <span class="n">xc0</span><span class="p">:</span><span class="n">xc1</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">stamps</span></div>
+
+
+
+<div class="viewcode-block" id="seg_vignet_column">
+<a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_column">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">seg_vignet_column</span><span class="p">(</span><span class="n">seg_vignets</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The ``SEG_VIGNET`` LDAC column: one int32 seg stamp per object.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seg_vignets : numpy.ndarray</span>
+<span class="sd">        Segmentation stamps, shape ``(n_obj, stamp_size, stamp_size)``, cut</span>
+<span class="sd">        on ``VIGNET``'s grid (:func:`cut_stamps`)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    astropy.io.fits.Column</span>
+<span class="sd">        The column, laid out as ``VIGNET`` is</span>
+
+<span class="sd">    """</span>
+    <span class="n">n_obj</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nx</span> <span class="o">=</span> <span class="n">seg_vignets</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">return</span> <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"SEG_VIGNET"</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ny</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">nx</span><span class="si">}</span><span class="s2">J"</span><span class="p">,</span>
+        <span class="n">array</span><span class="o">=</span><span class="n">seg_vignets</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_obj</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">dim</span><span class="o">=</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">nx</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">ny</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="c1"># Double-precision positions add_seg_vignet centres SEG_VIGNET on.</span>
+<span class="n">DOUBLE_POSITIONS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"X_IMAGE_DBL"</span><span class="p">,</span> <span class="s2">"Y_IMAGE_DBL"</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="vignet_centre">
+<a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.vignet_centre">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">vignet_centre</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The 0-based pixel SExtractor centres VIGNET on, along one axis.</span>
+
+<span class="sd">    SExtractor 2.25.0 (``src/analyse.c``, ``ix=(int)(obj-&gt;mx+0.49999)``,</span>
+<span class="sd">    unchanged in Debian's 2.25.0+ds-3) truncates the 0-based barycentre plus</span>
+<span class="sd">    0.49999. That is not round-to-nearest: a fractional part in</span>
+<span class="sd">    [0.5, 0.50001) goes down, where ``np.rint`` would go up (or to even).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pos : array_like of float</span>
+<span class="sd">        1-based double-precision position (``X_IMAGE_DBL`` or</span>
+<span class="sd">        ``Y_IMAGE_DBL``; SExtractor writes ``mx + 1``)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        0-based pixel index, int64</span>
+
+<span class="sd">    """</span>
+    <span class="n">mx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">trunc</span><span class="p">(</span><span class="n">mx</span> <span class="o">+</span> <span class="mf">0.49999</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="seg_vignet_param_file">
+<a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.seg_vignet_param_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">seg_vignet_param_file</span><span class="p">(</span><span class="n">dot_param</span><span class="p">,</span> <span class="n">output_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Write a SExtractor parameter file that also asks for the double</span>
+<span class="sd">    positions.</span>
+
+<span class="sd">    SExtractor centres VIGNET from its double-precision barycentre</span>
+<span class="sd">    (:func:`vignet_centre`), which the float32 ``X_IMAGE`` / ``Y_IMAGE``</span>
+<span class="sd">    cannot resolve near half pixels; ``X_IMAGE_DBL`` / ``Y_IMAGE_DBL``</span>
+<span class="sd">    carry it.</span>
+<span class="sd">    :func:`add_seg_vignet` reads them and drops them again.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dot_param : str</span>
+<span class="sd">        Path to the configured parameter file</span>
+<span class="sd">    output_path : str</span>
+<span class="sd">        Path to write the extended parameter file to</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        ``output_path``</span>
+
+<span class="sd">    """</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dot_param</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">text</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">text</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">+=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span> <span class="o">+</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">DOUBLE_POSITIONS</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">output_path</span></div>
+
+
+
+<div class="viewcode-block" id="add_seg_vignet">
+<a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.add_seg_vignet">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_seg_vignet</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">seg_path</span><span class="p">,</span> <span class="n">w_log</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Add the ``SEG_VIGNET`` column to a SExtractor catalogue.</span>
+
+<span class="sd">    The SEGMENTATION check image, whose labels are the catalogue's</span>
+<span class="sd">    ``NUMBER``, is cut on the grid of each object's VIGNET, centred where</span>
+<span class="sd">    SExtractor centres VIGNET (:func:`vignet_centre` of ``X_IMAGE_DBL`` /</span>
+<span class="sd">    ``Y_IMAGE_DBL``, :func:`cut_stamps`), and written, int32 and 0 off the image, as</span>
+<span class="sd">    ``SEG_VIGNET`` in ``LDAC_OBJECTS``, which ngmix's UberSeg blend handling</span>
+<span class="sd">    reads. The double positions (:func:`seg_vignet_param_file`) are dropped;</span>
+<span class="sd">    every other HDU and column is kept.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cat_path : str</span>
+<span class="sd">        Path to the SExtractor FITS-LDAC catalogue, rewritten in place</span>
+<span class="sd">    seg_path : str</span>
+<span class="sd">        Path to the SEGMENTATION check image</span>
+<span class="sd">    w_log : logging.Logger, optional</span>
+<span class="sd">        Pipeline logger</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the catalogue lacks the double positions</span>
+
+<span class="sd">    """</span>
+    <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">cat_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
+        <span class="n">hdus</span> <span class="o">=</span> <span class="p">[</span><span class="n">hdu</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">hdu</span> <span class="ow">in</span> <span class="n">hdul</span><span class="p">]</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hdus</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"LDAC_OBJECTS"</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">objects</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">DOUBLE_POSITIONS</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">cat_path</span><span class="si">}</span><span class="s2"> lacks </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2">, which SEG_VIGNET is"</span>
+            <span class="o">+</span> <span class="s2">" centred on; run SExtractor with seg_vignet_param_file."</span>
+        <span class="p">)</span>
+    <span class="n">col</span> <span class="o">=</span> <span class="n">vignet_centre</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"X_IMAGE_DBL"</span><span class="p">])</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="n">vignet_centre</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"Y_IMAGE_DBL"</span><span class="p">])</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"VIGNET"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">seg_vignets</span> <span class="o">=</span> <span class="n">cut_stamps</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="n">seg_path</span><span class="p">),</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">kept</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">objects</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">columns</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DOUBLE_POSITIONS</span><span class="p">]</span>
+    <span class="n">new</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="o">.</span><span class="n">from_columns</span><span class="p">(</span>
+        <span class="n">kept</span> <span class="o">+</span> <span class="p">[</span><span class="n">seg_vignet_column</span><span class="p">(</span><span class="n">seg_vignets</span><span class="p">)],</span>
+        <span class="n">header</span><span class="o">=</span><span class="n">objects</span><span class="o">.</span><span class="n">header</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"LDAC_OBJECTS"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">new</span> <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="n">objects</span> <span class="k">else</span> <span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hdus</span><span class="p">]</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">w_log</span><span class="p">:</span>
+        <span class="n">centre</span> <span class="o">=</span> <span class="n">size</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">own</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">seg_vignets</span><span class="p">[:,</span> <span class="n">centre</span><span class="p">,</span> <span class="n">centre</span><span class="p">]</span> <span class="o">==</span> <span class="n">data</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"SEG_VIGNET cut from </span><span class="si">{</span><span class="n">seg_path</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects;"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" centre label = NUMBER for </span><span class="si">{</span><span class="n">own</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="get_header_value">
 <a class="viewcode-back" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.get_header_value">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_header_value</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
@@ -715,12 +914,9 @@
 <span class="sd">        If SQL file not found</span>
 
 <span class="sd">    """</span>
-    <span class="n">cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
-        <span class="n">cat_path</span><span class="p">,</span>
-        <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">cat_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
+        <span class="n">hdus</span> <span class="o">=</span> <span class="p">[</span><span class="n">hdu</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">hdu</span> <span class="ow">in</span> <span class="n">hdul</span><span class="p">]</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hdus</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"LDAC_OBJECTS"</span><span class="p">)</span>
 
     <span class="c1"># One lock-free read of the whole header log: merge_headers wrote and</span>
     <span class="c1"># closed it in an earlier step, and keyed SqliteDict reads would take an</span>
@@ -735,7 +931,7 @@
     <span class="n">n_hdu</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">f_wcs</span><span class="p">[</span><span class="n">exp_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
 
     <span class="n">history</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">hdus</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"HISTORY"</span><span class="p">,</span> <span class="n">idx</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">""</span><span class="p">:</span>
             <span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
 
@@ -751,11 +947,13 @@
 
     <span class="n">exp_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">exp_list</span><span class="p">))</span>
 
-    <span class="n">obj_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
+    <span class="n">obj_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">objects</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
 
-    <span class="n">ra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
-    <span class="n">dec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+    <span class="n">ra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">objects</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+    <span class="n">dec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">objects</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
 
+    <span class="n">column</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="o">.</span><span class="n">fits_column</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">n_epoch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int32"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">exp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">exp_list</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">exp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">f_wcs</span><span class="p">:</span>
@@ -795,21 +993,24 @@
             <span class="n">ind</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">near</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="n">ind_near</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">pos_tmp</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx_j</span>
             <span class="n">n_epoch</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">exp_name</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">exp_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">))])</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="p">[(</span><span class="n">obj_id</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">exp_name</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">pos_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_name</span><span class="p">))],</span>
-            <span class="n">dtype</span><span class="o">=</span><span class="p">[</span>
-                <span class="p">(</span><span class="s2">"NUMBER"</span><span class="p">,</span> <span class="n">obj_id</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">"EXP_NAME"</span><span class="p">,</span> <span class="n">exp_name</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">"CCD_N"</span><span class="p">,</span> <span class="n">pos_tmp</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
+        <span class="n">epochs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="o">.</span><span class="n">from_columns</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">column</span><span class="p">(</span><span class="s2">"NUMBER"</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">),</span>
+                <span class="n">column</span><span class="p">(</span><span class="s2">"EXP_NAME"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">),</span> <span class="n">exp</span><span class="p">)),</span>
+                <span class="n">column</span><span class="p">(</span><span class="s2">"CCD_N"</span><span class="p">,</span> <span class="n">pos_tmp</span><span class="p">),</span>
             <span class="p">],</span>
-        <span class="p">)</span>
-        <span class="n">cat</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">ext_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"EPOCH_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="n">cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+            <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"EPOCH_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">))</span>
 
-    <span class="n">cat</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s2">"N_EPOCH"</span><span class="p">,</span> <span class="n">n_epoch</span><span class="p">)</span>
-
-    <span class="n">cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+    <span class="c1"># One write of the whole catalogue: LDAC_OBJECTS with N_EPOCH appended</span>
+    <span class="c1"># (laid out as FITSCatalogue.add_col lays it out), then the EPOCH HDUs.</span>
+    <span class="n">new</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="o">.</span><span class="n">from_columns</span><span class="p">(</span>
+        <span class="n">objects</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="o">+</span> <span class="n">fits</span><span class="o">.</span><span class="n">ColDefs</span><span class="p">([</span><span class="n">column</span><span class="p">(</span><span class="s2">"N_EPOCH"</span><span class="p">,</span> <span class="n">n_epoch</span><span class="p">)]),</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"LDAC_OBJECTS"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">new</span> <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="n">objects</span> <span class="k">else</span> <span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hdus</span><span class="p">]</span> <span class="o">+</span> <span class="n">epochs</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
 
@@ -1114,6 +1315,7 @@
         <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">check_image</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">check_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">""</span><span class="p">):</span>
             <span class="n">check_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"NONE"</span><span class="p">]</span>
             <span class="n">check_name</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"none"</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_paths</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">check_type</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">check_name</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1127,6 +1329,7 @@
                     <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_str</span>
                     <span class="o">+</span> <span class="s2">".fits"</span>
                 <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_paths</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">check_type</span><span class="p">,</span> <span class="n">check_name</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_line_extra</span> <span class="o">+=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s1">' -CHECKIMAGE_TYPE </span><span class="si">{</span><span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">check_type</span><span class="p">)</span><span class="si">}</span><span class="s1"> '</span>

@@ -658,6 +658,32 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">_expandvars_strict</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="CustomParser.getexpandedboolean">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.config.html#shapepipe.pipeline.config.CustomParser.getexpandedboolean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getexpandedboolean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Get Expanded Boolean.</span>
+
+<span class="sd">        Expand enviroment variables in the value, then read it as a boolean</span>
+<span class="sd">        the way ``getboolean`` does.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        section : str</span>
+<span class="sd">            Configuration file section</span>
+<span class="sd">        option : str</span>
+<span class="sd">            Configuration file option</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            The expanded value as a boolean</span>
+
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_boolean</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">getexpanded</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="CustomParser.getlist">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.config.html#shapepipe.pipeline.config.CustomParser.getlist">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getlist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">","</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>

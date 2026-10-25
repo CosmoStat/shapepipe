@@ -1183,13 +1183,10 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    cat_path : str</span>
-<span class="sd">        Path to the tile SExtractor catalogue.</span>
-<span class="sd">    seg_cat_path : str, optional</span>
-<span class="sd">        Path to the coadd-frame segmentation VIGNET catalogue (a CLASSIC-mode</span>
-<span class="sd">        vignetmaker output cut from the tile ``SEGMENTATION`` check image),</span>
-<span class="sd">        row-aligned to ``cat_path``. When given, ``self.seg`` holds one integer</span>
-<span class="sd">        seg stamp per object for the ``"uberseg"`` blend handling; ``None``</span>
-<span class="sd">        leaves ``self.seg`` unset, which only ``"uberseg"`` needs.</span>
+<span class="sd">        Path to the tile SExtractor catalogue. Its optional ``SEG_VIGNET``</span>
+<span class="sd">        column, one integer coadd segmentation stamp per object on the grid</span>
+<span class="sd">        of its ``VIGNET``, becomes ``self.seg``, which defines the neighbours</span>
+<span class="sd">        under both blend handlings; without it ``self.seg`` is ``None``.</span>
 <span class="sd">    row_min, row_max : int, optional</span>
 <span class="sd">        First and last catalogue row of the chunk (1-based, inclusive; see</span>
 <span class="sd">        :func:`chunk_rows`). The default, ``-1``, is unbounded, so the whole</span>
@@ -1199,12 +1196,10 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cat_path</span><span class="p">,</span>
-        <span class="n">seg_cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">row_min</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">row_max</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cat_path</span> <span class="o">=</span> <span class="n">cat_path</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seg_cat_path</span> <span class="o">=</span> <span class="n">seg_cat_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">row_min</span> <span class="o">=</span> <span class="n">row_min</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">row_max</span> <span class="o">=</span> <span class="n">row_max</span>
         <span class="k">if</span> <span class="n">cat_path</span><span class="p">:</span>
@@ -1235,41 +1230,17 @@
             <span class="k">else</span> <span class="kc">None</span>
         <span class="p">)</span>
 
-        <span class="n">tile_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c1"># Coadd-frame segmentation stamp (integer labels, the catalogue's</span>
+        <span class="c1"># NUMBER), one per object on the grid of its VIGNET, overlaid</span>
+        <span class="c1"># unchanged on every epoch; it defines the neighbours (shapepipe#776,</span>
+        <span class="c1"># split_tile_markers, uberseg_mask).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">ChunkStamps</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'SEG_VIGNET'</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">'SEG_VIGNET'</span> <span class="ow">in</span> <span class="n">cols</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
 
-        <span class="c1"># Coadd-frame SExtractor segmentation stamp (integer labels), one per</span>
-        <span class="c1"># object and row-aligned to the tile catalogue, overlaid unchanged on</span>
-        <span class="c1"># every epoch for uberseg neighbour masking (shapepipe#776). None -&gt;</span>
-        <span class="c1"># uberseg unavailable; ``"noisefill"`` does not read it.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seg</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">seg_cat_path</span><span class="p">:</span>
-            <span class="n">seg_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">seg_cat_path</span><span class="p">,</span>
-                <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">memmap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">seg_cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-            <span class="n">seg_data</span> <span class="o">=</span> <span class="n">seg_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
-            <span class="c1"># The seg VIGNETs are indexed by tile-catalogue row (self.seg[i]),</span>
-            <span class="c1"># so the two catalogues MUST be row-aligned. Fail loud at load if</span>
-            <span class="c1"># they are not — a silent length/order mismatch would hand every</span>
-            <span class="c1"># object the wrong footprint and quietly corrupt every mask.</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seg_data</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obj_id</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"SEG_VIGNET_PATH '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">seg_cat_path</span><span class="si">}</span><span class="s2">' has"</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">seg_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows but the tile catalogue has"</span>
-                    <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obj_id</span><span class="p">)</span><span class="si">}</span><span class="s2">; the segmentation vignets must be"</span>
-                    <span class="o">+</span> <span class="s2">" row-aligned to the tile catalogue."</span>
-                <span class="p">)</span>
-            <span class="k">if</span> <span class="s1">'NUMBER'</span> <span class="ow">in</span> <span class="n">seg_data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">seg_data</span><span class="p">[</span><span class="s1">'NUMBER'</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">obj_id</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"SEG_VIGNET_PATH '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">seg_cat_path</span><span class="si">}</span><span class="s2">' NUMBER column"</span>
-                        <span class="o">+</span> <span class="s2">" does not match the tile catalogue NUMBER; the"</span>
-                        <span class="o">+</span> <span class="s2">" segmentation vignets are misaligned or reordered."</span>
-                    <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">seg</span> <span class="o">=</span> <span class="n">ChunkStamps</span><span class="p">(</span><span class="n">seg_data</span><span class="p">[</span><span class="s1">'VIGNET'</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">)</span>
-            <span class="n">seg_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+        <span class="n">tile_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 </div>
 
 
@@ -1486,13 +1457,11 @@
 <span class="sd">    blend_handling : {"noisefill", "uberseg"}, optional</span>
 <span class="sd">        Neighbour treatment. ``"noisefill"`` (default) zero-weights and</span>
 <span class="sd">        noise-fills the pixels marked -1e30 in the tile VIGNET on other</span>
-<span class="sd">        detections' footprints; ``"uberseg"`` ignores those markers,</span>
+<span class="sd">        detections' footprints; ``"uberseg"`` ignores those markers and</span>
 <span class="sd">        zeroes the weight of neighbour-side pixels from the coadd</span>
-<span class="sd">        segmentation map and requires ``seg_cat_path``. Defect pixels are</span>
-<span class="sd">        filled under both (see :func:`prepare_ngmix_weights`).</span>
-<span class="sd">    seg_cat_path : str, optional</span>
-<span class="sd">        Path to the coadd-frame segmentation VIGNET catalogue (see</span>
-<span class="sd">        :class:`Tile_cat`). Required when ``blend_handling="uberseg"``.</span>
+<span class="sd">        segmentation stamps, the tile catalogue's ``SEG_VIGNET`` column (see</span>
+<span class="sd">        :class:`Tile_cat`), which it requires. Defect pixels are filled</span>
+<span class="sd">        under both (see :func:`prepare_ngmix_weights`).</span>
 <span class="sd">    dilate_neighbour : int, optional</span>
 <span class="sd">        Neighbour-mask dilation iterations for ``"uberseg"`` (see</span>
 <span class="sd">        :func:`uberseg_mask`); the default is ``1``.</span>
@@ -1517,7 +1486,7 @@
 <span class="sd">        If the length of the input file list is incorrect</span>
 <span class="sd">    ValueError</span>
 <span class="sd">        If ``blend_handling``, ``defect_weighting`` or ``defect_fill`` is</span>
-<span class="sd">        unknown, or ``"uberseg"`` is selected without ``seg_cat_path``.</span>
+<span class="sd">        unknown.</span>
 
 <span class="sd">    """</span>
 
@@ -1535,7 +1504,6 @@
         <span class="n">bkg_sub</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">centroid_source</span><span class="o">=</span><span class="s2">"wcs"</span><span class="p">,</span>
         <span class="n">blend_handling</span><span class="o">=</span><span class="s2">"noisefill"</span><span class="p">,</span>
-        <span class="n">seg_cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">"fitgauss"</span><span class="p">,</span>
         <span class="n">defect_weighting</span><span class="o">=</span><span class="n">DEFECT_WEIGHTING</span><span class="p">,</span>
@@ -1569,14 +1537,6 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"Unknown DEFECT_FILL '</span><span class="si">{</span><span class="n">defect_fill</span><span class="si">}</span><span class="s2">'; expected one of"</span>
                 <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">DEFECT_FILLS</span><span class="si">}</span><span class="s2">"</span>
-            <span class="p">)</span>
-
-        <span class="c1"># Fail fast at construction (not deep in the per-epoch loop) when</span>
-        <span class="c1"># uberseg is requested without its segmentation input (shapepipe#776).</span>
-        <span class="k">if</span> <span class="n">blend_handling</span> <span class="o">==</span> <span class="s2">"uberseg"</span> <span class="ow">and</span> <span class="n">seg_cat_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"blend_handling='uberseg' requires SEG_VIGNET_PATH (the coadd"</span>
-                <span class="o">+</span> <span class="s2">" SExtractor segmentation vignets); none configured."</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span> <span class="o">=</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1618,7 +1578,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_sub</span> <span class="o">=</span> <span class="n">bkg_sub</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_centroid_source</span> <span class="o">=</span> <span class="n">centroid_source</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_blend_handling</span> <span class="o">=</span> <span class="n">blend_handling</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_seg_cat_path</span> <span class="o">=</span> <span class="n">seg_cat_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dilate_neighbour</span> <span class="o">=</span> <span class="n">dilate_neighbour</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_metacal_psf</span> <span class="o">=</span> <span class="n">metacal_psf</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_defect_weighting</span> <span class="o">=</span> <span class="n">defect_weighting</span>
@@ -2038,11 +1997,26 @@
 <span class="sd">        """</span>
         <span class="n">tile_cat</span> <span class="o">=</span> <span class="n">Tile_cat</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_seg_cat_path</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_min</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">vignet_cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vignet_cat</span>
+
+        <span class="c1"># Fail before the per-object loop, whose try/except would otherwise</span>
+        <span class="c1"># drop every object one by one (shapepipe#776).</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blend_handling</span> <span class="o">==</span> <span class="s2">"uberseg"</span> <span class="ow">and</span> <span class="n">tile_cat</span><span class="o">.</span><span class="n">seg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"BLEND_HANDLING = uberseg needs the tile catalogue's"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">" SEG_VIGNET column, which </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span><span class="si">}</span><span class="s2"> lacks;"</span>
+                <span class="o">+</span> <span class="s2">" write it at tile detection (SEG_VIGNET = True)."</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">tile_cat</span><span class="o">.</span><span class="n">seg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tile_cat</span><span class="p">,</span> <span class="s2">"vign"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span><span class="si">}</span><span class="s2"> has no SEG_VIGNET column: every"</span>
+                <span class="o">+</span> <span class="s2">" interior -1e30 marker is taken as a neighbour,"</span>
+                <span class="o">+</span> <span class="s2">" including the object's own CLEAN-merged fragments"</span>
+                <span class="o">+</span> <span class="s2">" (neighbours-are-other-footprints)."</span>
+            <span class="p">)</span>
 
         <span class="n">check_wcs_centroid_offset</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_centroid_source</span><span class="p">,</span> <span class="n">tile_cat</span><span class="p">,</span> <span class="n">vignet_cat</span><span class="o">.</span><span class="n">gal_vign_cat</span>
@@ -2167,7 +2141,7 @@
             <span class="n">res</span><span class="p">[</span><span class="s1">'obj_id'</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj_id</span>
             <span class="c1"># Neighbour flag: does the coadd seg stamp hold any non-central,</span>
             <span class="c1"># non-zero label? Systematics-test hook (shapepipe#776); computed</span>
-            <span class="c1"># from the raw coadd seg, 0 when uberseg is off / seg absent.</span>
+            <span class="c1"># from the raw coadd seg, 0 when the seg is absent.</span>
             <span class="n">res</span><span class="p">[</span><span class="s1">'neighbour_flag'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
                 <span class="n">seg_has_neighbour</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">seg</span><span class="p">[</span><span class="n">i_tile</span><span class="p">],</span> <span class="n">obj_id</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tile_cat</span><span class="p">,</span> <span class="s2">"seg"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
@@ -2272,8 +2246,8 @@
 <span class="sd">    that ``DEFECT_WEIGHTING`` zero-weights or interpolates are not counted.</span>
 
 <span class="sd">    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects</span>
-<span class="sd">    The tile VIGNET's -1e30 markers on other detections' footprints</span>
-<span class="sd">    (:func:`split_tile_markers`) are the epoch's neighbour mask</span>
+<span class="sd">    The tile VIGNET's -1e30 markers on other objects' segmentation</span>
+<span class="sd">    footprints (:func:`split_tile_markers`) are the epoch's neighbour mask</span>
 <span class="sd">    (``stamp.neighbours``), not defects: every epoch shares the tile VIGNET,</span>
 <span class="sd">    so counting them would drop every epoch of a blended object.</span>
 
@@ -2380,7 +2354,9 @@
         <span class="n">flag_vign</span> <span class="o">=</span> <span class="n">flag_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
         <span class="c1"># Off-tile pixels are defects (off-tile-pixels-are-defects); the</span>
         <span class="c1"># other -1e30 markers are neighbours (neighbour-markers-are-not-defects).</span>
-        <span class="n">neighbour</span><span class="p">,</span> <span class="n">off_tile</span> <span class="o">=</span> <span class="n">split_tile_markers</span><span class="p">(</span><span class="n">tile_vign</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">gal_vign</span><span class="p">))</span>
+        <span class="n">neighbour</span><span class="p">,</span> <span class="n">off_tile</span> <span class="o">=</span> <span class="n">split_tile_markers</span><span class="p">(</span>
+            <span class="n">tile_vign</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">gal_vign</span><span class="p">),</span> <span class="n">tile_seg</span><span class="p">,</span> <span class="n">obj_id</span>
+        <span class="p">)</span>
         <span class="n">weight_vign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">off_tile</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">weight_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">])</span>
         <span class="n">bkg_rms_vign</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">bkg_rms_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
@@ -2457,18 +2433,28 @@
 
 <div class="viewcode-block" id="split_tile_markers">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.split_tile_markers">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">split_tile_markers</span><span class="p">(</span><span class="n">tile_vign</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">split_tile_markers</span><span class="p">(</span><span class="n">tile_vign</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">seg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Split the tile VIGNET's -1e30 markers into neighbour and off-tile.</span>
 
 <span class="sd">    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-marked-border-rows-and-columns</span>
-<span class="sd">    The tile VIGNET holds -1e30 on the footprints of other detections and on</span>
-<span class="sd">    stamp pixels beyond the tile's edge (SExtractor writes it). A stamp</span>
-<span class="sd">    clipped by the tile's rectangle loses whole rows and whole columns from</span>
-<span class="sd">    its border, so the off-tile pixels are the union of the runs of</span>
-<span class="sd">    entirely -1e30 rows and columns that start at a stamp border. The remaining markers are</span>
-<span class="sd">    neighbour pixels: a footprint touching the stamp border, and a footprint</span>
-<span class="sd">    that completes an interior row or column beside an off-tile band, stay</span>
-<span class="sd">    neighbours.</span>
+<span class="sd">    SExtractor writes -1e30 into the tile VIGNET on stamp pixels beyond the</span>
+<span class="sd">    tile's edge and, under MASK_TYPE CORRECT, on every above-threshold pixel</span>
+<span class="sd">    that is not the object's own pre-CLEAN footprint. A stamp clipped by the</span>
+<span class="sd">    tile's rectangle loses whole rows and whole columns from its border, so</span>
+<span class="sd">    the off-tile pixels are the union of the runs of entirely -1e30 rows and</span>
+<span class="sd">    columns that start at a stamp border.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.blend_handling] neighbours-are-other-footprints</span>
+<span class="sd">    The other markers also fall on pixels no other object owns: detections</span>
+<span class="sd">    smaller than DETECT_MINAREA (noise peaks, catalogued nowhere) and</span>
+<span class="sd">    fragments CLEAN merged into the object itself, which the segmentation</span>
+<span class="sd">    map labels as the object. With ``seg``, the neighbour pixels are the</span>
+<span class="sd">    markers on another label's footprint (any label but 0 and</span>
+<span class="sd">    ``object_number``; the catalogue join's -1 marks a detection that left</span>
+<span class="sd">    the catalogue). The markers left over are nothing: -1e30 is a flag in the</span>
+<span class="sd">    tile VIGNET only, and the epoch stamps hold real light there, the</span>
+<span class="sd">    object's own or sky. Without ``seg``, every interior marker is a</span>
+<span class="sd">    neighbour.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -2476,6 +2462,10 @@
 <span class="sd">        Tile VIGNET stamp, oriented like the epoch; ``None`` marks nothing.</span>
 <span class="sd">    shape : tuple of int</span>
 <span class="sd">        Stamp shape, used when ``tile_vign`` is ``None``.</span>
+<span class="sd">    seg : numpy.ndarray, optional</span>
+<span class="sd">        The object's SEG_VIGNET stamp, oriented like ``tile_vign``.</span>
+<span class="sd">    object_number : int, optional</span>
+<span class="sd">        The object's label in ``seg``; required with ``seg``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -2498,7 +2488,10 @@
         <span class="n">border_runs</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))[:,</span> <span class="kc">None</span><span class="p">]</span>
         <span class="o">|</span> <span class="n">border_runs</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">marker</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">off_tile</span><span class="p">,</span> <span class="n">off_tile</span></div>
+    <span class="n">neighbour</span> <span class="o">=</span> <span class="n">marker</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">off_tile</span>
+    <span class="k">if</span> <span class="n">seg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">neighbour</span> <span class="o">&amp;=</span> <span class="p">(</span><span class="n">seg</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">seg</span> <span class="o">!=</span> <span class="n">object_number</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">neighbour</span><span class="p">,</span> <span class="n">off_tile</span></div>
 
 
 
@@ -3167,7 +3160,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s2">"blend_handling='uberseg' requires a segmentation map and the"</span>
             <span class="o">+</span> <span class="s2">" central object_number; none reached prepare_ngmix_weights."</span>
-            <span class="o">+</span> <span class="s2">" Set SEG_VIGNET_PATH on the ngmix run (see"</span>
+            <span class="o">+</span> <span class="s2">" The tile catalogue's SEG_VIGNET column carries the map (see"</span>
             <span class="o">+</span> <span class="s2">" CosmoStat/shapepipe#776)."</span>
         <span class="p">)</span>
 

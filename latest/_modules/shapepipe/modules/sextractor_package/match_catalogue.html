@@ -576,8 +576,12 @@
 
 <span class="c1"># The SEG_VIGNET label of a footprint whose SExtractor row has no partner in</span>
 <span class="c1"># the external catalogue, and so leaves the catalogue. Negative, so it never</span>
-<span class="c1"># collides with a NUMBER; UberSeg only asks "self or not self".</span>
+<span class="c1"># collides with a NUMBER (match_catalogue requires positive ones); UberSeg only</span>
+<span class="c1"># asks "self or not self".</span>
 <span class="n">UNMATCHED_LABEL</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="c1"># The largest NUMBER the int32 NUMBER and SEG_VIGNET columns hold.</span>
+<span class="n">MAX_NUMBER</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
 
 
 <div class="viewcode-block" id="mutual_nearest">
@@ -661,9 +665,12 @@
 <span class="sd">    external catalogue (``X_IMAGE``, ``Y_IMAGE``, same image grid) within</span>
 <span class="sd">    ``radius`` pixels. Paired rows take the external ``NUMBER``; unpaired</span>
 <span class="sd">    rows leave the catalogue. A ``SEG_VIGNET`` column, when present, is</span>
-<span class="sd">    relabelled to the new numbering, with the footprints of rows that left</span>
-<span class="sd">    marked ``UNMATCHED_LABEL``. The catalogue is rewritten in place; every</span>
-<span class="sd">    other HDU and column is kept.</span>
+<span class="sd">    relabelled through the whole map from old to new numbers, with the</span>
+<span class="sd">    footprints of rows that left marked ``UNMATCHED_LABEL``: as the external</span>
+<span class="sd">    numbers are unique integers in ``[1, MAX_NUMBER]``, each row's own</span>
+<span class="sd">    footprint carries its new ``NUMBER`` and no other footprint can,</span>
+<span class="sd">    whatever the two numberings share.</span>
+<span class="sd">    The catalogue is rewritten in place; every other HDU and column is kept.</span>
 
 <span class="sd">    Both catalogues come from the same pixels, so pairs agree to ~1e-4</span>
 <span class="sd">    pixel, and on eight DR6 tiles at least 99.2% of each side pairs; the</span>
@@ -705,13 +712,25 @@
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
-<span class="sd">        If more than ``tolerated_unpaired`` rows of either side, and more</span>
-<span class="sd">        than ``1 - min_fraction`` of it, have no partner</span>
+<span class="sd">        If the external ``NUMBER`` repeats or is not an integer in</span>
+<span class="sd">        ``[1, MAX_NUMBER]``, or if more</span>
+<span class="sd">        than ``tolerated_unpaired`` rows of either side, and more than</span>
+<span class="sd">        ``1 - min_fraction`` of it, have no partner</span>
 
 <span class="sd">    @sc [decision:detection.tile_detection]</span>
 <span class="sd">    """</span>
     <span class="n">ext</span> <span class="o">=</span> <span class="n">asc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">ext_cat_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"sextractor"</span><span class="p">,</span>
                    <span class="n">include_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">,</span> <span class="s2">"X_IMAGE"</span><span class="p">,</span> <span class="s2">"Y_IMAGE"</span><span class="p">])</span>
+    <span class="n">ext_number</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ext</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">ext_number</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="n">ext_number</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ext_number</span> <span class="o">&gt;</span> <span class="n">MAX_NUMBER</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+            <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ext_number</span><span class="p">))</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">ext</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ext_cat_path</span><span class="si">}</span><span class="s2"> has a NUMBER that is not an integer in"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" [1, </span><span class="si">{</span><span class="n">MAX_NUMBER</span><span class="si">}</span><span class="s2">] or that repeats; the join needs unique"</span>
+            <span class="o">+</span> <span class="s2">" numbers that fit the int32 NUMBER and SEG_VIGNET columns, so"</span>
+            <span class="o">+</span> <span class="s2">" that no relabelled footprint takes another object's number."</span>
+        <span class="p">)</span>
     <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">cat_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
         <span class="n">hdus</span> <span class="o">=</span> <span class="p">[</span><span class="n">hdu</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">hdu</span> <span class="ow">in</span> <span class="n">hdul</span><span class="p">]</span>
     <span class="n">objects</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hdus</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"LDAC_OBJECTS"</span><span class="p">)</span>
@@ -755,7 +774,7 @@
 
     <span class="n">old_number</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
     <span class="n">new_number</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">UNMATCHED_LABEL</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
-    <span class="n">new_number</span><span class="p">[</span><span class="n">i_sex</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ext</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">])[</span><span class="n">i_ext</span><span class="p">]</span>
+    <span class="n">new_number</span><span class="p">[</span><span class="n">i_sex</span><span class="p">]</span> <span class="o">=</span> <span class="n">ext_number</span><span class="p">[</span><span class="n">i_ext</span><span class="p">]</span>
 
     <span class="n">columns</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">objects</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>

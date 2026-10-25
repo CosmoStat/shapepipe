@@ -2139,7 +2139,7 @@
 
         <span class="n">col_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="o">+</span> <span class="n">fits</span><span class="o">.</span><span class="n">ColDefs</span><span class="p">(</span>
             <span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_make_fits_col</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">col_data</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fits_column</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">col_data</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">col_data</span> <span class="ow">in</span> <span class="n">columns</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
             <span class="p">]</span>
         <span class="p">)</span>
@@ -2161,15 +2161,17 @@
             <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="FITSCatalogue._make_fits_col">
-<a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue._make_fits_col">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_make_fits_col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">col_data</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Make FITS Column.</span>
+<div class="viewcode-block" id="FITSCatalogue.fits_column">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.fits_column">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fits_column</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">col_data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""FITS Column.</span>
 
 <span class="sd">        Build the ``astropy.io.fits.Column`` that :meth:`add_cols` appends</span>
 <span class="sd">        for one array: the FITS type from :meth:`_get_fits_col_type`, a</span>
 <span class="sd">        repeat count and ``TDIM`` for multi-dimensional arrays, and a width</span>
-<span class="sd">        set by the longest entry for strings.</span>
+<span class="sd">        set by the longest entry for strings. :meth:`save_as_fits` lays out</span>
+<span class="sd">        the columns of a new table HDU the same way.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -2184,7 +2186,7 @@
 <span class="sd">            The column</span>
 
 <span class="sd">        """</span>
-        <span class="n">data_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_fits_col_type</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span>
+        <span class="n">data_type</span> <span class="o">=</span> <span class="n">FITSCatalogue</span><span class="o">.</span><span class="n">_get_fits_col_type</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span>
         <span class="n">data_shape</span> <span class="o">=</span> <span class="n">col_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
         <span class="n">dim</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">mem_size</span> <span class="o">=</span> <span class="mi">1</span>
@@ -2288,7 +2290,8 @@
 
 <div class="viewcode-block" id="FITSCatalogue._get_fits_col_type">
 <a class="viewcode-back" href="../../../shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_fits_col_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_data</span><span class="p">):</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_fits_col_type</span><span class="p">(</span><span class="n">col_data</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Get FITS Column Type.</span>
 
 <span class="sd">        Get the FITS data type of a given column.</span>
