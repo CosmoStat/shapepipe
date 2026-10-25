@@ -35,6 +35,13 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # (DR6), or the join fails. `sextractor` (the default for image sims) keeps
 # SExtractor's own NUMBER. Either way make_cat writes
 # TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER.
+# `blend_handling` is ngmix's neighbour treatment: `uberseg` (the default) or
+# `noisefill`. Under both, tile_detect adds the coadd segmentation stamps to
+# the sexcat as SEG_VIGNET and ngmix's neighbours are the other objects'
+# footprints in them. It is chosen per campaign: flipping it on an existing
+# run dir reruns tile_ngmix and the rest of the shape chain for every finished
+# tile, and reclaimed exposures make that destructive, so a comparison needs
+# its own `run:`.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.

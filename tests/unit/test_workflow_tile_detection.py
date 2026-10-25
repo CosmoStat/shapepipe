@@ -153,3 +153,28 @@ def test_catalogue_retrieve_follows_the_prefix(source, retrieve):
     config = {"tile_detection": "unions_catalogue",
               "inputs": {"catalogues": source}}
     assert run_config.catalogue_source(config) == (source, retrieve)
+
+
+# --- blend handling --------------------------------------------------------
+
+
+def test_blend_handlings_mirror_the_ngmix_module():
+    """run_config.BLEND_HANDLINGS is a copy; the copy must stay true.
+
+    The Snakefile validates `blend_handling:` against it in the launcher venv,
+    outside the container where shapepipe is importable, so the tuple is
+    mirrored rather than imported, and read out of the source text here for
+    the same reason: this file is container-free.
+    """
+    import re
+
+    src = (REPO_ROOT / "src" / "shapepipe" / "modules" / "ngmix_package"
+           / "ngmix.py").read_text()
+    match = re.search(r"^BLEND_HANDLINGS = \(([^)]*)\)", src, re.M)
+    assert match, "ngmix.py no longer defines BLEND_HANDLINGS"
+    assert _load("run_config").BLEND_HANDLINGS == tuple(
+        part.strip().strip('"\'') for part in match.group(1).split(",")
+        if part.strip())
+    committed = _load("run_config").load(
+        str(REPO_ROOT / "workflow" / "config.yaml"))
+    assert committed["blend_handling"] == "uberseg"

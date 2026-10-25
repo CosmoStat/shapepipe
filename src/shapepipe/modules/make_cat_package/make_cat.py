@@ -92,7 +92,8 @@ def read_sextractor_data(sexcat_path, remove_vignet=True):
     sexcat_path : str
         Path to SExtractor catalogue
     remove_vignet : bool
-        If ``True`` will not keep the ``VIGNET`` field
+        If ``True`` will not keep the ``VIGNET`` and ``SEG_VIGNET`` stamp
+        fields
 
     Returns
     -------
@@ -109,7 +110,7 @@ def read_sextractor_data(sexcat_path, remove_vignet=True):
     columns = {
         name: data[name]
         for name in data.dtype.names
-        if not (remove_vignet and name == "VIGNET")
+        if not (remove_vignet and name in ("VIGNET", "SEG_VIGNET"))
     }
 
     tile_name = os.path.basename(sexcat_path)

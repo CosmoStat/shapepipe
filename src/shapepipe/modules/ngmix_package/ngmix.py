@@ -589,13 +589,10 @@ class Tile_cat():
     Parameters
     ----------
     cat_path : str
-        Path to the tile SExtractor catalogue.
-    seg_cat_path : str, optional
-        Path to the coadd-frame segmentation VIGNET catalogue (a CLASSIC-mode
-        vignetmaker output cut from the tile ``SEGMENTATION`` check image),
-        row-aligned to ``cat_path``. When given, ``self.seg`` holds one integer
-        seg stamp per object for the ``"uberseg"`` blend handling; ``None``
-        leaves ``self.seg`` unset, which only ``"uberseg"`` needs.
+        Path to the tile SExtractor catalogue. Its optional ``SEG_VIGNET``
+        column, one integer coadd segmentation stamp per object on the grid
+        of its ``VIGNET``, becomes ``self.seg``, which defines the neighbours
+        under both blend handlings; without it ``self.seg`` is ``None``.
     row_min, row_max : int, optional
         First and last catalogue row of the chunk (1-based, inclusive; see
         :func:`chunk_rows`). The default, ``-1``, is unbounded, so the whole
@@ -605,12 +602,10 @@ class Tile_cat():
     def __init__(
         self,
         cat_path,
-        seg_cat_path=None,
         row_min=-1,
         row_max=-1,
     ):
         self.cat_path = cat_path
-        self.seg_cat_path = seg_cat_path
         self.row_min = row_min
         self.row_max = row_max
         if cat_path:
@@ -639,41 +634,17 @@ class Tile_cat():
             else None
         )
 
-        tile_cat.close()
+        # Coadd-frame segmentation stamp (integer labels, the catalogue's
+        # NUMBER), one per object on the grid of its VIGNET, overlaid
+        # unchanged on every epoch; it defines the neighbours (shapepipe#776,
+        # split_tile_markers, uberseg_mask).
+        self.seg = (
+            ChunkStamps(data['SEG_VIGNET'], self.rows)
+            if 'SEG_VIGNET' in cols
+            else None
+        )
 
-        # Coadd-frame SExtractor segmentation stamp (integer labels), one per
-        # object and row-aligned to the tile catalogue, overlaid unchanged on
-        # every epoch for uberseg neighbour masking (shapepipe#776). None ->
-        # uberseg unavailable; ``"noisefill"`` does not read it.
-        self.seg = None
-        if self.seg_cat_path:
-            seg_cat = file_io.FITSCatalogue(
-                self.seg_cat_path,
-                SEx_catalogue=True,
-                memmap=True,
-            )
-            seg_cat.open()
-            seg_data = seg_cat.get_data()
-            # The seg VIGNETs are indexed by tile-catalogue row (self.seg[i]),
-            # so the two catalogues MUST be row-aligned. Fail loud at load if
-            # they are not — a silent length/order mismatch would hand every
-            # object the wrong footprint and quietly corrupt every mask.
-            if len(seg_data) != len(self.obj_id):
-                raise ValueError(
-                    f"SEG_VIGNET_PATH '{self.seg_cat_path}' has"
-                    + f" {len(seg_data)} rows but the tile catalogue has"
-                    + f" {len(self.obj_id)}; the segmentation vignets must be"
-                    + " row-aligned to the tile catalogue."
-                )
-            if 'NUMBER' in seg_data.dtype.names:
-                if not np.array_equal(seg_data['NUMBER'], self.obj_id):
-                    raise ValueError(
-                        f"SEG_VIGNET_PATH '{self.seg_cat_path}' NUMBER column"
-                        + " does not match the tile catalogue NUMBER; the"
-                        + " segmentation vignets are misaligned or reordered."
-                    )
-            self.seg = ChunkStamps(seg_data['VIGNET'], self.rows)
-            seg_cat.close()
+        tile_cat.close()
 
 class Postage_stamp():
     """Galaxy Postage Stamp.
@@ -871,13 +842,11 @@ class Ngmix(object):
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment. ``"noisefill"`` (default) zero-weights and
         noise-fills the pixels marked -1e30 in the tile VIGNET on other
-        detections' footprints; ``"uberseg"`` ignores those markers,
+        detections' footprints; ``"uberseg"`` ignores those markers and
         zeroes the weight of neighbour-side pixels from the coadd
-        segmentation map and requires ``seg_cat_path``. Defect pixels are
-        filled under both (see :func:`prepare_ngmix_weights`).
-    seg_cat_path : str, optional
-        Path to the coadd-frame segmentation VIGNET catalogue (see
-        :class:`Tile_cat`). Required when ``blend_handling="uberseg"``.
+        segmentation stamps, the tile catalogue's ``SEG_VIGNET`` column (see
+        :class:`Tile_cat`), which it requires. Defect pixels are filled
+        under both (see :func:`prepare_ngmix_weights`).
     dilate_neighbour : int, optional
         Neighbour-mask dilation iterations for ``"uberseg"`` (see
         :func:`uberseg_mask`); the default is ``1``.
@@ -902,7 +871,7 @@ class Ngmix(object):
         If the length of the input file list is incorrect
     ValueError
         If ``blend_handling``, ``defect_weighting`` or ``defect_fill`` is
-        unknown, or ``"uberseg"`` is selected without ``seg_cat_path``.
+        unknown.
 
     """
 
@@ -920,7 +889,6 @@ class Ngmix(object):
         bkg_sub=True,
         centroid_source="wcs",
         blend_handling="noisefill",
-        seg_cat_path=None,
         dilate_neighbour=1,
         metacal_psf="fitgauss",
         defect_weighting=DEFECT_WEIGHTING,
@@ -954,14 +922,6 @@ class Ngmix(object):
             raise ValueError(
                 f"Unknown DEFECT_FILL '{defect_fill}'; expected one of"
                 + f" {DEFECT_FILLS}"
-            )
-
-        # Fail fast at construction (not deep in the per-epoch loop) when
-        # uberseg is requested without its segmentation input (shapepipe#776).
-        if blend_handling == "uberseg" and seg_cat_path is None:
-            raise ValueError(
-                "blend_handling='uberseg' requires SEG_VIGNET_PATH (the coadd"
-                + " SExtractor segmentation vignets); none configured."
             )
 
         self._tile_cat_path = input_file_list[0]
@@ -1003,7 +963,6 @@ class Ngmix(object):
         self._bkg_sub = bkg_sub
         self._centroid_source = centroid_source
         self._blend_handling = blend_handling
-        self._seg_cat_path = seg_cat_path
         self._dilate_neighbour = dilate_neighbour
         self._metacal_psf = metacal_psf
         self._defect_weighting = defect_weighting
@@ -1400,11 +1359,26 @@ class Ngmix(object):
         """
         tile_cat = Tile_cat(
             self._tile_cat_path,
-            self._seg_cat_path,
             self._id_obj_min,
             self._id_obj_max,
         )
         vignet_cat = self._vignet_cat
+
+        # Fail before the per-object loop, whose try/except would otherwise
+        # drop every object one by one (shapepipe#776).
+        if self._blend_handling == "uberseg" and tile_cat.seg is None:
+            raise ValueError(
+                "BLEND_HANDLING = uberseg needs the tile catalogue's"
+                + f" SEG_VIGNET column, which {self._tile_cat_path} lacks;"
+                + " write it at tile detection (SEG_VIGNET = True)."
+            )
+        if tile_cat.seg is None and getattr(tile_cat, "vign", None) is not None:
+            self._w_log.warning(
+                f"{self._tile_cat_path} has no SEG_VIGNET column: every"
+                + " interior -1e30 marker is taken as a neighbour,"
+                + " including the object's own CLEAN-merged fragments"
+                + " (neighbours-are-other-footprints)."
+            )
 
         check_wcs_centroid_offset(
             self._centroid_source, tile_cat, vignet_cat.gal_vign_cat
@@ -1529,7 +1503,7 @@ class Ngmix(object):
             res['obj_id'] = obj_id
             # Neighbour flag: does the coadd seg stamp hold any non-central,
             # non-zero label? Systematics-test hook (shapepipe#776); computed
-            # from the raw coadd seg, 0 when uberseg is off / seg absent.
+            # from the raw coadd seg, 0 when the seg is absent.
             res['neighbour_flag'] = int(
                 seg_has_neighbour(tile_cat.seg[i_tile], obj_id)
                 if getattr(tile_cat, "seg", None) is not None
@@ -1630,8 +1604,8 @@ def prepare_postage_stamps(
     that ``DEFECT_WEIGHTING`` zero-weights or interpolates are not counted.
 
     @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
-    The tile VIGNET's -1e30 markers on other detections' footprints
-    (:func:`split_tile_markers`) are the epoch's neighbour mask
+    The tile VIGNET's -1e30 markers on other objects' segmentation
+    footprints (:func:`split_tile_markers`) are the epoch's neighbour mask
     (``stamp.neighbours``), not defects: every epoch shares the tile VIGNET,
     so counting them would drop every epoch of a blended object.
 
@@ -1738,7 +1712,9 @@ def prepare_postage_stamps(
         flag_vign = flag_obj[expccd_name]['VIGNET']
         # Off-tile pixels are defects (off-tile-pixels-are-defects); the
         # other -1e30 markers are neighbours (neighbour-markers-are-not-defects).
-        neighbour, off_tile = split_tile_markers(tile_vign, np.shape(gal_vign))
+        neighbour, off_tile = split_tile_markers(
+            tile_vign, np.shape(gal_vign), tile_seg, obj_id
+        )
         weight_vign = np.where(off_tile, 0, weight_obj[expccd_name]['VIGNET'])
         bkg_rms_vign = (
             bkg_rms_obj[expccd_name]['VIGNET']
@@ -1812,18 +1788,28 @@ def prepare_postage_stamps(
 
     return stamp
 
-def split_tile_markers(tile_vign, shape):
+def split_tile_markers(tile_vign, shape, seg=None, object_number=None):
     """Split the tile VIGNET's -1e30 markers into neighbour and off-tile.
 
     @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-marked-border-rows-and-columns
-    The tile VIGNET holds -1e30 on the footprints of other detections and on
-    stamp pixels beyond the tile's edge (SExtractor writes it). A stamp
-    clipped by the tile's rectangle loses whole rows and whole columns from
-    its border, so the off-tile pixels are the union of the runs of
-    entirely -1e30 rows and columns that start at a stamp border. The remaining markers are
-    neighbour pixels: a footprint touching the stamp border, and a footprint
-    that completes an interior row or column beside an off-tile band, stay
-    neighbours.
+    SExtractor writes -1e30 into the tile VIGNET on stamp pixels beyond the
+    tile's edge and, under MASK_TYPE CORRECT, on every above-threshold pixel
+    that is not the object's own pre-CLEAN footprint. A stamp clipped by the
+    tile's rectangle loses whole rows and whole columns from its border, so
+    the off-tile pixels are the union of the runs of entirely -1e30 rows and
+    columns that start at a stamp border.
+
+    @sc [decision:shape_measurement.blend_handling] neighbours-are-other-footprints
+    The other markers also fall on pixels no other object owns: detections
+    smaller than DETECT_MINAREA (noise peaks, catalogued nowhere) and
+    fragments CLEAN merged into the object itself, which the segmentation
+    map labels as the object. With ``seg``, the neighbour pixels are the
+    markers on another label's footprint (any label but 0 and
+    ``object_number``; the catalogue join's -1 marks a detection that left
+    the catalogue). The markers left over are nothing: -1e30 is a flag in the
+    tile VIGNET only, and the epoch stamps hold real light there, the
+    object's own or sky. Without ``seg``, every interior marker is a
+    neighbour.
 
     Parameters
     ----------
@@ -1831,6 +1817,10 @@ def split_tile_markers(tile_vign, shape):
         Tile VIGNET stamp, oriented like the epoch; ``None`` marks nothing.
     shape : tuple of int
         Stamp shape, used when ``tile_vign`` is ``None``.
+    seg : numpy.ndarray, optional
+        The object's SEG_VIGNET stamp, oriented like ``tile_vign``.
+    object_number : int, optional
+        The object's label in ``seg``; required with ``seg``.
 
     Returns
     -------
@@ -1853,7 +1843,10 @@ def split_tile_markers(tile_vign, shape):
         border_runs(marker.all(axis=1))[:, None]
         | border_runs(marker.all(axis=0))[None, :]
     )
-    return marker & ~off_tile, off_tile
+    neighbour = marker & ~off_tile
+    if seg is not None:
+        neighbour &= (seg != 0) & (seg != object_number)
+    return neighbour, off_tile
 
 
 def background_subtract(gal,bkg):
@@ -2480,7 +2473,7 @@ def prepare_ngmix_weights(
         raise ValueError(
             "blend_handling='uberseg' requires a segmentation map and the"
             + " central object_number; none reached prepare_ngmix_weights."
-            + " Set SEG_VIGNET_PATH on the ngmix run (see"
+            + " The tile catalogue's SEG_VIGNET column carries the map (see"
             + " CosmoStat/shapepipe#776)."
         )
 
