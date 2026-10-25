@@ -7,6 +7,9 @@ from tests.workflow.harness import Campaign
 from tests.workflow.params import params_pin
 
 PIN = Path(__file__).with_name("params_pin.json")
+# blend_handling: noisefill's plan, pinned on its own so a campaign that ran as
+# noisefill stays resumable with the knob set explicitly.
+NOISEFILL_PIN = Path(__file__).with_name("params_pin_noisefill.json")
 BOUNDARY_MESSAGE = (
     "params.pre is a rerun trigger under both profiles; this change reruns "
     "every finished unit of a resumed campaign — land it at a campaign "
@@ -21,6 +24,21 @@ def test_unit_pre_changes_at_campaign_boundary(psfex_dag, pytestconfig):
         PIN.write_text(json.dumps(actual, indent=2, sort_keys=True) + "\n")
     assert PIN.is_file(), BOUNDARY_MESSAGE
     assert actual == json.loads(PIN.read_text()), BOUNDARY_MESSAGE
+
+
+def test_noisefill_plan_changes_at_campaign_boundary(tmp_path, resolve_dag,
+                                                     pytestconfig):
+    """The same pin for a campaign that sets blend_handling: noisefill."""
+    campaign = Campaign(tmp_path / "campaign", "data", "psfex")
+    campaign.config["blend_handling"] = "noisefill"
+    campaign.write_config()
+    with resolve_dag(campaign) as dag:
+        actual = params_pin(dag)
+    if pytestconfig.getoption("--update-params-pin"):
+        NOISEFILL_PIN.write_text(
+            json.dumps(actual, indent=2, sort_keys=True) + "\n")
+    assert NOISEFILL_PIN.is_file(), BOUNDARY_MESSAGE
+    assert actual == json.loads(NOISEFILL_PIN.read_text()), BOUNDARY_MESSAGE
 
 
 def test_params_pin_ignores_fixture_root(tmp_path, resolve_dag):

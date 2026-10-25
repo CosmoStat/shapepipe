@@ -35,6 +35,13 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # (DR6), or the join fails. `sextractor` (the default for image sims) keeps
 # SExtractor's own NUMBER. Either way make_cat writes
 # TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER.
+# `blend_handling` is ngmix's neighbour treatment: `uberseg` (the default) or
+# `noisefill`. Under both, tile_detect adds the coadd segmentation stamps to
+# the sexcat as SEG_VIGNET and ngmix's neighbours are the other objects'
+# footprints in them. It is chosen per campaign: flipping it on an existing
+# run dir reruns tile_ngmix and the rest of the shape chain for every finished
+# tile, and reclaimed exposures make that destructive, so a comparison needs
+# its own `run:`.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -353,6 +360,28 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   since the missing tombstones schedule exactly the outstanding clean jobs.
   The tombstone is written *before* anything is deleted, so a crash can cost
   disk but never the record.
+- **Tile epoch-cut diagnostics survive cleaning.**
+  `tile_ngmix` completeness checks capture PR #922's five counters before each chunk's temporary directory goes away.
+  `tile_make_cat` sums all configured chunks and publishes `tile_make_cat.json` beside the tile's persistent `final_cat`.
+  Its `epoch_cuts` field contains `schema_version`, `n_chunks`, per-chunk `chunks`, and tile `totals` for `considered`, `masked_fraction`, `central_veto`, `failed`, and `objects_emptied`.
+  Counts are sequential veto counts, not independent cut incidences; `objects_emptied` counts objects whose considered epochs were all removed before fitting.
+  Missing, malformed, or duplicate summaries fail completeness rather than becoming zeros.
+  `clean_tile` validates the durable count record before touching scratch, so `clean_tiles: true` needs no module-log retention override.
+  This requires an ngmix build with PR #922's end-of-loop `epoch cuts:` summary, including on empty chunks.
+  Older code without that summary fails the ngmix completeness check and leaves scratch intact.
+
+  For an **idle existing campaign** with kept logs, use `workflow/scripts/backfill_epoch_cuts.py --run-dir <run> --products-dir <products> --n-chunks <N> --dry-run` first.
+  Alternatively pass `--config <run_config.yaml>` to resolve products and chunk count from the run's frozen `workflow/config.yaml` plus its run config.
+  The script skips tiles without a nonempty persisted catalogue and refuses missing or ambiguous chunk evidence.
+  Without `--dry-run`, it publishes the same manifest schema and reclaims through `clean_tile.reclaim`, including its survivor checks and tombstone.
+  Don't use it while jobs or another cleaner are writing the campaign.
+  Dry-run reads metadata and small logs only, writes nothing, and reports logical regular-file bytes (not allocated blocks), without following symlinks.
+
+  **Deploy at a campaign boundary.**
+  The completeness/helper hash is part of every ShapePipe rule's `params`; this change also alters make-cat's params, outputs and shell, and clean-tile's inputs and shell.
+  An ordinary resume against old completed tiles can therefore schedule science stages again, even after their exposure stores have been reclaimed.
+  Backfill old campaigns without changing their frozen code or resuming them against this workflow; removing the log-retention override is appropriate for new campaigns running this contract.
+
 - **A finished tile declares no reclaimed exposures.** Deleting an exposure's
   manifests would otherwise rerun every other tile that reads it, and those
   reruns spread across the exposure-overlap component. So a tile whose
