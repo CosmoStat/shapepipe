@@ -129,6 +129,10 @@ def sextractor_runner(
             tolerated_unpaired=config.getint(
                 module_config_sec, "MATCH_TOLERATED_UNPAIRED"
             ),
+            external_unpaired_allowance=config.getint(
+                module_config_sec, "MATCH_EXTERNAL_UNPAIRED_ALLOWANCE",
+                fallback=50,
+            ),
             w_log=w_log,
         )
 

@@ -467,16 +467,33 @@ analyses:
           concentrated around very large objects; they have photometry but
           no shape. The join needs the tile image to be the catalogue's
           release: on the DR5 image of a tile only ~95% of detections pair.
-          The run stops when the unpaired detections, or the unpaired
-          catalogue objects, exceed both 2% of their side and 20 objects: a
-          margin over deblending near large objects, a stop for other pixels. PSF stars come from the exposure-level
+          Unpaired detections still stop the run beyond both 2% and 20
+          objects, preserving the check for other pixels. External-only
+          losses stop beyond both 20 objects and 2% of the external count
+          plus an additive 50-object allowance (only when pairs exist).
+          Four production edge tiles have 49, 59, 55 and 101 external-only
+          objects among 1680-2861 objects, concentrated in bright-star
+          halos/spikes at normal positive weight; only 0-3 detections lack
+          partners and paired positions agree to 7e-5 px. Local correlated
+          deblending losses do not scale with total tile population. The
+          allowance is empirical, rounded above the largest observed excess
+          over 2% (44 objects), not a binomial confidence bound. It weakens
+          sensitivity to modest external-side detection-config losses on
+          sparse tiles; there are too few uncensored sparse tiles to
+          calibrate a false-rejection rate. A zero-weight exemption would
+          not explain these losses, and spatial exemptions would add mask
+          and clustering choices. Only the acceptance gate changes: no
+          external-only object gains a shape and every previously accepted
+          catalogue retains identical membership and measurements.
+          PSF stars come from the exposure-level
           SExtractor run in both options. Image simulations, which have no
           UNIONS catalogue, keep SExtractor's own NUMBER.
           Values:
           input_types.data.tile_detection = unions_catalogue;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_RADIUS = 1.0;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_MIN_FRACTION = 0.98;
-          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_TOLERATED_UNPAIRED = 20.
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_TOLERATED_UNPAIRED = 20;
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_EXTERNAL_UNPAIRED_ALLOWANCE = 50.
         default: unions_catalogue
         options:
           unions_catalogue:
