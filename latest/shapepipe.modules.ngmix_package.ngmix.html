@@ -56,7 +56,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="shapepipe.modules.pastecat_package" href="shapepipe.modules.pastecat_package.html" />
-    <link rel="prev" title="shapepipe.modules.ngmix_package" href="shapepipe.modules.ngmix_package.html" />
+    <link rel="prev" title="shapepipe.modules.ngmix_package.defect_interpolation" href="shapepipe.modules.ngmix_package.defect_interpolation.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
@@ -317,6 +317,7 @@
 </ul>
 </details></li>
 <li class="toctree-l3 current active has-children"><a class="reference internal" href="shapepipe.modules.ngmix_package.html">shapepipe.modules.ngmix_package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.ngmix_package.defect_interpolation.html">shapepipe.modules.ngmix_package.defect_interpolation</a></li>
 <li class="toctree-l4 current active"><a class="current reference internal" href="#">shapepipe.modules.ngmix_package.ngmix</a></li>
 </ul>
 </details></li>
@@ -599,7 +600,11 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data"><code class="docutils literal notranslate"><span class="pre">Tile_cat.get_data()</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp"><code class="docutils literal notranslate"><span class="pre">Postage_stamp</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp"><code class="docutils literal notranslate"><span class="pre">Postage_stamp</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.record_defects"><code class="docutils literal notranslate"><span class="pre">Postage_stamp.record_defects()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.defect_diagnostics"><code class="docutils literal notranslate"><span class="pre">Postage_stamp.defect_diagnostics()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Vignet"><code class="docutils literal notranslate"><span class="pre">Vignet</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Vignet.close"><code class="docutils literal notranslate"><span class="pre">Vignet.close()</span></code></a></li>
 </ul>
@@ -616,6 +621,7 @@
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps"><code class="docutils literal notranslate"><span class="pre">prepare_postage_stamps()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.split_tile_markers"><code class="docutils literal notranslate"><span class="pre">split_tile_markers()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.background_subtract"><code class="docutils literal notranslate"><span class="pre">background_subtract()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.rescale_epoch_fluxes"><code class="docutils literal notranslate"><span class="pre">rescale_epoch_fluxes()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_galsim_jacobian"><code class="docutils literal notranslate"><span class="pre">get_galsim_jacobian()</span></code></a></li>
@@ -623,7 +629,12 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_noise"><code class="docutils literal notranslate"><span class="pre">get_noise()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.central_seg_label"><code class="docutils literal notranslate"><span class="pre">central_seg_label()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.seg_has_neighbour"><code class="docutils literal notranslate"><span class="pre">seg_has_neighbour()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_weight"><code class="docutils literal notranslate"><span class="pre">uberseg_weight()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_mask"><code class="docutils literal notranslate"><span class="pre">uberseg_mask()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.defect_mask"><code class="docutils literal notranslate"><span class="pre">defect_mask()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.interpolated_defects"><code class="docutils literal notranslate"><span class="pre">interpolated_defects()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes"><code class="docutils literal notranslate"><span class="pre">central_defect_vetoes()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.centre_distance"><code class="docutils literal notranslate"><span class="pre">centre_distance()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.defect_weighting_masks"><code class="docutils literal notranslate"><span class="pre">defect_weighting_masks()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix._average_psf_fits"><code class="docutils literal notranslate"><span class="pre">_average_psf_fits()</span></code></a></li>
@@ -1081,7 +1092,7 @@ only its own stamps.</p>
 vignetmaker output cut from the tile <code class="docutils literal notranslate"><span class="pre">SEGMENTATION</span></code> check image),
 row-aligned to <code class="docutils literal notranslate"><span class="pre">cat_path</span></code>. When given, <code class="docutils literal notranslate"><span class="pre">self.seg</span></code> holds one integer
 seg stamp per object for the <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> blend handling; <code class="docutils literal notranslate"><span class="pre">None</span></code>
-leaves <code class="docutils literal notranslate"><span class="pre">self.seg</span></code> unset (the noise-fill path is unaffected).</p></li>
+leaves <code class="docutils literal notranslate"><span class="pre">self.seg</span></code> unset, which only <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> needs.</p></li>
 <li><p><strong>row_min</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – First and last catalogue row of the chunk (1-based, inclusive; see
 <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.chunk_rows" title="shapepipe.modules.ngmix_package.ngmix.chunk_rows"><code class="xref py py-func docutils literal notranslate"><span class="pre">chunk_rows()</span></code></a>). The default, <code class="docutils literal notranslate"><span class="pre">-1</span></code>, is unbounded, so the whole
 catalogue.</p></li>
@@ -1113,6 +1124,34 @@ catalogue.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Postage_stamp.record_defects">
+<span class="sig-name descname"><span class="pre">record_defects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">defect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolated</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Postage_stamp.record_defects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.record_defects" title="Link to this definition">#</a></dt>
+<dd><p>Add one kept epoch to the defect diagnostics.</p>
+<p>&#64;sc [label:schema] defect-diagnostic-columns
+Per object, over the epochs handed to the fit: <code class="docutils literal notranslate"><span class="pre">n_epoch_interp</span></code>
+counts those with an interpolated defect pixel, and
+<code class="docutils literal notranslate"><span class="pre">min_dist_interp</span></code> (<code class="docutils literal notranslate"><span class="pre">min_dist_noisefill</span></code>) is the smallest distance
+in pixels from the stamp centre to an interpolated (noise-filled)
+defect pixel (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.centre_distance" title="shapepipe.modules.ngmix_package.ngmix.centre_distance"><code class="xref py py-func docutils literal notranslate"><span class="pre">centre_distance()</span></code></a>). A distance is -1 when no
+kept epoch has such a pixel. They read only masks, so splitting a
+catalogue on them selects on nothing shear-responsive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>defect</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – The epoch’s defect mask (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.defect_mask" title="shapepipe.modules.ngmix_package.ngmix.defect_mask"><code class="xref py py-func docutils literal notranslate"><span class="pre">defect_mask()</span></code></a>).</p></li>
+<li><p><strong>interpolated</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Its interpolated defect pixels (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.interpolated_defects" title="shapepipe.modules.ngmix_package.ngmix.interpolated_defects"><code class="xref py py-func docutils literal notranslate"><span class="pre">interpolated_defects()</span></code></a>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Postage_stamp.defect_diagnostics">
+<span class="sig-name descname"><span class="pre">defect_diagnostics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Postage_stamp.defect_diagnostics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.defect_diagnostics" title="Link to this definition">#</a></dt>
+<dd><p>The defect diagnostic columns, -1 for an absent distance.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -1143,7 +1182,7 @@ catalogue.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.Ngmix">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Ngmix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_sub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wcs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metacal_psf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fitgauss'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Ngmix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_wcs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_obj_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_sub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wcs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metacal_psf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fitgauss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defect_weighting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fourfold_zero'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defect_fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolate'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#Ngmix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.Ngmix" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Ngmix.</p>
 <p>Class to handle NGMIX shapepe measurement.</p>
@@ -1168,13 +1207,22 @@ offset the stamp extractor computed when it cut the stamp,
 propagated on the vignette. <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code> re-centers on the
 adaptive-moment centroid measured from the stamp pixels. See
 <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a>.</p></li>
-<li><p><strong>blend_handling</strong> (<em>{&quot;noisefill&quot;</em><em>, </em><em>&quot;uberseg&quot;}</em><em>, </em><em>optional</em>) – Neighbour treatment; <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> (default) is the historical
-noise-fill, <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> hard-masks neighbour-side pixels from the
-coadd segmentation map and requires <code class="docutils literal notranslate"><span class="pre">seg_cat_path</span></code>.</p></li>
+<li><p><strong>blend_handling</strong> (<em>{&quot;noisefill&quot;</em><em>, </em><em>&quot;uberseg&quot;}</em><em>, </em><em>optional</em>) – Neighbour treatment. <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> (default) zero-weights and
+noise-fills the pixels marked -1e30 in the tile VIGNET on other
+detections’ footprints; <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> ignores those markers,
+zeroes the weight of neighbour-side pixels from the coadd
+segmentation map and requires <code class="docutils literal notranslate"><span class="pre">seg_cat_path</span></code>. Defect pixels are
+filled under both (see <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a>).</p></li>
 <li><p><strong>seg_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – Path to the coadd-frame segmentation VIGNET catalogue (see
 <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat" title="shapepipe.modules.ngmix_package.ngmix.Tile_cat"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tile_cat</span></code></a>). Required when <code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code>.</p></li>
 <li><p><strong>dilate_neighbour</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Neighbour-mask dilation iterations for <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> (see
-<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_weight" title="shapepipe.modules.ngmix_package.ngmix.uberseg_weight"><code class="xref py py-func docutils literal notranslate"><span class="pre">uberseg_weight()</span></code></a>); the default is <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_mask" title="shapepipe.modules.ngmix_package.ngmix.uberseg_mask"><code class="xref py py-func docutils literal notranslate"><span class="pre">uberseg_mask()</span></code></a>); the default is <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<li><p><strong>metacal_psf</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – Metacal reconvolution-kernel scheme (see <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal" title="shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal"><code class="xref py py-func docutils literal notranslate"><span class="pre">do_ngmix_metacal()</span></code></a>).</p></li>
+<li><p><strong>defect_weighting</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – How interpolated defects are weighted, one of <code class="docutils literal notranslate"><span class="pre">DEFECT_WEIGHTINGS</span></code>
+(see <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.defect_weighting_masks" title="shapepipe.modules.ngmix_package.ngmix.defect_weighting_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">defect_weighting_masks()</span></code></a>); the default is
+<code class="docutils literal notranslate"><span class="pre">DEFECT_WEIGHTING</span></code>.</p></li>
+<li><p><strong>defect_fill</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – What defect pixels hold before metacal, one of <code class="docutils literal notranslate"><span class="pre">DEFECT_FILLS</span></code>
+(see <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.interpolated_defects" title="shapepipe.modules.ngmix_package.ngmix.interpolated_defects"><code class="xref py py-func docutils literal notranslate"><span class="pre">interpolated_defects()</span></code></a>); the default is <code class="docutils literal notranslate"><span class="pre">DEFECT_FILL</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1185,8 +1233,8 @@ coadd segmentation map and requires <code class="docutils literal notranslate"><
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#IndexError" title="(in Python v3.15)"><strong>IndexError</strong></a> – If the length of the input file list is incorrect</p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">blend_handling</span></code> is unknown, or <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> is selected without
-<code class="docutils literal notranslate"><span class="pre">seg_cat_path</span></code>.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">blend_handling</span></code>, <code class="docutils literal notranslate"><span class="pre">defect_weighting</span></code> or <code class="docutils literal notranslate"><span class="pre">defect_fill</span></code> is
+unknown, or <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> is selected without <code class="docutils literal notranslate"><span class="pre">seg_cat_path</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1352,9 +1400,79 @@ carries no coadd-centroid OFFSET (see
 
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps">
-<span class="sig-name descname"><span class="pre">prepare_postage_stamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vignet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_tile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_cat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_sub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gal_obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#prepare_postage_stamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps" title="Link to this definition">#</a></dt>
-<dd><p>Prepare the per-object lists of exposures passed to ngmix.</p>
-<p>&#64;sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut]</p>
+<span class="sig-name descname"><span class="pre">prepare_postage_stamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vignet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_tile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_cat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_sub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gal_obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defect_fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolate'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#prepare_postage_stamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps" title="Link to this definition">#</a></dt>
+<dd><p>Gather one object’s epoch stamps, dropping epochs its defects spoil.</p>
+<p>&#64;sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut] epoch-cut-on-defect-mask
+An epoch is dropped when more than <code class="docutils literal notranslate"><span class="pre">EPOCH_MASKED_FRACTION_CUT</span></code> of its
+stamp lies in <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.defect_mask" title="shapepipe.modules.ngmix_package.ngmix.defect_mask"><code class="xref py py-func docutils literal notranslate"><span class="pre">defect_mask()</span></code></a>, the set <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a>
+zero-weights and fills, or when <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes" title="shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes"><code class="xref py py-func docutils literal notranslate"><span class="pre">central_defect_vetoes()</span></code></a> finds a
+defect near the object. The quarter-turn copies of interpolated pixels
+that <code class="docutils literal notranslate"><span class="pre">DEFECT_WEIGHTING</span></code> zero-weights or interpolates are not counted.</p>
+<p>&#64;sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
+The tile VIGNET’s -1e30 markers on other detections’ footprints
+(<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.split_tile_markers" title="shapepipe.modules.ngmix_package.ngmix.split_tile_markers"><code class="xref py py-func docutils literal notranslate"><span class="pre">split_tile_markers()</span></code></a>) are the epoch’s neighbour mask
+(<code class="docutils literal notranslate"><span class="pre">stamp.neighbours</span></code>), not defects: every epoch shares the tile VIGNET,
+so counting them would drop every epoch of a blended object.</p>
+<p>&#64;sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.defect_fill] off-tile-pixels-are-defects
+Beyond the tile’s edge the epoch holds the object’s own light, cut off by
+the tile, so those pixels get zero exposure weight and join the defect
+set under every <code class="docutils literal notranslate"><span class="pre">blend_handling</span></code>. On a 51-px stamp an object within
+about 8.5 px of the tile edge fails the masked-fraction cut.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vignet</strong> (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Vignet" title="shapepipe.modules.ngmix_package.ngmix.Vignet"><em>Vignet</em></a>) – Per-object vignet stores.</p></li>
+<li><p><strong>obj_id</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Object ID (SExtractor <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>).</p></li>
+<li><p><strong>i_tile</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Row of the object in <code class="docutils literal notranslate"><span class="pre">tile_cat</span></code>.</p></li>
+<li><p><strong>tile_cat</strong> (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat" title="shapepipe.modules.ngmix_package.ngmix.Tile_cat"><em>Tile_cat</em></a>) – Tile catalogue.</p></li>
+<li><p><strong>bkg_sub</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a><em>, </em><em>optional</em>) – Subtract the background vignet; the default is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>psf_obj</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>, </em><em>optional</em>) – The object’s PSF and galaxy vignet dicts, if already read.</p></li>
+<li><p><strong>gal_obj</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>, </em><em>optional</em>) – The object’s PSF and galaxy vignet dicts, if already read.</p></li>
+<li><p><strong>blend_handling</strong> (<em>{&quot;noisefill&quot;</em><em>, </em><em>&quot;uberseg&quot;}</em><em>, </em><em>optional</em>) – The neighbour treatment <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a> will apply,
+which decides which defects it can interpolate and so their veto
+radius; the default is <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code>.</p></li>
+<li><p><strong>defect_fill</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – One of <code class="docutils literal notranslate"><span class="pre">DEFECT_FILLS</span></code>, which with <code class="docutils literal notranslate"><span class="pre">blend_handling</span></code> decides the
+interpolated defects and so their veto radius; the default is
+<code class="docutils literal notranslate"><span class="pre">DEFECT_FILL</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The surviving epochs’ stamps.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp" title="shapepipe.modules.ngmix_package.ngmix.Postage_stamp">Postage_stamp</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.split_tile_markers">
+<span class="sig-name descname"><span class="pre">split_tile_markers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile_vign</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#split_tile_markers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.split_tile_markers" title="Link to this definition">#</a></dt>
+<dd><p>Split the tile VIGNET’s -1e30 markers into neighbour and off-tile.</p>
+<p>&#64;sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-marked-border-rows-and-columns
+The tile VIGNET holds -1e30 on the footprints of other detections and on
+stamp pixels beyond the tile’s edge (SExtractor writes it). A stamp
+clipped by the tile’s rectangle loses whole rows and whole columns from
+its border, so the off-tile pixels are the union of the runs of
+entirely -1e30 rows and columns that start at a stamp border. The remaining markers are
+neighbour pixels: a footprint touching the stamp border, and a footprint
+that completes an interior row or column beside an off-tile band, stay
+neighbours.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tile_vign</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) – Tile VIGNET stamp, oriented like the epoch; <code class="docutils literal notranslate"><span class="pre">None</span></code> marks nothing.</p></li>
+<li><p><strong>shape</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Stamp shape, used when <code class="docutils literal notranslate"><span class="pre">tile_vign</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray of bool</em> – Neighbour pixels.</p></li>
+<li><p><em>numpy.ndarray of bool</em> – Off-tile pixels.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -1532,16 +1650,16 @@ the central object’s, i.e. the object is blended.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.uberseg_weight">
-<span class="sig-name descname"><span class="pre">uberseg_weight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#uberseg_weight"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_weight" title="Link to this definition">#</a></dt>
-<dd><p>Zero a stamp’s weight on neighbour-side pixels — the UberSeg treatment.</p>
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.uberseg_mask">
+<span class="sig-name descname"><span class="pre">uberseg_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#uberseg_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_mask" title="Link to this definition">#</a></dt>
+<dd><p>Neighbour-side pixels of a stamp: the UberSeg mask.</p>
 <p>UberSeg is Erin Sheldon’s MEDS/ngmix neighbour mask (<code class="docutils literal notranslate"><span class="pre">esheldon/meds</span></code>,
 <a class="github reference external" href="https://github.com/esheldon/meds">esheldon/meds</a> — <code class="docutils literal notranslate"><span class="pre">MEDS.get_uberseg</span></code> /
 <code class="docutils literal notranslate"><span class="pre">meds._uberseg.uberseg_tree</span></code>, in MEDS itself “adapted from Niall MacCrann
 and Joe Zuntz”, and used in the DES shear pipeline). Each stamp pixel is
 assigned to the object whose segmentation footprint it lies nearest to — a
-nearest-segment Voronoi partition — and only pixels assigned to the central
-object keep their weight.</p>
+nearest-segment Voronoi partition — and the pixels assigned to a neighbour
+are masked.</p>
 <p>This function <strong>reimplements</strong> the partition rather than depending on
 <code class="docutils literal notranslate"><span class="pre">meds</span></code>: it is a five-line <code class="docutils literal notranslate"><span class="pre">scipy.spatial.cKDTree</span></code> nearest-neighbour
 query, and pulling in the whole MEDS-file library — plus <code class="docutils literal notranslate"><span class="pre">esutil</span></code> and a
@@ -1557,32 +1675,32 @@ the C k-d tree; results are identical up to that boundary convention.</p>
 <p>Because the partition is by distance to the nearest footprint, the pixels
 surviving around a compact central object form a single connected,
 roughly circular core; the “circularisation” is emergent geometry, not a
-separate aperture. Unlike the noise-fill treatment, masked pixels are
-handed to ngmix as a hard mask (weight = 0), never replaced by a noise
-realisation.</p>
+separate aperture. <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a> zeroes the weight of the
+masked pixels and keeps their image values, so metacal shears the
+neighbour’s light along with the target’s.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Per-pixel weight (inverse variance) map for the stamp.</p></li>
-<li><p><strong>seg</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Segmentation map on the same grid as <code class="docutils literal notranslate"><span class="pre">weight</span></code>: 0 for sky, the
-SExtractor object number for each detected object’s footprint.</p></li>
+<li><p><strong>seg</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Segmentation stamp: 0 for sky, the SExtractor object number for each
+detected object’s footprint.</p></li>
 <li><p><strong>object_number</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Segmentation label of the central object — its SExtractor <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>
 (<code class="docutils literal notranslate"><span class="pre">obj_id</span></code>), authoritative because seg labels are the NUMBERs of the
 same SE run. Not the centre-pixel label, which a few-pixel coadd-vs-
 epoch offset can steal for a neighbour and so invert this mask.</p></li>
-<li><p><strong>dilate_neighbour</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Enlarge the neighbour mask by this many binary-dilation iterations
-(4-connected, ~one pixel per iteration) on top of the base Voronoi
-partition, to absorb the few-pixel coadd-vs-epoch registration offset
-the coadd-seg overlay accepts (shapepipe#776, decision on seg source).
-<code class="docutils literal notranslate"><span class="pre">0</span></code> (the default) recovers the pure Sheldon UberSeg mask, byte-for-
-byte. The dilation is additive: it only ever zeros more pixels, never
-restores a base-masked one, so over-masking a boundary pixel costs a
-little central-object S/N but never leaks neighbour flux into the fit.</p></li>
+<li><p><strong>dilate_neighbour</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Enlarge the mask by this many binary-dilation iterations of the
+neighbour footprints (4-connected, ~one pixel per iteration) on top of
+the Voronoi partition, to absorb the few-pixel coadd-vs-epoch
+registration offset the coadd-seg overlay accepts (shapepipe#776,
+decision on seg source). <code class="docutils literal notranslate"><span class="pre">0</span></code> (the default) is the pure Sheldon
+UberSeg mask. The dilation only ever adds pixels, so over-masking a
+boundary pixel costs a little central-object S/N but never leaks
+neighbour flux into the fit.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><em>numpy.ndarray</em> – Copy of <code class="docutils literal notranslate"><span class="pre">weight</span></code> with neighbour-side pixels zeroed.</p></li>
+<li><p><em>numpy.ndarray of bool</em> – <code class="docutils literal notranslate"><span class="pre">True</span></code> on pixels nearer a neighbour’s footprint than the central
+object’s; all <code class="docutils literal notranslate"><span class="pre">False</span></code> when the stamp holds no neighbour.</p></li>
 <li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.blend_handling]</em>)</p></li>
 </ul>
 </p>
@@ -1591,53 +1709,263 @@ little central-object S/N but never leaks neighbour flux into the fit.</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights">
-<span class="sig-name descname"><span class="pre">prepare_ngmix_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_rms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#prepare_ngmix_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="Link to this definition">#</a></dt>
-<dd><dl class="simple">
-<dt>bookkeeping for ngmix weights. runs on a single galaxy and epoch</dt><dd><p>pixel scale and galaxy guess
-TO DO: decide if we want galaxy guess stuff</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.defect_mask">
+<span class="sig-name descname"><span class="pre">defect_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_rms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#defect_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.defect_mask" title="Link to this definition">#</a></dt>
+<dd><p>Defect pixels of one epoch stamp.</p>
+<p>&#64;sc [decision:shape_measurement.defect_fill,label:physics] defect-set-unsymmetrized
+A defect is a pixel with zero exposure weight (off-tile pixels
+included), a nonzero exposure flag, or, when a background RMS map is
+given, a non-finite or non-positive RMS. This one set is zero-weighted
+and filled by <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a> and counted by the epoch
+cuts. It is not ORed with its rotations: a four-fold fill quadruples the
+filled area near the object and with it m (astra option
+<code class="docutils literal notranslate"><span class="pre">defect_fill.symmetrized_4fold_noise</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>gal</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
-<li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
-<li><p><strong>flag</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>)</p></li>
-<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random state for the noise realisations (seeded per object; see
-<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="xref py py-func docutils literal notranslate"><span class="pre">position_seed()</span></code></a>).</p></li>
-<li><p><strong>bkg_rms</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Per-pixel background RMS map. If supplied, unmasked pixels use
-<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">bkg_rms**2</span></code> as the ngmix inverse variance.</p></li>
-<li><p><strong>blend_handling</strong> (<em>{&quot;noisefill&quot;</em><em>, </em><em>&quot;uberseg&quot;}</em><em>, </em><em>optional</em>) – How to treat pixels shared with a neighbour. <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> (default)
-replaces flagged pixels with a noise realisation and keeps their
-inverse-variance weight — the historical behaviour. <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code>
-instead hard-masks (weight = 0) every pixel closer to a neighbour’s
-segmentation footprint than to the central object’s, leaving the
-image untouched (see <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_weight" title="shapepipe.modules.ngmix_package.ngmix.uberseg_weight"><code class="xref py py-func docutils literal notranslate"><span class="pre">uberseg_weight()</span></code></a>).</p></li>
-<li><p><strong>seg</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Segmentation map on the stamp grid (object NUMBERs). Required for
-<code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code>; ignored otherwise.</p></li>
-<li><p><strong>object_number</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Central object’s segmentation label. Required for
-<code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code>; ignored otherwise.</p></li>
-<li><p><strong>dilate_neighbour</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Neighbour-mask dilation iterations, passed to <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_weight" title="shapepipe.modules.ngmix_package.ngmix.uberseg_weight"><code class="xref py py-func docutils literal notranslate"><span class="pre">uberseg_weight()</span></code></a>
-under <code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code>; ignored otherwise.</p></li>
+<li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Exposure weight stamp.</p></li>
+<li><p><strong>flag</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Exposure flag stamp.</p></li>
+<li><p><strong>bkg_rms</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Background RMS stamp.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> on defect pixels.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a> of <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.interpolated_defects">
+<span class="sig-name descname"><span class="pre">interpolated_defects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">defect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbour</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defect_fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolate'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#interpolated_defects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.interpolated_defects" title="Link to this definition">#</a></dt>
+<dd><p>The defect pixels <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a> interpolates.</p>
+<p>&#64;sc [decision:shape_measurement.defect_fill] fill-option
+Under <code class="docutils literal notranslate"><span class="pre">defect_fill=&quot;noise&quot;</span></code> no pixel is interpolated: every defect is
+noise-filled. Under <code class="docutils literal notranslate"><span class="pre">&quot;interpolate&quot;</span></code>, the short bounded runs of
+<code class="xref py py-func docutils literal notranslate"><span class="pre">interpolable_defects()</span></code> are. There, under <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> the
+neighbour pixels’ light is replaced, so they neither support the
+interpolant nor are interpolated (<code class="docutils literal notranslate"><span class="pre">removed=neighbour</span></code>); under
+<code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> their light stays and supports it. The epoch cuts
+(<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes" title="shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes"><code class="xref py py-func docutils literal notranslate"><span class="pre">central_defect_vetoes()</span></code></a>) and the defect diagnostics read the
+same set, so each pixel is vetoed at the radius of the fill it gets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>defect</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Defect mask of one epoch stamp (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.defect_mask" title="shapepipe.modules.ngmix_package.ngmix.defect_mask"><code class="xref py py-func docutils literal notranslate"><span class="pre">defect_mask()</span></code></a>).</p></li>
+<li><p><strong>neighbour</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a><em> or </em><em>None</em>) – The epoch’s neighbour mask (<code class="docutils literal notranslate"><span class="pre">Postage_stamp.neighbours</span></code>); <code class="docutils literal notranslate"><span class="pre">None</span></code>
+marks no pixel.</p></li>
+<li><p><strong>blend_handling</strong> (<em>{&quot;noisefill&quot;</em><em>, </em><em>&quot;uberseg&quot;}</em>) – Neighbour treatment.</p></li>
+<li><p><strong>defect_fill</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – One of <code class="docutils literal notranslate"><span class="pre">DEFECT_FILLS</span></code>; the default is <code class="docutils literal notranslate"><span class="pre">DEFECT_FILL</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> on the defect pixels to interpolate; the other defect
+pixels are noise-filled.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a> of <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)">bool</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">defect_fill</span></code> is unknown.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes">
+<span class="sig-name descname"><span class="pre">central_defect_vetoes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">defect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolated</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#central_defect_vetoes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes" title="Link to this definition">#</a></dt>
+<dd><p>Whether a defect near the stamp centre drops the epoch.</p>
+<p>&#64;sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.defect_fill] veto-radius-follows-the-fill
+The epoch is dropped when an interpolated defect pixel lies closer than
+<code class="docutils literal notranslate"><span class="pre">EPOCH_INTERPOLATED_DEFECT_RADIUS</span></code> to the stamp centre, or a
+noise-filled one closer than <code class="docutils literal notranslate"><span class="pre">EPOCH_CENTRAL_DEFECT_RADIUS</span></code>: the
+smallest radii at which the defects kept recover shear within
+<a href="#id3"><span class="problematic" id="id4">|m|</span></a> &lt; 1% and <a href="#id5"><span class="problematic" id="id6">|c|</span></a> &lt; 5e-4. <code class="docutils literal notranslate"><span class="pre">interpolated</span></code> is the set
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a> interpolates, so each pixel is vetoed at
+the radius of the fill it gets; under <code class="docutils literal notranslate"><span class="pre">DEFECT_FILL</span> <span class="pre">=</span> <span class="pre">&quot;noise&quot;</span></code> that set
+is empty and every defect is vetoed at <code class="docutils literal notranslate"><span class="pre">EPOCH_CENTRAL_DEFECT_RADIUS</span></code>.
+The veto reads only masks, so it selects
+on nothing that responds to shear. Calibration: astra decision
+<code class="docutils literal notranslate"><span class="pre">shape_measurement.central_defect_veto</span></code>; guarded by
+<code class="docutils literal notranslate"><span class="pre">tests/science/test_defect_recovery.py</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>defect</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Defect mask of one epoch stamp (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.defect_mask" title="shapepipe.modules.ngmix_package.ngmix.defect_mask"><code class="xref py py-func docutils literal notranslate"><span class="pre">defect_mask()</span></code></a>).</p></li>
+<li><p><strong>interpolated</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – The defect pixels that are interpolated
+(<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.interpolated_defects" title="shapepipe.modules.ngmix_package.ngmix.interpolated_defects"><code class="xref py py-func docutils literal notranslate"><span class="pre">interpolated_defects()</span></code></a>); the rest are noise-filled.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if the epoch should be dropped.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.centre_distance">
+<span class="sig-name descname"><span class="pre">centre_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#centre_distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.centre_distance" title="Link to this definition">#</a></dt>
+<dd><p>Distance of every stamp pixel from the stamp centre, in pixels.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.defect_weighting_masks">
+<span class="sig-name descname"><span class="pre">defect_weighting_masks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interpolated</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defect_weighting</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#defect_weighting_masks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.defect_weighting_masks" title="Link to this definition">#</a></dt>
+<dd><p>The pixels each DEFECT_WEIGHTING interpolates, re-weights and zeroes.</p>
+<p>&#64;sc [decision:shape_measurement.defect_weighting,label:physics] one-place-decides-defect-weights
+<code class="docutils literal notranslate"><span class="pre">interpolated</span></code> (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.interpolated_defects" title="shapepipe.modules.ngmix_package.ngmix.interpolated_defects"><code class="xref py py-func docutils literal notranslate"><span class="pre">interpolated_defects()</span></code></a>) starts at weight 0, like
+every defect. The options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;fourfold_zero&quot;</span></code>: interpolate it; the weight is also zeroed on its
+three quarter-turn copies about the stamp centre, which keep their
+light, so the likelihood hole has no spin-2 part.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;des_y6&quot;</span></code>: DES Y6’s pizza-cutter symmetrization on a per-object
+stamp. The mask is ORed with its quarter turn (<code class="docutils literal notranslate"><span class="pre">np.rot90</span></code>, k=1)
+about the stamp centre, the union is interpolated, and every
+interpolated pixel keeps its full weight. Copies that land on a pixel
+whose light is already replaced (a noise-filled defect, a noisefill
+neighbour) stay as they are, and so do copies the interpolant cannot
+reach: a copy is interpolated only where it passes
+<code class="xref py py-func docutils literal notranslate"><span class="pre">interpolable_defects()</span></code> among the pixels the image keeps, so a
+copy wedged into a corner of the clean region (an edge band beside
+the stamp edge) keeps its light rather than leaving the fill
+non-finite.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;hole&quot;</span></code>: interpolate it and leave it at weight 0.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;full&quot;</span></code>: interpolate it at full weight.</p></li>
+</ul>
+<p>Under <code class="docutils literal notranslate"><span class="pre">DEFECT_FILL</span> <span class="pre">=</span> <span class="pre">&quot;noise&quot;</span></code> no pixel is interpolated, so every
+option leaves the weights and the image as they are.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interpolated</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – The interpolable defect pixels of a square stamp.</p></li>
+<li><p><strong>clean</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Pixels whose light the image keeps raw.</p></li>
+<li><p><strong>defect_weighting</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – One of <code class="docutils literal notranslate"><span class="pre">DEFECT_WEIGHTINGS</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><em>numpy.ndarray</em> – Galaxy image. For <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> masked pixels are replaced by noise;
-for <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> the image is returned untouched.</p></li>
-<li><p><em>numpy.ndarray</em> – Variance map for NGMIX.</p></li>
-<li><p><em>numpy.ndarray</em> – Noise image.</p></li>
-<li><p><strong>&#64;sc [decision</strong> (<em>masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights]</em>)</p></li>
+<li><p><strong>fill</strong> (<em>numpy.ndarray of bool</em>) – Pixels to replace by the interpolant.</p></li>
+<li><p><strong>restore</strong> (<em>numpy.ndarray of bool</em>) – Defect pixels that get their full inverse-variance weight back.</p></li>
+<li><p><strong>zero</strong> (<em>numpy.ndarray of bool</em>) – Pixels whose weight is zeroed though their light stays.</p></li>
 </ul>
 </p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">defect_weighting</span></code> is unknown.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights">
+<span class="sig-name descname"><span class="pre">prepare_ngmix_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_rms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defect_weighting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fourfold_zero'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defect_fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolate'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#prepare_ngmix_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="Link to this definition">#</a></dt>
+<dd><p>Build one epoch’s image, weight map and noise image for ngmix.</p>
+<p>Every stamp pixel falls in one of four classes. A clean pixel keeps its
+light and its weight. A pixel whose light is replaced by noise keeps
+neither: a defect that is not interpolated, or under <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> a
+marked neighbour pixel. An interpolated pixel takes the interpolant, at
+the weight <code class="docutils literal notranslate"><span class="pre">defect_weighting</span></code> gives it. A pixel whose light stays at
+zero weight is a hole in the likelihood only: under <code class="docutils literal notranslate"><span class="pre">&quot;fourfold_zero&quot;</span></code>
+the quarter-turn copies of the interpolated defects, under <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code>
+a neighbour-side pixel.</p>
+<p>&#64;sc [decision:shape_measurement.defect_fill,decision:shape_measurement.blend_handling] defects-filled-whatever-the-blend-handling
+Every pixel of <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.defect_mask" title="shapepipe.modules.ngmix_package.ngmix.defect_mask"><code class="xref py py-func docutils literal notranslate"><span class="pre">defect_mask()</span></code></a> gets weight 0 and is filled the same
+way under every <code class="docutils literal notranslate"><span class="pre">blend_handling</span></code>. The short runs of
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.interpolated_defects" title="shapepipe.modules.ngmix_package.ngmix.interpolated_defects"><code class="xref py py-func docutils literal notranslate"><span class="pre">interpolated_defects()</span></code></a> take a Clough-Tocher interpolant of the
+pixels whose light the image keeps (<code class="xref py py-func docutils literal notranslate"><span class="pre">interpolate_defects()</span></code>), in the
+image and the noise image alike; the other defects take noise at the
+background RMS. Metacal shears the whole image whatever the weights, so
+no raw defect value may reach it.</p>
+<p>&#64;sc [decision:shape_measurement.blend_handling] noisefill-fills-markers
+Under <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> the <code class="docutils literal notranslate"><span class="pre">neighbour</span></code> pixels (the tile VIGNET’s -1e30
+neighbour markers) get weight 0 and noise. Their light is gone, so they
+neither support the interpolant nor receive it.</p>
+<p>&#64;sc [decision:shape_measurement.blend_handling] uberseg-ignores-markers
+Under <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> the markers are ignored: the pixels of
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_mask" title="shapepipe.modules.ngmix_package.ngmix.uberseg_mask"><code class="xref py py-func docutils literal notranslate"><span class="pre">uberseg_mask()</span></code></a> get weight 0 and keep their light, which is real
+sky that metacal shears with the target and which supports the
+interpolant.</p>
+<p>&#64;sc [decision:shape_measurement.defect_weighting] defect-weighting-option
+<code class="docutils literal notranslate"><span class="pre">defect_weighting</span></code> decides which pixels are interpolated and how they
+and their quarter-turn copies are weighted
+(<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.defect_weighting_masks" title="shapepipe.modules.ngmix_package.ngmix.defect_weighting_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">defect_weighting_masks()</span></code></a>). Noise-filled pixels and the uberseg
+neighbour side are never symmetrized, and an interpolated pixel on the
+uberseg neighbour side stays at weight 0. Under <code class="docutils literal notranslate"><span class="pre">defect_fill=&quot;noise&quot;</span></code>
+there are no interpolated pixels for it to act on. Measurements: astra
+decision <code class="docutils literal notranslate"><span class="pre">shape_measurement.defect_weighting</span></code>; guarded by
+<code class="docutils literal notranslate"><span class="pre">tests/science/test_defect_recovery.py</span></code>.</p>
+<p>&#64;sc [decision:shape_measurement.defect_weighting,label:physics] noise-image-in-the-fixnoise-frame
+Metacal’s <code class="docutils literal notranslate"><span class="pre">fixnoise</span></code> turns the noise image a quarter turn
+(<code class="docutils literal notranslate"><span class="pre">np.rot90</span></code>, k=1) before shearing it and turns the result back (k=3)
+before adding it to the sheared image. The noise image is therefore
+interpolated in that turned frame, by the operator that interpolates the
+science image: in the frame where both are sheared, the interpolated
+pixels and their correlated noise coincide. Interpolating it in the
+detector frame instead puts its interpolated pixels a quarter turn away
+from the science image’s, and the correlated noise of an interpolated
+column then survives the cancellation as an additive bias.
+<code class="docutils literal notranslate"><span class="pre">tests/module/test_ngmix_defect_fill.py</span></code> pins ngmix’s k=1/k=3.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gal</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Background-subtracted galaxy stamp.</p></li>
+<li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Exposure weight stamp; zero marks a defect.</p></li>
+<li><p><strong>flag</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Exposure flag stamp; nonzero marks a defect.</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v2.5)"><em>numpy.random.RandomState</em></a>) – Random state for the noise realisations (seeded per object; see
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.position_seed" title="shapepipe.modules.ngmix_package.ngmix.position_seed"><code class="xref py py-func docutils literal notranslate"><span class="pre">position_seed()</span></code></a>).</p></li>
+<li><p><strong>bkg_rms</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Per-pixel background RMS map. If supplied, clean pixels use
+<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">bkg_rms**2</span></code> as the ngmix inverse variance, and non-finite or
+non-positive values mark defects. Otherwise every clean pixel gets
+<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">sigma_mad(gal)**2</span></code>.</p></li>
+<li><p><strong>blend_handling</strong> (<em>{&quot;noisefill&quot;</em><em>, </em><em>&quot;uberseg&quot;}</em><em>, </em><em>optional</em>) – Neighbour treatment. <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> (default) zero-weights and
+noise-fills the <code class="docutils literal notranslate"><span class="pre">neighbour</span></code> pixels. <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> ignores
+<code class="docutils literal notranslate"><span class="pre">neighbour</span></code>, zeroes the weight of the pixels of
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_mask" title="shapepipe.modules.ngmix_package.ngmix.uberseg_mask"><code class="xref py py-func docutils literal notranslate"><span class="pre">uberseg_mask()</span></code></a> and keeps their raw image values.</p></li>
+<li><p><strong>seg</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Segmentation map on the stamp grid (object NUMBERs). Required for
+<code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code>; ignored otherwise.</p></li>
+<li><p><strong>object_number</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Central object’s segmentation label. Required for
+<code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code>; ignored otherwise.</p></li>
+<li><p><strong>dilate_neighbour</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Neighbour-mask dilation iterations, passed to <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_mask" title="shapepipe.modules.ngmix_package.ngmix.uberseg_mask"><code class="xref py py-func docutils literal notranslate"><span class="pre">uberseg_mask()</span></code></a>
+under <code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code>; ignored otherwise.</p></li>
+<li><p><strong>neighbour</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a><em>, </em><em>optional</em>) – The epoch’s neighbour mask (<code class="docutils literal notranslate"><span class="pre">Postage_stamp.neighbours</span></code>); read only
+under <code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;noisefill&quot;</span></code>. <code class="docutils literal notranslate"><span class="pre">None</span></code> marks no pixel.</p></li>
+<li><p><strong>defect_weighting</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – One of <code class="docutils literal notranslate"><span class="pre">DEFECT_WEIGHTINGS</span></code>; the default is <code class="docutils literal notranslate"><span class="pre">DEFECT_WEIGHTING</span></code>.</p></li>
+<li><p><strong>defect_fill</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – One of <code class="docutils literal notranslate"><span class="pre">DEFECT_FILLS</span></code>; the default is <code class="docutils literal notranslate"><span class="pre">DEFECT_FILL</span></code>. Under
+<code class="docutils literal notranslate"><span class="pre">&quot;noise&quot;</span></code> every defect is noise-filled and none interpolated.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray</em> – Galaxy image with defect pixels, and under noisefill marked
+neighbour pixels, filled.</p></li>
+<li><p><em>numpy.ndarray</em> – Inverse-variance weight map for ngmix.</p></li>
+<li><p><em>numpy.ndarray</em> – Noise image: an independent realisation over the whole stamp, for
+metacal’s <code class="docutils literal notranslate"><span class="pre">fixnoise</span></code>, interpolated in fixnoise’s quarter-turned
+frame where the galaxy image is interpolated.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">blend_handling</span></code>, <code class="docutils literal notranslate"><span class="pre">defect_weighting</span></code> or <code class="docutils literal notranslate"><span class="pre">defect_fill</span></code> is
+unknown, or <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> lacks <code class="docutils literal notranslate"><span class="pre">seg</span></code> or <code class="docutils literal notranslate"><span class="pre">object_number</span></code>.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#RuntimeError" title="(in Python v3.15)"><strong>RuntimeError</strong></a> – If the interpolant does not reach a pixel <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.interpolated_defects" title="shapepipe.modules.ngmix_package.ngmix.interpolated_defects"><code class="xref py py-func docutils literal notranslate"><span class="pre">interpolated_defects()</span></code></a>
+selected (degenerate support, or non-finite image values in it).</p></li>
+<li><p><strong>&#64;sc</strong><strong> [</strong><strong>decision:masking.pixel_mask_source</strong><strong>,</strong><strong>decision:shape_measurement.blend_handling</strong><strong>,</strong><strong>decision:shape_measurement.defect_fill</strong><strong>,</strong><strong>decision:shape_measurement.galaxy_pixel_weights</strong><strong>,</strong><strong>decision:shape_measurement.defect_weighting</strong><strong>]</strong> – </p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation">
-<span class="sig-name descname"><span class="pre">make_ngmix_observation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_rms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wcs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#make_ngmix_observation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">make_ngmix_observation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_rms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wcs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defect_weighting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fourfold_zero'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defect_fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolate'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#make_ngmix_observation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="Link to this definition">#</a></dt>
 <dd><p>Build an ngmix Observation for a single galaxy epoch.</p>
 <p>The galaxy Jacobian origin sets where the centroid prior is centered, so
 it must sit on the object. Two ways to place it, selected by
@@ -1674,13 +2002,18 @@ propagated offset.</p></li>
 stamp extractor. Required for <code class="docutils literal notranslate"><span class="pre">centroid_source=&quot;wcs&quot;</span></code> (ignored for
 <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code>).</p></li>
 <li><p><strong>blend_handling</strong> (<em>{&quot;noisefill&quot;</em><em>, </em><em>&quot;uberseg&quot;}</em><em>, </em><em>optional</em>) – Neighbour treatment passed through to <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a>;
-the default <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> is the historical behaviour.</p></li>
+the default <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> zero-weights and noise-fills the
+<code class="docutils literal notranslate"><span class="pre">neighbour</span></code> pixels.</p></li>
 <li><p><strong>seg</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Segmentation map on the stamp grid. Required for
 <code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code> (ignored otherwise).</p></li>
 <li><p><strong>object_number</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Central object’s segmentation label. Required for
 <code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code> (ignored otherwise).</p></li>
 <li><p><strong>dilate_neighbour</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Neighbour-mask dilation iterations passed through to
 <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a> under <code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code>.</p></li>
+<li><p><strong>neighbour</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a><em>, </em><em>optional</em>) – Neighbour mask passed through to <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a>.</p></li>
+<li><p><strong>defect_weighting</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – Interpolated-defect weighting passed through to
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a>.</p></li>
+<li><p><strong>defect_fill</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – Defect fill passed through to <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1822,10 +2155,17 @@ observations directly.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal">
-<span class="sig-name descname"><span class="pre">do_ngmix_metacal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wcs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metacal_psf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fitgauss'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#do_ngmix_metacal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">do_ngmix_metacal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wcs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blend_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'noisefill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_neighbour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metacal_psf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fitgauss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defect_weighting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fourfold_zero'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defect_fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolate'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/ngmix_package/ngmix.html#do_ngmix_metacal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal" title="Link to this definition">#</a></dt>
 <dd><p>Do Ngmix Metacal.</p>
 <p>Performs metacalibration on a single multi-epoch object and returns the
 joint shape measurement with NGMIX.</p>
+<p>&#64;sc [decision:shape_measurement.epoch_masked_fraction_cut,label:operations] failed-epoch-dropped
+An epoch whose observation raises while being built (for example the
+non-finite interpolant guard in <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights" title="shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a>) is
+dropped and the object is fitted on its other epochs. The epoch’s name
+and exception are appended to <code class="docutils literal notranslate"><span class="pre">stamp.epoch_failures</span></code>; the caller logs
+them and writes their count as <code class="docutils literal notranslate"><span class="pre">n_epoch_failed</span></code>. Errors outside
+building the observations propagate.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1839,9 +2179,9 @@ coadd-centroid offset in <code class="docutils literal notranslate"><span class=
 extractor); <code class="docutils literal notranslate"><span class="pre">&quot;hsm&quot;</span></code> uses the adaptive-moment centroid from the
 stamp pixels — see that function.</p></li>
 <li><p><strong>blend_handling</strong> (<em>{&quot;noisefill&quot;</em><em>, </em><em>&quot;uberseg&quot;}</em><em>, </em><em>optional</em>) – Neighbour treatment passed through to
-<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a>; the default <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code> is the
-historical behaviour. <code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> consumes <code class="docutils literal notranslate"><span class="pre">stamp.segs</span></code> and
-<code class="docutils literal notranslate"><span class="pre">object_number</span></code>.</p></li>
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a>; the default <code class="docutils literal notranslate"><span class="pre">&quot;noisefill&quot;</span></code>
+zero-weights and noise-fills the pixels of <code class="docutils literal notranslate"><span class="pre">stamp.neighbours</span></code>.
+<code class="docutils literal notranslate"><span class="pre">&quot;uberseg&quot;</span></code> consumes <code class="docutils literal notranslate"><span class="pre">stamp.segs</span></code> and <code class="docutils literal notranslate"><span class="pre">object_number</span></code>.</p></li>
 <li><p><strong>object_number</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Central object’s segmentation label — its SExtractor <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>
 (<code class="docutils literal notranslate"><span class="pre">obj_id</span></code>), authoritative because seg labels are the NUMBERs of the
 same SE run (shapepipe#776). Required for <code class="docutils literal notranslate"><span class="pre">blend_handling=&quot;uberseg&quot;</span></code>
@@ -1858,19 +2198,28 @@ from the PSF-model fit (the <code class="docutils literal notranslate"><span cla
 round PSF that metacal reconvolves with after shearing, so it moves the
 metacal <em>response</em> (and therefore the recovered shear) but never reaches
 the deconvolution, which is by the PSF image.</p></li>
+<li><p><strong>defect_weighting</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – Interpolated-defect weighting (one of <code class="docutils literal notranslate"><span class="pre">DEFECT_WEIGHTINGS</span></code>) passed
+through to <a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a>.</p></li>
+<li><p><strong>defect_fill</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) – Defect fill (one of <code class="docutils literal notranslate"><span class="pre">DEFECT_FILLS</span></code>) passed through to
+<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation" title="shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>MetacalResult</em> – Named 3-tuple <code class="docutils literal notranslate"><span class="pre">(resdict,</span> <span class="pre">reconv,</span> <span class="pre">orig)</span></code>: the MetacalBootstrapper
+<dd class="field-even"><p>Named 3-tuple <code class="docutils literal notranslate"><span class="pre">(resdict,</span> <span class="pre">reconv,</span> <span class="pre">orig)</span></code>: the MetacalBootstrapper
 result dict, the averaged metacal <em>reconvolution</em>-kernel PSF dict
 (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf" title="shapepipe.modules.ngmix_package.ngmix.average_multiepoch_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_multiepoch_psf()</span></code></a>), and the averaged <em>original</em> image-PSF
 dict (<a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.average_original_psf" title="shapepipe.modules.ngmix_package.ngmix.average_original_psf"><code class="xref py py-func docutils literal notranslate"><span class="pre">average_original_psf()</span></code></a>). The two PSF dicts share keys but
 describe different PSFs; the named fields guard against transposing
-them. Unpacks positionally as <code class="docutils literal notranslate"><span class="pre">resdict,</span> <span class="pre">psf_res,</span> <span class="pre">psf_orig_res</span></code>.</p></li>
-<li><p><strong>&#64;sc [decision</strong> (<em>shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]</em>)</p></li>
+them. Unpacks positionally as <code class="docutils literal notranslate"><span class="pre">resdict,</span> <span class="pre">psf_res,</span> <span class="pre">psf_orig_res</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#shapepipe.modules.ngmix_package.ngmix.MetacalResult" title="shapepipe.modules.ngmix_package.ngmix.MetacalResult">MetacalResult</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If the stamp has no epoch, or every epoch failed to build.</p></li>
+<li><p><strong>&#64;sc</strong><strong> [</strong><strong>decision:shape_measurement.defect_fill</strong><strong>,</strong><strong>decision:shape_measurement.metacal_scheme</strong><strong>,</strong><strong>decision:shape_measurement.defect_weighting</strong><strong>]</strong> – </p></li>
 </ul>
-</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1889,12 +2238,12 @@ them. Unpacks positionally as <code class="docutils literal notranslate"><span c
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="shapepipe.modules.ngmix_package.html"
+       href="shapepipe.modules.ngmix_package.defect_interpolation.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">shapepipe.modules.ngmix_package</p>
+        <p class="prev-next-title">shapepipe.modules.ngmix_package.defect_interpolation</p>
       </div>
     </a>
     <a class="right-next"
@@ -1954,7 +2303,11 @@ them. Unpacks positionally as <code class="docutils literal notranslate"><span c
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data"><code class="docutils literal notranslate"><span class="pre">Tile_cat.get_data()</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp"><code class="docutils literal notranslate"><span class="pre">Postage_stamp</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp"><code class="docutils literal notranslate"><span class="pre">Postage_stamp</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.record_defects"><code class="docutils literal notranslate"><span class="pre">Postage_stamp.record_defects()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.defect_diagnostics"><code class="docutils literal notranslate"><span class="pre">Postage_stamp.defect_diagnostics()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Vignet"><code class="docutils literal notranslate"><span class="pre">Vignet</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.Vignet.close"><code class="docutils literal notranslate"><span class="pre">Vignet.close()</span></code></a></li>
 </ul>
@@ -1971,6 +2324,7 @@ them. Unpacks positionally as <code class="docutils literal notranslate"><span c
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps"><code class="docutils literal notranslate"><span class="pre">prepare_postage_stamps()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.split_tile_markers"><code class="docutils literal notranslate"><span class="pre">split_tile_markers()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.background_subtract"><code class="docutils literal notranslate"><span class="pre">background_subtract()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.rescale_epoch_fluxes"><code class="docutils literal notranslate"><span class="pre">rescale_epoch_fluxes()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_galsim_jacobian"><code class="docutils literal notranslate"><span class="pre">get_galsim_jacobian()</span></code></a></li>
@@ -1978,7 +2332,12 @@ them. Unpacks positionally as <code class="docutils literal notranslate"><span c
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.get_noise"><code class="docutils literal notranslate"><span class="pre">get_noise()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.central_seg_label"><code class="docutils literal notranslate"><span class="pre">central_seg_label()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.seg_has_neighbour"><code class="docutils literal notranslate"><span class="pre">seg_has_neighbour()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_weight"><code class="docutils literal notranslate"><span class="pre">uberseg_weight()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.uberseg_mask"><code class="docutils literal notranslate"><span class="pre">uberseg_mask()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.defect_mask"><code class="docutils literal notranslate"><span class="pre">defect_mask()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.interpolated_defects"><code class="docutils literal notranslate"><span class="pre">interpolated_defects()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes"><code class="docutils literal notranslate"><span class="pre">central_defect_vetoes()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.centre_distance"><code class="docutils literal notranslate"><span class="pre">centre_distance()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.defect_weighting_masks"><code class="docutils literal notranslate"><span class="pre">defect_weighting_masks()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.ngmix_package.ngmix._average_psf_fits"><code class="docutils literal notranslate"><span class="pre">_average_psf_fits()</span></code></a></li>

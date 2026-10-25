@@ -312,6 +312,7 @@
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.ngmix_package.html">shapepipe.modules.ngmix_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.ngmix_package.defect_interpolation.html">shapepipe.modules.ngmix_package.defect_interpolation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a></li>
 </ul>
 </details></li>
@@ -560,6 +561,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ngmix</span>
@@ -573,10 +575,48 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">cKDTree</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlitedict</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteDict</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.modules.ngmix_package.defect_interpolation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">fourfold</span><span class="p">,</span>
+    <span class="n">interpolable_defects</span><span class="p">,</span>
+    <span class="n">interpolate_defects</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
 
 <span class="c1"># Neighbour treatments selectable with the BLEND_HANDLING option.</span>
 <span class="n">BLEND_HANDLINGS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"noisefill"</span><span class="p">,</span> <span class="s2">"uberseg"</span><span class="p">)</span>
+
+<span class="c1"># How interpolated defects enter the image and the weight map, selectable</span>
+<span class="c1"># with the DEFECT_WEIGHTING option (see :func:`defect_weighting_masks`), and</span>
+<span class="c1"># the value an absent or empty option takes.</span>
+<span class="n">DEFECT_WEIGHTINGS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"des_y6"</span><span class="p">,</span> <span class="s2">"fourfold_zero"</span><span class="p">,</span> <span class="s2">"hole"</span><span class="p">,</span> <span class="s2">"full"</span><span class="p">)</span>
+<span class="c1"># @sc [decision:shape_measurement.defect_weighting]</span>
+<span class="n">DEFECT_WEIGHTING</span> <span class="o">=</span> <span class="s2">"fourfold_zero"</span>
+
+<span class="c1"># What defect pixels hold before metacal, selectable with the DEFECT_FILL</span>
+<span class="c1"># option (see :func:`interpolated_defects`), and the value an absent or empty</span>
+<span class="c1"># option takes: "interpolate" interpolates short bounded runs and noise-fills</span>
+<span class="c1"># the rest, "noise" noise-fills every defect.</span>
+<span class="n">DEFECT_FILLS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"interpolate"</span><span class="p">,</span> <span class="s2">"noise"</span><span class="p">)</span>
+<span class="c1"># @sc [decision:shape_measurement.defect_fill]</span>
+<span class="n">DEFECT_FILL</span> <span class="o">=</span> <span class="s2">"interpolate"</span>
+
+<span class="c1"># The epoch cuts (see :func:`prepare_postage_stamps`). Calibration outputs,</span>
+<span class="c1"># not options: an epoch is dropped when more than EPOCH_MASKED_FRACTION_CUT</span>
+<span class="c1"># of its stamp is in :func:`defect_mask`, or when a noise-filled</span>
+<span class="c1"># (interpolated) defect pixel lies closer than EPOCH_CENTRAL_DEFECT_RADIUS</span>
+<span class="c1"># (EPOCH_INTERPOLATED_DEFECT_RADIUS) pixels to the stamp centre (see</span>
+<span class="c1"># :func:`central_defect_vetoes`). The central veto is the bias control: defects</span>
+<span class="c1"># outside it bias nothing measured up to 58% of the stamp. The noise-fill</span>
+<span class="c1"># radius is set by the largest galaxy tested (0.7" through a 0.9" PSF), the</span>
+<span class="c1"># interpolated radius by 3-px bleeds on the same galaxy. The 10% fraction</span>
+<span class="c1"># cut matches DES Y3/Y6 and guards against real-data effects the simulations</span>
+<span class="c1"># do not model, at the cost of about 5% of epochs on a real tile.</span>
+<span class="c1"># @sc [decision:shape_measurement.epoch_masked_fraction_cut]</span>
+<span class="n">EPOCH_MASKED_FRACTION_CUT</span> <span class="o">=</span> <span class="mf">0.10</span>
+<span class="c1"># @sc [decision:shape_measurement.central_defect_veto]</span>
+<span class="n">EPOCH_CENTRAL_DEFECT_RADIUS</span> <span class="o">=</span> <span class="mi">13</span>
+<span class="c1"># @sc [decision:shape_measurement.central_defect_veto]</span>
+<span class="n">EPOCH_INTERPOLATED_DEFECT_RADIUS</span> <span class="o">=</span> <span class="mi">7</span>
 
 <span class="c1"># @sc [decision:shape_measurement.metacal_scheme]</span>
 <span class="n">METACAL_TYPES</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'noshear'</span><span class="p">,</span> <span class="s1">'1p'</span><span class="p">,</span> <span class="s1">'1m'</span><span class="p">,</span> <span class="s1">'2p'</span><span class="p">,</span> <span class="s1">'2m'</span><span class="p">)</span>
@@ -795,8 +835,15 @@
     <span class="n">names2</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s1">'id'</span><span class="p">,</span>
         <span class="s1">'n_epoch_model'</span><span class="p">,</span>
+        <span class="c1"># epochs dropped because building their observation raised</span>
+        <span class="c1"># (failed-epoch-dropped)</span>
+        <span class="s1">'n_epoch_failed'</span><span class="p">,</span>
         <span class="s1">'mcal_types_fail'</span><span class="p">,</span>
         <span class="s1">'neighbour_flag'</span><span class="p">,</span>
+        <span class="c1"># defect diagnostics (Postage_stamp.record_defects)</span>
+        <span class="s1">'n_epoch_interp'</span><span class="p">,</span>
+        <span class="s1">'min_dist_interp'</span><span class="p">,</span>
+        <span class="s1">'min_dist_noisefill'</span><span class="p">,</span>
         <span class="s1">'nfev_fit'</span><span class="p">,</span>
         <span class="c1"># galaxy</span>
         <span class="s1">'g1'</span><span class="p">,</span>
@@ -1142,7 +1189,7 @@
 <span class="sd">        vignetmaker output cut from the tile ``SEGMENTATION`` check image),</span>
 <span class="sd">        row-aligned to ``cat_path``. When given, ``self.seg`` holds one integer</span>
 <span class="sd">        seg stamp per object for the ``"uberseg"`` blend handling; ``None``</span>
-<span class="sd">        leaves ``self.seg`` unset (the noise-fill path is unaffected).</span>
+<span class="sd">        leaves ``self.seg`` unset, which only ``"uberseg"`` needs.</span>
 <span class="sd">    row_min, row_max : int, optional</span>
 <span class="sd">        First and last catalogue row of the chunk (1-based, inclusive; see</span>
 <span class="sd">        :func:`chunk_rows`). The default, ``-1``, is unbounded, so the whole</span>
@@ -1193,7 +1240,7 @@
         <span class="c1"># Coadd-frame SExtractor segmentation stamp (integer labels), one per</span>
         <span class="c1"># object and row-aligned to the tile catalogue, overlaid unchanged on</span>
         <span class="c1"># every epoch for uberseg neighbour masking (shapepipe#776). None -&gt;</span>
-        <span class="c1"># uberseg unavailable; the noise-fill path is unaffected.</span>
+        <span class="c1"># uberseg unavailable; ``"noisefill"`` does not read it.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seg</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">seg_cat_path</span><span class="p">:</span>
             <span class="n">seg_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
@@ -1251,9 +1298,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">psfs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Neighbour masks, one per epoch: the pixels marked -1e30 in the tile</span>
+        <span class="c1"># VIGNET on other detections' footprints (off-tile markers get zero</span>
+        <span class="c1"># weight instead; see split_tile_markers), MegaCam-flipped to the</span>
+        <span class="c1"># epoch. noisefill zero-weights and noise-fills them, and the epoch</span>
+        <span class="c1"># cuts do not count them (see prepare_ngmix_weights).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbours</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bkg_rms</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Segmentation stamps, one per epoch, used only by the "uberseg" blend</span>
-        <span class="c1"># handling; empty for the default noise-fill path. All epochs carry the</span>
+        <span class="c1"># handling; empty under the default "noisefill". All epochs carry the</span>
         <span class="c1"># SAME coadd-frame seg stamp (shapepipe#776: one coadd seg per object,</span>
         <span class="c1"># no per-epoch reprojection), each MegaCam-flipped to match its galaxy</span>
         <span class="c1"># stamp so the overlay stays registered.</span>
@@ -1270,8 +1323,73 @@
         <span class="c1"># CCD number of the first epoch, used only to build the per-object</span>
         <span class="c1"># position seed (see :func:`position_seed`).</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ccd</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epoch_cuts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span>
+            <span class="n">considered</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">masked_fraction</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">central_veto</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="c1"># The exposure-CCD name of each kept epoch, for the log.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epoch_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># ``(epoch name, exception)`` for each kept epoch whose observation</span>
+        <span class="c1"># raised while being built; :func:`do_ngmix_metacal` drops the epoch</span>
+        <span class="c1"># and records it here (failed-epoch-dropped).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epoch_failures</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Defect diagnostics over the epochs kept (see</span>
+        <span class="c1"># :meth:`record_defects`).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_epoch_interp</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_dist_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_dist_noisefill</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bkg_sub</span> <span class="o">=</span> <span class="n">bkg_sub</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">megacam_flip</span> <span class="o">=</span> <span class="n">megacam_flip</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">megacam_flip</span> <span class="o">=</span> <span class="n">megacam_flip</span>
+
+<div class="viewcode-block" id="Postage_stamp.record_defects">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.record_defects">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">record_defects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">defect</span><span class="p">,</span> <span class="n">interpolated</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Add one kept epoch to the defect diagnostics.</span>
+
+<span class="sd">        @sc [label:schema] defect-diagnostic-columns</span>
+<span class="sd">        Per object, over the epochs handed to the fit: ``n_epoch_interp``</span>
+<span class="sd">        counts those with an interpolated defect pixel, and</span>
+<span class="sd">        ``min_dist_interp`` (``min_dist_noisefill``) is the smallest distance</span>
+<span class="sd">        in pixels from the stamp centre to an interpolated (noise-filled)</span>
+<span class="sd">        defect pixel (:func:`centre_distance`). A distance is -1 when no</span>
+<span class="sd">        kept epoch has such a pixel. They read only masks, so splitting a</span>
+<span class="sd">        catalogue on them selects on nothing shear-responsive.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        defect : numpy.ndarray of bool</span>
+<span class="sd">            The epoch's defect mask (:func:`defect_mask`).</span>
+<span class="sd">        interpolated : numpy.ndarray of bool</span>
+<span class="sd">            Its interpolated defect pixels (:func:`interpolated_defects`).</span>
+<span class="sd">        """</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">centre_distance</span><span class="p">(</span><span class="n">defect</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">noisefill</span> <span class="o">=</span> <span class="n">defect</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">interpolated</span>
+        <span class="k">if</span> <span class="n">interpolated</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_epoch_interp</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">min_dist_interp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">min_dist_interp</span><span class="p">,</span> <span class="n">distance</span><span class="p">[</span><span class="n">interpolated</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">noisefill</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">min_dist_noisefill</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">min_dist_noisefill</span><span class="p">,</span> <span class="n">distance</span><span class="p">[</span><span class="n">noisefill</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Postage_stamp.defect_diagnostics">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.defect_diagnostics">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">defect_diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""The defect diagnostic columns, -1 for an absent distance."""</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">"n_epoch_interp"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_epoch_interp</span><span class="p">,</span>
+            <span class="s2">"min_dist_interp"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_dist_interp</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_dist_interp</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
+            <span class="p">),</span>
+            <span class="s2">"min_dist_noisefill"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_dist_noisefill</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_dist_noisefill</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
+            <span class="p">),</span>
+        <span class="p">}</span></div>
+</div>
 
 
 <div class="viewcode-block" id="Vignet">
@@ -1366,15 +1484,27 @@
 <span class="sd">        adaptive-moment centroid measured from the stamp pixels. See</span>
 <span class="sd">        :func:`make_ngmix_observation`.</span>
 <span class="sd">    blend_handling : {"noisefill", "uberseg"}, optional</span>
-<span class="sd">        Neighbour treatment; ``"noisefill"`` (default) is the historical</span>
-<span class="sd">        noise-fill, ``"uberseg"`` hard-masks neighbour-side pixels from the</span>
-<span class="sd">        coadd segmentation map and requires ``seg_cat_path``.</span>
+<span class="sd">        Neighbour treatment. ``"noisefill"`` (default) zero-weights and</span>
+<span class="sd">        noise-fills the pixels marked -1e30 in the tile VIGNET on other</span>
+<span class="sd">        detections' footprints; ``"uberseg"`` ignores those markers,</span>
+<span class="sd">        zeroes the weight of neighbour-side pixels from the coadd</span>
+<span class="sd">        segmentation map and requires ``seg_cat_path``. Defect pixels are</span>
+<span class="sd">        filled under both (see :func:`prepare_ngmix_weights`).</span>
 <span class="sd">    seg_cat_path : str, optional</span>
 <span class="sd">        Path to the coadd-frame segmentation VIGNET catalogue (see</span>
 <span class="sd">        :class:`Tile_cat`). Required when ``blend_handling="uberseg"``.</span>
 <span class="sd">    dilate_neighbour : int, optional</span>
 <span class="sd">        Neighbour-mask dilation iterations for ``"uberseg"`` (see</span>
-<span class="sd">        :func:`uberseg_weight`); the default is ``1``.</span>
+<span class="sd">        :func:`uberseg_mask`); the default is ``1``.</span>
+<span class="sd">    metacal_psf : str, optional</span>
+<span class="sd">        Metacal reconvolution-kernel scheme (see :func:`do_ngmix_metacal`).</span>
+<span class="sd">    defect_weighting : str, optional</span>
+<span class="sd">        How interpolated defects are weighted, one of ``DEFECT_WEIGHTINGS``</span>
+<span class="sd">        (see :func:`defect_weighting_masks`); the default is</span>
+<span class="sd">        ``DEFECT_WEIGHTING``.</span>
+<span class="sd">    defect_fill : str, optional</span>
+<span class="sd">        What defect pixels hold before metacal, one of ``DEFECT_FILLS``</span>
+<span class="sd">        (see :func:`interpolated_defects`); the default is ``DEFECT_FILL``.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
@@ -1386,8 +1516,8 @@
 <span class="sd">    IndexError</span>
 <span class="sd">        If the length of the input file list is incorrect</span>
 <span class="sd">    ValueError</span>
-<span class="sd">        If ``blend_handling`` is unknown, or ``"uberseg"`` is selected without</span>
-<span class="sd">        ``seg_cat_path``.</span>
+<span class="sd">        If ``blend_handling``, ``defect_weighting`` or ``defect_fill`` is</span>
+<span class="sd">        unknown, or ``"uberseg"`` is selected without ``seg_cat_path``.</span>
 
 <span class="sd">    """</span>
 
@@ -1408,6 +1538,8 @@
         <span class="n">seg_cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">"fitgauss"</span><span class="p">,</span>
+        <span class="n">defect_weighting</span><span class="o">=</span><span class="n">DEFECT_WEIGHTING</span><span class="p">,</span>
+        <span class="n">defect_fill</span><span class="o">=</span><span class="n">DEFECT_FILL</span><span class="p">,</span>
     <span class="p">):</span>
 
         <span class="c1"># Base count = catalogue + vignets, excluding the f_wcs headers (passed</span>
@@ -1425,6 +1557,18 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"Unknown BLEND_HANDLING '</span><span class="si">{</span><span class="n">blend_handling</span><span class="si">}</span><span class="s2">'; expected one of"</span>
                 <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">BLEND_HANDLINGS</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">defect_weighting</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DEFECT_WEIGHTINGS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Unknown DEFECT_WEIGHTING '</span><span class="si">{</span><span class="n">defect_weighting</span><span class="si">}</span><span class="s2">'; expected one"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">" of </span><span class="si">{</span><span class="n">DEFECT_WEIGHTINGS</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">defect_fill</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DEFECT_FILLS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Unknown DEFECT_FILL '</span><span class="si">{</span><span class="n">defect_fill</span><span class="si">}</span><span class="s2">'; expected one of"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">DEFECT_FILLS</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="c1"># Fail fast at construction (not deep in the per-epoch loop) when</span>
@@ -1477,6 +1621,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_seg_cat_path</span> <span class="o">=</span> <span class="n">seg_cat_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dilate_neighbour</span> <span class="o">=</span> <span class="n">dilate_neighbour</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_metacal_psf</span> <span class="o">=</span> <span class="n">metacal_psf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_defect_weighting</span> <span class="o">=</span> <span class="n">defect_weighting</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_defect_fill</span> <span class="o">=</span> <span class="n">defect_fill</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span> <span class="o">=</span> <span class="n">w_log</span>
 
@@ -1585,12 +1731,21 @@
                 <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"n_epoch_model"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">"n_epoch_model"</span><span class="p">]</span>
                 <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"n_epoch_failed"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">"n_epoch_failed"</span><span class="p">]</span>
+                <span class="p">)</span>
                 <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"mcal_types_fail"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mcal_types_fail</span><span class="p">)</span>
                 <span class="c1"># Per-object blend flag (see process()); replicated across all</span>
                 <span class="c1"># shear types like id / n_epoch_model / mcal_types_fail.</span>
                 <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"neighbour_flag"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">"neighbour_flag"</span><span class="p">]</span>
                 <span class="p">)</span>
+                <span class="c1"># Defect diagnostics (Postage_stamp.record_defects), likewise</span>
+                <span class="c1"># object-level and replicated.</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span>
+                    <span class="s2">"n_epoch_interp"</span><span class="p">,</span> <span class="s2">"min_dist_interp"</span><span class="p">,</span> <span class="s2">"min_dist_noisefill"</span>
+                <span class="p">):</span>
+                    <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
                 <span class="c1"># ngmix 2.x reports the solver's function-evaluation count</span>
                 <span class="c1"># (nfev, ~tens-hundreds; -1 on some failures), not the v1</span>
                 <span class="c1"># 1-5 retry count, so the column is named accordingly. Fits</span>
@@ -1904,6 +2059,10 @@
         <span class="n">id_first</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="n">id_last</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="n">count_batch</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">epoch_cuts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span>
+            <span class="n">considered</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">masked_fraction</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">central_veto</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">failed</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="n">n_emptied</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">saved_batch_cumul</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="n">rows</span> <span class="o">=</span> <span class="n">chunk_rows</span><span class="p">(</span>
@@ -1937,10 +2096,14 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_sub</span><span class="p">,</span>
                 <span class="n">psf_obj</span><span class="p">,</span>
                 <span class="n">gal_obj</span><span class="p">,</span>
+                <span class="n">blend_handling</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_blend_handling</span><span class="p">,</span>
+                <span class="n">defect_fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_defect_fill</span><span class="p">,</span>
             <span class="p">)</span>
+            <span class="n">epoch_cuts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">epoch_cuts</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">gals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">n_no_epoch</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">n_emptied</span> <span class="o">+=</span> <span class="n">stamp</span><span class="o">.</span><span class="n">epoch_cuts</span><span class="p">[</span><span class="s2">"considered"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
                 <span class="k">continue</span>
 
             <span class="c1"># Per-object RNG, seeded from (ra, dec, ccd) — see</span>
@@ -1982,6 +2145,8 @@
                     <span class="n">object_number</span><span class="o">=</span><span class="n">obj_id</span><span class="p">,</span>
                     <span class="n">dilate_neighbour</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dilate_neighbour</span><span class="p">,</span>
                     <span class="n">metacal_psf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_metacal_psf</span><span class="p">,</span>
+                    <span class="n">defect_weighting</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_defect_weighting</span><span class="p">,</span>
+                    <span class="n">defect_fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_defect_fill</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ee</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -1989,6 +2154,15 @@
                 <span class="p">)</span>
                 <span class="n">n_ngmix_fail</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">continue</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="c1"># Epochs do_ngmix_metacal dropped (failed-epoch-dropped).</span>
+                <span class="n">epoch_cuts</span><span class="p">[</span><span class="s2">"failed"</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">epoch_failures</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">epoch_name</span><span class="p">,</span> <span class="n">err</span> <span class="ow">in</span> <span class="n">stamp</span><span class="o">.</span><span class="n">epoch_failures</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"ngmix: tile </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="si">}</span><span class="s2"> object"</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">obj_id</span><span class="si">}</span><span class="s2"> epoch </span><span class="si">{</span><span class="n">epoch_name</span><span class="si">}</span><span class="s2"> dropped:"</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">err</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">err</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="p">)</span>
 
             <span class="n">res</span><span class="p">[</span><span class="s1">'obj_id'</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj_id</span>
             <span class="c1"># Neighbour flag: does the coadd seg stamp hold any non-central,</span>
@@ -2002,6 +2176,8 @@
             <span class="c1"># epochs that survived the PSF fit and entered the model,</span>
             <span class="c1"># not the number of epochs submitted (v1 contract)</span>
             <span class="n">res</span><span class="p">[</span><span class="s1">'n_epoch_model'</span><span class="p">]</span> <span class="o">=</span> <span class="n">psf_res</span><span class="p">[</span><span class="s1">'n_epoch'</span><span class="p">]</span>
+            <span class="n">res</span><span class="p">[</span><span class="s1">'n_epoch_failed'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">epoch_failures</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">defect_diagnostics</span><span class="p">())</span>
             <span class="c1"># The mcal flag columns are derived from the per-type results in</span>
             <span class="c1"># compile_results; here they only feed the run-health count.</span>
             <span class="k">if</span> <span class="n">get_mcal_flags</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
@@ -2050,6 +2226,14 @@
             <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">n_fitted</span><span class="si">}</span><span class="s2"> fitted"</span>
         <span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">"epoch cuts:"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" considered=</span><span class="si">{</span><span class="n">epoch_cuts</span><span class="p">[</span><span class="s1">'considered'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" masked_fraction=</span><span class="si">{</span><span class="n">epoch_cuts</span><span class="p">[</span><span class="s1">'masked_fraction'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" central_veto=</span><span class="si">{</span><span class="n">epoch_cuts</span><span class="p">[</span><span class="s1">'central_veto'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" failed=</span><span class="si">{</span><span class="n">epoch_cuts</span><span class="p">[</span><span class="s1">'failed'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" objects_emptied=</span><span class="si">{</span><span class="n">n_emptied</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
         <span class="n">log_run_health</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">n_fitted</span><span class="p">,</span> <span class="n">n_flagged</span><span class="p">)</span>
 
         <span class="n">vignet_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -2075,11 +2259,59 @@
     <span class="n">bkg_sub</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">psf_obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">gal_obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">blend_handling</span><span class="o">=</span><span class="s2">"noisefill"</span><span class="p">,</span>
+    <span class="n">defect_fill</span><span class="o">=</span><span class="n">DEFECT_FILL</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Prepare the per-object lists of exposures passed to ngmix.</span>
+<span class="w">    </span><span class="sd">"""Gather one object's epoch stamps, dropping epochs its defects spoil.</span>
 
-<span class="sd">    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut]</span>
+<span class="sd">    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut] epoch-cut-on-defect-mask</span>
+<span class="sd">    An epoch is dropped when more than ``EPOCH_MASKED_FRACTION_CUT`` of its</span>
+<span class="sd">    stamp lies in :func:`defect_mask`, the set :func:`prepare_ngmix_weights`</span>
+<span class="sd">    zero-weights and fills, or when :func:`central_defect_vetoes` finds a</span>
+<span class="sd">    defect near the object. The quarter-turn copies of interpolated pixels</span>
+<span class="sd">    that ``DEFECT_WEIGHTING`` zero-weights or interpolates are not counted.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects</span>
+<span class="sd">    The tile VIGNET's -1e30 markers on other detections' footprints</span>
+<span class="sd">    (:func:`split_tile_markers`) are the epoch's neighbour mask</span>
+<span class="sd">    (``stamp.neighbours``), not defects: every epoch shares the tile VIGNET,</span>
+<span class="sd">    so counting them would drop every epoch of a blended object.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.defect_fill] off-tile-pixels-are-defects</span>
+<span class="sd">    Beyond the tile's edge the epoch holds the object's own light, cut off by</span>
+<span class="sd">    the tile, so those pixels get zero exposure weight and join the defect</span>
+<span class="sd">    set under every ``blend_handling``. On a 51-px stamp an object within</span>
+<span class="sd">    about 8.5 px of the tile edge fails the masked-fraction cut.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    vignet : Vignet</span>
+<span class="sd">        Per-object vignet stores.</span>
+<span class="sd">    obj_id : int</span>
+<span class="sd">        Object ID (SExtractor ``NUMBER``).</span>
+<span class="sd">    i_tile : int</span>
+<span class="sd">        Row of the object in ``tile_cat``.</span>
+<span class="sd">    tile_cat : Tile_cat</span>
+<span class="sd">        Tile catalogue.</span>
+<span class="sd">    bkg_sub : bool, optional</span>
+<span class="sd">        Subtract the background vignet; the default is ``True``.</span>
+<span class="sd">    psf_obj, gal_obj : dict, optional</span>
+<span class="sd">        The object's PSF and galaxy vignet dicts, if already read.</span>
+<span class="sd">    blend_handling : {"noisefill", "uberseg"}, optional</span>
+<span class="sd">        The neighbour treatment :func:`prepare_ngmix_weights` will apply,</span>
+<span class="sd">        which decides which defects it can interpolate and so their veto</span>
+<span class="sd">        radius; the default is ``"noisefill"``.</span>
+<span class="sd">    defect_fill : str, optional</span>
+<span class="sd">        One of ``DEFECT_FILLS``, which with ``blend_handling`` decides the</span>
+<span class="sd">        interpolated defects and so their veto radius; the default is</span>
+<span class="sd">        ``DEFECT_FILL``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Postage_stamp</span>
+<span class="sd">        The surviving epochs' stamps.</span>
 <span class="sd">    """</span>
+    <span class="c1"># define per-object lists of individual exposures to go into ngmix</span>
     <span class="n">stamp</span> <span class="o">=</span> <span class="n">Postage_stamp</span><span class="p">(</span><span class="n">bkg_sub</span><span class="o">=</span><span class="n">bkg_sub</span><span class="p">)</span>
     <span class="c1"># Read each store's per-object dict ONCE: every sqlitedict access</span>
     <span class="c1"># unpickles the object's whole all-epoch dict, so keeping these out of</span>
@@ -2146,19 +2378,27 @@
             <span class="n">tile_seg</span> <span class="o">=</span> <span class="n">Ngmix</span><span class="o">.</span><span class="n">MegaCamFlip</span><span class="p">(</span><span class="n">tile_seg</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">))</span>
 
         <span class="n">flag_vign</span> <span class="o">=</span> <span class="n">flag_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">tile_vign</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">flag_vign</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tile_vign</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1e30</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">10</span>
-        <span class="n">v_flag_tmp</span> <span class="o">=</span> <span class="n">flag_vign</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
-        <span class="c1"># remove objects that are more than 1/3 masked</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">v_flag_tmp</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">v_flag_tmp</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">:</span>
-            <span class="k">continue</span>
-
-        <span class="n">weight_vign</span> <span class="o">=</span> <span class="n">weight_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
+        <span class="c1"># Off-tile pixels are defects (off-tile-pixels-are-defects); the</span>
+        <span class="c1"># other -1e30 markers are neighbours (neighbour-markers-are-not-defects).</span>
+        <span class="n">neighbour</span><span class="p">,</span> <span class="n">off_tile</span> <span class="o">=</span> <span class="n">split_tile_markers</span><span class="p">(</span><span class="n">tile_vign</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">gal_vign</span><span class="p">))</span>
+        <span class="n">weight_vign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">off_tile</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">weight_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">])</span>
         <span class="n">bkg_rms_vign</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">bkg_rms_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">bkg_rms_obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="k">else</span> <span class="kc">None</span>
         <span class="p">)</span>
+        <span class="n">defect</span> <span class="o">=</span> <span class="n">defect_mask</span><span class="p">(</span><span class="n">weight_vign</span><span class="p">,</span> <span class="n">flag_vign</span><span class="p">,</span> <span class="n">bkg_rms_vign</span><span class="p">)</span>
+        <span class="n">stamp</span><span class="o">.</span><span class="n">epoch_cuts</span><span class="p">[</span><span class="s2">"considered"</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">defect</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">EPOCH_MASKED_FRACTION_CUT</span><span class="p">:</span>
+            <span class="n">stamp</span><span class="o">.</span><span class="n">epoch_cuts</span><span class="p">[</span><span class="s2">"masked_fraction"</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">continue</span>
+        <span class="n">interpolated</span> <span class="o">=</span> <span class="n">interpolated_defects</span><span class="p">(</span>
+            <span class="n">defect</span><span class="p">,</span> <span class="n">neighbour</span><span class="p">,</span> <span class="n">blend_handling</span><span class="p">,</span> <span class="n">defect_fill</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">central_defect_vetoes</span><span class="p">(</span><span class="n">defect</span><span class="p">,</span> <span class="n">interpolated</span><span class="p">):</span>
+            <span class="n">stamp</span><span class="o">.</span><span class="n">epoch_cuts</span><span class="p">[</span><span class="s2">"central_veto"</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">continue</span>
+        <span class="n">stamp</span><span class="o">.</span><span class="n">record_defects</span><span class="p">(</span><span class="n">defect</span><span class="p">,</span> <span class="n">interpolated</span><span class="p">)</span>
 
         <span class="c1"># One unpickle per exposure (all CCDs), reused across this object's</span>
         <span class="c1"># epochs; the cache is per-call, so bounded by the object's exposures</span>
@@ -2192,7 +2432,9 @@
         <span class="n">stamp</span><span class="o">.</span><span class="n">psfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">psf_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">][</span><span class="s1">'VIGNET'</span><span class="p">])</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weight_vign_scaled</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flag_vign</span><span class="p">)</span>
+        <span class="n">stamp</span><span class="o">.</span><span class="n">neighbours</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">neighbour</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">bkg_rms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bkg_rms_vign_scaled</span><span class="p">)</span>
+        <span class="n">stamp</span><span class="o">.</span><span class="n">epoch_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">expccd_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">tile_seg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">stamp</span><span class="o">.</span><span class="n">segs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_seg</span><span class="p">)</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">jacobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jacob</span><span class="p">)</span>
@@ -2201,9 +2443,7 @@
         <span class="c1"># make_ngmix_observation), which raises if it is missing; the "hsm"</span>
         <span class="c1"># path ignores it, so read it leniently rather than coupling hsm to a</span>
         <span class="c1"># field it never uses.</span>
-        <span class="n">stamp</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="n">vignet</span><span class="o">.</span><span class="n">gal_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)][</span><span class="n">expccd_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'OFFSET'</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="n">stamp</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gal_obj</span><span class="p">[</span><span class="n">expccd_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'OFFSET'</span><span class="p">))</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">i_tile</span><span class="p">])</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">i_tile</span><span class="p">])</span>
         <span class="c1"># CCD of the first surviving epoch — Fabian's coord_list[0] convention</span>
@@ -2213,6 +2453,53 @@
             <span class="n">stamp</span><span class="o">.</span><span class="n">ccd</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">stamp</span></div>
+
+
+<div class="viewcode-block" id="split_tile_markers">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.split_tile_markers">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">split_tile_markers</span><span class="p">(</span><span class="n">tile_vign</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Split the tile VIGNET's -1e30 markers into neighbour and off-tile.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-marked-border-rows-and-columns</span>
+<span class="sd">    The tile VIGNET holds -1e30 on the footprints of other detections and on</span>
+<span class="sd">    stamp pixels beyond the tile's edge (SExtractor writes it). A stamp</span>
+<span class="sd">    clipped by the tile's rectangle loses whole rows and whole columns from</span>
+<span class="sd">    its border, so the off-tile pixels are the union of the runs of</span>
+<span class="sd">    entirely -1e30 rows and columns that start at a stamp border. The remaining markers are</span>
+<span class="sd">    neighbour pixels: a footprint touching the stamp border, and a footprint</span>
+<span class="sd">    that completes an interior row or column beside an off-tile band, stay</span>
+<span class="sd">    neighbours.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tile_vign : numpy.ndarray or None</span>
+<span class="sd">        Tile VIGNET stamp, oriented like the epoch; ``None`` marks nothing.</span>
+<span class="sd">    shape : tuple of int</span>
+<span class="sd">        Stamp shape, used when ``tile_vign`` is ``None``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray of bool</span>
+<span class="sd">        Neighbour pixels.</span>
+<span class="sd">    numpy.ndarray of bool</span>
+<span class="sd">        Off-tile pixels.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">tile_vign</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">marker</span> <span class="o">=</span> <span class="n">tile_vign</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1e30</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">border_runs</span><span class="p">(</span><span class="n">full</span><span class="p">):</span>
+        <span class="c1"># Lines in the unbroken run of marked lines from either border.</span>
+        <span class="n">lead</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="o">.</span><span class="n">accumulate</span><span class="p">(</span><span class="n">full</span><span class="p">)</span>
+        <span class="n">trail</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="o">.</span><span class="n">accumulate</span><span class="p">(</span><span class="n">full</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">lead</span> <span class="o">|</span> <span class="n">trail</span>
+
+    <span class="n">off_tile</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">border_runs</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="o">|</span> <span class="n">border_runs</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">marker</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">off_tile</span><span class="p">,</span> <span class="n">off_tile</span></div>
+
 
 
 <div class="viewcode-block" id="background_subtract">
@@ -2452,18 +2739,18 @@
 
 
 
-<div class="viewcode-block" id="uberseg_weight">
-<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.uberseg_weight">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">uberseg_weight</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="n">seg</span><span class="p">,</span> <span class="n">object_number</span><span class="p">,</span> <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Zero a stamp's weight on neighbour-side pixels — the UberSeg treatment.</span>
+<div class="viewcode-block" id="uberseg_mask">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.uberseg_mask">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">uberseg_mask</span><span class="p">(</span><span class="n">seg</span><span class="p">,</span> <span class="n">object_number</span><span class="p">,</span> <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Neighbour-side pixels of a stamp: the UberSeg mask.</span>
 
 <span class="sd">    UberSeg is Erin Sheldon's MEDS/ngmix neighbour mask (``esheldon/meds``,</span>
 <span class="sd">    https://github.com/esheldon/meds — ``MEDS.get_uberseg`` /</span>
 <span class="sd">    ``meds._uberseg.uberseg_tree``, in MEDS itself "adapted from Niall MacCrann</span>
 <span class="sd">    and Joe Zuntz", and used in the DES shear pipeline). Each stamp pixel is</span>
 <span class="sd">    assigned to the object whose segmentation footprint it lies nearest to — a</span>
-<span class="sd">    nearest-segment Voronoi partition — and only pixels assigned to the central</span>
-<span class="sd">    object keep their weight.</span>
+<span class="sd">    nearest-segment Voronoi partition — and the pixels assigned to a neighbour</span>
+<span class="sd">    are masked.</span>
 
 <span class="sd">    This function **reimplements** the partition rather than depending on</span>
 <span class="sd">    ``meds``: it is a five-line ``scipy.spatial.cKDTree`` nearest-neighbour</span>
@@ -2481,69 +2768,267 @@
 <span class="sd">    Because the partition is by distance to the nearest footprint, the pixels</span>
 <span class="sd">    surviving around a compact central object form a single connected,</span>
 <span class="sd">    roughly circular core; the "circularisation" is emergent geometry, not a</span>
-<span class="sd">    separate aperture. Unlike the noise-fill treatment, masked pixels are</span>
-<span class="sd">    handed to ngmix as a hard mask (weight = 0), never replaced by a noise</span>
-<span class="sd">    realisation.</span>
+<span class="sd">    separate aperture. :func:`prepare_ngmix_weights` zeroes the weight of the</span>
+<span class="sd">    masked pixels and keeps their image values, so metacal shears the</span>
+<span class="sd">    neighbour's light along with the target's.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    weight : numpy.ndarray</span>
-<span class="sd">        Per-pixel weight (inverse variance) map for the stamp.</span>
 <span class="sd">    seg : numpy.ndarray</span>
-<span class="sd">        Segmentation map on the same grid as ``weight``: 0 for sky, the</span>
-<span class="sd">        SExtractor object number for each detected object's footprint.</span>
+<span class="sd">        Segmentation stamp: 0 for sky, the SExtractor object number for each</span>
+<span class="sd">        detected object's footprint.</span>
 <span class="sd">    object_number : int</span>
 <span class="sd">        Segmentation label of the central object — its SExtractor ``NUMBER``</span>
 <span class="sd">        (``obj_id``), authoritative because seg labels are the NUMBERs of the</span>
 <span class="sd">        same SE run. Not the centre-pixel label, which a few-pixel coadd-vs-</span>
 <span class="sd">        epoch offset can steal for a neighbour and so invert this mask.</span>
 <span class="sd">    dilate_neighbour : int, optional</span>
-<span class="sd">        Enlarge the neighbour mask by this many binary-dilation iterations</span>
-<span class="sd">        (4-connected, ~one pixel per iteration) on top of the base Voronoi</span>
-<span class="sd">        partition, to absorb the few-pixel coadd-vs-epoch registration offset</span>
-<span class="sd">        the coadd-seg overlay accepts (shapepipe#776, decision on seg source).</span>
-<span class="sd">        ``0`` (the default) recovers the pure Sheldon UberSeg mask, byte-for-</span>
-<span class="sd">        byte. The dilation is additive: it only ever zeros more pixels, never</span>
-<span class="sd">        restores a base-masked one, so over-masking a boundary pixel costs a</span>
-<span class="sd">        little central-object S/N but never leaks neighbour flux into the fit.</span>
+<span class="sd">        Enlarge the mask by this many binary-dilation iterations of the</span>
+<span class="sd">        neighbour footprints (4-connected, ~one pixel per iteration) on top of</span>
+<span class="sd">        the Voronoi partition, to absorb the few-pixel coadd-vs-epoch</span>
+<span class="sd">        registration offset the coadd-seg overlay accepts (shapepipe#776,</span>
+<span class="sd">        decision on seg source). ``0`` (the default) is the pure Sheldon</span>
+<span class="sd">        UberSeg mask. The dilation only ever adds pixels, so over-masking a</span>
+<span class="sd">        boundary pixel costs a little central-object S/N but never leaks</span>
+<span class="sd">        neighbour flux into the fit.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    numpy.ndarray</span>
-<span class="sd">        Copy of ``weight`` with neighbour-side pixels zeroed.</span>
+<span class="sd">    numpy.ndarray of bool</span>
+<span class="sd">        ``True`` on pixels nearer a neighbour's footprint than the central</span>
+<span class="sd">        object's; all ``False`` when the stamp holds no neighbour.</span>
 <span class="sd">    @sc [decision:shape_measurement.blend_handling]</span>
 <span class="sd">    """</span>
-    <span class="n">weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">weight</span><span class="p">)</span>
+    <span class="n">seg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seg</span><span class="p">)</span>
+    <span class="n">masked</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
 
     <span class="n">obj_pix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">seg</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
-    <span class="c1"># No detected footprint, or only sky plus the central object: there is</span>
-    <span class="c1"># no neighbour to mask, so the weight is unchanged (cf. MEDS' early</span>
-    <span class="c1"># ``len(np.unique(seg)) == 2`` return).</span>
-    <span class="k">if</span> <span class="n">obj_pix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">weight</span>
     <span class="n">labels</span> <span class="o">=</span> <span class="n">seg</span><span class="p">[</span><span class="n">seg</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># No neighbour footprint on the stamp: nothing to mask (cf. MEDS' early</span>
+    <span class="c1"># ``len(np.unique(seg)) == 2`` return).</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">labels</span> <span class="o">==</span> <span class="n">object_number</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">weight</span>
+        <span class="k">return</span> <span class="n">masked</span>
 
-    <span class="c1"># Nearest segmentation pixel for every stamp pixel; zero the weight</span>
-    <span class="c1"># wherever that nearest footprint belongs to a neighbour rather than to</span>
-    <span class="c1"># the central object.</span>
+    <span class="c1"># Nearest segmentation pixel for every stamp pixel; mask wherever that</span>
+    <span class="c1"># nearest footprint belongs to a neighbour rather than to the central</span>
+    <span class="c1"># object.</span>
     <span class="n">grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
     <span class="n">_</span><span class="p">,</span> <span class="n">nearest</span> <span class="o">=</span> <span class="n">cKDTree</span><span class="p">(</span><span class="n">obj_pix</span><span class="p">)</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
-    <span class="n">nearest_label</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">nearest</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-    <span class="n">weight</span><span class="p">[</span><span class="n">nearest_label</span> <span class="o">!=</span> <span class="n">object_number</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">masked</span> <span class="o">|=</span> <span class="n">labels</span><span class="p">[</span><span class="n">nearest</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="n">object_number</span>
 
-    <span class="c1"># Enlarge the neighbour mask to absorb the coadd-vs-epoch offset: zero any</span>
-    <span class="c1"># pixel within ``dilate_neighbour`` of a neighbour footprint. Purely</span>
-    <span class="c1"># additive over the base Voronoi result above.</span>
     <span class="k">if</span> <span class="n">dilate_neighbour</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">neighbour_mask</span> <span class="o">=</span> <span class="n">binary_dilation</span><span class="p">(</span>
+        <span class="n">masked</span> <span class="o">|=</span> <span class="n">binary_dilation</span><span class="p">(</span>
             <span class="p">(</span><span class="n">seg</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">seg</span> <span class="o">!=</span> <span class="n">object_number</span><span class="p">),</span>
             <span class="n">iterations</span><span class="o">=</span><span class="n">dilate_neighbour</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">weight</span><span class="p">[</span><span class="n">neighbour_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="k">return</span> <span class="n">weight</span></div>
+    <span class="k">return</span> <span class="n">masked</span></div>
+
+
+
+<div class="viewcode-block" id="defect_mask">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.defect_mask">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">defect_mask</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">bkg_rms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Defect pixels of one epoch stamp.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.defect_fill,label:physics] defect-set-unsymmetrized</span>
+<span class="sd">    A defect is a pixel with zero exposure weight (off-tile pixels</span>
+<span class="sd">    included), a nonzero exposure flag, or, when a background RMS map is</span>
+<span class="sd">    given, a non-finite or non-positive RMS. This one set is zero-weighted</span>
+<span class="sd">    and filled by :func:`prepare_ngmix_weights` and counted by the epoch</span>
+<span class="sd">    cuts. It is not ORed with its rotations: a four-fold fill quadruples the</span>
+<span class="sd">    filled area near the object and with it m (astra option</span>
+<span class="sd">    ``defect_fill.symmetrized_4fold_noise``).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    weight : numpy.ndarray</span>
+<span class="sd">        Exposure weight stamp.</span>
+<span class="sd">    flag : numpy.ndarray</span>
+<span class="sd">        Exposure flag stamp.</span>
+<span class="sd">    bkg_rms : numpy.ndarray, optional</span>
+<span class="sd">        Background RMS stamp.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray of bool</span>
+<span class="sd">        ``True`` on defect pixels.</span>
+<span class="sd">    """</span>
+    <span class="n">defect</span> <span class="o">=</span> <span class="p">(</span><span class="n">weight</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">flag</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">bkg_rms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">defect</span> <span class="o">|=</span> <span class="o">~</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">bkg_rms</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bkg_rms</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">defect</span></div>
+
+
+
+<div class="viewcode-block" id="interpolated_defects">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.interpolated_defects">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">interpolated_defects</span><span class="p">(</span><span class="n">defect</span><span class="p">,</span> <span class="n">neighbour</span><span class="p">,</span> <span class="n">blend_handling</span><span class="p">,</span>
+                         <span class="n">defect_fill</span><span class="o">=</span><span class="n">DEFECT_FILL</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The defect pixels :func:`prepare_ngmix_weights` interpolates.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.defect_fill] fill-option</span>
+<span class="sd">    Under ``defect_fill="noise"`` no pixel is interpolated: every defect is</span>
+<span class="sd">    noise-filled. Under ``"interpolate"``, the short bounded runs of</span>
+<span class="sd">    :func:`interpolable_defects` are. There, under ``"noisefill"`` the</span>
+<span class="sd">    neighbour pixels' light is replaced, so they neither support the</span>
+<span class="sd">    interpolant nor are interpolated (``removed=neighbour``); under</span>
+<span class="sd">    ``"uberseg"`` their light stays and supports it. The epoch cuts</span>
+<span class="sd">    (:func:`central_defect_vetoes`) and the defect diagnostics read the</span>
+<span class="sd">    same set, so each pixel is vetoed at the radius of the fill it gets.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    defect : numpy.ndarray of bool</span>
+<span class="sd">        Defect mask of one epoch stamp (:func:`defect_mask`).</span>
+<span class="sd">    neighbour : numpy.ndarray of bool or None</span>
+<span class="sd">        The epoch's neighbour mask (``Postage_stamp.neighbours``); ``None``</span>
+<span class="sd">        marks no pixel.</span>
+<span class="sd">    blend_handling : {"noisefill", "uberseg"}</span>
+<span class="sd">        Neighbour treatment.</span>
+<span class="sd">    defect_fill : str, optional</span>
+<span class="sd">        One of ``DEFECT_FILLS``; the default is ``DEFECT_FILL``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray of bool</span>
+<span class="sd">        ``True`` on the defect pixels to interpolate; the other defect</span>
+<span class="sd">        pixels are noise-filled.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``defect_fill`` is unknown.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">defect_fill</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DEFECT_FILLS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Unknown DEFECT_FILL '</span><span class="si">{</span><span class="n">defect_fill</span><span class="si">}</span><span class="s2">'; expected one of"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">DEFECT_FILLS</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">defect_fill</span> <span class="o">==</span> <span class="s2">"noise"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">defect</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">))</span>
+    <span class="n">removed</span> <span class="o">=</span> <span class="n">neighbour</span> <span class="k">if</span> <span class="n">blend_handling</span> <span class="o">==</span> <span class="s2">"noisefill"</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">interpolable_defects</span><span class="p">(</span><span class="n">defect</span><span class="p">,</span> <span class="n">removed</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="central_defect_vetoes">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">central_defect_vetoes</span><span class="p">(</span><span class="n">defect</span><span class="p">,</span> <span class="n">interpolated</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Whether a defect near the stamp centre drops the epoch.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.defect_fill] veto-radius-follows-the-fill</span>
+<span class="sd">    The epoch is dropped when an interpolated defect pixel lies closer than</span>
+<span class="sd">    ``EPOCH_INTERPOLATED_DEFECT_RADIUS`` to the stamp centre, or a</span>
+<span class="sd">    noise-filled one closer than ``EPOCH_CENTRAL_DEFECT_RADIUS``: the</span>
+<span class="sd">    smallest radii at which the defects kept recover shear within</span>
+<span class="sd">    |m| &lt; 1% and |c| &lt; 5e-4. ``interpolated`` is the set</span>
+<span class="sd">    :func:`prepare_ngmix_weights` interpolates, so each pixel is vetoed at</span>
+<span class="sd">    the radius of the fill it gets; under ``DEFECT_FILL = "noise"`` that set</span>
+<span class="sd">    is empty and every defect is vetoed at ``EPOCH_CENTRAL_DEFECT_RADIUS``.</span>
+<span class="sd">    The veto reads only masks, so it selects</span>
+<span class="sd">    on nothing that responds to shear. Calibration: astra decision</span>
+<span class="sd">    ``shape_measurement.central_defect_veto``; guarded by</span>
+<span class="sd">    ``tests/science/test_defect_recovery.py``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    defect : numpy.ndarray of bool</span>
+<span class="sd">        Defect mask of one epoch stamp (:func:`defect_mask`).</span>
+<span class="sd">    interpolated : numpy.ndarray of bool</span>
+<span class="sd">        The defect pixels that are interpolated</span>
+<span class="sd">        (:func:`interpolated_defects`); the rest are noise-filled.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        ``True`` if the epoch should be dropped.</span>
+<span class="sd">    """</span>
+    <span class="n">radius</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">interpolated</span><span class="p">,</span>
+        <span class="n">EPOCH_INTERPOLATED_DEFECT_RADIUS</span><span class="p">,</span>
+        <span class="n">EPOCH_CENTRAL_DEFECT_RADIUS</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">defect</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">centre_distance</span><span class="p">(</span><span class="n">defect</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">radius</span><span class="p">)))</span></div>
+
+
+
+<div class="viewcode-block" id="centre_distance">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.centre_distance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">centre_distance</span><span class="p">(</span><span class="n">shape</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Distance of every stamp pixel from the stamp centre, in pixels."""</span>
+    <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">rows</span> <span class="o">-</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cols</span> <span class="o">-</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="defect_weighting_masks">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.defect_weighting_masks">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">defect_weighting_masks</span><span class="p">(</span><span class="n">interpolated</span><span class="p">,</span> <span class="n">clean</span><span class="p">,</span> <span class="n">defect_weighting</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The pixels each DEFECT_WEIGHTING interpolates, re-weights and zeroes.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.defect_weighting,label:physics] one-place-decides-defect-weights</span>
+<span class="sd">    ``interpolated`` (:func:`interpolated_defects`) starts at weight 0, like</span>
+<span class="sd">    every defect. The options:</span>
+
+<span class="sd">    * ``"fourfold_zero"``: interpolate it; the weight is also zeroed on its</span>
+<span class="sd">      three quarter-turn copies about the stamp centre, which keep their</span>
+<span class="sd">      light, so the likelihood hole has no spin-2 part.</span>
+<span class="sd">    * ``"des_y6"``: DES Y6's pizza-cutter symmetrization on a per-object</span>
+<span class="sd">      stamp. The mask is ORed with its quarter turn (``np.rot90``, k=1)</span>
+<span class="sd">      about the stamp centre, the union is interpolated, and every</span>
+<span class="sd">      interpolated pixel keeps its full weight. Copies that land on a pixel</span>
+<span class="sd">      whose light is already replaced (a noise-filled defect, a noisefill</span>
+<span class="sd">      neighbour) stay as they are, and so do copies the interpolant cannot</span>
+<span class="sd">      reach: a copy is interpolated only where it passes</span>
+<span class="sd">      :func:`interpolable_defects` among the pixels the image keeps, so a</span>
+<span class="sd">      copy wedged into a corner of the clean region (an edge band beside</span>
+<span class="sd">      the stamp edge) keeps its light rather than leaving the fill</span>
+<span class="sd">      non-finite.</span>
+<span class="sd">    * ``"hole"``: interpolate it and leave it at weight 0.</span>
+<span class="sd">    * ``"full"``: interpolate it at full weight.</span>
+
+<span class="sd">    Under ``DEFECT_FILL = "noise"`` no pixel is interpolated, so every</span>
+<span class="sd">    option leaves the weights and the image as they are.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    interpolated : numpy.ndarray of bool</span>
+<span class="sd">        The interpolable defect pixels of a square stamp.</span>
+<span class="sd">    clean : numpy.ndarray of bool</span>
+<span class="sd">        Pixels whose light the image keeps raw.</span>
+<span class="sd">    defect_weighting : str</span>
+<span class="sd">        One of ``DEFECT_WEIGHTINGS``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    fill : numpy.ndarray of bool</span>
+<span class="sd">        Pixels to replace by the interpolant.</span>
+<span class="sd">    restore : numpy.ndarray of bool</span>
+<span class="sd">        Defect pixels that get their full inverse-variance weight back.</span>
+<span class="sd">    zero : numpy.ndarray of bool</span>
+<span class="sd">        Pixels whose weight is zeroed though their light stays.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``defect_weighting`` is unknown.</span>
+<span class="sd">    """</span>
+    <span class="n">none</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">interpolated</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">defect_weighting</span> <span class="o">==</span> <span class="s2">"des_y6"</span><span class="p">:</span>
+        <span class="n">copy</span> <span class="o">=</span> <span class="n">interpolable_defects</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">interpolated</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">clean</span><span class="p">,</span> <span class="o">~</span><span class="n">clean</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">interpolated</span> <span class="o">|</span> <span class="n">copy</span><span class="p">,</span> <span class="n">interpolated</span><span class="p">,</span> <span class="n">none</span>
+    <span class="k">if</span> <span class="n">defect_weighting</span> <span class="o">==</span> <span class="s2">"fourfold_zero"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">interpolated</span><span class="p">,</span> <span class="n">none</span><span class="p">,</span> <span class="n">fourfold</span><span class="p">(</span><span class="n">interpolated</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">defect_weighting</span> <span class="o">==</span> <span class="s2">"hole"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">interpolated</span><span class="p">,</span> <span class="n">none</span><span class="p">,</span> <span class="n">none</span>
+    <span class="k">if</span> <span class="n">defect_weighting</span> <span class="o">==</span> <span class="s2">"full"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">interpolated</span><span class="p">,</span> <span class="n">interpolated</span><span class="p">,</span> <span class="n">none</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"Unknown DEFECT_WEIGHTING '</span><span class="si">{</span><span class="n">defect_weighting</span><span class="si">}</span><span class="s2">'; expected one of"</span>
+        <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">DEFECT_WEIGHTINGS</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="prepare_ngmix_weights">
@@ -2551,30 +3036,83 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">prepare_ngmix_weights</span><span class="p">(</span>
     <span class="n">gal</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">bkg_rms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">blend_handling</span><span class="o">=</span><span class="s2">"noisefill"</span><span class="p">,</span> <span class="n">seg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">neighbour</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defect_weighting</span><span class="o">=</span><span class="n">DEFECT_WEIGHTING</span><span class="p">,</span>
+    <span class="n">defect_fill</span><span class="o">=</span><span class="n">DEFECT_FILL</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">"""bookkeeping for ngmix weights. runs on a single galaxy and epoch</span>
-<span class="sd">        pixel scale and galaxy guess</span>
-<span class="sd">        TO DO: decide if we want galaxy guess stuff</span>
+<span class="w">    </span><span class="sd">"""Build one epoch's image, weight map and noise image for ngmix.</span>
+
+<span class="sd">    Every stamp pixel falls in one of four classes. A clean pixel keeps its</span>
+<span class="sd">    light and its weight. A pixel whose light is replaced by noise keeps</span>
+<span class="sd">    neither: a defect that is not interpolated, or under ``"noisefill"`` a</span>
+<span class="sd">    marked neighbour pixel. An interpolated pixel takes the interpolant, at</span>
+<span class="sd">    the weight ``defect_weighting`` gives it. A pixel whose light stays at</span>
+<span class="sd">    zero weight is a hole in the likelihood only: under ``"fourfold_zero"``</span>
+<span class="sd">    the quarter-turn copies of the interpolated defects, under ``"uberseg"``</span>
+<span class="sd">    a neighbour-side pixel.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.blend_handling] defects-filled-whatever-the-blend-handling</span>
+<span class="sd">    Every pixel of :func:`defect_mask` gets weight 0 and is filled the same</span>
+<span class="sd">    way under every ``blend_handling``. The short runs of</span>
+<span class="sd">    :func:`interpolated_defects` take a Clough-Tocher interpolant of the</span>
+<span class="sd">    pixels whose light the image keeps (:func:`interpolate_defects`), in the</span>
+<span class="sd">    image and the noise image alike; the other defects take noise at the</span>
+<span class="sd">    background RMS. Metacal shears the whole image whatever the weights, so</span>
+<span class="sd">    no raw defect value may reach it.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.blend_handling] noisefill-fills-markers</span>
+<span class="sd">    Under ``"noisefill"`` the ``neighbour`` pixels (the tile VIGNET's -1e30</span>
+<span class="sd">    neighbour markers) get weight 0 and noise. Their light is gone, so they</span>
+<span class="sd">    neither support the interpolant nor receive it.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.blend_handling] uberseg-ignores-markers</span>
+<span class="sd">    Under ``"uberseg"`` the markers are ignored: the pixels of</span>
+<span class="sd">    :func:`uberseg_mask` get weight 0 and keep their light, which is real</span>
+<span class="sd">    sky that metacal shears with the target and which supports the</span>
+<span class="sd">    interpolant.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.defect_weighting] defect-weighting-option</span>
+<span class="sd">    ``defect_weighting`` decides which pixels are interpolated and how they</span>
+<span class="sd">    and their quarter-turn copies are weighted</span>
+<span class="sd">    (:func:`defect_weighting_masks`). Noise-filled pixels and the uberseg</span>
+<span class="sd">    neighbour side are never symmetrized, and an interpolated pixel on the</span>
+<span class="sd">    uberseg neighbour side stays at weight 0. Under ``defect_fill="noise"``</span>
+<span class="sd">    there are no interpolated pixels for it to act on. Measurements: astra</span>
+<span class="sd">    decision ``shape_measurement.defect_weighting``; guarded by</span>
+<span class="sd">    ``tests/science/test_defect_recovery.py``.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.defect_weighting,label:physics] noise-image-in-the-fixnoise-frame</span>
+<span class="sd">    Metacal's ``fixnoise`` turns the noise image a quarter turn</span>
+<span class="sd">    (``np.rot90``, k=1) before shearing it and turns the result back (k=3)</span>
+<span class="sd">    before adding it to the sheared image. The noise image is therefore</span>
+<span class="sd">    interpolated in that turned frame, by the operator that interpolates the</span>
+<span class="sd">    science image: in the frame where both are sheared, the interpolated</span>
+<span class="sd">    pixels and their correlated noise coincide. Interpolating it in the</span>
+<span class="sd">    detector frame instead puts its interpolated pixels a quarter turn away</span>
+<span class="sd">    from the science image's, and the correlated noise of an interpolated</span>
+<span class="sd">    column then survives the cancellation as an additive bias.</span>
+<span class="sd">    ``tests/module/test_ngmix_defect_fill.py`` pins ngmix's k=1/k=3.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    gal : numpy.ndarray</span>
+<span class="sd">        Background-subtracted galaxy stamp.</span>
 <span class="sd">    weight : numpy.ndarray</span>
+<span class="sd">        Exposure weight stamp; zero marks a defect.</span>
 <span class="sd">    flag : numpy.ndarray</span>
+<span class="sd">        Exposure flag stamp; nonzero marks a defect.</span>
 <span class="sd">    rng : numpy.random.RandomState</span>
 <span class="sd">        Random state for the noise realisations (seeded per object; see</span>
 <span class="sd">        :func:`position_seed`).</span>
 <span class="sd">    bkg_rms : numpy.ndarray, optional</span>
-<span class="sd">        Per-pixel background RMS map. If supplied, unmasked pixels use</span>
-<span class="sd">        ``1 / bkg_rms**2`` as the ngmix inverse variance.</span>
+<span class="sd">        Per-pixel background RMS map. If supplied, clean pixels use</span>
+<span class="sd">        ``1 / bkg_rms**2`` as the ngmix inverse variance, and non-finite or</span>
+<span class="sd">        non-positive values mark defects. Otherwise every clean pixel gets</span>
+<span class="sd">        ``1 / sigma_mad(gal)**2``.</span>
 <span class="sd">    blend_handling : {"noisefill", "uberseg"}, optional</span>
-<span class="sd">        How to treat pixels shared with a neighbour. ``"noisefill"`` (default)</span>
-<span class="sd">        replaces flagged pixels with a noise realisation and keeps their</span>
-<span class="sd">        inverse-variance weight — the historical behaviour. ``"uberseg"``</span>
-<span class="sd">        instead hard-masks (weight = 0) every pixel closer to a neighbour's</span>
-<span class="sd">        segmentation footprint than to the central object's, leaving the</span>
-<span class="sd">        image untouched (see :func:`uberseg_weight`).</span>
+<span class="sd">        Neighbour treatment. ``"noisefill"`` (default) zero-weights and</span>
+<span class="sd">        noise-fills the ``neighbour`` pixels. ``"uberseg"`` ignores</span>
+<span class="sd">        ``neighbour``, zeroes the weight of the pixels of</span>
+<span class="sd">        :func:`uberseg_mask` and keeps their raw image values.</span>
 <span class="sd">    seg : numpy.ndarray, optional</span>
 <span class="sd">        Segmentation map on the stamp grid (object NUMBERs). Required for</span>
 <span class="sd">        ``blend_handling="uberseg"``; ignored otherwise.</span>
@@ -2582,51 +3120,92 @@
 <span class="sd">        Central object's segmentation label. Required for</span>
 <span class="sd">        ``blend_handling="uberseg"``; ignored otherwise.</span>
 <span class="sd">    dilate_neighbour : int, optional</span>
-<span class="sd">        Neighbour-mask dilation iterations, passed to :func:`uberseg_weight`</span>
+<span class="sd">        Neighbour-mask dilation iterations, passed to :func:`uberseg_mask`</span>
 <span class="sd">        under ``blend_handling="uberseg"``; ignored otherwise.</span>
+<span class="sd">    neighbour : numpy.ndarray of bool, optional</span>
+<span class="sd">        The epoch's neighbour mask (``Postage_stamp.neighbours``); read only</span>
+<span class="sd">        under ``blend_handling="noisefill"``. ``None`` marks no pixel.</span>
+<span class="sd">    defect_weighting : str, optional</span>
+<span class="sd">        One of ``DEFECT_WEIGHTINGS``; the default is ``DEFECT_WEIGHTING``.</span>
+<span class="sd">    defect_fill : str, optional</span>
+<span class="sd">        One of ``DEFECT_FILLS``; the default is ``DEFECT_FILL``. Under</span>
+<span class="sd">        ``"noise"`` every defect is noise-filled and none interpolated.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    numpy.ndarray</span>
-<span class="sd">        Galaxy image. For ``"noisefill"`` masked pixels are replaced by noise;</span>
-<span class="sd">        for ``"uberseg"`` the image is returned untouched.</span>
+<span class="sd">        Galaxy image with defect pixels, and under noisefill marked</span>
+<span class="sd">        neighbour pixels, filled.</span>
 <span class="sd">    numpy.ndarray</span>
-<span class="sd">        Variance map for NGMIX.</span>
+<span class="sd">        Inverse-variance weight map for ngmix.</span>
 <span class="sd">    numpy.ndarray</span>
-<span class="sd">        Noise image.</span>
-<span class="sd">    @sc [decision:masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights]</span>
+<span class="sd">        Noise image: an independent realisation over the whole stamp, for</span>
+<span class="sd">        metacal's ``fixnoise``, interpolated in fixnoise's quarter-turned</span>
+<span class="sd">        frame where the galaxy image is interpolated.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``blend_handling``, ``defect_weighting`` or ``defect_fill`` is</span>
+<span class="sd">        unknown, or ``"uberseg"`` lacks ``seg`` or ``object_number``.</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If the interpolant does not reach a pixel :func:`interpolated_defects`</span>
+<span class="sd">        selected (degenerate support, or non-finite image values in it).</span>
+<span class="sd">    @sc [decision:masking.pixel_mask_source,decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill,decision:shape_measurement.galaxy_pixel_weights,decision:shape_measurement.defect_weighting]</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">blend_handling</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">BLEND_HANDLINGS</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"Unknown blend_handling '</span><span class="si">{</span><span class="n">blend_handling</span><span class="si">}</span><span class="s2">'; expected one of"</span>
             <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">BLEND_HANDLINGS</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
+    <span class="k">if</span> <span class="n">defect_weighting</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DEFECT_WEIGHTINGS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Unknown defect_weighting '</span><span class="si">{</span><span class="n">defect_weighting</span><span class="si">}</span><span class="s2">'; expected one of"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">DEFECT_WEIGHTINGS</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">blend_handling</span> <span class="o">==</span> <span class="s2">"uberseg"</span> <span class="ow">and</span> <span class="p">(</span><span class="n">seg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">object_number</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"blend_handling='uberseg' requires a segmentation map and the"</span>
+            <span class="o">+</span> <span class="s2">" central object_number; none reached prepare_ngmix_weights."</span>
+            <span class="o">+</span> <span class="s2">" Set SEG_VIGNET_PATH on the ngmix run (see"</span>
+            <span class="o">+</span> <span class="s2">" CosmoStat/shapepipe#776)."</span>
+        <span class="p">)</span>
 
-    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">weight</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
-    <span class="n">mask</span><span class="p">[</span><span class="n">flag</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">defect</span> <span class="o">=</span> <span class="n">defect_mask</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">bkg_rms</span><span class="p">)</span>
+    <span class="n">no_pixel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">defect</span><span class="p">)</span>
+    <span class="c1"># Neighbour pixels whose light noisefill replaces (noisefill-fills-markers)</span>
+    <span class="c1"># or whose weight uberseg zeroes (uberseg-ignores-markers).</span>
+    <span class="n">removed_neighbour</span><span class="p">,</span> <span class="n">neighbour_side</span> <span class="o">=</span> <span class="n">no_pixel</span><span class="p">,</span> <span class="n">no_pixel</span>
+    <span class="k">if</span> <span class="n">blend_handling</span> <span class="o">==</span> <span class="s2">"noisefill"</span> <span class="ow">and</span> <span class="n">neighbour</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">removed_neighbour</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">neighbour</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">blend_handling</span> <span class="o">==</span> <span class="s2">"uberseg"</span><span class="p">:</span>
+        <span class="n">neighbour_side</span> <span class="o">=</span> <span class="n">uberseg_mask</span><span class="p">(</span><span class="n">seg</span><span class="p">,</span> <span class="n">object_number</span><span class="p">,</span> <span class="n">dilate_neighbour</span><span class="p">)</span>
+    <span class="c1"># Pixels whose light the image keeps raw.</span>
+    <span class="n">clean</span> <span class="o">=</span> <span class="o">~</span><span class="p">(</span><span class="n">defect</span> <span class="o">|</span> <span class="n">removed_neighbour</span><span class="p">)</span>
+    <span class="n">weighted</span> <span class="o">=</span> <span class="n">clean</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">neighbour_side</span>
 
     <span class="k">if</span> <span class="n">bkg_rms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">sig_noise</span> <span class="o">=</span> <span class="n">sigma_mad</span><span class="p">(</span><span class="n">gal</span><span class="p">)</span>
         <span class="c1"># Guard the degenerate constant stamp (sigma_mad == 0): 0 * inf</span>
         <span class="c1"># would otherwise put NaN in a fully-masked weight map.</span>
         <span class="n">weight_map</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span> <span class="o">/</span> <span class="n">sig_noise</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="n">weighted</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span> <span class="o">/</span> <span class="n">sig_noise</span> <span class="o">**</span> <span class="mi">2</span>
             <span class="k">if</span> <span class="n">sig_noise</span> <span class="o">&gt;</span> <span class="mi">0</span>
             <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">gal</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">valid_rms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">bkg_rms</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bkg_rms</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="n">mask</span> <span class="o">&amp;=</span> <span class="n">valid_rms</span>
         <span class="n">weight_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">gal</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="n">weight_map</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">bkg_rms</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">weight_map</span><span class="p">[</span><span class="n">weighted</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">bkg_rms</span><span class="p">[</span><span class="n">weighted</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
         <span class="c1"># Per-pixel noise sigma for the realisations below: metacal's</span>
         <span class="c1"># fixnoise bookkeeping (1/w + 1/w_noise) assumes the noise image</span>
         <span class="c1"># is a faithful realisation of the per-pixel variance the weights</span>
         <span class="c1"># claim; a scalar sigma there mis-reports errors and erodes the</span>
         <span class="c1"># inverse-variance advantage whenever the RMS map actually varies.</span>
+        <span class="c1"># Pixels without a valid RMS take the median over clean pixels.</span>
+        <span class="n">valid_rms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">bkg_rms</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bkg_rms</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">sig_noise</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">valid_rms</span><span class="p">,</span> <span class="n">bkg_rms</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">bkg_rms</span><span class="p">[</span><span class="n">mask</span><span class="p">]))</span>
-            <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">valid_rms</span><span class="p">,</span> <span class="n">bkg_rms</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">bkg_rms</span><span class="p">[</span><span class="n">clean</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">clean</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
             <span class="k">else</span> <span class="n">sigma_mad</span><span class="p">(</span><span class="n">gal</span><span class="p">)</span>
         <span class="p">)</span>
 
@@ -2639,28 +3218,34 @@
 
     <span class="n">noise_img</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">gal</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig_noise</span>
     <span class="n">noise_img_gal</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">gal</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig_noise</span>
-
-    <span class="n">gal_masked</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">gal</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">blend_handling</span> <span class="o">==</span> <span class="s2">"uberseg"</span><span class="p">:</span>
-        <span class="c1"># Hard-mask neighbour-side pixels (weight -&gt; 0) from the segmentation</span>
-        <span class="c1"># geometry; the image is left untouched (the masked pixels carry no</span>
-        <span class="c1"># weight, so ngmix ignores them in the likelihood). Bad/flagged</span>
-        <span class="c1"># pixels already sit at weight 0 from the mask above.</span>
-        <span class="k">if</span> <span class="n">seg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">object_number</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"blend_handling='uberseg' requires a segmentation map and the"</span>
-                <span class="o">+</span> <span class="s2">" central object_number; none reached prepare_ngmix_weights."</span>
-                <span class="o">+</span> <span class="s2">" Set SEG_VIGNET_PATH on the ngmix run (see"</span>
-                <span class="o">+</span> <span class="s2">" CosmoStat/shapepipe#776)."</span>
-            <span class="p">)</span>
-        <span class="n">weight_map</span> <span class="o">=</span> <span class="n">uberseg_weight</span><span class="p">(</span>
-            <span class="n">weight_map</span><span class="p">,</span> <span class="n">seg</span><span class="p">,</span> <span class="n">object_number</span><span class="p">,</span> <span class="n">dilate_neighbour</span><span class="o">=</span><span class="n">dilate_neighbour</span>
+    <span class="n">gal_filled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">clean</span><span class="p">,</span> <span class="n">gal</span><span class="p">,</span> <span class="n">noise_img_gal</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">gal</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">interpolated</span> <span class="o">=</span> <span class="n">interpolated_defects</span><span class="p">(</span>
+        <span class="n">defect</span><span class="p">,</span> <span class="n">neighbour</span><span class="p">,</span> <span class="n">blend_handling</span><span class="p">,</span> <span class="n">defect_fill</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">interpolated</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">fill</span><span class="p">,</span> <span class="n">restore</span><span class="p">,</span> <span class="n">zero</span> <span class="o">=</span> <span class="n">defect_weighting_masks</span><span class="p">(</span>
+            <span class="n">interpolated</span><span class="p">,</span> <span class="n">clean</span><span class="p">,</span> <span class="n">defect_weighting</span>
         <span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="o">~</span><span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-        <span class="c1"># noisefill (default): replace masked pixels with a noise realisation.</span>
-        <span class="n">gal_masked</span><span class="p">[</span><span class="o">~</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">noise_img_gal</span><span class="p">[</span><span class="o">~</span><span class="n">mask</span><span class="p">]</span>
+        <span class="c1"># One operator for the image and the noise image, the latter in</span>
+        <span class="c1"># fixnoise's quarter-turned frame (noise-image-in-the-fixnoise-frame).</span>
+        <span class="n">filled</span> <span class="o">=</span> <span class="n">interpolate_defects</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">gal</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">noise_img</span><span class="p">)],</span> <span class="o">~</span><span class="n">clean</span> <span class="o">|</span> <span class="n">fill</span><span class="p">,</span> <span class="n">fill</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">filled</span><span class="p">[:,</span> <span class="n">fill</span><span class="p">])):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">"The defect interpolant is not finite on pixels"</span>
+                <span class="o">+</span> <span class="s2">" defect_weighting_masks selected."</span>
+            <span class="p">)</span>
+        <span class="n">gal_filled</span><span class="p">[</span><span class="n">fill</span><span class="p">]</span> <span class="o">=</span> <span class="n">filled</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">fill</span><span class="p">]</span>
+        <span class="n">noise_img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">filled</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">restore</span> <span class="o">=</span> <span class="n">restore</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">neighbour_side</span>
+        <span class="n">weight_map</span><span class="p">[</span><span class="n">restore</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span>
+            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sig_noise</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">gal</span><span class="o">.</span><span class="n">shape</span>
+        <span class="p">)[</span><span class="n">restore</span><span class="p">]</span>
+        <span class="n">weight_map</span><span class="p">[</span><span class="n">zero</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="k">return</span> <span class="n">gal_masked</span><span class="p">,</span> <span class="n">weight_map</span><span class="p">,</span> <span class="n">noise_img</span></div>
+    <span class="k">return</span> <span class="n">gal_filled</span><span class="p">,</span> <span class="n">weight_map</span><span class="p">,</span> <span class="n">noise_img</span></div>
+
 
 
 <div class="viewcode-block" id="make_ngmix_observation">
@@ -2669,7 +3254,8 @@
     <span class="n">gal</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">psf</span><span class="p">,</span> <span class="n">wcs</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span>
     <span class="n">bkg_rms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">"wcs"</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">blend_handling</span><span class="o">=</span><span class="s2">"noisefill"</span><span class="p">,</span> <span class="n">seg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">neighbour</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defect_weighting</span><span class="o">=</span><span class="n">DEFECT_WEIGHTING</span><span class="p">,</span>
+    <span class="n">defect_fill</span><span class="o">=</span><span class="n">DEFECT_FILL</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Build an ngmix Observation for a single galaxy epoch.</span>
 
@@ -2713,7 +3299,8 @@
 <span class="sd">        ``"hsm"``).</span>
 <span class="sd">    blend_handling : {"noisefill", "uberseg"}, optional</span>
 <span class="sd">        Neighbour treatment passed through to :func:`prepare_ngmix_weights`;</span>
-<span class="sd">        the default ``"noisefill"`` is the historical behaviour.</span>
+<span class="sd">        the default ``"noisefill"`` zero-weights and noise-fills the</span>
+<span class="sd">        ``neighbour`` pixels.</span>
 <span class="sd">    seg : numpy.ndarray, optional</span>
 <span class="sd">        Segmentation map on the stamp grid. Required for</span>
 <span class="sd">        ``blend_handling="uberseg"`` (ignored otherwise).</span>
@@ -2723,6 +3310,13 @@
 <span class="sd">    dilate_neighbour : int, optional</span>
 <span class="sd">        Neighbour-mask dilation iterations passed through to</span>
 <span class="sd">        :func:`prepare_ngmix_weights` under ``blend_handling="uberseg"``.</span>
+<span class="sd">    neighbour : numpy.ndarray of bool, optional</span>
+<span class="sd">        Neighbour mask passed through to :func:`prepare_ngmix_weights`.</span>
+<span class="sd">    defect_weighting : str, optional</span>
+<span class="sd">        Interpolated-defect weighting passed through to</span>
+<span class="sd">        :func:`prepare_ngmix_weights`.</span>
+<span class="sd">    defect_fill : str, optional</span>
+<span class="sd">        Defect fill passed through to :func:`prepare_ngmix_weights`.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -2751,16 +3345,19 @@
     <span class="n">gal_masked</span><span class="p">,</span> <span class="n">weight_map</span><span class="p">,</span> <span class="n">noise_img</span> <span class="o">=</span> <span class="n">prepare_ngmix_weights</span><span class="p">(</span>
         <span class="n">gal</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">bkg_rms</span><span class="o">=</span><span class="n">bkg_rms</span><span class="p">,</span>
         <span class="n">blend_handling</span><span class="o">=</span><span class="n">blend_handling</span><span class="p">,</span> <span class="n">seg</span><span class="o">=</span><span class="n">seg</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="n">object_number</span><span class="p">,</span>
-        <span class="n">dilate_neighbour</span><span class="o">=</span><span class="n">dilate_neighbour</span><span class="p">,</span>
+        <span class="n">dilate_neighbour</span><span class="o">=</span><span class="n">dilate_neighbour</span><span class="p">,</span> <span class="n">neighbour</span><span class="o">=</span><span class="n">neighbour</span><span class="p">,</span>
+        <span class="n">defect_weighting</span><span class="o">=</span><span class="n">defect_weighting</span><span class="p">,</span>
+        <span class="n">defect_fill</span><span class="o">=</span><span class="n">defect_fill</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">centroid_source</span> <span class="o">==</span> <span class="s2">"hsm"</span><span class="p">:</span>
         <span class="c1"># Re-center the Jacobian on the HSM adaptive-moment centroid (pixel</span>
-        <span class="c1"># offset from the stamp center); fall back to the stamp center if</span>
-        <span class="c1"># HSM fails.</span>
+        <span class="c1"># offset from the stamp center), measured on the filled image so no</span>
+        <span class="c1"># raw defect value pulls it; fall back to the stamp center if HSM</span>
+        <span class="c1"># fails.</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">_hsm</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span>
-                <span class="n">galsim</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">gal</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">galsim</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">gal_masked</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">_hsm</span><span class="o">.</span><span class="n">error_message</span> <span class="o">!=</span> <span class="s2">""</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">galsim</span><span class="o">.</span><span class="n">hsm</span><span class="o">.</span><span class="n">GalSimHSMError</span><span class="p">(</span><span class="n">_hsm</span><span class="o">.</span><span class="n">error_message</span><span class="p">)</span>
@@ -2996,12 +3593,21 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">do_ngmix_metacal</span><span class="p">(</span>
     <span class="n">stamp</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">flux_guess</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">centroid_source</span><span class="o">=</span><span class="s2">"wcs"</span><span class="p">,</span>
     <span class="n">blend_handling</span><span class="o">=</span><span class="s2">"noisefill"</span><span class="p">,</span> <span class="n">object_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dilate_neighbour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-    <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">"fitgauss"</span><span class="p">,</span>
+    <span class="n">metacal_psf</span><span class="o">=</span><span class="s2">"fitgauss"</span><span class="p">,</span> <span class="n">defect_weighting</span><span class="o">=</span><span class="n">DEFECT_WEIGHTING</span><span class="p">,</span>
+    <span class="n">defect_fill</span><span class="o">=</span><span class="n">DEFECT_FILL</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Do Ngmix Metacal.</span>
 
 <span class="sd">    Performs metacalibration on a single multi-epoch object and returns the</span>
 <span class="sd">    joint shape measurement with NGMIX.</span>
+
+<span class="sd">    @sc [decision:shape_measurement.epoch_masked_fraction_cut,label:operations] failed-epoch-dropped</span>
+<span class="sd">    An epoch whose observation raises while being built (for example the</span>
+<span class="sd">    non-finite interpolant guard in :func:`prepare_ngmix_weights`) is</span>
+<span class="sd">    dropped and the object is fitted on its other epochs. The epoch's name</span>
+<span class="sd">    and exception are appended to ``stamp.epoch_failures``; the caller logs</span>
+<span class="sd">    them and writes their count as ``n_epoch_failed``. Errors outside</span>
+<span class="sd">    building the observations propagate.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -3021,9 +3627,9 @@
 <span class="sd">        stamp pixels — see that function.</span>
 <span class="sd">    blend_handling : {"noisefill", "uberseg"}, optional</span>
 <span class="sd">        Neighbour treatment passed through to</span>
-<span class="sd">        :func:`make_ngmix_observation`; the default ``"noisefill"`` is the</span>
-<span class="sd">        historical behaviour. ``"uberseg"`` consumes ``stamp.segs`` and</span>
-<span class="sd">        ``object_number``.</span>
+<span class="sd">        :func:`make_ngmix_observation`; the default ``"noisefill"``</span>
+<span class="sd">        zero-weights and noise-fills the pixels of ``stamp.neighbours``.</span>
+<span class="sd">        ``"uberseg"`` consumes ``stamp.segs`` and ``object_number``.</span>
 <span class="sd">    object_number : int, optional</span>
 <span class="sd">        Central object's segmentation label — its SExtractor ``NUMBER``</span>
 <span class="sd">        (``obj_id``), authoritative because seg labels are the NUMBERs of the</span>
@@ -3043,6 +3649,12 @@
 <span class="sd">        round PSF that metacal reconvolves with after shearing, so it moves the</span>
 <span class="sd">        metacal *response* (and therefore the recovered shear) but never reaches</span>
 <span class="sd">        the deconvolution, which is by the PSF image.</span>
+<span class="sd">    defect_weighting : str, optional</span>
+<span class="sd">        Interpolated-defect weighting (one of ``DEFECT_WEIGHTINGS``) passed</span>
+<span class="sd">        through to :func:`make_ngmix_observation`.</span>
+<span class="sd">    defect_fill : str, optional</span>
+<span class="sd">        Defect fill (one of ``DEFECT_FILLS``) passed through to</span>
+<span class="sd">        :func:`make_ngmix_observation`.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -3053,7 +3665,12 @@
 <span class="sd">        dict (:func:`average_original_psf`). The two PSF dicts share keys but</span>
 <span class="sd">        describe different PSFs; the named fields guard against transposing</span>
 <span class="sd">        them. Unpacks positionally as ``resdict, psf_res, psf_orig_res``.</span>
-<span class="sd">    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme]</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the stamp has no epoch, or every epoch failed to build.</span>
+<span class="sd">    @sc [decision:shape_measurement.defect_fill,decision:shape_measurement.metacal_scheme,decision:shape_measurement.defect_weighting]</span>
 <span class="sd">    """</span>
     <span class="n">n_epoch</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">gals</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">n_epoch</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -3062,22 +3679,42 @@
     <span class="n">gal_obs_list</span> <span class="o">=</span> <span class="n">ObsList</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">n_e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epoch</span><span class="p">):</span>
         <span class="n">bkg_rms</span> <span class="o">=</span> <span class="n">stamp</span><span class="o">.</span><span class="n">bkg_rms</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">bkg_rms</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">n_e</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="n">gal_obs</span> <span class="o">=</span> <span class="n">make_ngmix_observation</span><span class="p">(</span>
-            <span class="n">stamp</span><span class="o">.</span><span class="n">gals</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
-            <span class="n">stamp</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
-            <span class="n">stamp</span><span class="o">.</span><span class="n">flags</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
-            <span class="n">stamp</span><span class="o">.</span><span class="n">psfs</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
-            <span class="n">stamp</span><span class="o">.</span><span class="n">jacobs</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
-            <span class="n">rng</span><span class="p">,</span>
-            <span class="n">bkg_rms</span><span class="o">=</span><span class="n">bkg_rms</span><span class="p">,</span>
-            <span class="n">centroid_source</span><span class="o">=</span><span class="n">centroid_source</span><span class="p">,</span>
-            <span class="n">offset</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">offsets</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">offsets</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">blend_handling</span><span class="o">=</span><span class="n">blend_handling</span><span class="p">,</span>
-            <span class="n">seg</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">segs</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">segs</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">object_number</span><span class="o">=</span><span class="n">object_number</span><span class="p">,</span>
-            <span class="n">dilate_neighbour</span><span class="o">=</span><span class="n">dilate_neighbour</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">gal_obs</span> <span class="o">=</span> <span class="n">make_ngmix_observation</span><span class="p">(</span>
+                <span class="n">stamp</span><span class="o">.</span><span class="n">gals</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
+                <span class="n">stamp</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
+                <span class="n">stamp</span><span class="o">.</span><span class="n">flags</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
+                <span class="n">stamp</span><span class="o">.</span><span class="n">psfs</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
+                <span class="n">stamp</span><span class="o">.</span><span class="n">jacobs</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
+                <span class="n">rng</span><span class="p">,</span>
+                <span class="n">bkg_rms</span><span class="o">=</span><span class="n">bkg_rms</span><span class="p">,</span>
+                <span class="n">centroid_source</span><span class="o">=</span><span class="n">centroid_source</span><span class="p">,</span>
+                <span class="n">offset</span><span class="o">=</span><span class="p">(</span>
+                    <span class="n">stamp</span><span class="o">.</span><span class="n">offsets</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">offsets</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">),</span>
+                <span class="n">blend_handling</span><span class="o">=</span><span class="n">blend_handling</span><span class="p">,</span>
+                <span class="n">seg</span><span class="o">=</span><span class="n">stamp</span><span class="o">.</span><span class="n">segs</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">segs</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">object_number</span><span class="o">=</span><span class="n">object_number</span><span class="p">,</span>
+                <span class="n">dilate_neighbour</span><span class="o">=</span><span class="n">dilate_neighbour</span><span class="p">,</span>
+                <span class="n">neighbour</span><span class="o">=</span><span class="p">(</span>
+                    <span class="n">stamp</span><span class="o">.</span><span class="n">neighbours</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">neighbours</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">),</span>
+                <span class="n">defect_weighting</span><span class="o">=</span><span class="n">defect_weighting</span><span class="p">,</span>
+                <span class="n">defect_fill</span><span class="o">=</span><span class="n">defect_fill</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">stamp</span><span class="o">.</span><span class="n">epoch_failures</span><span class="o">.</span><span class="n">append</span><span class="p">((</span>
+                <span class="n">stamp</span><span class="o">.</span><span class="n">epoch_names</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">n_e</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stamp</span><span class="o">.</span><span class="n">epoch_names</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_e</span><span class="p">),</span>
+                <span class="n">err</span><span class="p">,</span>
+            <span class="p">))</span>
+            <span class="k">continue</span>
         <span class="n">gal_obs_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gal_obs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gal_obs_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"all </span><span class="si">{</span><span class="n">n_epoch</span><span class="si">}</span><span class="s2"> epochs failed to build an observation"</span>
+        <span class="p">)</span>
 
     <span class="n">runner</span><span class="p">,</span> <span class="n">psf_runner</span> <span class="o">=</span> <span class="n">make_runners</span><span class="p">(</span><span class="n">prior</span><span class="p">,</span> <span class="n">flux_guess</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
 

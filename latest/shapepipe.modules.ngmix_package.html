@@ -55,7 +55,7 @@
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="shapepipe.modules.ngmix_package.ngmix" href="shapepipe.modules.ngmix_package.ngmix.html" />
+    <link rel="next" title="shapepipe.modules.ngmix_package.defect_interpolation" href="shapepipe.modules.ngmix_package.defect_interpolation.html" />
     <link rel="prev" title="shapepipe.modules.merge_starcat_package.merge_starcat" href="shapepipe.modules.merge_starcat_package.merge_starcat.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -317,6 +317,7 @@
 </ul>
 </details></li>
 <li class="toctree-l3 current active has-children"><a class="current reference internal" href="#">shapepipe.modules.ngmix_package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.ngmix_package.defect_interpolation.html">shapepipe.modules.ngmix_package.defect_interpolation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a></li>
 </ul>
 </details></li>
@@ -652,6 +653,13 @@ and CCD (<code class="docutils literal notranslate"><span class="pre">ngmix.posi
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="shapepipe.modules.ngmix_package.defect_interpolation.html">shapepipe.modules.ngmix_package.defect_interpolation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.defect_interpolation.html#shapepipe.modules.ngmix_package.defect_interpolation._short_row_runs"><code class="docutils literal notranslate"><span class="pre">_short_row_runs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.defect_interpolation.html#shapepipe.modules.ngmix_package.defect_interpolation.interpolable_defects"><code class="docutils literal notranslate"><span class="pre">interpolable_defects()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.defect_interpolation.html#shapepipe.modules.ngmix_package.defect_interpolation.fourfold"><code class="docutils literal notranslate"><span class="pre">fourfold()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.defect_interpolation.html#shapepipe.modules.ngmix_package.defect_interpolation.interpolate_defects"><code class="docutils literal notranslate"><span class="pre">interpolate_defects()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.MetacalResult"><code class="docutils literal notranslate"><span class="pre">MetacalResult</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.MetacalResult.resdict"><code class="docutils literal notranslate"><span class="pre">MetacalResult.resdict</span></code></a></li>
@@ -683,7 +691,11 @@ and CCD (<code class="docutils literal notranslate"><span class="pre">ngmix.posi
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Tile_cat.get_data"><code class="docutils literal notranslate"><span class="pre">Tile_cat.get_data()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Postage_stamp"><code class="docutils literal notranslate"><span class="pre">Postage_stamp</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Postage_stamp"><code class="docutils literal notranslate"><span class="pre">Postage_stamp</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.record_defects"><code class="docutils literal notranslate"><span class="pre">Postage_stamp.record_defects()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.defect_diagnostics"><code class="docutils literal notranslate"><span class="pre">Postage_stamp.defect_diagnostics()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Vignet"><code class="docutils literal notranslate"><span class="pre">Vignet</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Vignet.close"><code class="docutils literal notranslate"><span class="pre">Vignet.close()</span></code></a></li>
 </ul>
@@ -700,6 +712,7 @@ and CCD (<code class="docutils literal notranslate"><span class="pre">ngmix.posi
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.prepare_postage_stamps"><code class="docutils literal notranslate"><span class="pre">prepare_postage_stamps()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.split_tile_markers"><code class="docutils literal notranslate"><span class="pre">split_tile_markers()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.background_subtract"><code class="docutils literal notranslate"><span class="pre">background_subtract()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.rescale_epoch_fluxes"><code class="docutils literal notranslate"><span class="pre">rescale_epoch_fluxes()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_galsim_jacobian"><code class="docutils literal notranslate"><span class="pre">get_galsim_jacobian()</span></code></a></li>
@@ -707,7 +720,12 @@ and CCD (<code class="docutils literal notranslate"><span class="pre">ngmix.posi
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_noise"><code class="docutils literal notranslate"><span class="pre">get_noise()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.central_seg_label"><code class="docutils literal notranslate"><span class="pre">central_seg_label()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.seg_has_neighbour"><code class="docutils literal notranslate"><span class="pre">seg_has_neighbour()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.uberseg_weight"><code class="docutils literal notranslate"><span class="pre">uberseg_weight()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.uberseg_mask"><code class="docutils literal notranslate"><span class="pre">uberseg_mask()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.defect_mask"><code class="docutils literal notranslate"><span class="pre">defect_mask()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.interpolated_defects"><code class="docutils literal notranslate"><span class="pre">interpolated_defects()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes"><code class="docutils literal notranslate"><span class="pre">central_defect_vetoes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.centre_distance"><code class="docutils literal notranslate"><span class="pre">centre_distance()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.defect_weighting_masks"><code class="docutils literal notranslate"><span class="pre">defect_weighting_masks()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.prepare_ngmix_weights"><code class="docutils literal notranslate"><span class="pre">prepare_ngmix_weights()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.make_ngmix_observation"><code class="docutils literal notranslate"><span class="pre">make_ngmix_observation()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix._average_psf_fits"><code class="docutils literal notranslate"><span class="pre">_average_psf_fits()</span></code></a></li>
@@ -743,11 +761,11 @@ and CCD (<code class="docutils literal notranslate"><span class="pre">ngmix.posi
       </div>
     </a>
     <a class="right-next"
-       href="shapepipe.modules.ngmix_package.ngmix.html"
+       href="shapepipe.modules.ngmix_package.defect_interpolation.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">shapepipe.modules.ngmix_package.ngmix</p>
+        <p class="prev-next-title">shapepipe.modules.ngmix_package.defect_interpolation</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
