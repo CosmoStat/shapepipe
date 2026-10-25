@@ -63,7 +63,8 @@ def test_clean_exposure_waits_on_persist_iff_psf(campaign, dag):
         ]
         if campaign.psf_model != "fake":
             expected.append(campaign.persist_manifest(exp))
-            expected.append(campaign.persist_manifest(exp, "exp_maps"))
+            expected.append(campaign.persist_manifest(exp).parent.parent
+                            / "maps" / f"maps-{exp}.hsp")
         assert Counter(map(str, job.input)) == Counter(map(str, expected)), (
             "clean-exposure-waits-on-persist-iff-psf", exp, list(job.input)
         )
@@ -121,6 +122,64 @@ def test_products_use_products_dir_and_run_name(campaign, dag):
             assert f"--campaign '{campaign.name}'" in job.shellcmd
     assert dag.namespace["CAMPAIGN"] == campaign.name
     assert Path(dag.namespace["INDEX_DB"]) == campaign.index_db
+
+
+def test_exposure_maps_are_campaign_targets(campaign, dag):
+    """Fitted-PSF campaigns publish all four maps on the persistent root."""
+    jobs = dag.jobs_for("exposure_maps")
+    if campaign.psf_model == "fake":
+        assert not jobs
+        return
+    assert len(jobs) == 1
+    expected = {campaign.products_dir / f"{name}_{campaign.name}.hsp"
+                for name in ("npoint", "ntaken", "nexp", "nflagged")}
+    assert set(map(Path, jobs[0].output)) == expected
+    assert expected <= set(map(Path, dag.namespace["exposure_maps_targets"]()))
+    for name in ("npoint", "ntaken", "nexp", "nflagged"):
+        assert f"--{name} " in jobs[0].shellcmd
+
+
+@pytest.mark.parametrize("stale_psf_manifest", [False, True])
+@pytest.mark.parametrize("tombstone", [False, True])
+@pytest.mark.parametrize("map_manifest", [False, True])
+def test_resume_missing_fragment_after_reclamation(
+        tmp_path, resolve_dag, tombstone, map_manifest, stale_psf_manifest):
+    """A completed catalogue and persist record cannot hide a missing map."""
+    campaign = Campaign(tmp_path / "resume", "data", "psfex")
+    raw = campaign.root / "inputs" / campaign.name / "exposures"
+    raw.mkdir(parents=True)
+    for exp in campaign.exposures:
+        persist = campaign.persist_manifest(exp)
+        persist.parent.mkdir(parents=True)
+        persist.write_text('{}')
+        if map_manifest:
+            campaign.persist_manifest(exp, "exp_maps").write_text('{}')
+        store = campaign.run_dir / "exp" / exp[:2] / exp
+        store.mkdir(parents=True)
+        (store / "output").symlink_to(tmp_path / "reclaimed-node-local")
+        if stale_psf_manifest:
+            manifests = store / "manifests"
+            manifests.mkdir()
+            (manifests / "exp_psf.json").write_text('{}')
+        if tombstone:
+            (store / "cleaned.json").write_text('{}')
+        for suffix in (".fits.fz", ".flag.fits.fz"):
+            (raw / f"{exp}p{suffix}").touch()
+    for tile in campaign.ready:
+        final = campaign.final_cat(tile)
+        final.parent.mkdir(parents=True)
+        final.touch()
+        campaign._manifest(tile, "tile_vignets")
+    # Raw files being available must not opt a reclaimed campaign into
+    # automatic rasterization. Recovery is an explicit operator action.
+    with pytest.raises((WorkflowError, ValueError),
+                       match="missing reclaimed fragment") as error:
+        with resolve_dag(campaign):
+            pass
+    message = str(error.value)
+    assert "Backfill outside the DAG" in message
+    assert "--image-mef" in message and "--flag-mef" in message
+    assert "--persist-manifest" in message and "--fragment" in message
 
 
 def test_tile_store_is_unique_per_campaign(campaign, tmp_path, resolve_dag):

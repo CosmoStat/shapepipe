@@ -235,14 +235,34 @@ analyses:
         type: data
         format: hsp
         description: >-
-          nexp_<run>.hsp and nflagged_<run>.hsp at the mask ladder's
-          resolution: per sky pixel, the number of exposures whose CCD with a
-          valid PSF model covers it, and the flagged CCD pixels of those
-          exposures that fall in it. Products; nothing in the workflow reads
-          them.
+          npoint_<run>.hsp, ntaken_<run>.hsp, nexp_<run>.hsp and
+          nflagged_<run>.hsp at the mask ladder's resolution: filled main-array
+          pointings, all CCD DATASEC exposures, validated-PSF CCD exposures,
+          and flagged CCD pixel centres of validated CCDs per sky pixel.
+          Products; nothing in the workflow reads them.
         inputs: [exposure_flags]
-        decisions: [nexp_map_valid_psf_ccds, defect_map_from_flags]
+        decisions: [pointing_square, nexp_map_valid_psf_ccds, defect_map_from_flags]
     decisions:
+      pointing_square:
+        label: Filled main-array pointing coverage, excluding ears
+        rationale: >-
+          npoint is deliberately smooth pointing coverage, the v2 counterpart
+          of v1.X's npoint3 >= 3 cut. CCD tiling, gaps, ears and dithers produce
+          patterned imaging-area counts instead. The convex hull of DATASEC
+          outer corners (half a pixel beyond pixel centres) of present CCDs
+          0–35 is computed in a tangent plane about the exposure centre, mapped
+          back to RA/Dec, and rasterized by sky-pixel centre inclusion. CCDs
+          36–39 are ears outside the main 4x9 array and are excluded. Every
+          fragment contributes regardless of PSF success; gaps are filled.
+        default: main_array_hull
+        options:
+          main_array_hull:
+            label: Convex hull of present CCDs 0–35, gaps filled and ears excluded
+          ccd_tiling:
+            label: Individual CCD DATASEC footprints including gaps and ears
+            excluded: true
+            excluded_reason: >-
+              Measures taken imaging area (ntaken), not smooth pointing coverage.
       nexp_map_valid_psf_ccds:
         label: The exposure count covers only CCDs with a valid PSF model
         rationale: >-
@@ -250,13 +270,17 @@ analyses:
           packed (psfex_interp writes it only when the fit succeeds) and marks
           the sky pixels whose centres lie inside each CCD's corner polygon.
           The CCDs of one exposure do not overlap, so summing fragments counts
-          exposures that can contribute a PSF-corrected epoch.
+          exposures that can contribute a PSF-corrected epoch. ntaken counts
+          all present CCD DATASEC footprints, ears included, without the PSF
+          requirement; ntaken - nexp measures epochs lost to CCD-level PSF
+          failure at each pixel. Both use centre-in-polygon inclusion and count
+          each exposure once even at overlapping footprint edges.
         default: valid_psf_ccds
         options:
           valid_psf_ccds:
             label: Count exposures whose CCD has a valid PSF model
           all_ccds:
-            label: Count every exposure whose CCD covers the pixel
+            label: Use all CCD coverage for nexp rather than separately in ntaken
             excluded: true
             excluded_reason: >-
               Counts epochs that cannot contribute a shape, overstating depth
@@ -735,9 +759,15 @@ analyses:
           WCS inversion failure skips that CCD, lowering N_EPOCH, which caps
           how many exposures enter each galaxy's multi-epoch fit. This geometric
           count remains internal; the final catalogue's N_EPOCH counts only
-          epochs with a validated PSF.
+          epochs with a validated PSF. Image simulations' CCDs are trimmed to
+          2048x4612 with no overscan, so
+          their bounds are 0 < x < 2047, 0 < y < 4611 (input_types.image_sims
+          ccd_size, exported as SP_CCD_SIZE): under the data bounds an object
+          at 2048 < x < 2080 gains an epoch on pixels that do not exist, and
+          one at x < 33 loses a real one.
           Values:
-          SEXTRACTOR_RUNNER.CCD_SIZE = 33,2080,1,4612;
+          SEXTRACTOR_RUNNER.CCD_SIZE = ${SP_CCD_SIZE:-33,2080,1,4612};
+          input_types.image_sims.ccd_size = 0,2047,0,4611;
           SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True.
         default: trimmed_bounds_33_2080
         options:
