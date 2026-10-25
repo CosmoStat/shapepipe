@@ -257,17 +257,13 @@
 <li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">The Snakemake workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="clusters.html">Running on a Cluster</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_canfar.html">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">The Snakemake workflow</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="current nav bd-sidenav">
@@ -385,7 +381,6 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html">shapepipe.utilities.ccd_psf_handler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html">shapepipe.utilities.coverage_map_builder</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html">shapepipe.utilities.coverage_plotter</a></li>
@@ -395,17 +390,13 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.coverage_run.html">shapepipe.coverage_run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shapepipe.get_ccds_run.html">shapepipe.get_ccds_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.info.html">shapepipe.info</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.run.html">shapepipe.run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shapepipe.summary_run.html">shapepipe.summary_run</a></li>
 </ul>
 </details></li>
 </ul>
@@ -626,16 +617,22 @@ or <code class="docutils literal notranslate"><span class="pre">SPHE</span></cod
 </dd>
 <dt>PREFIX<span class="classifier">str or list</span></dt><dd><p>Output file name prefix(es)</p>
 </dd>
-<dt>ME_IMAGE_DIR<span class="classifier">list</span></dt><dd><p>Module names of last run producing single-exposure flags, images, weights,
-and SExtractor background images, for multi-epoch processing. The specifier
-“last:” is not required</p>
+<dt>ME_IMAGE_EXP_DIR<span class="classifier">str</span></dt><dd><p>Root of the per-exposure work directories, for multi-epoch processing;
+each runner output directory is resolved beneath it for every exposure
+listed in the input <code class="docutils literal notranslate"><span class="pre">exp_numbers</span></code> file</p>
+</dd>
+<dt>ME_IMAGE_EXP_RUNNERS<span class="classifier">list</span></dt><dd><p>Names of the runners producing the single-exposure flags, images, weights
+and SExtractor background images, in the same order as
+<code class="docutils literal notranslate"><span class="pre">ME_IMAGE_PATTERN</span></code></p>
 </dd>
 <dt>ME_IMAGE_PATTERN<span class="classifier">list</span></dt><dd><p>Input file name patterns for flag, image, weight, and SExtractor background
 files, for multi-epoch processing</p>
 </dd>
-<dt>ME_LOG_WCS<span class="classifier">str</span></dt><dd><p>Path to world coordinate system log file (<code class="docutils literal notranslate"><span class="pre">*sqlite</span></code>)</p>
-</dd>
 </dl>
+<p>In <code class="docutils literal notranslate"><span class="pre">MULTI-EPOCH</span></code> mode the input file list is positional and carries three
+entries – the galaxy catalogue, the world-coordinate-system log
+(<code class="docutils literal notranslate"><span class="pre">*sqlite</span></code>) and the <code class="docutils literal notranslate"><span class="pre">exp_numbers</span></code> file – set through <code class="docutils literal notranslate"><span class="pre">FILE_PATTERN</span></code>
+and <code class="docutils literal notranslate"><span class="pre">FILE_EXT</span></code>, not through module-specific keys.</p>
 </section>
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>

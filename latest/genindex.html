@@ -252,17 +252,13 @@
 <li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">The Snakemake workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="clusters.html">Running on a Cluster</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_canfar.html">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">The Snakemake workflow</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="nav bd-sidenav">
@@ -380,7 +376,6 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html">shapepipe.utilities.ccd_psf_handler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html">shapepipe.utilities.coverage_map_builder</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html">shapepipe.utilities.coverage_plotter</a></li>
@@ -390,17 +385,13 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.coverage_run.html">shapepipe.coverage_run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shapepipe.get_ccds_run.html">shapepipe.get_ccds_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.info.html">shapepipe.info</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.run.html">shapepipe.run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shapepipe.summary_run.html">shapepipe.summary_run</a></li>
 </ul>
 </details></li>
 </ul>
@@ -962,8 +953,6 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.ccd_candidate_mask">ccd_candidate_mask() (in module shapepipe.modules.sextractor_package.sextractor_script)</a>
 </li>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler">CcdPsfHandler (class in shapepipe.utilities.ccd_psf_handler)</a>
-</li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes">central_defect_vetoes() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.central_seg_label">central_seg_label() (in module shapepipe.modules.ngmix_package.ngmix)</a>
@@ -992,13 +981,9 @@
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.check_key">check_key() (Ngmix class method)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.check_numbers">check_numbers() (job_data method)</a>
-</li>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.check_params">check_params() (CcdPsfHandler method)</a>
+      <li><a href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.check_params">check_params() (CoverageMapBuilder method)</a>
 
       <ul>
-        <li><a href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.check_params">(CoverageMapBuilder method)</a>
-</li>
         <li><a href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter.check_params">(CoveragePlotter method)</a>
 </li>
         <li><a href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.check_params">(FieldCornersExtractor method)</a>
@@ -1008,20 +993,16 @@
       </ul></li>
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.check_ra">check_ra() (in module shapepipe.utilities.cfis)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.check_special">check_special() (job_data method)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.check_special_one">check_special_one() (in module shapepipe.utilities.summary)</a>
-</li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.check_wcs_centroid_offset">check_wcs_centroid_offset() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
       <li><a href="shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html#shapepipe.modules.merge_sep_cats_package.merge_sep_cats.chunk_path">chunk_path() (in module shapepipe.modules.merge_sep_cats_package.merge_sep_cats)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.chunk_rows">chunk_rows() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.ChunkStamps">ChunkStamps (class in shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler.clean_up">clean_up() (JobHandler method)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.close">close() (FITSCatalogue method)</a>
@@ -1186,10 +1167,6 @@
 </li>
       <li><a href="shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.get_all_dirs">get_all_dirs() (in module shapepipe.pipeline.run_log)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.get_all_exposures">get_all_exposures() (in module shapepipe.utilities.summary)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.get_all_shdus">get_all_shdus() (in module shapepipe.utilities.summary)</a>
-</li>
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_Angle">get_Angle() (in module shapepipe.utilities.cfis)</a>
 </li>
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_Angle_arr">get_Angle_arr() (in module shapepipe.utilities.cfis)</a>
@@ -1197,10 +1174,6 @@
       <li><a href="shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.get_background">get_background() (SExtractorCaller method)</a>
 </li>
       <li><a href="shapepipe.modules.match_external_package.match_external.html#shapepipe.modules.match_external_package.match_external.get_cat">get_cat() (in module shapepipe.modules.match_external_package.match_external)</a>
-</li>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_ccds_with_psf">get_ccds_with_psf() (CcdPsfHandler method)</a>
-</li>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_ccds_with_psf_method_v1_3">get_ccds_with_psf_method_v1_3() (CcdPsfHandler method)</a>
 </li>
       <li><a href="shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.get_check_image">get_check_image() (SExtractorCaller method)</a>
 </li>
@@ -1236,13 +1209,9 @@
 </li>
       <li><a href="shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatSetools.get_ellipticity">get_ellipticity() (MergeStarCatSetools class method)</a>
 </li>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_exp">get_exp() (CcdPsfHandler method)</a>
-</li>
       <li><a href="shapepipe.pipeline.exp_utils.html#shapepipe.pipeline.exp_utils.get_exp_output_dirs">get_exp_output_dirs() (in module shapepipe.pipeline.exp_utils)</a>
 </li>
       <li><a href="shapepipe.pipeline.exp_utils.html#shapepipe.pipeline.exp_utils.get_exp_output_files">get_exp_output_files() (in module shapepipe.pipeline.exp_utils)</a>
-</li>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_exp_shdu_missing">get_exp_shdu_missing() (CcdPsfHandler method)</a>
 </li>
       <li><a href="shapepipe.modules.find_exposures_package.find_exposures.html#shapepipe.modules.find_exposures_package.find_exposures.FindExposures.get_exposure_list">get_exposure_list() (FindExposures method)</a>
 </li>
@@ -1270,8 +1239,6 @@
 </li>
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.image.get_ID">get_ID() (image method)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.get_IDs_from_file">get_IDs_from_file() (in module shapepipe.utilities.summary)</a>
-</li>
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_image_list">get_image_list() (in module shapepipe.utilities.cfis)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_info">get_info() (BaseCatalogue.Column method)</a>
@@ -1286,15 +1253,9 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.get_last_full_path">get_last_full_path() (job_data class method)</a>
-</li>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.get_lines">get_lines() (CcdPsfHandler method)</a>
-</li>
       <li><a href="shapepipe.pipeline.run_log.html#shapepipe.pipeline.run_log.get_list">get_list() (in module shapepipe.pipeline.run_log)</a>
 </li>
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_log_file">get_log_file() (in module shapepipe.utilities.cfis)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.get_matches_final">get_matches_final() (job_data method)</a>
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_mcal_flags">get_mcal_flags() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
@@ -1304,8 +1265,6 @@
 </li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.get_module_current_run">get_module_current_run() (FileHandler method)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.get_module_output_dir">get_module_output_dir() (job_data class method)</a>
-</li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.get_module_run_prop">get_module_run_prop() (FileHandler method)</a>
 </li>
       <li><a href="shapepipe.modules.module_runners.html#shapepipe.modules.module_runners.get_module_runners">get_module_runners() (in module shapepipe.modules.module_runners)</a>
@@ -1313,8 +1272,6 @@
       <li><a href="shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatSetools.get_moments">get_moments() (MergeStarCatSetools class method)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.get_named_col_data">get_named_col_data() (FITSCatalogue method)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.get_names_in_dir">get_names_in_dir() (job_data method)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.get_nb_cols">get_nb_cols() (BaseCatalogue method)</a>
 
@@ -1341,8 +1298,6 @@
 </li>
       </ul></li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_output_path">get_output_path() (Ngmix method)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.get_par_runtime">get_par_runtime() (in module shapepipe.utilities.summary)</a>
 </li>
       <li><a href="shapepipe.pipeline.config.html#shapepipe.pipeline.config.SetUpParser.get_parser">get_parser() (SetUpParser method)</a>
 </li>
@@ -1373,8 +1328,6 @@
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_type">get_type() (BaseCatalogue.Column method)</a>
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_type_flags">get_type_flags() (in module shapepipe.modules.ngmix_package.ngmix)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.get_unique">get_unique() (job_data class method)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.get_unit_from_fits_header">get_unit_from_fits_header() (in module shapepipe.pipeline.file_io)</a>
 </li>
@@ -1416,16 +1369,14 @@
 </li>
       <li><a href="shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.in2out_pattern">in2out_pattern() (in module shapepipe.modules.get_images_package.get_images)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.init_par_runtime">init_par_runtime() (in module shapepipe.utilities.summary)</a>
-</li>
       <li><a href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.interp_MCCD">interp_MCCD() (in module shapepipe.modules.mccd_package.mccd_interpolation_script)</a>
 </li>
       <li><a href="shapepipe.modules.ngmix_package.defect_interpolation.html#shapepipe.modules.ngmix_package.defect_interpolation.interpolable_defects">interpolable_defects() (in module shapepipe.modules.ngmix_package.defect_interpolation)</a>
 </li>
-      <li><a href="shapepipe.modules.ngmix_package.defect_interpolation.html#shapepipe.modules.ngmix_package.defect_interpolation.interpolate_defects">interpolate_defects() (in module shapepipe.modules.ngmix_package.defect_interpolation)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shapepipe.modules.ngmix_package.defect_interpolation.html#shapepipe.modules.ngmix_package.defect_interpolation.interpolate_defects">interpolate_defects() (in module shapepipe.modules.ngmix_package.defect_interpolation)</a>
+</li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.interpolated_defects">interpolated_defects() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
       <li><a href="shapepipe.pipeline.str_handler.html#shapepipe.pipeline.str_handler.StrInterpreter.interpret">interpret() (StrInterpreter method)</a>
@@ -1433,10 +1384,6 @@
       <li><a href="shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.interpsfex">interpsfex() (PSFExInterpolator method)</a>
 </li>
       <li><a href="shapepipe.utilities.final_cat.html#shapepipe.utilities.final_cat.is_hdf5">is_hdf5() (in module shapepipe.utilities.final_cat)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.is_ID_in_str">is_ID_in_str() (job_data class method)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.is_not_in_any">is_not_in_any() (job_data class method)</a>
 </li>
       <li><a href="shapepipe.pipeline.sqlite_store.html#shapepipe.pipeline.sqlite_store.ImmutableSqliteDict.items">items() (ImmutableSqliteDict method)</a>
 </li>
@@ -1446,12 +1393,10 @@
 <h2 id="J">J</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data">job_data (class in shapepipe.utilities.summary)</a>
+      <li><a href="shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler.job_type">job_type (JobHandler property)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler.job_type">job_type (JobHandler property)</a>
-</li>
       <li><a href="shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler">JobHandler (class in shapepipe.pipeline.job_handler)</a>
 </li>
   </ul></td>
@@ -1483,11 +1428,7 @@
       <li><a href="shapepipe.coverage_run.html#shapepipe.coverage_run.main">main() (in module shapepipe.coverage_run)</a>
 
       <ul>
-        <li><a href="shapepipe.get_ccds_run.html#shapepipe.get_ccds_run.main">(in module shapepipe.get_ccds_run)</a>
-</li>
         <li><a href="shapepipe.shapepipe_run.html#shapepipe.shapepipe_run.main">(in module shapepipe.shapepipe_run)</a>
-</li>
-        <li><a href="shapepipe.summary_run.html#shapepipe.summary_run.main">(in module shapepipe.summary_run)</a>
 </li>
       </ul></li>
       <li><a href="shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.make_command_line">make_command_line() (SExtractorCaller method)</a>
@@ -1561,8 +1502,6 @@
         <li><a href="shapepipe.canfar_run.html#module-shapepipe.canfar_run">shapepipe.canfar_run</a>
 </li>
         <li><a href="shapepipe.coverage_run.html#module-shapepipe.coverage_run">shapepipe.coverage_run</a>
-</li>
-        <li><a href="shapepipe.get_ccds_run.html#module-shapepipe.get_ccds_run">shapepipe.get_ccds_run</a>
 </li>
         <li><a href="shapepipe.info.html#module-shapepipe.info">shapepipe.info</a>
 </li>
@@ -1696,15 +1635,11 @@
 </li>
         <li><a href="shapepipe.shapepipe_run.html#module-shapepipe.shapepipe_run">shapepipe.shapepipe_run</a>
 </li>
-        <li><a href="shapepipe.summary_run.html#module-shapepipe.summary_run">shapepipe.summary_run</a>
-</li>
         <li><a href="shapepipe.testing.html#module-shapepipe.testing">shapepipe.testing</a>
 </li>
         <li><a href="shapepipe.testing.simulate.html#module-shapepipe.testing.simulate">shapepipe.testing.simulate</a>
 </li>
         <li><a href="shapepipe.utilities.html#module-shapepipe.utilities">shapepipe.utilities</a>
-</li>
-        <li><a href="shapepipe.utilities.ccd_psf_handler.html#module-shapepipe.utilities.ccd_psf_handler">shapepipe.utilities.ccd_psf_handler</a>
 </li>
         <li><a href="shapepipe.utilities.cfis.html#module-shapepipe.utilities.cfis">shapepipe.utilities.cfis</a>
 </li>
@@ -1723,10 +1658,6 @@
         <li><a href="shapepipe.utilities.header_downloader.html#module-shapepipe.utilities.header_downloader">shapepipe.utilities.header_downloader</a>
 </li>
         <li><a href="shapepipe.utilities.mask_query.html#module-shapepipe.utilities.mask_query">shapepipe.utilities.mask_query</a>
-</li>
-        <li><a href="shapepipe.utilities.summary.html#module-shapepipe.utilities.summary">shapepipe.utilities.summary</a>
-</li>
-        <li><a href="shapepipe.utilities.summary_params_pre_v2.html#module-shapepipe.utilities.summary_params_pre_v2">shapepipe.utilities.summary_params_pre_v2</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1763,15 +1694,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.open">open() (FITSCatalogue method)</a>
 </li>
-      <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.open_mode">open_mode (FITSCatalogue property)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.open_mode">open_mode (FITSCatalogue property)</a>
+</li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#id2">orig (MetacalResult attribute)</a>, <a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.MetacalResult.orig">[1]</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.output_missing">output_missing() (job_data method)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.output_missing_job">output_missing_job() (job_data method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1783,11 +1710,9 @@
 </li>
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.param">param (class in shapepipe.utilities.cfis)</a>
 </li>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.params_default">params_default() (CcdPsfHandler method)</a>
+      <li><a href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.params_default">params_default() (CoverageMapBuilder method)</a>
 
       <ul>
-        <li><a href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.params_default">(CoverageMapBuilder method)</a>
-</li>
         <li><a href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter.params_default">(CoveragePlotter method)</a>
 </li>
         <li><a href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.params_default">(FieldCornersExtractor method)</a>
@@ -1795,8 +1720,6 @@
         <li><a href="shapepipe.utilities.header_downloader.html#shapepipe.utilities.header_downloader.HeaderDownloader.params_default">(HeaderDownloader method)</a>
 </li>
       </ul></li>
-      <li><a href="shapepipe.summary_run.html#shapepipe.summary_run.parse_args">parse_args() (in module shapepipe.summary_run)</a>
-</li>
       <li><a href="shapepipe.modules.psfex_package.psfex_script.html#shapepipe.modules.psfex_package.psfex_script.PSFExCaller.parse_errors">parse_errors() (PSFExCaller static method)</a>
 
       <ul>
@@ -1833,17 +1756,7 @@
       </ul></li>
       <li><a href="shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.image.print_header">print_header() (image method)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.print_intro">print_intro() (job_data method)</a>
-</li>
       <li><a href="shapepipe.pipeline.args.html#shapepipe.pipeline.args.print_message">print_message() (in module shapepipe.pipeline.args)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.print_par_runtime">print_par_runtime() (in module shapepipe.utilities.summary)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.print_stats">print_stats() (job_data method)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.print_stats_header">print_stats_header() (job_data class method)</a>
 </li>
       <li><a href="shapepipe.modules.fake_psf_package.fake_psf.html#shapepipe.modules.fake_psf_package.fake_psf.FakePsf.process">process() (FakePsf method)</a>
 
@@ -1881,6 +1794,8 @@
         <li><a href="shapepipe.modules.vignetmaker_package.vignetmaker.html#shapepipe.modules.vignetmaker_package.vignetmaker.VignetMaker.process">(VignetMaker method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator.process_me">process_me() (MCCDinterpolator method)</a>
 
       <ul>
@@ -1951,29 +1866,23 @@
 </li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.remove_process_mmap">remove_process_mmap() (FileHandler method)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.replace_dash_dot_if_tile">replace_dash_dot_if_tile() (job_data class method)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.replace_dot_dash">replace_dot_dash() (job_data class method)</a>
-</li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.rescale_epoch_fluxes">rescale_epoch_fluxes() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#id0">resdict (MetacalResult attribute)</a>, <a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.MetacalResult.resdict">[1]</a>
 </li>
-      <li><a href="shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.GetImages.retrieve">retrieve() (GetImages method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.GetImages.retrieve">retrieve() (GetImages method)</a>
+</li>
       <li><a href="shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.GetImages.retrieve_one">retrieve_one() (GetImages method)</a>
 </li>
       <li><a href="shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD.rmse_calc">rmse_calc() (MergeStarCatMCCD static method)</a>
 </li>
       <li><a href="shapepipe.modules.merge_starcat_package.merge_starcat.html#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatMCCD.rmse_calc_2">rmse_calc_2() (MergeStarCatMCCD static method)</a>
 </li>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.run">run() (CcdPsfHandler method)</a>
+      <li><a href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.run">run() (CoverageMapBuilder method)</a>
 
       <ul>
-        <li><a href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.run">(CoverageMapBuilder method)</a>
-</li>
         <li><a href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter.run">(CoveragePlotter method)</a>
 </li>
         <li><a href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.run">(FieldCornersExtractor method)</a>
@@ -1982,20 +1891,14 @@
 </li>
         <li><a href="shapepipe.run.html#shapepipe.run.run">(in module shapepipe.run)</a>
 </li>
-        <li><a href="shapepipe.summary_run.html#shapepipe.summary_run.run">(in module shapepipe.summary_run)</a>
-</li>
       </ul></li>
       <li><a href="shapepipe.coverage_run.html#shapepipe.coverage_run.run_build_coverage">run_build_coverage() (in module shapepipe.coverage_run)</a>
-</li>
-      <li><a href="shapepipe.get_ccds_run.html#shapepipe.get_ccds_run.run_ccd_psf_handler">run_ccd_psf_handler() (in module shapepipe.get_ccds_run)</a>
 </li>
       <li><a href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.run_dir">run_dir (FileHandler property)</a>
 </li>
       <li><a href="shapepipe.coverage_run.html#shapepipe.coverage_run.run_download_headers">run_download_headers() (in module shapepipe.coverage_run)</a>
 </li>
       <li><a href="shapepipe.coverage_run.html#shapepipe.coverage_run.run_extract_corners">run_extract_corners() (in module shapepipe.coverage_run)</a>
-</li>
-      <li><a href="shapepipe.canfar_run.html#shapepipe.canfar_run.run_job">run_job() (in module shapepipe.canfar_run)</a>
 </li>
       <li><a href="shapepipe.canfar_run.html#shapepipe.canfar_run.run_log">run_log() (in module shapepipe.canfar_run)</a>
 </li>
@@ -2015,12 +1918,8 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.save">save() (CcdPsfHandler method)</a>
-
-      <ul>
-        <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.save">(FITSCatalogue method)</a>
+      <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.save">save() (FITSCatalogue method)</a>
 </li>
-      </ul></li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.save_as_fits">save_as_fits() (FITSCatalogue method)</a>
 </li>
       <li><a href="shapepipe.modules.setools_package.setools.html#shapepipe.modules.setools_package.setools.SETools.save_mask">save_mask() (SETools method)</a>
@@ -2047,17 +1946,11 @@
 </li>
       <li><a href="shapepipe.modules.setools_package.setools.html#shapepipe.modules.setools_package.setools.SEPlot">SEPlot (class in shapepipe.modules.setools_package.setools)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.set_as_list">set_as_list() (in module shapepipe.utilities.summary)</a>
-</li>
       <li><a href="shapepipe.modules.sextractor_package.sextractor_script.html#shapepipe.modules.sextractor_package.sextractor_script.SExtractorCaller.set_input_files">set_input_files() (SExtractorCaller method)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary_params_pre_v2.html#shapepipe.utilities.summary_params_pre_v2.set_jobs_v2_pre_v2">set_jobs_v2_pre_v2() (in module shapepipe.utilities.summary_params_pre_v2)</a>
-</li>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.set_params_from_command_line">set_params_from_command_line() (CcdPsfHandler method)</a>
+      <li><a href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.set_params_from_command_line">set_params_from_command_line() (CoverageMapBuilder method)</a>
 
       <ul>
-        <li><a href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.set_params_from_command_line">(CoverageMapBuilder method)</a>
-</li>
         <li><a href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter.set_params_from_command_line">(CoveragePlotter method)</a>
 </li>
         <li><a href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.set_params_from_command_line">(FieldCornersExtractor method)</a>
@@ -2100,13 +1993,6 @@
 
       <ul>
         <li><a href="shapepipe.coverage_run.html#module-shapepipe.coverage_run">module</a>
-</li>
-      </ul></li>
-      <li>
-    shapepipe.get_ccds_run
-
-      <ul>
-        <li><a href="shapepipe.get_ccds_run.html#module-shapepipe.get_ccds_run">module</a>
 </li>
       </ul></li>
       <li>
@@ -2354,6 +2240,8 @@
         <li><a href="shapepipe.modules.psfex_package.psfex_script.html#module-shapepipe.modules.psfex_package.psfex_script">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     shapepipe.modules.python_example_package
 
@@ -2361,8 +2249,6 @@
         <li><a href="shapepipe.modules.python_example_package.html#module-shapepipe.modules.python_example_package">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     shapepipe.modules.python_example_package.python_example
 
@@ -2574,13 +2460,6 @@
 </li>
       </ul></li>
       <li>
-    shapepipe.summary_run
-
-      <ul>
-        <li><a href="shapepipe.summary_run.html#module-shapepipe.summary_run">module</a>
-</li>
-      </ul></li>
-      <li>
     shapepipe.testing
 
       <ul>
@@ -2599,13 +2478,6 @@
 
       <ul>
         <li><a href="shapepipe.utilities.html#module-shapepipe.utilities">module</a>
-</li>
-      </ul></li>
-      <li>
-    shapepipe.utilities.ccd_psf_handler
-
-      <ul>
-        <li><a href="shapepipe.utilities.ccd_psf_handler.html#module-shapepipe.utilities.ccd_psf_handler">module</a>
 </li>
       </ul></li>
       <li>
@@ -2669,20 +2541,6 @@
 
       <ul>
         <li><a href="shapepipe.utilities.mask_query.html#module-shapepipe.utilities.mask_query">module</a>
-</li>
-      </ul></li>
-      <li>
-    shapepipe.utilities.summary
-
-      <ul>
-        <li><a href="shapepipe.utilities.summary.html#module-shapepipe.utilities.summary">module</a>
-</li>
-      </ul></li>
-      <li>
-    shapepipe.utilities.summary_params_pre_v2
-
-      <ul>
-        <li><a href="shapepipe.utilities.summary_params_pre_v2.html#module-shapepipe.utilities.summary_params_pre_v2">module</a>
 </li>
       </ul></li>
       <li><a href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.shapepipe_write_output">shapepipe_write_output() (in module shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd)</a>
@@ -2749,13 +2607,11 @@
 </li>
       <li><a href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.unwrap_ra">unwrap_ra() (in module shapepipe.utilities.coverage_map_builder)</a>
 </li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.update_par_runtime_after_find_exp">update_par_runtime_after_find_exp() (in module shapepipe.utilities.summary)</a>
-</li>
-      <li><a href="shapepipe.utilities.ccd_psf_handler.html#shapepipe.utilities.ccd_psf_handler.CcdPsfHandler.update_params">update_params() (CcdPsfHandler method)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.update_params">update_params() (CoverageMapBuilder method)</a>
 
       <ul>
-        <li><a href="shapepipe.utilities.coverage_map_builder.html#shapepipe.utilities.coverage_map_builder.CoverageMapBuilder.update_params">(CoverageMapBuilder method)</a>
-</li>
         <li><a href="shapepipe.utilities.coverage_plotter.html#shapepipe.utilities.coverage_plotter.CoveragePlotter.update_params">(CoveragePlotter method)</a>
 </li>
         <li><a href="shapepipe.utilities.field_corners_extractor.html#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.update_params">(FieldCornersExtractor method)</a>
@@ -2763,10 +2619,6 @@
         <li><a href="shapepipe.utilities.header_downloader.html#shapepipe.utilities.header_downloader.HeaderDownloader.update_params">(HeaderDownloader method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.update_subdirs">update_subdirs() (job_data method)</a>
-</li>
       <li><a href="shapepipe.pipeline.file_io.html#shapepipe.pipeline.file_io.FITSCatalogue.use_memmap">use_memmap (FITSCatalogue property)</a>
 </li>
   </ul></td>
@@ -2797,15 +2649,13 @@
 </li>
       <li><a href="shapepipe.pipeline.worker_handler.html#shapepipe.pipeline.worker_handler.WorkerHandler">WorkerHandler (class in shapepipe.pipeline.worker_handler)</a>
 </li>
-      <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.write_empty_tile_output">write_empty_tile_output() (in module shapepipe.modules.ngmix_package.ngmix)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.write_empty_tile_output">write_empty_tile_output() (in module shapepipe.modules.ngmix_package.ngmix)</a>
+</li>
       <li><a href="shapepipe.modules.python_example_package.python_example.html#shapepipe.modules.python_example_package.python_example.PythonExample.write_file">write_file() (PythonExample method)</a>
 </li>
       <li><a href="shapepipe.modules.make_cat_package.make_cat.html#shapepipe.modules.make_cat_package.make_cat.write_final_cat">write_final_cat() (in module shapepipe.modules.make_cat_package.make_cat)</a>
-</li>
-      <li><a href="shapepipe.utilities.summary.html#shapepipe.utilities.summary.job_data.write_IDs_to_file">write_IDs_to_file() (job_data class method)</a>
 </li>
       <li><a href="shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.write_ngmix_fits">write_ngmix_fits() (in module shapepipe.modules.ngmix_package.ngmix)</a>
 </li>

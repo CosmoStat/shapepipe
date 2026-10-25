@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Snakemake Workflow &#8212; ShapePipe v1.1</title>
+    <title>The Snakemake workflow &#8212; ShapePipe v1.1</title>
   
   
   
@@ -165,6 +165,10 @@
   
 
   
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
 </div>
 
     </header>
@@ -253,17 +257,13 @@
 <li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Snakemake Workflow</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">The Snakemake workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
-<ul class="nav bd-sidenav">
+<ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="clusters.html">Running on a Cluster</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_canfar.html">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">The Snakemake workflow</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="nav bd-sidenav">
@@ -381,7 +381,6 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html">shapepipe.utilities.ccd_psf_handler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html">shapepipe.utilities.coverage_map_builder</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html">shapepipe.utilities.coverage_plotter</a></li>
@@ -391,17 +390,13 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.coverage_run.html">shapepipe.coverage_run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shapepipe.get_ccds_run.html">shapepipe.get_ccds_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.info.html">shapepipe.info</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.run.html">shapepipe.run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shapepipe.summary_run.html">shapepipe.summary_run</a></li>
 </ul>
 </details></li>
 </ul>
@@ -543,7 +538,9 @@
 <button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass fa-lg"></i>
 </button>
-
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
 </div></div>
       
     </div>
@@ -554,11 +551,24 @@
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>Snakemake Workflow</h1>
+    <h1>The Snakemake workflow</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
             
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-start">Quick start</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-two-static-invocations">The two static invocations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#manifests-are-the-currency">Manifests are the currency</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sp-report"><code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">report</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sp-container"><code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">container</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#durable-products">Durable products</a></li>
+</ul>
+            </nav>
         </div>
     </div>
 </div>
@@ -568,29 +578,178 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="snakemake-workflow">
-<h1>Snakemake Workflow<a class="headerlink" href="#snakemake-workflow" title="Link to this heading">#</a></h1>
-<p>The end-to-end CFIS production run is driven by a
-<a class="reference external" href="https://snakemake.readthedocs.io">Snakemake</a> workflow that lives in the
-<code class="docutils literal notranslate"><span class="pre">workflow/</span></code> directory of the repository. It replaces the older bit-coded bash
-job chain (<code class="docutils literal notranslate"><span class="pre">job_sp</span></code>) that this documentation previously described.</p>
-<p>The workflow owns:</p>
-<ul class="simple">
-<li><p>the per-module ShapePipe configuration files, in <code class="docutils literal notranslate"><span class="pre">workflow/config/cfis/</span></code>,
-which is what <code class="docutils literal notranslate"><span class="pre">$SP_CONFIG</span></code> points at;</p></li>
-<li><p>the rule graph and job dispatch, in <code class="docutils literal notranslate"><span class="pre">workflow/Snakefile</span></code> and
-<code class="docutils literal notranslate"><span class="pre">workflow/rules/</span></code>;</p></li>
-<li><p>the run-level settings, in <code class="docutils literal notranslate"><span class="pre">workflow/config.yaml</span></code>.</p></li>
-</ul>
-<p>Full usage — dependencies, profiles, how to launch a run, and how the rules map
-onto the ShapePipe modules — is documented in <code class="docutils literal notranslate"><span class="pre">workflow/README.md</span></code> in the
-repository.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The PSF-validation and post-processing configurations that the workflow does
-not yet cover are kept separately in <code class="docutils literal notranslate"><span class="pre">example/cfis/</span></code>; see the README there and
-<a class="reference internal" href="post_processing.html"><span class="std std-doc">Post-processing</span></a>.</p>
+  <section id="the-snakemake-workflow">
+<h1>The Snakemake workflow<a class="headerlink" href="#the-snakemake-workflow" title="Link to this heading">#</a></h1>
+<p>Production ShapePipe runs — a tile list, not a tile — are orchestrated by the
+Snakemake workflow in <code class="docutils literal notranslate"><span class="pre">workflow/</span></code>. It is the only orchestration for real data;
+the bit-coded bash job scripts (<code class="docutils literal notranslate"><span class="pre">run_job_sp_canfar_v2.0.bash</span></code>,
+<code class="docutils literal notranslate"><span class="pre">job_sp_canfar_v2.0.bash</span></code>) remain only as the entry point of sp_validation’s
+image-simulation chain.</p>
+<p><strong>Module code is untouched by it.</strong> Every rule ultimately calls
+<code class="docutils literal notranslate"><span class="pre">shapepipe_run</span> <span class="pre">-c</span> <span class="pre">&lt;config&gt;</span></code> on the config chains described in
+<a class="reference internal" href="configuration.html"><span class="std std-doc">Configuration</span></a>; the workflow supplies the scheduling, the
+per-unit isolation, the bookkeeping and the reclamation around them. Reading
+<a class="reference internal" href="basic_execution.html"><span class="std std-doc">Basic execution</span></a> first is still the right order.</p>
+<p>This page is the orientation. The deep reference — design rationale, every
+rule, the profile, the two-roots argument — is
+<a class="reference external" href="https://github.com/CosmoStat/shapepipe/blob/develop/workflow/README.md"><code class="docutils literal notranslate"><span class="pre">workflow/README.md</span></code></a>
+in the repository, and the living design record is
+<a class="reference external" href="https://github.com/CosmoStat/shapepipe/issues/848">issue #848</a>.</p>
+<section id="quick-start">
+<h2>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading">#</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># One-time, on a SHARED filesystem: the SLURM executor re-invokes this python</span>
+<span class="c1"># inside every job, so a node-local path (/tmp) will not do.</span>
+uv<span class="w"> </span>venv<span class="w"> </span>/project/&lt;alloc&gt;/&lt;user&gt;/snakemake-env<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.12
+<span class="nb">source</span><span class="w"> </span>/project/&lt;alloc&gt;/&lt;user&gt;/snakemake-env/bin/activate
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">'snakemake&gt;=9,&lt;10'</span><span class="w"> </span><span class="s1">'snakemake-executor-plugin-slurm&gt;=2.7,&lt;3'</span>
+
+<span class="c1"># Write a run config that sets at least `run:`, the campaign's name;</span>
+<span class="c1"># workflow/config.yaml's machines: table supplies the rest.</span>
+
+workflow/bin/sp<span class="w"> </span>run<span class="w"> </span>-c<span class="w"> </span>my_run.yaml<span class="w">     </span><span class="c1"># bring products on disk up to date with the tile list</span>
+workflow/bin/sp<span class="w"> </span>report<span class="w"> </span>-c<span class="w"> </span>my_run.yaml<span class="w">  </span><span class="c1"># the success/failure tables, any time, mid-run is fine</span>
+workflow/bin/sp<span class="w"> </span>container<span class="w"> </span>status<span class="w">       </span><span class="c1"># which image the jobs will run inside</span>
+workflow/bin/sp<span class="w"> </span>cancel<span class="w"> </span>&lt;name&gt;<span class="w">          </span><span class="c1"># scancel this workflow's jobs</span>
+</pre></div>
 </div>
+<p>The run config is merged on top of <code class="docutils literal notranslate"><span class="pre">workflow/config.yaml</span></code>; <code class="docutils literal notranslate"><span class="pre">SP_PROFILE</span></code> and
+<code class="docutils literal notranslate"><span class="pre">input_type:</span></code> (<code class="docutils literal notranslate"><span class="pre">data</span></code> or <code class="docutils literal notranslate"><span class="pre">image_sims</span></code>) select the <code class="docutils literal notranslate"><span class="pre">machines:</span></code> entry that fills
+in whatever it leaves unset. The README’s <em>Run configuration</em> section has the
+full resolution.</p>
+<p><code class="docutils literal notranslate"><span class="pre">workflow/bin/sp</span></code> is the entry point for everything. It loads the apptainer
+module and the venv, snapshots the code it is about to launch, and sets the
+state directory, the SLURM profile and <code class="docutils literal notranslate"><span class="pre">SP_PHASE</span></code>. <strong>Bare <code class="docutils literal notranslate"><span class="pre">snakemake</span></code> outside
+<code class="docutils literal notranslate"><span class="pre">sp</span></code> is unsupported</strong> — it skips all of that, including the phase variable the
+Snakefile needs to build its index at parse time. Any verb <code class="docutils literal notranslate"><span class="pre">sp</span></code> does not
+recognise passes straight through to snakemake with the right profile and state
+directory, which is the escape hatch for <code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">--unlock</span></code>, <code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">--dag</span></code> or
+<code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">exp_psf</span> <span class="pre">...</span></code>.</p>
+</section>
+<section id="the-two-static-invocations">
+<h2>The two static invocations<a class="headerlink" href="#the-two-static-invocations" title="Link to this heading">#</a></h2>
+<p>The exposure job set is <em>derived from data the run itself produces</em> — a tile’s
+<code class="docutils literal notranslate"><span class="pre">find_exposures</span></code> output — so it cannot live in the same static DAG that produces
+it. <code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">run</span></code> is therefore two snakemake invocations over one Snakefile:</p>
+<ol class="arabic">
+<li><p><strong>PREPARE</strong> (<code class="docutils literal notranslate"><span class="pre">snakemake</span> <span class="pre">prepare_all_tiles</span></code>) — the per-tile static chain
+<code class="docutils literal notranslate"><span class="pre">tile_get_images</span> <span class="pre">→</span> <span class="pre">tile_uncompress</span> <span class="pre">→</span> <span class="pre">tile_find_exposures</span></code>, with <code class="docutils literal notranslate"><span class="pre">keep-going</span></code>
+so tile failures stay independent. A nonzero exit is a warning, not a fatal
+error: tiles that lost their exposure list are dropped at the compute parse,
+and <code class="docutils literal notranslate"><span class="pre">SP_MISSING_THRESHOLD</span></code> is the real gate on how many may be lost.</p></li>
+<li><p><strong>COMPUTE</strong> (<code class="docutils literal notranslate"><span class="pre">snakemake</span> <span class="pre">all</span></code>) — this invocation’s <em>parse</em> builds the
+tile↔exposure index (<code class="docutils literal notranslate"><span class="pre">run_index.sqlite</span></code>) and the DAG then runs the full
+exposure and tile chains:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>level</p></th>
+<th class="head"><p>chain</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>exposure</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">exp_get_images</span> <span class="pre">→</span> <span class="pre">exp_split</span> <span class="pre">→</span> <span class="pre">exp_psf</span> <span class="pre">→</span> <span class="pre">exp_persist</span> <span class="pre">→</span> <span class="pre">clean_exposure</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>tile</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tile_exp_forest</span> <span class="pre">→</span> <span class="pre">tile_merge_headers</span> <span class="pre">→</span> <span class="pre">tile_detect</span> <span class="pre">→</span> <span class="pre">tile_vignets</span> <span class="pre">→</span> <span class="pre">tile_ngmix</span> <span class="pre">→</span> <span class="pre">tile_merge_cats</span> <span class="pre">→</span> <span class="pre">tile_make_cat</span> <span class="pre">→</span> <span class="pre">clean_tile</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>campaign</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">star_cat_merge</span></code>, <code class="docutils literal notranslate"><span class="pre">final_cat_merge</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
+</ol>
+<p><code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">run</span></code> chains both and fails if either phase did. The index <strong>accumulates</strong>
+across invocations, so appending tiles to <code class="docutils literal notranslate"><span class="pre">tile_list</span></code> later changes which jobs
+exist without invalidating completed work.</p>
+<p>Every rule instance is its own SLURM job (<code class="docutils literal notranslate"><span class="pre">executor:</span> <span class="pre">slurm</span></code> in
+<code class="docutils literal notranslate"><span class="pre">profiles/nibi/config.yaml</span></code>) carrying that rule’s own attempt-scaled resources,
+and runs inside the container via snakemake’s software-deployment method — the
+workflow never calls apptainer itself.</p>
+</section>
+<section id="manifests-are-the-currency">
+<h2>Manifests are the currency<a class="headerlink" href="#manifests-are-the-currency" title="Link to this heading">#</a></h2>
+<p>The atom is <strong>one rule == one <code class="docutils literal notranslate"><span class="pre">shapepipe_run</span></code> on one unit</strong> (one tile, or one
+exposure), in its own sharded store: <code class="docutils literal notranslate"><span class="pre">&lt;run_dir&gt;/tiles/&lt;2-char</span> <span class="pre">prefix&gt;/&lt;ID&gt;/</span></code> or
+<code class="docutils literal notranslate"><span class="pre">&lt;run_dir&gt;/exp/&lt;prefix&gt;/&lt;base&gt;/</span></code>.</p>
+<p>A rule’s single declared output is not its product files but that unit’s
+<strong>manifest</strong>, <code class="docutils literal notranslate"><span class="pre">&lt;unit</span> <span class="pre">dir&gt;/manifests/&lt;stage&gt;.json</span></code>. Per-CCD declaration would
+mean millions of paths at DR6 scale, and a missing CCD is frequently
+legitimate.</p>
+<p>Manifests are <em>success-only</em>. After each run, <code class="docutils literal notranslate"><span class="pre">completeness.py</span> <span class="pre">check</span></code> writes its
+full verdict — per-runner counts against floors, scraped failure reasons, the
+<code class="docutils literal notranslate"><span class="pre">shapepipe_run</span></code> exit status — to the rule’s <code class="docutils literal notranslate"><span class="pre">log:</span></code>
+(<code class="docutils literal notranslate"><span class="pre">&lt;unit</span> <span class="pre">dir&gt;/logs/&lt;stage&gt;.json</span></code>) <strong>every</strong> time, and additionally to the
+declared manifest <strong>only</strong> when that verdict is a success. So a manifest on disk
+means “this stage succeeded”, and a resume after an unclean death can never
+schedule downstream work on top of a failure.</p>
+<p>Completeness is a <strong>count floor, not a taxonomy</strong>: a stage is a real failure iff
+a mandatory runner produced fewer products than its floor. Per-CCD attrition
+between the floor and the expected count is tolerated and recorded. There is no
+error-signature whitelist.</p>
+</section>
+<section id="sp-report">
+<h2><code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">report</span></code><a class="headerlink" href="#sp-report" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">report</span></code> reads the index and those two directories — the manifest for
+success, the log for failure, a unit with neither ran nothing — and prints the
+per-stage tables plus a <code class="docutils literal notranslate"><span class="pre">run_report.json</span></code> beside the index. It is deliberately
+<strong>not</strong> a DAG node: a report rule declaring every tile’s output would be a
+descendant of every job, so one hard failure under <code class="docutils literal notranslate"><span class="pre">--keep-going</span></code> would poison
+its cone and the report would never run in exactly the situation it exists for.
+It is a plain script, runnable at any time including mid-run, and the COMPUTE
+invocation’s <code class="docutils literal notranslate"><span class="pre">onsuccess</span></code>/<code class="docutils literal notranslate"><span class="pre">onerror</span></code> hooks fire it automatically so every run ends
+with one.</p>
+</section>
+<section id="sp-container">
+<h2><code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">container</span></code><a class="headerlink" href="#sp-container" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">container</span></code> owns which image the jobs run inside, in one resolution order
+shared by the CLI and the workflow: <strong>sandbox → your cached SIF → the
+machine’s <code class="docutils literal notranslate"><span class="pre">container:</span></code> in <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code>’s <code class="docutils literal notranslate"><span class="pre">machines:</span></code> table</strong>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sp<span class="w"> </span>container<span class="w"> </span>status<span class="w">                  </span><span class="c1"># layers present, active one, revision vs HEAD</span>
+sp<span class="w"> </span>container<span class="w"> </span>pull<span class="w">                    </span><span class="c1"># ghcr.io/cosmostat/shapepipe:develop</span>
+sp<span class="w"> </span>container<span class="w"> </span>sandbox<span class="w">                 </span><span class="c1"># unpack the SIF writable (opt-in)</span>
+sp<span class="w"> </span>container<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>--writable<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>&lt;pkg&gt;
+sp<span class="w"> </span>container<span class="w"> </span>resolve<span class="w">                 </span><span class="c1"># just the path the workflow will run</span>
+</pre></div>
+</div>
+<p>The cached SIF is a private pull, so nobody else’s refresh moves the ground
+under your running jobs; the sandbox is the escape hatch for work needing a
+package the image does not carry yet. <code class="docutils literal notranslate"><span class="pre">status</span></code> places the image’s
+<code class="docutils literal notranslate"><span class="pre">org.opencontainers.image.revision</span></code> label against this checkout’s HEAD.
+<code class="docutils literal notranslate"><span class="pre">pull</span></code> needs the network — run it on a login node, never from a batch job.</p>
+<p>See <a class="reference internal" href="container.html"><span class="std std-doc">Container workflow</span></a> for how the images are built.</p>
+</section>
+<section id="durable-products">
+<h2>Durable products<a class="headerlink" href="#durable-products" title="Link to this heading">#</a></h2>
+<p>Two roots. <code class="docutils literal notranslate"><span class="pre">run_dir</span></code> is scratch: the bulk per-unit stores, sized to finish
+inside the purge window. <code class="docutils literal notranslate"><span class="pre">products_dir</span></code> is persistent and holds the low-volume
+things worth keeping:</p>
+<ul class="simple">
+<li><p><strong>Final catalogues</strong> — <code class="docutils literal notranslate"><span class="pre">&lt;products_dir&gt;/tiles/&lt;prefix&gt;/&lt;ID&gt;/final_cat-&lt;ID&gt;.fits</span></code>,
+mirroring the scratch shard structure. This file is also the <em>tile-finished
+marker</em> that lets a completed tile stop pinning its exposures, which is the
+second reason it cannot live on scratch.</p></li>
+<li><p><strong>Merged catalogues</strong> — <code class="docutils literal notranslate"><span class="pre">&lt;products_dir&gt;/final_cat_&lt;run&gt;.hdf5</span></code> (every tile’s
+final catalogue, one dataset per tile) and <code class="docutils literal notranslate"><span class="pre">full_starcat_&lt;run&gt;.hdf5</span></code> (every
+exposure’s PSF validation catalogue, the rho/tau statistics input), named by
+the run config’s <code class="docutils literal notranslate"><span class="pre">run:</span></code> and reconciled rather than rebuilt when tiles are
+appended.</p></li>
+<li><p><strong>PSF products</strong> — <code class="docutils literal notranslate"><span class="pre">exp_persist</span></code> packs each exposure’s psfex_interp
+<code class="docutils literal notranslate"><span class="pre">validation_psf-*.fits</span></code> (always) and the products named by <code class="docutils literal notranslate"><span class="pre">persist_exp:</span></code> in
+<code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> (by default <code class="docutils literal notranslate"><span class="pre">psf_model</span></code>) into one uncompressed tar per exposure,
+plus a manifest recording the members. It answers the scratch purge, not the
+workflow’s own reclamation, so it runs whether or not <code class="docutils literal notranslate"><span class="pre">clean:</span></code> is on. Under
+<code class="docutils literal notranslate"><span class="pre">psf_model:</span> <span class="pre">fake</span></code> there is no PSF product and it does not run.</p></li>
+<li><p><strong>The index and the report</strong> — <code class="docutils literal notranslate"><span class="pre">run_index.sqlite</span></code>, <code class="docutils literal notranslate"><span class="pre">missing.json</span></code>,
+<code class="docutils literal notranslate"><span class="pre">run_report.json</span></code>.</p></li>
+</ul>
+<p>Exposure stores are reclaimed by the in-DAG <code class="docutils literal notranslate"><span class="pre">clean_exposure</span></code> rule rather than by
+<code class="docutils literal notranslate"><span class="pre">temp()</span></code>: exposures overlap tiles, so <code class="docutils literal notranslate"><span class="pre">temp()</span></code> would cascade destructive reruns
+whenever a tile is appended. Reclamation leaves a <code class="docutils literal notranslate"><span class="pre">cleaned.json</span></code> tombstone
+holding the absorbed manifests, so a reclaimed exposure still reports its
+per-runner counts and blocks no tile.</p>
+</section>
 </section>
 
 
@@ -628,6 +787,28 @@ not yet cover are kept separately in <code class="docutils literal notranslate">
             </div>
             
             
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-start">Quick start</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-two-static-invocations">The two static invocations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#manifests-are-the-currency">Manifests are the currency</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sp-report"><code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">report</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sp-container"><code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">container</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#durable-products">Durable products</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
               
             
           </div>

@@ -13,7 +13,6 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
-   shapepipe.utilities.ccd_psf_handler
    shapepipe.utilities.cfis
    shapepipe.utilities.coverage_map_builder
    shapepipe.utilities.coverage_plotter
@@ -23,5 +22,3 @@ Submodules
    shapepipe.utilities.galaxy
    shapepipe.utilities.header_downloader
    shapepipe.utilities.mask_query
-   shapepipe.utilities.summary
-   shapepipe.utilities.summary_params_pre_v2

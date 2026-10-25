@@ -252,17 +252,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../../basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../testing.html">Testing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow.html">The Snakemake workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../clusters.html">Running on a Cluster</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../pipeline_canfar.html">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../../post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow.html">The Snakemake workflow</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="nav bd-sidenav">
@@ -380,7 +376,6 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../shapepipe.utilities.ccd_psf_handler.html">shapepipe.utilities.ccd_psf_handler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../shapepipe.utilities.coverage_map_builder.html">shapepipe.utilities.coverage_map_builder</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../shapepipe.utilities.coverage_plotter.html">shapepipe.utilities.coverage_plotter</a></li>
@@ -390,17 +385,13 @@
 <li class="toctree-l3"><a class="reference internal" href="../../shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="../../shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../shapepipe.coverage_run.html">shapepipe.coverage_run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../shapepipe.get_ccds_run.html">shapepipe.get_ccds_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../shapepipe.info.html">shapepipe.info</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../shapepipe.run.html">shapepipe.run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../shapepipe.summary_run.html">shapepipe.summary_run</a></li>
 </ul>
 </details></li>
 </ul>
@@ -557,28 +548,7 @@
 <span class="c1"># executables are created by pyproject.toml.</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.canfar</span><span class="w"> </span><span class="kn">import</span> <span class="n">canfar_submit</span><span class="p">,</span> <span class="n">canfar_monitor</span><span class="p">,</span> <span class="n">canfar_log_monitor</span>
-
-<div class="viewcode-block" id="run_job">
-<a class="viewcode-back" href="../../shapepipe.canfar_run.html#shapepipe.canfar_run.run_job">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">run_job</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Run Job.</span>
-
-<span class="sd">    Handles job submission with the canfar library</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    args : list, optional</span>
-<span class="sd">        command line arguments, default is ``None``</span>
-
-<span class="sd">    """</span>
-    <span class="c1"># Create instance</span>
-    <span class="n">obj</span> <span class="o">=</span> <span class="n">canfar_submit</span><span class="o">.</span><span class="n">Job</span><span class="p">()</span>
-
-    <span class="c1"># Run instance</span>
-    <span class="n">obj</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span></div>
-
-
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.canfar</span><span class="w"> </span><span class="kn">import</span> <span class="n">canfar_monitor</span><span class="p">,</span> <span class="n">canfar_log_monitor</span>
 
 <div class="viewcode-block" id="run_log">
 <a class="viewcode-back" href="../../shapepipe.canfar_run.html#shapepipe.canfar_run.run_log">[docs]</a>

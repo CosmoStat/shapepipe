@@ -56,7 +56,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Running on a Cluster" href="clusters.html" />
-    <link rel="prev" title="Snakemake Workflow" href="workflow.html" />
+    <link rel="prev" title="The Snakemake workflow" href="workflow.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
@@ -257,17 +257,13 @@
 <li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">The Snakemake workflow</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">ShapePipe Tutorial</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="clusters.html">Running on a Cluster</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_canfar.html">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">The Snakemake workflow</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="nav bd-sidenav">
@@ -385,7 +381,6 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.ccd_psf_handler.html">shapepipe.utilities.ccd_psf_handler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_map_builder.html">shapepipe.utilities.coverage_map_builder</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.coverage_plotter.html">shapepipe.utilities.coverage_plotter</a></li>
@@ -395,17 +390,13 @@
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.header_downloader.html">shapepipe.utilities.header_downloader</a></li>
 <li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.mask_query.html">shapepipe.utilities.mask_query</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
-<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.coverage_run.html">shapepipe.coverage_run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shapepipe.get_ccds_run.html">shapepipe.get_ccds_run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.info.html">shapepipe.info</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.run.html">shapepipe.run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shapepipe.summary_run.html">shapepipe.summary_run</a></li>
 </ul>
 </details></li>
 </ul>
@@ -575,7 +566,7 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#file-types-and-names">File types and names</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cfis-processing">CFIS processing</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#input-and-output-paths">Input and output paths</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#job-and-pipeline-scripts">Job and pipeline scripts</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-rule-chain">The rule chain</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#select-tiles">Select tiles</a></li>
 </ul>
 </li>
@@ -592,7 +583,6 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#galaxy-selection">Galaxy selection</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shape-measurement">Shape measurement</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#paste-catalogues">Paste catalogues</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upload-results">Upload results</a></li>
 </ul>
             </nav>
         </div>
@@ -608,14 +598,14 @@
 <h1>ShapePipe Tutorial<a class="headerlink" href="#shapepipe-tutorial" title="Link to this heading">#</a></h1>
 <section id="quick-start">
 <h2>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading">#</a></h2>
-<p>Run the entire pipeline on a single example CFIS image with tile ID 246.290:</p>
-<ol class="arabic simple">
-<li><p><a class="reference internal" href="installation.html"><span class="std std-doc">Install</span></a> <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> — the recommended path is the container image, which bundles everything needed to run the pipeline.</p></li>
-<li><p>Run the job script</p></li>
-</ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp<span class="w"> </span><span class="m">246</span>.290<span class="w"> </span>-j<span class="w"> </span><span class="m">127</span>
+<p>Production runs go through the <a class="reference internal" href="workflow.html"><span class="std std-doc">Snakemake workflow</span></a>. Put the tile
+IDs in the file named by <code class="docutils literal notranslate"><span class="pre">tile_list</span></code> in <code class="docutils literal notranslate"><span class="pre">workflow/config.yaml</span></code>, one
+<code class="docutils literal notranslate"><span class="pre">IDra.IDdec</span></code> per line, and run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>workflow/bin/sp<span class="w"> </span>run
 </pre></div>
 </div>
+<p>A single tile is a legal tile list and is the smallest useful end-to-end run.
+The sections below describe what that produces, stage by stage.</p>
 </section>
 <section id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h2>
@@ -649,7 +639,7 @@ A stacked image is also called <em>tile</em>. These files are used on input by <
 The pixel data can contain the observed image, a weight map, or a flag map. Tile images and weights are created in the
 case of CFIS by Stephen Gwyn using a combination of <code class="docutils literal notranslate"><span class="pre">swarp</span></code> and his own software. Examples of file names are
 <code class="docutils literal notranslate"><span class="pre">CFIS.316.246.r.fits</span></code>, <code class="docutils literal notranslate"><span class="pre">CFIS.205.267.r.weight.fits.fz</span></code>, the latter is a compressed FITS file, see below. Tiles have no flag file
-(see <a class="reference internal" href="#masks"><span class="xref myst">Masks</span></a>). The tile ID needs to be modified such that the <code class="docutils literal notranslate"><span class="pre">.</span></code> between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. For the same reason, the extension <code class="docutils literal notranslate"><span class="pre">.fits.fz</span></code> is changed to <code class="docutils literal notranslate"><span class="pre">.fitzfz</span></code>. In addition, for
+(see <a class="reference internal" href="#masks">Masks</a>). The tile ID needs to be modified such that the <code class="docutils literal notranslate"><span class="pre">.</span></code> between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. For the same reason, the extension <code class="docutils literal notranslate"><span class="pre">.fits.fz</span></code> is changed to <code class="docutils literal notranslate"><span class="pre">.fitzfz</span></code>. In addition, for
 clarity, we include the string <code class="docutils literal notranslate"><span class="pre">image</span></code> for a tile image type.<br />
 Default convention: <strong>&lt;image_type&gt;-&lt;tile_number&gt;.fits</strong><br />
 Examples: <code class="docutils literal notranslate"><span class="pre">CFIS_image-277-282.fits</span></code>, <code class="docutils literal notranslate"><span class="pre">CFIS_weight-274-282.fitsfz</span></code></p></li>
@@ -668,18 +658,18 @@ The end product of <code class="docutils literal notranslate"><span class="pre">
 shape parameters, the ellipticity components :math:<code class="docutils literal notranslate"><span class="pre">e_1</span></code> and :math:<code class="docutils literal notranslate"><span class="pre">e_2</span></code>. This catalogue also contains shapes of artificially
 sheared images. This information is used in post-processing to compute calibrated shear estimates via metacalibration.</p></li>
 <li><p>Summary statistic files<br />
-The <code class="docutils literal notranslate"><span class="pre">SETools</span></code> module that creates samples of objects according to some user-defined selection criteria (see <a class="reference internal" href="#select-stars"><span class="xref myst">Select stars</span></a>) also outputs ASCII<br />
+The <code class="docutils literal notranslate"><span class="pre">SETools</span></code> module that creates samples of objects according to some user-defined selection criteria (see <a class="reference internal" href="#detect-objects-on-tiles-and-process-stars-on-single-exposures">Detect objects</a>) also outputs ASCII<br />
 files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.<br />
 Example: <code class="docutils literal notranslate"><span class="pre">star_stat-2366993-18.txt</span></code></p></li>
 <li><p>Tile ID list<br />
-ASCII file with a tile number on each line. Used for the <code class="docutils literal notranslate"><span class="pre">get_image_runner</span></code> module to download CFIS images (see <a class="reference internal" href="#download-tiles"><span class="xref myst">Download tiles</span></a>).</p></li>
+ASCII file with a tile number on each line. Used for the <code class="docutils literal notranslate"><span class="pre">get_image_runner</span></code> module to download CFIS images (see <a class="reference internal" href="#retrieve-input-images">Retrieve input images</a>).</p></li>
 <li><p>Single-exposure name list<br />
 ASCII file with a single-exposure name on each line. Produced by the <code class="docutils literal notranslate"><span class="pre">find_exposure_runner</span></code> module to identify single exposures that were used to create
-a given tile. See <a class="reference internal" href="#find-exposures"><span class="xref myst">Find exposures</span></a>).</p></li>
+a given tile. See <a class="reference internal" href="#retrieve-input-images">Retrieve input images</a>).</p></li>
 <li><p>Plots<br />
 The <code class="docutils literal notranslate"><span class="pre">SETools</span></code> module can also produce plots of the objects properties that were selected for a given CCD.
 The type of plot (histogram, scatter plot, …) and quantities to plot as well as plot decorations can be specified in the
-selection criteria config file (see <a class="reference internal" href="#select-stars"><span class="xref myst">Select stars</span></a>).
+selection criteria config file (see <a class="reference internal" href="#detect-objects-on-tiles-and-process-stars-on-single-exposures">Detect objects</a>).
 Example: <code class="docutils literal notranslate"><span class="pre">hist_mag_stars-2104133-5.png</span></code></p></li>
 <li><p>Log files<br />
 The pipeline core and all called modules write ASCII log files to disk.<br />
@@ -690,16 +680,17 @@ Examples: <code class="docutils literal notranslate"><span class="pre">process-2
 <h3>CFIS processing<a class="headerlink" href="#cfis-processing" title="Link to this heading">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> splits the processing of CFIS images into several parts:
 These are the retrieval and preparation of input images, processing of single exposures,
-processing of tile images, creation and upload (optional) of <em>final</em> shape catalogues.</p>
+processing of tile images, and creation of <em>final</em> shape catalogues.</p>
 <p>The following flowchart visualised the processing parts and steps.</p>
 <p><img alt="ShapePipe_FlowChart" src="_images/ShapePipe_v0.0.1.png" /></p>
 <p>Below, the individual processing steps are described in detail.</p>
 </section>
 <section id="input-and-output-paths">
 <h3>Input and output paths<a class="headerlink" href="#input-and-output-paths" title="Link to this heading">#</a></h3>
-<p>All required paths are automatically set in the job script <code class="docutils literal notranslate"><span class="pre">job_sp</span></code>.</p>
-<p>If an example config file is run outside this script,
-the following path variables might need to be defined.</p>
+<p>The workflow’s rules export every path a config interpolates before each
+<code class="docutils literal notranslate"><span class="pre">shapepipe_run</span></code> call, so nothing here needs setting by hand for a normal run.</p>
+<p>If a config file is run outside the workflow, the following variables need to be
+defined.</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">$SP_RUN</span></code>: Run directory of <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code>. In general this is just <code class="docutils literal notranslate"><span class="pre">pwd</span></code>, and can be set via</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">SP_RUN</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
@@ -708,72 +699,96 @@ the following path variables might need to be defined.</p>
 <p>but on a cluster this directory might be different.</p>
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">$SP_CONFIG</span></code>: Path to configuration files. In our example this is <code class="docutils literal notranslate"><span class="pre">$SP_BASE/example/cfis</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">$SP_UNIT_NUM</span></code>: the tile or exposure this run is restricted to, in ShapePipe’s
+image-number convention — a leading dash, and dots replaced by dashes (tile
+<code class="docutils literal notranslate"><span class="pre">210.282</span></code> becomes <code class="docutils literal notranslate"><span class="pre">-210-282</span></code>, exposure <code class="docutils literal notranslate"><span class="pre">2605805</span></code> becomes <code class="docutils literal notranslate"><span class="pre">-2605805</span></code>). The
+configs interpolate it into <code class="docutils literal notranslate"><span class="pre">NUMBER_LIST</span></code>.</p></li>
 </ul>
 <p>In addition, the output path <code class="docutils literal notranslate"><span class="pre">$SP_RUN/output</span></code> needs to be created by the user before running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code>.</p>
 </section>
-<section id="job-and-pipeline-scripts">
-<h3>Job and pipeline scripts<a class="headerlink" href="#job-and-pipeline-scripts" title="Link to this heading">#</a></h3>
-<p>The job script to run the pipeline in its entity or in parts is <code class="docutils literal notranslate"><span class="pre">job_sp[.bash]</span></code>. Type</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp<span class="w"> </span>-h
-</pre></div>
+<section id="the-rule-chain">
+<h3>The rule chain<a class="headerlink" href="#the-rule-chain" title="Link to this heading">#</a></h3>
+<p>There is no monolithic job script. Every processing step below is a <strong>rule</strong>, and
+every rule instance is one <code class="docutils literal notranslate"><span class="pre">shapepipe_run</span></code> call on one unit — one tile, or one
+single exposure — inside that unit’s own directory:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>level</p></th>
+<th class="head"><p>rule chain</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>tile, prepare phase</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tile_get_images</span></code> → <code class="docutils literal notranslate"><span class="pre">tile_uncompress</span></code> → <code class="docutils literal notranslate"><span class="pre">tile_find_exposures</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>exposure</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">exp_get_images</span></code> → <code class="docutils literal notranslate"><span class="pre">exp_split</span></code> → <code class="docutils literal notranslate"><span class="pre">exp_psf</span></code> → <code class="docutils literal notranslate"><span class="pre">exp_persist</span></code> → <code class="docutils literal notranslate"><span class="pre">clean_exposure</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>tile, compute phase</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tile_exp_forest</span></code> → <code class="docutils literal notranslate"><span class="pre">tile_merge_headers</span></code> → <code class="docutils literal notranslate"><span class="pre">tile_detect</span></code> → <code class="docutils literal notranslate"><span class="pre">tile_vignets</span></code> → <code class="docutils literal notranslate"><span class="pre">tile_ngmix</span></code> → <code class="docutils literal notranslate"><span class="pre">tile_merge_cats</span></code> → <code class="docutils literal notranslate"><span class="pre">tile_make_cat</span></code> → <code class="docutils literal notranslate"><span class="pre">clean_tile</span></code></p></td>
+</tr>
+</tbody>
+</table>
 </div>
-<p>for all options.</p>
-<p>This script creates the subdirectory <code class="docutils literal notranslate"><span class="pre">$SP_RUN/output</span></code> to store all pipeline outputs
-(log files, diagnostics, statistics, output images, catalogues, single-exposure headers with WCS information).</p>
-<p>The job script automaticall performs a number of subsequent calls to the <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> executable <code class="docutils literal notranslate"><span class="pre">shapepipe_run</span></code>, as</p>
+<p>Each rule calls</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>shapepipe_run<span class="w"> </span>-c<span class="w"> </span><span class="nv">$SP_CONFIG</span>/&lt;config&gt;.ini
 </pre></div>
 </div>
-<p>The config file <code class="docutils literal notranslate"><span class="pre">&lt;config&gt;.ini</span></code> contains the configuration for one or more modules.
-See the main <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> readme for more details.</p>
-<p>The user specifies which steps are run with the command line option <code class="docutils literal notranslate"><span class="pre">-j</span> <span class="pre">JOB</span></code>. The integer value <code class="docutils literal notranslate"><span class="pre">JOB</span></code>
-is bit-coded such that arbitrary combinations of steps can be run with a single call to <code class="docutils literal notranslate"><span class="pre">job_sp</span></code>. For
-example, to run steps #1 and #2, type <code class="docutils literal notranslate"><span class="pre">job_sp</span> <span class="pre">-j</span> <span class="pre">3</span></code>.</p>
+<p>on a config file committed under <code class="docutils literal notranslate"><span class="pre">workflow/config/cfis/</span></code>, containing the
+configuration for one or more modules. See <a class="reference internal" href="configuration.html"><span class="std std-doc">Configuration</span></a> for
+what goes in one. To run a single rule and its prerequisites and nothing else,
+name it as a snakemake target: <code class="docutils literal notranslate"><span class="pre">sp</span> <span class="pre">exp_psf</span> <span class="pre">...</span></code>.</p>
+<p>Each unit directory holds an <code class="docutils literal notranslate"><span class="pre">output/</span></code> subdirectory with all pipeline outputs
+(log files, diagnostics, statistics, output images, catalogues, single-exposure
+headers with WCS information), beside the <code class="docutils literal notranslate"><span class="pre">manifests/</span></code> and <code class="docutils literal notranslate"><span class="pre">logs/</span></code> that are the
+workflow’s own bookkeeping.</p>
 </section>
 <section id="select-tiles">
 <h3>Select tiles<a class="headerlink" href="#select-tiles" title="Link to this heading">#</a></h3>
-<p>To run the job script, one or more CFIS tiles need to be chosen. If the tile IDs are known, they are provided to <code class="docutils literal notranslate"><span class="pre">job_sp</span></code> on the command line.</p>
+<p>The tiles to process are the lines of the tile list. The campaign grows by
+appending to that file: the tile-to-exposure index accumulates across
+invocations, so adding tiles later changes which jobs exist without invalidating
+completed work.</p>
 <p>If the tile IDs are not known a priori, they can be selected via sky coordinates, with the script <code class="docutils literal notranslate"><span class="pre">cfis_field_select</span></code>.
 For example, to find the tile number for a Planck cluster at R.A.=213.68 deg, dec=57.79 deg, run:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cfis_field_select<span class="w"> </span>-i<span class="w"> </span>/path/to/shapepipe/auxdir/CFIS/tiles_202007/tiles_all_order.txt<span class="w"> </span>--coord<span class="w"> </span><span class="m">213</span>.68deg_54.79deg<span class="w"> </span>-t<span class="w"> </span>tile<span class="w"> </span>--input_format<span class="w"> </span>ID_only<span class="w"> </span>--out_name_only<span class="w"> </span>--out_ID_only<span class="w"> </span>-s
 </pre></div>
 </div>
 <p>The input text file (provide via the flag <code class="docutils literal notranslate"><span class="pre">-i</span></code>) contains a list of CFIS tiles, this can also be directory containing the tile FITS files.</p>
-<p>The following sections describe the different steps that are performed with <code class="docutils literal notranslate"><span class="pre">job_sp</span></code>.</p>
+<p>The following sections describe the steps the rule chain performs.</p>
 </section>
 </section>
 <section id="run-the-pipeline">
 <h2>Run the pipeline<a class="headerlink" href="#run-the-pipeline" title="Link to this heading">#</a></h2>
 <section id="retrieve-input-images">
 <h3>Retrieve input images<a class="headerlink" href="#retrieve-input-images" title="Link to this heading">#</a></h3>
-<p>The command</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp<span class="w"> </span>TILE_ID<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
-</pre></div>
-</div>
-<p>retrieves the image and weight corresponding to TILE_ID using the module <code class="docutils literal notranslate"><span class="pre">get_images</span></code>.
-It then identifies the exposures that were used to create the tile image via the <code class="docutils literal notranslate"><span class="pre">find_exposures</span></code> runner.
-Finally, another call to <code class="docutils literal notranslate"><span class="pre">get_images</span></code> retrieves the exposure images, weights, and flag files.</p>
-<p>For the retrieval method the user can choose betwen</p>
+<p><code class="docutils literal notranslate"><span class="pre">tile_get_images</span></code> retrieves the image and weight corresponding to a tile ID
+using the module <code class="docutils literal notranslate"><span class="pre">get_images</span></code>. <code class="docutils literal notranslate"><span class="pre">tile_find_exposures</span></code> then identifies the
+exposures that were used to create the tile image via the <code class="docutils literal notranslate"><span class="pre">find_exposures</span></code>
+runner, and <code class="docutils literal notranslate"><span class="pre">exp_get_images</span></code> retrieves each of those exposures’ image, weight
+and flag files.</p>
+<p>For the retrieval method the user can choose between</p>
 <ul class="simple">
-<li><p>download from VOspace (<code class="docutils literal notranslate"><span class="pre">-r</span> <span class="pre">vos</span></code>);</p></li>
-<li><p>create symbolic link to existing file on disk (<code class="docutils literal notranslate"><span class="pre">-r</span> <span class="pre">symlink</span></code>).</p></li>
+<li><p>download from VOspace (<code class="docutils literal notranslate"><span class="pre">RETRIEVE</span> <span class="pre">=</span> <span class="pre">vos</span></code> in the config);</p></li>
+<li><p>create symbolic link to existing file on disk (<code class="docutils literal notranslate"><span class="pre">RETRIEVE</span> <span class="pre">=</span> <span class="pre">symlink</span></code>).</p></li>
 </ul>
 <p>Note that internet access is required for this step if the download method is <code class="docutils literal notranslate"><span class="pre">vos</span></code>.</p>
-<p>An output directory <code class="docutils literal notranslate"><span class="pre">run_sp_GitFeGie</span></code> (in <code class="docutils literal notranslate"><span class="pre">output</span></code>) is created containing the results of <code class="docutils literal notranslate"><span class="pre">get_images</span></code> for tiles (<code class="docutils literal notranslate"><span class="pre">Git</span></code>),
-<code class="docutils literal notranslate"><span class="pre">find_exposures</span></code> (<code class="docutils literal notranslate"><span class="pre">Fe</span></code>), and <code class="docutils literal notranslate"><span class="pre">get_images</span></code> for exposures (<code class="docutils literal notranslate"><span class="pre">Gie</span></code>).</p>
+<p>These three rules are the workflow’s PREPARE phase. The exposure half of the run
+cannot be scheduled before them, because which exposures exist is something
+<code class="docutils literal notranslate"><span class="pre">find_exposures</span></code> has to say first — which is why one run is two snakemake
+invocations over one Snakefile (see <a class="reference internal" href="workflow.html"><span class="std std-doc">the workflow page</span></a>).</p>
 </section>
 </section>
 <section id="prepare-input-images">
 <h2>Prepare input images<a class="headerlink" href="#prepare-input-images" title="Link to this heading">#</a></h2>
-<p>With</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp<span class="w"> </span>TILE_ID<span class="w"> </span>-j<span class="w"> </span><span class="m">2</span>
-</pre></div>
-</div>
-<p>the compressed tile weight image is uncompressed via the <code class="docutils literal notranslate"><span class="pre">uncompress_fits</span></code> module. Then, the single-exposure images, weight, and flags are split into single-exposure single-CCD file
-(one FITS file per CCD) with <code class="docutils literal notranslate"><span class="pre">split_exp</span></code>.
-Finally, the headers of all single-exposure single-CCD files are merged into a single <code class="docutils literal notranslate"><span class="pre">sqlite</span></code> file, to store the WCS information of the input exposures.</p>
-<p>Two output directories are created, <code class="docutils literal notranslate"><span class="pre">run_sp_Uz</span></code> for <code class="docutils literal notranslate"><span class="pre">uncompress_fits</span></code>, and <code class="docutils literal notranslate"><span class="pre">run_sp_exp_SpMh</span></code> for the output of the modules
-<code class="docutils literal notranslate"><span class="pre">split_exp</span></code> (<code class="docutils literal notranslate"><span class="pre">Sp</span></code>) and <code class="docutils literal notranslate"><span class="pre">merge_headers</span></code> (<code class="docutils literal notranslate"><span class="pre">Mh</span></code>).</p>
+<p><code class="docutils literal notranslate"><span class="pre">tile_uncompress</span></code> uncompresses the compressed tile weight image via the
+<code class="docutils literal notranslate"><span class="pre">uncompress_fits</span></code> module.</p>
+<p><code class="docutils literal notranslate"><span class="pre">exp_split</span></code> splits each single-exposure image, weight and flag into
+single-exposure single-CCD files (one FITS file per CCD) with <code class="docutils literal notranslate"><span class="pre">split_exp</span></code>, and
+writes that exposure’s WCS information to <code class="docutils literal notranslate"><span class="pre">headers-&lt;exposure_number&gt;.npy</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">tile_merge_headers</span></code> then merges the headers of the exposures overlapping one
+tile into a single <code class="docutils literal notranslate"><span class="pre">sqlite</span></code> file, so the tile-side modules can look up the WCS of
+any of them.</p>
 </section>
 <section id="masks">
 <h2>Masks<a class="headerlink" href="#masks" title="Link to this heading">#</a></h2>
@@ -817,24 +832,22 @@ with <code class="docutils literal notranslate"><span class="pre">FLAG_IMAGE</sp
 </section>
 <section id="detect-objects-on-tiles-and-process-stars-on-single-exposures">
 <h2>Detect objects on tiles and process stars on single exposures<a class="headerlink" href="#detect-objects-on-tiles-and-process-stars-on-single-exposures" title="Link to this heading">#</a></h2>
-<p>The call</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp<span class="w"> </span>TILE_ID<span class="w"> </span>-j<span class="w"> </span><span class="m">8</span>
-</pre></div>
-</div>
-<p>performs a number of steps. First, objects on the tiles are deteced with the <code class="docutils literal notranslate"><span class="pre">sextractor</span></code> runner.
-Next, the following tasks are run on the single-exposure single-CCD images:</p>
+<p><code class="docutils literal notranslate"><span class="pre">tile_detect</span></code> detects objects on the tile with the <code class="docutils literal notranslate"><span class="pre">sextractor</span></code> runner.</p>
+<p><code class="docutils literal notranslate"><span class="pre">exp_psf</span></code> runs the single-exposure single-CCD chain:</p>
 <ul class="simple">
-<li><p>Objects are deteced with <code class="docutils literal notranslate"><span class="pre">sextractor</span></code>.</p></li>
+<li><p>Objects are detected with <code class="docutils literal notranslate"><span class="pre">sextractor</span></code>.</p></li>
 <li><p>Star candidates are selected via <code class="docutils literal notranslate"><span class="pre">setools</span></code>.</p></li>
-<li><p>The PSF model is created, either with <code class="docutils literal notranslate"><span class="pre">psfex</span></code> for PSFex, or
-with <code class="docutils literal notranslate"><span class="pre">mccd_preprocessing</span></code> and <code class="docutils literal notranslate"><span class="pre">mccd_fit_val</span></code> for MCCD.</p></li>
-<li><p>The PSF model is interpolated to star positions for validation. For the PSFEx model, this is done
-via a call to <code class="docutils literal notranslate"><span class="pre">psfex_interp</span></code>. For MCCD, the modules <code class="docutils literal notranslate"><span class="pre">merge_starcat</span></code>, <code class="docutils literal notranslate"><span class="pre">mccd_plots</span></code>, and
-<code class="docutils literal notranslate"><span class="pre">mccd_interp</span></code> are called.</p></li>
+<li><p>The PSF model is created with <code class="docutils literal notranslate"><span class="pre">psfex</span></code>.</p></li>
+<li><p>The PSF model is interpolated to star positions for validation, via a call to
+<code class="docutils literal notranslate"><span class="pre">psfex_interp</span></code>.</p></li>
 </ul>
-<p>The output directory for both the <code class="docutils literal notranslate"><span class="pre">mccd</span></code> and <code class="docutils literal notranslate"><span class="pre">psfex</span></code> options is <code class="docutils literal notranslate"><span class="pre">run_sp_tile_Sx_exp_SxSePsf</span></code>.
-This stores the output of SExtractor on the tiles (<code class="docutils literal notranslate"><span class="pre">tile_Sx</span></code>), on the exposures (<code class="docutils literal notranslate"><span class="pre">exp_Sx</span></code>),
-<code class="docutils literal notranslate"><span class="pre">setools</span></code> (<code class="docutils literal notranslate"><span class="pre">Se</span></code>), and the Psf model (<code class="docutils literal notranslate"><span class="pre">Psf</span></code>).</p>
+<p>The output directory is <code class="docutils literal notranslate"><span class="pre">run_sp_exp_SxSePsfPi</span></code>, holding the output of SExtractor
+on the exposures (<code class="docutils literal notranslate"><span class="pre">Sx</span></code>), <code class="docutils literal notranslate"><span class="pre">setools</span></code> (<code class="docutils literal notranslate"><span class="pre">Se</span></code>), the PSF model (<code class="docutils literal notranslate"><span class="pre">Psf</span></code>) and the
+validation interpolation (<code class="docutils literal notranslate"><span class="pre">Pi</span></code>).</p>
+<p><code class="docutils literal notranslate"><span class="pre">exp_persist</span></code> then copies the products named by <code class="docutils literal notranslate"><span class="pre">persist_exp:</span></code> in
+<code class="docutils literal notranslate"><span class="pre">workflow/config.yaml</span></code> — by default the <code class="docutils literal notranslate"><span class="pre">validation_psf-*.fits</span></code> that the rho and
+tau statistics are computed from — off scratch onto the persistent root, before
+the purge or <code class="docutils literal notranslate"><span class="pre">clean_exposure</span></code> can take them.</p>
 <p>The following plots show an example of a single CCD, in the center of the focal plane.</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
@@ -908,56 +921,37 @@ several runs.</p>
 </section>
 <section id="galaxy-selection">
 <h2>Galaxy selection<a class="headerlink" href="#galaxy-selection" title="Link to this heading">#</a></h2>
-<p>The focus of the next step,</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp<span class="w"> </span>TILE_ID<span class="w"> </span>-j<span class="w"> </span><span class="m">16</span>
-</pre></div>
-</div>
-<p>is the selection of galaxies as extended objects compared to the PSF.
-First, the PSF model is interpolated to galaxy positions, according to the PSF model
-with <code class="docutils literal notranslate"><span class="pre">psfex_interp</span></code> or <code class="docutils literal notranslate"><span class="pre">mccd_interp</span></code>. Next, postage stamps around galaxies
-of the weights maps are created via <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code>. Finally, postage stamps
-around galaxies of single-exposure data is extracted with another call
-to <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code>.</p>
-<p>The output directory is</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">run_sp_MiViSmVi</span></code> if the PSF model is <code class="docutils literal notranslate"><span class="pre">mccd</span></code>;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">run_sp_tile_PsViSmVi</span></code> for the <code class="docutils literal notranslate"><span class="pre">PSFEx</span></code> PSF model.</p></li>
-</ul>
-<p>This corresponds to the MCCD/PSFex interpolation (<code class="docutils literal notranslate"><span class="pre">Mi</span></code>/<code class="docutils literal notranslate"><span class="pre">Pi</span></code>), <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code> (<code class="docutils literal notranslate"><span class="pre">Vi</span></code>),
-and the second call to <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code> (<code class="docutils literal notranslate"><span class="pre">Vi</span></code>).</p>
+<p><code class="docutils literal notranslate"><span class="pre">tile_vignets</span></code> selects galaxies as extended objects compared to the PSF.
+First, the PSF model is interpolated to galaxy positions with <code class="docutils literal notranslate"><span class="pre">psfex_interp</span></code>.
+Next, postage stamps around galaxies of the weight maps are created via
+<code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code>. Finally, postage stamps around galaxies of single-exposure data
+are extracted with another call to <code class="docutils literal notranslate"><span class="pre">vignetmaker</span></code> — <code class="docutils literal notranslate"><span class="pre">Pi</span></code>, <code class="docutils literal notranslate"><span class="pre">Vi</span></code>, <code class="docutils literal notranslate"><span class="pre">Vi</span></code>, hence the
+config name <code class="docutils literal notranslate"><span class="pre">config_tile_PiViVi_psfex.ini</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">tile_vignets</span></code> reads the exposure products through the symlink forest that
+<code class="docutils literal notranslate"><span class="pre">tile_exp_forest</span></code> built for this tile, and is the last stage that touches them:
+once every consuming tile has its vignets, an exposure store becomes
+reclaimable.</p>
 </section>
 <section id="shape-measurement">
 <h2>Shape measurement<a class="headerlink" href="#shape-measurement" title="Link to this heading">#</a></h2>
-<p>The call</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp<span class="w"> </span>TILE_ID<span class="w"> </span>-j<span class="w"> </span><span class="m">32</span>
-</pre></div>
-</div>
-<p>computes galaxy shapes using the multi-epoch model-fitting method <code class="docutils literal notranslate"><span class="pre">ngmix</span></code>. At the same time,
-shapes of artifically sheared galaxies are obtained for metacalibration.</p>
-<p>Shape measurement is performed in parallel for each tile, the number of processes can be specified
-by the user with the option <code class="docutils literal notranslate"><span class="pre">--nsh_jobs</span> <span class="pre">NJOB</span></code>. This creates <code class="docutils literal notranslate"><span class="pre">NJOB</span></code> output directories <code class="docutils literal notranslate"><span class="pre">run_sp_tile_ngmix_Ng&lt;X&gt;u</span></code>.
-with <code class="docutils literal notranslate"><span class="pre">X</span></code> = 1 … <code class="docutils literal notranslate"><span class="pre">NJOB</span></code> containing the result of <code class="docutils literal notranslate"><span class="pre">ngmix</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">tile_ngmix</span></code> computes galaxy shapes using the multi-epoch model-fitting method
+<code class="docutils literal notranslate"><span class="pre">ngmix</span></code>. At the same time, shapes of artificially sheared galaxies are obtained
+for metacalibration.</p>
+<p>Shape measurement is split into parallel chunks: <code class="docutils literal notranslate"><span class="pre">ngmix_chunks:</span></code> in
+<code class="docutils literal notranslate"><span class="pre">workflow/config.yaml</span></code> sets how many, and each chunk is its own rule instance
+writing its own <code class="docutils literal notranslate"><span class="pre">run_sp_tile_ngmix_Ng&lt;X&gt;u</span></code> output directory.</p>
 </section>
 <section id="paste-catalogues">
 <h2>Paste catalogues<a class="headerlink" href="#paste-catalogues" title="Link to this heading">#</a></h2>
-<p>The last real processing step is</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp<span class="w"> </span>TILE_ID<span class="w"> </span>-j<span class="w"> </span><span class="m">64</span>
-</pre></div>
-</div>
-<p>This task first merges the <code class="docutils literal notranslate"><span class="pre">NJOB</span></code> parallel <code class="docutils literal notranslate"><span class="pre">ngmix</span></code> output files from the previous step into
-one output file. Then, previously obtained information are pasted into a <em>final</em> shape catalogue via <code class="docutils literal notranslate"><span class="pre">make_cat</span></code>.
-Included are galaxy detection and basic measurement parameters, the PSF model at
-galaxy positions, and the shape measurement.</p>
-<p>Two output directories are created.
-The first one is <code class="docutils literal notranslate"><span class="pre">run_sp_tile_Ms</span></code> for the <code class="docutils literal notranslate"><span class="pre">merge_sep</span></code> run.
-The second is <code class="docutils literal notranslate"><span class="pre">run_sp_tile_Mc</span></code> for the <code class="docutils literal notranslate"><span class="pre">make_cat</span></code> task; the name is the same for both the <code class="docutils literal notranslate"><span class="pre">MCCD</span></code> and <code class="docutils literal notranslate"><span class="pre">PSFEx</span></code> PSF model.</p>
-</section>
-<section id="upload-results">
-<h2>Upload results<a class="headerlink" href="#upload-results" title="Link to this heading">#</a></h2>
-<p>Optionally, after the pipeline is finished, results can be uploaded to VOspace via</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>job_sp<span class="w"> </span>TILE_ID<span class="w"> </span>-j<span class="w"> </span><span class="m">128</span>
-</pre></div>
-</div>
+<p><code class="docutils literal notranslate"><span class="pre">tile_merge_cats</span></code> merges the parallel <code class="docutils literal notranslate"><span class="pre">ngmix</span></code> output files from the previous
+step into one file with <code class="docutils literal notranslate"><span class="pre">merge_sep</span></code>, in <code class="docutils literal notranslate"><span class="pre">run_sp_Ms</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">tile_make_cat</span></code> then pastes the previously obtained information into a <em>final</em>
+shape catalogue via <code class="docutils literal notranslate"><span class="pre">make_cat</span></code>, in <code class="docutils literal notranslate"><span class="pre">run_sp_Mc</span></code>. Included are galaxy detection
+and basic measurement parameters, the PSF model at galaxy positions, and the
+shape measurement. The rule publishes that
+catalogue onto the persistent root as
+<code class="docutils literal notranslate"><span class="pre">&lt;products_dir&gt;/tiles/&lt;prefix&gt;/&lt;ID&gt;/final_cat-&lt;ID&gt;.fits</span></code> — the campaign’s
+product, and also the marker that says this tile is finished.</p>
 </section>
 </section>
 
@@ -978,7 +972,7 @@ The second is <code class="docutils literal notranslate"><span class="pre">run_s
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Snakemake Workflow</p>
+        <p class="prev-next-title">The Snakemake workflow</p>
       </div>
     </a>
     <a class="right-next"
@@ -1013,7 +1007,7 @@ The second is <code class="docutils literal notranslate"><span class="pre">run_s
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#file-types-and-names">File types and names</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cfis-processing">CFIS processing</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#input-and-output-paths">Input and output paths</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#job-and-pipeline-scripts">Job and pipeline scripts</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-rule-chain">The rule chain</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#select-tiles">Select tiles</a></li>
 </ul>
 </li>
@@ -1030,7 +1024,6 @@ The second is <code class="docutils literal notranslate"><span class="pre">run_s
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#galaxy-selection">Galaxy selection</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shape-measurement">Shape measurement</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#paste-catalogues">Paste catalogues</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upload-results">Upload results</a></li>
 </ul>
   </nav></div>
 
