@@ -18,7 +18,13 @@ def check(mutation):
         failures = 0
 
         def pytest_collection_modifyitems(self, items):
-            if mutation not in ("ignore-additive-bias", "noise-as-interpolation"):
+            # Mutate after collection so tests keep their original geometry
+            # constants; only production selection changes.
+            if mutation == "remove-interpolation-veto":
+                ngm.EPOCH_INTERPOLATED_DEFECT_RADIUS = 0
+                return
+            if mutation == "remove-noise-veto":
+                ngm.EPOCH_CENTRAL_DEFECT_RADIUS = 0
                 return
             for module in {item.module for item in items}:
                 original = module.defect_response
@@ -38,11 +44,9 @@ def check(mutation):
                 self.failures += 1
 
     if mutation == "remove-interpolation-veto":
-        ngm.EPOCH_INTERPOLATED_DEFECT_RADIUS = 0
         target = ("tests/module/test_ngmix_defect_fill.py::"
                   "test_a_flagged_column_near_the_centre_is_still_vetoed")
     elif mutation == "remove-noise-veto":
-        ngm.EPOCH_CENTRAL_DEFECT_RADIUS = 0
         target = ("tests/module/test_ngmix_defect_fill.py::"
                   "test_under_noise_fill_every_defect_is_vetoed_at_the_noise_radius")
     else:

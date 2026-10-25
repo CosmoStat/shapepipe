@@ -115,6 +115,7 @@ The measured scan used job **24999265**, account `def-waerbeke`, 64 CPUs, 96 GiB
 It completed successfully in **2 min 38 s**, using about **14 GiB peak RSS and 2 h 9 min total CPU**.
 There was one pool and no sleep/polling loop.
 The SIF was `/project/def-mjhudson/cdaley/containers/shapepipe-develop-240b37e4.sif`, loaded with `apptainer/1.4.5`.
+Its measured package versions are NumPy 2.5.3, SciPy 1.17.1, GalSim 2.8.5 and ngmix 2.4.1; the workflow helper supplies Snakemake 9.23.1 from the project environment.
 The scanner implementation was `bd3ff85b` (the later plotting/documentation edits do not change the measured jobs); the science source and helper match base `b24f92e5` on `origin/feat/masked-pixels`.
 The initial tests were committed first as `db9d9c63`, observed failing, then the scanner patch was applied inside the allocation and its tests passed before scanning.
 Threaded BLAS/OpenMP were limited to one thread per process.

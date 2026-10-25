@@ -1,0 +1,69 @@
+Napoli defect-veto evidence: completed checks, 25 October 2026
+
+Environment
+  SIF: /project/def-mjhudson/cdaley/containers/shapepipe-develop-240b37e4.sif
+  Apptainer module: 1.4.5
+  NumPy 2.5.3; SciPy 1.17.1; GalSim 2.8.5; ngmix 2.4.1
+  Workflow helper: Snakemake 9.23.1
+  Checkout: /scratch/cdaley/wt-veto (base b24f92e5)
+  No production or other worktree files changed.
+
+Tests first, scan job 24999265 (def-waerbeke)
+  db9d9c63: three new scan-harness checks FAIL on the original implementation.
+  After applying the scanner implementation (bd3ff85b): 3 PASS.
+  Scan: 696/696 cases attempted, 692 estimates, four ill-conditioned responses.
+  Elapsed 00:02:38; allocated 64 CPUs / 96 GiB; peak RSS 14571132 KiB.
+
+Final suite, job 24999804 (def-waerbeke)
+  Science record/tests at 0a012056; subsequent changes are plot/report output
+  and the mutation harness's after-collection injection (tested separately
+  in the same allocation, so fixture constants do not change with a mutant).
+
+  REPO=/scratch/cdaley/wt-veto bash \
+    /project/def-mjhudson/cdaley/sp-products/smk-g15/pytest-sif.sh \
+    -m 'not slow' -o addopts='' -q
+  1077 passed, 4 skipped, 2 deselected, 55 warnings in 225.95s.
+  Includes the decision-record integrity suite and all three significance
+  regressions (interpolated bleed at 4 and 6 px, noise fill at 10 px).
+
+  REPO=/scratch/cdaley/wt-veto bash \
+    /project/def-mjhudson/cdaley/sp-products/smk-g15/tests-workflow.sh \
+    --update-params-pin
+  39 passed in 8.24s.
+
+  Regenerated params pins are byte-identical before/after; git diff is empty.
+  SHA-256 tests/workflow/params_pin.json:
+  f5fdfda5932a408396a0774f94ab5a509665dd26b5478fab9a58189b50a47b7b
+  No pin-change commit is warranted because the veto/default did not change.
+  Any eventual selection change still requires a campaign boundary and its
+  own params-pin commit.
+
+Restored mutations, run in fresh SIF processes with no tracked-file edits
+  python scripts/validation/masked_pixels/check_veto_mutations.py
+
+  remove-interpolation-veto:
+    exactly 1 assertion failure
+    test_a_flagged_column_near_the_centre_is_still_vetoed
+  remove-noise-veto:
+    exactly 1 assertion failure
+    test_under_noise_fill_every_defect_is_vetoed_at_the_noise_radius
+  ignore-additive-bias:
+    exactly 1 assertion failure, 2 other cases pass
+    test_inside_radius_bias_is_significant[6-0.7-0.9-interpolate]
+  noise-as-interpolation:
+    exactly 1 assertion failure, 2 other cases pass
+    test_inside_radius_bias_is_significant[10-0.7-0.9-noise]
+
+Other checks
+  uvx astra-tools@0.2.17 validate: record and committed universe pass.
+  git diff --check: passes.
+  bash -n scripts/validation/masked_pixels/napoli_scan.sbatch: passes.
+  CSV/raw JSON: all 696 keys, measurements and errors match exactly.
+  Scan keys: 696 unique cases; 79/168 interpolated fixtures strictly inside
+  7 px exceed a nominal bound (fixture count, not a survey rate).
+
+Private raw logs: /scratch/cdaley/veto-evidence/
+  harness-before.log, harness-after.log, diagnose.log,
+  final-not-slow.log, final-workflow.log,
+  final-mutations-stable-fixtures.log, pins-{before,after}.txt,
+  astra-validation.txt, versions.txt.
