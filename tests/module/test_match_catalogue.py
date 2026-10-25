@@ -122,7 +122,8 @@ def test_too_few_catalogue_objects_paired_stop_the_run(tmp_path):
     cat = _sexcat(tmp_path / "sexcat.fits", X[:4], Y[:4])
     ext = _external(tmp_path / "ext.cat", [1, 2, 3, 4, 5], X, Y)
     with pytest.raises(ValueError, match="fewer objects"):
-        mc.match_catalogue(cat, ext, min_fraction=0.99, tolerated_unpaired=0)
+        mc.match_catalogue(cat, ext, min_fraction=0.99, tolerated_unpaired=0,
+                           external_unpaired_allowance=0)
     assert list(_objects(cat)["NUMBER"]) == [1, 2, 3, 4]
     counts = mc.match_catalogue(cat, ext, min_fraction=0.8)
     assert counts["n_paired"] == 4 and counts["n_external_only"] == 1
@@ -222,6 +223,59 @@ def test_other_pixels_stop_the_run(tmp_path, side):
     with pytest.raises(ValueError, match="DR6" if side == "sextractor"
                        else "fewer objects"):
         mc.match_catalogue(cat, ext)
+
+
+@pytest.mark.parametrize("n_ext,missing,passes", [
+    (2000, 89, True), (2000, 91, False),
+    (40000, 849, True), (40000, 851, False),
+])
+@pytest.mark.decision("detection.tile_detection")
+def test_external_loss_budget_boundary(tmp_path, n_ext, missing, passes):
+    """The local allowance is bounded; a detection-config regression fails.
+
+    Missing rows occupy a single grid region: clustering grants no exemption.
+    """
+    x, y = _grid(n_ext)
+    cat = _sexcat(tmp_path / "sexcat.fits", x[:-missing], y[:-missing])
+    ext = _external(tmp_path / "ext.cat", np.arange(1, n_ext + 1), x, y)
+    if passes:
+        assert mc.match_catalogue(cat, ext)["n_external_only"] == missing
+    else:
+        before = (tmp_path / "sexcat.fits").read_bytes()
+        with pytest.raises(ValueError, match="fewer objects"):
+            mc.match_catalogue(cat, ext)
+        assert (tmp_path / "sexcat.fits").read_bytes() == before
+
+
+def test_empty_detection_does_not_get_a_deblending_allowance(tmp_path):
+    """No paired population is not evidence for a local deblending loss."""
+    x, y = _grid(30)
+    cat = _sexcat(tmp_path / "sexcat.fits", [], [])
+    ext = _external(tmp_path / "ext.cat", np.arange(1, 31), x, y)
+    with pytest.raises(ValueError, match="fewer objects"):
+        mc.match_catalogue(cat, ext)
+
+
+@pytest.mark.decision("detection.tile_detection")
+def test_previously_accepted_catalogue_is_byte_identical(tmp_path):
+    """Relaxing acceptance changes no ID, stamp label, or measurement."""
+    x, y = _grid(2000)
+    seg = np.zeros((1997, 3, 3), dtype=np.int32)
+    seg[:, 1, 1] = np.arange(1, 1998)
+    ext = _external(tmp_path / "ext.cat", np.arange(10001, 12001), x, y)
+    old = _sexcat(tmp_path / "old.fits", x[:1997], y[:1997], seg)
+    new = _sexcat(tmp_path / "new.fits", x[:1997], y[:1997], seg)
+    old_counts = mc.match_catalogue(old, ext, external_unpaired_allowance=0)
+    assert mc.match_catalogue(new, ext) == old_counts
+    assert (tmp_path / "old.fits").read_bytes() == (tmp_path / "new.fits").read_bytes()
+
+
+def test_external_allowance_can_be_disabled(tmp_path):
+    x, y = _grid(2000)
+    cat = _sexcat(tmp_path / "sexcat.fits", x[:1911], y[:1911])
+    ext = _external(tmp_path / "ext.cat", np.arange(1, 2001), x, y)
+    with pytest.raises(ValueError, match="fewer objects"):
+        mc.match_catalogue(cat, ext, external_unpaired_allowance=0)
 
 
 def test_seg_vignet_is_relabelled(tmp_path):

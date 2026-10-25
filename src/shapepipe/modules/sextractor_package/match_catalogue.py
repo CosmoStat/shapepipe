@@ -97,7 +97,8 @@ def relabel(seg_vignets, old_number, new_number):
 
 
 def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
-                    tolerated_unpaired=20, w_log=None):
+                    tolerated_unpaired=20, w_log=None,
+                    external_unpaired_allowance=50):
     """Take membership and ``NUMBER`` from an external catalogue.
 
     Each SExtractor row is paired with its mutual nearest neighbour in the
@@ -116,12 +117,17 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     shortfall is deblending that differs near very large objects (a cD
     galaxy, a bright star's halo). On different pixels (a DR5 image against
     the DR6 catalogue) only ~95% pair. The guard is there to catch that: the
-    run stops when the unpaired rows of either side exceed both
-    ``(1 - min_fraction)`` of that side and ``tolerated_unpaired``, so a
-    near-empty edge tile with a couple of unpaired children passes. On the
-    SExtractor side it catches a catalogue from other pixels; on the
-    external side, a detection configuration that finds fewer objects than
-    the catalogue's, which would leave its objects without shapes.
+    SExtractor-side guard stops when unpaired detections exceed both
+    ``(1 - min_fraction)`` of that side and ``tolerated_unpaired``.
+    External-only losses instead get an additive local deblending allowance
+    on top of the fractional budget (and retain the absolute tolerance).
+    Sparse DR6 edge tiles can lose dozens of children in one bright-star
+    halo while almost every detection pairs; those losses do not scale with
+    the tile's total population. This is an empirical allowance, not an
+    independent-object confidence bound. It weakens sensitivity to modest
+    external-side detection-config losses on sparse tiles, but does not
+    relax the SExtractor-side check for other pixels. With no pairs there
+    is no evidence for a local loss, so no additive allowance is granted.
 
     Parameters
     ----------
@@ -133,13 +139,16 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     radius : float, optional
         Largest separation of a pair, in pixels; default 1
     min_fraction : float, optional
-        Smallest acceptable fraction of SExtractor rows, and of external
-        objects, with a partner; default 0.98
+        Baseline paired fraction on each side; default 0.98. External-only
+        losses additionally receive ``external_unpaired_allowance``.
     tolerated_unpaired : int, optional
         Number of unpaired rows on either side accepted whatever the
         fraction; default 20
     w_log : logging.Logger, optional
         Pipeline logger
+    external_unpaired_allowance : int, optional
+        Additive external-only loss budget, in objects; default 50. Only
+        applied when at least one pair exists; zero restores the old guard.
 
     Returns
     -------
@@ -152,9 +161,9 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     ------
     ValueError
         If the external ``NUMBER`` repeats or is not an integer in
-        ``[1, MAX_NUMBER]``, or if more
-        than ``tolerated_unpaired`` rows of either side, and more than
-        ``1 - min_fraction`` of it, have no partner
+        ``[1, MAX_NUMBER]``, or if unpaired rows exceed the absolute tolerance
+        and the side's loss budget: fractional only for SExtractor,
+        fractional plus the local allowance for the external catalogue
 
     @sc [decision:detection.tile_detection]
     """
@@ -185,10 +194,10 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
         n_external_only=len(ext) - len(i_sex),
     )
     summary = ", ".join(f"{k}={v}" for k, v in counts.items())
-    def too_many_unpaired(n_total):
+    def too_many_unpaired(n_total, allowance=0):
         unpaired = n_total - len(i_sex)
         return (unpaired > tolerated_unpaired
-                and unpaired > (1 - min_fraction) * n_total)
+                and unpaired > (1 - min_fraction) * n_total + allowance)
 
     fraction = len(i_sex) / max(len(data), 1)
     if too_many_unpaired(len(data)):
@@ -201,11 +210,13 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
             + " release of the catalogue (DR6)."
         )
     fraction_ext = len(i_sex) / max(len(ext), 1)
-    if too_many_unpaired(len(ext)):
+    allowance = external_unpaired_allowance if len(i_sex) else 0
+    if too_many_unpaired(len(ext), allowance):
         raise ValueError(
             f"Only {fraction_ext:.4f} of the objects of {ext_cat_path} pair"
             + f" with a row of {cat_path} within {radius} px (minimum"
             + f" {min_fraction} beyond {tolerated_unpaired} unpaired;"
+            + f" additive external allowance {allowance};"
             + f" {summary}). SExtractor finds fewer objects"
             + " than the catalogue: check that the detection configuration"
             + " is the catalogue's."
