@@ -305,20 +305,28 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   catalogue server, staged, or rasterized, which is why the old
   `star_catalogue` / `exp_star_cat` / `exp_mask` rules and their cache root are
   gone.
-- **Two HealSparse maps come out of the exposures.** At the mask ladder's
-  resolution (nside 131072), `nexp_<run>.hsp` counts per sky pixel the
-  exposures whose CCD with a valid PSF model covers it, and
-  `nflagged_<run>.hsp` counts the flagged CCD pixels (bad columns, saturated
-  pixels, bleed trails, cosmics) of those exposures that fall in it, ~74 CCD
-  pixels filling one sky pixel. The flag image is the one mask that otherwise
-  never leaves the pixel domain, so a footprint built from CCD corners could not
-  subtract it (#878). `exp_maps` writes one fragment per exposure beside its PSF
-  tar, from the split's `DATASEC` (the overscan border is neither coverage nor
-  defect) and the CCDs `exp_persist` packed a PSF for; `exposure_maps` sums the
-  campaign's fragments. Nothing in the workflow reads either map. `nexp` is
-  what randoms need to match an `N_EPOCH` cut; `nflagged` is a diagnostic of
-  where the detector is bad, not a cut (it does not count exposures lost to
-  the defect veto).
+- **Four HealSparse maps come out of the exposures.** At nside 131072,
+  `npoint_<run>.hsp` counts filled pointing hulls of present main-array CCDs 0–35.
+  The hull fills CCD gaps and excludes ear CCDs 36–39, regardless of PSF success.
+  `ntaken_<run>.hsp` counts exposures covering each pixel with any CCD's DATASEC, ears included.
+  `nexp_<run>.hsp` counts only CCDs with a validated PSF; `ntaken - nexp` measures CCD-level PSF losses.
+  These three counts are uint8.
+  `nflagged_<run>.hsp` (uint16) counts flagged CCD pixel centres inside validated CCD DATASEC coverage, with ~74 CCD pixels per sky pixel.
+  The overscan border contributes neither coverage nor flags.
+  `exp_maps` writes one packed uint16 fragment beside each PSF tar: the low three bits store 1 = pointing, 2 = taken, 4 = validated, and bits 3–10 store flag counts clipped at 255.
+  Scalar fragments use compressed image storage (~2.6 MB per exposure); record-array table storage costs ~31 MB.
+  `exposure_maps` sums the fragments; nothing in the workflow reads the four maps.
+  `npoint` follows the v1.X npoint3 coverage-cut lineage, `nexp` supports an `N_EPOCH` cut, and `nflagged` diagnoses detector defects rather than exposures lost to the defect veto.
+  A plain uint8 fragment is rejected with an exposure-specific backfill command.
+  For reclaimed scratch stores, raw-MEF mode rewrites both the fragment and its completion manifest (the fragment is the durable DAG edge):
+
+  ```bash
+  python workflow/scripts/exp_maps.py --exp "$exp" \
+    --image-mef "$raw/${exp}p.fits.fz" --flag-mef "$raw/${exp}p.flag.fits.fz" \
+    --persist-manifest "$products/exp/${exp:0:2}/$exp/manifests/exp_persist.json" \
+    --fragment "$products/exp/${exp:0:2}/$exp/maps/maps-$exp.hsp" \
+    --manifest "$products/exp/${exp:0:2}/$exp/manifests/exp_maps.json"
+  ```
 - **External masks are wired, on the tile side only (data runs).** `inputs.masks`
   is a third input root beside tiles and exposures, set per machine in the
   `machines:` table, exported as `$SP_INPUT_MASKS` and
