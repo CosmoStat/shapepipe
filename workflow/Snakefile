@@ -31,6 +31,7 @@ the manifest says "this stage succeeded", the log says "here is what happened"
 (the contract is argued in completeness.py's docstring).
 """
 
+import ast
 import fnmatch
 import functools
 import hashlib
@@ -239,6 +240,38 @@ scattergather:
     ngmix=int(config.get("ngmix_chunks", 8))
 
 NGMIX_CHUNKS = workflow._scatter["ngmix"]
+
+# ngmix's defect options, each a run-config key that tile_ngmix exports for
+# config_tile_Ng_template.ini to expand:
+#   defect_fill      -> SP_DEFECT_FILL      -> DEFECT_FILL (what defect pixels
+#                       hold before metacal)
+#   defect_weighting -> SP_DEFECT_WEIGHTING -> DEFECT_WEIGHTING (how
+#                       interpolated defects are weighted)
+# Unset: empty, and ngmix takes its own default. The allowed values are read
+# from the ngmix module this campaign runs, so a typo fails here, at parse time,
+# rather than in every tile's ngmix job.
+DEFECT_FILL = config.get("defect_fill") or ""
+DEFECT_WEIGHTING = config.get("defect_weighting") or ""
+_NGMIX_PY = (Path(workflow.basedir).parent / "src" / "shapepipe" / "modules"
+             / "ngmix_package" / "ngmix.py")
+_ngmix_tree = ast.parse(_NGMIX_PY.read_text())
+
+
+def _ngmix_options(name):
+    return next(
+        ast.literal_eval(node.value) for node in _ngmix_tree.body
+        if isinstance(node, ast.Assign)
+        and [getattr(t, "id", None) for t in node.targets] == [name])
+
+
+DEFECT_FILLS = _ngmix_options("DEFECT_FILLS")
+DEFECT_WEIGHTINGS = _ngmix_options("DEFECT_WEIGHTINGS")
+for _key, _value, _allowed in (
+        ("defect_fill", DEFECT_FILL, DEFECT_FILLS),
+        ("defect_weighting", DEFECT_WEIGHTING, DEFECT_WEIGHTINGS)):
+    if _value and _value not in _allowed:
+        raise WorkflowError(
+            f"Invalid {_key}={_value!r}; expected one of {list(_allowed)}.")
 
 # --- parse-time index build + load (D1) ------------------------------------
 # The COMPUTE invocation's parse IS the index build, and it runs UNCONDITIONALLY
