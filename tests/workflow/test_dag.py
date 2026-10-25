@@ -1,5 +1,8 @@
 """Resolved-job checks for campaign scope, product paths, and PSF custody."""
 
+import hashlib
+import os
+import re
 from collections import Counter
 from pathlib import Path
 
@@ -15,7 +18,8 @@ BASE_RULES = {
     "tile_ngmix", "tile_merge_cats", "tile_make_cat", "clean_tile",
     "final_cat_merge",
 }
-PSF_RULES = {"exp_persist", "star_cat_merge"}
+TILE_SHAPE_STORE_RULES = ("tile_vignets", "tile_ngmix", "tile_make_cat")
+PSF_RULES = {"exp_persist", "star_cat_merge", "exp_maps", "exposure_maps"}
 CATALOGUE_RULES = {"tile_get_catalogue"}
 
 
@@ -31,6 +35,24 @@ def test_rule_set_matches_input_mode(campaign, dag):
     assert "merge_final_cats" not in dag.declared_rule_names
 
 
+def test_tile_detect_joins_the_catalogue_iff_unions(campaign, dag):
+    """Data's tile_detect waits on the fetch and exports its catalogue as
+    SP_MATCH_CATALOGUE; the image-simulation prologue exports it empty."""
+    for job in dag.jobs_for("tile_detect"):
+        tile = job.wildcards.tile
+        inputs = {str(f) for f in job.input}
+        fetch = str(campaign.tile_manifest(tile, "tile_get_catalogue"))
+        if campaign.tile_detection == "unions_catalogue":
+            gic = (campaign.run_dir / "tiles" / tile[:2] / tile / "output"
+                   / "run_sp_tile_Gic" / "get_images_runner" / "output")
+            cat = gic / f"CFIS_cat-{tile.replace('.', '-')}.cat"
+            assert fetch in inputs
+            assert f"export SP_MATCH_CATALOGUE='{cat}'" in job.params.pre
+        else:
+            assert fetch not in inputs
+            assert "export SP_MATCH_CATALOGUE=''" in job.params.pre.split("\n")
+
+
 def test_clean_exposure_waits_on_persist_iff_psf(campaign, dag):
     """Reclamation waits for persistence and exactly its in-scope readers."""
     jobs = dag.jobs_for("clean_exposure")
@@ -43,6 +65,8 @@ def test_clean_exposure_waits_on_persist_iff_psf(campaign, dag):
         ]
         if campaign.psf_model != "fake":
             expected.append(campaign.persist_manifest(exp))
+            expected.append(campaign.persist_manifest(exp).parent.parent
+                            / "maps" / f"maps-{exp}.hsp")
         assert Counter(map(str, job.input)) == Counter(map(str, expected)), (
             "clean-exposure-waits-on-persist-iff-psf", exp, list(job.input)
         )
@@ -102,6 +126,110 @@ def test_products_use_products_dir_and_run_name(campaign, dag):
     assert Path(dag.namespace["INDEX_DB"]) == campaign.index_db
 
 
+def test_exposure_maps_are_campaign_targets(campaign, dag):
+    """Fitted-PSF campaigns publish all four maps on the persistent root."""
+    jobs = dag.jobs_for("exposure_maps")
+    if campaign.psf_model == "fake":
+        assert not jobs
+        return
+    assert len(jobs) == 1
+    expected = {campaign.products_dir / f"{name}_{campaign.name}.hsp"
+                for name in ("npoint", "ntaken", "nexp", "nflagged")}
+    assert set(map(Path, jobs[0].output)) == expected
+    assert expected <= set(map(Path, dag.namespace["exposure_maps_targets"]()))
+    for name in ("npoint", "ntaken", "nexp", "nflagged"):
+        assert f"--{name} " in jobs[0].shellcmd
+
+
+@pytest.mark.parametrize("stale_psf_manifest", [False, True])
+@pytest.mark.parametrize("tombstone", [False, True])
+@pytest.mark.parametrize("map_manifest", [False, True])
+def test_resume_missing_fragment_after_reclamation(
+        tmp_path, resolve_dag, tombstone, map_manifest, stale_psf_manifest):
+    """A completed catalogue and persist record cannot hide a missing map."""
+    campaign = Campaign(tmp_path / "resume", "data", "psfex")
+    raw = campaign.root / "inputs" / campaign.name / "exposures"
+    raw.mkdir(parents=True)
+    for exp in campaign.exposures:
+        persist = campaign.persist_manifest(exp)
+        persist.parent.mkdir(parents=True)
+        persist.write_text('{}')
+        if map_manifest:
+            campaign.persist_manifest(exp, "exp_maps").write_text('{}')
+        store = campaign.run_dir / "exp" / exp[:2] / exp
+        store.mkdir(parents=True)
+        (store / "output").symlink_to(tmp_path / "reclaimed-node-local")
+        if stale_psf_manifest:
+            manifests = store / "manifests"
+            manifests.mkdir()
+            (manifests / "exp_psf.json").write_text('{}')
+        if tombstone:
+            (store / "cleaned.json").write_text('{}')
+        for suffix in (".fits.fz", ".flag.fits.fz"):
+            (raw / f"{exp}p{suffix}").touch()
+    for tile in campaign.ready:
+        final = campaign.final_cat(tile)
+        final.parent.mkdir(parents=True)
+        final.touch()
+        campaign._manifest(tile, "tile_vignets")
+    # Raw files being available must not opt a reclaimed campaign into
+    # automatic rasterization. Recovery is an explicit operator action.
+    with pytest.raises((WorkflowError, ValueError),
+                       match="missing reclaimed fragment") as error:
+        with resolve_dag(campaign):
+            pass
+    message = str(error.value)
+    assert "Backfill outside the DAG" in message
+    assert "--image-mef" in message and "--flag-mef" in message
+    assert "--persist-manifest" in message and "--fragment" in message
+
+
+def test_tile_store_is_unique_per_campaign(campaign, tmp_path, resolve_dag):
+    """Concurrent campaigns over the same tiles get distinct node-local stores;
+    within a campaign, every tile_shape member of a tile names the same one."""
+    other = Campaign(tmp_path / "another-campaign", campaign.input_type,
+                     campaign.psf_model)
+    stores = []
+    for each in (campaign, other):
+        by_tile = {}
+        with resolve_dag(each) as dag:
+            for rule in TILE_SHAPE_STORE_RULES:
+                for job in dag.jobs_for(rule):
+                    match = re.search(r'^export SP_LOCAL="([^"]+)"$',
+                                      job.params.pre, re.MULTILINE)
+                    assert match, (rule, job.wildcards_dict)
+                    by_tile.setdefault(job.wildcards.tile, set()).add(
+                        match.group(1))
+        assert by_tile.keys() == set(each.ready)
+        assert all(len(paths) == 1 for paths in by_tile.values()), by_tile
+        stores.append({tile: paths.pop() for tile, paths in by_tile.items()})
+    first, second = stores
+    assert all(first[tile] != second[tile] for tile in first), (first, second)
+
+
+def test_module_logs_outlive_their_run_dirs(campaign, dag):
+    """tile_vignets (node-local) and every ngmix chunk (temp()) copy their
+    module logs into the tile's logs/modules/ on the shared root, after
+    shapepipe_run and before the rule exits, whatever its rc."""
+    sources = {"tile_vignets": lambda job: '"$NGMIX_VIGNET_DIR"',
+               "tile_ngmix": lambda job: f'"{job.output.chunkdir}"'}
+    for rule, source in sources.items():
+        for job in dag.jobs_for(rule):
+            name = ("run_sp_tile_PiViVi" if rule == "tile_vignets" else
+                    f"run_sp_tile_ngmix_Ng{job.wildcards.chunk}u")
+            lines = job.shellcmd.splitlines()
+            keep = [i for i, line in enumerate(lines)
+                    if f'"$SP_RUN/logs/modules/{name}"' in line]
+            assert len(keep) == 1, (rule, job.wildcards_dict)
+            line = lines[keep[0]]
+            assert f"cd {source(job)}" in line
+            assert '-path "*/logs/*"' in line and line.rstrip().endswith(">&2")
+            run = next(i for i, l in enumerate(lines)
+                       if l.startswith("shapepipe_run "))
+            assert run < keep[0] < len(lines) - 1
+            assert lines[-1] == "exit $rc"
+
+
 def test_missing_run_fails_during_parse(campaign, resolve_dag):
     """Explicit paths cannot bypass the required campaign name diagnostic."""
     campaign.omit_run()
@@ -119,3 +247,162 @@ def test_mccd_is_refused_during_parse(tmp_path, resolve_dag):
     with pytest.raises(WorkflowError, match=r"psf_model=mccd: PSF persistence"):
         with resolve_dag(campaign):
             pytest.fail("psf_model=mccd must be refused at parse time")
+
+
+# --- blend_handling ---------------------------------------------------------
+
+# First-attempt memory of the stages that hold SEG_VIGNET, under every
+# blend_handling: the base plus the seg stamps' share.
+SEG_MEM_MB = {"tile_detect": 4000 + 3000, "tile_ngmix": 5000 + 500}
+# The exports every blend_handling sets, and those uberseg adds.
+SEG_EXPORTS = {"tile_detect": {"SP_SEG_VIGNET": "True"}}
+BLEND_EXPORTS = {"tile_ngmix": {"SP_BLEND_HANDLING": "uberseg"}}
+# The option each stage's committed ini reads the export through, and the
+# value it must resolve to with and without it.
+BLEND_OPTIONS = {"tile_detect": ("SEG_VIGNET", "False", "True"),
+                 "tile_ngmix": ("BLEND_HANDLING", "noisefill", "uberseg")}
+
+
+def _jobs(dag, campaign):
+    """Every job's prologue, shell and memory, keyed by rule and wildcards,
+    with the campaign root and the run-dir hash in the node-local store name
+    made location-free."""
+    run_hash = hashlib.sha1(str(campaign.run_dir).encode()).hexdigest()[:8]
+
+    def normalize(value):
+        if not isinstance(value, str):
+            return value
+        return (value.replace(run_hash, "<RUN_DIR_SHA1>")
+                .replace(str(campaign.root), "<ROOT>"))
+
+    return {
+        (job.rule.name, tuple(sorted(job.wildcards_dict.items()))): tuple(
+            normalize(v) for v in (getattr(job.params, "pre", None),
+                                   job.shellcmd, job.resources.get("mem_mb")))
+        for job in dag.jobs
+    }
+
+
+def _surface(campaign, resolve_dag):
+    """The active rules and :func:`_jobs`."""
+    with resolve_dag(campaign) as dag:
+        return dag.rule_names, _jobs(dag, campaign)
+
+
+def _committed_value(shell, config_dir, option, env, monkeypatch):
+    """``option`` of the module section of the ini ``shell`` runs, expanded
+    under ``env`` as ShapePipe expands it."""
+    from shapepipe.pipeline.config import CustomParser
+
+    name = shell.split('shapepipe_run -c "$SP_CONFIG/')[1].split('"')[0]
+    parser = CustomParser()
+    parser.optionxform = str
+    assert parser.read(config_dir / name)
+    section = next(s for s in parser.sections() if s.endswith("_RUNNER"))
+    for key in ("SP_SEG_VIGNET", "SP_BLEND_HANDLING"):
+        monkeypatch.delenv(key, raising=False)
+    for key, value in env.items():
+        monkeypatch.setenv(key, value)
+    return parser.getexpanded(section, option)
+
+
+@pytest.mark.parametrize("detection", ["sextractor", "unions_catalogue"])
+def test_blend_handling_reaches_ngmix_only_under_uberseg(
+        tmp_path, resolve_dag, monkeypatch, detection):
+    """A campaign without the knob plans exactly the uberseg campaign. Both
+    handlings export SP_SEG_VIGNET to tile_detect, which turns its ini's
+    SEG_VIGNET on, and carry the seg stamps' memory in tile_detect and
+    tile_ngmix. Against explicit noisefill, uberseg only adds its export to
+    tile_ngmix's prologue, which turns BLEND_HANDLING to uberseg."""
+    surfaces = {}
+    for blend in (None, "noisefill", "uberseg"):
+        campaign = Campaign(tmp_path / str(blend), "data", "psfex")
+        campaign.config["tile_detection"] = detection
+        if blend is not None:
+            campaign.config["blend_handling"] = blend
+        campaign.write_config()
+        surfaces[blend] = _surface(campaign, resolve_dag)
+
+    assert surfaces["uberseg"] == surfaces[None]
+    rules, noisefill = surfaces["noisefill"]
+    uberseg_rules, uberseg = surfaces["uberseg"]
+    assert uberseg_rules == rules
+    assert uberseg.keys() == noisefill.keys()
+    config_dir = Path(__file__).parents[2] / "workflow" / "config" / "cfis"
+    for key, (pre, shell, mem) in uberseg.items():
+        rule = key[0]
+        nf_pre, nf_shell, nf_mem = noisefill[key]
+        exports = BLEND_EXPORTS.get(rule, {})
+        lines = {f"export {name}='{value}'" for name, value in exports.items()}
+
+        def without_exports(text):
+            if text is None:
+                return None
+            return "\n".join(line for line in text.split("\n")
+                             if line not in lines)
+
+        # The rendered shell carries the prologue, so it moves with it and
+        # nowhere else.
+        assert without_exports(shell) == nf_shell, key
+        if pre is None:
+            assert nf_pre is None and not exports, key
+            continue
+        assert lines <= set(pre.split("\n")), key
+        assert without_exports(pre) == nf_pre, key
+        if exports:
+            option, default, value = BLEND_OPTIONS[rule]
+            assert _committed_value(shell, config_dir, option, {},
+                                    monkeypatch) == default
+            assert _committed_value(shell, config_dir, option, exports,
+                                    monkeypatch) == value
+        assert mem == nf_mem, key
+        if rule in SEG_MEM_MB:
+            assert mem == SEG_MEM_MB[rule], key
+        seg_exports = SEG_EXPORTS.get(rule, {})
+        if seg_exports:
+            assert {f"export {name}='{value}'"
+                    for name, value in seg_exports.items()} <= set(
+                        nf_pre.split("\n")), key
+            option, default, value = BLEND_OPTIONS[rule]
+            assert _committed_value(shell, config_dir, option, seg_exports,
+                                    monkeypatch) == value
+
+
+def test_unknown_blend_handling_fails_during_parse(tmp_path, resolve_dag):
+    campaign = Campaign(tmp_path / "campaign", "data", "psfex")
+    campaign.config["blend_handling"] = "mof"
+    campaign.write_config()
+    with pytest.raises(WorkflowError, match=r"Invalid blend_handling='mof'"):
+        with resolve_dag(campaign):
+            pytest.fail("an unknown blend_handling must fail at parse time")
+
+
+INHERITED_BLEND_ENV = {
+    f"{prefix}{name}": value
+    for prefix in ("", "APPTAINERENV_", "SINGULARITYENV_")
+    for name, value in (("SP_SEG_VIGNET", "True"),
+                        ("SP_BLEND_HANDLING", "uberseg"))
+}
+
+
+def test_noisefill_ignores_blend_variables_in_the_launch_shell(
+        tmp_path, resolve_dag):
+    """A noisefill campaign launched from a shell that still exports the
+    uberseg variables plans exactly the campaign launched from a clean one,
+    and the parse leaves none of them in the environment jobs inherit (the
+    slurm executor submits with --export=ALL from this process)."""
+    campaigns = {}
+    for name in ("clean", "dirty"):
+        campaigns[name] = Campaign(tmp_path / name, "data", "psfex")
+        campaigns[name].config["blend_handling"] = "noisefill"
+        campaigns[name].write_config()
+    clean, dirty = campaigns["clean"], campaigns["dirty"]
+    _, clean_jobs = _surface(clean, resolve_dag)
+
+    with resolve_dag(dirty, launch_env=INHERITED_BLEND_ENV) as dag:
+        leaked = sorted(set(INHERITED_BLEND_ENV) & set(os.environ))
+        dirty_jobs = _jobs(dag, dirty)
+    assert leaked == []
+    assert dirty_jobs == clean_jobs
+    for _, shell, _ in dirty_jobs.values():
+        assert "SP_BLEND_HANDLING" not in (shell or "")

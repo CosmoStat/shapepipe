@@ -31,6 +31,7 @@ the manifest says "this stage succeeded", the log says "here is what happened"
 (the contract is argued in completeness.py's docstring).
 """
 
+import ast
 import fnmatch
 import functools
 import hashlib
@@ -90,6 +91,15 @@ if _unresolved:
         f"$variable for machine={MACHINE!r}, "
         f"input_type={INPUT_TYPE!r}: {', '.join(_unresolved)}. Set them in "
         f"your run config (SP_RUN_CONFIG).")
+# The external masks are a data-only input: config_tile_Mc.ini's
+# MASK_EXT_PATHS reads $SP_INPUT_MASKS, and the sims Mc.ini carries no mask
+# block. Checked here rather than in run_config.REQUIRED because it depends on
+# input_type.
+if INPUT_TYPE == "data" and not config.get("inputs", {}).get("masks"):
+    raise WorkflowError(
+        f"inputs.masks is unset for machine={MACHINE!r}, input_type='data': "
+        "the tile chain queries the UNIONS sky-fixed masks (MASK_EXT_PATHS in "
+        "config/cfis/config_tile_Mc.ini). Set it in the run config.")
 
 # The image every job runs in: this user's sandbox, else their cached SIF,
 # else the run config's `container:`. Checked at parse time, since an empty
@@ -175,9 +185,9 @@ sys.path.insert(0, str(SCRIPTS))
 import build_index                                     # noqa: E402
 from completeness import STAGE_DIR, TILE_DETECTIONS  # noqa: E402
 
-# Where the tile's galaxy sample comes from: SExtractor on the tile image, or
-# the UNIONS per-tile catalogue fetched and converted in place (tile.smk).
-# Both write run_sp_tile_Sx, so nothing downstream of tile_detect branches.
+# How the tile's galaxy sample is defined: SExtractor on the tile image, alone
+# or joined to the UNIONS per-tile catalogue (tile.smk). Both write
+# run_sp_tile_Sx, so nothing downstream of tile_detect branches.
 TILE_DETECTION = config.get("tile_detection", "sextractor")
 if TILE_DETECTION not in TILE_DETECTIONS:
     raise WorkflowError(
@@ -187,6 +197,25 @@ try:
     CATALOGUES, CATALOGUE_RETRIEVE = run_config.catalogue_source(config)
 except ValueError as err:
     raise WorkflowError(str(err)) from None
+
+# How ngmix treats a stamp's neighbours; tile.smk's blend handling section
+# carries it to tile_detect and tile_ngmix.
+BLEND_HANDLING = config.get("blend_handling", "uberseg")
+if BLEND_HANDLING not in run_config.BLEND_HANDLINGS:
+    raise WorkflowError(
+        f"Invalid blend_handling={BLEND_HANDLING!r}; expected one of "
+        f"{sorted(run_config.BLEND_HANDLINGS)}.")
+
+# The committed inis read SP_SEG_VIGNET and SP_BLEND_HANDLING with the modules'
+# own defaults, and only tile.smk's blend_env exports them (SP_BLEND_HANDLING
+# under uberseg, the workflow's default). Drop any copy the
+# launching shell carries, bare or as the APPTAINERENV_/SINGULARITYENV_ forms
+# that survive --cleanenv, so a job inherits none: the slurm executor submits
+# with --export=ALL from this process's environment, and each job re-parses
+# this file before its shell runs.
+for _prefix in ("", "APPTAINERENV_", "SINGULARITYENV_"):
+    for _name in ("SP_SEG_VIGNET", "SP_BLEND_HANDLING"):
+        os.environ.pop(_prefix + _name, None)
 
 # SP_PHASE is set by bin/sp and NOWHERE else: `prepare`/`compute` on the two
 # invocations of `sp run`, `passthrough` on direct commands (`sp --unlock`, `sp
@@ -230,6 +259,38 @@ scattergather:
     ngmix=int(config.get("ngmix_chunks", 8))
 
 NGMIX_CHUNKS = workflow._scatter["ngmix"]
+
+# ngmix's defect options, each a run-config key that tile_ngmix exports for
+# config_tile_Ng_template.ini to expand:
+#   defect_fill      -> SP_DEFECT_FILL      -> DEFECT_FILL (what defect pixels
+#                       hold before metacal)
+#   defect_weighting -> SP_DEFECT_WEIGHTING -> DEFECT_WEIGHTING (how
+#                       interpolated defects are weighted)
+# Unset: empty, and ngmix takes its own default. The allowed values are read
+# from the ngmix module this campaign runs, so a typo fails here, at parse time,
+# rather than in every tile's ngmix job.
+DEFECT_FILL = config.get("defect_fill") or ""
+DEFECT_WEIGHTING = config.get("defect_weighting") or ""
+_NGMIX_PY = (Path(workflow.basedir).parent / "src" / "shapepipe" / "modules"
+             / "ngmix_package" / "ngmix.py")
+_ngmix_tree = ast.parse(_NGMIX_PY.read_text())
+
+
+def _ngmix_options(name):
+    return next(
+        ast.literal_eval(node.value) for node in _ngmix_tree.body
+        if isinstance(node, ast.Assign)
+        and [getattr(t, "id", None) for t in node.targets] == [name])
+
+
+DEFECT_FILLS = _ngmix_options("DEFECT_FILLS")
+DEFECT_WEIGHTINGS = _ngmix_options("DEFECT_WEIGHTINGS")
+for _key, _value, _allowed in (
+        ("defect_fill", DEFECT_FILL, DEFECT_FILLS),
+        ("defect_weighting", DEFECT_WEIGHTING, DEFECT_WEIGHTINGS)):
+    if _value and _value not in _allowed:
+        raise WorkflowError(
+            f"Invalid {_key}={_value!r}; expected one of {list(_allowed)}.")
 
 # --- parse-time index build + load (D1) ------------------------------------
 # The COMPUTE invocation's parse IS the index build, and it runs UNCONDITIONALLY
@@ -400,7 +461,7 @@ def final_cat(tile):
     stores that reclamation deleted — the rerun avalanche the cut exists to
     prevent, arriving by way of the purge instead.
     """
-    return f"{PRODUCTS_DIR}/tiles/{tile[:2]}/{tile}/final_cat-{tile}.fits"
+    return f"{PRODUCTS_DIR}/tiles/{tile[:2]}/{tile}/final_cat-{tile}.hdf5"
 
 def unit_num(unit):
     """$SP_UNIT_NUM: ShapePipe's image-number convention, dot -> dash, leading
@@ -451,11 +512,16 @@ def path_hash(path):
                 f"that needs the file will say so when it runs.")
         return "missing"
 
-SCRIPT_HASH = script_hash("completeness.py")
+# Epoch-count parsing/aggregation is part of the completeness contract too.
+SCRIPT_HASH = ":".join((script_hash("completeness.py"),
+                        script_hash("epoch_cuts.py")))
 FOREST_HASH = script_hash("build_forest.py")
 CLEAN_HASH  = script_hash("clean_exposure.py")
-CLEAN_TILE_HASH = script_hash("clean_tile.py")
+CLEAN_TILE_HASH = ":".join((script_hash("clean_tile.py"),
+                            script_hash("epoch_cuts.py")))
 PERSIST_HASH = script_hash("persist_exp.py")
+EXP_MAPS_HASH = script_hash("exp_maps.py")
+MERGE_MAPS_HASH = script_hash("merge_exposure_maps.py")
 MERGE_STAR_HASH  = script_hash("merge_star_cat.py")
 # Three files, one trigger: the rule's script, the column extraction it calls,
 # and the parameter file that says which columns (path_hash argues why).
@@ -545,8 +611,12 @@ def clean_consumers(exp):
                   if t not in CLEAN_IGNORE_TILES)
 
 
-def clean_targets():
+@functools.lru_cache(maxsize=1)
+def clean_exposures():
     """Which exposures this invocation may clean.
+
+    Shared with the exp_maps producer constraint: cleanup can request fragments
+    from campaign history, not just from this invocation's ready tiles.
 
     An exposure is eligible only when every consuming tile is either in this
     run's scope or has already produced its vignets on disk. Without that test,
@@ -560,13 +630,11 @@ def clean_targets():
     `clean_ignore_tiles` neither gates eligibility nor appears in the job's
     input — which is the purpose of that list.
 
-    HEAD PROCESS ONLY. This feeds `rule all` at module level, so it runs on every
-    parse — including the ~800 per-job re-parses under the slurm executor, none of
-    which can ever schedule `all`. Each of those was stat()ing the whole
-    campaign's tile_vignets manifests for nothing. The empty list a job parse
-    returns costs it exactly the target it could not have used anyway.
+    Unlike the target list, this selector must also work on job re-parses:
+    a historical exp_maps job needs the same producer constraint on the worker
+    as on the head. Cache the eligibility walk within each parse.
     """
-    if not CLEAN or not workflow.is_main_process:
+    if not CLEAN:
         return []
     out = []
     for exp, raw in EXP_TILES.items():
@@ -578,8 +646,15 @@ def clean_targets():
         tiles = clean_consumers(exp)
         if all(t in READY_SET or Path(tile_manifest(t, "tile_vignets")).exists()
                for t in tiles):
-            out.append(tombstone(exp))
+            out.append(exp)
     return sorted(out)
+
+
+def clean_targets():
+    """Only the head can schedule rule all's reclamation targets."""
+    if not workflow.is_main_process:
+        return []
+    return [tombstone(exp) for exp in clean_exposures()]
 
 # --- persisted exposure products (D5) --------------------------------------
 # The keep list is config, not a rule input, and it is READ HERE so that exactly
@@ -602,6 +677,7 @@ PERSIST_EXP = list(config.get("persist_exp") or [])
 PERSISTS_PSF = PSF_MODEL != "fake"
 
 
+# @sc [decision:star_selection_psf.psf_modelling_software]
 def refuse_unpersistable_psf(psf_model):
     """Refuse a PSF model whose products the persistence path cannot read.
 
@@ -834,13 +910,19 @@ def star_cat_inputs():
     manifest and is in no set at all. Nothing short of rebuilding its chain from
     VOS recovers it; the merge reports how many exposures it found.
     """
-    live, reclaimed = [], []
-    for exp in psf_exposures():
-        if not exp_store_reclaimed(exp):
-            live.append(prod_exp_manifest(exp, "exp_persist"))
-        elif Path(prod_exp_tar(exp)).exists():
-            reclaimed.append(prod_exp_tar(exp))
-    return live + reclaimed
+    return [p for exp in psf_exposures()
+            for p in durable_edge(exp, "exp_persist", prod_exp_tar(exp))]
+
+
+def durable_edge(exp, stage, product):
+    """The DAG edge to a per-exposure product on the persistent root: the
+    stage's manifest while the scratch store is live, the product itself once
+    it is reclaimed (no rule declares it, so it is a leaf that builds nothing),
+    and nothing when a reclaimed store left no product. star_cat_inputs()
+    argues why a reclaimed exposure's manifest must never be named."""
+    if not exp_store_reclaimed(exp):
+        return [prod_exp_manifest(exp, stage)]
+    return [product] if Path(product).exists() else []
 
 
 @functools.lru_cache(maxsize=1)
@@ -858,6 +940,101 @@ def star_cat_exposures():
     return [e for e in psf_exposures()
             if Path(prod_exp_manifest(e, "exp_persist")).exists()
             or not exp_store_reclaimed(e)]
+
+
+# --- the exposure maps ------------------------------------------------------
+# exp_maps rasterizes pointing hulls, all CCD DATASEC footprints, and validated
+# CCD coverage and flags into one persistent fragment; exposure_maps sums these
+# into npoint, ntaken, nexp and nflagged campaign maps. Fitted-PSF
+# runs only (psf_exposures()): the valid-PSF CCD set comes from exp_persist.
+# Live stores produce declared fragments before reclamation. Reclaimed
+# fragments are immutable leaves: no rasterization producer may reach them.
+# Missing reclaimed fragments require an explicit out-of-DAG raw-MEF backfill.
+
+def prod_exp_maps(exp):
+    """The persistent fragment declared by exp_maps."""
+    return f"{prod_exp_dir(exp)}/maps/maps-{exp}.hsp"
+
+
+def exp_maps_reclaimed(exp):
+    """Recognize reclamation even when stale scratch manifests survive."""
+    split = Path(exp_dir(exp)) / 'output/run_sp_exp_Sp/split_exp_runner/output'
+    return (exp_store_reclaimed(exp)
+            or (Path(prod_exp_manifest(exp, 'exp_persist')).exists()
+                and not split.is_dir()))
+
+
+def exp_maps_live_pattern():
+    """Restrict the producer to live exposures, not merely its input edges.
+
+    An existing reclaimed fragment must have NO reachable producer: otherwise
+    code/params changes schedule it and Snakemake removes the fragment before
+    a failed rasterization can discover that its sources have been deleted.
+    Exposure IDs are numeric (the workflow-wide wildcard constraint).
+    """
+    # These are exactly the two target selectors that request fragments. Use
+    # cleanup's selector itself so historical candidates cannot drift out of
+    # the producer set. The same reclamation predicate used by exp_maps_edge
+    # (including cleanup's edge) keeps reclaimed fragments producer-free.
+    requested = set(psf_exposures())
+    if PERSISTS_PSF:
+        requested.update(clean_exposures())
+    live = sorted(e for e in requested if not exp_maps_reclaimed(e))
+    return '(?:' + '|'.join(live) + ')' if live else '(?!)'
+
+
+def exp_maps_edge(exp):
+    """Require live production or an immutable reclaimed fragment; never omit."""
+    fragment = prod_exp_maps(exp)
+    if exp_maps_reclaimed(exp) and not Path(fragment).exists():
+        name = exp_name(exp)
+        raw = INPUTS['exposures']
+        raise ValueError(
+            f'Exposure {exp}: missing reclaimed fragment {fragment}. '
+            'Backfill outside the DAG with:\n'
+            f'python {SCRIPTS}/exp_maps.py --exp {exp} '
+            f'--image-mef {raw}/{name}.fits.fz '
+            f'--flag-mef {raw}/{name}.flag.fits.fz '
+            f'--persist-manifest {prod_exp_manifest(exp, "exp_persist")} '
+            f'--fragment {fragment} '
+            f'--manifest {prod_exp_manifest(exp, "exp_maps")}')
+    return fragment
+
+
+def npoint_map():
+    return f"{PRODUCTS_DIR}/npoint_{CAMPAIGN}.hsp"
+
+
+def ntaken_map():
+    return f"{PRODUCTS_DIR}/ntaken_{CAMPAIGN}.hsp"
+
+
+def nexp_map():
+    return f"{PRODUCTS_DIR}/nexp_{CAMPAIGN}.hsp"
+
+
+def nflagged_map():
+    return f"{PRODUCTS_DIR}/nflagged_{CAMPAIGN}.hsp"
+
+
+@functools.lru_cache(maxsize=1)
+def exposure_maps_inputs():
+    return [exp_maps_edge(exp) for exp in psf_exposures()]
+
+
+def exposure_maps_exposures():
+    """The exposure ids exposure_maps sums: its rerun fingerprint."""
+    return psf_exposures()
+
+
+def exposure_maps_targets():
+    """The per-exposure fragments to build, and the campaign maps when there is
+    at least one fragment to sum."""
+    if not workflow.is_main_process:
+        return []
+    inputs = exposure_maps_inputs()
+    return inputs + ([npoint_map(), ntaken_map(), nexp_map(), nflagged_map()]
+                   if inputs else [])
 
 
 # --- sizing the two merges (D4) ---------------------------------------------
@@ -1138,10 +1315,10 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     There is no per-unit ``cfis`` symlink any more: $SP_CONFIG points straight at
     the committed config dir.
 
-    It also exports the configured input roots as ``SP_INPUT_TILES`` and
-    ``SP_INPUT_EXPOSURES``, the retrieve mode as ``SP_RETRIEVE`` and the PSF
-    choice as ``SP_PSF`` for the committed ini chain (plus ``PSF_DICT`` for the
-    image-simulation true PSF).
+    It also exports the configured input roots as ``SP_INPUT_TILES``,
+    ``SP_INPUT_EXPOSURES`` and (data only) ``SP_INPUT_MASKS``, the retrieve
+    mode as ``SP_RETRIEVE`` and the PSF choice as ``SP_PSF`` for the committed
+    ini chain (plus ``PSF_DICT`` for the image-simulation true PSF).
 
     Every line here is part of each rule's ``params.pre`` and so of the
     ``params`` rerun trigger: a line added for every rule reruns every finished
@@ -1180,6 +1357,8 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     ]
     if PSF_DICT:
         lines.append(f"export PSF_DICT='{PSF_DICT}'")
+    if INPUT_TYPE == "data":
+        lines.append(f"export SP_INPUT_MASKS='{INPUTS['masks']}'")
     if forest:
         lines.append(f"export SP_EXP='{forest}'")
     for k, v in (env or {}).items():
@@ -1262,6 +1441,7 @@ rule all:
         [final_cat(t) for t in TILES_READY],
         persist_targets(),
         star_cat_targets(),
+        exposure_maps_targets(),
         final_cat_targets(),
         clean_targets(),
         clean_tile_targets(),

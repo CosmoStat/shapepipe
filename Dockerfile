@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.27
+# syntax=docker/dockerfile:1.28
 #
 # One image: CI tests it, canfar batch jobs run it, downstream stacks (e.g.
 # sp_validation) build FROM it. Everyday CLI tools and all extras (test,
@@ -139,6 +139,7 @@ RUN chmod -R go+rwX /app && \
     uv pip install --no-deps -e . && \
     for ext in .py .sh .bash; do \
         for script in /app/scripts/*/*$ext; do \
+            [ -e "$script" ] || continue; \
             link_name=$(basename $script $ext); \
             ln -s $script /usr/local/bin/$link_name; \
         done; \

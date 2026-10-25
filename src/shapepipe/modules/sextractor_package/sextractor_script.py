@@ -11,9 +11,193 @@ import re
 import numpy as np
 from astropy.io import fits
 from astropy.wcs.wcs import InvalidCoordinateError
-from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
+from shapepipe.pipeline.sqlite_store import read_sqlitedict
+
+
+def cut_stamps(array, col, row, stamp_size, fill):
+    """Cut one square stamp per object from a 2-D array.
+
+    Each stamp is ``stamp_size`` pixels on a side with the 0-based pixel
+    (``row``, ``col``) at index ``stamp_size // 2`` on both axes; pixels off
+    the array take ``fill``. This is the window SExtractor cuts ``VIGNET``
+    with, so stamps cut at the same centres from arrays on one pixel grid are
+    registered pixel for pixel.
+
+    Parameters
+    ----------
+    array : numpy.ndarray
+        2-D array, shape ``(ny, nx)``
+    col, row : array_like of int
+        0-based column and row of each stamp's centre pixel
+    stamp_size : int
+        Side length of the stamps
+    fill : scalar
+        Value of the stamp pixels off the array
+
+    Returns
+    -------
+    numpy.ndarray
+        Stamps, shape ``(n_obj, stamp_size, stamp_size)``, dtype of ``array``
+
+    """
+    ny, nx = array.shape
+    half = stamp_size // 2
+    stamps = np.full((len(col), stamp_size, stamp_size), fill, array.dtype)
+    for i, (xi, yi) in enumerate(zip(col, row)):
+        x0, y0 = xi - half, yi - half
+        xc0, xc1 = max(0, x0), min(nx, x0 + stamp_size)
+        yc0, yc1 = max(0, y0), min(ny, y0 + stamp_size)
+        if xc0 >= xc1 or yc0 >= yc1:
+            continue
+        stamps[i, yc0 - y0:yc1 - y0, xc0 - x0:xc1 - x0] = (
+            array[yc0:yc1, xc0:xc1]
+        )
+    return stamps
+
+
+def seg_vignet_column(seg_vignets):
+    """The ``SEG_VIGNET`` LDAC column: one int32 seg stamp per object.
+
+    Parameters
+    ----------
+    seg_vignets : numpy.ndarray
+        Segmentation stamps, shape ``(n_obj, stamp_size, stamp_size)``, cut
+        on ``VIGNET``'s grid (:func:`cut_stamps`)
+
+    Returns
+    -------
+    astropy.io.fits.Column
+        The column, laid out as ``VIGNET`` is
+
+    """
+    n_obj, ny, nx = seg_vignets.shape
+    return fits.Column(
+        name="SEG_VIGNET",
+        format=f"{ny * nx}J",
+        array=seg_vignets.astype(np.int32, copy=False).reshape(n_obj, -1),
+        dim=f"({nx},{ny})",
+    )
+
+
+# Double-precision positions add_seg_vignet centres SEG_VIGNET on.
+DOUBLE_POSITIONS = ("X_IMAGE_DBL", "Y_IMAGE_DBL")
+
+
+def vignet_centre(pos):
+    """The 0-based pixel SExtractor centres VIGNET on, along one axis.
+
+    SExtractor 2.25.0 (``src/analyse.c``, ``ix=(int)(obj->mx+0.49999)``,
+    unchanged in Debian's 2.25.0+ds-3) truncates the 0-based barycentre plus
+    0.49999. That is not round-to-nearest: a fractional part in
+    [0.5, 0.50001) goes down, where ``np.rint`` would go up (or to even).
+
+    Parameters
+    ----------
+    pos : array_like of float
+        1-based double-precision position (``X_IMAGE_DBL`` or
+        ``Y_IMAGE_DBL``; SExtractor writes ``mx + 1``)
+
+    Returns
+    -------
+    numpy.ndarray
+        0-based pixel index, int64
+
+    """
+    mx = np.asarray(pos, np.float64) - 1.0
+    return np.trunc(mx + 0.49999).astype(np.int64)
+
+
+def seg_vignet_param_file(dot_param, output_path):
+    """Write a SExtractor parameter file that also asks for the double
+    positions.
+
+    SExtractor centres VIGNET from its double-precision barycentre
+    (:func:`vignet_centre`), which the float32 ``X_IMAGE`` / ``Y_IMAGE``
+    cannot resolve near half pixels; ``X_IMAGE_DBL`` / ``Y_IMAGE_DBL``
+    carry it.
+    :func:`add_seg_vignet` reads them and drops them again.
+
+    Parameters
+    ----------
+    dot_param : str
+        Path to the configured parameter file
+    output_path : str
+        Path to write the extended parameter file to
+
+    Returns
+    -------
+    str
+        ``output_path``
+
+    """
+    with open(dot_param) as f:
+        text = f.read()
+    if text and not text.endswith("\n"):
+        text += "\n"
+    with open(output_path, "w") as f:
+        f.write(text + "".join(f"{name}\n" for name in DOUBLE_POSITIONS))
+    return output_path
+
+
+def add_seg_vignet(cat_path, seg_path, w_log=None):
+    """Add the ``SEG_VIGNET`` column to a SExtractor catalogue.
+
+    The SEGMENTATION check image, whose labels are the catalogue's
+    ``NUMBER``, is cut on the grid of each object's VIGNET, centred where
+    SExtractor centres VIGNET (:func:`vignet_centre` of ``X_IMAGE_DBL`` /
+    ``Y_IMAGE_DBL``, :func:`cut_stamps`), and written, int32 and 0 off the image, as
+    ``SEG_VIGNET`` in ``LDAC_OBJECTS``, which ngmix's UberSeg blend handling
+    reads. The double positions (:func:`seg_vignet_param_file`) are dropped;
+    every other HDU and column is kept.
+
+    Parameters
+    ----------
+    cat_path : str
+        Path to the SExtractor FITS-LDAC catalogue, rewritten in place
+    seg_path : str
+        Path to the SEGMENTATION check image
+    w_log : logging.Logger, optional
+        Pipeline logger
+
+    Raises
+    ------
+    ValueError
+        If the catalogue lacks the double positions
+
+    """
+    with fits.open(cat_path) as hdul:
+        hdus = [hdu.copy() for hdu in hdul]
+    objects = next(h for h in hdus if h.name == "LDAC_OBJECTS")
+    data = objects.data
+    missing = [name for name in DOUBLE_POSITIONS if name not in data.names]
+    if missing:
+        raise ValueError(
+            f"{cat_path} lacks {', '.join(missing)}, which SEG_VIGNET is"
+            + " centred on; run SExtractor with seg_vignet_param_file."
+        )
+    col = vignet_centre(data["X_IMAGE_DBL"])
+    row = vignet_centre(data["Y_IMAGE_DBL"])
+    size = data["VIGNET"].shape[1]
+    seg_vignets = cut_stamps(fits.getdata(seg_path), col, row, size, 0)
+    kept = [c for c in objects.columns.columns
+            if c.name not in DOUBLE_POSITIONS]
+    new = fits.BinTableHDU.from_columns(
+        kept + [seg_vignet_column(seg_vignets)],
+        header=objects.header,
+        name="LDAC_OBJECTS",
+    )
+    fits.HDUList(
+        [new if h is objects else h for h in hdus]
+    ).writeto(cat_path, overwrite=True)
+    if w_log:
+        centre = size // 2
+        own = np.mean(seg_vignets[:, centre, centre] == data["NUMBER"])
+        w_log.info(
+            f"SEG_VIGNET cut from {seg_path} for {len(col)} objects;"
+            + f" centre label = NUMBER for {own:.4f}"
+        )
 
 
 def get_header_value(image_path, key):
@@ -123,11 +307,17 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
     objects near it, never the tile. CCD_N is the 0-based index that split_exp
     gives the CCD file and its header entry.
 
+    @sc [decision:preparation.epoch_provenance_from_tile_history]
+
     The columns will be:
 
     - ``NUMBER``: same as SExtractor NUMBER
     - ``EXP_NAME``: name of the single exposure for this epoch
     - ``CCD_N``: extension where the object was detected
+
+    @sc [decision:preparation.epoch_provenance_from_tile_history,label:invariant] duplicate-history-cards-count-once
+    Repeated HISTORY cards for one exposure yield one EPOCH HDU and count once
+    in N_EPOCH, as find_exposures' deduplicated list does.
 
     Parameters
     ----------
@@ -148,24 +338,24 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
         If SQL file not found
 
     """
-    cat = file_io.FITSCatalogue(
-        cat_path,
-        SEx_catalogue=True,
-        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-    )
-    cat.open()
+    with fits.open(cat_path) as hdul:
+        hdus = [hdu.copy() for hdu in hdul]
+    objects = next(h for h in hdus if h.name == "LDAC_OBJECTS")
 
-    f_wcs = SqliteDict(f_wcs_path)
+    # One lock-free read of the whole header log: merge_headers wrote and
+    # closed it in an earlier step, and keyed SqliteDict reads would take an
+    # NFS lock per access.
+    f_wcs = read_sqlitedict(f_wcs_path)
     # Tile-level logs from merge_headers carry a "TILE_ID" metadata entry
     # (inserted first); n_hdu must be derived from a real exposure entry,
     # otherwise it measures the tile ID string and truncates the CCD scan.
-    exp_keys = [key for key in f_wcs.keys() if key != "TILE_ID"]
+    exp_keys = [key for key in f_wcs if key != "TILE_ID"]
     if len(exp_keys) == 0:
         raise IOError(f"Could not read sql file '{f_wcs_path}'")
     n_hdu = len(f_wcs[exp_keys[0]])
 
     history = []
-    for idx in cat.get_data(1)[0][0]:
+    for idx in hdus[1].data[0][0]:
         if re.split("HISTORY", idx)[0] == "":
             history.append(idx)
 
@@ -179,21 +369,25 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
             )
         exp_list.append(m.group(1))
 
-    obj_id = np.copy(cat.get_data()["NUMBER"])
+    exp_list = list(dict.fromkeys(exp_list))
 
-    ra = np.copy(cat.get_data()[pos_params[0]])
-    dec = np.copy(cat.get_data()[pos_params[1]])
+    obj_id = np.copy(objects.data["NUMBER"])
 
+    ra = np.copy(objects.data[pos_params[0]])
+    dec = np.copy(objects.data[pos_params[1]])
+
+    column = file_io.FITSCatalogue.fits_column
+    epochs = []
     n_epoch = np.zeros(len(obj_id), dtype="int32")
     for idx, exp in enumerate(exp_list):
+        if exp not in f_wcs:
+            raise KeyError(
+                f"Exposure {exp} used in image {cat_path} but not"
+                + f" found in header file {f_wcs_path}. Make sure this"
+                + " file is complete."
+            )
         pos_tmp = np.ones(len(obj_id), dtype="int32") * -1
         for idx_j in range(n_hdu):
-            if exp not in f_wcs:
-                raise KeyError(
-                    f"Exposure {exp} used in image {cat_path} but not"
-                    + f" found in header file {f_wcs_path}. Make sure this"
-                    + " file is complete."
-                )
             w = f_wcs[exp][idx_j]["WCS"]
             # Only inverse-project objects near this CCD's footprint.
             # Positions far outside the distortion domain make the
@@ -223,23 +417,24 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
             ind[np.where(near)[0][ind_near]] = True
             pos_tmp[ind] = idx_j
             n_epoch[ind] += 1
-        exp_name = np.array([exp_list[idx] for n in range(len(obj_id))])
-        a = np.array(
-            [(obj_id[ii], exp_name[ii], pos_tmp[ii]) for ii in range(len(exp_name))],
-            dtype=[
-                ("NUMBER", obj_id.dtype),
-                ("EXP_NAME", exp_name.dtype),
-                ("CCD_N", pos_tmp.dtype),
+        epochs.append(fits.BinTableHDU.from_columns(
+            [
+                column("NUMBER", obj_id),
+                column("EXP_NAME", np.full(len(obj_id), exp)),
+                column("CCD_N", pos_tmp),
             ],
-        )
-        cat.save_as_fits(data=a, ext_name=f"EPOCH_{idx}")
-        cat.open()
+            name=f"EPOCH_{idx}",
+        ))
 
-    f_wcs.close()
-
-    cat.add_col("N_EPOCH", n_epoch)
-
-    cat.close()
+    # One write of the whole catalogue: LDAC_OBJECTS with N_EPOCH appended
+    # (laid out as FITSCatalogue.add_col lays it out), then the EPOCH HDUs.
+    new = fits.BinTableHDU.from_columns(
+        objects.data.columns + fits.ColDefs([column("N_EPOCH", n_epoch)]),
+        name="LDAC_OBJECTS",
+    )
+    fits.HDUList(
+        [new if h is objects else h for h in hdus] + epochs
+    ).writeto(cat_path, overwrite=True)
 
 
 class SExtractorCaller:
@@ -376,6 +571,13 @@ class SExtractorCaller:
 
         Set up all of the input image files.
 
+        Without a detection image, SExtractor runs in single-image mode on
+        the measurement image: ``img -WEIGHT_IMAGE w``. With one, it runs in
+        dual-image mode, ``det,img -WEIGHT_IMAGE det_w,w``. Dual-image mode
+        with the same image twice is not equivalent to single-image mode: it
+        changes the background and the photometry of a fifth of the objects of
+        a UNIONS tile (#936).
+
         @sc [decision:detection.weight_map_usage,label:convention] weight-map-on-both-images
         With a weight file, the same map weights detection and measurement (a
         separate detection weight only when DETECTION_WEIGHT is set); without
@@ -435,26 +637,28 @@ class SExtractorCaller:
                 "DETECTION_WEIGHT cannot be True " + "if WEIGHT_FILE is False"
             )
 
-        # Check for separate image file for detection and measurement
+        # A separate detection image switches SExtractor to dual-image mode;
+        # without one, the measurement image alone (single-image mode).
         if use_detect_img:
-            self._detect_img_path = self._all_input_path[extra]
+            self._image_arg = (
+                f"{self._all_input_path[extra]},{self._meas_img_path}"
+            )
             extra += 1
         else:
-            self._detect_img_path = self._meas_img_path
+            self._image_arg = self._meas_img_path
 
-        # Check for separate weight file corresponding to the detection image.
-        # If False, use measurement weight image.
-        # Note: This could be changed, and no weight image could be used, but
-        # this might lead to more user errors.
+        # In dual-image mode the detection image takes the detection weight
+        # if given, else the measurement weight.
         if use_weight:
-            if use_detect_weight:
-                detect_weight_path = self._all_input_path[extra]
-                extra += 1
-            else:
-                detect_weight_path = weight_image
-            self._cmd_line_extra += (
-                f" -WEIGHT_IMAGE {detect_weight_path}" + f",{weight_image}"
-            )
+            weight_arg = weight_image
+            if use_detect_img:
+                if use_detect_weight:
+                    detect_weight_path = self._all_input_path[extra]
+                    extra += 1
+                else:
+                    detect_weight_path = weight_image
+                weight_arg = f"{detect_weight_path},{weight_image}"
+            self._cmd_line_extra += f" -WEIGHT_IMAGE {weight_arg}"
         else:
             self._cmd_line_extra += " -WEIGHT_TYPE None"
 
@@ -518,6 +722,7 @@ class SExtractorCaller:
         if (len(check_image) == 1) & (check_image[0] == ""):
             check_type = ["NONE"]
             check_name = ["none"]
+            self.check_paths = {}
         else:
             check_type = []
             check_name = []
@@ -531,6 +736,7 @@ class SExtractorCaller:
                     + self._num_str
                     + ".fits"
                 )
+            self.check_paths = dict(zip(check_type, check_name))
 
         self._cmd_line_extra += (
             f' -CHECKIMAGE_TYPE {",".join(check_type)} '
@@ -555,7 +761,7 @@ class SExtractorCaller:
         """
         # Base arguments for SExtractor
         command_line_base = (
-            f"{exec_path} {self._detect_img_path},{self._meas_img_path} "
+            f"{exec_path} {self._image_arg} "
             + f"-c {self._path_dot_sex} "
             + f"-PARAMETERS_NAME {self._path_dot_param} "
             + f"-FILTER_NAME {self._path_dot_conv} "

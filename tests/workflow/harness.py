@@ -155,12 +155,12 @@ class Campaign:
     def final_cat(self, tile):
         """Return the expected persistent catalogue for one tile."""
         return (self.products_dir / "tiles" / tile[:2] / tile
-                / f"final_cat-{tile}.fits")
+                / f"final_cat-{tile}.hdf5")
 
-    def persist_manifest(self, exp):
-        """Return the expected persistent manifest for one exposure."""
+    def persist_manifest(self, exp, stage="exp_persist"):
+        """Return one exposure's manifest on the persistent root."""
         return (self.products_dir / "exp" / exp[:2] / exp
-                / "manifests" / "exp_persist.json")
+                / "manifests" / f"{stage}.json")
 
 
 @dataclass
@@ -206,8 +206,12 @@ def load_profile(name):
 
 
 @contextmanager
-def resolve(campaign, monkeypatch):
-    """Resolve ``all`` in an isolated state directory, without running jobs."""
+def resolve(campaign, monkeypatch, launch_env=None):
+    """Resolve ``all`` in an isolated state directory, without running jobs.
+
+    ``launch_env`` adds variables to the scrubbed environment, as if the
+    launching shell had exported them.
+    """
     from snakemake import workflow as sm_workflow
 
     scripts = REPO / "workflow" / "scripts"
@@ -233,6 +237,8 @@ def resolve(campaign, monkeypatch):
             "SP_MISSING_THRESHOLD": "0.34",
             "XDG_CACHE_HOME": campaign.root / "cache",
         }.items():
+            patch.setenv(name, str(value))
+        for name, value in (launch_env or {}).items():
             patch.setenv(name, str(value))
         profile = load_profile("candide")
         try:

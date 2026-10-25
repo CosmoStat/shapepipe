@@ -6,14 +6,12 @@ Module runner for ``make_cat``.
 
 """
 
-import os
-
 from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(
-    version="1.1",
+    version="2.0",
     input_module=[
         "sextractor_runner",
         "psfex_interp_runner",
@@ -25,7 +23,7 @@ from shapepipe.modules.module_decorator import module_runner
         "ngmix",
     ],
     file_ext=[".fits", ".sqlite", ".fits"],
-    depends=["numpy", "sqlitedict"],
+    depends=["numpy", "h5py", "sqlitedict"],
 )
 def make_cat_runner(
     input_file_list,
@@ -62,41 +60,30 @@ def make_cat_runner(
     else:
         n_epoch_slots = None
 
-    # Set final output file
-    final_cat_file = make_cat.prepare_final_cat_file(
-        run_dirs["output"],
-        file_number_string,
-    )
-
-    # Save SExtractor data
+    # The catalogue is assembled in memory, column by column, and written once.
     w_log.info("Save SExtractor data")
-    cat_size_sextractor = make_cat.save_sextractor_data(
-        final_cat_file, tile_sexcat_path
-    )
+    final_cat = make_cat.read_sextractor_data(tile_sexcat_path)
 
-    # Save shape data
-    sc_inst = make_cat.SaveCatalogue(final_cat_file, cat_size_sextractor, w_log)
+    sc_inst = make_cat.SaveCatalogue(
+        final_cat, len(final_cat["NUMBER"]), w_log
+    )
     w_log.info("Save shape measurement data")
     for shape_type in shape_type_list:
         w_log.info(f"Save {shape_type.lower()} data")
         err_msg = sc_inst.process(shape_type.lower(), shape1_cat_path)
-
-
-        # If error message: delete (incomplete) output file and raise error
+        # An incomplete catalogue is never written.
         if err_msg is not None:
-            os.remove(
-                make_cat.get_output_name(
-                    run_dirs["output"],
-                    file_number_string,
-                )
-            )
-            #raise ValueError(err_msg)
             w_log.info(err_msg)
+            return None, None
 
-    if save_psf:
-        err_msg = sc_inst.process(
-            "psf", galaxy_psf_path, n_epoch_slots=n_epoch_slots
-        )
+    # N_EPOCH (epochs with a validated PSF) always; the per-epoch PSF
+    # columns only when SAVE_PSF_DATA is set.
+    sc_inst.process(
+        "psf",
+        galaxy_psf_path,
+        n_epoch_slots=n_epoch_slots,
+        epoch_slots=save_psf,
+    )
 
     # Optional per-band external healsparse mask lookup (UNIONS-WL/spherex#38):
     # add one MASK_<BAND> column per band, queried at each object's world
@@ -106,6 +93,11 @@ def make_cat_runner(
             config.getexpanded(module_config_sec, "MASK_EXT_PATHS")
         )
         w_log.info("Save external mask data")
-        make_cat.save_mask_ext_data(final_cat_file, band_paths, w_log)
+        make_cat.save_mask_ext_data(final_cat, band_paths, w_log)
+
+    make_cat.write_final_cat(
+        make_cat.get_output_name(run_dirs["output"], file_number_string),
+        final_cat,
+    )
 
     return None, None

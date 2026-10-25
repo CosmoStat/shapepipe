@@ -193,14 +193,15 @@ def object_epochs(run_dir: Path):
     discovered by name, never assumed — each with ``n_obj`` rows in
     ``LDAC_OBJECTS`` row order and ``CCD_N < 0`` where the object misses that
     exposure. Summing
-    ``CCD_N >= 0`` across them reproduces the final catalogue's ``N_EPOCH``
-    column exactly — checked row by row against 186.307's
+    ``CCD_N >= 0`` across them reproduces the sexcat's geometric
+    ``N_EPOCH`` — checked row by row against the pre-change catalogue for 186.307,
     ``run_sp_tile_Mc/.../final_cat-186-307.fits``, all 35,298 of them, 7 extensions,
     116,727 pairs, mean 3.31. The post-process is upstream of the whole
     tile_shape group, so the extensions always exist by the time ngmix runs;
     their absence is a broken tile, not a case to accommodate.
 
-    N_EPOCH is a GEOMETRIC count and mildly over-states the work, because ngmix
+    This is a GEOMETRIC count and mildly over-states the work, because ngmix
+    fits only epochs with a validated PSF (the final catalogue's N_EPOCH) and
     drops epochs it cannot fit. The same catalogue's NGMIX_N_EPOCH is lower for
     2,203 of the 35,298 objects and never higher: 113,947 pairs against
     116,727, 2.4%. That gap is the whole of the ~3.4% by which this cost model

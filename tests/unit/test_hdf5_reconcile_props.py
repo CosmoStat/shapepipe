@@ -456,3 +456,27 @@ def test_each_provenance_record_replaces_the_last(tmp_path):
     with h5py.File(output, "r") as f:
         code = {k: f.attrs[k] for k in f.attrs if k.startswith("code_")}
     assert code == {"code_head": "unknown"}
+
+
+def test_every_dataset_is_compressed_and_round_trips(tmp_path):
+    """Units are written with the module's compression and read back exactly,
+    through all three paths a dataset reaches the file by: a fresh build, an
+    add-only append onto a copy, and a rewrite that group-copies kept units."""
+    columns = COLUMN_SETS[0]
+    output = tmp_path / "cat.h5"
+    sources = {}
+    for i, unit in enumerate(UNITS[:2]):
+        sources[unit] = tmp_path / f"{unit}.npy"
+        _write_source(sources[unit], _array(columns, 500, i), 10**18 + i)
+    _build(output, sources, columns)                      # fresh
+    sources["u2"] = tmp_path / "u2.npy"
+    _write_source(sources["u2"], _array(columns, 500, 2), 10**18 + 2)
+    _build(output, sources, columns)                      # add-only append
+    _write_source(sources["u0"], _array(columns, 500, 9), 10**18 + 9)
+    assert _build(output, sources, columns).refresh == ["u0"]  # rewrite
+    with h5py.File(output, "r") as f:
+        assert set(f[GROUP]) == set(sources)
+        for unit, path in sources.items():
+            dset = f[GROUP][unit]
+            assert dset.compression == reconcile.COMPRESSION
+            np.testing.assert_array_equal(dset[...], _read(unit, path))

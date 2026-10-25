@@ -1,6 +1,10 @@
 """UNIT TESTS FOR MODULE PACKAGE: NGMIX."""
 
+from collections import Counter
+
 from astropy.io import fits
+from astropy.wcs import WCS
+import galsim
 from hypothesis import given
 from hypothesis import strategies as st
 import numpy as np
@@ -45,7 +49,6 @@ def test_ngmix_accepts_optional_background_rms_vignet(tmp_path):
         str(tmp_path),
         "-001-001",
         30.0,
-        0.186,
         str(sqlite_paths[5]),
         _NullLogger(),
     )
@@ -128,11 +131,11 @@ def _metacal_noshear_g(seed):
 def test_metacal_is_reproducible_with_fixed_seed():
     """Same seed -> identical metacal shear.
 
-    The module seeds ``self._rng = RandomState(seed)`` per tile precisely so a
-    rerun reproduces. This guards the noise-image and masked-pixel draws in
-    ``prepare_ngmix_weights`` against silently falling back to the unseeded
-    global ``numpy.random`` state, which would make shear estimates
-    irreproducible from one run to the next.
+    Production seeds a fresh RandomState per object from its position
+    (position_seed), so a rerun reproduces. This guards the noise-image and
+    masked-pixel draws in ``prepare_ngmix_weights`` against silently falling
+    back to the unseeded global ``numpy.random`` state, which would make
+    shear estimates irreproducible from one run to the next.
     """
     npt.assert_array_equal(_metacal_noshear_g(42), _metacal_noshear_g(42))
 
@@ -325,8 +328,12 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
     res = {
         "obj_id": 1,
         "n_epoch_model": 1,
+        "n_epoch_failed": 0,
         "mcal_types_fail": 0,
         "neighbour_flag": 0,
+        "n_epoch_interp": 0,
+        "min_dist_interp": -1.0,
+        "min_dist_noisefill": -1.0,
         # original image PSF (psfex/mccd) family
         "g1_psf_orig": ORIG_PSF_G[0],
         "g2_psf_orig": ORIG_PSF_G[1],
@@ -603,7 +610,6 @@ def test_process_survives_a_tile_with_nothing_to_fit(tmp_path):
         str(tmp_path),
         "-001-001",
         30.0,
-        0.186,
         sqlite_paths[5],
         w_log,
     )
@@ -629,6 +635,11 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
     galaxies = {str(i): {"exp-1": {"OFFSET": [0., 0.]}} for i in tile.obj_id}
     stamp = SimpleNamespace(
         gals=[np.ones((5, 5))], ra=[42.], dec=[30.], ccd=20,
+        epoch_cuts=Counter(considered=1), epoch_failures=[],
+        jacobs=[galsim.JacobianWCS(.186, 0., 0., .186)],
+        defect_diagnostics=lambda: dict(
+            n_epoch_interp=0, min_dist_interp=-1.0, min_dist_noisefill=-1.0,
+        ),
     )
     psf = dict(
         n_epoch=1, g_psf=[.01, -.01], g_psf_err=[.001, .001],
@@ -641,23 +652,25 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
         results.append((result, psf, psf))
     fits_to_return = iter(results)
     monkeypatch.setattr(module, "Tile_cat", lambda *args: tile)
-    monkeypatch.setattr(module, "prepare_postage_stamps", lambda *args: stamp)
+    monkeypatch.setattr(
+        module, "prepare_postage_stamps", lambda *args, **kwargs: stamp,
+    )
     monkeypatch.setattr(
         module, "do_ngmix_metacal", lambda *args, **kwargs: next(fits_to_return),
     )
     inst = object.__new__(Ngmix)
     inst._tile_cat_path = "in-memory-tile"
-    inst._seg_cat_path = None
     inst._vignet_cat = SimpleNamespace(
         gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
     )
     inst._centroid_source = "wcs"
     inst._id_obj_min = inst._id_obj_max = -1
     inst._bkg_sub = True
-    inst._pixel_scale = .186
     inst._blend_handling = "noisefill"
     inst._dilate_neighbour = 1
     inst._metacal_psf = "fitgauss"
+    inst._defect_weighting = module.DEFECT_WEIGHTING
+    inst._defect_fill = module.DEFECT_FILL
     inst._save_batch = 1
     inst._zero_point = 30.
     inst._output_dir = str(tmp_path)
@@ -673,6 +686,106 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
         assert "100% of 2 fitted objects carry nonzero mcal_flags" in inst._w_log.errors[0]
     else:
         assert inst._w_log.errors == []
+
+
+def _rotation_jacobian(scale, angle_deg, flip=False):
+    """Jacobian of a ``scale`` arcsec/px CCD rotated by ``angle_deg``."""
+    c, s = np.cos(np.radians(angle_deg)), np.sin(np.radians(angle_deg))
+    sign = -1. if flip else 1.
+    return galsim.JacobianWCS(sign * scale * c, -scale * s,
+                              sign * scale * s, scale * c)
+
+
+def test_stamp_pixel_scale_reads_a_rotated_flipped_wcs():
+    """A rotated, flipped TAN WCS gives its linear scale back, in arcsec."""
+    from shapepipe.modules.ngmix_package.ngmix import (
+        get_galsim_jacobian,
+        stamp_pixel_scale,
+    )
+
+    scale, angle = 0.187, np.radians(30.)
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+    wcs.wcs.crval = [180., 30.]
+    wcs.wcs.crpix = [100., 100.]
+    wcs.wcs.cd = scale / 3600 * np.array([
+        [-np.cos(angle), np.sin(angle)],
+        [np.sin(angle), np.cos(angle)],
+    ])
+    jac = get_galsim_jacobian(wcs, 180., 30.)
+    assert stamp_pixel_scale([jac]) == pytest.approx(scale, rel=1e-6)
+
+
+def test_process_centroid_prior_is_each_objects_own_pixel_scale(monkeypatch):
+    """Each object's centroid prior is one pixel of its own epochs wide.
+
+    The width is the mean over the object's epochs of sqrt|det J|, so a
+    rotated or flipped epoch counts at its true scale. The prior still draws
+    from the object's position-seeded RNG, untouched before the fit.
+    """
+    from types import SimpleNamespace
+    from shapepipe.modules.ngmix_package import ngmix as module
+
+    epochs = {
+        1: [_rotation_jacobian(.1845, 0., flip=True),
+            _rotation_jacobian(.1875, 90.)],
+        2: [_rotation_jacobian(.1842, 37.)],
+    }
+    expected = {1: .1860, 2: .1842}
+    tile = SimpleNamespace(obj_id=list(epochs), flux=None, seg=None)
+    galaxies = {str(i): {"exp-1": {"OFFSET": [0., 0.]}} for i in epochs}
+    stamps = {
+        obj_id: SimpleNamespace(
+            gals=[np.ones((5, 5))] * len(jacobs), jacobs=jacobs,
+            ra=[10. * obj_id], dec=[30.], ccd=obj_id,
+            epoch_cuts=Counter(considered=len(jacobs)), epoch_failures=[],
+        )
+        for obj_id, jacobs in epochs.items()
+    }
+    seen = {}
+
+    def capture(stamp, prior, flux_guess, rng, **kwargs):
+        seen[kwargs["object_number"]] = (stamp, prior, rng)
+        raise RuntimeError("captured")
+
+    monkeypatch.setattr(module, "Tile_cat", lambda *args: tile)
+    monkeypatch.setattr(
+        module, "prepare_postage_stamps",
+        lambda vignet, obj_id, *args, **kwargs: stamps[obj_id],
+    )
+    monkeypatch.setattr(module, "do_ngmix_metacal", capture)
+    monkeypatch.setattr(Ngmix, "save_results", lambda self, res: None)
+    monkeypatch.setattr(Ngmix, "log_mean_ellipticity", lambda self: None)
+    inst = object.__new__(Ngmix)
+    inst._tile_cat_path = "in-memory-tile"
+    inst._vignet_cat = SimpleNamespace(
+        gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
+    )
+    inst._centroid_source = "wcs"
+    inst._id_obj_min = inst._id_obj_max = -1
+    inst._bkg_sub = True
+    inst._blend_handling = "noisefill"
+    inst._dilate_neighbour = 1
+    inst._metacal_psf = "fitgauss"
+    inst._defect_weighting = module.DEFECT_WEIGHTING
+    inst._defect_fill = module.DEFECT_FILL
+    inst._save_batch = -1
+    inst._w_log = _RecordingLogger()
+
+    inst.process()
+
+    assert sorted(seen) == sorted(epochs)
+    for obj_id, (stamp, prior, rng) in seen.items():
+        cen = prior.cen_prior
+        assert cen.sigma1 == cen.sigma2 == pytest.approx(
+            expected[obj_id], rel=1e-9,
+        )
+        assert cen.rng is rng
+        fresh = np.random.RandomState(
+            module.position_seed(stamp.ra[0], stamp.dec[0], stamp.ccd)
+        )
+        npt.assert_array_equal(rng.get_state()[1], fresh.get_state()[1])
+        assert rng.get_state()[2] == fresh.get_state()[2]
 
 
 def _write_tile_cat_with_one_object(tmp_path):
@@ -718,7 +831,6 @@ def _ngmix_with_offsetless_vignette(tmp_path, centroid_source):
         str(tmp_path),
         "-001-001",
         30.0,
-        0.186,
         sqlite_paths[5],
         _RecordingLogger(),
         centroid_source=centroid_source,
@@ -1015,10 +1127,12 @@ def test_background_rms_builds_per_pixel_inverse_variance():
         gal, weight, flag, np.random.RandomState(0), bkg_rms=bkg_rms
     )
 
+    # The bad-RMS pixel (1, 2) is interpolated from (0, 2) and (2, 2), so
+    # its quarter turns (0, 1) and (1, 0) lose their weight too.
     expected = np.array(
         [
-            [1.0, 0.25, 0.0625],
-            [4.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0625],
+            [0.0, 0.0, 0.0],
             [0.0, 0.0, 1.0],
         ]
     )
@@ -1161,3 +1275,111 @@ def test_wcs_centroid_requires_offset():
             gal, weight, flag, psf, jacob, np.random.RandomState(7),
             centroid_source="wcs", offset=None,
         )
+
+
+def test_failed_epoch_is_dropped_not_the_object():
+    """Contract failed-epoch-dropped: one epoch whose observation raises is
+    dropped, and the object is fitted on its other epochs.
+
+    The poisoned epoch has one flagged pixel, so it is interpolated, beside
+    NaN pixels that support the interpolant: the non-finite-interpolant guard
+    in prepare_ngmix_weights raises a RuntimeError for that epoch alone.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import (
+        Postage_stamp,
+        do_ngmix_metacal,
+        get_prior,
+    )
+    from shapepipe.testing.simulate import make_data
+
+    rng = np.random.RandomState(5)
+    gals, psfs, _, weights, flags, jacobs = make_data(
+        rng=np.random.RandomState(123), shear=(0.02, 0.0), noise=1e-4,
+        n_epochs=3, img_size=51,
+    )
+    gals = [np.array(g, dtype=float) for g in gals]
+    flags = [np.array(f) for f in flags]
+    flags[1][5, 5] = 1
+    gals[1][4:7, 4:7] = np.nan
+    gals[1][5, 5] = 0.0
+    stamp = Postage_stamp(bkg_sub=False, megacam_flip=False)
+    stamp.gals, stamp.psfs, stamp.weights, stamp.flags, stamp.jacobs = (
+        gals, psfs, weights, flags, jacobs,
+    )
+    stamp.bkg_rms = [np.full(g.shape, 1e-4) for g in gals]
+    stamp.epoch_names = ["2000001-1", "2000002-1", "2000003-1"]
+
+    res, psf_res, _ = do_ngmix_metacal(
+        stamp, get_prior(0.1857, rng), 1.0, rng, centroid_source="hsm",
+    )
+
+    assert [name for name, _ in stamp.epoch_failures] == ["2000002-1"]
+    assert isinstance(stamp.epoch_failures[0][1], RuntimeError)
+    assert psf_res["n_epoch"] == 2
+    assert res["noshear"]["flags"] == 0
+    assert np.all(np.isfinite(res["noshear"]["g"]))
+
+
+def test_process_logs_and_counts_failed_epochs(tmp_path, monkeypatch):
+    """process logs each dropped epoch with tile, object and epoch, and
+    writes the count as n_epoch_failed (contract failed-epoch-dropped)."""
+    from types import SimpleNamespace
+    from shapepipe.modules.ngmix_package import ngmix as module
+
+    tile = SimpleNamespace(obj_id=[7], flux=None, seg=None)
+    galaxies = {"7": {"exp-1": {"OFFSET": [0., 0.]}}}
+    stamp = SimpleNamespace(
+        gals=[np.ones((5, 5))] * 2, ra=[42.], dec=[30.], ccd=20,
+        epoch_cuts=Counter(considered=3),
+        epoch_failures=[],
+        jacobs=[galsim.JacobianWCS(.186, 0., 0., .186)] * 2,
+        defect_diagnostics=lambda: dict(
+            n_epoch_interp=0, min_dist_interp=-1.0, min_dist_noisefill=-1.0,
+        ),
+    )
+    psf = dict(
+        n_epoch=2, g_psf=[.01, -.01], g_psf_err=[.001, .001],
+        T_psf=.1, T_psf_err=.01,
+    )
+
+    def fit(stamp, *args, **kwargs):
+        stamp.epoch_failures.append(("2000002-1", RuntimeError("poisoned")))
+        return _fake_metacal_result(.18, .02, .09, .001), psf, psf
+
+    monkeypatch.setattr(module, "Tile_cat", lambda *args: tile)
+    monkeypatch.setattr(
+        module, "prepare_postage_stamps", lambda *args, **kwargs: stamp,
+    )
+    monkeypatch.setattr(module, "do_ngmix_metacal", fit)
+    warnings = []
+    log = _RecordingLogger()
+    log.warning = lambda msg, *a, **k: warnings.append(msg)
+    inst = object.__new__(Ngmix)
+    inst._tile_cat_path = "in-memory-tile"
+    inst._seg_cat_path = None
+    inst._vignet_cat = SimpleNamespace(
+        gal_vign_cat=galaxies, psf_vign_cat=galaxies, close=lambda: None,
+    )
+    inst._centroid_source = "wcs"
+    inst._id_obj_min = inst._id_obj_max = -1
+    inst._bkg_sub = True
+    inst._blend_handling = "noisefill"
+    inst._dilate_neighbour = 1
+    inst._metacal_psf = "fitgauss"
+    inst._defect_weighting = module.DEFECT_WEIGHTING
+    inst._defect_fill = module.DEFECT_FILL
+    inst._save_batch = -1
+    inst._zero_point = 30.
+    inst._output_dir = str(tmp_path)
+    inst._file_number_string = "-001-001"
+    inst._w_log = log
+
+    inst.process()
+
+    dropped = [msg for msg in warnings if "dropped" in msg]
+    assert len(dropped) == 1
+    for part in ("-001-001", "object 7", "epoch 2000002-1", "poisoned"):
+        assert part in dropped[0]
+    with fits.open(inst.get_output_path(str(tmp_path))) as hdul:
+        npt.assert_array_equal(hdul["NOSHEAR"].data["n_epoch_failed"], [1])
+        npt.assert_array_equal(hdul["NOSHEAR"].data["n_epoch_model"], [2])

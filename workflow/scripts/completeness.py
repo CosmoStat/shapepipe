@@ -72,15 +72,15 @@ import re
 import sys
 from pathlib import Path
 
-# How the tile's galaxy sample is produced: SExtractor on the tile image, or
-# the UNIONS per-tile catalogue converted in place. The run config's
-# `tile_detection:` picks one; the rules export it as $SP_TILE_DETECTION only
-# when it is not the default, so a SExtractor run's prologue is unchanged.
+from epoch_cuts import gather_manifests, read_chunk_logs
+
+# How the tile's galaxy sample is defined: SExtractor on the tile image alone,
+# or those detections joined to the UNIONS per-tile catalogue, whose NUMBER
+# they take. The run config's `tile_detection:` picks one.
 TILE_DETECTIONS = ("sextractor", "unions_catalogue")
 
 # stage -> {runner_subdir: {expect, [warn], [subpath]}}
-# exp_psf and tile_vignets are selected by $SP_PSF at check time, tile_detect
-# by $SP_TILE_DETECTION.
+# exp_psf and tile_vignets are selected by $SP_PSF at check time.
 # @sc [decision:per_unit_completeness]
 COMPLETENESS = {
     # --- tile prepare (phase A) ---
@@ -142,13 +142,9 @@ COMPLETENESS = {
 
     # --- tile post ---
     "tile_merge_headers": {"merge_headers_runner": dict(expect=1)},
-    # The fetched UNIONS catalogue and its r-band segmentation map.
-    "tile_get_catalogue": {"get_images_runner":     dict(expect=2)},
-    "tile_detect": {
-        "sextractor":       {"sextractor_runner":      dict(expect=2)},
-        # The FITS-LDAC sexcat converted from the fetched catalogue.
-        "unions_catalogue": {"read_ext_sexcat_runner": dict(expect=1)},
-    },
+    # The fetched UNIONS catalogue.
+    "tile_get_catalogue": {"get_images_runner":     dict(expect=1)},
+    "tile_detect":        {"sextractor_runner":     dict(expect=2)},
     "tile_vignets": {
         "psfex": {
             "psfex_interp_runner": dict(expect=1),
@@ -220,13 +216,6 @@ def check_counts(stage, run_dir):
             raise ValueError(
                 f"Invalid SP_PSF={psf_model!r}; expected one of {sorted(table)}."
             ) from exc
-    elif stage == "tile_detect":
-        detection = os.environ.get("SP_TILE_DETECTION", TILE_DETECTIONS[0])
-        if detection not in TILE_DETECTIONS:
-            raise ValueError(
-                f"Invalid SP_TILE_DETECTION={detection!r}; expected one of "
-                f"{', '.join(TILE_DETECTIONS)}.")
-        table = table[detection]
     details, ok = [], True
     for runner, spec in table.items():
         n = count_products(run_dir, runner, spec)
@@ -259,8 +248,6 @@ STAGE_DIR = {
     "exp_psf":             ("exp",  "run_sp_exp_SxSePsf"),
     "tile_merge_headers":  ("tile", "run_sp_tile_Mh_exp"),
     "tile_get_catalogue":  ("tile", "run_sp_tile_Gic"),
-    # Both detection modes write here (config_tile_Sx.ini / config_tile_Uc.ini
-    # share the RUN_NAME): the chain downstream reads one path.
     "tile_detect":         ("tile", "run_sp_tile_Sx"),
     "tile_vignets":        ("tile", "run_sp_tile_PiViVi"),
     "tile_ngmix":          ("tile", "run_sp_tile_ngmix_Ng${SP_NGMIX_CHUNK}u"),
@@ -376,6 +363,20 @@ def build_manifest(stage, run_dir, unit, stage_subdir=None):
                 "runner": runner, "found": n, "expect": expect,
                 "warn": warn, "status": status,
                 "reasons": scrape_reasons(stage_dir, runner),
+            })
+    # Capture ngmix's diagnostics while its temp() directory still exists.
+    # Make-cat consumes only structured records, never the retained log copies.
+    if ok and stage in ("tile_ngmix", "tile_make_cat"):
+        try:
+            manifest["epoch_cuts"] = (
+                read_chunk_logs(stage_dir) if stage == "tile_ngmix" else
+                gather_manifests(run_dir, int(os.environ["NGMIX_N_CHUNKS"]))
+            )
+        except (OSError, ValueError, KeyError) as exc:
+            ok = False
+            manifest["failures"].append({
+                "runner": "epoch_cuts", "found": 0, "expect": 1,
+                "warn": False, "status": "failed", "reasons": [str(exc)],
             })
     manifest["status"] = "failed" if not ok else ("warn" if short else "complete")
     return manifest, ok

@@ -20,10 +20,21 @@ input_type: data
 # campaign's merged catalogues. Required, and set by the run config.
 # run: smk-g6
 
+# How ngmix treats a stamp's neighbours (its BLEND_HANDLING). tile_detect
+# writes the coadd segmentation stamps into the sexcat as SEG_VIGNET under
+# both, and the neighbours are the other objects' footprints in them:
+# `uberseg` zeroes their weight; `noisefill`, ngmix's own default, zero-weights
+# and noise-fills the -1e30 VIGNET markers on them. Chosen per campaign:
+# flipping it on an existing run dir reruns tile_ngmix and everything after it
+# for every finished tile, and reclaimed exposures make that destructive -- a
+# comparison needs its own `run:`.
+blend_handling: uberseg
+
 # Default settings per input_type, can be overridden by a user-defined run config file.
-# - tile_detection: allowed are `unions_catalogue` (fetch official UNIONS catalogue
-#   from vos; recommended for data); `sextractor` (detect objects via a SExtractor
-#   module run; required for image_sims)
+# - tile_detection: both run SExtractor on the tile. `unions_catalogue` (data)
+#   also fetches the UNIONS per-tile catalogue and joins the detections to it,
+#   taking its NUMBER (needs the DR6 tile image); `sextractor` keeps
+#   SExtractor's own (required for image_sims)
 # - psf_model: allowed are `psfex` (default), `mccd`; `fake` (image_sims only,
 #   PSF read from psf_dict)
 input_types:
@@ -36,6 +47,12 @@ input_types:
     tile_detection: sextractor
     # @sc [decision:star_selection_psf.psf_modelling_software]
     psf_model: fake
+    # Epoch-membership CCD bounds (config_tile_Sx.ini CCD_SIZE, 0-based,
+    # strict): the simulated CCDs are 2048x4612 with no overscan, so a stamp
+    # centre rounds onto the image only for 0 < x < 2047, 0 < y < 4611. Data
+    # keeps the ini's MegaCam DATASEC default.
+    # @sc [decision:detection.epoch_membership_ccd_bounds]
+    ccd_size: 0,2047,0,4611
 
 # Entries per machine (SP_PROFILE, default nibi; implemented: nibi, candide)
 # and input_type. A run config may instead state `machine:`, which must
@@ -43,7 +60,12 @@ input_types:
 # - base_dir
 # - tile_list: text file with tile IDs
 # - retrieve: method to get input data, allowed are symlink, vos
-# - inputs.tiles,, .exposures: path for input tile and exposure
+# - inputs.tiles, .exposures: path for input tile and exposure
+# - inputs.masks (data only): the UNIONS sky-fixed masks, one boolean
+#   healsparse map per bit of the band-combined ugriz mask (nside 131072,
+#   True = masked), queried per object by make_cat -- never rasterized.
+#   Consumed by MASK_EXT_PATHS in config/cfis/config_tile_Mc.ini, which
+#   carries the bit table. Required for input_type: data.
 # - inputs.catalogues: UNIONS per-tile catalogues, a local directory
 #   (symlinked in) or a vos: URL (tile_detection: unions_catalogue)
 # - psf_dict: simulation PSF stamps (psf_model: fake)
@@ -62,8 +84,8 @@ machines:
       inputs:
         tiles: $base_dir/unions-wl/tiles
         exposures: $base_dir/unions-wl/exposures
-        # UNIONS per-tile catalogues and segmentation maps (CFIS.<tile>.r.cat,
-        # CFIS.<tile>.r.seg.fits.fz), fetched by vcp in
+        masks: $base_dir/unions-wl/masks/dr6-2026-08
+        # UNIONS per-tile catalogues (CFIS.<tile>.r.cat), fetched by vcp in
         # the job: needs network from compute nodes and ~/.ssl/cadcproxy.pem.
         catalogues: vos:cfis/tiles_DR6
       outputs:
@@ -77,6 +99,7 @@ machines:
     data:
       retrieve: vos
       inputs:
+        masks: $base_dir/masks/dr6-2026-08
         catalogues: vos:cfis/tiles_DR6
       container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
     image_sims:
@@ -128,8 +151,8 @@ machines:
 #                       the 20% VALIDATION sample — the positions psf_validation's rows
 #                       correspond to. Rows duplicate star_selection.
 #   star_stats      star_stat-*.txt             unmeasured
-#                       setools' per-CCD STAT block: star counts, stars/deg^2, FWHM mode
-#                       and cuts. The selection's summary without its catalogue.
+#                       setools' per-CCD STAT block: star counts, FWHM mode and cuts.
+#                       The selection's summary without its catalogue.
 #   psf_model       *.psf                       2.8 MB
 #                       the PSFEx model itself. Keeping it means the PSF can be
 #                       re-interpolated at ANY position later without rebuilding the
@@ -174,8 +197,9 @@ machines:
 # selection studies and cost an order of magnitude more.
 #
 # THIS LIST IS EXPOSURE-SIDE ONLY. Tile-side retention is not configurable: the
-# only tile product that persists today is final_cat, written by tile_make_cat
-# straight to products_dir. A tile keep list is #844 follow-up.
+# tile products that persist are final_cat and tile_make_cat.json, written by
+# tile_make_cat straight to products_dir. The manifest contains epoch-cut
+# counts summed over all ngmix chunks. A tile keep list is #844 follow-up.
 #
 # NOTE ON products_dir DEFAULTING TO run_dir (a fixture or smoke test): the tar
 # then lands beside the store on the same filesystem and buys nothing, and
@@ -191,7 +215,10 @@ clean: true
 
 # Per-tile store reclamation after the tile's final_cat. Needed above ~850
 # tiles (scratch quota); deletes the per-tile data sp_tilecost/sp_costmodel
-# read. Set both false for a small control run you want to re-measure.
+# read. Epoch-cut counts survive in products_dir/tiles/<shard>/<tile>/
+# tile_make_cat.json; keeping module logs does NOT require disabling cleaning.
+# Cleaning refuses a tile without this complete durable count record.
+# Set both false for a small control run you want to re-measure timings on.
 clean_tiles: true
 
 # Failed tiles that should not keep their exposures from being cleaned.
@@ -210,6 +237,17 @@ max_mem_mb: 750000
 
 # ngmix chunks per tile.
 ngmix_chunks: 8
+
+# How ngmix weights interpolated defects: des_y6, fourfold_zero, hole or full
+# (astra decision shape_measurement.defect_weighting). Unset: fourfold_zero.
+# defect_weighting: des_y6
+
+# What ngmix puts in defect pixels before metacal: interpolate (short bounded
+# runs interpolated, the rest noise-filled) or noise (every defect
+# noise-filled, vetoed at the noise-fill radius; defect_weighting then has
+# nothing to act on). Astra decision shape_measurement.defect_fill. Unset:
+# interpolate.
+# defect_fill: noise
 
 # Node-local tile store (vignets, WCS). Unset: the profile's /local/scratch
 # bind (nibi NVMe, candide node /tmp). Dense image-sim campaigns on candide

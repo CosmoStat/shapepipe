@@ -10,6 +10,7 @@ silently dropping every epoch on the unscanned CCDs.
 """
 
 import numpy as np
+import pytest
 from astropy.io import fits
 from astropy.wcs import WCS
 
@@ -136,3 +137,118 @@ def test_post_process_scans_all_ccds_despite_tile_id_key(tmp_path):
     np.testing.assert_array_equal(n_epoch, [2, 2])
     for idx in range(len(exp_names)):
         np.testing.assert_array_equal(ccd_n[idx], [0, 2])
+
+
+@pytest.mark.decision("preparation.epoch_provenance_from_tile_history")
+def test_duplicate_history_cards_create_one_epoch_hdu(tmp_path):
+    """Repeated HISTORY entries add one epoch to each object's count."""
+    exp_name = "123456"
+    npy_path = tmp_path / f"headers-{exp_name}.npy"
+    _write_exposure_headers(npy_path)
+
+    tile_number = "52"
+    merge_headers([[str(npy_path)]], str(tmp_path), tile_number=tile_number)
+    sqlite_path = tmp_path / f"log_exp_headers{tile_number}.sqlite"
+    assert sqlite_path.is_file()
+
+    positions = np.array(
+        [
+            _make_ccd_wcs(ccd)[0].all_pix2world([[50.0, 50.0]], 0)[0]
+            for ccd in (0, 2)
+        ]
+    )
+    cat_path = tmp_path / "sexcat.fits"
+    _write_sex_ldac(cat_path, [exp_name, exp_name], positions)
+
+    sextractor_script.make_post_process(
+        str(cat_path),
+        str(sqlite_path),
+        ["XWIN_WORLD", "YWIN_WORLD"],
+        ["0", str(CCD_NPIX), "0", str(CCD_NPIX)],
+    )
+
+    with fits.open(cat_path) as hdu_list:
+        epoch_names = [
+            hdu.name for hdu in hdu_list if hdu.name.startswith("EPOCH_")
+        ]
+        n_epoch = hdu_list["LDAC_OBJECTS"].data["N_EPOCH"]
+
+    assert epoch_names == ["EPOCH_0"]
+    np.testing.assert_array_equal(n_epoch, [1, 1])
+
+
+def test_exposure_missing_from_header_log_raises(tmp_path):
+    """A HISTORY exposure absent from the header log is a KeyError."""
+    npy_path = tmp_path / "headers-123456.npy"
+    _write_exposure_headers(npy_path)
+    merge_headers([[str(npy_path)]], str(tmp_path), tile_number="53")
+    sqlite_path = tmp_path / "log_exp_headers53.sqlite"
+
+    positions = _make_ccd_wcs(0)[0].all_pix2world([[50.0, 50.0]], 0)
+    cat_path = tmp_path / "sexcat.fits"
+    _write_sex_ldac(cat_path, ["123456", "999999"], positions)
+
+    with pytest.raises(KeyError, match="999999"):
+        sextractor_script.make_post_process(
+            str(cat_path),
+            str(sqlite_path),
+            ["XWIN_WORLD", "YWIN_WORLD"],
+            ["0", str(CCD_NPIX), "0", str(CCD_NPIX)],
+        )
+
+
+def test_post_process_writes_the_file_catalogue_appends_would(tmp_path):
+    """make_post_process writes the catalogue once; the bytes are those of
+    one FITSCatalogue.save_as_fits per EPOCH HDU followed by add_col of
+    N_EPOCH, the per-step route that rewrote the whole file each time."""
+    from shapepipe.pipeline import file_io
+
+    exp_names = ["123456", "654321"]
+    header_files = []
+    for name in exp_names:
+        npy_path = tmp_path / f"headers-{name}.npy"
+        _write_exposure_headers(npy_path)
+        header_files.append([str(npy_path)])
+    merge_headers(header_files, str(tmp_path), tile_number="54")
+    sqlite_path = tmp_path / "log_exp_headers54.sqlite"
+
+    # Objects on CCDs 0 and 2 and one on no CCD.
+    positions = np.array(
+        [
+            _make_ccd_wcs(ccd)[0].all_pix2world([[50.0, 50.0]], 0)[0]
+            for ccd in (0, 2)
+        ]
+        + [[170.0, 10.0]]
+    )
+    cat_path = tmp_path / "sexcat.fits"
+    _write_sex_ldac(cat_path, exp_names, positions)
+    ref_path = tmp_path / "reference.fits"
+    ref_path.write_bytes(cat_path.read_bytes())
+
+    sextractor_script.make_post_process(
+        str(cat_path),
+        str(sqlite_path),
+        ["XWIN_WORLD", "YWIN_WORLD"],
+        ["0", str(CCD_NPIX), "0", str(CCD_NPIX)],
+    )
+
+    number = np.arange(1, 4, dtype=">i4")
+    ccd_n = np.array([0, 2, -1], dtype="int32")
+    ref = file_io.FITSCatalogue(
+        str(ref_path),
+        SEx_catalogue=True,
+        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+    )
+    ref.open()
+    for idx, exp in enumerate(exp_names):
+        epoch = np.array(
+            list(zip(number, [exp] * 3, ccd_n)),
+            dtype=[("NUMBER", number.dtype), ("EXP_NAME", "<U6"),
+                   ("CCD_N", ccd_n.dtype)],
+        )
+        ref.save_as_fits(data=epoch, ext_name=f"EPOCH_{idx}")
+        ref.open()
+    ref.add_col("N_EPOCH", np.array([2, 2, 0], dtype="int32"))
+    ref.close()
+
+    assert cat_path.read_bytes() == ref_path.read_bytes()
