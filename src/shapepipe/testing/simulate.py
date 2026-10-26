@@ -199,6 +199,10 @@ def make_data_pujol(
     psf_fwhm=0.55,
     pixel_scale=0.1857,
     img_size=201,
+    gal_profile="exponential",
+    sersic_n=1.0,
+    intrinsic_g=(0.0, 0.0),
+    return_offsets=False,
 ):
     """Simulate galaxies at multiple shear values sharing the same noise per epoch.
 
@@ -219,12 +223,24 @@ def make_data_pujol(
         always shared across shear variants regardless of this flag.
     gal_hlr, gal_flux, psf_fwhm, pixel_scale, img_size : float / int, optional
         Same meaning as in make_data.
+    gal_profile : {"exponential", "sersic"}, optional
+        Galaxy light profile. Default "exponential".
+    sersic_n : float, optional
+        Sersic index, used if ``gal_profile`` is "sersic". Default 1.
+    intrinsic_g : tuple of float, optional
+        Intrinsic (unlensed) reduced-shear ellipticity (g1, g2), applied
+        before the lensing shear. Default (0, 0), a round galaxy.
+    return_offsets : bool, optional
+        If True, append per-epoch ``[row, col]`` sub-pixel offsets of the
+        galaxy from the stamp centre (for ngmix ``centroid_source="wcs"``)
+        to each returned tuple. Default False.
 
     Returns
     -------
     list of tuple
         One ``(gals, psfs, psfs_sigmas, weights, flags, jacob_lists)`` per
-        entry in ``shear_list``, all sharing identical per-epoch noise.
+        entry in ``shear_list``, all sharing identical per-epoch noise; with
+        ``offsets`` appended if ``return_offsets``.
     """
     psf_noise_sigma = 1.0e-6
     scale = pixel_scale
@@ -238,6 +254,16 @@ def make_data_pujol(
     all_weights     = [[] for _ in range(n_shears)]
     all_flags       = [[] for _ in range(n_shears)]
     all_jacobs      = [[] for _ in range(n_shears)]
+    offsets         = []
+
+    if gal_profile == "exponential":
+        gal = galsim.Exponential(half_light_radius=gal_hlr, flux=gal_flux)
+    elif gal_profile == "sersic":
+        gal = galsim.Sersic(n=sersic_n, half_light_radius=gal_hlr, flux=gal_flux)
+    else:
+        raise ValueError(f"unknown gal_profile '{gal_profile}'")
+    if intrinsic_g[0] != 0.0 or intrinsic_g[1] != 0.0:
+        gal = gal.shear(g1=intrinsic_g[0], g2=intrinsic_g[1])
 
     if share_shift:
         dy, dx = rng.uniform(low=-scale / 2, high=scale / 2, size=2)
@@ -258,13 +284,11 @@ def make_data_pujol(
         jacob  = wcs.jacobian()
         weight = np.full((img_size, img_size), 1.0 / noise ** 2)
         flag   = np.zeros((img_size, img_size))
+        offsets.append(np.array([dy / scale, dx / scale]))
 
         for j, shear in enumerate(shear_list):
             obj = galsim.Convolve(
-                psf,
-                galsim.Exponential(half_light_radius=gal_hlr, flux=gal_flux).shear(
-                    g1=shear[0], g2=shear[1]
-                ),
+                psf, gal.shear(g1=shear[0], g2=shear[1]),
             ).shift(dx, dy)
             im = obj.drawImage(nx=img_size, ny=img_size, wcs=wcs).array.astype(np.float64)
             im += noise_img   # same noise for every shear variant
@@ -276,8 +300,9 @@ def make_data_pujol(
             all_flags[j].append(flag.copy())
             all_jacobs[j].append(jacob)
 
+    extra = (offsets,) if return_offsets else ()
     return [
         (all_gals[j], all_psfs[j], all_psfs_sigmas[j],
-         all_weights[j], all_flags[j], all_jacobs[j])
+         all_weights[j], all_flags[j], all_jacobs[j]) + extra
         for j in range(n_shears)
     ]
