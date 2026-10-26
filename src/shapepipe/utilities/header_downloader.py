@@ -186,6 +186,10 @@ class HeaderDownloader(object):
         bool
             True if successful, False otherwise
 
+        @sc [label:custody] header-download-publication
+        Copy to a ``.part`` file in the destination directory and rename only
+        after success: resume treats an existing destination as complete.
+        A caught failure removes the partial file; interruption can leave it.
         """
         vospace_path = self._params["vospace_path"]
         output_dir = self._params["output_dir"]
@@ -213,10 +217,7 @@ class HeaderDownloader(object):
                     print(f"Could not create symlink from {link_source}: {e}")
                     # Fall through to download if symlink fails
 
-        # Download from VOSpace atomically: copy to a temp file in the same
-        # directory, then rename on success. An interrupted transfer leaves
-        # only the temp file behind, so resume never treats a partial download
-        # as complete.
+        # Publish by rename; see header-download-publication.
         tmp_dest = f"{dest}.part"
         try:
             client.copy(source, tmp_dest, head=True)

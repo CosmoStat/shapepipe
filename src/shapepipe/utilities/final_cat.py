@@ -5,11 +5,10 @@ of the formats it exists in:
 
 * HDF5, as ``make_cat.write_final_cat`` writes it: one dataset per column, in
   column order, a vector column as a 2-D dataset with one row per object;
-* FITS, a binary table (``RESULTS``, HDU 1), as catalogues made before the
-  HDF5 format are.
+* FITS, a binary table (``RESULTS``, HDU 1).
 
 The format is decided per file from its content (the HDF5 signature), not its
-name, so a campaign or a hand-made directory that mixes the two reads as one.
+name, so callers can read a directory containing both formats.
 
 """
 

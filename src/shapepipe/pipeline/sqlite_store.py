@@ -11,13 +11,13 @@ spend most of its time in lock traffic. :class:`ImmutableSqliteDict` opens the
 file with sqlite's ``immutable=1`` URI parameter instead, which skips all
 locking and change detection.
 
-``immutable=1`` is only correct for a file that no process writes while it
-is open: sqlite neither sees concurrent changes nor replays a hot journal
-left by a crashed writer, so it would return uncommitted rows. Every call
-site of this module reads a store that an earlier module wrote and closed
-(``make_post_process`` reads the header log ``merge_headers`` wrote). As a
-guard, opening a store that has a rollback journal or write-ahead log next
-to it raises instead of reading it.
+@sc [label:custody] immutable-sqlite-store
+The writer must close the store before a reader opens it, and no process may
+write it while an immutable reader is open. SQLite skips change detection
+and journal recovery in this mode, so concurrent writes or an unrecovered
+journal can yield invalid data. Opening rejects stores with a rollback
+journal or write-ahead log beside them; this guard does not prevent a writer
+from starting after the check.
 
 """
 
@@ -52,9 +52,8 @@ class ImmutableSqliteDict(Mapping):
     FileNotFoundError
         If ``path`` is not an existing file
     RuntimeError
-        If a ``-journal`` or ``-wal`` file sits next to ``path``: a writer is
-        mid-transaction or crashed in one, and an immutable read would see
-        uncommitted data
+        If a ``-journal`` or ``-wal`` file sits next to ``path``; the store
+        may have an active writer or require recovery before an immutable read
 
     """
 

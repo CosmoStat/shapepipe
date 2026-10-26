@@ -2,7 +2,7 @@
 
 Module runner for ``mask_query``.
 
-:Author: Claude Fable 5, for PR #847
+:Author: Claude Fable 5
 
 """
 
