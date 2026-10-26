@@ -54,3 +54,35 @@ def test_classifier_uses_production_fill_and_euclidean_dilation():
     assert not r['hit0'] and r['hit2'] and r['interp_hit2']
     assert r['iso_bits'] == 0
     assert set(c['fill'] for c in components) == {'interpolate', 'noise'}
+
+
+def test_multi_epoch_normalization_and_shared_calibration_error(monkeypatch):
+    monkeypatch.syspath_prepend(str(PATH.parent))
+    import survey_combine as m
+    from survey_prevalence import EP_DTYPE, CP_DTYPE
+    monkeypatch.setattr(m, 'ARMS', ('B',))
+    objects = np.zeros(2, dtype=[('X_IMAGE', 'f8'), ('Y_IMAGE', 'f8')])
+    objects['X_IMAGE'] = [0, 1]
+    objects['Y_IMAGE'] = [0, 1]
+    epochs = np.zeros(6, dtype=EP_DTYPE)
+    epochs['oi'] = [0, 0, 0, 1, 1, 1]
+    epochs['eligible'] = True
+    epochs['ivar'] = 1.
+    components = np.zeros(2, dtype=CP_DTYPE)
+    components['ei'] = [0, 3]
+    components['distance'] = 4
+    components['fill'] = 'interpolate'
+    components['kind'] = 'bleed'
+    lib = [dict(kind='bleed', fill='interpolate', d=4, hlr=.3,
+                psf_shear=[0., 0.], n_epochs=n) for n in (1, 3)]
+    # Effective coefficient N*delta_N is half the single-epoch delta.
+    q = np.array([[.3, 0, .03, 0], [.15, 0, .015, 0]])
+    qb = np.zeros((2, 10, 4))
+    qb[1, :, 0] = [.0, .3] * 5
+    out = m.combine(epochs, objects, components, np.array([0, 0]), q, qb,
+                    np.abs(q), {'B': np.ones(6, bool)}, np.ones(2, bool), lib)['B']
+    np.testing.assert_allclose(out['mean'], [.05, 0, .005, 0])
+    assert out['multi_corrected_components'] == 2
+    # One shared fixture error does NOT shrink by sqrt(number of objects).
+    np.testing.assert_allclose(out['fixture_sigma'][0], .05)
+    assert out['objects_lost'] == out['epochs_lost'] == 0
