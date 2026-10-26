@@ -1784,8 +1784,9 @@ analyses:
           epoch. Off-tile pixels are defects, so an object near the tile edge
           is vetoed. The veto reads only masks, so it selects on nothing
           shear-responsive; for the same reason the radii are fixed rather
-          than scaled by galaxy size. Each radius is the smallest at which
-          the defects it keeps give |m11|, |m22| < 1% and |c1|, |c2| < 5e-4,
+          than scaled by galaxy size. Each radius was chosen using
+          conditional single-epoch targets |m11|, |m22| < 1% and
+          |c1|, |c2| < 5e-4 for the defects it keeps,
           on 51-px stamps at known RMS and high S/N, through a round and a
           (0.05, 0.02) elliptical 0.7 arcsec PSF, on galaxies of half-light
           radius 0.3 and 0.5 arcsec, and 0.7 arcsec through a 0.9 arcsec
@@ -1794,11 +1795,11 @@ analyses:
           m11 = -0.67% +/- 0.05%, c1 = 7e-5).
           Napoli (16 Oct 2026) requested interpolation with adaptive,
           SExtractor-style exposure-to-tile flags instead of fixed-radius
-          rejection; Cail requested removal on 25 Oct. This follow-up
-          conditions removal on an inside-radius bias scan. The earlier Napoli injection comparison
-          retained the veto and cannot establish safety inside it. The
-          no-veto follow-up (scripts/validation/masked_pixels/napoli_veto_scan.md)
-          retains this default: an interpolated 3-px bleed at 4 px on a
+          rejection; Cail requested removal on 25 Oct. The earlier Napoli
+          injection comparison retained the veto and cannot establish
+          single-epoch recovery inside it. The inside-radius scan
+          (scripts/validation/masked_pixels/napoli_veto_scan.md) finds
+          conditional bias: an interpolated 3-px bleed at 4 px on a
           0.3 arcsec galaxy through a round 0.7 arcsec PSF gives
           m11 = +2.64% +/- 0.25% and c1 = (4.46 +/- 0.44)e-3.
           At 6 px on the 0.7/0.9 arcsec grid, m passes but
@@ -1810,10 +1811,20 @@ analyses:
           0.9 arcsec PSF gives m11 = -1.022% +/- 0.072% at 13 px,
           marginally outside the nominal 1% bound; the radius is not a
           universal guarantee for every selectable fill. Production
-          interpolates this narrow defect. The scan does not establish
-          safety of rejecting only noise-filled defects on the segmentation
-          footprint: it contains no detection/footprint calibration.
-          Guarded by tests/science/test_defect_recovery.py.
+          interpolates this narrow defect. These per-case targets must not
+          be treated as catalogue-mean requirements or used to rule out
+          adaptive replacements. The 188.307 follow-up
+          (scripts/validation/masked_pixels/survey_results/report.html)
+          measures prevalence and replacement-rule loss, then projects bias
+          with coherent detector orientation and measured multi-epoch
+          dilution. Adaptive k=0 has modeled m11 = (1.37 +/- 1.74)e-5,
+          c1 = (5.19 +/- 1.64)e-6, and loses 1,550/115,299 eligible epochs
+          versus this default's 2,565. It is recommended for a validation
+          run, not yet selected in production: one-tile fixture transport
+          does not calibrate the actual survey selection, profiles or
+          weighting. Production constants and params pins are unchanged.
+          Guarded by tests/science/test_defect_recovery.py for conditional
+          recovery and tests/unit/test_veto_survey.py for transport semantics.
           Values:
           EPOCH_CENTRAL_DEFECT_RADIUS = 13;
           EPOCH_INTERPOLATED_DEFECT_RADIUS = 7.
@@ -1821,25 +1832,41 @@ analyses:
         options:
           fixed_radii:
             label: Fixed radii, 13 px for noise-filled and 7 px for interpolated defects
+          adaptive_epoch_iso_0px:
+            label: Reject any defect epoch touching the ISO footprint, k=0
+            description: >-
+              Candidate D(k=0), recommended for a validation run, not
+              implemented in production. The one-tile transport predicts
+              small mean bias and saves 1,015 epochs versus fixed radii.
+              Its size-matched fixture envelope is within the stated budget;
+              unrestricted-size stress is much broader, highlighting profile
+              transport uncertainty rather than a measured catalogue failure.
+          adaptive_epoch_iso_2px:
+            label: Reject any defect epoch touching the ISO footprint dilated 2 px
+            description: >-
+              Candidate D(k=2), not implemented in production. It has more fixture-envelope
+              margin than k=0, saves 284 epochs versus fixed radii, and loses
+              five additional objects with no surviving epoch on 188.307.
+              Unknown footprints use the fixed veto in this comparison.
           noise_only_13px:
             label: Keep only the 13 px noise-fill veto; flag interpolated defects
             excluded: true
             excluded_reason: >-
-              The no-veto scan fails the condition for removing the 7 px
-              interpolation veto: the interpolated bleed at 4 px gives
-              m11 = +2.64% +/- 0.25% and c1 = (4.46 +/- 0.44)e-3.
-              Flags expose affected objects but do not remove this bias
-              from an uncut catalogue.
+              Not adopted as the current production policy; conditional
+              single-epoch bias alone is not a reason to exclude it at
+              catalogue level. The follow-up compares fixed, no-veto,
+              object-cut, adaptive and hybrid policies, but does not
+              calibrate this noise-only policy on the selected shear sample.
           adaptive_noise_footprint:
             label: Drop an epoch only if a noise-filled defect touches its footprint
             excluded: true
             excluded_reason: >-
-              Not yet validated, rather than demonstrated unsafe: the scan
-              bypasses detection and has no segmentation footprint.
-              A footprint-only cut needs a detection-level bias test,
-              including defects outside the footprint whose fill propagates
-              through metacal. It also cannot cure the measured bias of
-              interpolated defects inside 7 px if those epochs are retained.
+              Not adopted in production, rather than demonstrated unsafe.
+              Real-footprint prevalence plus fixture transport now exist,
+              including residuals outside the footprint, but a selected-sample
+              detection/selection-response test is still needed.
+              The measured bias of an individual retained epoch is not a
+              catalogue-mean exclusion criterion.
           noise_fill_10px:
             label: 10 px for noise-filled defects
             excluded: true
@@ -1854,12 +1881,12 @@ analyses:
             label: No central veto
             excluded: true
             excluded_reason: >-
-              The no-veto scan gives m11 = -6.50% +/- 0.27% and
-              c1 = (-4.68 +/- 0.25)e-3 for a noise-filled 3-px bleed
-              at 10 px on the 0.7/0.9 arcsec grid. Interpolation alone
-              does not make removal safe: at 4 px on the 0.3/0.7 arcsec
-              grid, m11 = +2.64% +/- 0.25% and
-              c1 = (4.46 +/- 0.44)e-3.
+              Not adopted as a robust default. The one-tile transported
+              no-veto mean passes the nominal catalogue bounds, unlike the
+              implication of comparing single-epoch cases with those bounds.
+              Its broad no-cancellation fixture envelope reaches |m|=1.57%
+              and |c|=7.70e-4, crossing both targets; this is model uncertainty,
+              not proof that its true survey mean fails.
           size_scaled_radius:
             label: Veto radius scaled by galaxy size
             excluded: true

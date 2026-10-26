@@ -81,13 +81,15 @@ def response(bad, hlr=.3, psf=.7, psf_shear=(0., 0.), n_epochs=1,
 
 
 def one(job):
-    kind, fill, distance, hlr, psf, psf_shear, ne = job
+    kind, fill, distance, hlr, psf, psf_shear, ne, *seed_spec = job
+    seed_start, nseeds = seed_spec if seed_spec else (0, 6)
     row = dict(kind=kind, fill=fill, d=distance, hlr=hlr, psf=psf,
-               psf_shear=psf_shear, n_epochs=ne)
+               psf_shear=psf_shear, n_epochs=ne, seed_start=seed_start, nseeds=nseeds)
     start = time.monotonic()
     bad = np.zeros((51, 51), dtype=bool) if kind == 'clean' else geometry(kind, distance)
     try:
-        row.update(response(bad, hlr, psf, psf_shear, ne, fill))
+        row.update(response(bad, hlr, psf, psf_shear, ne, fill,
+                            seeds=range(seed_start, seed_start + nseeds)))
     except Exception as exc:
         import traceback
         row.update(error=repr(exc), traceback=traceback.format_exc())

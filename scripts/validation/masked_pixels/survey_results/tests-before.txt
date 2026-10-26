@@ -1,0 +1,78 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_______________ test_arm_boundaries_and_footprint_only_rejection _______________
+
+    def test_arm_boundaries_and_footprint_only_rejection():
+>       m = load()
+            ^^^^^^
+
+tests/unit/test_veto_survey.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_veto_survey.py:13: in load
+    spec.loader.exec_module(module)
+<frozen importlib._bootstrap_external>:995: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1132: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x14f07c108f80>
+path = '/scratch/cdaley/wt-veto/scripts/validation/masked_pixels/survey_prevalence.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/scratch/cdaley/wt-veto/scripts/validation/masked_pixels/survey_prevalence.py'
+
+<frozen importlib._bootstrap_external>:1190: FileNotFoundError
+__________ test_unknown_footprint_falls_back_to_fixed_rule_not_clean ___________
+
+    def test_unknown_footprint_falls_back_to_fixed_rule_not_clean():
+>       m = load()
+            ^^^^^^
+
+tests/unit/test_veto_survey.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_veto_survey.py:13: in load
+    spec.loader.exec_module(module)
+<frozen importlib._bootstrap_external>:995: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1132: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x14f07be899d0>
+path = '/scratch/cdaley/wt-veto/scripts/validation/masked_pixels/survey_prevalence.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/scratch/cdaley/wt-veto/scripts/validation/masked_pixels/survey_prevalence.py'
+
+<frozen importlib._bootstrap_external>:1190: FileNotFoundError
+_________ test_classifier_uses_production_fill_and_euclidean_dilation __________
+
+    def test_classifier_uses_production_fill_and_euclidean_dilation():
+>       m = load()
+            ^^^^^^
+
+tests/unit/test_veto_survey.py:45: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_veto_survey.py:13: in load
+    spec.loader.exec_module(module)
+<frozen importlib._bootstrap_external>:995: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1132: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x14f07be8e900>
+path = '/scratch/cdaley/wt-veto/scripts/validation/masked_pixels/survey_prevalence.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/scratch/cdaley/wt-veto/scripts/validation/masked_pixels/survey_prevalence.py'
+
+<frozen importlib._bootstrap_external>:1190: FileNotFoundError
+=========================== short test summary info ============================
+FAILED tests/unit/test_veto_survey.py::test_arm_boundaries_and_footprint_only_rejection
+FAILED tests/unit/test_veto_survey.py::test_unknown_footprint_falls_back_to_fixed_rule_not_clean
+FAILED tests/unit/test_veto_survey.py::test_classifier_uses_production_fill_and_euclidean_dilation
+3 failed in 0.51s
+srun: error: c345: task 0: Exited with exit code 1
+srun: Terminating StepId=25005956.2

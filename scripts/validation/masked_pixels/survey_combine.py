@@ -55,9 +55,10 @@ def library(extra, nboot=500):
     rows = json.load(open(BASE / 'napoli_veto_scan.json'))
     controls = json.load(open(BASE / 'napoli_clean_controls.json'))
     extra_rows = json.load(open(extra))
-    core = Path(extra).with_name('fixtures-core.json')
-    if core.exists():
-        extra_rows += json.load(open(core))
+    for name in ('fixtures-core.json', 'fixtures-interp.json'):
+        additional = Path(extra).with_name(name)
+        if additional.exists():
+            extra_rows += json.load(open(additional))
     clean = {(r['hlr'], tuple(r['psf_shear'])): r for r in controls}
     entries = {}
     for row in rows:
@@ -147,6 +148,27 @@ def component_lookup(c, e, o, lib, q, radii, psf_t):
                                    beyond_20px=int((c['distance'] > 20).sum()))
 
 
+def matched_size_envelope(c, ci, lib, q):
+    """Keep measured size/footprint correlation; vary geometry, PSF and N.
+
+    This still assumes the nearest convolved-size bin is appropriate; the
+    unrestricted envelope deliberately drops even that assumption.
+    """
+    cache = {}
+    output = []
+    for part, index in zip(c, ci):
+        h = lib[index]['hlr']
+        d = min(int(np.rint(part['distance'])), 20)
+        key = (str(part['fill']), h, d)
+        if key not in cache:
+            pool = [i for i, row in enumerate(lib) if row['fill'] == key[0] and row['hlr'] == h]
+            nearest = min(abs(lib[i]['d'] - d) for i in pool)
+            pool = [i for i in pool if abs(lib[i]['d'] - d) <= max(1., nearest)]
+            cache[key] = np.max(np.abs(q[pool]), axis=0)
+        output.append(cache[key])
+    return np.asarray(output)
+
+
 def build_keep(e, nobjects):
     masks = {k: np.asarray([epoch_rules(r)[k] for r in e]) & e['eligible']
              for k in ARMS if k != 'C'}
@@ -206,11 +228,27 @@ def combine(e, o, c, ci, q, qb, envelopes, masks, sample, lib, ivar=True, use_mu
         denominator = block_draws @ bn
         nonempty = denominator > 0
         bmean = (block_draws[nonempty] @ bs) / denominator[nonempty, None]
-        spatial_sigma = bmean.std(axis=0)
+        block_sigma = bmean.std(axis=0)
+        # Column defects correlate different square blocks along a stripe.
+        # Keep both sky axes coherent and use the larger strip/block SD,
+        # rather than treating 36 squares as independent by assumption.
+        strip_sigmas = []
+        for axis in (blocks % 6, blocks // 6):
+            counts = np.bincount(axis[alive], minlength=6)
+            sums = np.array([np.bincount(axis[alive], weights=oq[alive, j], minlength=6)
+                             for j in range(4)]).T
+            draws = np.random.default_rng(775).multinomial(6, np.ones(6)/6, size=500)
+            denominator_s = draws @ counts
+            valid = denominator_s > 0
+            strip_sigmas.append(((draws[valid] @ sums) / denominator_s[valid, None]).std(axis=0))
+        strip_sigma = np.max(strip_sigmas, axis=0)
+        spatial_sigma = np.maximum(block_sigma, strip_sigma)
         # Summing absolute component predictions (not signed cancellation).
         env = (alpha[c['ei'], None] * envelopes).sum(axis=0) / alive.sum()
         result[arm] = dict(mean=mean.tolist(), fixture_sigma=fixture_sigma.tolist(),
                            spatial_sigma=spatial_sigma.tolist(),
+                           spatial_block_sigma=block_sigma.tolist(),
+                           spatial_strip_sigma=strip_sigma.tolist(),
                            sigma=np.hypot(fixture_sigma, spatial_sigma).tolist(),
                            fixture_envelope=env.tolist(), objects=int(alive.sum()),
                            objects_lost=nbase-int(alive.sum()),
@@ -251,6 +289,11 @@ def rates(o, e):
     positive[e['oi'][eligible & ((e['iso_bits'] != 0) | e['interp_hit0'])]] = True
     out['unknown_footprint_objects'] = int((unknown & baseline).sum())
     out['positive_iso_flag_objects'] = int((positive & baseline).sum())
+    centre_missing = eligible & e['known'] & ~e['centre_in_foot']
+    out['known_footprint_without_centre_objects'] = int(len(np.unique(e['oi'][centre_missing])))
+    retained_centre = eligible & e['known'] & ~e['hit0'] & (e['d_interp'] == 0)
+    out['D0_retained_central_interpolation_epochs'] = int(retained_centre.sum())
+    out['psf_T_percentiles'] = np.percentile(e['psf_T'][eligible & (e['psf_T'] > 0)], [10, 50, 90]).tolist()
     blind = eligible & e['hit0'] & ~e['interp_hit0'] & (e['iso_bits'] == 0) & e['known']
     out['noise_iso_no_973_flag_epochs'] = int(blind.sum())
     out['noise_iso_no_973_flag_objects'] = int(len(np.unique(e['oi'][blind])))
@@ -298,6 +341,8 @@ def main():
     single_epoch = combine(e, o, c, ci, q, qb, env, masks, all_sample, lib, use_multi=False)
     # Conservative all-component envelope, separate from nearest-component mean.
     all_components = combine(e, o, all_c, ai, q, qb, aenv, masks, all_sample, lib)
+    sized_envelope = matched_size_envelope(all_c, ai, lib, q)
+    matched = combine(e, o, all_c, ai, q, qb, sized_envelope, masks, all_sample, lib)
     uniform = combine(e, o, c, ci, q, qb, env, masks, all_sample, lib, ivar=False)
     proxy = combine(e, o, c, ci, q, qb, env, masks, galaxy_proxy, lib)
     near = c['distance'] <= 20
@@ -315,6 +360,7 @@ def main():
     for arm in ARMS:
         projected[arm]['all_component_envelope'] = all_components[arm]['fixture_envelope']
         projected[arm]['all_component_mean'] = all_components[arm]['mean']
+        projected[arm]['matched_size_envelope'] = matched[arm]['fixture_envelope']
     # Direct N=1 equivalence to the independent original helper.
     original = json.load(open(BASE / 'napoli_veto_scan.json'))
     direct = next(r for r in extra if r['kind'] == 'bleed' and r['fill'] == 'interpolate'

@@ -1,7 +1,8 @@
-# The no-veto scan fails the removal criterion
+# Conditional single-epoch bias inside the old veto radii
 
-**Keep the 7 px interpolation veto and the 13 px noise-fill veto for now.**
-The requested condition for removing the interpolation veto is false in the existing galaxy/PSF fixtures.
+**This scan measures defect-present single-epoch bias, not the catalogue mean or the performance of a replacement rule.**
+Its per-case counterexamples do not establish that a fixed veto is necessary.
+The [survey-level follow-up](survey_results/report.html) combines real object–epoch prevalence, replacement-rule loss and direct multi-epoch recovery, and supersedes the policy interpretation of this scan.
 An interpolated 3-px bleed at 4 px on a 0.3″ galaxy through a round 0.7″ PSF gives **m11 = +2.64 ± 0.25% and c1 = (4.46 ± 0.44) × 10⁻³**.
 At 6 px on the 0.7″/0.9″ grid, multiplicative bias passes but **c1 = (6.90 ± 0.33) × 10⁻⁴** exceeds the 5 × 10⁻⁴ bound by 5.7 bootstrap standard deviations.
 Noise fill at 10 px reproduces the earlier result: **m11 = −6.50 ± 0.27%, c1 = (−4.68 ± 0.25) × 10⁻³**.
@@ -10,7 +11,7 @@ The Napoli decision (16 October 2026) calls for interpolation and adaptive, SExt
 Cail requested removal of the fixed veto on 25 October.
 This follow-up makes removal conditional on testing inside the previous radii.
 The earlier Napoli interpolated-versus-clean injection comparison retained the veto; its Δm ≈ 0 does not test these newly admitted epochs.
-These fixtures establish a counterexample to safe unconditional removal, not a survey-wide calibration or the prevalence of that counterexample in data.
+These fixtures establish nonzero conditional bias, not failure of an unconditional catalogue mean, a survey-wide calibration, or the prevalence of that counterexample in data.
 
 ## Evidence
 
@@ -48,20 +49,12 @@ A dash means outside the requested interpolation scan, not zero bias.
 
 ## Implemented choice and alternatives
 
-**No production epoch-selection change is justified by these data.**
-`shape_measurement.central_defect_veto` therefore retains `fixed_radii`, with the measured counterexamples and the Napoli rationale recorded in `astra.yaml`.
-The rejected options remain in the record with reasons.
-
-1. **Remove only the interpolation veto, keeping the 13 px noise veto.**
-   This is the supported noise-fill policy among the tested policies, but the proposed combined change still admits demonstrably biased interpolated epochs.
-   It is excluded for the current default.
-2. **Drop an epoch only when a noise-filled defect touches the segmentation footprint.**
-   This is adaptive and compatible with the intended flag geometry, but this scan contains no detection or segmentation-footprint calibration.
-   It cannot establish that defects outside that footprint are harmless after metacal's image transformation, and it does not address the measured bias of retained interpolated defects.
-   It is excluded as unvalidated, not claimed to be disproven.
-3. **Remove both fixed vetoes and rely on flags.**
-   Flags identify affected objects; they do not make their uncut shapes unbiased.
-   This option fails the measured m/c bounds for both fills.
+**Production remains unchanged; this single-epoch scan cannot choose the catalogue policy.**
+`shape_measurement.central_defect_veto` retains `fixed_radii`, but its rationale now distinguishes conditional fixture targets from catalogue-mean requirements.
+The [follow-up report](survey_results/report.html) compares fixed radii, no veto, object-level flag removal, adaptive epoch rejection at k=0/2, and hybrids.
+It finds small nominal transported catalogue means for every arm, while their loss and model uncertainty differ.
+Adaptive k=0 is recommended for a selected-sample validation run under the stated budget and nearest-fixture transport, not yet implemented as a new default.
+The original per-case comparison was insufficient to reject replacements or conclude that an uncut survey mean fails.
 
 PR #973 is stacked on #925, whereas this branch is based on #922 as requested.
 Its `defect_flagging` decision is not present here.
@@ -130,5 +123,5 @@ python scripts/validation/masked_pixels/check_veto_mutations.py
 
 They remove each veto separately, erase additive bias from the recovery result, and mislabel interpolation as noise fill.
 Each must produce exactly one assertion failure; a collection/environment error does not count as a killed mutation.
-The 6-px regression specifically prevents m-only reasoning from certifying removal.
+The 6-px regression records additive bias that an m-only conditional scan misses; it is not itself a catalogue-policy safety check.
 Test-suite results and the final decision-record validation are recorded in `napoli_checks.txt`.

@@ -1,0 +1,102 @@
+{
+  "allocation": 25005956,
+  "account": "def-waerbeke",
+  "cpu_limit": 16,
+  "time_limit": "02:00:00",
+  "sif": "/project/def-mjhudson/cdaley/containers/shapepipe-develop-240b37e4.sif",
+  "module": "apptainer/1.4.5",
+  "host": "c345.nibi.sharcnet",
+  "packages": {
+    "numpy": "2.5.3",
+    "scipy": "1.17.1",
+    "galsim": "2.8.5",
+    "ngmix": "2.4.1"
+  },
+  "base": "b24f92e5",
+  "branch": "feat/defect-veto-napoli",
+  "rebased": false,
+  "inputs": {
+    "sexcat": {
+      "path": "/scratch/cdaley/defectflag-check/run/188307/work/tiles/18/188.307/output/run_sp_tile_Sx/sextractor_runner/output/sexcat-188-307.fits",
+      "size": 763292160,
+      "mtime_ns": 1792850712770757802
+    },
+    "image": {
+      "path": "/scratch/cdaley/defectflag-check/run/188307/epoch-output/run_sp_epoch_vignets/vignetmaker_runner/output/image_vignet-188-307.sqlite",
+      "size": 681066496,
+      "mtime_ns": 1792855243722809687
+    },
+    "flag": {
+      "path": "/scratch/cdaley/defectflag-check/run/188307/epoch-output/run_sp_epoch_vignets/vignetmaker_runner/output/flag_vignet-188-307.sqlite",
+      "size": 681066496,
+      "mtime_ns": 1792855195839410459
+    },
+    "weight": {
+      "path": "/scratch/cdaley/defectflag-check/run/188307/epoch-output/run_sp_epoch_vignets/vignetmaker_runner/output/weight_vignet-188-307.sqlite",
+      "size": 681066496,
+      "mtime_ns": 1792855286563348123
+    },
+    "psf": {
+      "path": "/scratch/cdaley/defectflag-check/run/188307/tile-store/sp-c9b3bf5e-188.307/output/run_sp_tile_PiViVi/psfex_interp_runner/output/galaxy_psf-188-307.sqlite",
+      "size": 2579050496,
+      "mtime_ns": 1792850947169651798
+    },
+    "headers": {
+      "path": "/scratch/cdaley/defectflag-check/run/188307/tile-store/sp-c9b3bf5e-188.307/wcs/log_exp_headers-188-307.sqlite",
+      "size": 11337728,
+      "mtime_ns": 1792850720390949039
+    },
+    "background": {
+      "path": "/scratch/cdaley/defectflag-check/run/188307/epoch-output/run_sp_epoch_vignets/vignetmaker_runner/output/background_vignet-188-307.sqlite",
+      "size": 1317859328,
+      "mtime_ns": 1792855347727932089
+    },
+    "rms": {
+      "path": "/scratch/cdaley/defectflag-check/run/188307/epoch-output/run_sp_epoch_vignets/vignetmaker_runner/output/background_rms_vignet-188-307.sqlite",
+      "size": 1317859328,
+      "mtime_ns": 1792855408159506332
+    }
+  },
+  "input_summary_sha256": {
+    "/scratch/cdaley/defectflag-check/188.307.json": "90cc934b803edb7d52eb101690a89d3d768ef81a644b429250cf530fd90c1ffe",
+    "/scratch/cdaley/defectflag-check/188.307.npz": "feb079b53b739038e4993cc0b5d4d91217ecb25d9355ad914d1b77af86ceb764"
+  },
+  "source_sha256": {
+    "scripts/validation/masked_pixels/survey_combine.py": "10f05c57a5533da22c2772ac286a2f1e4eae432580df03755a1e90ca124cb69f",
+    "scripts/validation/masked_pixels/survey_fixtures.py": "d259444603c4f86ae64ac4be3c9cce989860a554f8e0403387d9f76ec9092623",
+    "scripts/validation/masked_pixels/survey_mutations.py": "4ae941f82a5bba25893c7b42703aec346839c26437157ac4ac2e1a5649c9e22a",
+    "scripts/validation/masked_pixels/survey_prevalence.py": "32f345b64d06d04c8cc87a1b10a512876044b459c57af9ec85ecc0050d4ecd5b",
+    "scripts/validation/masked_pixels/survey_report.py": "7c183c8f8cc879ffe7e04d098448847f67cfbc5b955fcdab43331fc6c941008e"
+  },
+  "output_sha256": {
+    "report.html": "2b9e081142f7e0c7773961a239467b8ba092ca266c9d6053dedb5aecc40585a6",
+    "summary.md": "8d64ab4d7be955c381b04b8da9f5ca31a2e799a0b7014653c1a2ef2c73029a08",
+    "combined.json": "68056b61a4e36a99b3711f73799c0f4222e830e6c7dd63f138e76d0f5d7fa86b",
+    "arms.csv": "bd4810b9b0c99ac623f273e00a3407317e8127f2b9eecfd9e94c95a892d0ced9",
+    "dilution.csv": "681603ac2bb377e4509e7daec71563aa5eeeb2a9b299062850aefa6aaad8ab35",
+    "prevalence.npz": "ad73518c7064f2e5d7734567387111c8bc41da98ab283d182d8eb4ea17f40149",
+    "prevalence_checks.json": "23d749af9f6d70018945a0960604175014774edcf1915233d39812bcd37a2cdc",
+    "fixtures.json": "a6b1abd2cb12f8c36f796de2a1504058e679f2c1351193b9ad2742dd756df2d6",
+    "fixtures-core.json": "b1b90e1ab52f9bf09bf184d3e7c3555816909c08535aa81c07e2928b324c6dc8",
+    "fixtures-interp.json": "0be808fa1948bb358ff6b451c38accda188d469e7f3e5c10d1a446f2aec9b658",
+    "fixtures-stability.json": "4c22bd2e5cb434bd8a80f54cc69ba9c840f4b862fbc92588958dc2830a9d0621",
+    "core_jobs.json": "80fb1febc6af5e5e24ae6ff7316dca145b8316f9814579cba76c47f1ac973028",
+    "interp_jobs.json": "6943de5408bd7812322cf79b21077f0b985835c1f6c42afa9bf2ecd4080543e4",
+    "stability_jobs.json": "e4bc23bc27d65363d786dc9fa3bd2c9cf9ce673a456cbfa978487fd774b63976",
+    "mapping.npz": "d5b03e9e4e6dc8b2d1311bc30fd957a33d6866dbe67d3c12b9b249d40475984e",
+    "library_keys.json": "904e1be972be3be2e5e2a4da3e2aa5c8f234b4f17e5cdfa8585d7f0d71b64260",
+    "tests-before.txt": "6e11919b0ab43f04b9de5c8da4383c0bb24aaf63904363e8eb3b38c8a4d7ba26",
+    "final-targeted-tests.txt": "d5ab1c488ccbeab3df1dba5174b16f31e4990c51ac7785e3b420ca14aac4512d",
+    "final-survey-tests.txt": "77d1afd6c25a53e122adc922966114c8dfa61d5a0efcb8df8ee88f2dd9bfdc82",
+    "final-mutations.txt": "e248340d7d00ef5100a3c7bf7e46d6968e6b2bdae2893a46edbec6b6b8b6adb2",
+    "astra-validation.txt": "ff7f0caae812fb760a750bc8a8cf25e8d0e8299834b6bb72559c22a92b8dce59",
+    "bias_budget.png": "61a171414de909a1553adfb9b8fdf33d956c036b40063790d07f84beac18854f",
+    "prevalence_distance.png": "36b0a444e375cb9b1304917024b61e96b262a8be7f8552a2f359dbbb41b98689",
+    "footprint_size.png": "10525c6a0f1fe3caca6a6a6103266110eac86376be327c87ca265ccab1dda5b4",
+    "multi_epoch_dilution.png": "2e177ac98bcd436b86ab67dfb0c5dc4c90f8619a18eb116937ed69dd84c55c1e",
+    "outside_footprint.png": "c9a16071806644552d8d5cb00e0926d3614e31d50b8fbc4d1a99ca6f44ec89c9"
+  },
+  "image_data_uris": 5,
+  "fixed_veto_cache_count_mismatches": 0,
+  "candidate_cache_count_mismatches": 0
+}

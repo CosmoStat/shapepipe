@@ -19,7 +19,7 @@ KINDS = ('pixel', 'column', 'bleed', 'finite_bleed', 'cluster4', 'edge', 'blob')
 EP_DTYPE = [('oi', 'i4'), ('exposure', 'U20'), ('eligible', '?'), ('fraction', 'f4'),
             ('d_interp', 'f4'), ('d_noise', 'f4'), ('hit0', '?'), ('hit2', '?'),
             ('interp_hit0', '?'), ('interp_hit2', '?'), ('iso_bits', 'i8'),
-            ('known', '?'), ('ivar', 'f8'), ('psf_T', 'f4'), ('psf_g1', 'f4'),
+            ('known', '?'), ('centre_in_foot', '?'), ('ivar', 'f8'), ('psf_T', 'f4'), ('psf_g1', 'f4'),
             ('psf_g2', 'f4')]
 CP_DTYPE = [('ei', 'i4'), ('fill', 'U12'), ('kind', 'U16'), ('distance', 'f4'),
             ('height', 'i2'), ('width', 'i2'), ('npix', 'i4'), ('hit0', '?'),
@@ -58,6 +58,7 @@ def classify_epoch(flag, weight, rms, tile_vign, seg, number):
              hit0=bool((defect & foot).any()), hit2=bool((defect & foot2).any()),
              interp_hit0=bool((interp & foot).any()),
              interp_hit2=bool((interp & foot2).any()), known=known,
+             centre_in_foot=bool(foot[25, 25]),
              iso_bits=int(np.bitwise_or.reduce(flag[foot].astype(np.int64), initial=0)))
     parts = []
     for fill, mask in (('interpolate', interp), ('noise', noise)):

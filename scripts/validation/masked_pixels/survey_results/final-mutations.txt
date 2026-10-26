@@ -1,0 +1,127 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_multi_epoch_normalization_and_shared_calibration_error __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x148d31866f60>
+
+    def test_multi_epoch_normalization_and_shared_calibration_error(monkeypatch):
+        monkeypatch.syspath_prepend(str(PATH.parent))
+        import survey_combine as m
+        from survey_prevalence import EP_DTYPE, CP_DTYPE
+        monkeypatch.setattr(m, 'ARMS', ('B',))
+        objects = np.zeros(2, dtype=[('X_IMAGE', 'f8'), ('Y_IMAGE', 'f8')])
+        objects['X_IMAGE'] = [0, 1]
+        objects['Y_IMAGE'] = [0, 1]
+        epochs = np.zeros(6, dtype=EP_DTYPE)
+        epochs['oi'] = [0, 0, 0, 1, 1, 1]
+        epochs['eligible'] = True
+        epochs['ivar'] = 1.
+        components = np.zeros(2, dtype=CP_DTYPE)
+        components['ei'] = [0, 3]
+        components['distance'] = 4
+        components['fill'] = 'interpolate'
+        components['kind'] = 'bleed'
+        lib = [dict(kind='bleed', fill='interpolate', d=4, hlr=.3,
+                    psf_shear=[0., 0.], n_epochs=n) for n in (1, 3)]
+        # Effective coefficient N*delta_N is half the single-epoch delta.
+        q = np.array([[.3, 0, .03, 0], [.15, 0, .015, 0]])
+        qb = np.zeros((2, 10, 4))
+        qb[1, :, 0] = [.0, .3] * 5
+        out = m.combine(epochs, objects, components, np.array([0, 0]), q, qb,
+                        np.abs(q), {'B': np.ones(6, bool)}, np.ones(2, bool), lib)['B']
+>       np.testing.assert_allclose(out['mean'], [.05, 0, .005, 0])
+E       AssertionError: 
+E       Not equal to tolerance rtol=1e-07, atol=0
+E       
+E       Mismatched elements: 2 / 4 (50%)
+E       Mismatch at indices:
+E        [0]: 0.09999999999999999 (ACTUAL), 0.05 (DESIRED)
+E        [2]: 0.009999999999999998 (ACTUAL), 0.005 (DESIRED)
+E       Max absolute difference among violations: 0.05
+E       Max relative difference among violations: 1.
+E        ACTUAL: array([0.1 , 0.  , 0.01, 0.  ])
+E        DESIRED: array([0.05 , 0.   , 0.005, 0.   ])
+
+tests/unit/test_veto_survey.py:84: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_veto_survey.py::test_multi_epoch_normalization_and_shared_calibration_error
+1 failed in 0.10s
+KILLED ignore-joint-fit-dilution
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_multi_epoch_normalization_and_shared_calibration_error __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14c70390d730>
+
+    def test_multi_epoch_normalization_and_shared_calibration_error(monkeypatch):
+        monkeypatch.syspath_prepend(str(PATH.parent))
+        import survey_combine as m
+        from survey_prevalence import EP_DTYPE, CP_DTYPE
+        monkeypatch.setattr(m, 'ARMS', ('B',))
+        objects = np.zeros(2, dtype=[('X_IMAGE', 'f8'), ('Y_IMAGE', 'f8')])
+        objects['X_IMAGE'] = [0, 1]
+        objects['Y_IMAGE'] = [0, 1]
+        epochs = np.zeros(6, dtype=EP_DTYPE)
+        epochs['oi'] = [0, 0, 0, 1, 1, 1]
+        epochs['eligible'] = True
+        epochs['ivar'] = 1.
+        components = np.zeros(2, dtype=CP_DTYPE)
+        components['ei'] = [0, 3]
+        components['distance'] = 4
+        components['fill'] = 'interpolate'
+        components['kind'] = 'bleed'
+        lib = [dict(kind='bleed', fill='interpolate', d=4, hlr=.3,
+                    psf_shear=[0., 0.], n_epochs=n) for n in (1, 3)]
+        # Effective coefficient N*delta_N is half the single-epoch delta.
+        q = np.array([[.3, 0, .03, 0], [.15, 0, .015, 0]])
+        qb = np.zeros((2, 10, 4))
+        qb[1, :, 0] = [.0, .3] * 5
+        out = m.combine(epochs, objects, components, np.array([0, 0]), q, qb,
+                        np.abs(q), {'B': np.ones(6, bool)}, np.ones(2, bool), lib)['B']
+        np.testing.assert_allclose(out['mean'], [.05, 0, .005, 0])
+        assert out['multi_corrected_components'] == 2
+        # One shared fixture error does NOT shrink by sqrt(number of objects).
+>       np.testing.assert_allclose(out['fixture_sigma'][0], .05)
+E       AssertionError: 
+E       Not equal to tolerance rtol=1e-07, atol=0
+E       
+E       Mismatched elements: 1 / 1 (100%)
+E       Max absolute difference among violations: 0.01464466
+E       Max relative difference among violations: 0.29289322
+E        ACTUAL: array(0.035355)
+E        DESIRED: array(0.05)
+
+tests/unit/test_veto_survey.py:87: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_veto_survey.py::test_multi_epoch_normalization_and_shared_calibration_error
+1 failed in 0.07s
+KILLED average-away-shared-fixture-error
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_object_cut_reads_pre_veto_flags_not_fixed_veto_survivors _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x15390281d880>
+
+    def test_object_cut_reads_pre_veto_flags_not_fixed_veto_survivors(monkeypatch):
+        monkeypatch.syspath_prepend(str(PATH.parent))
+        import survey_combine as m
+        from survey_prevalence import EP_DTYPE
+        e = np.zeros(2, dtype=EP_DTYPE)
+        e['eligible'] = e['known'] = True
+        e['d_interp'] = [4, np.inf]
+        e['d_noise'] = np.inf
+        e['iso_bits'] = [8, 0]
+        e['hit0'][0] = e['interp_hit0'][0] = True
+        keep = m.build_keep(e, 1)
+        assert keep['A'].tolist() == [False, True]
+        assert keep['B'].all()
+>       assert not keep['C'].any()
+E       assert not np.True_
+E        +  where np.True_ = <built-in method any of numpy.ndarray object at 0x153902b9e3d0>()
+E        +    where <built-in method any of numpy.ndarray object at 0x153902b9e3d0> = array([ True,  True]).any
+
+tests/unit/test_veto_survey.py:104: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_veto_survey.py::test_object_cut_reads_pre_veto_flags_not_fixed_veto_survivors
+1 failed in 0.06s
+KILLED cut-flags-after-fixed-veto

@@ -1,0 +1,17 @@
+warning: Ignoring invalid `SSL_CERT_FILE`. Path does not exist: /etc/pki/tls/certs/ca-bundle.crt.
+Validating astra.yaml...
+✓ Schema validation passed
+✓ Semantic validation passed
+
+Note: 2 prior insight(s) (2 evidence) and 0 finding(s) (0 evidence) found.
+Run with --verify-evidence to verify quotes exist in papers.
+
+Validation successful!
+
+Validating universes/committed.yaml...
+✓ Schema validation passed
+✓ Semantic validation passed
+
+Validation successful!
+
+All 2 file(s) passed validation.

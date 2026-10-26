@@ -86,3 +86,43 @@ def test_multi_epoch_normalization_and_shared_calibration_error(monkeypatch):
     # One shared fixture error does NOT shrink by sqrt(number of objects).
     np.testing.assert_allclose(out['fixture_sigma'][0], .05)
     assert out['objects_lost'] == out['epochs_lost'] == 0
+
+
+def test_object_cut_reads_pre_veto_flags_not_fixed_veto_survivors(monkeypatch):
+    monkeypatch.syspath_prepend(str(PATH.parent))
+    import survey_combine as m
+    from survey_prevalence import EP_DTYPE
+    e = np.zeros(2, dtype=EP_DTYPE)
+    e['eligible'] = e['known'] = True
+    e['d_interp'] = [4, np.inf]
+    e['d_noise'] = np.inf
+    e['iso_bits'] = [8, 0]
+    e['hit0'][0] = e['interp_hit0'][0] = True
+    keep = m.build_keep(e, 1)
+    assert keep['A'].tolist() == [False, True]
+    assert keep['B'].all()
+    assert not keep['C'].any()
+
+
+def test_973_object_cut_does_not_invent_noise_only_zero_weight_flags(monkeypatch):
+    monkeypatch.syspath_prepend(str(PATH.parent))
+    import survey_combine as m
+    from survey_prevalence import EP_DTYPE
+    e = np.zeros(1, dtype=EP_DTYPE)
+    e['eligible'] = e['known'] = e['hit0'] = True
+    e['d_interp'], e['d_noise'] = np.inf, 10.
+    keep = m.build_keep(e, 1)
+    assert keep['C'].all()  # neither instrument ISO bits nor interpolation
+    assert not keep['D0'].any()  # D sees all production defects
+
+
+def test_size_matched_envelope_preserves_size_footprint_correlation(monkeypatch):
+    monkeypatch.syspath_prepend(str(PATH.parent))
+    import survey_combine as m
+    from survey_prevalence import CP_DTYPE
+    c = np.zeros(1, dtype=CP_DTYPE)
+    c['fill'], c['distance'] = 'interpolate', 4
+    lib = [dict(fill='interpolate', hlr=h, d=4) for h in (.3, .7)]
+    q = np.array([[.01, .001, .0001, .00001], [1., .1, .01, .001]])
+    envelope = m.matched_size_envelope(c, np.array([0]), lib, q)
+    np.testing.assert_allclose(envelope, q[[0]])
