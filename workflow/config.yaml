@@ -13,12 +13,12 @@
 
 # Main keys, global for all machines
 
-# input_tyle: allowed are data or image_sims
+# input_type: allowed are data or image_sims
 input_type: data
 
 # Run name, available as `$run` in the paths below; it also names the
 # campaign's merged catalogues. Required, and set by the run config.
-# run: smk-g6
+# run: my_campaign
 
 # How ngmix treats a stamp's neighbours (its BLEND_HANDLING). tile_detect
 # writes the coadd segmentation stamps into the sexcat as SEG_VIGNET under
@@ -35,8 +35,8 @@ blend_handling: uberseg
 #   also fetches the UNIONS per-tile catalogue and joins the detections to it,
 #   taking its NUMBER (needs the DR6 tile image); `sextractor` keeps
 #   SExtractor's own (required for image_sims)
-# - psf_model: allowed are `psfex` (default), `mccd`; `fake` (image_sims only,
-#   PSF read from psf_dict)
+# - psf_model: `psfex` (data default), `fake` (image_sims default, read from
+#   psf_dict). The Snakefile refuses `mccd`; see refuse_unpersistable_psf.
 input_types:
   data:
     # @sc [decision:detection.tile_detection]
@@ -73,7 +73,7 @@ input_types:
 # - outputs.products_dir: path to final products (default run_dir; one root
 #   needs clean: false and clean_tiles: false)
 # - outputs.index_db: path to bookkeeping index sqlite file
-# - container: TBD
+# - container: image fallback; see workflow/scripts/container.py for resolution
 
 machines:
   nibi:
@@ -114,27 +114,10 @@ machines:
       psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle 
       container: /n17data/cdaley/containers/shapepipe_im_sims-runtime.sif
 
-# OPTIONAL per-exposure retention: what to carry onto the persistent root ON TOP
-# OF the star catalogue's own inputs, before the scratch store goes
-# (`exp_persist`, exposure.smk).
-#
-# WHAT IS ALWAYS KEPT, AND IS NOT A CHOICE HERE: psf_validation, the psfex_interp
-# validation catalogue, one per CCD. `star_cat_merge` stacks every one of them
-# into <products_dir>/full_starcat_<run>.hdf5, so they are that
-# catalogue's PROVENANCE — a merged star catalogue with no per-exposure inputs
-# beside it cannot be audited, re-cut, or recomputed after a purge — and they are
-# what keeps APPENDING TILES CHEAP, since a tile added next month brings
-# exposures whose catalogues must join the existing stack. ~2 MB per exposure:
-# ~40 GB and ~40k inodes at DR6 scale, against a ~1 M-inode group quota. That is
-# the price of being able to say where the number came from, and it is paid.
-#
-# SO THIS LIST IS PURELY ADDITIVE, and an empty one is a coherent instruction:
-# the tar then holds the star catalogue's inputs and nothing else.
-#
-# Entries are PRODUCT NAMES — not globs. The catalogue below is the rendering of
-# workflow/scripts/persist_exp.py's PRODUCTS table, which is the single source of
-# truth for what each name means and what keeping it buys
-# (CosmoStat/shapepipe#844); print it any time with
+# Optional per-exposure retention, in addition to mandatory psf_validation.
+# Entries name products in workflow/scripts/persist_exp.py's PRODUCTS table;
+# that file owns product meanings, sizes, glob syntax and additive retention.
+# Print the catalogue with:
 #
 #     workflow/bin/sp container exec python workflow/scripts/persist_exp.py --list-products
 #
@@ -201,12 +184,9 @@ machines:
 # tile_make_cat straight to products_dir. The manifest contains epoch-cut
 # counts summed over all ngmix chunks. A tile keep list is #844 follow-up.
 #
-# NOTE ON products_dir DEFAULTING TO run_dir (a fixture or smoke test): the tar
-# then lands beside the store on the same filesystem and buys nothing, and
-# final_cat and the persist manifests sit inside the trees clean_tile and
-# clean_exposure delete. A one-root run is for fixtures and smoke tests only and
-# must set clean: false and clean_tiles: false; the Snakefile refuses it
-# otherwise.
+# @sc [label:hazard] shared-run-products-root-requires-no-clean
+# A one-root fixture (products_dir == run_dir) must disable both clean flags:
+# otherwise cleanup deletes persistent products. The Snakefile enforces this.
 persist_exp:
   - psf_model
 
@@ -225,14 +205,10 @@ clean_tiles: true
 # Their exposures are rebuilt from scratch if the tile is retried.
 clean_ignore_tiles: []
 
-# The ceiling on any rule's mem_mb: nibi's, whose standard compute node is
-# 766 GB (192 cores at 4 GB/core), so 750000 leaves room for the OS and slurm's
-# own overhead. A candide run never reaches it. A request above the partition
-# maximum is a job SLURM never schedules and snakemake never diagnoses: it sits
-# PENDING while the campaign looks alive. The two
-# campaign-level merges size themselves from the campaign's bytes and will cross
-# this at survey scale — the cap turns "never runs" into "runs on the biggest
-# node there is", with a parse-time warning saying which rule was capped.
+# Memory-request ceiling: 750000 MB leaves OS/SLURM headroom on nibi's
+# 766 GB standard nodes. An above-partition request stays PENDING indefinitely.
+# Snakefile::capped_mem limits merge requests and warns when sizing exceeds the
+# cap; it does not guarantee that the job fits in the capped memory.
 max_mem_mb: 750000
 
 # ngmix chunks per tile.

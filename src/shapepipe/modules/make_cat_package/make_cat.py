@@ -318,23 +318,22 @@ class SaveCatalogue:
         ``NGMIX_N_EPOCH_FAILED`` — epochs dropped because building their
         observation raised, see ``ngmix.do_ngmix_metacal`` —
         ``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG`` — a blend
-        flag set when the coadd seg stamp held a non-central footprint,
-        shapepipe#776 — the adaptive defect diagnostics
+        flag set when the coadd segmentation stamp contains a non-central
+        footprint — the adaptive defect diagnostics
         ``NGMIX_IMAFLAGS_ISO`` and ``NGMIX_N_EPOCH_INTERP_ISO`` (defined by
         ``Postage_stamp.record_footprint_defects``; unknown footprints -1,
         never-fit rows 0), and the stamp diagnostics ``NGMIX_N_EPOCH_INTERP``,
         ``NGMIX_MIN_DIST_INTERP``, ``NGMIX_MIN_DIST_NOISEFILL``, described
         by ``Postage_stamp.record_defects``; -1 is their absent distance,
-        and a never-fit row carries 0 and -1). The galaxy is the implicit default object
-        and carries NO ``OBJECT`` token (``NGMIX_G1_NOSHEAR``, dropping the
-        ``GAL`` segment carried by the pre-#761 names). The explicit PSF
+        and a never-fit row carries 0 counts and -1 distances).
+        The galaxy is the implicit default object and carries no
+        ``OBJECT`` token (``NGMIX_G1_NOSHEAR``). The explicit PSF
         objects are ``PSF_ORIG``
         (the original image PSF, fit by
         :func:`ngmix.average_original_psf`) and ``PSF_RECONV`` (the metacal
         reconvolution kernel, fit by :func:`ngmix.average_multiepoch_psf`);
-        see those functions for what each PSF family IS. ``PSF_ORIG`` and
-        ``PSF_RECONV`` are independent fits of different PSFs, no longer the
-        single aliased value of the pre-fix code (shapepipe#749).
+        see those functions for the definitions of each PSF family. The two
+        families contain independent fits of different PSFs.
 
         Parameters
         ----------
@@ -375,8 +374,7 @@ class SaveCatalogue:
             self._w_log.warning(warning)
 
         ngmix_mcal_types_fail = ngmix_cat_file.get_data()["mcal_types_fail"]
-        # Per-object blend flag (shapepipe#776): the seg stamp held a
-        # non-central footprint. Galaxy-only (non-moments), like N_EPOCH.
+        # Per-object blend flag: galaxy-only (non-moments), like N_EPOCH.
         ngmix_neighbour_flag = ngmix_cat_file.get_data()["neighbour_flag"]
         # Failed-epoch count (ngmix.do_ngmix_metacal) and defect diagnostics
         # (ngmix Postage_stamp.record_defects).

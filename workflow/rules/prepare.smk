@@ -8,19 +8,18 @@ data-derived tile->exposure edge that invocation 2's parse aggregates into the
 index. Nibi compute nodes have internet, so downloads run in-DAG (no login-node
 tier).
 
-All three rules carry ``group: "tile_prep"``, so one tile's whole chain is ONE
-sbatch instead of three (medians 0:41 / ~0:40 / 0:15 — all far under the
-15-minute runtime limit Alliance policy asks us to bundle away, and at DR6 scale three
-submissions per tile is a scheduler load out of all proportion to the work).
+All three rules carry ``group: "tile_prep"``, so one tile's chain uses one
+sbatch submission. Measured stage medians are 0:41 / ~0:40 / 0:15, well below
+Alliance's 15-minute bundling threshold; grouping limits scheduler load.
 Group membership is per connected DAG component and distinct tiles share no
 edge, so this is exactly one group job per tile, never a cross-tile bundle.
 Rules stay group-compatible: shell only, no mid-chain localrules, no pipe outputs.
 
 Group resource composition (snakemake 9.23, ``GroupResources.basic_layered`` in
 snakemake/resources.py): jobs are laid out per toposort level; within a level
-non-additive resources (mem_mb, cpus) SUM — split into layers when a global
-constraint is exceeded, the group's width being the widest layer — while the
-additive resource ``runtime`` is maxed within a layer and SUMMED across layers.
+non-additive resources (mem_mb, cpus) sum, with layers split when a global
+constraint is exceeded and group width set by the widest layer. The additive
+resource ``runtime`` takes the maximum within each layer and sums across layers.
 This chain is strictly linear, one job per level, so the group asks for
 max(mem_mb) = 8000*attempt, max(threads) = 4 and sum(runtime) = 150 min.
 Attempt scaling survives grouping: ``GroupJob.attempt``'s setter clears the
@@ -29,12 +28,8 @@ cached group resources and re-sets ``attempt`` on every member (jobs.py), and
 ``retries: 2`` still governs. A retry re-runs the whole group, which is safe
 because every rule ``rm -rf``s its own run dir at start.
 
-There is no masking node in this phase, or in any other: ShapePipe generates no
-masks (PR #847). The instrument flag image ships with the exposure and is split
-per CCD by ``exp_split``; the sky-fixed healsparse masks are queried per object
-inside the ShapePipe configs (``mask_query`` on exposures, ``make_cat`` on
-tiles). Nothing is fetched, staged or rasterized, so there is nothing to
-prepare.
+This phase has no masking node. See exposure.smk for instrument flags and
+config_tile_Mc.ini for tile mask queries; neither requires tile preparation.
 """
 
 # No NUMBER_LIST for get_images — a download stage has nothing on disk to

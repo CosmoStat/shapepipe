@@ -133,8 +133,7 @@ decisions:
       Values:
       default_noimaflags.param#VIGNET = 51;
       default.param#VIGNET = 51;
-      VIGNETMAKER_RUNNER_RUN_1.STAMP_SIZE = 51;
-      VIGNETMAKER_RUNNER_RUN_2.STAMP_SIZE = 51;
+      VIGNETMAKER_RUNNER.STAMP_SIZE = 51;
       PSF_SIZE = 51.
     default: px_51
     options:
@@ -328,7 +327,7 @@ analyses:
           pixels: a star halo changes no stamp.
           Values:
           config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = True;
-          VIGNETMAKER_RUNNER_RUN_2.ME_IMAGE_PATTERN = flag, image, weight,
+          VIGNETMAKER_RUNNER.ME_IMAGE_PATTERN = flag, image, weight,
           background, background_rms.
         default: instrument_flags_only
         options:
@@ -468,16 +467,33 @@ analyses:
           concentrated around very large objects; they have photometry but
           no shape. The join needs the tile image to be the catalogue's
           release: on the DR5 image of a tile only ~95% of detections pair.
-          The run stops when the unpaired detections, or the unpaired
-          catalogue objects, exceed both 2% of their side and 20 objects: a
-          margin over deblending near large objects, a stop for other pixels. PSF stars come from the exposure-level
+          Unpaired detections still stop the run beyond both 2% and 20
+          objects, preserving the check for other pixels. External-only
+          losses stop beyond both 20 objects and 2% of the external count
+          plus an additive 50-object allowance (only when pairs exist).
+          Four production edge tiles have 49, 59, 55 and 101 external-only
+          objects among 1680-2861 objects, concentrated in bright-star
+          halos/spikes at normal positive weight; only 0-3 detections lack
+          partners and paired positions agree to 7e-5 px. Local correlated
+          deblending losses do not scale with total tile population. The
+          allowance is empirical, rounded above the largest observed excess
+          over 2% (44 objects), not a binomial confidence bound. It weakens
+          sensitivity to modest external-side detection-config losses on
+          sparse tiles; there are too few uncensored sparse tiles to
+          calibrate a false-rejection rate. A zero-weight exemption would
+          not explain these losses, and spatial exemptions would add mask
+          and clustering choices. Only the acceptance gate changes: no
+          external-only object gains a shape and every previously accepted
+          catalogue retains identical membership and measurements.
+          PSF stars come from the exposure-level
           SExtractor run in both options. Image simulations, which have no
           UNIONS catalogue, keep SExtractor's own NUMBER.
           Values:
           input_types.data.tile_detection = unions_catalogue;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_RADIUS = 1.0;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_MIN_FRACTION = 0.98;
-          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_TOLERATED_UNPAIRED = 20.
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_TOLERATED_UNPAIRED = 20;
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_EXTERNAL_UNPAIRED_ALLOWANCE = 50.
         default: unions_catalogue
         options:
           unions_catalogue:
@@ -907,12 +923,10 @@ analyses:
           blends and asymmetric galaxies, and the centroid feeds the position
           seed and the centroid prior.
           Values:
-          VIGNETMAKER_RUNNER_RUN_1.POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE;
-          VIGNETMAKER_RUNNER_RUN_1.COORD = PIX;
           config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS =
           XWIN_WORLD,YWIN_WORLD;
-          VIGNETMAKER_RUNNER_RUN_2.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD;
-          VIGNETMAKER_RUNNER_RUN_2.COORD = SPHE;
+          VIGNETMAKER_RUNNER.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD;
+          VIGNETMAKER_RUNNER.COORD = SPHE;
           config_exp_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS =
           XWIN_IMAGE,YWIN_IMAGE.
         default: xwin_windowed
@@ -1508,7 +1522,7 @@ analyses:
           (BKG_SUB, on unless set False).
           Values:
           NGMIX_RUNNER.BKG_RMS_VIGNET_PATH =
-          $NGMIX_VIGNET_DIR/vignetmaker_runner_run_2/output/background_rms_vignet{file_number_string}.sqlite;
+          $NGMIX_VIGNET_DIR/vignetmaker_runner/output/background_rms_vignet{file_number_string}.sqlite;
           NGMIX_RUNNER.BKG_SUB = absent.
         default: rms_vignet_weights
         options:
@@ -1602,8 +1616,7 @@ analyses:
           fragments) are not defects either: the epoch stamps hold real
           light there, so they keep their weight and image.
           Values:
-          VIGNETMAKER_RUNNER_RUN_1.MASKING = False;
-          VIGNETMAKER_RUNNER_RUN_2.MASKING = False;
+          VIGNETMAKER_RUNNER.MASKING = False;
           ngmix.py::DEFECT_FILL = "interpolate".
         default: interpolate
         options:

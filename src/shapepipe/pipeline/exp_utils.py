@@ -1,11 +1,10 @@
 """EXPOSURE UTILITIES.
 
 Utility functions for accessing per-exposure runner outputs from the
-tile level.  In the v2.0 pipeline, each single exposure is processed in
-its own work directory ``<EXP_BASE_DIR>/<prefix>/<base>/``.  Tile-level
-modules that need files produced by a per-exposure runner use the
-functions here to discover those files by scanning the contributing
-exposure directories.
+tile level.  Each single exposure is processed in its own work directory
+``<EXP_BASE_DIR>/<prefix>/<base>/``.  Tile-level modules that need files
+produced by a per-exposure runner use the functions here to discover those
+files by scanning the contributing exposure directories.
 
 :Author: Martin Kilbinger
 
@@ -40,7 +39,7 @@ def get_exp_output_files(
     ----------
     exp_base_dir : str
         Root directory that contains all per-exposure work directories,
-        e.g. ``/arc/home/kilbinger/v2.0/exp``
+        e.g. ``<run_dir>/exp``
     exp_numbers_file : str
         Path to a text file listing one exposure ID per line,
         e.g. ``exp_numbers-301-279.txt``
@@ -91,7 +90,8 @@ def get_exp_output_files(
     missing = []
 
     for exp_id in exp_ids:
-        # Directory structure mirrors run_job_canfar_v2.0.sh:
+        # Directory structure mirrors the workflow's per-exposure store, built
+        # by rule tile_exp_forest / workflow/scripts/build_forest.py:
         #   exp_prefix = first 2 chars of exp_id  (e.g. "21")
         #   exp_base   = exp_id without trailing letter if present (e.g. "2113864"),
         #                or full exp_id for numeric-only ids (image sims)
