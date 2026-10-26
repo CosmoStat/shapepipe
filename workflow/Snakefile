@@ -273,6 +273,17 @@ for _key, _value, _allowed in (
         raise WorkflowError(
             f"Invalid {_key}={_value!r}; expected one of {list(_allowed)}.")
 
+# megacam_flip -> SP_MEGACAM_FLIP -> NGMIX_RUNNER.MEGACAM_FLIP: rotate the
+# coadd stamps of CCDs < 18 and 36/37 to the MegaCam epoch orientation. Unset:
+# on for data, off for image sims, whose CCDs are all read out the same way up.
+MEGACAM_FLIP = config.get("megacam_flip", INPUT_TYPE != "image_sims")
+if not isinstance(MEGACAM_FLIP, bool):
+    raise WorkflowError(
+        f"Invalid megacam_flip={MEGACAM_FLIP!r}; expected true or false.")
+# Exported only when off: the ini's default is True, so a flipping campaign's
+# tile_ngmix params (a rerun trigger) stay what they were before the key.
+MEGACAM_FLIP_ENV = {} if MEGACAM_FLIP else {"SP_MEGACAM_FLIP": "False"}
+
 # --- parse-time index build + load (D1) ------------------------------------
 # The compute head process builds the index unconditionally: zero Fe outputs
 # gives a missing fraction of 1.0 and trips the configured missing threshold

@@ -525,6 +525,7 @@ rule tile_ngmix:
             env={"SP_NGMIX_CHUNK": wc.chunk, "NGMIX_N_CHUNKS": NGMIX_CHUNKS,
                  "SP_DEFECT_FILL": DEFECT_FILL,
                  "SP_DEFECT_WEIGHTING": DEFECT_WEIGHTING,
+                 **MEGACAM_FLIP_ENV,
                  **blend_env("tile_ngmix")},
             # Two steps, not `eval "$(...)"`: a command substitution inside eval
             # discards the script's exit status, so a missing sexcat would fall

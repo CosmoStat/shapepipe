@@ -1551,15 +1551,20 @@ analyses:
       megacam_ccd_flip:
         label: 180-degree rotation of tile vignets for CCDs below 18 and 36-37
         rationale: >-
-          [HARDCODED] "MegaPipe has CCDs that are upside down": the tile vignet
+          "MegaPipe has CCDs that are upside down": the tile vignet
           and segmentation stamp are rotated to register with the epoch stamp.
           A wrong flip mis-registers the tile coverage flag against the epoch,
           changing flagged pixels and the masked-fraction cut. The docstring
-          warns it is wrong for THELI CCDs.
+          warns it is wrong for THELI CCDs. The simulated CCDs are all read out
+          the same way up, so image sims turn the flip off: the run-config
+          key `megacam_flip` (unset: true for data, false for image_sims)
+          sets NGMIX_RUNNER.MEGACAM_FLIP.
         default: megapipe_flip
         options:
           megapipe_flip:
             label: Flip CCDs < 18 and 36/37 (MegaPipe orientation)
+          no_flip:
+            label: No flip (image sims)
       defect_flagging:
         label: Adaptive exposure defects on tile objects
         rationale: >-

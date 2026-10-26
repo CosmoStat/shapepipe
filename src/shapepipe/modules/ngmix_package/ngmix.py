@@ -914,6 +914,10 @@ class Ngmix(object):
     defect_fill : str, optional
         What defect pixels hold before metacal, one of ``DEFECT_FILLS``
         (see :func:`interpolated_defects`); the default is ``DEFECT_FILL``.
+    megacam_flip : bool, optional
+        Rotate the coadd stamps to the MegaCam CCD orientation (see
+        :meth:`MegaCamFlip`); the default is ``True``. ``False`` for image
+        sims, whose CCDs are not flipped.
 
     Notes
     -----
@@ -948,6 +952,7 @@ class Ngmix(object):
         metacal_psf="fitgauss",
         defect_weighting=DEFECT_WEIGHTING,
         defect_fill=DEFECT_FILL,
+        megacam_flip=True,
     ):
 
         # Base count = catalogue + vignets, excluding the f_wcs headers (passed
@@ -1022,6 +1027,7 @@ class Ngmix(object):
         self._metacal_psf = metacal_psf
         self._defect_weighting = defect_weighting
         self._defect_fill = defect_fill
+        self._megacam_flip = megacam_flip
 
         self._w_log = w_log
 
@@ -1495,6 +1501,7 @@ class Ngmix(object):
                 gal_obj,
                 blend_handling=self._blend_handling,
                 defect_fill=self._defect_fill,
+                megacam_flip=self._megacam_flip,
             )
             epoch_cuts.update(stamp.epoch_cuts)
 
@@ -1654,6 +1661,7 @@ def prepare_postage_stamps(
     gal_obj=None,
     blend_handling="noisefill",
     defect_fill=DEFECT_FILL,
+    megacam_flip=True,
 ):
     """Gather one object's epoch stamps, dropping epochs its defects spoil.
 
@@ -1705,7 +1713,7 @@ def prepare_postage_stamps(
         The surviving epochs' stamps.
     """
     # define per-object lists of individual exposures to go into ngmix
-    stamp = Postage_stamp(bkg_sub=bkg_sub)
+    stamp = Postage_stamp(bkg_sub=bkg_sub, megacam_flip=megacam_flip)
     # Read each store's per-object dict ONCE: every sqlitedict access
     # unpickles the object's whole all-epoch dict, so keeping these out of
     # the epoch loop below saves O(n_epoch) full unpickles per store.

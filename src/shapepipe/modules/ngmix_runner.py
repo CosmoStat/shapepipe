@@ -207,6 +207,12 @@ def ngmix_runner(
     else:
         metacal_psf = "fitgauss"
 
+    # MegaCam CCD flip of the coadd stamps (see Ngmix.MegaCamFlip). Disable
+    # for image sims, whose CCDs are all read out the same way up.
+    megacam_flip = config.getboolean(
+        module_config_sec, "MEGACAM_FLIP", fallback=True
+    )
+
     # Initialise class instance
     ngmix_inst = Ngmix(
         input_file_list,
@@ -225,6 +231,7 @@ def ngmix_runner(
         metacal_psf=metacal_psf,
         defect_weighting=defect_weighting,
         defect_fill=defect_fill,
+        megacam_flip=megacam_flip,
     )
 
     # Process ngmix shape measurement and metacalibration
