@@ -10,7 +10,28 @@ import pickle
 
 import numpy as np
 from astropy.io import fits
+from cs_util import size as cs_size
 from sqlitedict import SqliteDict
+
+
+def _galaxy_psf_shapes(shapes):
+    """Map a simulation PSF ``SHAPES`` dict to the galaxy-PSF schema.
+
+    The SKiLLS PSF dictionary stores HSM shapes as ``E1_PSF_HSM``,
+    ``E2_PSF_HSM``, ``SIGMA_PSF_HSM`` and ``FLAG_PSF_HSM``; ``make_cat``
+    reads ``HSM_G1_PSF``, ``HSM_G2_PSF``, ``HSM_T_PSF`` and ``HSM_FLAG_PSF``
+    (the keys ``psfex_interp`` writes). A dict already in that schema is
+    returned unchanged. The fourth-moment keys are absent, so ``make_cat``
+    leaves those slots at their fill values.
+    """
+    if "HSM_FLAG_PSF" in shapes:
+        return shapes
+    return {
+        "HSM_G1_PSF": float(shapes["E1_PSF_HSM"]),
+        "HSM_G2_PSF": float(shapes["E2_PSF_HSM"]),
+        "HSM_T_PSF": float(cs_size.sigma_to_T(shapes["SIGMA_PSF_HSM"])),
+        "HSM_FLAG_PSF": int(shapes["FLAG_PSF_HSM"]),
+    }
 
 
 class FakePsf:
@@ -101,7 +122,11 @@ class FakePsf:
                         f"Galaxy {galaxy_number}: key '{exp_ccd}' not in PSF dict"
                     )
                     continue
-                gal_dict[exp_ccd] = psf_dict[exp_ccd]
+                entry = psf_dict[exp_ccd]
+                gal_dict[exp_ccd] = {
+                    **entry,
+                    "SHAPES": _galaxy_psf_shapes(entry["SHAPES"]),
+                }
             output_file[str(galaxy_number)] = gal_dict
 
         output_file.commit()

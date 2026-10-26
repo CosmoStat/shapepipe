@@ -5,15 +5,14 @@ runs the full chain from raw survey images to calibrated shear catalogues —
 object detection, PSF modelling, and shape measurement — and was used to produce
 the first UNIONS cosmic-shear release.
 
-The project is now entering a substantial rework of the shape-measurement
-pipeline, with the near-term goal of a tight loop between the pipeline and image
-simulations for validation and calibration. Development is by a small team;
+Development focuses on a tight loop between the shape-measurement pipeline and
+image simulations for validation and calibration. Development is by a small team;
 reproducibility and clarity matter more than breadth.
 
 ## Environment — the container is the source of truth
 
 ShapePipe is not a stand-alone library: it needs system tools (Source Extractor,
-PSFEx, WeightWatcher), MPI, and a specific scientific-Python stack. The supported
+PSFEx), MPI, and a specific scientific-Python stack. The supported
 way to get all of that is the container.
 
 - **Dependencies** are declared in `pyproject.toml` as **floor ranges**; exact
@@ -81,18 +80,34 @@ Full detail: `docs/source/installation.md` and `docs/source/container.md`.
 
 - `src/shapepipe/` — the package (src-layout). `modules/` holds the pipeline
   modules and their `*_runner.py` wrappers; `pipeline/` is execution and file
-  I/O; `utilities/`; `canfar/` is CANFAR/cluster job orchestration. Console entry
-  points (`shapepipe_run`, `summary_run`, `canfar_*`) are defined under
+  I/O; `utilities/`; `canfar/` monitors CANFAR sessions. Console entry
+  points (`shapepipe_run`, `canfar_*`, `plot_coverage_map`) are defined under
   `[project.scripts]`.
 - `tests/` — the whole test suite, one discovery root: `module/` (per-module
   unit/property/integration tests), `unit/` (structural), `science/` (fast
   guardrails), `cluster/` (candide-only), `helpers/` (shared library code).
   See `tests/README.md`.
+- `workflow/` — **the production orchestration**: a Snakemake workflow over the
+  same `shapepipe_run` calls. `bin/sp` is the entry point (`run`, `report`,
+  `container`, `cancel`); `Snakefile` plus `rules/{prepare,exposure,tile}.smk`
+  are the rule graph; `scripts/` holds the plain Python each rule
+  shells out to; `config.yaml` declares one run (tile list, the scratch and
+  persistent roots, the container); `config/cfis/` holds the committed ini
+  chain; `profiles/nibi/config.yaml` is the SLURM executor profile. Deep
+  reference: `workflow/README.md`. User-facing: `docs/source/workflow.md`.
 - `example/` — a runnable example pipeline (`example/config.ini`) on a single
   CFIS tile; doubles as the CI smoke test.
 - `scripts/` — shell / Python / notebook helpers (`sh/`, `python/`, `jupyter/`),
   symlinked onto `$PATH` inside the image.
 - `docs/` — Sphinx sources; the API docs are generated from docstrings.
+
+**There is no concept of a catalogue version in the code.** Nothing branches on
+`v1.3`..`v1.6` or `v2.0`, and there are no sky patches (`P1`..`P9`): a campaign
+is a tile list, and the version of a catalogue is the git tag of the code that
+produced it. The pre-Snakemake bash job
+layer (`scripts/sh/run_job_sp_canfar_v2.0.bash`, `job_sp_canfar_v2.0.bash`,
+`job_list_help.bash`, `functions.sh`) stays — it is version-free, and
+sp_validation's image-simulation workflow calls it.
 
 ## Development workflow
 
@@ -105,8 +120,8 @@ Full detail: `docs/source/installation.md` and `docs/source/container.md`.
   exercises exactly what ships — run them the same way, in the container.
 - **CI** (`.github/workflows/deploy-image.yml`): every PR and push builds the
   image and runs the test suite + the example pipeline + binary smokes; pushes to
-  `develop` / `main` / `master` additionally publish the images. API docs deploy
-  from `master` (`cd.yml`).
+  any branch additionally publish the images. See `cd.yml` for versioned API-doc
+  builds and deployment.
 - **Style**: PEP 8; numpydoc docstrings on public modules, classes, and methods.
   Match the surrounding code.
 

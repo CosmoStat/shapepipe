@@ -1441,7 +1441,7 @@ class FITSCatalogue(BaseCatalogue):
 
         col_list = self._cat_data[hdu_no].data.columns + fits.ColDefs(
             [
-                self._make_fits_col(col_name, col_data)
+                self.fits_column(col_name, col_data)
                 for col_name, col_data in columns.items()
             ]
         )
@@ -1462,13 +1462,15 @@ class FITSCatalogue(BaseCatalogue):
                 memmap=self.use_memmap,
             )
 
-    def _make_fits_col(self, col_name, col_data):
-        """Make FITS Column.
+    @staticmethod
+    def fits_column(col_name, col_data):
+        """FITS Column.
 
         Build the ``astropy.io.fits.Column`` that :meth:`add_cols` appends
         for one array: the FITS type from :meth:`_get_fits_col_type`, a
         repeat count and ``TDIM`` for multi-dimensional arrays, and a width
-        set by the longest entry for strings.
+        set by the longest entry for strings. :meth:`save_as_fits` lays out
+        the columns of a new table HDU the same way.
 
         Parameters
         ----------
@@ -1483,7 +1485,7 @@ class FITSCatalogue(BaseCatalogue):
             The column
 
         """
-        data_type = self._get_fits_col_type(col_data)
+        data_type = FITSCatalogue._get_fits_col_type(col_data)
         data_shape = col_data.shape[1:]
         dim = None
         mem_size = 1
@@ -1575,7 +1577,8 @@ class FITSCatalogue(BaseCatalogue):
         else:
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
-    def _get_fits_col_type(self, col_data):
+    @staticmethod
+    def _get_fits_col_type(col_data):
         """Get FITS Column Type.
 
         Get the FITS data type of a given column.

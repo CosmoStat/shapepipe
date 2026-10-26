@@ -1,7 +1,7 @@
 """Simulation utilities for ShapePipe validation tests.
 
-Stable across shapepipe branches and ngmix versions — contains only galsim
-and numpy, no shapepipe processing or ngmix fitting code.
+Uses only galsim and numpy, keeping image generation independent of
+ShapePipe processing and ngmix fitting code.
 
 Author: Axel Guinot
 """
@@ -59,40 +59,35 @@ def make_data(
         guardrail needs: the PSF carries a shape that an unbiased deconvolution
         must remove from a round galaxy.
     wcs : galsim.BaseWCS, optional
-        Uniform drawing WCS. Default None means ``galsim.PixelScale
-        (pixel_scale)`` with the legacy world-space sub-pixel shift draw —
-        bit-identical rng consumption and values to earlier versions of this
-        function. A non-trivial jacobian (rotation/shear — the ngmix#72
-        sensitivity axis) switches the shift draw to PIXEL space (uniform
-        ±0.5 pixel per axis), guaranteeing the object lands within half a
-        pixel of the stamp centre — the contract that round-to-nearest-pixel
-        centroid logic (e.g. ngmix ``centroid_source="wcs"``) depends on.
-        Note ``psfs_sigmas`` are HSM pixel-unit sigmas of the *WCS-drawn*
-        PSF stamp; under a sheared WCS they are not circularly symmetric
-        measures.
+        Uniform drawing WCS. With None, use ``galsim.PixelScale(pixel_scale)``
+        and draw shifts uniformly in world space within ±pixel_scale/2.
+        With an explicit WCS, draw shifts uniformly within ±0.5 pixel per
+        axis and transform them to world space; see the centroid contract below.
+        ``psfs_sigmas`` are HSM pixel-unit sigmas of the WCS-drawn model PSF
+        stamp, not circularly symmetric measures under a sheared WCS.
     return_centers : bool, optional
         If True, also return per-epoch true object centres as
         ``galsim.PositionD`` in galsim image coordinates (1-based; stamp
-        centre is ``(img_size + 1) / 2``). Default False keeps the legacy
-        6-tuple return.
+        centre is ``(img_size + 1) / 2``). Default False returns six items.
     psf_model_fwhm_ratio : float, optional
-        Multiplicative size error injected into the PSF *model* stamp handed to
-        ngmix, relative to the *true* PSF that convolves the galaxy. Default 1.0
-        (no error: the same PSF object renders the galaxy and the model stamp,
-        byte-for-byte identical to the legacy behaviour). A value != 1.0 makes
-        the model PSF the wrong size — over-sized (>1) over-deconvolves, under-
-        sized (<1) leaves residual smoothing — so metacal deconvolves by a PSF
-        that does not match the one in the data. This is the controlled-PSF-
-        model-error knob: it tests whether metacal's response correction (which
-        is computed with the same wrong model) absorbs a deconvolution error,
-        the one shape-measurement systematic the zero-error sim could not probe.
+        Model PSF FWHM divided by the true PSF FWHM. Default 1.0 adds no
+        size error. Values above 1 over-deconvolve; values below 1 leave
+        residual smoothing. This controlled mismatch tests whether metacal's
+        response correction absorbs an error in its deconvolution model.
     psf_model_shear : tuple of float or None, optional
         Extra ellipticity (Δg1, Δg2) added to the PSF *model* stamp on top of
         ``psf_shear``, relative to the true PSF. Default None (no error). A
         non-zero value mismodels the PSF shape, injecting a controlled additive
         (PSF-leakage) error into the recovered shear. When both this is None and
         ``psf_model_fwhm_ratio`` is 1.0 the model PSF *is* the true PSF object,
-        so the output is byte-for-byte the legacy result.
+        so there is no model mismatch before stamp noise is added.
+
+    @sc [label:frame] simulation-subpixel-centres
+    Shifts stay within half a pixel of the stamp centre on each pixel axis,
+    as required by round-to-nearest-pixel centroid logic. Both drawing paths
+    consume random shifts in y-then-x order so seeded simulations are reproducible.
+    An explicit WCS transforms pixel shifts to world coordinates; drawing a
+    world-space box under a sheared WCS can exceed the half-pixel bounds.
 
     Returns
     -------
@@ -111,9 +106,7 @@ def make_data(
         wcs = galsim.PixelScale(scale)
 
         def draw_shift():
-            # Legacy world-space draw — these exact lines (incl. dy-then-dx
-            # order) keep rng consumption and values bit-identical to the
-            # pre-wcs version of this function.
+            # World-space shifts for PixelScale; see the centroid contract.
             dy, dx = rng.uniform(low=-scale / 2, high=scale / 2, size=2)
             return dx, dy, dx / scale, dy / scale
 
@@ -122,10 +115,7 @@ def make_data(
         transform = np.array([[jac.dudx, jac.dudy], [jac.dvdx, jac.dvdy]])
 
         def draw_shift():
-            # Pixel-space draw (same dy-then-dx order): under a sheared
-            # jacobian a world-space ±scale/2 box maps to a pixel-space
-            # parallelogram exceeding ±0.5 pixel, which would silently break
-            # rounded-centroid logic with off-by-one-pixel centres.
+            # Transform bounded pixel shifts; see the centroid contract.
             dpy, dpx = rng.uniform(low=-0.5, high=0.5, size=2)
             dx, dy = transform @ (dpx, dpy)
             return float(dx), float(dy), dpx, dpy
@@ -151,11 +141,7 @@ def make_data(
             ),
         ).shift(dx, dy)
 
-        # The PSF *model* stamp handed to ngmix. By default it is the very same
-        # object that convolved the galaxy (zero model error, byte-for-byte). A
-        # size and/or shape error makes it differ from the true PSF, so metacal
-        # deconvolves by the wrong PSF — the systematic the zero-error sim could
-        # not exercise.
+        # Reuse the true PSF when neither model-error parameter is set.
         if psf_model_fwhm_ratio == 1.0 and psf_model_shear is None:
             psf_model = psf
         else:

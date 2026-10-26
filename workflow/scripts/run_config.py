@@ -28,6 +28,10 @@ TABLES = ("input_types", "machines")
 # never mention `$run` must still set it.
 REQUIRED = ("run", "tile_list", "inputs.tiles", "inputs.exposures",
             "outputs.run_dir", "outputs.index_db")
+# ngmix's BLEND_HANDLING values, which `blend_handling` takes. A copy, because
+# the Snakefile validates it outside the container; tests/unit holds it equal
+# to ngmix_package.ngmix.BLEND_HANDLINGS.
+BLEND_HANDLINGS = ("noisefill", "uberseg")
 
 
 def merge(base, over):
@@ -86,14 +90,10 @@ def apply_defaults(config):
     entry = (config.get("machines") or {}).get(machine) or {}
     defaults = merge((config.get("input_types") or {}).get(input_type) or {},
                      entry.get(input_type) or {})
-    # Every top-level scalar is a variable, so a run config can define its own
-    # shorthands. They are resolved AGAINST EACH OTHER first, to a fixpoint, so
-    # one shorthand may be written in terms of another
-    # (grid: grid_2 / base: .../${grid} / run: ${shear}_${grid}). One pass is
-    # not enough: re.sub does not rescan what it substitutes, so a nested name
-    # would survive into the paths and only surface at the unresolved check.
-    # The loop is capped, so a self-reference (a: $b, b: $a) stops rather than
-    # spinning -- the leftover $ is then caught by unresolved() by design.
+    # Resolve top-level scalar shorthands against each other before expanding
+    # paths: re.sub does not rescan substitutions in one pass. Stop at a
+    # fixpoint or ten passes; unresolved() catches remaining $ references,
+    # including cycles.
     variables = {k: v for k, v in config.items()
                  if isinstance(v, (str, int, float))}
     variables["base_dir"] = entry.get("base_dir")

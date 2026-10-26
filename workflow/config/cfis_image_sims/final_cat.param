@@ -4,13 +4,9 @@
 # final catalogue into <products_dir>/final_cat_<run>.hdf5, and sp_validation's
 # extract step reads the same list; every entry must exist in that catalogue.
 #
-# A real file in this overlay dir, not a symlink into ../cfis/, because the
-# real-data list names columns make_cat does not write for the simulations:
-#   - IMAFLAGS_ISO   : the tile SExtractor runs without a flag image
-#                      (config_tile_Sx.ini: FLAG_IMAGE = False)
-#   - NGMIX_MOM_FAIL : make_cat writes it as NGMIX_MCAL_TYPES_FAIL
-# and it omits two that sp_validation's image-sim extract step reads: NUMBER and
-# NGMIX_MCAL_TYPES_FAIL (the metacal moments-failure cut).
+# This overlay has its own list: simulated tiles have no IMAFLAGS_ISO
+# (config_tile_Sx.ini: FLAG_IMAGE = False), and sp_validation's image-sim
+# extract step needs NUMBER and NGMIX_MCAL_TYPES_FAIL.
 
 # coordinates
 XWIN_WORLD
@@ -31,6 +27,16 @@ NGMIX_MCAL_FLAGS
 NGMIX_MCAL_TYPES_FAIL
 NGMIX_NEIGHBOUR_FLAG
 
+# Defect diagnostics over the kept epochs: epochs with interpolated pixels,
+# min distance (px) from the centre to an interpolated / noise-filled defect
+# pixel, -1 when none (ngmix Postage_stamp.record_defects)
+NGMIX_N_EPOCH_INTERP
+# @sc [decision:shape_measurement.defect_flagging]
+NGMIX_IMAFLAGS_ISO
+NGMIX_N_EPOCH_INTERP_ISO
+NGMIX_MIN_DIST_INTERP
+NGMIX_MIN_DIST_NOISEFILL
+
 # PSF ellipticity (original image PSF)
 NGMIX_G1_PSF_ORIG_NOSHEAR
 NGMIX_G2_PSF_ORIG_NOSHEAR
@@ -39,6 +45,8 @@ NGMIX_G2_PSF_ORIG_NOSHEAR
 # NGMIX_N_EPOCH fitted by ngmix
 N_EPOCH
 NGMIX_N_EPOCH
+# epochs dropped because building their ngmix observation raised
+NGMIX_N_EPOCH_FAILED
 
 ## Shape measurement outputs
 ## Ngmix: model fitting

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Reclaim one finished tile's scratch store and leave a tombstone (PRD #848 D5).
 
-Run as the shell of the in-DAG ``clean_tile`` rule, never by hand: the rule's
-``input:`` is the tile's ``final_cat`` on the PERSISTENT root, so by the time
-this executes the tile has published its final catalogue.
+Run as the shell of the in-DAG ``clean_tile`` rule, or through
+``backfill_epoch_cuts.py`` for an idle campaign. The rule's input is the tile's
+``final_cat`` on the PERSISTENT root. Before any deletion, validate the
+``tile_make_cat.json`` beside it, including all chunks' epoch-cut counts.
+The persistent manifest is not scratch DAG currency and is never pruned.
 A tile's scratch store has no reader outside that tile — tiles read exposures,
 nothing reads another tile's store — so unlike the exposure case there is no
 consumer set to close over and no eligibility test to make. Writer, then
@@ -113,7 +115,10 @@ the fixture: every link unlinked, no target followed. Whoever edits ``prune``
 next should know that the worst case is not a scratch store they could rebuild —
 it is a rmtree walking into half a terabyte of shared, backed-up survey data.
 
-Logs are deleted, not absorbed, as in ``clean_exposure``. Here the
+Module logs are deleted too: epoch-cut counts have already been captured in
+chunk completeness manifests and summed in the persistent make-cat manifest.
+No log is needed to recover these diagnostics after reclamation.
+Verdict logs are deleted, not absorbed, as in ``clean_exposure``. Here the
 duplication is exact: on a finished tile every ``logs/<stage>.json`` is
 BYTE-IDENTICAL to the ``manifests/<stage>.json`` beside it (verified across all
 16 stage records of 186.307), because a tile with a failed stage has no
@@ -138,17 +143,15 @@ from pathlib import Path
 
 
 def survivor_paths(tile_dir: Path, tile: str) -> dict:
-    """``{what it is: path}`` for the three PRE-EXISTING survivors.
+    """Return ``{purpose: path}`` for the three pre-existing survivors.
 
-    Three, not four: ``cleaned.json`` is this job's own output and does not
-    exist yet when this is called.
+    ``cleaned.json`` is excluded because this job creates it.
 
-    The Fe path is spelled out rather than globbed and MUST agree with
-    ``build_index.exp_list_path`` — that function is what re-reads it at every
-    compute parse. It is not imported, because this script runs inside the
-    container as a job shell and stays stdlib-only and import-free like
-    ``clean_exposure.py``; ``require_survivors`` below turns a drift between the
-    two into a loud failure on the first tile instead of a fatal parse later.
+    @sc [label:coupling] clean-tile-index-survivor-path
+    The explicit Fe path must match ``build_index.exp_list_path`` so compute
+    parses can read a cleaned tile's exposure edges. It is duplicated to keep
+    this job stdlib-only; ``require_survivors`` detects missing paths before
+    deletion rather than leaving the next parse unable to build its index.
     """
     idra, iddec = tile.split(".")
     return {
@@ -163,15 +166,12 @@ def survivor_paths(tile_dir: Path, tile: str) -> dict:
 
 
 def require_survivors(survivors: dict, tile: str) -> None:
-    """Abort before deleting anything if the survivor contract is not met.
+    """Abort before deletion if any required survivor is missing.
 
-    Fatal, not a warning. Each of these is read by a mechanism OUTSIDE this
-    tile, and each failure mode is silent at deletion time and loud much later:
-    a missing vignets manifest strands shared exposures, a missing Fe manifest
-    reruns the prepare chain, a missing exposure list makes the next compute
-    parse exit on the missing-tile threshold. Failing here costs one red job in
-    a keep-going run (clean_tile is a leaf, so it poisons no cone) and leaves
-    the store intact for inspection.
+    @sc [label:hazard] clean-tile-required-survivors
+    All three survivor paths must exist before cleanup. Each supports a later
+    campaign operation (see the module docstring); failing here leaves the
+    store intact instead of making that operation fail after reclamation.
     """
     missing = {k: p for k, p in survivors.items() if not p.exists()}
     if missing:
@@ -187,14 +187,11 @@ def require_survivors(survivors: dict, tile: str) -> None:
 def previous_record(tombstone: Path) -> tuple:
     """``(manifests, benchmarks)`` from an existing tombstone, or two empties.
 
-    THE ABSORPTION IS ADDITIVE, and this is why. A second clean of an
-    already-cleaned tile finds only the two surviving manifests on disk, so a
-    fresh absorption would overwrite a complete record with a two-entry one and
-    the tile's history would be gone — silently, and for good. Found by running
-    the fixture clean twice; not hypothetical, since ``script_hash`` reruns this
-    job on any edit to this file. So the previous record is the BASE and what is
-    on disk is laid over it: a rebuilt stage's fresh manifest still wins, and a
-    reclaimed one keeps the only copy that exists.
+    @sc [label:custody] clean-tile-additive-tombstone
+    Use the readable previous record as the base and overlay files still on
+    disk. A rerun over a pruned tile finds only two manifests; fresh absorption
+    alone would destroy the other stage records and benchmarks. A rebuilt
+    stage's current record supersedes its archived one.
     """
     if not tombstone.exists():
         return {}, {}
@@ -209,9 +206,8 @@ def previous_record(tombstone: Path) -> tuple:
 def absorb_manifests(mdir: Path) -> dict:
     """Every ``manifests/*.json`` verbatim, keyed by file stem.
 
-    By GLOB, so it takes whatever is there; ``run_report.py`` re-keys on each
-    body's own ``stage`` field. Same shape as ``clean_exposure``'s absorption,
-    including its tolerance for a legacy ``<stage>.failed.json``.
+    Globbing includes ``<stage>.failed.json`` records if present;
+    ``run_report.py`` re-keys on each body's own ``stage`` field.
     """
     out = {}
     if mdir.is_dir():
@@ -224,12 +220,10 @@ def absorb_manifests(mdir: Path) -> dict:
 
 
 def absorb_benchmarks(mdir: Path) -> dict:
-    """The ngmix chunks' benchmark rows, keyed by file stem.
+    """The ngmix chunks' benchmark rows, keyed by file name.
 
-    Two lines each (header + values), so this is a few hundred bytes for the
-    campaign's only per-chunk record of runtime, RSS and mean load — the feed D4
-    sizes ``tile_ngmix``'s ``mem_mb`` from. Numbers are kept as strings: this is
-    an archive of what the TSV said, not a re-measurement.
+    Archive the first data row from each TSV, retaining numeric values as
+    strings. This preserves runtime, RSS and mean load without extra inodes.
     """
     out = {}
     if mdir.is_dir():
@@ -245,7 +239,16 @@ def absorb_benchmarks(mdir: Path) -> dict:
     return out
 
 
-def prune(root: Path, keep: set, removed: list) -> None:
+def logical_bytes(path: Path) -> int:
+    """Count regular-file bytes without following any symlink, even a dangling one."""
+    if path.is_symlink():
+        return 0
+    if path.is_dir():
+        return sum(logical_bytes(p) for p in path.iterdir())
+    return path.stat().st_size if path.is_file() else 0
+
+
+def prune(root: Path, keep: set, removed: list, *, dry_run=False) -> int:
     """Delete everything under ``root`` except ``keep`` and the dirs leading to it.
 
     A whitelist walk rather than an rmtree-with-exceptions, so adding a survivor
@@ -253,23 +256,61 @@ def prune(root: Path, keep: set, removed: list) -> None:
     survivor, recursed into iff it is a real directory on the way to one, and
     deleted otherwise.
 
-    ``is_symlink()`` is tested BEFORE ``is_dir()`` and before the recursion —
-    see the module docstring on the two symlink classes.
+    @sc [label:hazard] clean-tile-no-follow-deletion
+    Never recurse through symlinks: direct entries are unlinked before the
+    directory test, and ``shutil.rmtree`` unlinks nested links. Both are needed
+    because the deleted trees contain links to shared exposure stores and
+    backed-up survey imaging outside this tile's ownership.
     """
     ancestors = {p for k in keep for p in k.parents}
+    freed = 0
     for entry in sorted(root.iterdir()):
         if entry in keep:
             continue
         if entry in ancestors and not entry.is_symlink():
-            prune(entry, keep, removed)
+            freed += prune(entry, keep, removed, dry_run=dry_run)
             continue
-        if entry.is_symlink():
+        if dry_run:
+            freed += logical_bytes(entry)
+        elif entry.is_symlink():
             entry.unlink()
         elif entry.is_dir():
             shutil.rmtree(entry)          # unlinks nested symlinks, never follows
         else:
             entry.unlink()
         removed.append(str(entry))
+    return freed
+
+
+def reclaim(tile_dir: Path, tile: str, tombstone: Path, final_cat: Path) -> None:
+    """Validate durable diagnostics, write the tombstone, then prune scratch."""
+    from epoch_cuts import require_durable_manifest
+
+    require_durable_manifest(final_cat, tile)
+    survivors = survivor_paths(tile_dir, tile)
+    require_survivors(survivors, tile)
+
+    mdir = tile_dir / "manifests"
+    manifests, benchmarks = previous_record(tombstone)
+    manifests.update(absorb_manifests(mdir))
+    benchmarks.update(absorb_benchmarks(mdir))
+
+    # Tombstone first, complete — then delete (see the module docstring).
+    tombstone.parent.mkdir(parents=True, exist_ok=True)
+    tmp = tombstone.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps({
+        "tile": tile,
+        "cleaned_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "kept": sorted(str(p) for p in survivors.values()),
+        "manifests": manifests,
+        "benchmarks": benchmarks,
+    }, indent=2, sort_keys=True) + "\n")
+    tmp.replace(tombstone)   # atomic: no half-written tombstone, ever
+
+    removed: list = []
+    prune(tile_dir, set(survivors.values()) | {tombstone}, removed)
+    print(f"[clean_tile] {tile}: removed {len(removed)} path(s); kept "
+          f"{len(survivors)} survivor(s) + the tombstone")
 
 
 def main() -> None:
@@ -277,32 +318,9 @@ def main() -> None:
     p.add_argument("--tile-dir", required=True, type=Path)
     p.add_argument("--tile", required=True)
     p.add_argument("--tombstone", required=True, type=Path)
+    p.add_argument("--final-cat", required=True, type=Path)
     args = p.parse_args()
-
-    survivors = survivor_paths(args.tile_dir, args.tile)
-    require_survivors(survivors, args.tile)
-
-    mdir = args.tile_dir / "manifests"
-    manifests, benchmarks = previous_record(args.tombstone)
-    manifests.update(absorb_manifests(mdir))
-    benchmarks.update(absorb_benchmarks(mdir))
-
-    # Tombstone first, complete — then delete (see the module docstring).
-    args.tombstone.parent.mkdir(parents=True, exist_ok=True)
-    tmp = args.tombstone.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps({
-        "tile": args.tile,
-        "cleaned_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "kept": sorted(str(p) for p in survivors.values()),
-        "manifests": manifests,
-        "benchmarks": benchmarks,
-    }, indent=2, sort_keys=True) + "\n")
-    tmp.replace(args.tombstone)   # atomic: no half-written tombstone, ever
-
-    removed: list = []
-    prune(args.tile_dir, set(survivors.values()) | {args.tombstone}, removed)
-    print(f"[clean_tile] {args.tile}: removed {len(removed)} path(s); kept "
-          f"{len(survivors)} survivor(s) + the tombstone")
+    reclaim(args.tile_dir, args.tile, args.tombstone, args.final_cat)
 
 
 if __name__ == "__main__":

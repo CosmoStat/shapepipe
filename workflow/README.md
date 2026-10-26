@@ -1,12 +1,20 @@
 # ShapePipe Snakemake orchestration
 
-Snakemake workflow that orchestrates real-data ShapePipe runs. It replaces the
-`curl_canfar_local.sh → run_job_sp_canfar_v2.0.bash → job_sp_canfar_v2.0.bash`
-bash layers and the per-site sbatch reimplementations. **Module code is
-untouched**: rules call `shapepipe_run -c <config>` on the existing config
-chains. Design and rationale:
+Snakemake workflow that orchestrates real-data ShapePipe runs. It is the one
+production orchestration: there is no CANFAR submission front end and no
+per-site sbatch layer beside it. The two Gen-2 bash scripts
+(`run_job_sp_canfar_v2.0.bash → job_sp_canfar_v2.0.bash`) are still in the tree
+and still installed (`pyproject.toml`'s `[tool.setuptools] script-files`):
+sp_validation's image-simulation workflow calls `run_job_sp_canfar_v2.0.bash` by
+path, so they stay until that chain is ported or parked. **Module code is untouched**: rules call
+`shapepipe_run -c <config>` on the existing config chains. Design and rationale:
 [CosmoStat/shapepipe#848](https://github.com/CosmoStat/shapepipe/issues/848)
 (the design document).
+
+**There is no concept of a catalogue version in the code.** No path branches on
+`v1.3`..`v1.6` or `v2.0`, and there are no sky patches: a campaign is a tile
+list, and the version of a catalogue is the git tag of the code that produced
+it.
 
 Use `workflow/bin/sp` for everything. Bare `snakemake all` outside `sp` is
 unsupported: `sp` sets the state directory, the SLURM profile, and
@@ -26,8 +34,7 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # the campaign's name; workflow/config.yaml's input_types: and machines: tables supply the rest.
 
 # `psf_model` is `psfex` for data (`fake` for image sims). `mccd` is refused
-# until `persist_exp.py` and `merge_star_cat.py` read MCCD products. PSFEx is
-# exercised by smk-g4 through smk-g6.
+# until `persist_exp.py` and `merge_star_cat.py` read MCCD products.
 # Both `tile_detection` values run SExtractor on the tile image. Under
 # `unions_catalogue` (the input_types default for data) the UNIONS per-tile
 # catalogue at `inputs.catalogues` is fetched and the detections are joined
@@ -35,6 +42,13 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # (DR6), or the join fails. `sextractor` (the default for image sims) keeps
 # SExtractor's own NUMBER. Either way make_cat writes
 # TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER.
+# `blend_handling` is ngmix's neighbour treatment: `uberseg` (the default) or
+# `noisefill`. Under both, tile_detect adds the coadd segmentation stamps to
+# the sexcat as SEG_VIGNET and ngmix's neighbours are the other objects'
+# footprints in them. It is chosen per campaign: flipping it on an existing
+# run dir reruns tile_ngmix and the rest of the shape chain for every finished
+# tile, and reclaimed exposures make that destructive, so a comparison needs
+# its own `run:`.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -44,11 +58,9 @@ workflow/bin/sp cancel <run-name-substring>   # scancel this workflow's jobs
 workflow/bin/sp container status              # which image the jobs will run
 ```
 
-Installed and pinned versions on nibi (`/project/def-mjhudson/cdaley/snakemake-env`,
-queried 2026-07-30): `snakemake==9.23.1`, `snakemake-executor-plugin-slurm==2.7.1`.
-Pin range: `snakemake>=9,<10`, `snakemake-executor-plugin-slurm>=2.7,<3`. The
-v8→v9 breaks matter here: `--use-singularity` became `--sdm`, executors became
-plugins, and full `rerun-triggers` became the default.
+Supported ranges: `snakemake>=9,<10`, `snakemake-executor-plugin-slurm>=2.7,<3`.
+The profiles use Snakemake 9's `--sdm` software deployment and executor plugins;
+see `profiles/` for the rerun triggers.
 
 Anything other than `run`, `report`, `container`, `cancel` passes straight through to
 snakemake with the workflow's profile and state dir — the direct command path for
@@ -141,9 +153,7 @@ only exists if you ask for one:
 
 The Snakefile's `container:` is that resolution, in one order shared by the CLI
 and the workflow: **sandbox → cached SIF → the `container:` path in
-`config.yaml`**. With an empty cache — the normal case — that lands on the
-shared `/project` `.sif` the workflow has always used, so this changes nothing
-until you opt in.
+`config.yaml`**. With an empty cache, resolution falls back to the configured shared image.
 
 ```bash
 sp container status                      # layers present, active one, revision vs HEAD
@@ -174,9 +184,9 @@ therefore two snakemake invocations over one Snakefile:
 
 1. **PREPARE** — `snakemake prepare_all_tiles`: per-tile static DAG
    (`Git_vos → Uz → Fe`), `keep-going` so tile failures are independent. A
-   nonzero exit here is not fatal to the run — tiles that lost their
-   exposure list are dropped at the compute parse — but it is a warning:
-   `SP_MISSING_THRESHOLD` (default 0.0) is the real gate.
+   nonzero exit still allows COMPUTE to run, but makes `sp run` fail.
+   Tiles without exposure lists are dropped at the compute parse, subject to
+   `SP_MISSING_THRESHOLD` (default 0.0).
 2. **COMPUTE** — `snakemake all`: this invocation's *parse* builds the
    tile↔exposure index (`build_index.py`, imported at parse time, not a DAG
    node) and runs the full tile/exposure compute chain. The index
@@ -208,11 +218,11 @@ the other verbs run out of the existing snapshot, `sp container` excepted (it is
 about the image you are working with now, not about a campaign). The mechanism
 and its rationale live in one place: `bin/sp`.
 
-## Execution mode: one SLURM job per rule
+## Execution mode: SLURM rules and groups
 
-The profile (`profiles/nibi/config.yaml`) sets `executor: slurm`. Every rule
-instance becomes its own SLURM job carrying that rule's own attempt-scaled
-resources (`cpus_per_task = threads`, `mem_mb`, `runtime`) and runs inside
+The profile (`profiles/nibi/config.yaml`) sets `executor: slurm`. Ungrouped rule instances become individual SLURM jobs; grouped rules share a job.
+Rules define attempt-scaled resources (`cpus_per_task = threads`, `mem_mb`,
+`runtime`) and run inside
 `apptainer exec` via the profile's software-deployment method — the workflow
 never calls apptainer directly. Snakemake feeds the queue as jobs finish, so
 the full campaign's job count never needs to queue at once, and multi-node
@@ -226,10 +236,8 @@ attempt-scaled `mem_mb = lambda wc, attempt: ...` OOM retries and the tuned
 ngmix thread count. Rules own their own resources; the profile only supplies
 defaults for rules that state nothing.
 
-`group:` labels that fuse short rules (uncompress, merges) into their chunky
-neighbours (queue-latency amortization, per the PRD) are **not yet wired**:
-they require labels in `workflow/rules/*.smk`, out of scope for this
-profile-only pass.
+The rule files define the groups and their resource constraints.
+See `workflow/rules/prepare.smk`, `exposure.smk`, and `tile.smk` for their composition.
 
 ## Layout
 
@@ -245,9 +253,10 @@ workflow/
   scripts/
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
-    completeness.py      the ported count table (shared by sp_rule + run_report)
+    completeness.py      the ported count-floor table + the `check` every rule ends with
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
+    ngmix_range.py       the ngmix chunk partition: written once by tile_vignets, read by each chunk
     persist_exp.py       ONE exposure's keepable PSF products -> one tar on products_dir (the exp_persist rule)
     hdf5_reconcile.py    bring an hdf5 catalogue into agreement with a campaign (shared by both merges)
     merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<run>.hdf5
@@ -255,10 +264,11 @@ workflow/
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
     exp_maps.py          ONE exposure's valid-PSF CCD footprints + flagged-pixel counts -> healsparse fragment (the exp_maps rule)
     merge_exposure_maps.py  ALL fragments -> nexp_<run>.hsp, nflagged_<run>.hsp (the exposure_maps rule)
+    clean_tile.py        ONE finished tile's store -> tombstone (the clean_tile rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
 
-## How it works
+## Products and lifecycle
 
 - **The atom is one rule == one `shapepipe_run` on one unit.** Its single
   declared output is that unit's manifest
@@ -276,10 +286,13 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   output natively and never touches its log, which is why the profile runs
   *without* `keep-incomplete`. `sp report` reads both dirs — the manifest for
   success, the log for failure — and a unit with neither ran nothing.
-- **Completeness is an exact-count check, not a taxonomy.** After a run,
-  `sp_rule.py` counts products per mandatory runner against
-  `completeness.py`'s expected count and exits nonzero below it. A shortfall
-  below `expect` fails unless `warn` is set. No 3-class taxonomy, no
+- **Completeness is a count floor, not a taxonomy.** There is no per-unit
+  wrapper script: the Snakefile's `unit_pre()` builds the unit's furniture and
+  clears the stage's run dir as bash inlined into the rule's `params`, and
+  `sp_shell()` composes every rule's shell as *prologue, one `shapepipe_run`,
+  one `completeness.py check`*. That check counts products per mandatory runner
+  against `completeness.py`'s floor and exits nonzero below it. Per-CCD
+  attrition between floor and `expect` is tolerated. No 3-class taxonomy, no
   error-signature whitelist. `--keep-going` isolates a failure to its own
   DAG cone.
 - **Stores are sharded.** Every tile/exposure runs its own `shapepipe_run`
@@ -305,20 +318,28 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   catalogue server, staged, or rasterized, which is why the old
   `star_catalogue` / `exp_star_cat` / `exp_mask` rules and their cache root are
   gone.
-- **Two HealSparse maps come out of the exposures.** At the mask ladder's
-  resolution (nside 131072), `nexp_<run>.hsp` counts per sky pixel the
-  exposures whose CCD with a valid PSF model covers it, and
-  `nflagged_<run>.hsp` counts the flagged CCD pixels (bad columns, saturated
-  pixels, bleed trails, cosmics) of those exposures that fall in it, ~74 CCD
-  pixels filling one sky pixel. The flag image is the one mask that otherwise
-  never leaves the pixel domain, so a footprint built from CCD corners could not
-  subtract it (#878). `exp_maps` writes one fragment per exposure beside its PSF
-  tar, from the split's `DATASEC` (the overscan border is neither coverage nor
-  defect) and the CCDs `exp_persist` packed a PSF for; `exposure_maps` sums the
-  campaign's fragments. Nothing in the workflow reads either map. `nexp` is
-  what randoms need to match an `N_EPOCH` cut; `nflagged` is a diagnostic of
-  where the detector is bad, not a cut (it does not count exposures lost to
-  the defect veto).
+- **Four HealSparse maps come out of the exposures.** At nside 131072,
+  `npoint_<run>.hsp` counts filled pointing hulls of present main-array CCDs 0–35.
+  The hull fills CCD gaps and excludes ear CCDs 36–39, regardless of PSF success.
+  `ntaken_<run>.hsp` counts exposures covering each pixel with any CCD's DATASEC, ears included.
+  `nexp_<run>.hsp` counts only CCDs with a validated PSF; `ntaken - nexp` measures CCD-level PSF losses.
+  These three counts are uint8.
+  `nflagged_<run>.hsp` (uint16) counts flagged CCD pixel centres inside validated CCD DATASEC coverage, with ~74 CCD pixels per sky pixel.
+  The overscan border contributes neither coverage nor flags.
+  `exp_maps` writes one packed uint16 fragment beside each PSF tar: the low three bits store 1 = pointing, 2 = taken, 4 = validated, and bits 3–10 store flag counts clipped at 255.
+  Scalar fragments use compressed image storage (~2.6 MB per exposure); record-array table storage costs ~31 MB.
+  `exposure_maps` sums the fragments; nothing in the workflow reads the four maps.
+  `npoint` follows the v1.X npoint3 coverage-cut lineage, `nexp` supports an `N_EPOCH` cut, and `nflagged` diagnoses detector defects rather than exposures lost to the defect veto.
+  A plain uint8 fragment is rejected with an exposure-specific backfill command.
+  For reclaimed scratch stores, raw-MEF mode rewrites both the fragment and its completion manifest (the fragment is the durable DAG edge):
+
+  ```bash
+  python workflow/scripts/exp_maps.py --exp "$exp" \
+    --image-mef "$raw/${exp}p.fits.fz" --flag-mef "$raw/${exp}p.flag.fits.fz" \
+    --persist-manifest "$products/exp/${exp:0:2}/$exp/manifests/exp_persist.json" \
+    --fragment "$products/exp/${exp:0:2}/$exp/maps/maps-$exp.hsp" \
+    --manifest "$products/exp/${exp:0:2}/$exp/manifests/exp_maps.json"
+  ```
 - **External masks are wired, on the tile side only (data runs).** `inputs.masks`
   is a third input root beside tiles and exposures, set per machine in the
   `machines:` table, exported as `$SP_INPUT_MASKS` and
@@ -345,6 +366,28 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   since the missing tombstones schedule exactly the outstanding clean jobs.
   The tombstone is written *before* anything is deleted, so a crash can cost
   disk but never the record.
+- **Tile epoch-cut diagnostics survive cleaning.**
+  `tile_ngmix` completeness checks capture PR #922's five counters before each chunk's temporary directory goes away.
+  `tile_make_cat` sums all configured chunks and publishes `tile_make_cat.json` beside the tile's persistent `final_cat`.
+  Its `epoch_cuts` field contains `schema_version`, `n_chunks`, per-chunk `chunks`, and tile `totals` for `considered`, `masked_fraction`, `central_veto`, `failed`, and `objects_emptied`.
+  Counts are sequential veto counts, not independent cut incidences; `objects_emptied` counts objects whose considered epochs were all removed before fitting.
+  Missing, malformed, or duplicate summaries fail completeness rather than becoming zeros.
+  `clean_tile` validates the durable count record before touching scratch, so `clean_tiles: true` needs no module-log retention override.
+  This requires an ngmix build with PR #922's end-of-loop `epoch cuts:` summary, including on empty chunks.
+  Older code without that summary fails the ngmix completeness check and leaves scratch intact.
+
+  For an **idle existing campaign** with kept logs, use `workflow/scripts/backfill_epoch_cuts.py --run-dir <run> --products-dir <products> --n-chunks <N> --dry-run` first.
+  Alternatively pass `--config <run_config.yaml>` to resolve products and chunk count from the run's frozen `workflow/config.yaml` plus its run config.
+  The script skips tiles without a nonempty persisted catalogue and refuses missing or ambiguous chunk evidence.
+  Without `--dry-run`, it publishes the same manifest schema and reclaims through `clean_tile.reclaim`, including its survivor checks and tombstone.
+  Don't use it while jobs or another cleaner are writing the campaign.
+  Dry-run reads metadata and small logs only, writes nothing, and reports logical regular-file bytes (not allocated blocks), without following symlinks.
+
+  **Deploy at a campaign boundary.**
+  The completeness/helper hash is part of every ShapePipe rule's `params`; this change also alters make-cat's params, outputs and shell, and clean-tile's inputs and shell.
+  An ordinary resume against old completed tiles can therefore schedule science stages again, even after their exposure stores have been reclaimed.
+  Backfill old campaigns without changing their frozen code or resuming them against this workflow; removing the log-retention override is appropriate for new campaigns running this contract.
+
 - **A finished tile declares no reclaimed exposures.** Deleting an exposure's
   manifests would otherwise rerun every other tile that reads it, and those
   reruns spread across the exposure-overlap component. So a tile whose
@@ -354,65 +397,25 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   trigger reads that cut as a reason to rerun the very tiles it protects.
   Know the consequence — `--forcerun` on a tile whose `final_cat` exists will
   not rebuild its reclaimed exposures. Delete the `final_cat` first.
-- **PSF products leave scratch before the purge does.** `exp_persist` packs
-  the products named by `persist_exp:` in `config.yaml` from the exposure's
-  scratch store into ONE uncompressed tar,
-  `<products_dir>/exp/<prefix>/<base>/psf/<base>.tar` (inodes, not bytes, bind
-  on /project), and writes ONE manifest beside it recording the patterns, the
-  members and their sizes. The
-  threat it answers is the /scratch purge, not `clean_exposure` — the store goes
-  in 60 days whether or not the workflow reclaimed it — so it runs even with
-  `clean: false`, requested directly by `rule all`. `clean_exposure` takes its
-  manifest as an input, so reclamation can never overtake the copy. It is a
-  rule of its own rather than a `cp` on the end of `exp_psf` because the keep
-  list rides on `params`: adding a pattern reruns seconds of packing, not four
-  hours of PSF fitting per exposure. A pattern that matches nothing is a
-  recorded warning (setools rejects sparse CCDs); matching nothing at all is a
-  failure. A `localrule`, by the same arithmetic as `clean_exposure`.
-- **The star catalogue's inputs are always kept; `persist_exp:` is what you
-  keep on top.** `exp_persist` packs `psf_validation` — the psfex_interp
-  validation catalogue, one per CCD — for every exposure whatever the config
-  says, because `star_cat_merge` stacks exactly those into the campaign's
-  `full_starcat`. They are that catalogue's provenance, and they are what keeps
-  appending a tile next month cheap rather than a rebuild from VOS. About 2 MB
-  per exposure: ~40 GB and ~40k inodes at DR6 scale, against a ~1 M-inode group
-  quota. `persist_exp:` is purely additive, and an empty list is legal — the tar
-  then holds the merge's inputs and nothing else.
-- **The keep list names products, not globs.** Entries are names from a
-  catalogue in `workflow/scripts/persist_exp.py`, which is the single source of
-  truth for what each one means and what keeping it buys
-  ([#844](https://github.com/CosmoStat/shapepipe/issues/844)); `config.yaml`'s
-  block is that catalogue rendered, and `persist_exp.py --list-products` prints
-  it. Sizes are per exposure, 40 CCDs, measured on smk-m2.
-
-  | product | glob | per exposure | what it buys |
-  |---|---|---|---|
-  | `psf_model` | `*.psf` | 2.8 MB | re-interpolate the PSF anywhere later, no rebuild |
-  | `psfex_cat` | `psfex_cat-*.cat` | unmeasured | which stars PSFEx's outlier rejection clipped |
-  | `star_selection` | `star_selection-*.fits` | 24.5 MB | which stars the selection cuts rejected, and why |
-  | `star_train` | `star_split_ratio_80-*.fits` | 19.9 MB | the 80% sample PSFEx fitted |
-  | `star_test` | `star_split_ratio_20-*.fits` | 7.1 MB | the 20% sample `psf_validation` corresponds to |
-  | `star_stats` | `star_stat-*.txt` | unmeasured | setools' per-CCD counts, density and FWHM cuts |
-
-  The default is `psf_model`. `psf_validation` is in the catalogue too but needs
-  no naming; naming it anyway is harmless. **Retention is additive**: an
-  existing tar is a floor, so shrinking the list adds nothing and removes
-  nothing. Dropping a product is a deliberate act on `products_dir`, not a
-  config edit — otherwise editing a config would delete products from the
-  backed-up filesystem whose scratch originals are long gone. A raw glob is still accepted as an
-  escape hatch — anything with a glob metacharacter or a dot is read as one —
-  and an unknown *name* is a parse-time error listing the valid ones. The list
-  is exposure-side only; tile-side retention is #844 follow-up.
+- **PSF products are persisted independently of scratch cleanup.** `exp_persist`
+  writes `<products_dir>/exp/<prefix>/<base>/psf/<base>.tar` and a manifest,
+  even with `clean: false`. See `workflow/scripts/persist_exp.py` for retention
+  guarantees, measured storage costs, and packing details; see
+  `workflow/CONTRACTS` for cleanup ordering.
+- **Configure optional retention with `persist_exp:`.** Product names and their
+  meanings live in `workflow/scripts/persist_exp.py`; `persist_exp.py --list-products`
+  prints them. The default is `psf_model`, and `psf_validation` is mandatory
+  regardless of the list. Retention is additive: shrinking the list does not
+  remove saved products. Remove products explicitly from `products_dir`.
 - **The campaign ends in two merged catalogues, and the workflow makes both.**
   Everything above is per unit; the two products downstream analysis actually
-  opens are per *campaign*, and until these rules existed each was a manual pass
-  after the run.
+  opens are per *campaign*.
   `star_cat_merge` collects every exposure's every CCD's `psf_validation` into
   `<products_dir>/full_starcat_<run>.hdf5`, one dataset per exposure at
   `exposures/<exp>` — the rho/tau statistics input. It reads the members
   straight out of the per-exposure tars (`tarfile`; unpacking ~800k files to
   merge them would defeat the tar's whole purpose), keeps their native dtypes,
-  and stores `CCD_NB` as an int. sp_validation still opens the old flat FITS
+  and stores `CCD_NB` as an int. sp_validation opens the flat FITS
   name, `full_starcat-0000000.fits`; its readers move to this file under
   [sp_validation#340](https://github.com/CosmoStat/sp_validation/issues/340),
   the same migration that retires the `patches/` key on the tile side. The rule
@@ -420,19 +423,17 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   **Two writers, one schema.** The module runner still emits the flat FITS
   table through `MergeStarCatPSFEX`, and this rule emits the hdf5; they are
   separate implementations on purpose, because only one of them reads tars,
-  keeps native dtypes and reconciles. Their 22 COLUMN NAMES must not drift
-  apart, and nothing else would notice if they did — a column added to one
-  writer would just be missing from the other's product. `tests/unit/`
-  `test_star_cat_columns.py` is what holds them together.
+  keeps native dtypes and reconciles. Their column names must agree;
+  `tests/unit/test_star_cat_columns.py` enforces that coupling.
   `final_cat_merge` collects every ready tile's `final_cat-<ID>.hdf5` into
   `<products_dir>/final_cat_<run>.hdf5`: one dataset per tile under a group
-  named for the campaign, the `final_cat.param` columns, an `n_tiles` attribute.
+  named `patches/<run>`, the `final_cat.param` columns, an `n_tiles` attribute.
   That schema is what sp_validation's reader opens, so it is fixed; the column
   extraction reuses `scripts/python/create_final_cat.py` while the file is
   written here, because that script's own discovery walks a directory layout
   this workflow does not have. The run config's `run:` names both files and the
   group.
-  BOTH RECONCILE, through one shared module (`hdf5_reconcile.py`) so the
+  Both reconcile through one shared module (`hdf5_reconcile.py`) so the
   campaign's two products cannot disagree about what an output owes its inputs.
   Each adds the units that have no dataset, drops datasets whose unit left the
   campaign, re-reads one whose source changed (every dataset records its
@@ -457,7 +458,7 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   absorbed manifests out of `cleaned.json`, so a reclaimed exposure keeps its
   per-runner counts and blocks no tile. The logs go with the manifests — a log
   claiming `complete` for a store that is gone would contradict the unbuilt
-  chain the DAG must now see, and its content duplicates the manifest anyway.
+  chain the DAG must see, and its content duplicates the manifest anyway.
   The `exp_psf` benchmark tsv lives beside both dirs, not inside either, so
   reclamation does not eat the memory-sizing data.
 - **Failure is a report, not a gate.** `run_report.py` disk-scans the trees

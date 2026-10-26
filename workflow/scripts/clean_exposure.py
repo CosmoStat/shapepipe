@@ -1,67 +1,38 @@
 #!/usr/bin/env python3
-"""Reclaim ONE exposure's store and leave a tombstone (PRD #848 D5, S5).
+"""Reclaim one exposure's products and stage records, leaving a tombstone.
 
-Run as the shell of the in-DAG ``clean_exposure`` rule, never by hand: the rule's
-``input:`` is every consuming tile's ``tile_vignets`` manifest, so by the time
-this executes, every campaign tile that reads this exposure has already extracted
-its postage stamps. Writer, then readers, then cleaner — DAG-ordered, race-free.
+Run through the in-DAG ``clean_exposure`` rule, never by hand. Its dependencies
+order cleanup after persistence and all consuming tiles' vignette extraction;
+see ``workflow/rules/exposure.smk`` and the Snakefile's ``clean_targets``.
+The tombstone records that consumer set; the rule's ``params`` trigger cleanup
+again when the set changes.
 
-What it deletes: the exposure's whole ``output/`` tree (the bulk store —
-run_sp_exp_Gie/Sp/SxSePsf), its ``manifests/`` and its ``logs/``. That is the
-entire exposure store: since PR #847 removed ShapePipe's mask generation there
-is no run_sp_exp_Ma tree and no star-catalogue link farm to reclaim beside it.
+This script deletes ``output/``, ``manifests/`` and ``logs/``, not the exposure
+directory itself. The ``exp_psf`` benchmark beside those directories survives
+for resource sizing.
 
-Deletion is SYMLINK-SAFE: a target that is itself a symlink is ``unlink``ed, not
-``rmtree``d, so a link into a shared store can never be recursed through.
+@sc [label:operations] clean-exposure-remove-stage-records
+Remove the stage manifests with the products: surviving declared outputs would
+make a later tile treat the exposure as built while its vignette inputs are
+absent. Missing manifests let Snakemake regenerate the chain when demanded;
+finished tiles do not rerun solely because an intermediate is missing.
+Remove logs too so their verdicts do not contradict the reclaimed store.
+Successful log verdicts duplicate manifests; see ``completeness.py``.
 
-Deleting the manifests is deliberate and load-bearing, not tidiness:
+Current ``manifests/*.json`` records are absorbed under ``manifests`` in the
+tombstone, keyed by file stem, including ``<stage>.failed.json`` if present.
+``run_report.py`` reads these records to report the unit as ``cleaned`` with
+its counts and shortfalls. This script does not merge an existing tombstone.
 
-  * the manifests are the exposure rules' DECLARED outputs. If they survived, a
-    tile appended later would find the exposure chain "up to date" and run
-    tile_vignets against products that are no longer on disk. With them gone the
-    DAG sees the chain as unbuilt and regenerates it — the accepted cost of a
-    late append (D5), expressed as ordinary Snakemake bookkeeping rather than as
-    a special case.
-  * Snakemake only demands a missing intermediate when something downstream of it
-    needs to run, so tiles already finished are NOT rerun by their exposures'
-    manifests vanishing.
+@sc [label:custody] clean-exposure-record-before-delete
+Publish the complete tombstone atomically before deleting any tree. A crash
+between publication and deletion leaves the record and unreclaimed disk space;
+deleting first would risk losing manifests before their record is preserved.
 
-``logs/`` goes with them, and for the same reason rather than for bytes. Each
-log holds the completeness verdict of one stage, written on every run and kept by
-snakemake through failures; a log left behind would attest "complete" for a store
-that is no longer there, contradicting the unbuilt chain the DAG must now see.
-Its content for a successful stage is byte-identical to the manifest beside it,
-so absorbing the logs into the tombstone would duplicate what the manifests
-already carry — they are deleted, not copied.
-
-Nothing is lost to the report: every ``manifests/*.json`` is copied verbatim into
-the tombstone under ``manifests``, and ``run_report.py`` reads a cleaned
-exposure's record out of the tombstone — it reports the unit as ``cleaned``,
-warn counts and shortfalls intact, instead of "not run".
-
-The absorption is by GLOB, so it takes whatever is in ``manifests/``, keyed by
-file stem; the report re-keys on each manifest's own ``stage`` field. A legacy
-``<stage>.failed.json`` from the pre-``log:`` convention is therefore carried
-through unremarkably — it should never be there (an exposure with a failed stage
-has no complete vignets consumer and so is not eligible for cleaning), but it
-costs nothing to be right about.
-
-Order matters, and it is the reverse of the obvious one: the tombstone is
-written FIRST, complete, and only then is anything deleted. A crash between the
-two leaves a tombstone beside a store that is still there — the next invocation
-treats the exposure as cleaned and only the disk is lost. Deleting first would
-put the crash window where the manifests are already gone and the record that
-replaces them was never written, and the report would be blind to that exposure
-forever.
-
-The exp_psf benchmark tsv lives beside ``manifests/`` and ``logs/``, not inside
-either, so it survives this job — it is the measured-memory feed for resource sizing (D4).
-
-The tombstone records the consumer set it was cleaned against. The rule carries
-that same set as a ``params`` value, so when the index grows a new consumer the
-tombstone goes stale under the default ``params`` rerun-trigger and the clean job
-is rescheduled after the new tile's vignets — the exposure is cleaned once per
-consumer set, not once per campaign.
+@sc [label:hazard] clean-exposure-no-follow-deletion
+Unlink symlinks themselves, including dangling links, rather than passing them to
+``rmtree``. Nested links are unlinked by ``rmtree`` itself so deletion does not
+follow them into shared stores.
 """
 
 import argparse
@@ -112,7 +83,7 @@ def main() -> None:
 
     removed = []
     for target in targets:
-        # NEVER rmtree a symlink (see the module docstring).
+        # See the module's no-follow deletion contract.
         if target.is_symlink():
             target.unlink()
         else:

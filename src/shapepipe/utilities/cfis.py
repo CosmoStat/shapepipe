@@ -601,8 +601,7 @@ def get_tile_number_list(tile_name_list):
     return nix_list, niy_list
 
 
-# Survey-wide object ID: ``tile_id * TILE_UNIQUE_ID_BASE + NUMBER``, with
-# ``tile_id = RRR * 1000 + DDD``. Assumes fewer than 10**6 objects per tile.
+# Radix of the object-ID encoding; see get_tile_unique_id.
 TILE_UNIQUE_ID_BASE = 10**6
 
 
@@ -633,6 +632,12 @@ def get_tile_unique_id(tile_id, number):
     """Get Tile Unique ID.
 
     Return the survey-wide object ID ``tile_id * 10**6 + number``.
+
+    @sc [label:schema] tile-object-id-encoding
+    Tile IDs and object numbers must each be integers in ``[0, 10**6)``.
+    Object numbers must be unique within a tile: encoding pairs with this
+    radix then gives distinct survey-wide IDs and an exact inverse through
+    :func:`split_tile_unique_id`.
 
     Parameters
     ----------

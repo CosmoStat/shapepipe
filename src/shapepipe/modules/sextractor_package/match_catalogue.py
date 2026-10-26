@@ -23,8 +23,12 @@ from scipy.spatial import cKDTree
 
 # The SEG_VIGNET label of a footprint whose SExtractor row has no partner in
 # the external catalogue, and so leaves the catalogue. Negative, so it never
-# collides with a NUMBER; UberSeg only asks "self or not self".
+# collides with a NUMBER (match_catalogue requires positive ones); UberSeg only
+# asks "self or not self".
 UNMATCHED_LABEL = -1
+
+# The largest NUMBER the int32 NUMBER and SEG_VIGNET columns hold.
+MAX_NUMBER = np.iinfo(np.int32).max
 
 
 def mutual_nearest(x_a, y_a, x_b, y_b, radius):
@@ -93,28 +97,37 @@ def relabel(seg_vignets, old_number, new_number):
 
 
 def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
-                    tolerated_unpaired=20, w_log=None):
+                    tolerated_unpaired=20, w_log=None,
+                    external_unpaired_allowance=50):
     """Take membership and ``NUMBER`` from an external catalogue.
 
     Each SExtractor row is paired with its mutual nearest neighbour in the
     external catalogue (``X_IMAGE``, ``Y_IMAGE``, same image grid) within
     ``radius`` pixels. Paired rows take the external ``NUMBER``; unpaired
     rows leave the catalogue. A ``SEG_VIGNET`` column, when present, is
-    relabelled to the new numbering, with the footprints of rows that left
-    marked ``UNMATCHED_LABEL``. The catalogue is rewritten in place; every
-    other HDU and column is kept.
+    relabelled through the whole map from old to new numbers, with the
+    footprints of rows that left marked ``UNMATCHED_LABEL``: as the external
+    numbers are unique integers in ``[1, MAX_NUMBER]``, each row's own
+    footprint carries its new ``NUMBER`` and no other footprint can,
+    whatever the two numberings share.
+    The catalogue is rewritten in place; every other HDU and column is kept.
 
     Both catalogues come from the same pixels, so pairs agree to ~1e-4
     pixel, and on eight DR6 tiles at least 99.2% of each side pairs; the
     shortfall is deblending that differs near very large objects (a cD
     galaxy, a bright star's halo). On different pixels (a DR5 image against
     the DR6 catalogue) only ~95% pair. The guard is there to catch that: the
-    run stops when the unpaired rows of either side exceed both
-    ``(1 - min_fraction)`` of that side and ``tolerated_unpaired``, so a
-    near-empty edge tile with a couple of unpaired children passes. On the
-    SExtractor side it catches a catalogue from other pixels; on the
-    external side, a detection configuration that finds fewer objects than
-    the catalogue's, which would leave its objects without shapes.
+    SExtractor-side guard stops when unpaired detections exceed both
+    ``(1 - min_fraction)`` of that side and ``tolerated_unpaired``.
+    External-only losses instead get an additive local deblending allowance
+    on top of the fractional budget (and retain the absolute tolerance).
+    Sparse DR6 edge tiles can lose dozens of children in one bright-star
+    halo while almost every detection pairs; those losses do not scale with
+    the tile's total population. This is an empirical allowance, not an
+    independent-object confidence bound. It weakens sensitivity to modest
+    external-side detection-config losses on sparse tiles, but does not
+    relax the SExtractor-side check for other pixels. With no pairs there
+    is no evidence for a local loss, so no additive allowance is granted.
 
     Parameters
     ----------
@@ -126,13 +139,16 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     radius : float, optional
         Largest separation of a pair, in pixels; default 1
     min_fraction : float, optional
-        Smallest acceptable fraction of SExtractor rows, and of external
-        objects, with a partner; default 0.98
+        Baseline paired fraction on each side; default 0.98. External-only
+        losses additionally receive ``external_unpaired_allowance``.
     tolerated_unpaired : int, optional
         Number of unpaired rows on either side accepted whatever the
         fraction; default 20
     w_log : logging.Logger, optional
         Pipeline logger
+    external_unpaired_allowance : int, optional
+        Additive external-only loss budget, in objects; default 50. Only
+        applied when at least one pair exists; zero restores the old guard.
 
     Returns
     -------
@@ -144,13 +160,25 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     Raises
     ------
     ValueError
-        If more than ``tolerated_unpaired`` rows of either side, and more
-        than ``1 - min_fraction`` of it, have no partner
+        If the external ``NUMBER`` repeats or is not an integer in
+        ``[1, MAX_NUMBER]``, or if unpaired rows exceed the absolute tolerance
+        and the side's loss budget: fractional only for SExtractor,
+        fractional plus the local allowance for the external catalogue
 
     @sc [decision:detection.tile_detection]
     """
     ext = asc.read(ext_cat_path, format="sextractor",
                    include_names=["NUMBER", "X_IMAGE", "Y_IMAGE"])
+    ext_number = np.asarray(ext["NUMBER"])
+    if (not np.issubdtype(ext_number.dtype, np.integer)
+            or (ext_number <= 0).any() or (ext_number > MAX_NUMBER).any()
+            or len(np.unique(ext_number)) < len(ext)):
+        raise ValueError(
+            f"{ext_cat_path} has a NUMBER that is not an integer in"
+            + f" [1, {MAX_NUMBER}] or that repeats; the join needs unique"
+            + " numbers that fit the int32 NUMBER and SEG_VIGNET columns, so"
+            + " that no relabelled footprint takes another object's number."
+        )
     with fits.open(cat_path) as hdul:
         hdus = [hdu.copy() for hdu in hdul]
     objects = next(h for h in hdus if h.name == "LDAC_OBJECTS")
@@ -166,10 +194,10 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
         n_external_only=len(ext) - len(i_sex),
     )
     summary = ", ".join(f"{k}={v}" for k, v in counts.items())
-    def too_many_unpaired(n_total):
+    def too_many_unpaired(n_total, allowance=0):
         unpaired = n_total - len(i_sex)
         return (unpaired > tolerated_unpaired
-                and unpaired > (1 - min_fraction) * n_total)
+                and unpaired > (1 - min_fraction) * n_total + allowance)
 
     fraction = len(i_sex) / max(len(data), 1)
     if too_many_unpaired(len(data)):
@@ -182,11 +210,13 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
             + " release of the catalogue (DR6)."
         )
     fraction_ext = len(i_sex) / max(len(ext), 1)
-    if too_many_unpaired(len(ext)):
+    allowance = external_unpaired_allowance if len(i_sex) else 0
+    if too_many_unpaired(len(ext), allowance):
         raise ValueError(
             f"Only {fraction_ext:.4f} of the objects of {ext_cat_path} pair"
-            + f" with a row of {cat_path} within {radius} px (minimum"
+            + f" with a row of {cat_path} within {radius} px (baseline"
             + f" {min_fraction} beyond {tolerated_unpaired} unpaired;"
+            + f" additive external allowance {allowance};"
             + f" {summary}). SExtractor finds fewer objects"
             + " than the catalogue: check that the detection configuration"
             + " is the catalogue's."
@@ -194,7 +224,7 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
 
     old_number = np.asarray(data["NUMBER"])
     new_number = np.full(len(data), UNMATCHED_LABEL, np.int64)
-    new_number[i_sex] = np.asarray(ext["NUMBER"])[i_ext]
+    new_number[i_sex] = ext_number[i_ext]
 
     columns = []
     for col in objects.columns:

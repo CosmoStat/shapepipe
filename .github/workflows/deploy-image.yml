@@ -120,9 +120,9 @@ jobs:
           docker run --rm -e HYPOTHESIS_PROFILE=ci "$IMAGE" \
             pytest -rX -m "not slow" --no-cov tests/science
 
-      # The actual test suite, run inside the shipped image — replacing the
-      # retired conda-based suite. pytest exercises the same wheels, binaries,
-      # and Python (3.12) that production runs on, not a parallel environment.
+      # Run the remaining suite inside the shipped image: the same wheels,
+      # binaries, and Python (3.12) that production uses.
+      # tests/science runs in the step above, so it is left out here.
       # pyproject's addopts add `--cov=shapepipe`; COVERAGE_FILE is set to /tmp
       # in the image so it works on read-only filesystems too. The Hypothesis
       # profile is explicit here so CI always uses the deterministic, capped
@@ -130,7 +130,7 @@ jobs:
       - name: Test — pytest suite
         run: |
           IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
-          docker run --rm -e HYPOTHESIS_PROFILE=ci -e SHAPEPIPE_ON_CANDIDE=0 "$IMAGE" pytest -rX
+          docker run --rm -e HYPOTHESIS_PROFILE=ci -e SHAPEPIPE_ON_CANDIDE=0 "$IMAGE" pytest -rX --ignore=tests/science
 
       # tests/workflow drives the Snakefile through snakemake's API. Snakemake
       # is a host tool and stays out of the image (it wraps each job in the
@@ -149,7 +149,7 @@ jobs:
       # ----------------------------------------------------------------
       - name: Log in to the Container registry
         if: github.event_name == 'push'
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}

@@ -297,12 +297,13 @@ class FieldCornersExtractor(object):
     def get_done_ccds(self):
         """Get Done CCDs.
 
-        Read the set of CCD IDs already present in the output file. Resume is
-        keyed on individual CCD IDs, not exposure numbers: a CCD counts as done
-        only if its own row is present. This keeps resume correct when a write
-        was interrupted mid-exposure (the missing CCDs are filled in) and when
-        a rerun uses an expanded ``--ccd_list`` (the newly requested CCDs are
-        added), and it never duplicates a row.
+        @sc [label:schema] footprint-resume-ccd-ids
+        Resume is keyed on individual CCD IDs, not exposure numbers, so missing
+        CCDs in a partially written exposure and an expanded ``--ccd_list``
+        remain eligible. A row's first column marks its CCD as done; the rest
+        of the row is not validated, so an interrupted row write can make resume
+        skip an incomplete CCD: remove any incomplete trailing row before
+        resuming. If reading the IDs fails, return an empty set.
 
         Returns
         -------
@@ -371,9 +372,7 @@ class FieldCornersExtractor(object):
 
         print(f"{n} header files found")
 
-        # On resume, read the CCD IDs already written so we can skip them
-        # per-CCD (not per-exposure): a partially written exposure is completed
-        # rather than skipped, and no row is ever duplicated.
+        # Skip IDs returned by get_done_ccds; see its resume contract.
         done_ccds = set()
         if resume:
             done_ccds = self.get_done_ccds()
