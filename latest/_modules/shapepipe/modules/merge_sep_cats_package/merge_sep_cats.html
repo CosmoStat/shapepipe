@@ -678,8 +678,7 @@
             <span class="n">cat0</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
             <span class="n">list_ext_name</span> <span class="o">=</span> <span class="n">cat0</span><span class="o">.</span><span class="n">get_ext_name</span><span class="p">()</span>
 
-            <span class="c1"># Inupt ngmix files sometimes have not all sheared versions</span>
-            <span class="c1"># (HDUs 1 - 5 = 1M, 1P, 2M, 2P, NOSHEAR) due to IO errors</span>
+            <span class="c1"># Require all five shear HDUs (1M, 1P, 2M, 2P, NOSHEAR).</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_ext_name</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">"Input ngmix catalogue </span><span class="si">{</span><span class="n">input_file</span><span class="si">}</span><span class="s2"> has only"</span>
@@ -688,10 +687,8 @@
 
             <span class="n">list_col_name</span> <span class="o">=</span> <span class="n">cat0</span><span class="o">.</span><span class="n">get_col_names</span><span class="p">()</span>
 
-            <span class="c1"># Some older input ngmix catalogues have multiple of 5 HDUs</span>
-            <span class="c1"># if reprocessed and not deleted but appended.</span>
-            <span class="c1"># The following log message should be replaced by raising</span>
-            <span class="c1"># and error in future</span>
+            <span class="c1"># Appending repeated results can leave extra HDUs. Read only the</span>
+            <span class="c1"># primary HDU and the first five shear tables.</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_ext_name</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">6</span><span class="p">:</span>
                 <span class="n">wmsg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Cropping input HDUs from </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">list_ext_name</span><span class="p">)</span><span class="si">}</span><span class="s2"> to 5"</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">wmsg</span><span class="p">)</span>

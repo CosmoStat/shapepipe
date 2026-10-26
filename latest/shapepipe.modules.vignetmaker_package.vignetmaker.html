@@ -603,10 +603,8 @@
 <p>&#64;sc [decision:preparation.stamp_positioning_and_padding]</p>
 <p>The image is zero-padded by <code class="docutils literal notranslate"><span class="pre">rad</span></code> on every side and a
 <code class="docutils literal notranslate"><span class="pre">(2</span> <span class="pre">*</span> <span class="pre">rad</span> <span class="pre">+</span> <span class="pre">1,</span> <span class="pre">2</span> <span class="pre">*</span> <span class="pre">rad</span> <span class="pre">+</span> <span class="pre">1)</span></code> stamp is sliced around the integer pixel
-nearest each position (<code class="docutils literal notranslate"><span class="pre">numpy.round</span></code>). The stamp values are
-bit-identical to the <code class="docutils literal notranslate"><span class="pre">sf_tools.image.stamp.FetchStamps</span></code> this replaces
-for in-bounds positions; unlike <code class="docutils literal notranslate"><span class="pre">FetchStamps</span></code>, an out-of-bounds centre
-raises rather than being silently wrapped modulo the image shape.</p>
+nearest each position (<code class="docutils literal notranslate"><span class="pre">numpy.round</span></code>). An out-of-bounds centre raises
+rather than wrapping modulo the image shape.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -750,6 +748,11 @@ image header WCS.</p>
 <dd class="field-even"><p><ul class="simple">
 <li><p><em>dict</em> – Dictionary containing object id and vignets for each epoch</p></li>
 <li><p><strong>&#64;sc [decision</strong> (<em>preparation.stamp_positioning_and_padding]</em>)</p></li>
+<li><p><strong>&#64;sc [label</strong> (<em>coupling] vignette-centroid-rounding</em>)</p></li>
+<li><p>Each epoch stores the [row, col] <code class="docutils literal notranslate"><span class="pre">OFFSET</span></code> and <code class="docutils literal notranslate"><span class="pre">INT_POS</span></code> from</p></li>
+<li><p><em>extraction with its vignette. The ngmix “wcs” centroid prior must share</em></p></li>
+<li><p>that rounding; <code class="docutils literal notranslate"><span class="pre">INT_POS</span> <span class="pre">+</span> <span class="pre">OFFSET</span></code> reconstructs the absolute exposure</p></li>
+<li><p><em>centroid for diagnostics.</em></p></li>
 </ul>
 </p>
 </dd>

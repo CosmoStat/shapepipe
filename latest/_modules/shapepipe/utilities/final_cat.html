@@ -549,11 +549,10 @@
 
 <span class="sd">* HDF5, as ``make_cat.write_final_cat`` writes it: one dataset per column, in</span>
 <span class="sd">  column order, a vector column as a 2-D dataset with one row per object;</span>
-<span class="sd">* FITS, a binary table (``RESULTS``, HDU 1), as catalogues made before the</span>
-<span class="sd">  HDF5 format are.</span>
+<span class="sd">* FITS, a binary table (``RESULTS``, HDU 1).</span>
 
 <span class="sd">The format is decided per file from its content (the HDF5 signature), not its</span>
-<span class="sd">name, so a campaign or a hand-made directory that mixes the two reads as one.</span>
+<span class="sd">name, so callers can read a directory containing both formats.</span>
 
 <span class="sd">"""</span>
 

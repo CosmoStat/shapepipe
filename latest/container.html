@@ -575,7 +575,7 @@
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#common-workflows">Common workflows</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-this-shape">Why this shape</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#build-choices">Build choices</a></li>
 </ul>
             </nav>
         </div>
@@ -595,7 +595,7 @@ that determine that. For running the image on a batch cluster (candide,
 CANFAR), see <a class="reference internal" href="clusters.html"><span class="std std-doc">Running on a cluster</span></a>.</p>
 <section id="one-image">
 <h2>One image<a class="headerlink" href="#one-image" title="Link to this heading">#</a></h2>
-<p>Every tag (<code class="docutils literal notranslate"><span class="pre">:develop</span></code>, a feature branch, <code class="docutils literal notranslate"><span class="pre">:v1.1.0</span></code>, …) is the same build:
+<p>Every published branch tag (<code class="docutils literal notranslate"><span class="pre">:develop</span></code>, a feature branch, …) uses the same build:
 everyday CLI tools (<code class="docutils literal notranslate"><span class="pre">vim</span></code>, <code class="docutils literal notranslate"><span class="pre">tmux</span></code>, <code class="docutils literal notranslate"><span class="pre">htop</span></code>, <code class="docutils literal notranslate"><span class="pre">rg</span></code>, <code class="docutils literal notranslate"><span class="pre">fd</span></code>, <code class="docutils literal notranslate"><span class="pre">jq</span></code>, <code class="docutils literal notranslate"><span class="pre">bat</span></code>, <code class="docutils literal notranslate"><span class="pre">less</span></code>,
 <code class="docutils literal notranslate"><span class="pre">git-lfs</span></code>, …) and <strong>all</strong> Python extras (test, lint, doc, jupyter, fitsio,
 release) on top of core deps. CI runs the test suite inside it before
@@ -707,7 +707,7 @@ shapepipe itself, and optional extras (<code class="docutils literal notranslate
 shapepipe is compatible with</em>. Edit when:</p>
 <ul class="simple">
 <li><p>adding a new dependency (<code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">add</span> <span class="pre">foo</span></code> will edit it for you)</p></li>
-<li><p>bumping a minimum after crossing a major version line</p></li>
+<li><p>bumping a minimum when code requires a newer API</p></li>
 <li><p>adding/restructuring extras</p></li>
 <li><p>changing project metadata (scripts, version, etc.)</p></li>
 </ul>
@@ -725,9 +725,9 @@ uv<span class="w"> </span>add<span class="w"> </span><span class="s1">'foo&gt;=1
 </pre></div>
 </div>
 <p>Commit <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> to the repo — that’s how reproducibility transfers
-between machines. The Dockerfile uses <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span> <span class="pre">--frozen</span></code>, which fails if
-<code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> and <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> have drifted. That’s the discipline
-mechanism: a stale lockfile cannot ship.</p>
+between machines. The Dockerfile uses <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span> <span class="pre">--frozen</span></code> to install from the
+lockfile without resolving dependencies or checking whether it is current.
+Regenerate the lock whenever requirements change.</p>
 </section>
 <section id="dockerfile-the-build-recipe">
 <h3><code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code> — the build recipe<a class="headerlink" href="#dockerfile-the-build-recipe" title="Link to this heading">#</a></h3>
@@ -781,23 +781,12 @@ into a working venv. Edit when:</p>
 versioning). Don’t <code class="docutils literal notranslate"><span class="pre">apt</span> <span class="pre">install</span></code> something that has a Python wheel; don’t
 <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> something Debian packages directly (e.g. <code class="docutils literal notranslate"><span class="pre">source-extractor</span></code>).</p>
 </section>
-<section id="why-this-shape">
-<h2>Why this shape<a class="headerlink" href="#why-this-shape" title="Link to this heading">#</a></h2>
-<ul class="simple">
-<li><p><strong>No conda.</strong> Earlier images double-installed packages via conda <em>and</em>
-pip, ballooning the image and creating environment-resolution bugs.
-Dropped in favour of plain Python + uv.</p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span> <span class="pre">--frozen</span></code></strong> at build time means the image is bit-exactly
-reproducible from a tagged commit, and impossible to ship with a stale
-lockfile.</p></li>
-<li><p><strong>Astromatic binaries from Debian</strong> (<code class="docutils literal notranslate"><span class="pre">psfex</span></code>, <code class="docutils literal notranslate"><span class="pre">source-extractor</span></code>)
-instead of source builds — Debian carries the
-GCC-compatibility patches that the previous Dockerfile had to apply
-inline with <code class="docutils literal notranslate"><span class="pre">sed</span></code>.</p></li>
-<li><p><strong>One image</strong> so a canfar batch job, a downstream <code class="docutils literal notranslate"><span class="pre">FROM</span></code> clause, and CI’s
-test run are never three different environments — <code class="docutils literal notranslate"><span class="pre">vim</span></code>, <code class="docutils literal notranslate"><span class="pre">pytest</span></code>, and
-everything else ship on every tag.</p></li>
-</ul>
+<section id="build-choices">
+<h2>Build choices<a class="headerlink" href="#build-choices" title="Link to this heading">#</a></h2>
+<p>The image uses plain Python and uv for Python dependencies, and Debian’s
+<code class="docutils literal notranslate"><span class="pre">psfex</span></code> and <code class="docutils literal notranslate"><span class="pre">source-extractor</span></code> packages for the Astromatic binaries.
+See <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code> for the source-built OpenMPI version and host-compatibility
+requirements.</p>
 </section>
 </section>
 
@@ -862,7 +851,7 @@ everything else ship on every tag.</p></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#common-workflows">Common workflows</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-this-shape">Why this shape</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#build-choices">Build choices</a></li>
 </ul>
   </nav></div>
 

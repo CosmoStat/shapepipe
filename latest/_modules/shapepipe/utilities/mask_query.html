@@ -544,47 +544,34 @@
   <h1>Source code for shapepipe.utilities.mask_query</h1><div class="highlight"><pre>
 <span></span><span class="sd">"""MASK QUERY.</span>
 
-<span class="sd">The one healsparse lookup in ShapePipe.</span>
+<span class="sd">Shared healsparse lookup at object sky positions.</span>
 
-<span class="sd">ShapePipe does not generate or rasterize masks. Sky-fixed masks are supplied</span>
-<span class="sd">as healsparse maps and are consumed by *querying them at object positions*:</span>
-<span class="sd">every object gets its mask value(s) as catalogue columns, and rejection happens</span>
-<span class="sd">at the catalogue level, never at the pixel level. The only mask that still</span>
-<span class="sd">reaches pixels is the per-exposure instrument flag image delivered with it.</span>
-
-<span class="sd">Two callers share the primitive defined here:</span>
-
-<span class="sd">* ``make_cat`` writes one ``MASK_&lt;band&gt;`` column per configured map, carrying</span>
-<span class="sd">  the map value verbatim (no interpretation, no filtering);</span>
-<span class="sd">* ``mask_query`` writes a single integer ``MASK_EXT`` column onto the exposure</span>
-<span class="sd">  SExtractor catalogue, combining the configured maps into "clean (0) or</span>
-<span class="sd">  flagged (nonzero)" so that ``setools`` — whose expression language has no</span>
-<span class="sd">  bitwise operators — *could* cut on ``MASK_EXT == 0``. The shipped selection</span>
-<span class="sd">  does not; the column is carried for measurement (see that module).</span>
+<span class="sd">``query_map`` returns map values verbatim; ``flag_positions`` combines maps</span>
+<span class="sd">into a clean (0) or flagged (nonzero) integer. Catalogue column definitions</span>
+<span class="sd">and selection policy belong to the callers in ``modules/make_cat_package``</span>
+<span class="sd">and ``modules/mask_query_package``.</span>
 
 <span class="sd">Partial reads</span>
 <span class="sd">-------------</span>
-<span class="sd">Never read a whole map. The UNIONS products are ~550 MB each and ``mask_query``</span>
-<span class="sd">runs PER CCD, so a full read would cost ~22 GB of I/O per 40-CCD exposure to</span>
+<span class="sd">Read only the coverage pixels needed by the catalogue. The UNIONS products</span>
+<span class="sd">are ~550 MB each and the mask-query runner operates per CCD, so a full read</span>
+<span class="sd">would cost ~22 GB of I/O per 40-CCD exposure to</span>
 <span class="sd">answer questions about a 0.06 deg² footprint. Instead the coverage index is</span>
 <span class="sd">read first (``HealSparseCoverage``, a few hundred kB), the coverage pixels the</span>
 <span class="sd">catalogue actually touches are computed with ``hpgeom.angle_to_pixel`` at the</span>
 <span class="sd">map's ``nside_coverage``, and only those get loaded.</span>
 
 <span class="sd">Every queried position falls inside exactly one coverage pixel and all of them</span>
-<span class="sd">are requested, so the padding by ``hpgeom.neighbors`` is insurance rather</span>
-<span class="sd">than necessity — at ``nside_coverage=128`` a coverage pixel of the star map</span>
-<span class="sd">is ~23 kB, so the padding costs under a megabyte and buys immunity to any</span>
-<span class="sd">edge convention we did not think of. ``test_partial_read_matches_full`` is</span>
-<span class="sd">what actually holds the two paths equal.</span>
+<span class="sd">are requested. Padding with ``hpgeom.neighbors`` guards against edge</span>
+<span class="sd">conventions; at ``nside_coverage=128`` a coverage pixel of the star map is</span>
+<span class="sd">~23 kB, so this costs under a megabyte for a CCD-sized query.</span>
+<span class="sd">``test_partial_read_matches_full`` checks equality with a full-map read.</span>
 
-<span class="sd">Measured on the DR6 star-body map — the bit-2 rung of the ladder the configs</span>
-<span class="sd">name ``mask_ugriz_nside131072_n4.hsp``, run against the staged single-band copy</span>
-<span class="sd">``mask_r_nside131072_n4.hsp``, 583 MB, ``nside_coverage=128`` — for 2000</span>
+<span class="sd">Measured on the DR6 star-body map's single-band copy</span>
+<span class="sd">``mask_r_nside131072_n4.hsp`` (583 MB, ``nside_coverage=128``), for 2000</span>
 <span class="sd">positions in one CCD-sized box, one process each: partial 0.102 s / 157 MiB</span>
-<span class="sd">peak RSS, full 12.8 s / 3364 MiB, identical values. Per 40-CCD exposure that</span>
-<span class="sd">is ~4 s against ~8.5 min of map reading, and the query adds ~0.15 GB to a rule</span>
-<span class="sd">already asking for 16 GB.</span>
+<span class="sd">peak RSS, full 12.8 s / 3364 MiB, identical values. Extrapolated to a 40-CCD</span>
+<span class="sd">exposure, map reading takes ~4 s rather than ~8.5 min.</span>
 
 <span class="sd">Coverage</span>
 <span class="sd">--------</span>
@@ -593,22 +580,16 @@
 <span class="sd">``-1`` for integer maps. ``make_cat`` passes that sentinel through verbatim,</span>
 <span class="sd">which is the documented off-map flag for the final catalogue.</span>
 
-<span class="sd">Coverage is reported from the COVERAGE MASK, not ``valid_mask=True``. For a</span>
+<span class="sd">@sc [label:schema] mask-coverage-index</span>
+<span class="sd">Coverage is reported from the coverage mask, not ``valid_mask=True``. For a</span>
 <span class="sd">boolean map — which is what the UNIONS per-bit products are — healsparse</span>
 <span class="sd">stores only the ``True`` pixels, so ``valid_mask`` returns the value itself</span>
 <span class="sd">and cannot tell "inside the footprint and clean" from "outside it entirely".</span>
-<span class="sd">The coverage mask can, at ``nside_coverage`` resolution, which is the scale the</span>
-<span class="sd">question is asked at anyway: does this map reach this exposure at all?</span>
+<span class="sd">The coverage mask distinguishes them at ``nside_coverage`` resolution.</span>
 
-<span class="sd">``flag_positions`` treats off-coverage as **not flagged**, for both map kinds.</span>
-<span class="sd">This makes the integer case agree with the boolean case (whose sentinel is</span>
-<span class="sd">literally ``False``) rather than diverge from it, and it keeps a map whose</span>
-<span class="sd">coverage does not reach an exposure from silently rejecting every star on it.</span>
-<span class="sd">That is also why the all-off-coverage case is logged as a WARNING: it is</span>
-<span class="sd">indistinguishable from "nothing is masked here" in the output column, so it has</span>
-<span class="sd">to be distinguishable in the log.</span>
+<span class="sd">See ``flag_positions`` for the off-coverage flag convention and warning.</span>
 
-<span class="sd">:Author: Claude Fable 5, for PR #847</span>
+<span class="sd">:Author: Claude Fable 5</span>
 
 <span class="sd">"""</span>
 
@@ -793,9 +774,6 @@
 <span class="sd">      (``value &amp; bits``); ``0`` where the value is zero or the position is</span>
 <span class="sd">      outside coverage.</span>
 
-<span class="sd">    Contributions are combined with a bitwise OR, so the returned flag is zero</span>
-<span class="sd">    for a clean object and carries the union of the bits that fired otherwise.</span>
-
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    paths : list</span>
@@ -830,8 +808,7 @@
             <span class="n">contribution</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">integer</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
-            <span class="c1"># Off-coverage: the sentinel, negative by healsparse convention.</span>
-            <span class="c1"># Zeroed rather than OR-ed in, see this module's docstring.</span>
+            <span class="c1"># Exclude negative sentinels from the OR; see the flag contract.</span>
             <span class="n">integer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">integer</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">integer</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">bits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">integer</span> <span class="o">&amp;=</span> <span class="n">bits</span>

@@ -579,9 +579,8 @@
 <h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h1>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
-<p>ShapePipe was not designed to be a stand-alone Python library. Instead users
-are expected to install the full ShapePipe environment on the system(s) where
-data should be processed.</p>
+<p>Running the pipeline requires both the Python package and system executables.
+Use the container for the complete supported environment.</p>
 </div>
 <section id="container-installation-recommended">
 <h2>Container Installation (Recommended)<a class="headerlink" href="#container-installation-recommended" title="Link to this heading">#</a></h2>
@@ -606,7 +605,7 @@ apptainer<span class="w"> </span>shell<span class="w"> </span>--writable<span cl
 </div>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
-<p>We do not currently build images for Apple Silicon/amr64; however the amd64 images should work on these systems, albeit with reduced performance.</p>
+<p>We do not currently build images for Apple Silicon/arm64; however the amd64 images should work on these systems, albeit with reduced performance.</p>
 </div>
 <p>The image bundles the astromatic binaries (<code class="docutils literal notranslate"><span class="pre">source-extractor</span></code>, <code class="docutils literal notranslate"><span class="pre">psfex</span></code>),
 MPI (<code class="docutils literal notranslate"><span class="pre">mpi4py</span></code> + OpenMPI), and every Python dependency, so

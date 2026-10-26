@@ -582,43 +582,30 @@
   <section id="module-shapepipe.utilities.mask_query">
 <span id="shapepipe-utilities-mask-query"></span><h1>shapepipe.utilities.mask_query<a class="headerlink" href="#module-shapepipe.utilities.mask_query" title="Link to this heading">#</a></h1>
 <p>MASK QUERY.</p>
-<p>The one healsparse lookup in ShapePipe.</p>
-<p>ShapePipe does not generate or rasterize masks. Sky-fixed masks are supplied
-as healsparse maps and are consumed by <em>querying them at object positions</em>:
-every object gets its mask value(s) as catalogue columns, and rejection happens
-at the catalogue level, never at the pixel level. The only mask that still
-reaches pixels is the per-exposure instrument flag image delivered with it.</p>
-<p>Two callers share the primitive defined here:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">make_cat</span></code> writes one <code class="docutils literal notranslate"><span class="pre">MASK_&lt;band&gt;</span></code> column per configured map, carrying
-the map value verbatim (no interpretation, no filtering);</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">mask_query</span></code> writes a single integer <code class="docutils literal notranslate"><span class="pre">MASK_EXT</span></code> column onto the exposure
-SExtractor catalogue, combining the configured maps into “clean (0) or
-flagged (nonzero)” so that <code class="docutils literal notranslate"><span class="pre">setools</span></code> — whose expression language has no
-bitwise operators — <em>could</em> cut on <code class="docutils literal notranslate"><span class="pre">MASK_EXT</span> <span class="pre">==</span> <span class="pre">0</span></code>. The shipped selection
-does not; the column is carried for measurement (see that module).</p></li>
-</ul>
+<p>Shared healsparse lookup at object sky positions.</p>
+<p><code class="docutils literal notranslate"><span class="pre">query_map</span></code> returns map values verbatim; <code class="docutils literal notranslate"><span class="pre">flag_positions</span></code> combines maps
+into a clean (0) or flagged (nonzero) integer. Catalogue column definitions
+and selection policy belong to the callers in <code class="docutils literal notranslate"><span class="pre">modules/make_cat_package</span></code>
+and <code class="docutils literal notranslate"><span class="pre">modules/mask_query_package</span></code>.</p>
 <section id="partial-reads">
 <h2>Partial reads<a class="headerlink" href="#partial-reads" title="Link to this heading">#</a></h2>
-<p>Never read a whole map. The UNIONS products are ~550 MB each and <code class="docutils literal notranslate"><span class="pre">mask_query</span></code>
-runs PER CCD, so a full read would cost ~22 GB of I/O per 40-CCD exposure to
+<p>Read only the coverage pixels needed by the catalogue. The UNIONS products
+are ~550 MB each and the mask-query runner operates per CCD, so a full read
+would cost ~22 GB of I/O per 40-CCD exposure to
 answer questions about a 0.06 deg² footprint. Instead the coverage index is
 read first (<code class="docutils literal notranslate"><span class="pre">HealSparseCoverage</span></code>, a few hundred kB), the coverage pixels the
 catalogue actually touches are computed with <code class="docutils literal notranslate"><span class="pre">hpgeom.angle_to_pixel</span></code> at the
 map’s <code class="docutils literal notranslate"><span class="pre">nside_coverage</span></code>, and only those get loaded.</p>
 <p>Every queried position falls inside exactly one coverage pixel and all of them
-are requested, so the padding by <code class="docutils literal notranslate"><span class="pre">hpgeom.neighbors</span></code> is insurance rather
-than necessity — at <code class="docutils literal notranslate"><span class="pre">nside_coverage=128</span></code> a coverage pixel of the star map
-is ~23 kB, so the padding costs under a megabyte and buys immunity to any
-edge convention we did not think of. <code class="docutils literal notranslate"><span class="pre">test_partial_read_matches_full</span></code> is
-what actually holds the two paths equal.</p>
-<p>Measured on the DR6 star-body map — the bit-2 rung of the ladder the configs
-name <code class="docutils literal notranslate"><span class="pre">mask_ugriz_nside131072_n4.hsp</span></code>, run against the staged single-band copy
-<code class="docutils literal notranslate"><span class="pre">mask_r_nside131072_n4.hsp</span></code>, 583 MB, <code class="docutils literal notranslate"><span class="pre">nside_coverage=128</span></code> — for 2000
+are requested. Padding with <code class="docutils literal notranslate"><span class="pre">hpgeom.neighbors</span></code> guards against edge
+conventions; at <code class="docutils literal notranslate"><span class="pre">nside_coverage=128</span></code> a coverage pixel of the star map is
+~23 kB, so this costs under a megabyte for a CCD-sized query.
+<code class="docutils literal notranslate"><span class="pre">test_partial_read_matches_full</span></code> checks equality with a full-map read.</p>
+<p>Measured on the DR6 star-body map’s single-band copy
+<code class="docutils literal notranslate"><span class="pre">mask_r_nside131072_n4.hsp</span></code> (583 MB, <code class="docutils literal notranslate"><span class="pre">nside_coverage=128</span></code>), for 2000
 positions in one CCD-sized box, one process each: partial 0.102 s / 157 MiB
-peak RSS, full 12.8 s / 3364 MiB, identical values. Per 40-CCD exposure that
-is ~4 s against ~8.5 min of map reading, and the query adds ~0.15 GB to a rule
-already asking for 16 GB.</p>
+peak RSS, full 12.8 s / 3364 MiB, identical values. Extrapolated to a 40-CCD
+exposure, map reading takes ~4 s rather than ~8.5 min.</p>
 </section>
 <section id="coverage">
 <h2>Coverage<a class="headerlink" href="#coverage" title="Link to this heading">#</a></h2>
@@ -626,22 +613,16 @@ already asking for 16 GB.</p>
 positions outside its coverage: <code class="docutils literal notranslate"><span class="pre">False</span></code> for boolean maps, and typically
 <code class="docutils literal notranslate"><span class="pre">-1</span></code> for integer maps. <code class="docutils literal notranslate"><span class="pre">make_cat</span></code> passes that sentinel through verbatim,
 which is the documented off-map flag for the final catalogue.</p>
-<p>Coverage is reported from the COVERAGE MASK, not <code class="docutils literal notranslate"><span class="pre">valid_mask=True</span></code>. For a
+<p>&#64;sc [label:schema] mask-coverage-index
+Coverage is reported from the coverage mask, not <code class="docutils literal notranslate"><span class="pre">valid_mask=True</span></code>. For a
 boolean map — which is what the UNIONS per-bit products are — healsparse
 stores only the <code class="docutils literal notranslate"><span class="pre">True</span></code> pixels, so <code class="docutils literal notranslate"><span class="pre">valid_mask</span></code> returns the value itself
 and cannot tell “inside the footprint and clean” from “outside it entirely”.
-The coverage mask can, at <code class="docutils literal notranslate"><span class="pre">nside_coverage</span></code> resolution, which is the scale the
-question is asked at anyway: does this map reach this exposure at all?</p>
-<p><code class="docutils literal notranslate"><span class="pre">flag_positions</span></code> treats off-coverage as <strong>not flagged</strong>, for both map kinds.
-This makes the integer case agree with the boolean case (whose sentinel is
-literally <code class="docutils literal notranslate"><span class="pre">False</span></code>) rather than diverge from it, and it keeps a map whose
-coverage does not reach an exposure from silently rejecting every star on it.
-That is also why the all-off-coverage case is logged as a WARNING: it is
-indistinguishable from “nothing is masked here” in the output column, so it has
-to be distinguishable in the log.</p>
+The coverage mask distinguishes them at <code class="docutils literal notranslate"><span class="pre">nside_coverage</span></code> resolution.</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">flag_positions</span></code> for the off-coverage flag convention and warning.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Author<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Claude Fable 5, for PR #847</p>
+<dd class="field-odd"><p>Claude Fable 5</p>
 </dd>
 </dl>
 </section>
@@ -754,8 +735,6 @@ bitwise OR of the per-map contributions, 0 meaning clean.</p>
 (<code class="docutils literal notranslate"><span class="pre">value</span> <span class="pre">&amp;</span> <span class="pre">bits</span></code>); <code class="docutils literal notranslate"><span class="pre">0</span></code> where the value is zero or the position is
 outside coverage.</p></li>
 </ul>
-<p>Contributions are combined with a bitwise OR, so the returned flag is zero
-for a clean object and carries the union of the bits that fired otherwise.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

@@ -546,7 +546,7 @@
 
 <span class="sd">Class to flag SExtractor detections against external healsparse masks.</span>
 
-<span class="sd">:Author: Claude Fable 5, for PR #847</span>
+<span class="sd">:Author: Claude Fable 5</span>
 
 <span class="sd">"""</span>
 
@@ -639,12 +639,9 @@
         <span class="n">ori_cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">ori_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
 
-        <span class="c1"># A CCD SExtractor found nothing on is tolerated all along this chain</span>
-        <span class="c1"># (setools' ~0.2% attrition, psfex_interp's floor=0 warn), so it must</span>
-        <span class="c1"># not be an error here either. An empty LDAC table has no columns to</span>
-        <span class="c1"># index, so read the positions only when there are rows, and still</span>
-        <span class="c1"># publish an output file — a missing sexcat_ext would look to the file</span>
-        <span class="c1"># handler like a crash rather than like an empty CCD.</span>
+        <span class="c1"># Empty CCD catalogues still need an output file so the file handler</span>
+        <span class="c1"># can distinguish an empty detection result from a failed module.</span>
+        <span class="c1"># Read position columns only when the table has rows.</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">ra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">dec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>

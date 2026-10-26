@@ -875,12 +875,13 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_done_ccds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Get Done CCDs.</span>
 
-<span class="sd">        Read the set of CCD IDs already present in the output file. Resume is</span>
-<span class="sd">        keyed on individual CCD IDs, not exposure numbers: a CCD counts as done</span>
-<span class="sd">        only if its own row is present. This keeps resume correct when a write</span>
-<span class="sd">        was interrupted mid-exposure (the missing CCDs are filled in) and when</span>
-<span class="sd">        a rerun uses an expanded ``--ccd_list`` (the newly requested CCDs are</span>
-<span class="sd">        added), and it never duplicates a row.</span>
+<span class="sd">        @sc [label:schema] footprint-resume-ccd-ids</span>
+<span class="sd">        Resume is keyed on individual CCD IDs, not exposure numbers, so missing</span>
+<span class="sd">        CCDs in a partially written exposure and an expanded ``--ccd_list``</span>
+<span class="sd">        remain eligible. A row's first column marks its CCD as done; the rest</span>
+<span class="sd">        of the row is not validated, so an interrupted row write can make resume</span>
+<span class="sd">        skip an incomplete CCD: remove any incomplete trailing row before</span>
+<span class="sd">        resuming. If reading the IDs fails, return an empty set.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -952,9 +953,7 @@
 
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> header files found"</span><span class="p">)</span>
 
-        <span class="c1"># On resume, read the CCD IDs already written so we can skip them</span>
-        <span class="c1"># per-CCD (not per-exposure): a partially written exposure is completed</span>
-        <span class="c1"># rather than skipped, and no row is ever duplicated.</span>
+        <span class="c1"># Skip IDs returned by get_done_ccds; see its resume contract.</span>
         <span class="n">done_ccds</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">resume</span><span class="p">:</span>
             <span class="n">done_ccds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_done_ccds</span><span class="p">()</span>

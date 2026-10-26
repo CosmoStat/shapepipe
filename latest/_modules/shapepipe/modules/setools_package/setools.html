@@ -1244,12 +1244,7 @@
 
             <span class="n">cat_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
             <span class="n">n_keep</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">cat_size</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">))</span>
-            <span class="c1"># Deterministic split, seeded from the unit's file number: the</span>
-            <span class="c1"># train/validation assignment is a pure function of the input</span>
-            <span class="c1"># catalogue, so the PSF star sample (and everything downstream</span>
-            <span class="c1"># of the PSF model) is reproducible run-to-run. An unseeded</span>
-            <span class="c1"># np.random here made the shear catalogue non-reproducible</span>
-            <span class="c1"># upstream of ngmix's own position seeding.</span>
+            <span class="c1"># See the split-seeded-by-file-number contract above.</span>
             <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
                 <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\D"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span>
             <span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">32</span><span class="p">)</span>

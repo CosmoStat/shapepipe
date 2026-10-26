@@ -673,7 +673,7 @@ different WCS rotation viewing the same sky object) — the science guarantee
 that motivates the sky-coordinate measurement. When <code class="docutils literal notranslate"><span class="pre">wcs</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> the
 computation is done consistently in the pixel frame instead (the axes are
 then the CCD axes and the result is <em>not</em> frame-invariant); this path exists
-only for the legacy pixel-frame branch.</p>
+only for the pixel-frame branch.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -877,8 +877,7 @@ the fourth-moment sum so they do not contribute.</p>
 <dd><p>Galaxy Catalogue WCS.</p>
 <p>Read the CCD image WCS from the SExtractor FITS_LDAC galaxy catalogue.
 The original image header is stored as a card list in the <code class="docutils literal notranslate"><span class="pre">LDAC_IMHEAD</span></code>
-HDU (HDU 1); this is the same header the (now retired) pixel-to-world
-conversion reconstructed to rotate shapes.</p>
+HDU (HDU 1).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>WCS of the CCD the stars/PSFs live on.</p>

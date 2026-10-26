@@ -817,28 +817,24 @@ in which no key is added</p></li>
 <span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/merge_starcat_package/merge_starcat.html#MergeStarCatPSFEX.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.merge_starcat_package.merge_starcat.MergeStarCatPSFEX.process" title="Link to this definition">#</a></dt>
 <dd><p>Process.</p>
 <p>Process merging.</p>
-<p>TWO PASSES, AND NEITHER HOLDS THE CAMPAIGN TWICE. The first reads only
-the FITS HEADER of every input — NAXIS2, the row count — and never
-touches a data block; the second allocates the output columns once, at
-their exact final length, and fills them slice by slice. Peak memory is
-therefore ONE output plus ONE input catalogue.</p>
+<p>The first pass reads row counts (<code class="docutils literal notranslate"><span class="pre">NAXIS2</span></code>) and column dtypes from
+FITS headers without touching data blocks. The second allocates each
+output column at its final length and fills it slice by slice. During
+the fill pass, retained arrays are the output columns and one input
+catalogue; FITS serialization allocates additional copies.</p>
 <p>&#64;sc [label:schema] psfex-starcat-columns-strict
 Every <code class="docutils literal notranslate"><span class="pre">HSM_*</span></code> column is read by name with no fallback, so the set
 read here (<code class="docutils literal notranslate"><span class="pre">_COLUMNS</span></code>) equals the set
 <code class="docutils literal notranslate"><span class="pre">PSFExInterpolator._write_output_validation</span></code> writes
 (<code class="docutils literal notranslate"><span class="pre">test_hsm_column_seams</span></code>).</p>
-<p>What this replaces, in two steps, is instructive about the cost of the
-obvious code. Accumulating each column into a python LIST OF VALUES —
-<code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">+=</span> <span class="pre">list(data[&quot;X&quot;])</span></code> — turned 4 bytes of float32 payload into a
-32-byte object plus an 8-byte pointer, measured at ~10x the input bytes
-end to end and putting a full-survey merge (~20k exposures x 40 CCDs) at
-~400 GB. Accumulating one ARRAY PER CATALOGUE and concatenating once
-brought that to ~5.5x. This pass structure removes what was left of the
-accumulation: there are no chunks, and no concatenate that must hold its
-inputs and its result at the same time.</p>
-<p><code class="docutils literal notranslate"><span class="pre">self._input_file_list</span></code> MUST BE ITERABLE TWICE, which the module
-runner’s list is. A one-shot generator is not, and would silently merge
-nothing on the second pass — hence the explicit row-count check below.</p>
+<p>Per-value Python lists measure ~10x the input bytes (~400 GB for
+~20k exposures x 40 CCDs); arrays accumulated before concatenation
+measure ~5.5x. Two passes avoid retaining both concatenation inputs
+and their result.</p>
+<p>&#64;sc [label:operations] starcat-two-pass-input-stability
+Inputs must remain unchanged across both passes, and
+<code class="docutils literal notranslate"><span class="pre">self._input_file_list</span></code> must support repeated iteration. The final
+row-count check rejects a mismatch rather than writing unfilled rows.</p>
 </dd></dl>
 
 </dd></dl>

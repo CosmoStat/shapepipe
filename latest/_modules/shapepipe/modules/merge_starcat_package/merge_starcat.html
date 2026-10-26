@@ -911,8 +911,8 @@
             <span class="n">model_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_var_val</span><span class="p">)</span>
             <span class="n">model_var_size</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_var_val</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
 
-            <span class="c1"># ONE ARRAY PER CATALOGUE PER COLUMN (see _stack): the per-value</span>
-            <span class="c1"># python lists this replaces cost ~10x the input bytes.</span>
+            <span class="c1"># Keep one array per catalogue per column (see _stack).</span>
+            <span class="c1"># Per-value Python lists cost ~10x the input bytes.</span>
             <span class="c1"># positions</span>
             <span class="n">pos</span> <span class="o">=</span> <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"GLOB_POSITION_IMG_LIST"</span><span class="p">]</span>
             <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pos</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]))</span>
@@ -1076,7 +1076,7 @@
 
         <span class="c1"># Write file</span>
         <span class="n">output</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sex_cat_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-        <span class="c1"># MKDEBUG; Implement this in file_io</span>
+        <span class="c1"># Record the input catalogue type in the output table header.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_cat_type</span><span class="p">:</span>
             <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"update"</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdu_list</span><span class="p">:</span>
                 <span class="n">header</span> <span class="o">=</span> <span class="n">hdu_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
@@ -1144,8 +1144,8 @@
         <span class="p">(</span><span class="s2">"HSM_RHO4_STAR"</span><span class="p">,</span> <span class="s2">"HSM_RHO4_STAR"</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">"HSM_FLAG_PSF"</span><span class="p">,</span> <span class="s2">"HSM_FLAG_PSF"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"HSM_FLAG_STAR"</span><span class="p">,</span> <span class="s2">"HSM_FLAG_STAR"</span><span class="p">),</span>
     <span class="p">)</span>
-    <span class="c1"># Present in psfex_interp output, absent from pix2wcs-converted files</span>
-    <span class="c1"># (MKDEBUG); zero-filled when missing rather than failing the merge.</span>
+    <span class="c1"># Present in psfex_interp output, absent from pix2wcs-converted files;</span>
+    <span class="c1"># zero-filled when missing rather than failing the merge.</span>
     <span class="n">_OPTIONAL</span> <span class="o">=</span> <span class="p">((</span><span class="s2">"MAG"</span><span class="p">,</span> <span class="s2">"MAG"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"SNR"</span><span class="p">,</span> <span class="s2">"SNR"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"ACCEPTED"</span><span class="p">,</span> <span class="s2">"ACCEPTED"</span><span class="p">))</span>
 
 <div class="viewcode-block" id="MergeStarCatPSFEX._ccd_nb">
@@ -1162,11 +1162,11 @@
 
 <span class="sd">        Process merging.</span>
 
-<span class="sd">        TWO PASSES, AND NEITHER HOLDS THE CAMPAIGN TWICE. The first reads only</span>
-<span class="sd">        the FITS HEADER of every input — NAXIS2, the row count — and never</span>
-<span class="sd">        touches a data block; the second allocates the output columns once, at</span>
-<span class="sd">        their exact final length, and fills them slice by slice. Peak memory is</span>
-<span class="sd">        therefore ONE output plus ONE input catalogue.</span>
+<span class="sd">        The first pass reads row counts (``NAXIS2``) and column dtypes from</span>
+<span class="sd">        FITS headers without touching data blocks. The second allocates each</span>
+<span class="sd">        output column at its final length and fills it slice by slice. During</span>
+<span class="sd">        the fill pass, retained arrays are the output columns and one input</span>
+<span class="sd">        catalogue; FITS serialization allocates additional copies.</span>
 
 <span class="sd">        @sc [label:schema] psfex-starcat-columns-strict</span>
 <span class="sd">        Every ``HSM_*`` column is read by name with no fallback, so the set</span>
@@ -1174,33 +1174,24 @@
 <span class="sd">        ``PSFExInterpolator._write_output_validation`` writes</span>
 <span class="sd">        (``test_hsm_column_seams``).</span>
 
-<span class="sd">        What this replaces, in two steps, is instructive about the cost of the</span>
-<span class="sd">        obvious code. Accumulating each column into a python LIST OF VALUES —</span>
-<span class="sd">        ``x += list(data["X"])`` — turned 4 bytes of float32 payload into a</span>
-<span class="sd">        32-byte object plus an 8-byte pointer, measured at ~10x the input bytes</span>
-<span class="sd">        end to end and putting a full-survey merge (~20k exposures x 40 CCDs) at</span>
-<span class="sd">        ~400 GB. Accumulating one ARRAY PER CATALOGUE and concatenating once</span>
-<span class="sd">        brought that to ~5.5x. This pass structure removes what was left of the</span>
-<span class="sd">        accumulation: there are no chunks, and no concatenate that must hold its</span>
-<span class="sd">        inputs and its result at the same time.</span>
+<span class="sd">        Per-value Python lists measure ~10x the input bytes (~400 GB for</span>
+<span class="sd">        ~20k exposures x 40 CCDs); arrays accumulated before concatenation</span>
+<span class="sd">        measure ~5.5x. Two passes avoid retaining both concatenation inputs</span>
+<span class="sd">        and their result.</span>
 
-<span class="sd">        ``self._input_file_list`` MUST BE ITERABLE TWICE, which the module</span>
-<span class="sd">        runner's list is. A one-shot generator is not, and would silently merge</span>
-<span class="sd">        nothing on the second pass — hence the explicit row-count check below.</span>
+<span class="sd">        @sc [label:operations] starcat-two-pass-input-stability</span>
+<span class="sd">        Inputs must remain unchanged across both passes, and</span>
+<span class="sd">        ``self._input_file_list`` must support repeated iteration. The final</span>
+<span class="sd">        row-count check rejects a mismatch rather than writing unfilled rows.</span>
 <span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"Merging </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> star catalogues"</span>
         <span class="p">)</span>
 
         <span class="c1"># --- pass 1: row counts and dtypes, from headers alone --------------</span>
-        <span class="c1"># THE OPTIONAL COLUMNS ARE A PER-FILE QUESTION, NOT A PER-MERGE ONE.</span>
-        <span class="c1"># A pix2wcs-converted catalogue has no MAG/SNR/ACCEPTED while an</span>
-        <span class="c1"># ordinary one does, and a merge can be handed both. Deciding from the</span>
-        <span class="c1"># first file alone got it wrong in both directions: converted-first</span>
-        <span class="c1"># zero-filled the real values of every ordinary file behind it, and</span>
-        <span class="c1"># ordinary-first raised KeyError on the first converted one. So the</span>
-        <span class="c1"># dtype comes from ANY file that carries the column, and pass 2 asks</span>
-        <span class="c1"># each file for itself.</span>
+        <span class="c1"># Optional MAG/SNR/ACCEPTED columns can differ between inputs:</span>
+        <span class="c1"># pix2wcs catalogues lack them. Take the dtype from any file carrying</span>
+        <span class="c1"># the column; pass 2 zero-fills only files that lack it.</span>
         <span class="n">names</span><span class="p">,</span> <span class="n">dtypes</span><span class="p">,</span> <span class="n">opt_dtypes</span><span class="p">,</span> <span class="n">n_total</span> <span class="o">=</span> <span class="p">[],</span> <span class="kc">None</span><span class="p">,</span> <span class="p">{},</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_file_list</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -1209,10 +1200,9 @@
                     <span class="n">hdu</span> <span class="o">=</span> <span class="n">starcat_j</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hdu_table</span><span class="p">]</span>
                     <span class="n">n_rows</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">"NAXIS2"</span><span class="p">]</span>
                     <span class="c1"># ColDefs.dtype describes the table without reading it.</span>
-                    <span class="c1"># NOTE: it is the RAW storage dtype and ignores TSCAL/TZERO,</span>
-                    <span class="c1"># so a scaled column would be allocated narrower than the</span>
-                    <span class="c1"># values .data returns. Latent, not live: no validation_psf</span>
-                    <span class="c1"># column is scaled. Read the dtype off .data if one ever is.</span>
+                    <span class="c1"># This is the raw storage dtype, ignoring TSCAL/TZERO.</span>
+                    <span class="c1"># Validation columns must be unscaled; scaled columns need</span>
+                    <span class="c1"># the dtype of .data to preserve their decoded values.</span>
                     <span class="n">cols</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">dtype</span>
                     <span class="k">if</span> <span class="n">dtypes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">dtypes</span> <span class="o">=</span> <span class="n">cols</span>
@@ -1233,8 +1223,8 @@
         <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">out</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_total</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtypes</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
                 <span class="k">for</span> <span class="n">out</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_COLUMNS</span><span class="p">}</span>
         <span class="k">for</span> <span class="n">out</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_OPTIONAL</span><span class="p">:</span>
-            <span class="c1"># A column no file carries still gets a column, zero-filled, in the</span>
-            <span class="c1"># positional dtype the old code used for it.</span>
+            <span class="c1"># Columns absent from every file use X's dtype and are zero-filled</span>
+            <span class="c1"># in pass 2.</span>
             <span class="n">data</span><span class="p">[</span><span class="n">out</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_total</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">opt_dtypes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">dtypes</span><span class="p">[</span><span class="s2">"X"</span><span class="p">]))</span>
         <span class="c1"># CCD_NB is one string per catalogue, repeated over its rows; its width</span>
         <span class="c1"># is the widest CCD number in the campaign, which pass 1 already knows.</span>
@@ -1257,7 +1247,7 @@
             <span class="k">for</span> <span class="n">out</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_COLUMNS</span><span class="p">:</span>
                 <span class="n">data</span><span class="p">[</span><span class="n">out</span><span class="p">][</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_j</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">out</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_OPTIONAL</span><span class="p">:</span>
-                <span class="c1"># THIS file's schema, not the merge's: zero-fill only the files</span>
+                <span class="c1"># Use this file's schema: zero-fill only the files</span>
                 <span class="c1"># that actually lack the column.</span>
                 <span class="n">data</span><span class="p">[</span><span class="n">out</span><span class="p">][</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_j</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">have</span> <span class="k">else</span> <span class="mi">0</span>
             <span class="n">data</span><span class="p">[</span><span class="s2">"CCD_NB"</span><span class="p">][</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ccd_nb</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -1273,8 +1263,7 @@
                 <span class="sa">f</span><span class="s2">"merge_starcat: pass 1 counted </span><span class="si">{</span><span class="n">n_total</span><span class="si">}</span><span class="s2"> rows, pass 2 filled "</span>
                 <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">at</span><span class="si">}</span><span class="s2"> — is the input list iterable more than once?"</span><span class="p">)</span>
 
-        <span class="c1"># Prepare output FITS catalogue</span>
-        <span class="c1"># MKDEBUG: SEx_cat=True -&gt; False</span>
+        <span class="c1"># Prepare a plain FITS catalogue without copying a SExtractor HDU.</span>
         <span class="n">out_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="si">}</span><span class="s2">/full_starcat-0000000.fits"</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
             <span class="n">out_path</span><span class="p">,</span>
@@ -1282,18 +1271,13 @@
             <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="c1"># `data` was built by the two passes above (size stored as T = 2</span>
-        <span class="c1"># sigma^2); every column is already an array of its final length.</span>
-
-        <span class="c1"># Write file</span>
-        <span class="c1"># MKDEBUG for psf conv (pix2WCS) files do not write as SExtractorCat;</span>
-        <span class="c1"># we do not want to copy the first input data content to HDU #1.</span>
-        <span class="c1"># sex_cat_path=self._input_file_list[0][0],</span>
+        <span class="c1"># Write the final-length arrays as a plain FITS table without copying</span>
+        <span class="c1"># an input SExtractor HDU (size stored as T = 2 sigma^2).</span>
         <span class="n">output</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span>
             <span class="n">data</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="c1"># MKDEBUG; Implement this in file_io</span>
+        <span class="c1"># Record the input catalogue type in the output table header.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_cat_type</span><span class="p">:</span>
             <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"update"</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdu_list</span><span class="p">:</span>
                 <span class="n">header</span> <span class="o">=</span> <span class="n">hdu_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
@@ -1446,13 +1430,8 @@
             <span class="n">ra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"XWIN_WORLD"</span><span class="p">]))</span>
             <span class="n">dec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data_j</span><span class="p">[</span><span class="s2">"YWIN_WORLD"</span><span class="p">]))</span>
 
-            <span class="c1"># PRE-EXISTING BUG, LEFT ALONE DELIBERATELY: these four REBIND the</span>
-            <span class="c1"># accumulators initialised above rather than appending to them, so</span>
-            <span class="c1"># only the LAST input file's ellipticities reach the output while</span>
-            <span class="c1"># every other column carries the whole merge. Setools is not wired</span>
-            <span class="c1"># to any workflow path today; fixing it is its own change with its</span>
-            <span class="c1"># own verification, and doing it silently inside a memory rewrite</span>
-            <span class="c1"># would bury it.</span>
+            <span class="c1"># These assignments retain only this file's ellipticities;</span>
+            <span class="c1"># the other columns accumulate rows from every input.</span>
             <span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_moments</span><span class="p">(</span><span class="n">data_j</span><span class="p">)</span>
             <span class="n">eps1</span><span class="p">,</span> <span class="n">eps2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ellipticity</span><span class="p">(</span><span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span><span class="p">,</span> <span class="s2">"epsilon"</span><span class="p">)</span>
             <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ellipticity</span><span class="p">(</span><span class="n">m11</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m02</span><span class="p">,</span> <span class="s2">"chi"</span><span class="p">)</span>

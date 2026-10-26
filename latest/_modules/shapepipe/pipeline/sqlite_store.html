@@ -555,13 +555,13 @@
 <span class="sd">file with sqlite's ``immutable=1`` URI parameter instead, which skips all</span>
 <span class="sd">locking and change detection.</span>
 
-<span class="sd">``immutable=1`` is only correct for a file that no process writes while it</span>
-<span class="sd">is open: sqlite neither sees concurrent changes nor replays a hot journal</span>
-<span class="sd">left by a crashed writer, so it would return uncommitted rows. Every call</span>
-<span class="sd">site of this module reads a store that an earlier module wrote and closed</span>
-<span class="sd">(``make_post_process`` reads the header log ``merge_headers`` wrote). As a</span>
-<span class="sd">guard, opening a store that has a rollback journal or write-ahead log next</span>
-<span class="sd">to it raises instead of reading it.</span>
+<span class="sd">@sc [label:custody] immutable-sqlite-store</span>
+<span class="sd">The writer must close the store before a reader opens it, and no process may</span>
+<span class="sd">write it while an immutable reader is open. SQLite skips change detection</span>
+<span class="sd">and journal recovery in this mode, so concurrent writes or an unrecovered</span>
+<span class="sd">journal can yield invalid data. Opening rejects stores with a rollback</span>
+<span class="sd">journal or write-ahead log beside them; this guard does not prevent a writer</span>
+<span class="sd">from starting after the check.</span>
 
 <span class="sd">"""</span>
 
@@ -598,9 +598,8 @@
 <span class="sd">    FileNotFoundError</span>
 <span class="sd">        If ``path`` is not an existing file</span>
 <span class="sd">    RuntimeError</span>
-<span class="sd">        If a ``-journal`` or ``-wal`` file sits next to ``path``: a writer is</span>
-<span class="sd">        mid-transaction or crashed in one, and an immutable read would see</span>
-<span class="sd">        uncommitted data</span>
+<span class="sd">        If a ``-journal`` or ``-wal`` file sits next to ``path``; the store</span>
+<span class="sd">        may have an active writer or require recovery before an immutable read</span>
 
 <span class="sd">    """</span>
 

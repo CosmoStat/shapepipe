@@ -657,7 +657,7 @@
 <span class="sd">    that motivates the sky-coordinate measurement. When ``wcs`` is ``None`` the</span>
 <span class="sd">    computation is done consistently in the pixel frame instead (the axes are</span>
 <span class="sd">    then the CCD axes and the result is *not* frame-invariant); this path exists</span>
-<span class="sd">    only for the legacy pixel-frame branch.</span>
+<span class="sd">    only for the pixel-frame branch.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1298,8 +1298,7 @@
 
 <span class="sd">        Read the CCD image WCS from the SExtractor FITS_LDAC galaxy catalogue.</span>
 <span class="sd">        The original image header is stored as a card list in the ``LDAC_IMHEAD``</span>
-<span class="sd">        HDU (HDU 1); this is the same header the (now retired) pixel-to-world</span>
-<span class="sd">        conversion reconstructed to rotate shapes.</span>
+<span class="sd">        HDU (HDU 1).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>

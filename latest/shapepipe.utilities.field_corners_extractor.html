@@ -749,12 +749,13 @@ success, <code class="docutils literal notranslate"><span class="pre">None</span
 <dt class="sig sig-object py" id="shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.get_done_ccds">
 <span class="sig-name descname"><span class="pre">get_done_ccds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/utilities/field_corners_extractor.html#FieldCornersExtractor.get_done_ccds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.utilities.field_corners_extractor.FieldCornersExtractor.get_done_ccds" title="Link to this definition">#</a></dt>
 <dd><p>Get Done CCDs.</p>
-<p>Read the set of CCD IDs already present in the output file. Resume is
-keyed on individual CCD IDs, not exposure numbers: a CCD counts as done
-only if its own row is present. This keeps resume correct when a write
-was interrupted mid-exposure (the missing CCDs are filled in) and when
-a rerun uses an expanded <code class="docutils literal notranslate"><span class="pre">--ccd_list</span></code> (the newly requested CCDs are
-added), and it never duplicates a row.</p>
+<p>&#64;sc [label:schema] footprint-resume-ccd-ids
+Resume is keyed on individual CCD IDs, not exposure numbers, so missing
+CCDs in a partially written exposure and an expanded <code class="docutils literal notranslate"><span class="pre">--ccd_list</span></code>
+remain eligible. A row’s first column marks its CCD as done; the rest
+of the row is not validated, so an interrupted row write can make resume
+skip an incomplete CCD: remove any incomplete trailing row before
+resuming. If reading the IDs fails, return an empty set.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>CCD IDs already written</p>

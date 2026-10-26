@@ -585,30 +585,12 @@ the bundled example pipeline.</p>
 <section id="the-automated-test-suite">
 <h2>The automated test suite<a class="headerlink" href="#the-automated-test-suite" title="Link to this heading">#</a></h2>
 <p>The test suite runs with <a class="reference external" href="https://docs.pytest.org/">pytest</a> under a single
-discovery root, <code class="docutils literal notranslate"><span class="pre">tests/</span></code>, with one tier per subdirectory:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">tests/module/</span></code> — <strong>unit, property-based, and integration</strong> tests for
-the analytic surface: pure helpers and geometry (coordinate round-trips,
-postage-stamp shapes, the MegaCam CCD flip), tested both by example and with
-<a class="reference external" href="https://hypothesis.readthedocs.io/">Hypothesis</a> property tests where a
-function has a clear invariant. Integration tests that need the astromatic
-binaries (Source Extractor, PSFEx) build synthetic FITS on the fly rather
-than requiring survey data.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tests/unit/</span></code> — <strong>structural</strong> tests, one parametrized case per file: every
-shell script parses (<code class="docutils literal notranslate"><span class="pre">bash</span> <span class="pre">-n</span></code>), every example config parses, every
-<code class="docutils literal notranslate"><span class="pre">shapepipe.*</span></code> submodule imports, every <code class="docutils literal notranslate"><span class="pre">[project.scripts]</span></code> entry handles
-<code class="docutils literal notranslate"><span class="pre">-h</span></code>, and every <code class="docutils literal notranslate"><span class="pre">*_runner.py</span></code> carries its <code class="docutils literal notranslate"><span class="pre">&#64;module_runner</span></code> metadata. Cheap,
-broad, and good at catching the dumb-but-real regressions (a syntax error, a
-broken import, a renamed entry point).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tests/science/</span></code> — <strong>fast scientific guardrails</strong> (controlled simulations
-with a known answer) and <code class="docutils literal notranslate"><span class="pre">tests/cluster/</span></code> — <strong>candide guardrails</strong> that read
-real on-disk catalogs; the latter are marked <code class="docutils literal notranslate"><span class="pre">candide</span></code> and auto-skip off the
-cluster. See <code class="docutils literal notranslate"><span class="pre">tests/README.md</span></code> for the full layout and markers.</p></li>
-</ul>
-<p><strong>CI is the single gate.</strong> On every pull request and every push to <code class="docutils literal notranslate"><span class="pre">develop</span></code>,
-<code class="docutils literal notranslate"><span class="pre">.github/workflows/deploy-image.yml</span></code> builds the image and runs the suite
-<em>inside it</em> — so the tests exercise exactly the environment that ships. A green
-check means the container actually works.</p>
+discovery root, <code class="docutils literal notranslate"><span class="pre">tests/</span></code>. See <code class="docutils literal notranslate"><span class="pre">tests/README.md</span></code> for the tiers, markers, and
+machine-specific requirements.</p>
+<p><code class="docutils literal notranslate"><span class="pre">.github/workflows/deploy-image.yml</span></code> builds the image and runs tests inside it
+on branch pushes and pull requests targeting the integration or release branches.
+See that workflow for the suite, science checks, workflow-DAG checks, and binary
+and example smoke runs.</p>
 <section id="running-it-yourself">
 <h3>Running it yourself<a class="headerlink" href="#running-it-yourself" title="Link to this heading">#</a></h3>
 <p>The supported way is inside the image (it carries the <code class="docutils literal notranslate"><span class="pre">test</span></code> extra and the

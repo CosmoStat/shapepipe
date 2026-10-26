@@ -801,20 +801,19 @@ plus OBJECT/SHEAR-less per-object metadata columns
 <code class="docutils literal notranslate"><span class="pre">NGMIX_N_EPOCH_FAILED</span></code> — epochs dropped because building their
 observation raised, see <code class="docutils literal notranslate"><span class="pre">ngmix.do_ngmix_metacal</span></code> —
 <code class="docutils literal notranslate"><span class="pre">NGMIX_MCAL_TYPES_FAIL</span></code>, <code class="docutils literal notranslate"><span class="pre">NGMIX_NEIGHBOUR_FLAG</span></code> — a blend
-flag set when the coadd seg stamp held a non-central footprint,
-shapepipe#776 — and the defect diagnostics <code class="docutils literal notranslate"><span class="pre">NGMIX_N_EPOCH_INTERP</span></code>,
+flag set when the coadd segmentation stamp contains a non-central
+footprint — and the defect diagnostics <code class="docutils literal notranslate"><span class="pre">NGMIX_N_EPOCH_INTERP</span></code>,
 <code class="docutils literal notranslate"><span class="pre">NGMIX_MIN_DIST_INTERP</span></code>, <code class="docutils literal notranslate"><span class="pre">NGMIX_MIN_DIST_NOISEFILL</span></code>, described
 by <code class="docutils literal notranslate"><span class="pre">Postage_stamp.record_defects</span></code>; -1 is their absent distance,
-and a never-fit row carries 0 and -1). The galaxy is the implicit default object
-and carries NO <code class="docutils literal notranslate"><span class="pre">OBJECT</span></code> token (<code class="docutils literal notranslate"><span class="pre">NGMIX_G1_NOSHEAR</span></code>, dropping the
-<code class="docutils literal notranslate"><span class="pre">GAL</span></code> segment carried by the pre-#761 names). The explicit PSF
+and a never-fit row carries 0 counts and -1 distances).
+The galaxy is the implicit default object and carries no
+<code class="docutils literal notranslate"><span class="pre">OBJECT</span></code> token (<code class="docutils literal notranslate"><span class="pre">NGMIX_G1_NOSHEAR</span></code>). The explicit PSF
 objects are <code class="docutils literal notranslate"><span class="pre">PSF_ORIG</span></code>
 (the original image PSF, fit by
 <code class="xref py py-func docutils literal notranslate"><span class="pre">ngmix.average_original_psf()</span></code>) and <code class="docutils literal notranslate"><span class="pre">PSF_RECONV</span></code> (the metacal
 reconvolution kernel, fit by <code class="xref py py-func docutils literal notranslate"><span class="pre">ngmix.average_multiepoch_psf()</span></code>);
-see those functions for what each PSF family IS. <code class="docutils literal notranslate"><span class="pre">PSF_ORIG</span></code> and
-<code class="docutils literal notranslate"><span class="pre">PSF_RECONV</span></code> are independent fits of different PSFs, no longer the
-single aliased value of the pre-fix code (shapepipe#749).</p>
+see those functions for the definitions of each PSF family. The two
+families contain independent fits of different PSFs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

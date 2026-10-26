@@ -890,20 +890,19 @@
 <span class="sd">        ``NGMIX_N_EPOCH_FAILED`` — epochs dropped because building their</span>
 <span class="sd">        observation raised, see ``ngmix.do_ngmix_metacal`` —</span>
 <span class="sd">        ``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG`` — a blend</span>
-<span class="sd">        flag set when the coadd seg stamp held a non-central footprint,</span>
-<span class="sd">        shapepipe#776 — and the defect diagnostics ``NGMIX_N_EPOCH_INTERP``,</span>
+<span class="sd">        flag set when the coadd segmentation stamp contains a non-central</span>
+<span class="sd">        footprint — and the defect diagnostics ``NGMIX_N_EPOCH_INTERP``,</span>
 <span class="sd">        ``NGMIX_MIN_DIST_INTERP``, ``NGMIX_MIN_DIST_NOISEFILL``, described</span>
 <span class="sd">        by ``Postage_stamp.record_defects``; -1 is their absent distance,</span>
-<span class="sd">        and a never-fit row carries 0 and -1). The galaxy is the implicit default object</span>
-<span class="sd">        and carries NO ``OBJECT`` token (``NGMIX_G1_NOSHEAR``, dropping the</span>
-<span class="sd">        ``GAL`` segment carried by the pre-#761 names). The explicit PSF</span>
+<span class="sd">        and a never-fit row carries 0 counts and -1 distances).</span>
+<span class="sd">        The galaxy is the implicit default object and carries no</span>
+<span class="sd">        ``OBJECT`` token (``NGMIX_G1_NOSHEAR``). The explicit PSF</span>
 <span class="sd">        objects are ``PSF_ORIG``</span>
 <span class="sd">        (the original image PSF, fit by</span>
 <span class="sd">        :func:`ngmix.average_original_psf`) and ``PSF_RECONV`` (the metacal</span>
 <span class="sd">        reconvolution kernel, fit by :func:`ngmix.average_multiepoch_psf`);</span>
-<span class="sd">        see those functions for what each PSF family IS. ``PSF_ORIG`` and</span>
-<span class="sd">        ``PSF_RECONV`` are independent fits of different PSFs, no longer the</span>
-<span class="sd">        single aliased value of the pre-fix code (shapepipe#749).</span>
+<span class="sd">        see those functions for the definitions of each PSF family. The two</span>
+<span class="sd">        families contain independent fits of different PSFs.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -944,8 +943,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warning</span><span class="p">)</span>
 
         <span class="n">ngmix_mcal_types_fail</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"mcal_types_fail"</span><span class="p">]</span>
-        <span class="c1"># Per-object blend flag (shapepipe#776): the seg stamp held a</span>
-        <span class="c1"># non-central footprint. Galaxy-only (non-moments), like N_EPOCH.</span>
+        <span class="c1"># Per-object blend flag: galaxy-only (non-moments), like N_EPOCH.</span>
         <span class="n">ngmix_neighbour_flag</span> <span class="o">=</span> <span class="n">ngmix_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">"neighbour_flag"</span><span class="p">]</span>
         <span class="c1"># Failed-epoch count (ngmix.do_ngmix_metacal) and defect diagnostics</span>
         <span class="c1"># (ngmix Postage_stamp.record_defects).</span>

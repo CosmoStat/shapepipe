@@ -1196,8 +1196,7 @@
 
 
 
-<span class="c1"># Survey-wide object ID: ``tile_id * TILE_UNIQUE_ID_BASE + NUMBER``, with</span>
-<span class="c1"># ``tile_id = RRR * 1000 + DDD``. Assumes fewer than 10**6 objects per tile.</span>
+<span class="c1"># Radix of the object-ID encoding; see get_tile_unique_id.</span>
 <span class="n">TILE_UNIQUE_ID_BASE</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span>
 
 
@@ -1233,6 +1232,12 @@
 <span class="w">    </span><span class="sd">"""Get Tile Unique ID.</span>
 
 <span class="sd">    Return the survey-wide object ID ``tile_id * 10**6 + number``.</span>
+
+<span class="sd">    @sc [label:schema] tile-object-id-encoding</span>
+<span class="sd">    Tile IDs and object numbers must each be integers in ``[0, 10**6)``.</span>
+<span class="sd">    Object numbers must be unique within a tile: encoding pairs with this</span>
+<span class="sd">    radix then gives distinct survey-wide IDs and an exact inverse through</span>
+<span class="sd">    :func:`split_tile_unique_id`.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>

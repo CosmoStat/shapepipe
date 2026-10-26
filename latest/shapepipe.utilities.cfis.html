@@ -957,6 +957,11 @@ This is the inverse to get_tile_number_from_coord.</p>
 <span class="sig-name descname"><span class="pre">get_tile_unique_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/utilities/cfis.html#get_tile_unique_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.utilities.cfis.get_tile_unique_id" title="Link to this definition">#</a></dt>
 <dd><p>Get Tile Unique ID.</p>
 <p>Return the survey-wide object ID <code class="docutils literal notranslate"><span class="pre">tile_id</span> <span class="pre">*</span> <span class="pre">10**6</span> <span class="pre">+</span> <span class="pre">number</span></code>.</p>
+<p>&#64;sc [label:schema] tile-object-id-encoding
+Tile IDs and object numbers must each be integers in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">10**6)</span></code>.
+Object numbers must be unique within a tile: encoding pairs with this
+radix then gives distinct survey-wide IDs and an exact inverse through
+<a class="reference internal" href="#shapepipe.utilities.cfis.split_tile_unique_id" title="shapepipe.utilities.cfis.split_tile_unique_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">split_tile_unique_id()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
