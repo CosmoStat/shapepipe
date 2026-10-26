@@ -1337,8 +1337,13 @@ class Ngmix(object):
         """Log mean ellipticity from NOSHEAR HDU to the run log.
 
         Reports <e1>, <e2> with standard errors for all objects and for
-        objects passing the default metacal cuts (flags==0, mcal_flags==0,
-        10 < SNR < 500, T/Tpsf > 0.5).
+        objects passing diagnostic cuts (flags==0, mcal_flags==0,
+        10 <= SNR <= 500, T/T_psf_reconv >= 0.5).
+
+        @sc [label:schema] mean-ellipticity-reconvolution-psf
+        Use the reconvolution PSF family, as sp_validation.calibration.metacal
+        does in _read_data_ngmix and _masking_gal for its relative-size cut.
+        This summary only reads the catalogue; it does not select saved rows.
         """
         output_path = self.get_output_path(self._output_dir)
         try:
@@ -1350,7 +1355,7 @@ class Ngmix(object):
                 mcal_flags = d['mcal_flags']
                 s2n = d['s2n'].astype(float)
                 T = d['T'].astype(float)
-                Tpsf = d['Tpsf'].astype(float)
+                Tpsf = d['T_psf_reconv'].astype(float)
         except Exception as e:
             self._w_log.warning(f"Could not compute mean ellipticity: {e}")
             return
@@ -1386,7 +1391,7 @@ class Ngmix(object):
                 & (s2n <= 500.0)
                 & (T / Tpsf >= 0.5)
             )
-        _log_stats(g1[mask], g2[mask], "SNR in [10, 500], T/Tpsf > 0.5")
+        _log_stats(g1[mask], g2[mask], "SNR in [10, 500], T/T_psf_reconv >= 0.5")
 
     def process(self):
         """Process.
