@@ -1596,7 +1596,7 @@ class Ngmix(object):
                 self.save_results(res_dict)
                 saved_batch_cumul += count_batch
                 self._w_log.info(
-                    f"Batch-saved {count_batch} ({len(res_dict)} valid) objects,"
+                    f"Batch-saved {count_batch} objects,"
                     + f" cumul={saved_batch_cumul}"
                 )
                 final_res = []
