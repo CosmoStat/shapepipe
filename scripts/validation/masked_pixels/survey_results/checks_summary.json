@@ -1,0 +1,9 @@
+{
+  "not_slow": "1083 passed, 4 skipped, 2 deselected; 55 warnings; 1904.46 s",
+  "final_targeted": "72 passed: 7 survey checks plus 65 decision-record checks",
+  "mutations": "3 killed by assertion failures: ignore joint-fit dilution, average away shared fixture error, accumulate C flags after fixed veto",
+  "astra": "astra-tools 0.2.17 schema and semantic validation passed for record and committed universe",
+  "workflow": "Incomplete: the workflow-only run made no test progress during an observed node I/O wait and was canceled before the 2-hour allocation cap. No completed workflow pass is claimed.",
+  "params": "Production source/defaults unchanged; params_pin.json unchanged (SHA-256 f5fdfda5932a408396a0774f94ab5a509665dd26b5478fab9a58189b50a47b7b).",
+  "html": "Five inlined PNG data URIs validated; no network assets required."
+}

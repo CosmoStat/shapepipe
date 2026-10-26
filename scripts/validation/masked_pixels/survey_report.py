@@ -178,6 +178,13 @@ def main():
             r=j[name][a]
             sensitivity_rows.append([name,a,*[f'{x*1e5:+.3f}' for x in r['mean']],
                                      f"{100*r['object_loss_fraction']:.3f}%",f"{100*r['epoch_loss_fraction']:.3f}%"])
+    for a in ('B', 'D0', 'D2'):
+        r = arms[a]
+        sensitivity_rows.append(['all_components', a, *[f'{x*1e5:+.3f}' for x in r['all_component_mean']],
+                                 f"{100*r['object_loss_fraction']:.3f}%", f"{100*r['epoch_loss_fraction']:.3f}%"])
+    checks_file = root / 'checks_summary.json'
+    checks = json.load(open(checks_file)) if checks_file.exists() else {'status': 'See adjacent check logs.'}
+    checks_html = table(['Check', 'Observed result'], [[k, v] for k, v in checks.items()])
     # Stability follow-up is independent seeds 6..29, never a reason to
     # delete the original zero-flag metacal-response outlier.
     unstable = lookup[('bleed','interpolate',4,.7,(0.,0.),2)]
@@ -315,6 +322,8 @@ The hybrid provides only a modest envelope reduction for 30 extra epoch drops at
 I would choose B if a matched-profile test establishes that the uncut selected-catalogue mean and flags-only policy meet the allocated systematic budget across tiles.
 A tighter defect budget near 10⁻⁴ in c would also favor k=2.
 The decisive missing measurement is the selected catalogue's response with real masks, not another comparison of a per-object bias against a catalogue requirement.</p>
+<h2>Checks</h2>
+{checks_html}
 <h2>Reproduction and provenance</h2>
 <p>Allocation 25005956, account def-waerbeke, ≤16 CPUs, ≤2 h; all computation in
 <code>/project/def-mjhudson/cdaley/containers/shapepipe-develop-240b37e4.sif</code> with apptainer/1.4.5 and single-thread BLAS/OpenMP.

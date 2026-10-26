@@ -66,10 +66,10 @@
     "scripts/validation/masked_pixels/survey_fixtures.py": "d259444603c4f86ae64ac4be3c9cce989860a554f8e0403387d9f76ec9092623",
     "scripts/validation/masked_pixels/survey_mutations.py": "4ae941f82a5bba25893c7b42703aec346839c26437157ac4ac2e1a5649c9e22a",
     "scripts/validation/masked_pixels/survey_prevalence.py": "32f345b64d06d04c8cc87a1b10a512876044b459c57af9ec85ecc0050d4ecd5b",
-    "scripts/validation/masked_pixels/survey_report.py": "7c183c8f8cc879ffe7e04d098448847f67cfbc5b955fcdab43331fc6c941008e"
+    "scripts/validation/masked_pixels/survey_report.py": "8f41bd74f1d26f08d7ca2ffdb12748fe36dc07ee9388bb4a638de6b8783cc6ba"
   },
   "output_sha256": {
-    "report.html": "2b9e081142f7e0c7773961a239467b8ba092ca266c9d6053dedb5aecc40585a6",
+    "report.html": "798498299838df2bbd21bbe832da5027f7a314c0b4d2d8e360dac9d4106dd6af",
     "summary.md": "8d64ab4d7be955c381b04b8da9f5ca31a2e799a0b7014653c1a2ef2c73029a08",
     "combined.json": "68056b61a4e36a99b3711f73799c0f4222e830e6c7dd63f138e76d0f5d7fa86b",
     "arms.csv": "bd4810b9b0c99ac623f273e00a3407317e8127f2b9eecfd9e94c95a892d0ced9",
@@ -90,6 +90,10 @@
     "final-survey-tests.txt": "77d1afd6c25a53e122adc922966114c8dfa61d5a0efcb8df8ee88f2dd9bfdc82",
     "final-mutations.txt": "e248340d7d00ef5100a3c7bf7e46d6968e6b2bdae2893a46edbec6b6b8b6adb2",
     "astra-validation.txt": "ff7f0caae812fb760a750bc8a8cf25e8d0e8299834b6bb72559c22a92b8dce59",
+    "checks_summary.json": "20aa3176a4555da8ab0b7a671054d39e4e542732e4a4dd1c61a12004c8c5b5a8",
+    "not-slow.txt": "fb140e74b70dceadda4562d4b57ae9b5105abfe3e935e0393aad9cd6963772c2",
+    "workflow.txt": "e352824b98a8901714aad98d5d558b9fdd92f3db5264807720b2c2143516cc56",
+    "pins-before.txt": "99e5ec6dcab0acaaed618cbf0b6efd2ee302dfd4fdfadeff86c093cb000b6cf6",
     "bias_budget.png": "61a171414de909a1553adfb9b8fdf33d956c036b40063790d07f84beac18854f",
     "prevalence_distance.png": "36b0a444e375cb9b1304917024b61e96b262a8be7f8552a2f359dbbb41b98689",
     "footprint_size.png": "10525c6a0f1fe3caca6a6a6103266110eac86376be327c87ca265ccab1dda5b4",

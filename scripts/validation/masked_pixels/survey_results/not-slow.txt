@@ -1,0 +1,51 @@
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 19%]
+........................................................................ [ 26%]
+........................................................................ [ 33%]
+.................................................................sss.... [ 39%]
+........................................................................ [ 46%]
+........................................................................ [ 52%]
+........................................................................ [ 59%]
+........................................................................ [ 66%]
+........................................................................ [ 72%]
+........................................................................ [ 79%]
+........................................................................ [ 86%]
+........................................................................ [ 92%]
+...........................................s............................ [ 99%]
+.......                                                                  [100%]
+=============================== warnings summary ===============================
+src/shapepipe/utilities/summary.py:168
+  /scratch/cdaley/wt-veto/src/shapepipe/utilities/summary.py:168: SyntaxWarning: invalid escape sequence '\S'
+    m = re.search("Nb stars = (\S*)", line)
+
+src/shapepipe/utilities/summary.py:214
+  /scratch/cdaley/wt-veto/src/shapepipe/utilities/summary.py:214: SyntaxWarning: invalid escape sequence '\.'
+    m = re.search("astropy\.wcs\.wcs\.NoConvergence", line)
+
+src/shapepipe/utilities/summary.py:417
+  /scratch/cdaley/wt-veto/src/shapepipe/utilities/summary.py:417: SyntaxWarning: invalid escape sequence '\.'
+    results = [re.sub("\.", "-", number) for number in numbers]
+
+tests/module/test_ngmix.py: 6 warnings
+tests/module/test_ngmix_weight_validation.py: 3 warnings
+tests/module/test_psf_physics_properties.py: 1 warning
+tests/science/test_additive_null.py: 2 warnings
+tests/science/test_defect_recovery.py: 29 warnings
+tests/science/test_mbias.py: 1 warning
+tests/science/test_resolution_ladder.py: 2 warnings
+tests/science/test_star_response.py: 1 warning
+tests/science/test_symmetry.py: 5 warnings
+  /app/.venv/lib/python3.12/site-packages/galsim/gaussian.py:89: ComplexWarning: Casting complex values to real discards the imaginary part
+    self._sigma = float(sigma)
+
+tests/unit/test_imports.py::test_submodule_imports[shapepipe.modules.mccd_fit_runner]
+  /app/.venv/lib/python3.12/site-packages/mccd/mccd.py:17: DeprecationWarning: numpy.core.defchararray is deprecated and has been renamed to numpy._core.defchararray. The numpy._core namespace contains private NumPy internals and its use is discouraged, as NumPy internals can change without warning in any release. In practice, most real-world usage of numpy.core is to access functionality in the public NumPy API. If that is the case, use the public NumPy API. If not, you are using NumPy internals. If you would still like to access an internal attribute, use numpy._core.defchararray.join.
+    from numpy.core.defchararray import join
+
+tests/unit/test_imports.py::test_submodule_imports[shapepipe.modules.mccd_fit_runner]
+  /app/.venv/lib/python3.12/site-packages/pysap/extensions/transform.py:41: UserWarning: Sparse2D Python bindings not found. Any call to a Sparse2D transform or a plug-in method that uses a Sparse2D transform will result in an error.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1083 passed, 4 skipped, 2 deselected, 55 warnings in 1904.46s (0:31:44)

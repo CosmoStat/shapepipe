@@ -1,0 +1,7 @@
+# 2026-10-25T22:02:17-04:00 HEAD 62254d83dd4d2a521fc4ed4db2a2345c70a04e06 dirty=9 step 25005956.48 (c345)
+snakemake 9.23.1
+# pytest tests/workflow -o addopts='' -q -rfEs -p no:cacheprovider 
+srun: Job step aborted: Waiting up to 62 seconds for job step to finish.
+[2026-10-25T22:09:13.735] error: *** STEP 25005956.48 ON c345 CANCELLED AT 2026-10-25T22:09:13 DUE to SIGNAL Killed ***
+.............................srun: error: c345: task 0: Killed
+srun: Terminating StepId=25005956.48
