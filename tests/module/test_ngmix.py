@@ -332,6 +332,7 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
         "mcal_types_fail": 0,
         "neighbour_flag": 0,
         "n_epoch_interp": 0,
+        "imaflags_iso": 0, "n_epoch_interp_iso": 0,
         "min_dist_interp": -1.0,
         "min_dist_noisefill": -1.0,
         # original image PSF (psfex/mccd) family
@@ -421,6 +422,45 @@ def test_compile_results_psf_families_are_unaliased():
     # the un-aliasing: the two families are no longer the same value
     assert noshear["g1_psf_orig"] != noshear["g1_psf_reconv"]
     assert noshear["g2_psf_orig"] != noshear["g2_psf_reconv"]
+
+
+def test_log_mean_ellipticity_reads_compiled_reconvolution_psf(tmp_path):
+    """The run-log cut uses the reconvolution PSF, without changing the FITS.
+
+    A stale Tpsf column prevents any summary; using the original PSF instead
+    would incorrectly admit the second object to this diagnostic selection.
+    """
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    from shapepipe.modules.ngmix_package.ngmix import Ngmix
+
+    inst = object.__new__(Ngmix)
+    inst._zero_point = 30.0
+    inst._output_dir = str(tmp_path)
+    inst._file_number_string = "-000-000"
+    messages, warnings = [], []
+    inst._w_log = SimpleNamespace(info=messages.append, warning=warnings.append)
+    kept = _fake_metacal_result(0.18, 0.02, 0.09, 0.001)
+    rejected = _fake_metacal_result(0.05, 0.01, 0.2, 0.001)
+    rejected["obj_id"] = 2
+    rejected["noshear"]["g"] = [-0.3, 0.4]
+    compiled = inst.compile_results([kept, rejected])
+    assert "Tpsf" not in compiled["noshear"]
+    inst.save_results(compiled)
+    path = Path(inst.get_output_path(str(tmp_path)))
+    before = path.read_bytes()
+
+    inst.log_mean_ellipticity()
+
+    assert not warnings
+    assert any("no cuts (N=2)" in line for line in messages)
+    selected = [line for line in messages if "T/T_psf_reconv" in line]
+    assert len(selected) == 1
+    assert "(N=1)" in selected[0]
+    assert "<e1> = +1.0000e-02" in selected[0]
+    assert "<e2> = -2.0000e-02" in selected[0]
+    assert path.read_bytes() == before
 
 
 def test_compile_results_nan_fills_failed_fit_types():
@@ -638,6 +678,7 @@ def test_process_counts_flagged_fits_across_batches(tmp_path, monkeypatch, flags
         epoch_cuts=Counter(considered=1), epoch_failures=[],
         jacobs=[galsim.JacobianWCS(.186, 0., 0., .186)],
         defect_diagnostics=lambda: dict(
+            imaflags_iso=0, n_epoch_interp_iso=0,
             n_epoch_interp=0, min_dist_interp=-1.0, min_dist_noisefill=-1.0,
         ),
     )
@@ -1334,6 +1375,7 @@ def test_process_logs_and_counts_failed_epochs(tmp_path, monkeypatch):
         epoch_failures=[],
         jacobs=[galsim.JacobianWCS(.186, 0., 0., .186)] * 2,
         defect_diagnostics=lambda: dict(
+            imaflags_iso=0, n_epoch_interp_iso=0,
             n_epoch_interp=0, min_dist_interp=-1.0, min_dist_noisefill=-1.0,
         ),
     )

@@ -764,6 +764,7 @@ def test_defect_diagnostics_summarise_the_kept_epochs():
     )
     assert stamp.defect_diagnostics() == {
         "n_epoch_interp": 2,
+        "imaflags_iso": -1, "n_epoch_interp_iso": -1,
         "min_dist_interp": float(EPOCH_INTERPOLATED_DEFECT_RADIUS),
         "min_dist_noisefill": float(EPOCH_CENTRAL_DEFECT_RADIUS),
     }
@@ -774,6 +775,7 @@ def test_defect_diagnostics_summarise_the_kept_epochs():
         psf_obj=psf_obj, gal_obj=gal_obj,
     )
     assert stamp.defect_diagnostics() == {
+        "imaflags_iso": -1, "n_epoch_interp_iso": -1,
         "n_epoch_interp": 0, "min_dist_interp": -1.0,
         "min_dist_noisefill": -1.0,
     }

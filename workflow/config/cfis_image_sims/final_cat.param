@@ -31,6 +31,9 @@ NGMIX_NEIGHBOUR_FLAG
 # min distance (px) from the centre to an interpolated / noise-filled defect
 # pixel, -1 when none (ngmix Postage_stamp.record_defects)
 NGMIX_N_EPOCH_INTERP
+# @sc [decision:shape_measurement.defect_flagging]
+NGMIX_IMAFLAGS_ISO
+NGMIX_N_EPOCH_INTERP_ISO
 NGMIX_MIN_DIST_INTERP
 NGMIX_MIN_DIST_NOISEFILL
 

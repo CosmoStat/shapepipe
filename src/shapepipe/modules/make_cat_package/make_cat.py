@@ -319,7 +319,10 @@ class SaveCatalogue:
         observation raised, see ``ngmix.do_ngmix_metacal`` —
         ``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG`` — a blend
         flag set when the coadd segmentation stamp contains a non-central
-        footprint — and the defect diagnostics ``NGMIX_N_EPOCH_INTERP``,
+        footprint — the adaptive defect diagnostics
+        ``NGMIX_IMAFLAGS_ISO`` and ``NGMIX_N_EPOCH_INTERP_ISO`` (defined by
+        ``Postage_stamp.record_footprint_defects``; unknown footprints -1,
+        never-fit rows 0), and the stamp diagnostics ``NGMIX_N_EPOCH_INTERP``,
         ``NGMIX_MIN_DIST_INTERP``, ``NGMIX_MIN_DIST_NOISEFILL``, described
         by ``Postage_stamp.record_defects``; -1 is their absent distance,
         and a never-fit row carries 0 counts and -1 distances).
@@ -378,6 +381,8 @@ class SaveCatalogue:
         defect_columns = {
             "NGMIX_N_EPOCH_FAILED": "n_epoch_failed",
             "NGMIX_N_EPOCH_INTERP": "n_epoch_interp",
+            "NGMIX_IMAFLAGS_ISO": "imaflags_iso",
+            "NGMIX_N_EPOCH_INTERP_ISO": "n_epoch_interp_iso",
             "NGMIX_MIN_DIST_INTERP": "min_dist_interp",
             "NGMIX_MIN_DIST_NOISEFILL": "min_dist_noisefill",
         }
@@ -409,6 +414,8 @@ class SaveCatalogue:
             self._add2dict("NGMIX_NEIGHBOUR_FLAG", np.zeros(n_obj))
             self._add2dict("NGMIX_N_EPOCH_FAILED", np.zeros(n_obj))
             self._add2dict("NGMIX_N_EPOCH_INTERP", np.zeros(n_obj))
+            self._add2dict("NGMIX_IMAFLAGS_ISO", np.zeros(n_obj, dtype=np.int64))
+            self._add2dict("NGMIX_N_EPOCH_INTERP_ISO", np.zeros(n_obj, dtype=np.int64))
             self._add2dict("NGMIX_MIN_DIST_INTERP", np.full(n_obj, -1.0))
             self._add2dict("NGMIX_MIN_DIST_NOISEFILL", np.full(n_obj, -1.0))
 

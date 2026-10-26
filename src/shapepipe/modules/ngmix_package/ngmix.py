@@ -272,6 +272,8 @@ def empty_metacal_output():
         'neighbour_flag',
         # defect diagnostics (Postage_stamp.record_defects)
         'n_epoch_interp',
+        'imaflags_iso',
+        'n_epoch_interp_iso',
         'min_dist_interp',
         'min_dist_noisefill',
         'nfev_fit',
@@ -706,6 +708,8 @@ class Postage_stamp():
         # Defect diagnostics over the epochs kept (see
         # :meth:`record_defects`).
         self.n_epoch_interp = 0
+        self.imaflags_iso = 0
+        self.n_epoch_interp_iso = 0
         self.min_dist_interp = np.inf
         self.min_dist_noisefill = np.inf
         self.bkg_sub = bkg_sub
@@ -742,10 +746,61 @@ class Postage_stamp():
                 self.min_dist_noisefill, distance[noisefill].min()
             )
 
+    def record_footprint_defects(self, flag, interpolated, seg, obj_id):
+        """Accumulate adaptive defect diagnostics for one kept epoch.
+
+        @sc [decision:shape_measurement.defect_flagging,label:schema] footprint-defect-flags
+        ``imaflags_iso`` is the bitwise OR of all instrument bits in the
+        exposure flag stamp on ``seg == obj_id``, OR'ed across epochs kept
+        after the masked-fraction cut and central veto. ``seg`` is the coadd
+        SEG_VIGNET, already MegaCam-flipped to the epoch frame; it is not an
+        exposure detection or a reprojected isophote. ``n_epoch_interp_iso``
+        counts kept epochs with any interpolated defect on that footprint.
+        Zero-weight/off-tile pixels with flag 0 contribute no instrument bit
+        (SExtractor semantics), but count if interpolated. Neither quantity
+        includes clean quarter-turn copies introduced by defect weighting.
+        Missing segmentation, an empty footprint, or a footprint touching
+        any stamp edge makes both quantities -1 (unknown/incomplete), not
+        clean; this sentinel persists across epochs. Never-fit rows in the
+        final catalogue carry 0, as do the other count diagnostics.
+        These diagnostics do not change the fit or impose a catalogue cut.
+
+        Parameters
+        ----------
+        flag : numpy.ndarray
+            Exposure instrument flags; integral floats are accepted because
+            vignet extraction can store flags in floating-point arrays.
+            Non-finite, fractional, negative or int64-overflow values on
+            the footprint raise ValueError rather than silently losing bits.
+        interpolated : numpy.ndarray of bool
+            Interpolated defects, as used by the fill and central veto.
+        seg : numpy.ndarray or None
+            Coadd segmentation stamp in the epoch's orientation.
+        obj_id : int
+            Tile object's segmentation label.
+        """
+        footprint = None if seg is None else seg == obj_id
+        if (footprint is None or not footprint.any()
+                or footprint[[0, -1], :].any()
+                or footprint[:, [0, -1]].any()):
+            self.imaflags_iso = self.n_epoch_interp_iso = -1
+            return
+        if self.imaflags_iso == -1:
+            return
+        values = np.asarray(flag)[footprint]
+        if (not np.isfinite(values).all() or (values < 0).any()
+                or (values >= 2**63).any()
+                or (values != np.floor(values)).any()):
+            raise ValueError("Non-integral or out-of-range footprint flags")
+        self.imaflags_iso |= int(np.bitwise_or.reduce(values.astype(np.int64)))
+        self.n_epoch_interp_iso += int((interpolated & footprint).any())
+
     def defect_diagnostics(self):
         """The defect diagnostic columns, -1 for an absent distance."""
         return {
             "n_epoch_interp": self.n_epoch_interp,
+            "imaflags_iso": self.imaflags_iso,
+            "n_epoch_interp_iso": self.n_epoch_interp_iso,
             "min_dist_interp": (
                 float(self.min_dist_interp)
                 if np.isfinite(self.min_dist_interp) else -1.0
@@ -1082,7 +1137,8 @@ class Ngmix(object):
                 # Defect diagnostics (Postage_stamp.record_defects), likewise
                 # object-level and replicated.
                 for key in (
-                    "n_epoch_interp", "min_dist_interp", "min_dist_noisefill"
+                    "n_epoch_interp", "min_dist_interp", "min_dist_noisefill",
+                    "imaflags_iso", "n_epoch_interp_iso"
                 ):
                     output_dict[name][key].append(results[idx][key])
                 # ngmix 2.x reports the solver's function-evaluation count
@@ -1281,8 +1337,13 @@ class Ngmix(object):
         """Log mean ellipticity from NOSHEAR HDU to the run log.
 
         Reports <e1>, <e2> with standard errors for all objects and for
-        objects passing the default metacal cuts (flags==0, mcal_flags==0,
-        10 < SNR < 500, T/Tpsf > 0.5).
+        objects passing diagnostic cuts (flags==0, mcal_flags==0,
+        10 <= SNR <= 500, T/T_psf_reconv >= 0.5).
+
+        @sc [label:schema] mean-ellipticity-reconvolution-psf
+        Use the reconvolution PSF family, as sp_validation.calibration.metacal
+        does in _read_data_ngmix and _masking_gal for its relative-size cut.
+        This summary only reads the catalogue; it does not select saved rows.
         """
         output_path = self.get_output_path(self._output_dir)
         try:
@@ -1294,7 +1355,7 @@ class Ngmix(object):
                 mcal_flags = d['mcal_flags']
                 s2n = d['s2n'].astype(float)
                 T = d['T'].astype(float)
-                Tpsf = d['Tpsf'].astype(float)
+                Tpsf = d['T_psf_reconv'].astype(float)
         except Exception as e:
             self._w_log.warning(f"Could not compute mean ellipticity: {e}")
             return
@@ -1330,7 +1391,7 @@ class Ngmix(object):
                 & (s2n <= 500.0)
                 & (T / Tpsf >= 0.5)
             )
-        _log_stats(g1[mask], g2[mask], "SNR in [10, 500], T/Tpsf > 0.5")
+        _log_stats(g1[mask], g2[mask], "SNR in [10, 500], T/T_psf_reconv >= 0.5")
 
     def process(self):
         """Process.
@@ -1540,7 +1601,7 @@ class Ngmix(object):
                 self.save_results(res_dict)
                 saved_batch_cumul += count_batch
                 self._w_log.info(
-                    f"Batch-saved {count_batch} ({len(res_dict)} valid) objects,"
+                    f"Batch-saved {count_batch} objects,"
                     + f" cumul={saved_batch_cumul}"
                 )
                 final_res = []
@@ -1733,6 +1794,7 @@ def prepare_postage_stamps(
             stamp.epoch_cuts["central_veto"] += 1
             continue
         stamp.record_defects(defect, interpolated)
+        stamp.record_footprint_defects(flag_vign, interpolated, tile_seg, obj_id)
 
         # One unpickle per exposure (all CCDs), reused across this object's
         # epochs; the cache is per-call, so bounded by the object's exposures

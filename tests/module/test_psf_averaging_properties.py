@@ -260,6 +260,8 @@ _SENTINELS = {
     "NGMIX_NEIGHBOUR_FLAG": 0.0,
     "NGMIX_N_EPOCH_FAILED": 0.0,
     "NGMIX_N_EPOCH_INTERP": 0.0,
+    "NGMIX_IMAFLAGS_ISO": 0,
+    "NGMIX_N_EPOCH_INTERP_ISO": 0,
     "NGMIX_MIN_DIST_INTERP": -1.0,
     "NGMIX_MIN_DIST_NOISEFILL": -1.0,
 }
@@ -270,6 +272,7 @@ _NGMIX_KEYS = [
     "id", "n_epoch_model", "n_epoch_failed", "mcal_types_fail",
     "neighbour_flag",
     "n_epoch_interp", "min_dist_interp", "min_dist_noisefill", "nfev_fit",
+    "imaflags_iso", "n_epoch_interp_iso",
     "g1", "g1_err", "g2", "g2_err", "T", "T_err",
     "flux", "flux_err", "s2n", "mag", "mag_err", "flags", "mcal_flags",
     "g1_psf_orig", "g2_psf_orig", "g1_err_psf_orig", "g2_err_psf_orig",
@@ -280,7 +283,8 @@ _NGMIX_KEYS = [
 _INT_KEYS = {
     "id", "n_epoch_model", "n_epoch_failed", "mcal_types_fail",
     "neighbour_flag",
-    "n_epoch_interp", "nfev_fit", "flags", "mcal_flags"
+    "n_epoch_interp", "nfev_fit", "flags", "mcal_flags",
+    "imaflags_iso", "n_epoch_interp_iso"
 }
 _SHEAR_EXTS = ["1M", "1P", "2M", "2P", "NOSHEAR"]
 
