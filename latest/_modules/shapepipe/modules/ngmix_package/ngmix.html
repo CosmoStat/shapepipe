@@ -833,6 +833,8 @@
         <span class="s1">'neighbour_flag'</span><span class="p">,</span>
         <span class="c1"># defect diagnostics (Postage_stamp.record_defects)</span>
         <span class="s1">'n_epoch_interp'</span><span class="p">,</span>
+        <span class="s1">'imaflags_iso'</span><span class="p">,</span>
+        <span class="s1">'n_epoch_interp_iso'</span><span class="p">,</span>
         <span class="s1">'min_dist_interp'</span><span class="p">,</span>
         <span class="s1">'min_dist_noisefill'</span><span class="p">,</span>
         <span class="s1">'nfev_fit'</span><span class="p">,</span>
@@ -1297,6 +1299,8 @@
         <span class="c1"># Defect diagnostics over the epochs kept (see</span>
         <span class="c1"># :meth:`record_defects`).</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_epoch_interp</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imaflags_iso</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_epoch_interp_iso</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">min_dist_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">min_dist_noisefill</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bkg_sub</span> <span class="o">=</span> <span class="n">bkg_sub</span>
@@ -1336,12 +1340,66 @@
             <span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Postage_stamp.record_footprint_defects">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.record_footprint_defects">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">record_footprint_defects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">interpolated</span><span class="p">,</span> <span class="n">seg</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Accumulate adaptive defect diagnostics for one kept epoch.</span>
+
+<span class="sd">        @sc [decision:shape_measurement.defect_flagging,label:schema] footprint-defect-flags</span>
+<span class="sd">        ``imaflags_iso`` is the bitwise OR of all instrument bits in the</span>
+<span class="sd">        exposure flag stamp on ``seg == obj_id``, OR'ed across epochs kept</span>
+<span class="sd">        after the masked-fraction cut and central veto. ``seg`` is the coadd</span>
+<span class="sd">        SEG_VIGNET, already MegaCam-flipped to the epoch frame; it is not an</span>
+<span class="sd">        exposure detection or a reprojected isophote. ``n_epoch_interp_iso``</span>
+<span class="sd">        counts kept epochs with any interpolated defect on that footprint.</span>
+<span class="sd">        Zero-weight/off-tile pixels with flag 0 contribute no instrument bit</span>
+<span class="sd">        (SExtractor semantics), but count if interpolated. Neither quantity</span>
+<span class="sd">        includes clean quarter-turn copies introduced by defect weighting.</span>
+<span class="sd">        Missing segmentation, an empty footprint, or a footprint touching</span>
+<span class="sd">        any stamp edge makes both quantities -1 (unknown/incomplete), not</span>
+<span class="sd">        clean; this sentinel persists across epochs. Never-fit rows in the</span>
+<span class="sd">        final catalogue carry 0, as do the other count diagnostics.</span>
+<span class="sd">        These diagnostics do not change the fit or impose a catalogue cut.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        flag : numpy.ndarray</span>
+<span class="sd">            Exposure instrument flags; integral floats are accepted because</span>
+<span class="sd">            vignet extraction can store flags in floating-point arrays.</span>
+<span class="sd">            Non-finite, fractional, negative or int64-overflow values on</span>
+<span class="sd">            the footprint raise ValueError rather than silently losing bits.</span>
+<span class="sd">        interpolated : numpy.ndarray of bool</span>
+<span class="sd">            Interpolated defects, as used by the fill and central veto.</span>
+<span class="sd">        seg : numpy.ndarray or None</span>
+<span class="sd">            Coadd segmentation stamp in the epoch's orientation.</span>
+<span class="sd">        obj_id : int</span>
+<span class="sd">            Tile object's segmentation label.</span>
+<span class="sd">        """</span>
+        <span class="n">footprint</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">seg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">seg</span> <span class="o">==</span> <span class="n">obj_id</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">footprint</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">footprint</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+                <span class="ow">or</span> <span class="n">footprint</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+                <span class="ow">or</span> <span class="n">footprint</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">imaflags_iso</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_epoch_interp_iso</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">imaflags_iso</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">flag</span><span class="p">)[</span><span class="n">footprint</span><span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">values</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+                <span class="ow">or</span> <span class="p">(</span><span class="n">values</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">63</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+                <span class="ow">or</span> <span class="p">(</span><span class="n">values</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">values</span><span class="p">))</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Non-integral or out-of-range footprint flags"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imaflags_iso</span> <span class="o">|=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bitwise_or</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_epoch_interp_iso</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">((</span><span class="n">interpolated</span> <span class="o">&amp;</span> <span class="n">footprint</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">())</span></div>
+
+
 <div class="viewcode-block" id="Postage_stamp.defect_diagnostics">
 <a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Postage_stamp.defect_diagnostics">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">defect_diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""The defect diagnostic columns, -1 for an absent distance."""</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">"n_epoch_interp"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_epoch_interp</span><span class="p">,</span>
+            <span class="s2">"imaflags_iso"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">imaflags_iso</span><span class="p">,</span>
+            <span class="s2">"n_epoch_interp_iso"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_epoch_interp_iso</span><span class="p">,</span>
             <span class="s2">"min_dist_interp"</span><span class="p">:</span> <span class="p">(</span>
                 <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_dist_interp</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_dist_interp</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
@@ -1693,7 +1751,8 @@
                 <span class="c1"># Defect diagnostics (Postage_stamp.record_defects), likewise</span>
                 <span class="c1"># object-level and replicated.</span>
                 <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span>
-                    <span class="s2">"n_epoch_interp"</span><span class="p">,</span> <span class="s2">"min_dist_interp"</span><span class="p">,</span> <span class="s2">"min_dist_noisefill"</span>
+                    <span class="s2">"n_epoch_interp"</span><span class="p">,</span> <span class="s2">"min_dist_interp"</span><span class="p">,</span> <span class="s2">"min_dist_noisefill"</span><span class="p">,</span>
+                    <span class="s2">"imaflags_iso"</span><span class="p">,</span> <span class="s2">"n_epoch_interp_iso"</span>
                 <span class="p">):</span>
                     <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
                 <span class="c1"># ngmix 2.x reports the solver's function-evaluation count</span>
@@ -1907,8 +1966,13 @@
 <span class="w">        </span><span class="sd">"""Log mean ellipticity from NOSHEAR HDU to the run log.</span>
 
 <span class="sd">        Reports &lt;e1&gt;, &lt;e2&gt; with standard errors for all objects and for</span>
-<span class="sd">        objects passing the default metacal cuts (flags==0, mcal_flags==0,</span>
-<span class="sd">        10 &lt; SNR &lt; 500, T/Tpsf &gt; 0.5).</span>
+<span class="sd">        objects passing diagnostic cuts (flags==0, mcal_flags==0,</span>
+<span class="sd">        10 &lt;= SNR &lt;= 500, T/T_psf_reconv &gt;= 0.5).</span>
+
+<span class="sd">        @sc [label:schema] mean-ellipticity-reconvolution-psf</span>
+<span class="sd">        Use the reconvolution PSF family, as sp_validation.calibration.metacal</span>
+<span class="sd">        does in _read_data_ngmix and _masking_gal for its relative-size cut.</span>
+<span class="sd">        This summary only reads the catalogue; it does not select saved rows.</span>
 <span class="sd">        """</span>
         <span class="n">output_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_output_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1920,7 +1984,7 @@
                 <span class="n">mcal_flags</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">'mcal_flags'</span><span class="p">]</span>
                 <span class="n">s2n</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">'s2n'</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
                 <span class="n">T</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">'T'</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
-                <span class="n">Tpsf</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">'Tpsf'</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">Tpsf</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">'T_psf_reconv'</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not compute mean ellipticity: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span>
@@ -1956,7 +2020,7 @@
                 <span class="o">&amp;</span> <span class="p">(</span><span class="n">s2n</span> <span class="o">&lt;=</span> <span class="mf">500.0</span><span class="p">)</span>
                 <span class="o">&amp;</span> <span class="p">(</span><span class="n">T</span> <span class="o">/</span> <span class="n">Tpsf</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">)</span>
             <span class="p">)</span>
-        <span class="n">_log_stats</span><span class="p">(</span><span class="n">g1</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">g2</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="s2">"SNR in [10, 500], T/Tpsf &gt; 0.5"</span><span class="p">)</span></div>
+        <span class="n">_log_stats</span><span class="p">(</span><span class="n">g1</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">g2</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="s2">"SNR in [10, 500], T/T_psf_reconv &gt;= 0.5"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Ngmix.process">
@@ -2169,7 +2233,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">res_dict</span><span class="p">)</span>
                 <span class="n">saved_batch_cumul</span> <span class="o">+=</span> <span class="n">count_batch</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"Batch-saved </span><span class="si">{</span><span class="n">count_batch</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">res_dict</span><span class="p">)</span><span class="si">}</span><span class="s2"> valid) objects,"</span>
+                    <span class="sa">f</span><span class="s2">"Batch-saved </span><span class="si">{</span><span class="n">count_batch</span><span class="si">}</span><span class="s2"> objects,"</span>
                     <span class="o">+</span> <span class="sa">f</span><span class="s2">" cumul=</span><span class="si">{</span><span class="n">saved_batch_cumul</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
                 <span class="n">final_res</span> <span class="o">=</span> <span class="p">[]</span>
@@ -2366,6 +2430,7 @@
             <span class="n">stamp</span><span class="o">.</span><span class="n">epoch_cuts</span><span class="p">[</span><span class="s2">"central_veto"</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">continue</span>
         <span class="n">stamp</span><span class="o">.</span><span class="n">record_defects</span><span class="p">(</span><span class="n">defect</span><span class="p">,</span> <span class="n">interpolated</span><span class="p">)</span>
+        <span class="n">stamp</span><span class="o">.</span><span class="n">record_footprint_defects</span><span class="p">(</span><span class="n">flag_vign</span><span class="p">,</span> <span class="n">interpolated</span><span class="p">,</span> <span class="n">tile_seg</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">)</span>
 
         <span class="c1"># One unpickle per exposure (all CCDs), reused across this object's</span>
         <span class="c1"># epochs; the cache is per-call, so bounded by the object's exposures</span>

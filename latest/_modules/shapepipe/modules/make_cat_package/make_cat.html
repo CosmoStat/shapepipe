@@ -891,7 +891,10 @@
 <span class="sd">        observation raised, see ``ngmix.do_ngmix_metacal`` —</span>
 <span class="sd">        ``NGMIX_MCAL_TYPES_FAIL``, ``NGMIX_NEIGHBOUR_FLAG`` — a blend</span>
 <span class="sd">        flag set when the coadd segmentation stamp contains a non-central</span>
-<span class="sd">        footprint — and the defect diagnostics ``NGMIX_N_EPOCH_INTERP``,</span>
+<span class="sd">        footprint — the adaptive defect diagnostics</span>
+<span class="sd">        ``NGMIX_IMAFLAGS_ISO`` and ``NGMIX_N_EPOCH_INTERP_ISO`` (defined by</span>
+<span class="sd">        ``Postage_stamp.record_footprint_defects``; unknown footprints -1,</span>
+<span class="sd">        never-fit rows 0), and the stamp diagnostics ``NGMIX_N_EPOCH_INTERP``,</span>
 <span class="sd">        ``NGMIX_MIN_DIST_INTERP``, ``NGMIX_MIN_DIST_NOISEFILL``, described</span>
 <span class="sd">        by ``Postage_stamp.record_defects``; -1 is their absent distance,</span>
 <span class="sd">        and a never-fit row carries 0 counts and -1 distances).</span>
@@ -950,6 +953,8 @@
         <span class="n">defect_columns</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">"NGMIX_N_EPOCH_FAILED"</span><span class="p">:</span> <span class="s2">"n_epoch_failed"</span><span class="p">,</span>
             <span class="s2">"NGMIX_N_EPOCH_INTERP"</span><span class="p">:</span> <span class="s2">"n_epoch_interp"</span><span class="p">,</span>
+            <span class="s2">"NGMIX_IMAFLAGS_ISO"</span><span class="p">:</span> <span class="s2">"imaflags_iso"</span><span class="p">,</span>
+            <span class="s2">"NGMIX_N_EPOCH_INTERP_ISO"</span><span class="p">:</span> <span class="s2">"n_epoch_interp_iso"</span><span class="p">,</span>
             <span class="s2">"NGMIX_MIN_DIST_INTERP"</span><span class="p">:</span> <span class="s2">"min_dist_interp"</span><span class="p">,</span>
             <span class="s2">"NGMIX_MIN_DIST_NOISEFILL"</span><span class="p">:</span> <span class="s2">"min_dist_noisefill"</span><span class="p">,</span>
         <span class="p">}</span>
@@ -981,6 +986,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_NEIGHBOUR_FLAG"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_N_EPOCH_FAILED"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_N_EPOCH_INTERP"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_IMAFLAGS_ISO"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_N_EPOCH_INTERP_ISO"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_obj</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_MIN_DIST_INTERP"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_obj</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_add2dict</span><span class="p">(</span><span class="s2">"NGMIX_MIN_DIST_NOISEFILL"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_obj</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">))</span>
 

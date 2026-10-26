@@ -802,7 +802,10 @@ plus OBJECT/SHEAR-less per-object metadata columns
 observation raised, see <code class="docutils literal notranslate"><span class="pre">ngmix.do_ngmix_metacal</span></code> —
 <code class="docutils literal notranslate"><span class="pre">NGMIX_MCAL_TYPES_FAIL</span></code>, <code class="docutils literal notranslate"><span class="pre">NGMIX_NEIGHBOUR_FLAG</span></code> — a blend
 flag set when the coadd segmentation stamp contains a non-central
-footprint — and the defect diagnostics <code class="docutils literal notranslate"><span class="pre">NGMIX_N_EPOCH_INTERP</span></code>,
+footprint — the adaptive defect diagnostics
+<code class="docutils literal notranslate"><span class="pre">NGMIX_IMAFLAGS_ISO</span></code> and <code class="docutils literal notranslate"><span class="pre">NGMIX_N_EPOCH_INTERP_ISO</span></code> (defined by
+<code class="docutils literal notranslate"><span class="pre">Postage_stamp.record_footprint_defects</span></code>; unknown footprints -1,
+never-fit rows 0), and the stamp diagnostics <code class="docutils literal notranslate"><span class="pre">NGMIX_N_EPOCH_INTERP</span></code>,
 <code class="docutils literal notranslate"><span class="pre">NGMIX_MIN_DIST_INTERP</span></code>, <code class="docutils literal notranslate"><span class="pre">NGMIX_MIN_DIST_NOISEFILL</span></code>, described
 by <code class="docutils literal notranslate"><span class="pre">Postage_stamp.record_defects</span></code>; -1 is their absent distance,
 and a never-fit row carries 0 counts and -1 distances).
