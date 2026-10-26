@@ -20,6 +20,16 @@ input_type: data
 # campaign's merged catalogues. Required, and set by the run config.
 # run: smk-g6
 
+# How ngmix treats a stamp's neighbours (its BLEND_HANDLING). tile_detect
+# writes the coadd segmentation stamps into the sexcat as SEG_VIGNET under
+# both, and the neighbours are the other objects' footprints in them:
+# `uberseg` zeroes their weight; `noisefill`, ngmix's own default, zero-weights
+# and noise-fills the -1e30 VIGNET markers on them. Chosen per campaign:
+# flipping it on an existing run dir reruns tile_ngmix and everything after it
+# for every finished tile, and reclaimed exposures make that destructive -- a
+# comparison needs its own `run:`.
+blend_handling: uberseg
+
 # Default settings per input_type, can be overridden by a user-defined run config file.
 # - tile_detection: both run SExtractor on the tile. `unions_catalogue` (data)
 #   also fetches the UNIONS per-tile catalogue and joins the detections to it,
@@ -187,8 +197,9 @@ machines:
 # selection studies and cost an order of magnitude more.
 #
 # THIS LIST IS EXPOSURE-SIDE ONLY. Tile-side retention is not configurable: the
-# only tile product that persists today is final_cat, written by tile_make_cat
-# straight to products_dir. A tile keep list is #844 follow-up.
+# tile products that persist are final_cat and tile_make_cat.json, written by
+# tile_make_cat straight to products_dir. The manifest contains epoch-cut
+# counts summed over all ngmix chunks. A tile keep list is #844 follow-up.
 #
 # NOTE ON products_dir DEFAULTING TO run_dir (a fixture or smoke test): the tar
 # then lands beside the store on the same filesystem and buys nothing, and
@@ -204,7 +215,10 @@ clean: true
 
 # Per-tile store reclamation after the tile's final_cat. Needed above ~850
 # tiles (scratch quota); deletes the per-tile data sp_tilecost/sp_costmodel
-# read. Set both false for a small control run you want to re-measure.
+# read. Epoch-cut counts survive in products_dir/tiles/<shard>/<tile>/
+# tile_make_cat.json; keeping module logs does NOT require disabling cleaning.
+# Cleaning refuses a tile without this complete durable count record.
+# Set both false for a small control run you want to re-measure timings on.
 clean_tiles: true
 
 # Failed tiles that should not keep their exposures from being cleaned.

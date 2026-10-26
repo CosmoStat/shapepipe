@@ -1,12 +1,20 @@
 # ShapePipe Snakemake orchestration
 
-Snakemake workflow that orchestrates real-data ShapePipe runs. It replaces the
-`curl_canfar_local.sh → run_job_sp_canfar_v2.0.bash → job_sp_canfar_v2.0.bash`
-bash layers and the per-site sbatch reimplementations. **Module code is
-untouched**: rules call `shapepipe_run -c <config>` on the existing config
-chains. Design and rationale:
+Snakemake workflow that orchestrates real-data ShapePipe runs. It is the one
+production orchestration: there is no CANFAR submission front end and no
+per-site sbatch layer beside it. The two Gen-2 bash scripts
+(`run_job_sp_canfar_v2.0.bash → job_sp_canfar_v2.0.bash`) are still in the tree
+and still installed (`pyproject.toml`'s `[tool.setuptools] script-files`):
+sp_validation's image-simulation workflow calls `run_job_sp_canfar_v2.0.bash` by
+path, so they stay until that chain is ported or parked. **Module code is untouched**: rules call
+`shapepipe_run -c <config>` on the existing config chains. Design and rationale:
 [CosmoStat/shapepipe#848](https://github.com/CosmoStat/shapepipe/issues/848)
 (the design document).
+
+**There is no concept of a catalogue version in the code.** No path branches on
+`v1.3`..`v1.6` or `v2.0`, and there are no sky patches: a campaign is a tile
+list, and the version of a catalogue is the git tag of the code that produced
+it.
 
 Use `workflow/bin/sp` for everything. Bare `snakemake all` outside `sp` is
 unsupported: `sp` sets the state directory, the SLURM profile, and
@@ -35,6 +43,13 @@ uv pip install 'snakemake>=9,<10' 'snakemake-executor-plugin-slurm>=2.7,<3'
 # (DR6), or the join fails. `sextractor` (the default for image sims) keeps
 # SExtractor's own NUMBER. Either way make_cat writes
 # TILE_UNIQUE_ID = tile_id * 10**6 + NUMBER.
+# `blend_handling` is ngmix's neighbour treatment: `uberseg` (the default) or
+# `noisefill`. Under both, tile_detect adds the coadd segmentation stamps to
+# the sexcat as SEG_VIGNET and ngmix's neighbours are the other objects'
+# footprints in them. It is chosen per campaign: flipping it on an existing
+# run dir reruns tile_ngmix and the rest of the shape chain for every finished
+# tile, and reclaimed exposures make that destructive, so a comparison needs
+# its own `run:`.
 
 # The committed launcher loads apptainer/1.4.5 + the /project venv, so a
 # fresh shell always has the right state.
@@ -315,9 +330,10 @@ workflow/
   scripts/
     build_index.py       prepare-phase run_index.sqlite builder (plain script)
     build_forest.py      per-tile exposure symlink forest (group-compatible shell)
-    completeness.py      the ported count table (shared by sp_rule + run_report)
+    completeness.py      the ported count-floor table + the `check` every rule ends with
     run_report.py        standalone report (NOT a DAG node; run_report hooks call it)
     container.py         image layers + the resolution order behind `sp container` (stdlib-only)
+    ngmix_range.py       the ngmix chunk partition: written once by tile_vignets, read by each chunk
     persist_exp.py       ONE exposure's keepable PSF products -> one tar on products_dir (the exp_persist rule)
     hdf5_reconcile.py    bring an hdf5 catalogue into agreement with a campaign (shared by both merges)
     merge_star_cat.py    ALL exposures' validation_psf, out of the tars -> full_starcat_<run>.hdf5
@@ -325,6 +341,7 @@ workflow/
     clean_exposure.py    ONE exposure's store + manifests + logs -> tombstone (the clean_exposure rule)
     exp_maps.py          ONE exposure's valid-PSF CCD footprints + flagged-pixel counts -> healsparse fragment (the exp_maps rule)
     merge_exposure_maps.py  ALL fragments -> nexp_<run>.hsp, nflagged_<run>.hsp (the exposure_maps rule)
+    clean_tile.py        ONE finished tile's store -> tombstone (the clean_tile rule)
 profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; keep-going
 ```
 
@@ -346,10 +363,13 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   output natively and never touches its log, which is why the profile runs
   *without* `keep-incomplete`. `sp report` reads both dirs — the manifest for
   success, the log for failure — and a unit with neither ran nothing.
-- **Completeness is an exact-count check, not a taxonomy.** After a run,
-  `sp_rule.py` counts products per mandatory runner against
-  `completeness.py`'s expected count and exits nonzero below it. A shortfall
-  below `expect` fails unless `warn` is set. No 3-class taxonomy, no
+- **Completeness is a count floor, not a taxonomy.** There is no per-unit
+  wrapper script: the Snakefile's `unit_pre()` builds the unit's furniture and
+  clears the stage's run dir as bash inlined into the rule's `params`, and
+  `sp_shell()` composes every rule's shell as *prologue, one `shapepipe_run`,
+  one `completeness.py check`*. That check counts products per mandatory runner
+  against `completeness.py`'s floor and exits nonzero below it. Per-CCD
+  attrition between floor and `expect` is tolerated. No 3-class taxonomy, no
   error-signature whitelist. `--keep-going` isolates a failure to its own
   DAG cone.
 - **Stores are sharded.** Every tile/exposure runs its own `shapepipe_run`
@@ -423,6 +443,28 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   since the missing tombstones schedule exactly the outstanding clean jobs.
   The tombstone is written *before* anything is deleted, so a crash can cost
   disk but never the record.
+- **Tile epoch-cut diagnostics survive cleaning.**
+  `tile_ngmix` completeness checks capture PR #922's five counters before each chunk's temporary directory goes away.
+  `tile_make_cat` sums all configured chunks and publishes `tile_make_cat.json` beside the tile's persistent `final_cat`.
+  Its `epoch_cuts` field contains `schema_version`, `n_chunks`, per-chunk `chunks`, and tile `totals` for `considered`, `masked_fraction`, `central_veto`, `failed`, and `objects_emptied`.
+  Counts are sequential veto counts, not independent cut incidences; `objects_emptied` counts objects whose considered epochs were all removed before fitting.
+  Missing, malformed, or duplicate summaries fail completeness rather than becoming zeros.
+  `clean_tile` validates the durable count record before touching scratch, so `clean_tiles: true` needs no module-log retention override.
+  This requires an ngmix build with PR #922's end-of-loop `epoch cuts:` summary, including on empty chunks.
+  Older code without that summary fails the ngmix completeness check and leaves scratch intact.
+
+  For an **idle existing campaign** with kept logs, use `workflow/scripts/backfill_epoch_cuts.py --run-dir <run> --products-dir <products> --n-chunks <N> --dry-run` first.
+  Alternatively pass `--config <run_config.yaml>` to resolve products and chunk count from the run's frozen `workflow/config.yaml` plus its run config.
+  The script skips tiles without a nonempty persisted catalogue and refuses missing or ambiguous chunk evidence.
+  Without `--dry-run`, it publishes the same manifest schema and reclaims through `clean_tile.reclaim`, including its survivor checks and tombstone.
+  Don't use it while jobs or another cleaner are writing the campaign.
+  Dry-run reads metadata and small logs only, writes nothing, and reports logical regular-file bytes (not allocated blocks), without following symlinks.
+
+  **Deploy at a campaign boundary.**
+  The completeness/helper hash is part of every ShapePipe rule's `params`; this change also alters make-cat's params, outputs and shell, and clean-tile's inputs and shell.
+  An ordinary resume against old completed tiles can therefore schedule science stages again, even after their exposure stores have been reclaimed.
+  Backfill old campaigns without changing their frozen code or resuming them against this workflow; removing the log-retention override is appropriate for new campaigns running this contract.
+
 - **A finished tile declares no reclaimed exposures.** Deleting an exposure's
   manifests would otherwise rerun every other tile that reads it, and those
   reruns spread across the exposure-overlap component. So a tile whose

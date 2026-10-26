@@ -206,8 +206,13 @@ def load_profile(name):
 
 
 @contextmanager
-def resolve(campaign, monkeypatch, environment=None):
-    """Resolve ``all`` in an isolated state directory, without running jobs."""
+def resolve(campaign, monkeypatch, launch_env=None, environment=None):
+    """Resolve ``all`` in an isolated state directory, without running jobs.
+
+    ``launch_env`` adds variables to the scrubbed environment, as if the
+    launching shell had exported them.
+    ``environment`` overrides the fixture's default variables.
+    """
     from snakemake import workflow as sm_workflow
 
     scripts = REPO / "workflow" / "scripts"
@@ -234,6 +239,8 @@ def resolve(campaign, monkeypatch, environment=None):
             "XDG_CACHE_HOME": campaign.root / "cache",
             **(environment or {}),
         }.items():
+            patch.setenv(name, str(value))
+        for name, value in (launch_env or {}).items():
             patch.setenv(name, str(value))
         profile = load_profile("candide")
         try:
