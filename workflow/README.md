@@ -434,6 +434,15 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   This requires an ngmix build with PR #922's end-of-loop `epoch cuts:` summary, including on empty chunks.
   Older code without that summary fails the ngmix completeness check and leaves scratch intact.
 
+  Every tile joined to the external catalogue also publishes `catalogue_match` in this same `tile_make_cat.json` (under `<products_dir>/tiles/<shard>/<tile>/`).
+  It contains integer `n_sextractor`, `n_external`, `n_paired`, `n_external_only`, `n_dropped`, plus `external_paired_fraction` (zero for an empty external catalogue) and `external_warning_budget`.
+  The budget is `max(20, 0.02 * n_external + 50)` when any pairs exist, otherwise `max(20, 0.02 * n_external)`; exceeding it only warns.
+  The SExtractor-side mismatch still fails hard.
+  The record travels from detection FITS headers through `tile_detect.json` before scratch cleanup, without changing catalogue rows.
+  Join the manifest's `unit` converted to float to the final catalogue's `TILE_ID` to cut downstream; records exist for passing and warning tiles alike, including zero-object tiles.
+  Runs without an external join omit `catalogue_match`.
+  For example, real b619 tile 058.220 has `(n_sextractor, n_external, n_paired, n_external_only, n_dropped) = (774, 845, 774, 71, 0)`, fraction `774/845 = 0.9159763313609467`, budget `66.9`, and now warns rather than failing.
+
   For an **idle existing campaign** with kept logs, use `workflow/scripts/backfill_epoch_cuts.py --run-dir <run> --products-dir <products> --n-chunks <N> --dry-run` first.
   Alternatively pass `--config <run_config.yaml>` to resolve products and chunk count from the run's frozen `workflow/config.yaml` plus its run config.
   The script skips tiles without a nonempty persisted catalogue and refuses missing or ambiguous chunk evidence.

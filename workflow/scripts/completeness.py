@@ -364,6 +364,24 @@ def build_manifest(stage, run_dir, unit, stage_subdir=None):
                 "warn": warn, "status": status,
                 "reasons": scrape_reasons(stage_dir, runner),
             })
+    # Capture the join before detection scratch is reclaimed, and carry it
+    # into the existing published make-cat manifest beside final_cat.
+    if ok and stage == "tile_detect":
+        from shapepipe.modules.sextractor_package.match_catalogue import (
+            read_match_record,
+        )
+        cats = sorted(stage_dir.glob("sextractor_runner/output/sexcat*.fits"))
+        if len(cats) == 1:
+            record = read_match_record(cats[0])
+            if record is not None:
+                manifest["catalogue_match"] = record
+    if ok and stage == "tile_make_cat":
+        detect = run_dir / "manifests" / "tile_detect.json"
+        if detect.exists():
+            record = json.loads(detect.read_text()).get("catalogue_match")
+            if record is not None:
+                manifest["catalogue_match"] = record
+
     # Capture ngmix's diagnostics while its temp() directory still exists.
     # Make-cat consumes only structured records, never the retained log copies.
     if ok and stage in ("tile_ngmix", "tile_make_cat"):
