@@ -383,6 +383,9 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   The record travels from detection FITS headers through `tile_detect.json` before scratch cleanup, without changing catalogue rows.
   Join the manifest's `unit` converted to float to the final catalogue's `TILE_ID` to cut downstream; records exist for passing and warning tiles alike, including zero-object tiles.
   Runs without an external join omit `catalogue_match`.
+  A zero-detection tile is valid: detection writes zero-row `LDAC_OBJECTS`/`EPOCH_*` tables and an explicitly shaped `SEG_VIGNET`; pairing records zero pairs and warns when above budget.
+  PSF interpolation and vignette extraction write empty SQLite stores, each ngmix chunk and their merge write five zero-row shear HDUs with zero epoch-cut counts, and make-cat publishes an HDF5 catalogue with the normal columns and zero rows.
+  Completeness counts these files, not their rows; the campaign merge retains the tile as a zero-length structured dataset rather than losing its identity.
   For example, real b619 tile 058.220 has `(n_sextractor, n_external, n_paired, n_external_only, n_dropped) = (774, 845, 774, 71, 0)`, fraction `774/845 = 0.9159763313609467`, budget `66.9`, and now warns rather than failing.
 
   For an **idle existing campaign** with kept logs, use `workflow/scripts/backfill_epoch_cuts.py --run-dir <run> --products-dir <products> --n-chunks <N> --dry-run` first.

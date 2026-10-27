@@ -335,6 +335,8 @@ class VignetMaker(object):
                     + f" HDU #{hdu_index}"
                 )
             if len(exp_names) == 0:
+                if len(all_id) == 0:
+                    continue  # A valid zero-object tile has empty EPOCH HDUs.
                 raise IndexError(
                     f"EXP_NAME list is empty in file {self._galcat_path}"     
                     + f" HDU #{hdu_index}"                                      
