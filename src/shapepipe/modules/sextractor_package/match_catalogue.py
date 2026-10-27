@@ -16,6 +16,8 @@ SExtractor columns) stays SExtractor's own.
 
 """
 
+import logging
+
 import numpy as np
 from astropy.io import ascii as asc
 from astropy.io import fits
@@ -29,6 +31,21 @@ UNMATCHED_LABEL = -1
 
 # The largest NUMBER the int32 NUMBER and SEG_VIGNET columns hold.
 MAX_NUMBER = np.iinfo(np.int32).max
+
+# Carried through tile_detect into the published tile_make_cat.json manifest.
+MATCH_HEADER = dict(
+    n_sextractor="MCHNSEX", n_external="MCHNEXT", n_paired="MCHNPAIR",
+    n_dropped="MCHNDROP", n_external_only="MCHNONLY",
+    external_paired_fraction="MCHFRAC", external_warning_budget="MCHBUDG",
+)
+
+
+def read_match_record(cat_path):
+    """Read join diagnostics, or None for a catalogue with no external join."""
+    header = fits.getheader(cat_path, "LDAC_OBJECTS")
+    if MATCH_HEADER["n_sextractor"] not in header:
+        return None
+    return {name: header[key] for name, key in MATCH_HEADER.items()}
 
 
 def mutual_nearest(x_a, y_a, x_b, y_b, radius):
@@ -97,8 +114,7 @@ def relabel(seg_vignets, old_number, new_number):
 
 
 def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
-                    tolerated_unpaired=20, w_log=None,
-                    external_unpaired_allowance=50):
+                    tolerated_unpaired=20, w_log=None):
     """Take membership and ``NUMBER`` from an external catalogue.
 
     Each SExtractor row is paired with its mutual nearest neighbour in the
@@ -119,15 +135,11 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     the DR6 catalogue) only ~95% pair. The guard is there to catch that: the
     SExtractor-side guard stops when unpaired detections exceed both
     ``(1 - min_fraction)`` of that side and ``tolerated_unpaired``.
-    External-only losses instead get an additive local deblending allowance
-    on top of the fractional budget (and retain the absolute tolerance).
-    Sparse DR6 edge tiles can lose dozens of children in one bright-star
-    halo while almost every detection pairs; those losses do not scale with
-    the tile's total population. This is an empirical allowance, not an
-    independent-object confidence bound. It weakens sensitivity to modest
-    external-side detection-config losses on sparse tiles, but does not
-    relax the SExtractor-side check for other pixels. With no pairs there
-    is no evidence for a local loss, so no additive allowance is granted.
+    External-only losses never reject a tile: warn above max(20, 0.02 N +
+    50), the former rejection budget (without the 50 when no pairs exist).
+    Record every tile's counts, external paired fraction and warning budget
+    in LDAC_OBJECTS headers for publication in the make-cat manifest, so
+    analysts can cut downstream. Sparse edge losses need not scale with N.
 
     Parameters
     ----------
@@ -139,31 +151,27 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     radius : float, optional
         Largest separation of a pair, in pixels; default 1
     min_fraction : float, optional
-        Baseline paired fraction on each side; default 0.98. External-only
-        losses additionally receive ``external_unpaired_allowance``.
+        Minimum SExtractor paired fraction; default 0.98.
     tolerated_unpaired : int, optional
         Number of unpaired rows on either side accepted whatever the
         fraction; default 20
     w_log : logging.Logger, optional
         Pipeline logger
-    external_unpaired_allowance : int, optional
-        Additive external-only loss budget, in objects; default 50. Only
-        applied when at least one pair exists; zero restores the old guard.
-
     Returns
     -------
     dict
         ``n_sextractor``, ``n_external``, ``n_paired``, ``n_dropped``
         (SExtractor rows without a partner) and ``n_external_only``
-        (external objects without a SExtractor row)
+        (external objects without a SExtractor row), plus
+        ``external_paired_fraction`` (zero for an empty external catalogue)
+        and ``external_warning_budget``
 
     Raises
     ------
     ValueError
         If the external ``NUMBER`` repeats or is not an integer in
         ``[1, MAX_NUMBER]``, or if unpaired rows exceed the absolute tolerance
-        and the side's loss budget: fractional only for SExtractor,
-        fractional plus the local allowance for the external catalogue
+        and the SExtractor fractional loss budget
 
     @sc [decision:detection.tile_detection]
     """
@@ -194,10 +202,10 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
         n_external_only=len(ext) - len(i_sex),
     )
     summary = ", ".join(f"{k}={v}" for k, v in counts.items())
-    def too_many_unpaired(n_total, allowance=0):
+    def too_many_unpaired(n_total):
         unpaired = n_total - len(i_sex)
         return (unpaired > tolerated_unpaired
-                and unpaired > (1 - min_fraction) * n_total + allowance)
+                and unpaired > (1 - min_fraction) * n_total)
 
     fraction = len(i_sex) / max(len(data), 1)
     if too_many_unpaired(len(data)):
@@ -210,16 +218,15 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
             + " release of the catalogue (DR6)."
         )
     fraction_ext = len(i_sex) / max(len(ext), 1)
-    allowance = external_unpaired_allowance if len(i_sex) else 0
-    if too_many_unpaired(len(ext), allowance):
-        raise ValueError(
+    budget = max(20, 0.02 * len(ext) + (50 if len(i_sex) else 0))
+    counts.update(external_paired_fraction=fraction_ext,
+                  external_warning_budget=budget)
+    if counts["n_external_only"] > budget:
+        (w_log or logging.getLogger(__name__)).warning(
             f"Only {fraction_ext:.4f} of the objects of {ext_cat_path} pair"
-            + f" with a row of {cat_path} within {radius} px (baseline"
-            + f" {min_fraction} beyond {tolerated_unpaired} unpaired;"
-            + f" additive external allowance {allowance};"
-            + f" {summary}). SExtractor finds fewer objects"
-            + " than the catalogue: check that the detection configuration"
-            + " is the catalogue's."
+            + f" with a row of {cat_path} within {radius} px (external-only"
+            + f" warning budget {budget}; {summary}). Recording for a"
+            + " downstream catalogue cut; the tile is not rejected."
         )
 
     old_number = np.asarray(data["NUMBER"])
@@ -241,6 +248,8 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     new = fits.BinTableHDU.from_columns(
         columns, header=objects.header, name="LDAC_OBJECTS",
     )
+    for name, key in MATCH_HEADER.items():
+        new.header[key] = counts[name]
     fits.HDUList(
         [new if h is objects else h for h in hdus]
     ).writeto(cat_path, overwrite=True)

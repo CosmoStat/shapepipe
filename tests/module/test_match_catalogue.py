@@ -73,7 +73,10 @@ def test_rows_take_the_external_number_one_to_one(tmp_path):
     expected[order] = numbers
     assert list(data["NUMBER"]) == list(expected)
     assert counts == dict(n_sextractor=5, n_external=6, n_paired=5,
-                          n_dropped=0, n_external_only=1)
+                          n_dropped=0, n_external_only=1,
+                          external_paired_fraction=5 / 6,
+                          external_warning_budget=50.12)
+    assert mc.read_match_record(cat) == counts
     # Every measurement is SExtractor's, row for row.
     np.testing.assert_array_equal(data["XWIN_IMAGE"], X + 0.01)
     np.testing.assert_array_equal(data["VIGNET"][2].ravel(),
@@ -116,17 +119,14 @@ def test_pairs_lie_within_the_radius(tmp_path):
     assert counts["n_dropped"] == 1 and counts["n_external_only"] == 1
 
 
-def test_too_few_catalogue_objects_paired_stop_the_run(tmp_path):
-    """Fewer detections than catalogue objects (a drifted detection
-    configuration) fails, though every detection pairs."""
+def test_external_record_is_independent_of_sextractor_guard(tmp_path):
     cat = _sexcat(tmp_path / "sexcat.fits", X[:4], Y[:4])
     ext = _external(tmp_path / "ext.cat", [1, 2, 3, 4, 5], X, Y)
-    with pytest.raises(ValueError, match="fewer objects"):
-        mc.match_catalogue(cat, ext, min_fraction=0.99, tolerated_unpaired=0,
-                           external_unpaired_allowance=0)
-    assert list(_objects(cat)["NUMBER"]) == [1, 2, 3, 4]
-    counts = mc.match_catalogue(cat, ext, min_fraction=0.8)
+    counts = mc.match_catalogue(cat, ext, min_fraction=0.99,
+                                tolerated_unpaired=0)
     assert counts["n_paired"] == 4 and counts["n_external_only"] == 1
+    assert counts["external_warning_budget"] == 50.1
+    assert mc.read_match_record(cat) == counts
 
 
 def test_too_few_pairs_stop_the_run(tmp_path):
@@ -162,6 +162,8 @@ def test_small_tile_with_few_unpaired_children_passes(tmp_path):
     (2490, 2431, 2431),  # 577.246
     (1680, 1625, 1625),  # 603.227
     (2861, 2760, 2760),  # 618.220
+    (845, 774, 774),     # 058.220, real b619 counts; formerly rejected
+    (2400, 2296, 2296),  # 207.238-like: 0.9567; synthetic counts
 ])
 @pytest.mark.decision("detection.tile_detection")
 def test_production_sparse_tiles_keep_only_the_pairs(
@@ -180,7 +182,10 @@ def test_production_sparse_tiles_keep_only_the_pairs(
     counts = mc.match_catalogue(cat, ext)
     assert counts == dict(n_external=n_ext, n_sextractor=n_sex,
                           n_paired=n_paired, n_dropped=n_sex - n_paired,
-                          n_external_only=n_ext - n_paired)
+                          n_external_only=n_ext - n_paired,
+                          external_paired_fraction=n_paired / n_ext,
+                          external_warning_budget=0.02 * n_ext + 50)
+    assert mc.read_match_record(cat) == counts
     data = _objects(cat)
     np.testing.assert_array_equal(data["NUMBER"],
                                   np.arange(10001, 10001 + n_paired))
@@ -211,49 +216,49 @@ def test_large_tile_with_unpaired_children_passes(tmp_path):
     assert counts["n_external_only"] == 30
 
 
-@pytest.mark.parametrize("side", ["sextractor", "external"])
-def test_other_pixels_stop_the_run(tmp_path, side):
-    """5% unpaired on either side (a DR5 image: ~95% pair) stops the run with
-    the default guard, far beyond the 20 tolerated."""
+def test_other_pixels_stop_the_run(tmp_path):
+    """5% of our detections unpaired still stops the run."""
     x, y = _grid(2000)
-    n_sex, n_ext = (2000, 1900) if side == "sextractor" else (1900, 2000)
+    n_sex, n_ext = 2000, 1900
     cat = _sexcat(tmp_path / "sexcat.fits", x[:n_sex], y[:n_sex])
     ext = _external(tmp_path / "ext.cat", np.arange(1, n_ext + 1),
                     x[:n_ext], y[:n_ext])
-    with pytest.raises(ValueError, match="DR6" if side == "sextractor"
-                       else "fewer objects"):
+    with pytest.raises(ValueError, match="DR6"):
         mc.match_catalogue(cat, ext)
 
 
-@pytest.mark.parametrize("n_ext,missing,passes", [
-    (2000, 89, True), (2000, 91, False),
-    (40000, 849, True), (40000, 851, False),
+@pytest.mark.parametrize("n_ext,missing,warns", [
+    (2000, 89, False), (2000, 91, True),
+    (40000, 849, False), (40000, 851, True),
+    (845, 71, True), (2400, 104, True),
 ])
 @pytest.mark.decision("detection.tile_detection")
-def test_external_loss_budget_boundary(tmp_path, n_ext, missing, passes):
-    """The local allowance is bounded; a detection-config regression fails.
-
-    Missing rows occupy a single grid region: clustering grants no exemption.
-    """
+def test_external_loss_budget_boundary(tmp_path, caplog, n_ext, missing, warns):
+    """The former rejection budget only controls a warning, never rows."""
     x, y = _grid(n_ext)
     cat = _sexcat(tmp_path / "sexcat.fits", x[:-missing], y[:-missing])
     ext = _external(tmp_path / "ext.cat", np.arange(1, n_ext + 1), x, y)
-    if passes:
-        assert mc.match_catalogue(cat, ext)["n_external_only"] == missing
-    else:
-        before = (tmp_path / "sexcat.fits").read_bytes()
-        with pytest.raises(ValueError, match="fewer objects"):
-            mc.match_catalogue(cat, ext)
-        assert (tmp_path / "sexcat.fits").read_bytes() == before
+    counts = mc.match_catalogue(cat, ext)
+    assert counts["n_external_only"] == missing
+    assert mc.read_match_record(cat) == counts
+    assert ("downstream catalogue cut" in caplog.text) == warns
+    if warns:
+        assert f"n_external_only={missing}" in caplog.text
+    assert len(_objects(cat)) == n_ext - missing
 
 
-def test_empty_detection_does_not_get_a_deblending_allowance(tmp_path):
-    """No paired population is not evidence for a local deblending loss."""
+def test_empty_detection_warns_and_records(tmp_path, caplog):
+    """Even no pairs is a downstream decision, not an external-side veto."""
     x, y = _grid(30)
     cat = _sexcat(tmp_path / "sexcat.fits", [], [])
     ext = _external(tmp_path / "ext.cat", np.arange(1, 31), x, y)
-    with pytest.raises(ValueError, match="fewer objects"):
-        mc.match_catalogue(cat, ext)
+    counts = mc.match_catalogue(cat, ext)
+    assert counts["n_external_only"] == 30
+    assert counts["external_paired_fraction"] == 0
+    assert counts["external_warning_budget"] == 20
+    assert mc.read_match_record(cat) == counts
+    assert "downstream catalogue cut" in caplog.text
+    assert len(_objects(cat)) == 0
 
 
 @pytest.mark.decision("detection.tile_detection")
@@ -265,17 +270,9 @@ def test_previously_accepted_catalogue_is_byte_identical(tmp_path):
     ext = _external(tmp_path / "ext.cat", np.arange(10001, 12001), x, y)
     old = _sexcat(tmp_path / "old.fits", x[:1997], y[:1997], seg)
     new = _sexcat(tmp_path / "new.fits", x[:1997], y[:1997], seg)
-    old_counts = mc.match_catalogue(old, ext, external_unpaired_allowance=0)
+    old_counts = mc.match_catalogue(old, ext)
     assert mc.match_catalogue(new, ext) == old_counts
     assert (tmp_path / "old.fits").read_bytes() == (tmp_path / "new.fits").read_bytes()
-
-
-def test_external_allowance_can_be_disabled(tmp_path):
-    x, y = _grid(2000)
-    cat = _sexcat(tmp_path / "sexcat.fits", x[:1911], y[:1911])
-    ext = _external(tmp_path / "ext.cat", np.arange(1, 2001), x, y)
-    with pytest.raises(ValueError, match="fewer objects"):
-        mc.match_catalogue(cat, ext, external_unpaired_allowance=0)
 
 
 def test_seg_vignet_is_relabelled(tmp_path):

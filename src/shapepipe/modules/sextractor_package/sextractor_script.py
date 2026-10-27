@@ -430,7 +430,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
     # (laid out as FITSCatalogue.add_col lays it out), then the EPOCH HDUs.
     new = fits.BinTableHDU.from_columns(
         objects.data.columns + fits.ColDefs([column("N_EPOCH", n_epoch)]),
-        name="LDAC_OBJECTS",
+        header=objects.header, name="LDAC_OBJECTS",
     )
     fits.HDUList(
         [new if h is objects else h for h in hdus] + epochs
