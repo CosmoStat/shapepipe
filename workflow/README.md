@@ -444,6 +444,9 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   A zero-detection tile is valid: detection writes zero-row `LDAC_OBJECTS`/`EPOCH_*` tables and an explicitly shaped `SEG_VIGNET`; pairing records zero pairs and warns when above budget.
   PSF interpolation and vignette extraction write empty SQLite stores, each ngmix chunk and their merge write five zero-row shear HDUs with zero epoch-cut counts, and make-cat publishes an HDF5 catalogue with the normal columns and zero rows.
   Completeness counts these files, not their rows; the campaign merge retains the tile as a zero-length structured dataset rather than losing its identity.
+  The workflow keeps its configured static ngmix fan-out even for zero objects: `ngmix_range.py` writes a normal ranges document with every chunk set to the positive empty interval `(2, 1)`.
+  This avoids the unbounded `ROW_MAX <= 0` sentinel and lets every scheduled chunk publish its normal empty product, so merge and completeness need no separate zero-chunk graph.
+  Nonzero partitions are unchanged.
   For example, real b619 tile 058.220 has `(n_sextractor, n_external, n_paired, n_external_only, n_dropped) = (774, 845, 774, 71, 0)`, fraction `774/845 = 0.9159763313609467`, budget `66.9`, and now warns rather than failing.
 
   For an **idle existing campaign** with kept logs, use `workflow/scripts/backfill_epoch_cuts.py --run-dir <run> --products-dir <products> --n-chunks <N> --dry-run` first.

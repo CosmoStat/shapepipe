@@ -31,12 +31,14 @@ from tests.module.test_ngmix_empty_tile import _RecordingLogger, _runner_config
 
 
 @pytest.mark.parametrize("epoch_slots", [None, 12])
-def test_zero_object_tile_modules_and_publication(tmp_path, monkeypatch, epoch_slots):
+def test_zero_object_tile_modules_and_publication(
+        tmp_path, monkeypatch, epoch_slots, *, tile="177.257", n_chunks=2,
+        products_dir=None, exposure="2360341"):
     scripts = Path(__file__).resolve().parents[2] / "workflow/scripts"
     monkeypatch.syspath_prepend(str(scripts))
     complete = importlib.import_module("completeness")
-    tile = "177.257"
-    number = "-177-257"
+    number = "-" + tile.replace(".", "-")
+    products_dir = products_dir or tmp_path / "products"
     run = tmp_path / tile
     log = _RecordingLogger()
 
@@ -46,7 +48,7 @@ def test_zero_object_tile_modules_and_publication(tmp_path, monkeypatch, epoch_s
         return path
 
     mdir = run / "manifests"
-    mdir.mkdir(parents=True)
+    mdir.mkdir(parents=True, exist_ok=True)
 
     def manifest(stage, subdir=None, suffix=""):
         record, ok = complete.build_manifest(stage, run, tile, subdir)
@@ -55,7 +57,7 @@ def test_zero_object_tile_modules_and_publication(tmp_path, monkeypatch, epoch_s
         return record
 
     # Fir 177.257's one exposure, but synthetic zero-row SExtractor output.
-    exp = "2360341"
+    exp = exposure
     npy = tmp_path / f"headers-{exp}.npy"
     _write_exposure_headers(npy)
     merge_headers([[str(npy)]], str(tmp_path), tile_number=number)
@@ -112,7 +114,7 @@ def test_zero_object_tile_modules_and_publication(tmp_path, monkeypatch, epoch_s
     manifest("tile_vignets")
 
     # Run both chunks, merge their five empty shear HDUs, assemble HDF5.
-    for k in [1, 2]:
+    for k in range(1, n_chunks + 1):
         subdir = f"run_sp_tile_ngmix_Ng{k}u"
         ngout = output(subdir, "ngmix_runner")
         log.messages.clear()
@@ -135,7 +137,7 @@ def test_zero_object_tile_modules_and_publication(tmp_path, monkeypatch, epoch_s
     merged = output("run_sp_tile_Ms", "merge_sep_cats_runner")
     first = run / "output/run_sp_tile_ngmix_Ng1u/ngmix_runner/output" / f"ngmix{number}.fits"
     MergeSep([str(first)], number, ["ngmix"], [".fits"], str(merged),
-             2, "error", log).process()
+             n_chunks, "error", log).process()
     manifest("tile_merge_cats")
     finalout = output("run_sp_tile_Mc", "make_cat_runner")
     config = CustomParser()
@@ -152,14 +154,14 @@ def test_zero_object_tile_modules_and_publication(tmp_path, monkeypatch, epoch_s
         assert "TILE_ID" in h5 and "NGMIX_MCAL_FLAGS" in h5
         assert len(h5) > 50
         assert all(d.shape[0] == 0 for d in h5.values())
-    monkeypatch.setenv("NGMIX_N_CHUNKS", "2")
+    monkeypatch.setenv("NGMIX_N_CHUNKS", str(n_chunks))
     made = manifest("tile_make_cat")
     assert made["catalogue_match"] == counts
     assert made["epoch_cuts"]["totals"] == dict(
         considered=0, masked_fraction=0, central_veto=0, failed=0, objects_emptied=0)
     # Same persistent products as the publication rule (whose commands are
     # exercised separately by test_match_record_publication).
-    published = tmp_path / "products/tiles/17" / tile
+    published = products_dir / "tiles" / tile[:2] / tile
     published.mkdir(parents=True)
     shutil.copyfile(final, published / f"final_cat-{tile}.hdf5")
     shutil.copyfile(mdir / "tile_make_cat.json", published / "tile_make_cat.json")
@@ -172,20 +174,20 @@ def test_zero_object_tile_modules_and_publication(tmp_path, monkeypatch, epoch_s
     index = tmp_path / "index.sqlite"
     with sqlite3.connect(index) as db:
         db.execute("CREATE TABLE tiles(tile_id TEXT PRIMARY KEY, ra_dir TEXT, n_exp INTEGER)")
-        db.execute("INSERT INTO tiles VALUES (?, '177', 1)", (tile,))
+        db.execute("INSERT INTO tiles VALUES (?, ?, 1)", (tile, tile.split(".")[0]))
     with h5py.File(final) as h5:
         columns = list(h5)
     params = tmp_path / "final_cat.param"
     params.write_text("\n".join(columns) + "\n")
-    campaign_cat = tmp_path / "products/final_cat_empty.hdf5"
+    campaign_cat = products_dir / "final_cat_empty.hdf5"
     argv = [sys.executable, str(scripts / "merge_final_cat.py"),
-            "--products-dir", str(tmp_path / "products"), "--tile-list", str(tiles),
+            "--products-dir", str(products_dir), "--tile-list", str(tiles),
             "--index-db", str(index), "--output", str(campaign_cat),
             "--campaign", "empty", "--param-file", str(params)]
     merged = subprocess.run(argv, capture_output=True, text=True)
     assert merged.returncode == 0, merged.stdout + merged.stderr
     with h5py.File(campaign_cat) as h5:
-        data = h5["patches/empty/177.257"]
+        data = h5[f"patches/empty/{tile}"]
         assert data.shape == (0,)
         assert set(data.dtype.names) == set(columns)
         assert h5.attrs["n_tiles"] == 1

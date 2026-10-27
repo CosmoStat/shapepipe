@@ -119,22 +119,20 @@ def row_ranges(epochs, n_chunks: int) -> list[tuple[int, int]]:
     which is arbitrary but fixed, and fixed is the property that matters.
 
     With ``n_obj < n_chunks`` the first ``n_obj`` chunks take one object each
-    and the remainder are EMPTY, written ``(n_obj + 1, n_obj)``: ``lo = hi+1``
-    is the canonical empty closed interval and preserves the chain
-    ``ranges[k][0] == ranges[k-1][1] + 1``. Deliberately not ``(1, 0)``, which
-    is what the old equal-count split emitted here — ``ID_OBJ_MAX = 0`` is
-    ngmix's unbounded sentinel, so each empty chunk would have re-measured the
-    ENTIRE tile.
+    and the remainder are empty, written ``(max(1, n_obj) + 1, max(1, n_obj))``.
+    For nonempty catalogues this preserves adjacency to the last object.
+    With no objects every configured chunk receives ``(2, 1)``: a positive,
+    inverted interval that selects nothing, never ngmix's unbounded sentinel.
+    Keeping the configured chunk count lets the static DAG, merge and
+    completeness use their normal empty-product paths without a second graph.
     """
     if n_chunks < 1:
         raise ValueError(f"n_chunks must be >= 1, got {n_chunks}")
     n_obj = len(epochs)
-    if n_obj < 1:
-        raise ValueError("cannot split a catalogue of zero objects")
-
     if n_obj < n_chunks:
+        empty_hi = max(1, n_obj)
         return ([(k, k) for k in range(1, n_obj + 1)]
-                + [(n_obj + 1, n_obj)] * (n_chunks - n_obj))
+                + [(empty_hi + 1, empty_hi)] * (n_chunks - n_obj))
 
     weights = [MILLI_EPOCH * int(e) + ALPHA_MILLI_EPOCHS for e in epochs]
     cap = _min_feasible_capacity(weights, n_chunks)
