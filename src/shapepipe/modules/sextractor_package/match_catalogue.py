@@ -153,7 +153,7 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     min_fraction : float, optional
         Minimum SExtractor paired fraction; default 0.98.
     tolerated_unpaired : int, optional
-        Number of unpaired rows on either side accepted whatever the
+        Number of unpaired SExtractor rows accepted whatever the
         fraction; default 20
     w_log : logging.Logger, optional
         Pipeline logger
