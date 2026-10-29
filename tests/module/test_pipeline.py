@@ -6,6 +6,7 @@ This module contains unit tests for the shapepipe.pipeline module.
 
 """
 
+import configparser
 from unittest import TestCase
 
 from astropy.io import fits
@@ -160,6 +161,21 @@ def test_custom_parser_expands_a_default_only_when_the_variable_is_unset(
     assert parser.getexpanded("S", "MODE") == "uberseg"
     assert parser.getexpanded("S", "BARE") == "uberseg"
     assert parser.getexpandedboolean("S", "FLAG") is True
+
+
+def test_custom_parser_expanded_boolean_fallback(monkeypatch):
+    """An absent option returns ``fallback`` as ``getboolean`` does; a present
+    one is expanded first."""
+    monkeypatch.delenv("SP_TEST_FLAG", raising=False)
+    parser = config.CustomParser()
+    parser.add_section("S")
+    assert parser.getexpandedboolean("S", "FLAG", fallback=True) is True
+    assert parser.getexpandedboolean("T", "FLAG", fallback=False) is False
+    with pytest.raises(configparser.NoOptionError):
+        parser.getexpandedboolean("S", "FLAG")
+    parser.set("S", "FLAG", "${SP_TEST_FLAG:-True}")
+    monkeypatch.setenv("SP_TEST_FLAG", "False")
+    assert parser.getexpandedboolean("S", "FLAG", fallback=True) is False
 
 
 def test_custom_parser_expands_a_variable_value_once(monkeypatch):

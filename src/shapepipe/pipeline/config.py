@@ -8,7 +8,7 @@ This module defines methods for handling the pipeline configuration file.
 
 import os
 import re
-from configparser import ConfigParser
+from configparser import ConfigParser, NoOptionError, NoSectionError
 
 
 # ``$VAR``, ``${VAR}`` or ``${VAR:-default}``.
@@ -70,6 +70,9 @@ def _expandvars_strict(value):
     return expanded
 
 
+_UNSET = object()
+
+
 class CustomParser(ConfigParser):
     """Custom Parser.
 
@@ -97,11 +100,12 @@ class CustomParser(ConfigParser):
         """
         return self._get(section, _expandvars_strict, option, **kwargs)
 
-    def getexpandedboolean(self, section, option, **kwargs):
+    def getexpandedboolean(self, section, option, *, fallback=_UNSET, **kwargs):
         """Get Expanded Boolean.
 
         Expand enviroment variables in the value, then read it as a boolean
-        the way ``getboolean`` does.
+        the way ``getboolean`` does. As with ``getboolean``, ``fallback`` is
+        returned unconverted when the option or section is absent.
 
         Parameters
         ----------
@@ -116,9 +120,13 @@ class CustomParser(ConfigParser):
             The expanded value as a boolean
 
         """
-        return self._convert_to_boolean(
-            self.getexpanded(section, option, **kwargs)
-        )
+        try:
+            value = self.getexpanded(section, option, **kwargs)
+        except (NoSectionError, NoOptionError):
+            if fallback is _UNSET:
+                raise
+            return fallback
+        return self._convert_to_boolean(value)
 
     def getlist(self, section, option, delimiter=",", **kwargs):
         """Get List.
