@@ -162,7 +162,7 @@ def test_small_tile_with_few_unpaired_children_passes(tmp_path):
     (2490, 2431, 2431),  # 577.246
     (1680, 1625, 1625),  # 603.227
     (2861, 2760, 2760),  # 618.220
-    (845, 774, 774),     # 058.220, real b619 counts; formerly rejected
+    (845, 774, 774),     # 058.220, real b619 counts; warns
     (2400, 2296, 2296),  # 207.238-like: 0.9567; synthetic counts
 ])
 @pytest.mark.decision("detection.tile_detection")
@@ -234,7 +234,7 @@ def test_other_pixels_stop_the_run(tmp_path):
 ])
 @pytest.mark.decision("detection.tile_detection")
 def test_external_loss_budget_boundary(tmp_path, caplog, n_ext, missing, warns):
-    """The former rejection budget only controls a warning, never rows."""
+    """The external-loss budget controls a warning, never rows."""
     x, y = _grid(n_ext)
     cat = _sexcat(tmp_path / "sexcat.fits", x[:-missing], y[:-missing])
     ext = _external(tmp_path / "ext.cat", np.arange(1, n_ext + 1), x, y)
@@ -262,8 +262,8 @@ def test_empty_detection_warns_and_records(tmp_path, caplog):
 
 
 @pytest.mark.decision("detection.tile_detection")
-def test_previously_accepted_catalogue_is_byte_identical(tmp_path):
-    """Relaxing acceptance changes no ID, stamp label, or measurement."""
+def test_matching_reproduces_catalogue_bytes(tmp_path):
+    """Matching reproduces IDs, stamp labels and measurements byte for byte."""
     x, y = _grid(2000)
     seg = np.zeros((1997, 3, 3), dtype=np.int32)
     seg[:, 1, 1] = np.arange(1, 1998)

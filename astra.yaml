@@ -471,8 +471,8 @@ analyses:
           objects, preserving the check for other pixels. External-only
           losses never reject a tile: warn and record, then cut downstream.
           The warning threshold is max(20, 0.02 N + 50), without the 50 if
-          no pairs exist; it no longer shares the SExtractor guard settings.
-          Sparse edge tiles 058.220 and 207.238 exceed the former budget,
+          no pairs exist; it is independent of the SExtractor guard settings.
+          Sparse edge tiles 058.220 and 207.238 exceed it,
           despite almost every detection pairing. Local correlated
           deblending losses need not scale with tile population.
           Every joined tile records the five match counts, external paired
@@ -480,8 +480,7 @@ analyses:
           then in tile_detect and the published tile_make_cat.json manifest
           beside final_cat. Join its unit (RRR.DDD) as a float to TILE_ID in
           the final catalogue to select the population downstream.
-          No external-only object gains a shape; previously accepted
-          catalogue rows retain identical membership and measurements.
+          No external-only object gains a shape.
           PSF stars come from the exposure-level
           SExtractor run in both options. Image simulations, which have no
           UNIONS catalogue, keep SExtractor's own NUMBER.

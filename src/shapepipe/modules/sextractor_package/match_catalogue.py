@@ -136,7 +136,7 @@ def match_catalogue(cat_path, ext_cat_path, radius=1.0, min_fraction=0.98,
     SExtractor-side guard stops when unpaired detections exceed both
     ``(1 - min_fraction)`` of that side and ``tolerated_unpaired``.
     External-only losses never reject a tile: warn above max(20, 0.02 N +
-    50), the former rejection budget (without the 50 when no pairs exist).
+    50) (without the 50 when no pairs exist).
     Record every tile's counts, external paired fraction and warning budget
     in LDAC_OBJECTS headers for publication in the make-cat manifest, so
     analysts can cut downstream. Sparse edge losses need not scale with N.
