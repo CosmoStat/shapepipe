@@ -209,7 +209,7 @@ def ngmix_runner(
 
     # MegaCam CCD flip of the coadd stamps (see Ngmix.MegaCamFlip). Disable
     # for image sims, whose CCDs are all read out the same way up.
-    megacam_flip = config.getboolean(
+    megacam_flip = config.getexpandedboolean(
         module_config_sec, "MEGACAM_FLIP", fallback=True
     )
 
