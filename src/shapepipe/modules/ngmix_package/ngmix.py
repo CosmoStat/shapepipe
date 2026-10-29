@@ -584,8 +584,8 @@ class Tile_cat():
         Path to the tile SExtractor catalogue. Its optional ``SEG_VIGNET``
         column, one integer coadd segmentation stamp per object on the grid
         of its ``VIGNET``, becomes ``self.seg``, which defines the neighbours
-        under both blend handlings. Without it ``self.seg`` is ``None``
-        and the D0 footprint cut rejects every fraction-eligible epoch.
+        under both blend handlings. Without it ``self.seg`` is ``None``;
+        D0 cannot admit an epoch, and uberseg raises before the object loop.
     row_min, row_max : int, optional
         First and last catalogue row of the chunk (1-based, inclusive; see
         :func:`chunk_rows`). The default, ``-1``, is unbounded, so the whole

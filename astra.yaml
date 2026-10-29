@@ -1829,16 +1829,23 @@ analyses:
           flipped into the epoch orientation. Defects include nonzero flags,
           zero exposure weights, invalid background RMS and off-tile pixels,
           both interpolated and noise-filled. Neighbour markers are not
-          defects. The 10% masked-fraction cut runs first. Missing or empty
-          footprints reject the epoch: overlap cannot be established, and an
+          defects. The 10% masked-fraction cut runs first. The D0 predicate
+          rejects missing or empty footprints: overlap cannot be established, and an
           absent object label is an upstream inconsistency, not evidence of
-          clean data. Border-touching footprints are tested within the stamp,
+          clean data. Uberseg also requires the SEG_VIGNET column before the
+          object loop. Border-touching footprints are tested within the stamp,
           the same domain used for the fit; this needs no radius fallback.
           Footprint diagnostics retain their -1 sentinel for clipped stamps
           because the full ISO flag OR is unknown. On 188.307 there are no
           empty footprints among 36051 objects; border-touching footprints
-          occur on 633 objects (1.76%). Epoch-level frequencies and the
-          production-path loss are recorded in the accompanying validation.
+          occur on 633 objects (1.76%), 2121/120421 considered epochs and
+          2028/115299 fraction-eligible epochs (1.76%). Production D0 rejects
+          1791/115299 eligible epochs (1.553%), including 316 border epochs,
+          and matches the survey's raw overlap decisions exactly. The survey's
+          clipped-footprint radius fallback rejects 1550 epochs (1.344%);
+          the in-stamp border policy rejects 246 it keeps and keeps 5 it rejects.
+          The retained survey stores and the reproducible production-path
+          census are documented in scripts/validation/masked_pixels/tile_defect_flags.md.
           The 25 Oct veto scan combines modeled fixture biases with measured
           prevalence and multi-epoch dilution on 188.307: D0 gives maximum
           |m| about 1e-5 and |c| about 5e-6, against limits 1e-2 and 5e-4,

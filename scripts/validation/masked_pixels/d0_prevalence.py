@@ -1,7 +1,8 @@
 """Measure D0 through prepare_postage_stamps on retained survey inputs.
 
 Run in an allocation and the campaign SIF with PYTHONPATH=src:.
-SQLite stores use immutable read-only connections. No fits are performed.
+Epoch stores use immutable read-only connections; WCS headers open
+read-only. No fits are performed.
 The inputs JSON is the survey's provenance record with an ``inputs`` mapping.
 """
 

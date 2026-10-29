@@ -50,6 +50,26 @@ Its `--plot-only` mode regenerates the plot from saved arrays.
 The independent-pixel Poisson reference uses `1 - exp(-0.0028 * A * N)` with each object's footprint area and kept-epoch count.
 Spatially correlated defects, non-random detection and conditioning on epoch selection violate that reference's independence assumptions; it is not a calibration.
 
+## Tile 188.307 production census
+
+`d0_prevalence_188307.json` records a run of the real preparation path on the retained survey inputs, without galaxy fits.
+All **120,421 considered epochs** and **5,122 masked-fraction rejections** match the survey census.
+Of **115,299 eligible epochs**, D0 rejects **1,791 (1.553%)** and retains **113,508**.
+The survey's D0 arm rejects **1,550 (1.344%)**, with its clipped-footprint fixed-radius fallback.
+The denominator is eligible epochs, `113,749 kept + 1,550 rejected = 115,299`, not the kept count alone.
+The fixed-radius survey arm rejects **2,565 (2.225%)** on the same denominator.
+
+| Footprint case | Objects / 36,051 | Considered epochs / 120,421 | Eligible epochs / 115,299 |
+| --- | ---: | ---: | ---: |
+| Empty | 0 | 0 | 0 |
+| Border-touching | 633 (1.756%) | 2,121 (1.761%) | 2,028 (1.759%) |
+
+D0 rejects 316 of the 2,028 eligible border epochs.
+Relative to the survey's fallback, the in-stamp policy rejects 246 epochs it keeps and keeps 5 it rejects, for a net 241 extra rejections.
+All 251 changed decisions concern border-touching footprints.
+There are **zero mismatches** with the survey's cached raw-footprint overlap decisions, including border cases.
+The epoch-cut count also includes an unavailable footprint if encountered; this tile has none.
+
 ## Regression coverage
 
 The unit tests cover own-footprint overlap, adjacent non-overlap, another object's footprint, raw defect sources, border touch and unavailable footprints.
