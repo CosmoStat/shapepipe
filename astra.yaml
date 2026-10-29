@@ -468,8 +468,14 @@ analyses:
           no shape. The join needs the tile image to be the catalogue's
           release: on the DR5 image of a tile only ~95% of detections pair.
           Unpaired detections still stop the run beyond both 2% and 20
-          objects, preserving the check for other pixels. External-only
-          losses never reject a tile: warn and record, then cut downstream.
+          objects, preserving the check for other pixels. External-only losses
+          never reject a tile: warn and record; no cut is applied in the
+          pipeline, and whether the catalogue consumer cuts on
+          external_paired_fraction (or catalogue_match in tile_make_cat.json)
+          remains undecided. Hard rejection and an additive unpaired allowance
+          both reject sparse edge tiles whose losses are external-only (058.220:
+          71 external-only of 845 against an allowance of 66.9); zero-weight or
+          spatial exemptions would hide the losses the published counts expose.
           The warning threshold is max(20, 0.02 N + 50), without the 50 if
           no pairs exist; it is independent of the SExtractor guard settings.
           Sparse edge tiles 058.220 and 207.238 exceed it,
@@ -488,7 +494,8 @@ analyses:
           input_types.data.tile_detection = unions_catalogue;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_RADIUS = 1.0;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_MIN_FRACTION = 0.98;
-          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_TOLERATED_UNPAIRED = 20.
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_TOLERATED_UNPAIRED = 20;
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_EXTERNAL_UNPAIRED_ALLOWANCE = absent.
         default: unions_catalogue
         options:
           unions_catalogue:
