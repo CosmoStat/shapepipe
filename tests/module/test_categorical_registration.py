@@ -113,11 +113,12 @@ def test_rotated_tile_edge_is_not_a_border_run_heuristic():
     assert not np.any(got["NEIGHBOUR"] & off)
 
 
-def test_half_pixel_ties_go_upward():
+def test_half_pixel_ties_go_upward(monkeypatch):
     # An exact coordinate stub isolates floating-point tie semantics from
     # spherical WCS round-trip precision, exercised in the tests above.
-    identity = SimpleNamespace(all_pix2world=lambda xy, origin: xy)
-    shift = SimpleNamespace(all_world2pix=lambda xy, origin: xy + 0.5)
+    identity, shift = _wcs(), _wcs()
+    monkeypatch.setattr(identity, "all_pix2world", lambda xy, origin: xy)
+    monkeypatch.setattr(shift, "all_world2pix", lambda xy, origin: xy + 0.5)
     seg = np.arange(25, dtype=np.int32).reshape(5, 5)
     got = register_categories(seg, shift, identity, [2, 2], (3, 3), 12)
     npt.assert_array_equal(got["SEG_VIGNET"], seg[2:5, 2:5])
@@ -215,13 +216,15 @@ def test_retained_188307_object_5422_epoch_2254827_27(monkeypatch):
     path = Path(__file__).parents[1] / "data/registration_188307.npz"
     with np.load(path) as f:
         tw = WCS(fits.Header.fromstring(str(f["tile_header"])))
-        ew = WCS(fits.Header.fromstring(str(f["epoch_header"])))
+        epoch_header = fits.Header.fromstring(str(f["epoch_header"]))
+        ew = WCS(epoch_header)
         epoch = dict(
             VIGNET=f["image"], INT_POS=f["int_pos"], OFFSET=f["offset"]
         )
         epoch.update(
             register_categories(
-                f["segmentation"], tw, ew, f["int_pos"], (51, 51), 5422
+                f["segmentation"], tw, ew, f["int_pos"], (51, 51), 5422,
+                epoch_header=epoch_header,
             )
         )
         npt.assert_array_equal(epoch["SEG_VIGNET"], f["expected_seg"])
@@ -279,8 +282,11 @@ def test_simulation_example_produces_registration_labels():
     assert "SEGMENTATION" in config.get("SEXTRACTOR_RUNNER", "CHECKIMAGE")
 
 
-def test_vignetmaker_writes_joined_categories_with_image_grid(tmp_path):
+@pytest.mark.parametrize("gaia_fk5", [False, True])
+def test_vignetmaker_writes_joined_categories_with_image_grid(tmp_path, gaia_fk5):
     seg, tw, ew = _segmentation(), _wcs(), _wcs((40.37, 42.61), 1.7, True)
+    if gaia_fk5:
+        ew.wcs.radesys, ew.wcs.equinox = "FK5", 2000.0
     raw = np.where(seg == 101, 7, np.where(seg != 0, 8, 0)).astype(np.int32)
     sky = ew.pixel_to_world(40.27, 42.34)
     columns = [
@@ -315,8 +321,11 @@ def test_vignetmaker_writes_joined_categories_with_image_grid(tmp_path):
     image = np.random.default_rng(4).normal(size=(89, 91))
     fits.writeto(image_path, image)
     headers = tmp_path / "headers.sqlite"
+    epoch_header = ew.to_header(relax=True)
+    if gaia_fk5:
+        epoch_header["ASTCAT"] = "test.gaia"
     with SqliteDict(str(headers)) as db:
-        db["2254827"] = {27: {"WCS": ew}}
+        db["2254827"] = {27: {"WCS": ew, "header": epoch_header.tostring()}}
         db.commit()
     maker = VignetMaker(
         str(cat),
@@ -338,7 +347,10 @@ def test_vignetmaker_writes_joined_categories_with_image_grid(tmp_path):
     npt.assert_array_equal(epoch["INT_POS"], ip[0])
     npt.assert_allclose(epoch["OFFSET"], offset[0], atol=1e-7)
     joined = np.where(raw == 7, 101, np.where(raw != 0, -1, 0))
-    expected, off = _oracle(joined, tw, ew, ip[0], (51, 51))
+    oracle_epoch = ew.deepcopy()
+    if gaia_fk5:
+        oracle_epoch.wcs.radesys, oracle_epoch.wcs.equinox = "ICRS", np.nan
+    expected, off = _oracle(joined, tw, oracle_epoch, ip[0], (51, 51))
     npt.assert_array_equal(epoch["SEG_VIGNET"], expected)
     npt.assert_array_equal(epoch["OFF_TILE"], off)
     assert np.any(epoch["SEG_VIGNET"] == -1)

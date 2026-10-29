@@ -126,10 +126,11 @@ decisions:
       Every stamp width is 51 px (about 9.5 arcsec): the tile VIGNET (cut
       by the tile SExtractor run), the multi-epoch vignetmaker stamps
       ngmix fits, the exposure SExtractor VIGNET PSFEx trains on, and the
-      PSFEx model stamp. Only the first two are coupled: ngmix lays the tile
-      VIGNET's -1e30 neighbour markers over each epoch stamp pixel for pixel,
-      so they must be the same size. The stamp truncates the wings of large
-      galaxies. No rationale for 51 px is recorded.
+      PSFEx model stamp. Exposure-grid categories are sampled from the full
+      tile segmentation, independently of the tile VIGNET width; categorical
+      registration does not couple tile and exposure stamp widths. The
+      stamp truncates the wings of large galaxies. No rationale for 51 px
+      is recorded.
       Values:
       default_noimaflags.param#VIGNET = 51;
       default.param#VIGNET = 51;
@@ -321,8 +322,9 @@ analyses:
           shape_measurement.epoch_masked_fraction_cut). Tiles have no flag
           image, and ShapePipe's tile SExtractor run requests no IMAFLAGS_ISO
           (detection.detection_source_mode). Neighbour pixels are masked
-          separately, from the -1e30 markers SExtractor writes into the tile
-          VIGNET and the coadd segmentation map
+          separately, from full-tile segmentation labels sampled on each
+          native exposure grid: noisefill fills foreign nonzero footprints,
+          and UberSeg partitions the registered labels
           (shape_measurement.blend_handling). Sky-fixed masks never touch
           pixels: a star halo changes no stamp.
           Values:
@@ -867,8 +869,11 @@ analyses:
           step on exposures uses that solution: epoch membership,
           multi-epoch stamp placement and OFFSET, tile-side PSF interpolation
           positions, and the per-epoch ngmix Jacobian. [HARDCODED] No
-          astrometric re-derivation or refinement exists. A re-fit would shift
-          stamp centres and Jacobians and could change epoch membership.
+          astrometric re-derivation or refinement exists. Categorical
+          registration normalises Gaia-referenced FK5/J2000 frame annotations
+          under preparation.categorical_registration without changing the
+          numerical solution. A re-fit would shift stamp centres and
+          Jacobians and could change epoch membership.
         default: delivered_headers
         options:
           delivered_headers:
@@ -957,7 +962,16 @@ analyses:
           with full-tile support independent of VIGNET's marker coverage.
           UberSeg recomputes its Voronoi partition on the registered labels.
           These maps enter ngmix before masks, cuts and footprint diagnostics.
-          A flip alone cannot register independent pixel grids and centroids.
+          Numerical sky coordinates require equivalent celestial frames,
+          including equinox where applicable. An FK5/J2000 exposure whose
+          ASTCAT has a case-insensitive gaia token is treated as numerical
+          ICRS: frame metadata is normalised on a WCS copy, without a sky
+          coordinate conversion. Tokens are delimited by non-alphanumeric
+          characters. On 500 compact centroids in 188.307 (PR #985 review),
+          the median residual is (+0.006,+0.003) px under this interpretation
+          versus (-0.044,-0.010) px with FK5-to-ICRS conversion. All remaining
+          frame mismatches raise. A flip alone cannot register independent
+          pixel grids and centroids.
         default: native_grid_nearest
         options:
           native_grid_nearest:
@@ -1613,16 +1627,15 @@ analyses:
           noise-filled defects at least 13 px away. Only the defect pixels are filled, not a four-fold
           symmetrized mask as in DES, since symmetrizing quadruples m and
           leaves an additive c1 (symmetrized_4fold_noise); the hole this
-          leaves near the galaxy is bounded by central_defect_veto. In the
-          tile VIGNET, SExtractor writes -1e30 beyond the tile edge and over
-          every above-threshold pixel outside the object's pre-CLEAN
-          footprint. Rows and columns that are entirely -1e30 and start at
-          the stamp border are off-tile, hence defects (the epoch has the
-          object's light there); the other -1e30 pixels on another object's
-          segmentation footprint are neighbours, handled by blend_handling.
-          The rest (sub-MINAREA noise peaks, the object's own CLEAN-merged
-          fragments) are not defects either: the epoch stamps hold real
-          light there, so they keep their weight and image.
+          leaves near the galaxy is bounded by central_defect_veto. Off-tile
+          cells are those whose nearest tile pixel centre is outside the full
+          segmentation image after WCS sampling on the exposure grid. They
+          are defects because the native exposure can hold the object's light
+          beyond the tile rectangle. Foreign nonzero registered segmentation
+          footprints are neighbours, handled by blend_handling rather than
+          counted as defects. Own CLEAN-merged fragments and sky are not
+          defects solely by their segmentation labels; blend handling can
+          still mask nearby sky.
           Values:
           VIGNETMAKER_RUNNER.MASKING = False;
           ngmix.py::DEFECT_FILL = "interpolate".
@@ -1689,9 +1702,9 @@ analyses:
           depend on it: defects are filled the same way under every
           BLEND_HANDLING, and the epoch cuts never count neighbour pixels.
           The committed choice is uberseg (the workflow's default
-          blend_handling), which ignores the -1e30 neighbour markers in the
-          tile VIGNET and zeroes the weight of pixels nearer a neighbour's
-          coadd segmentation footprint than the target's (DILATE_NEIGHBOUR,
+          blend_handling), which partitions the registered full-tile labels
+          and zeroes the weight of pixels nearer a neighbour's sampled
+          footprint than the target's (DILATE_NEIGHBOUR,
           default 1), leaving the neighbour side's image untouched, as
           official uberseg does:
           esheldon/meds get_uberseg returns a weight map (a
@@ -1827,10 +1840,10 @@ analyses:
           reads the same interpolated set as the fill, including the runs
           that end on a noisefill neighbour and so are noise-filled. Under
           defect_fill noise that set is empty, so every defect is vetoed at
-          13 px. The tile
-          VIGNET's -1e30 neighbour markers are not defects: all epochs share
-          the tile VIGNET, so a neighbour inside the radius would drop every
-          epoch. Off-tile pixels are defects, so an object near the tile edge
+          13 px. Foreign nonzero segmentation footprints sampled on the
+          exposure grid are neighbours, not defects: counting them would
+          reject blended objects. Off-tile pixels from the sampled tile
+          rectangle are defects, so an object near the tile edge
           is vetoed. The veto reads only masks, so it selects on nothing
           shear-responsive; for the same reason the radii are fixed rather
           than scaled by galaxy size. Each radius is the smallest at which

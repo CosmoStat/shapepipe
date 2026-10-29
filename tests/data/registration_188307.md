@@ -6,7 +6,10 @@ Other detections use label −1 and sky uses label 0.
 
 The source segmentation rectangle is the zero-based full-tile slice `[1420:1510, 640:735]`.
 `tile_header` is the tile WCS sliced to that rectangle, including the adjusted reference pixel.
-`epoch_header` is the independently retained exposure WCS.
+`epoch_header` is the full independently retained exposure header for 2254827-27.
+It contains `RADECSYS=FK5`, `EQUINOX=2000`, and the Gaia reference card `ASTCAT=test.gaia`, while the tile declares ICRS.
+The registration contract normalises this exposure's frame metadata to ICRS without changing its numerical solution.
+The frame regressions compare all three categorical maps with the direct numerical lookup and reject an unapproved mixed-frame input.
 `int_pos`, `offset`, `image`, `weight`, `flag` and `rms` come from the retained epoch stores listed in `/scratch/cdaley/veto-survey/prevalence_checks.json` on Nibi.
 The original tile catalogue is `sexcat-188-307.fits` under `defectflag-check/run/188307/work/tiles/18/188.307/output/run_sp_tile_Sx/sextractor_runner/output`.
 

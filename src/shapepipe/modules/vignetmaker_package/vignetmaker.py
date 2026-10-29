@@ -11,6 +11,8 @@ import os
 
 import numpy as np
 from astropy.wcs import WCS
+from astropy.wcs.utils import wcs_to_celestial_frame
+from astropy.coordinates import FK5
 from astropy.io import fits
 from sqlitedict import SqliteDict
 
@@ -86,8 +88,60 @@ def get_stamps(image, positions, rad):
     return stamps, int_pos, offsets
 
 
+def normalise_registration_wcs(tile_wcs, epoch_wcs, epoch_header=None):
+    """Validate a common numerical celestial frame for categorical sampling.
+
+    @sc [decision:preparation.categorical_registration]
+    An exposure in FK5/J2000 with a case-insensitive ``gaia`` token in its
+    header's ``ASTCAT`` has ICRS numerical coordinates. Normalize that WCS's
+    frame metadata on a copy, without transforming coordinates or changing
+    the input WCS/header. Tokens are delimited by non-alphanumeric characters.
+    All other exposures retain their declared frame. The resulting exposure
+    and tile celestial frames, including equinox where applicable, must be
+    equivalent; an unsupported or mismatched frame raises ``ValueError``.
+
+    Parameters
+    ----------
+    tile_wcs, epoch_wcs : astropy.wcs.WCS
+        Tile and native exposure coordinate systems.
+    epoch_header : mapping, optional
+        Exposure header carrying the astrometric reference catalogue ASTCAT.
+
+    Returns
+    -------
+    astropy.wcs.WCS
+        The exposure WCS in the validated common numerical frame.
+    """
+    tile_frame = wcs_to_celestial_frame(tile_wcs)
+    epoch_frame = wcs_to_celestial_frame(epoch_wcs)
+    astcat = str((epoch_header or {}).get("ASTCAT", "")).casefold()
+    gaia_reference = "gaia" in re.split(r"[^a-z0-9]+", astcat)
+    if (
+        isinstance(epoch_frame, FK5)
+        and epoch_frame.equinox.jyear == 2000.0
+        and gaia_reference
+    ):
+        # On 188.307, 500 compact centroids give median residuals
+        # (+0.006, +0.003) px with common ICRS numbers, versus
+        # (-0.044, -0.010) px after FK5->ICRS conversion (PR #985 review).
+        # ASTCAT identifies these Gaia-referenced solutions as numerical ICRS.
+        epoch_wcs = epoch_wcs.deepcopy()
+        epoch_wcs.wcs.radesys = "ICRS"
+        epoch_wcs.wcs.equinox = np.nan
+        epoch_wcs.wcs.set()
+        epoch_frame = wcs_to_celestial_frame(epoch_wcs)
+    if not tile_frame.is_equivalent_frame(epoch_frame):
+        raise ValueError(
+            "Categorical registration requires equivalent celestial frames: "
+            f"tile={tile_frame!r}, exposure={epoch_frame!r}; only Gaia ASTCAT "
+            "FK5/J2000 exposure metadata may be normalized to ICRS"
+        )
+    return epoch_wcs
+
+
 def register_categories(
-    segmentation, tile_wcs, epoch_wcs, int_pos, shape, object_number
+    segmentation, tile_wcs, epoch_wcs, int_pos, shape, object_number,
+    epoch_header=None,
 ):
     """Sample tile categories at native exposure-stamp pixel centres.
 
@@ -101,6 +155,8 @@ def register_categories(
     Noisefill uses this full neighbour footprint; UberSeg recomputes its
     nearest-segment partition on the registered labels.
     Neither images nor detector masks are resampled.
+    :func:`normalise_registration_wcs` validates the celestial-frame contract
+    before numerical coordinates pass between the WCSs.
 
     Parameters
     ----------
@@ -115,12 +171,15 @@ def register_categories(
         Exposure stamp shape.
     object_number : int
         Target's catalogue NUMBER.
+    epoch_header : mapping, optional
+        Exposure header for the Gaia/FK5-J2000 frame-normalisation rule.
 
     Returns
     -------
     dict
         Exposure-grid ``SEG_VIGNET``, ``NEIGHBOUR`` and ``OFF_TILE`` maps.
     """
+    epoch_wcs = normalise_registration_wcs(tile_wcs, epoch_wcs, epoch_header)
     row, col = np.indices(shape, dtype=float)
     xy = np.stack(
         (col - shape[1] // 2 + int_pos[1], row - shape[0] // 2 + int_pos[0]),
@@ -440,7 +499,15 @@ class VignetMaker(object):
                 ind_obj = np.where(cat.get_data(hdu_index)["CCD_N"] == ccd)[0]
                 obj_id = all_id[ind_obj]
 
-                wcs_file = self._f_wcs_file[exp_name][ccd]["WCS"]
+                ccd_info = self._f_wcs_file[exp_name][ccd]
+                wcs_file = ccd_info["WCS"]
+                if categories is not None:
+                    header = ccd_info.get("header")
+                    if isinstance(header, str):
+                        header = fits.Header.fromstring(header)
+                    wcs_file = normalise_registration_wcs(
+                        tile_wcs, wcs_file, header
+                    )
                 pos = np.array(
                     wcs_file.all_world2pix(
                         self._pos[:, 1][ind_obj],

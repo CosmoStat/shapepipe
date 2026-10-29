@@ -45,14 +45,14 @@ by MegaPipe on the same DR6 image with the same configuration, so the join is
 exact; on other pixels (a DR5 image) it fails loudly.
 
 ``blend_handling: uberseg``, the default, gives ngmix UberSeg's hard mask
-instead of its own noise-fill default. Both read one coadd segmentation stamp
-per object from the sexcat's SEG_VIGNET column: uberseg masks by it, and
-noisefill takes as neighbours only the -1e30 VIGNET markers on another
-object's footprint in it. tile_detect cuts it from SExtractor's SEGMENTATION
-check image on the grid of each object's VIGNET, before the join, which
-relabels every stamp to the catalogue's NUMBER (-1 on the footprints of rows
-that leave, 0 on sky). The switch is one prologue variable and nothing else
-(blend_env, below).
+instead of its own noise-fill default. Both consume the full tile
+segmentation sampled onto each native exposure stamp by vignetmaker:
+uberseg partitions registered labels; noisefill fills every foreign nonzero
+footprint. The sampled tile rectangle supplies OFF_TILE defects.
+Tile detection retains the pre-join SEG_LABEL so vignetmaker can relabel the
+full check image with catalogue NUMBERs (-1 for departed detections, 0 sky).
+The tile SEG_VIGNET supplies the catalogue-level neighbour flag, not epoch
+masks. The switch is one prologue variable (blend_env, below).
 
 There is no `tile_mask` rule, and there will not be one (PR #847). ShapePipe
 generates no masks: tiles have no instrument flag image of their own, so
@@ -310,9 +310,11 @@ rule tile_merge_headers:
 
 # The blend-handling exports into a stage's prologue. tile_detect writes
 # SEG_VIGNET (config_tile_Sx.ini, SEG_VIGNET = ${SP_SEG_VIGNET:-False}) under
-# both handlings: noisefill keeps only the -1e30 markers on another object's
-# footprint in it (split_tile_markers), uberseg masks by it. uberseg (the
-# default) also sets BLEND_HANDLING (config_tile_Ng_template.ini,
+# both handlings, together with pre-join SEG_LABEL. Vignetmaker samples the
+# full relabelled check image on each exposure grid. Noisefill fills foreign
+# nonzero footprints; uberseg partitions the registered labels. The sampled
+# tile rectangle supplies OFF_TILE defects. uberseg (the default) also sets
+# BLEND_HANDLING (config_tile_Ng_template.ini,
 # ${SP_BLEND_HANDLING:-noisefill}), which reruns only tile_ngmix on a flip.
 BLEND_ENV = {
     "tile_detect": {"SP_SEG_VIGNET": "True"},

@@ -668,8 +668,8 @@ class Postage_stamp():
         self.psfs = []
         self.weights = []
         self.flags = []
-        # Exposure-grid neighbour masks, projected upstream from tile
-        # other-footprint markers. Epoch cuts do not count neighbours.
+        # Exposure-grid neighbour masks from full-tile foreign nonzero
+        # segmentation footprints. Epoch cuts do not count neighbours.
         self.neighbours = []
         self.bkg_rms = []
         # Exposure-grid segmentation stamps, sampled upstream from the full
