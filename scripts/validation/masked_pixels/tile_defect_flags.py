@@ -18,7 +18,7 @@ The output contains every tile row, including unavailable PSFs, zero-kept-
 epoch objects and unknown footprints, distinguished by status and -1.
 The Poisson expectation uses 0.0028 as the exposure DATASEC pixel flag rate
 from #887. It is an unconditioned reference, not a calibration: spatially
-correlated defects and the central veto violate its independence assumption.
+correlated defects and the footprint cut violate its independence assumption.
 After measuring, --plot-only --out PREFIX --nflagged MAP --plot PNG regenerates
 just the figure and spatial comparison from PREFIX.npz and PREFIX.json.
 """
@@ -37,7 +37,7 @@ import numpy as np
 from sqlitedict import SqliteDict
 
 from shapepipe.modules.ngmix_package.ngmix import (
-    EPOCH_INTERPOLATED_DEFECT_RADIUS, Ngmix, Tile_cat, centre_distance,
+    Ngmix, Tile_cat,
     prepare_postage_stamps,
 )
 
@@ -50,7 +50,7 @@ def measure(args):
     n = len(tile.obj_id)
     data = dict(number=tile.obj_id, ra=tile.ra, dec=tile.dec)
     for key in ("imaflags_iso", "n_epoch_interp_iso", "n_epoch_interp",
-                "n_kept", "area", "area_outside_veto", "n_candidate",
+                "n_kept", "area", "n_candidate",
                 "precut_imaflags_iso"):
         data[key] = np.full(n, -1, dtype=np.int64)
     data["footprint_clipped"] = np.zeros(n, dtype=bool)
@@ -80,7 +80,6 @@ def measure(args):
         )
         # Decode exposure-level WCS objects once rather than for every object.
         vignet.f_wcs_file = dict(vignet.f_wcs_file.items())
-        radius = centre_distance(tile.seg[0].shape)
         for i, obj_id in enumerate(tile.obj_id):
             if i % 1000 == 0:
                 print(f"{i}/{n}", flush=True)
@@ -89,9 +88,6 @@ def measure(args):
             data["footprint_clipped"][i] = (
                 footprint[[0, -1], :].any() or footprint[:, [0, -1]].any()
             )
-            data["area_outside_veto"][i] = (
-                footprint & (radius >= EPOCH_INTERPOLATED_DEFECT_RADIUS)
-            ).sum()
             key = str(obj_id)
             if key not in vignet.psf_vign_cat or key not in vignet.gal_vign_cat:
                 status["missing_store_row"] += 1
@@ -180,18 +176,12 @@ def measure(args):
         summary["poisson_before_cuts_known_kept"] = float(np.mean(
             -np.expm1(-0.0028 * data["area"][valid] * data["n_candidate"][valid])
         ))
-        for area in ("area", "area_outside_veto"):
+        for area in ("area",):
             summary[f"poisson_{area}"] = float(np.mean(
                 -np.expm1(-0.0028 * data[area][valid] * data["n_kept"][valid])
             ))
         summary["mean_area_known"] = float(data["area"][valid].mean())
         summary["median_area_known"] = float(np.median(data["area"][valid]))
-        summary["mean_area_outside_veto_known"] = float(
-            data["area_outside_veto"][valid].mean()
-        )
-        summary["fraction_known_footprints_inside_veto"] = float(
-            (data["area_outside_veto"][valid] == 0).mean()
-        )
         summary["mean_kept_epochs_known"] = float(data["n_kept"][valid].mean())
     if kept.any():
         summary["fraction_stamp_interp_kept"] = float(wide[kept].mean())

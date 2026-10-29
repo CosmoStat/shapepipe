@@ -47,8 +47,8 @@ def interpolable_defects(defect, removed=None, max_run=MAX_INTERPOLATED_RUN):
     support the interpolant: on the stamp, not a defect, and not
     ``removed``. That covers columns, 3-px bleeds and isolated pixels.
     Wider holes, edge bands and runs that end on a removed pixel are
-    noise-filled and vetoed at the noise-fill radius
-    (:func:`~shapepipe.modules.ngmix_package.ngmix.central_defect_vetoes`).
+    noise-filled. Both fills count toward the footprint-touch epoch cut
+    (:func:`~shapepipe.modules.ngmix_package.ngmix.footprint_defect_vetoes`).
     Each interpolated pixel lies between two support pixels, so the
     interpolant reaches it. The rule reads only the masks and commutes with
     quarter turns of the stamp.

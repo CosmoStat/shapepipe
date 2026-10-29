@@ -17,13 +17,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import ListedColormap
 from matplotlib.lines import Line2D
-from matplotlib.patches import Circle, Patch
+from matplotlib.patches import Patch
 
 from figstyle import (AQUA, BLUE, INK, INK2, ORANGE, PAPER, TARGET,
                       WEIGHT_LEGEND, clean, show_image, show_weight)
 from shapepipe.modules.ngmix_package.ngmix import (
-    EPOCH_CENTRAL_DEFECT_RADIUS,
-    EPOCH_INTERPOLATED_DEFECT_RADIUS,
     defect_mask,
     interpolated_defects,
     prepare_ngmix_weights,
@@ -94,16 +92,11 @@ def classes(ep):
     return cls
 
 
-def class_panel(ax, ep, radii=True):
+def class_panel(ax, ep):
     ax.imshow(classes(ep), origin="lower", cmap=CLASS_CMAP, vmin=-0.5,
               vmax=4.5, interpolation="nearest")
-    if radii:
-        n = ep["gal"].shape[0]
-        c = (n - 1) / 2
-        for r, ls in ((EPOCH_CENTRAL_DEFECT_RADIUS, "--"),
-                      (EPOCH_INTERPOLATED_DEFECT_RADIUS, ":")):
-            ax.add_patch(Circle((c, c), r, fill=False, ec=INK, ls=ls,
-                                lw=1.0))
+    ax.contour(ep["seg"] == int(ep["object_number"]), levels=[0.5],
+               colors=[INK], linewidths=1.0)
 
 
 def main(real_path, out_path):
@@ -131,12 +124,6 @@ def main(real_path, out_path):
     axs[0, 0].set_title("(a) one epoch's stamp", color=INK, fontsize=10)
     axs[0, 0].set_ylabel("image ngmix sees", color=INK, fontsize=11)
     axs[1, 0].set_ylabel("pixel class / weight", color=INK, fontsize=11)
-    c = 25
-    rn = EPOCH_CENTRAL_DEFECT_RADIUS
-    axs[1, 0].text(c, c + rn + 0.8, f"{rn:g} px", ha="center", va="bottom",
-                   fontsize=8, color=INK)
-    axs[1, 0].text(c, c - 6.3, "7 px", ha="center", va="bottom",
-                   fontsize=8, color=INK)
 
     for j, (blend, title) in enumerate(
         (("noisefill", "(b) noisefill (default)"),
@@ -173,9 +160,7 @@ def main(real_path, out_path):
         Patch(color=BLUE, label="neighbour (−1e30 in tile)"),
         Patch(color=ORANGE, label="defect (flag / weight / RMS)"),
         Patch(color=AQUA, label="off-tile (a defect)"),
-        Line2D([], [], color=INK, ls="--", lw=1, label=f"{EPOCH_CENTRAL_DEFECT_RADIUS:g} px veto"),
-        Line2D([], [], color=INK, ls=":", lw=1,
-               label="7 px veto (interpolated)"),
+        Line2D([], [], color=INK, lw=1, label="D0 footprint boundary"),
     ] + WEIGHT_LEGEND
     fig.legend(handles=handles, loc="upper center", ncol=5, frameon=False,
                fontsize=9, handlelength=1.4,

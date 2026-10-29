@@ -13,7 +13,7 @@ TILE = "259.283"
 COUNTS = dict(
     considered=100,
     masked_fraction=7,
-    central_veto=3,
+    footprint_defect=3,
     failed=2,
     objects_emptied=1,
 )
@@ -77,15 +77,15 @@ def test_parse_timestamp_and_unrelated_lines():
     )
 
 
-def test_parse_pr922_exact_line():
-    """Accept the exact field names and spacing emitted by PR #922."""
+def test_parse_production_exact_line():
+    """Accept the exact field names and spacing emitted by ngmix."""
     assert epoch.parse_epoch_cuts(
         "epoch cuts: considered=8181 masked_fraction=235 "
-        "central_veto=271 failed=0 objects_emptied=16"
+        "footprint_defect=271 failed=0 objects_emptied=16"
     ) == dict(
         considered=8181,
         masked_fraction=235,
-        central_veto=271,
+        footprint_defect=271,
         failed=0,
         objects_emptied=16,
     )
@@ -108,6 +108,7 @@ def test_zero_is_data_not_missing():
         summary().replace("failed=2", "failed=2.5"),
         summary().replace("failed=2", "failed=2 failed=2"),
         summary().replace("failed=2", "failed=2 extra=1"),
+        summary().replace("footprint_defect=3", "central_veto=3"),
         summary().replace("considered=100", "considered=1"),
         summary().replace("objects_emptied=1", "objects_emptied=101"),
     ],
@@ -129,7 +130,7 @@ def test_aggregate_all_fields_once_in_numeric_chunk_order():
     """All five counters sum over exactly the configured chunks."""
     chunks = {str(k): dict(COUNTS) for k in reversed(range(1, 17))}
     record = epoch.aggregate_chunks(chunks, 16)
-    assert record["schema_version"] == 1
+    assert record["schema_version"] == 2
     assert list(record["chunks"]) == [str(k) for k in range(1, 17)]
     assert record["totals"] == {k: 16 * v for k, v in COUNTS.items()}
     assert record["n_chunks"] == 16
