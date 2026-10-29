@@ -322,7 +322,8 @@ class SaveCatalogue:
         footprint — the adaptive defect diagnostics
         ``NGMIX_IMAFLAGS_ISO`` and ``NGMIX_N_EPOCH_INTERP_ISO`` (defined by
         ``Postage_stamp.record_footprint_defects``; unknown footprints -1,
-        never-fit rows 0), and the stamp diagnostics ``NGMIX_N_EPOCH_INTERP``,
+        never-fit rows 0; complete kept footprints have zero hits under D0),
+        and the stamp diagnostics ``NGMIX_N_EPOCH_INTERP``,
         ``NGMIX_MIN_DIST_INTERP``, ``NGMIX_MIN_DIST_NOISEFILL``, described
         by ``Postage_stamp.record_defects``; -1 is their absent distance,
         and a never-fit row carries 0 counts and -1 distances).

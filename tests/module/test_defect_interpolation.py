@@ -93,10 +93,10 @@ def test_the_interpolant_reaches_every_interpolable_pixel(
 ):
     """Each selected pixel lies between two support pixels, so the
     interpolant is finite there; prepare_ngmix_weights relies on this to
-    veto and fill the same pixels.
+    fill every selected pixel.
 
     Failure mode: a selected pixel falls outside the support's hull and gets
-    NaN, so the fill and the central-defect veto disagree on it.
+    NaN, making the ngmix observation invalid.
     """
     rng = np.random.RandomState(seed)
     defect = rng.uniform(size=(n, n)) < density
