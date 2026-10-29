@@ -235,6 +235,9 @@ def _fake_inputs(epochs):
     gal_obj = per_epoch(lambda k: rng.normal(0.0, 1.0, (N_STAMP, N_STAMP)))
     for epoch in gal_obj.values():
         epoch["OFFSET"] = np.zeros(2)
+        epoch["SEG_VIGNET"] = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
+        epoch["NEIGHBOUR"] = np.zeros((N_STAMP, N_STAMP), dtype=bool)
+        epoch["OFF_TILE"] = np.zeros((N_STAMP, N_STAMP), dtype=bool)
     vignet = SimpleNamespace(
         gal_vign_cat={"1": gal_obj},
         bkg_vign_cat=None,
@@ -814,11 +817,27 @@ def _marker_stamp(tile, epochs=None, **kwargs):
         epochs = {name: (clean.copy(), ones) for name in _MARKER_EPOCH_NAMES}
     vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(epochs)
     tile_cat.vign = tile[np.newaxis]
+    _put_categories(gal_obj, tile)
     stamp = prepare_postage_stamps(
         vignet, 1, 0, tile_cat, bkg_sub=False,
         psf_obj=psf_obj, gal_obj=gal_obj, **kwargs,
     )
     return stamp, epochs, gal_obj
+
+
+def _put_categories(gal_obj, tile, seg=None):
+    """Supply native-grid categorical inputs for mask-consumption tests.
+
+    This fixture uses a discrete 180-degree geometry; independent-WCS
+    registration is tested in test_categorical_registration.py.
+    """
+    neighbour, off_tile = split_tile_markers(tile, tile.shape, seg, 1)
+    for name, epoch in gal_obj.items():
+        ccd = int(name.split("-")[1])
+        epoch["NEIGHBOUR"] = Ngmix.MegaCamFlip(neighbour, ccd)
+        epoch["OFF_TILE"] = Ngmix.MegaCamFlip(off_tile, ccd)
+        if seg is not None:
+            epoch["SEG_VIGNET"] = Ngmix.MegaCamFlip(seg, ccd)
 
 
 def _expected_neighbours(tile, name):
@@ -1048,6 +1067,7 @@ def _seg_marker_stamp(tile, seg, blend_handling="noisefill"):
     vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(epochs)
     tile_cat.vign = tile[np.newaxis]
     tile_cat.seg = seg[np.newaxis]
+    _put_categories(gal_obj, tile, seg)
     return prepare_postage_stamps(
         vignet, _OBJ, 0, tile_cat, bkg_sub=False,
         psf_obj=psf_obj, gal_obj=gal_obj, blend_handling=blend_handling,
@@ -1077,16 +1097,17 @@ def test_noisefill_keeps_light_under_non_neighbour_markers():
         assert np.all(weight[stamp.neighbours[i]] == 0)
 
 
-def test_uberseg_is_unchanged_by_seg_defined_neighbours(monkeypatch):
+def test_uberseg_is_unchanged_by_seg_defined_neighbours():
     """Uberseg reads no marker, so defining neighbours by the seg map leaves
     every epoch's observation bit-identical: the same epochs survive, with
     the same image, weight and noise image. Noisefill does change.
     """
     tile, seg, _ = _seg_marked_tile()
-    marker_split = split_tile_markers
-
-    def observations(blend_handling):
+    def observations(blend_handling, bare_markers=False):
         stamp = _seg_marker_stamp(tile, seg, blend_handling)
+        if bare_markers:
+            stamp.neighbours = [_expected_neighbours(tile, name)
+                                for name in stamp.epoch_names]
         out = []
         for i in range(len(stamp.gals)):
             obs = make_ngmix_observation(
@@ -1100,11 +1121,8 @@ def test_uberseg_is_unchanged_by_seg_defined_neighbours(monkeypatch):
         return stamp.epoch_names, out
 
     new = {b: observations(b) for b in ("uberseg", "noisefill")}
-    monkeypatch.setattr(
-        ngmix_module, "split_tile_markers",
-        lambda t, shape, seg=None, object_number=None: marker_split(t, shape),
-    )
-    old = {b: observations(b) for b in ("uberseg", "noisefill")}
+    old = {b: observations(b, bare_markers=True)
+           for b in ("uberseg", "noisefill")}
 
     assert new["uberseg"][0] == old["uberseg"][0]
     for got, want in zip(new["uberseg"][1], old["uberseg"][1]):

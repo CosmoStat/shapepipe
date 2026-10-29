@@ -592,9 +592,9 @@ class Tile_cat():
     ----------
     cat_path : str
         Path to the tile SExtractor catalogue. Its optional ``SEG_VIGNET``
-        column, one integer coadd segmentation stamp per object on the grid
-        of its ``VIGNET``, becomes ``self.seg``, which defines the neighbours
-        under both blend handlings; without it ``self.seg`` is ``None``.
+        column becomes ``self.seg`` for the catalogue-level neighbour flag
+        and centre-label diagnostic. Epoch masks come from the registered
+        categories in the image vignette store.
     row_min, row_max : int, optional
         First and last catalogue row of the chunk (1-based, inclusive; see
         :func:`chunk_rows`). The default, ``-1``, is unbounded, so the whole
@@ -636,10 +636,8 @@ class Tile_cat():
             else None
         )
 
-        # Coadd-frame segmentation stamp (integer labels, the catalogue's
-        # NUMBER), one per object on the grid of its VIGNET, overlaid
-        # unchanged on every epoch; it defines the neighbours (shapepipe#776,
-        # split_tile_markers, uberseg_mask).
+        # Tile-grid labels supply the catalogue-level neighbour flag.
+        # Per-epoch registered labels are read from the image vignette store.
         self.seg = (
             ChunkStamps(data['SEG_VIGNET'], self.rows)
             if 'SEG_VIGNET' in cols
@@ -656,33 +654,26 @@ class Postage_stamp():
     Parameters
     ----------
     bkg_sub: bool
-
+        Subtract per-epoch backgrounds.
     megacam_flip: bool
-    We probably want to put weight and flag options here too
+        Accepted without effect; categorical maps are on the native grid.
 
     """
     def __init__(
         self,
         bkg_sub=True,
-        megacam_flip=True
-
+        megacam_flip=True,
     ):
         self.gals = []
         self.psfs = []
         self.weights = []
         self.flags = []
-        # Neighbour masks, one per epoch: the pixels marked -1e30 in the tile
-        # VIGNET on other detections' footprints (off-tile markers get zero
-        # weight instead; see split_tile_markers), MegaCam-flipped to the
-        # epoch. noisefill zero-weights and noise-fills them, and the epoch
-        # cuts do not count them (see prepare_ngmix_weights).
+        # Exposure-grid neighbour masks, projected upstream from tile
+        # other-footprint markers. Epoch cuts do not count neighbours.
         self.neighbours = []
         self.bkg_rms = []
-        # Segmentation stamps, one per epoch, used only by the "uberseg" blend
-        # handling; empty under the default "noisefill". All epochs carry the
-        # SAME coadd-frame seg stamp (shapepipe#776: one coadd seg per object,
-        # no per-epoch reprojection), each MegaCam-flipped to match its galaxy
-        # stamp so the overlay stays registered.
+        # Exposure-grid segmentation stamps, sampled upstream from the full
+        # tile segmentation. UberSeg partitions these native-grid labels.
         self.segs = []
         self.jacobs = []
         # Per-epoch sub-pixel [row, col] coadd-centroid offset propagated from
@@ -713,7 +704,6 @@ class Postage_stamp():
         self.min_dist_interp = np.inf
         self.min_dist_noisefill = np.inf
         self.bkg_sub = bkg_sub
-        self.megacam_flip = megacam_flip
 
     def record_defects(self, defect, interpolated):
         """Add one kept epoch to the defect diagnostics.
@@ -752,9 +742,9 @@ class Postage_stamp():
         @sc [decision:shape_measurement.defect_flagging,label:schema] footprint-defect-flags
         ``imaflags_iso`` is the bitwise OR of all instrument bits in the
         exposure flag stamp on ``seg == obj_id``, OR'ed across epochs kept
-        after the masked-fraction cut and central veto. ``seg`` is the coadd
-        SEG_VIGNET, already MegaCam-flipped to the epoch frame; it is not an
-        exposure detection or a reprojected isophote. ``n_epoch_interp_iso``
+        after the masked-fraction cut and central veto. ``seg`` is the tile
+        segmentation sampled on the native exposure grid, not an exposure
+        detection. ``n_epoch_interp_iso``
         counts kept epochs with any interpolated defect on that footprint.
         Zero-weight/off-tile pixels with flag 0 contribute no instrument bit
         (SExtractor semantics), but count if interpolated. Neither quantity
@@ -896,11 +886,9 @@ class Ngmix(object):
         :func:`make_ngmix_observation`.
     blend_handling : {"noisefill", "uberseg"}, optional
         Neighbour treatment. ``"noisefill"`` (default) zero-weights and
-        noise-fills the pixels marked -1e30 in the tile VIGNET on other
-        detections' footprints; ``"uberseg"`` ignores those markers and
-        zeroes the weight of neighbour-side pixels from the coadd
-        segmentation stamps, the tile catalogue's ``SEG_VIGNET`` column (see
-        :class:`Tile_cat`), which it requires. Defect pixels are filled
+        noise-fills foreign nonzero segmentation footprints on the exposure
+        grid. ``"uberseg"`` zeroes neighbour-side weights using the nearest
+        segment partition of those registered labels. Defect pixels are filled
         under both (see :func:`prepare_ngmix_weights`).
     dilate_neighbour : int, optional
         Neighbour-mask dilation iterations for ``"uberseg"`` (see
@@ -1050,7 +1038,6 @@ class Ngmix(object):
         numpy.ndarray
             The flipped postage stamp
 
-        @sc [decision:shape_measurement.megacam_ccd_flip]
         """
         if ccd_nb < 18 or ccd_nb in [36, 37]:
             # swap x axis so origin is on top-right
@@ -1297,17 +1284,15 @@ class Ngmix(object):
         """Cross-check the seg stamp's centre pixel against the object's NUMBER.
 
         The authoritative central label is ``obj_id`` (the SExtractor NUMBER);
-        this is a diagnostic on the coadd-vs-epoch overlay registration, not a
-        gate. Two outcomes:
+        this checks the tile catalogue's label integrity. Two outcomes:
 
         * The seg stamp does not contain ``obj_id`` anywhere — the object's own
           footprint fell outside the cutout (bad centroid / dropped detection),
           so uberseg has no central object to keep. Raise; the per-object
           ``try/except`` in :meth:`process` drops it, loud in the log.
-        * The centre-pixel label is nonzero and ``!= obj_id`` — a few-pixel
-          registration offset put a neighbour on the centre pixel. Harmless for
-          the mask (which keys off ``obj_id``), but a signal worth surfacing:
-          log a warning and proceed.
+        * The centre-pixel label is nonzero and ``!= obj_id`` — the tile
+          barycentre lies on a neighbour. Log this diagnostic and proceed;
+          native-grid masks use the target's NUMBER, not the centre label.
 
         Parameters
         ----------
@@ -1328,9 +1313,8 @@ class Ngmix(object):
         if centre_label != 0 and centre_label != obj_id:
             self._w_log.info(
                 f"uberseg: object NUMBER={obj_id} but seg centre pixel carries"
-                + f" label {centre_label}; a coadd-vs-epoch registration offset"
-                + " is placing a neighbour on the centre. Proceeding with the"
-                + " NUMBER (authoritative)."
+                + f" label {centre_label}; the tile barycentre lies on a"
+                + " neighbour. Proceeding with the authoritative NUMBER."
             )
 
     def log_mean_ellipticity(self):
@@ -1435,10 +1419,8 @@ class Ngmix(object):
             )
         if tile_cat.seg is None and getattr(tile_cat, "vign", None) is not None:
             self._w_log.warning(
-                f"{self._tile_cat_path} has no SEG_VIGNET column: every"
-                + " interior -1e30 marker is taken as a neighbour,"
-                + " including the object's own CLEAN-merged fragments"
-                + " (neighbours-are-other-footprints)."
+                f"{self._tile_cat_path} has no SEG_VIGNET column:"
+                + " catalogue-level neighbour_flag is unknown (written 0)."
             )
 
         check_wcs_centroid_offset(
@@ -1525,11 +1507,8 @@ class Ngmix(object):
                 # NUMBER (obj_id): seg labels are the NUMBERs of the same SE run
                 # that produced the tile catalogue, so obj_id is authoritative
                 # and is used for both the uberseg mask and the neighbour flag.
-                # The centre pixel is only a diagnostic: a few-pixel coadd-vs-
-                # epoch overlay offset can put a NEIGHBOUR's label there, which
-                # would invert the mask — so we never trust it to define the
-                # central object. Cross-check it and warn on a mismatch (a
-                # registration signal), but proceed with obj_id (shapepipe#776).
+                # NUMBER defines the target even if its tile-stamp centre
+                # falls on sky or a neighbour. The central label is diagnostic.
                 if self._blend_handling == "uberseg":
                     self._check_central_seg_label(tile_cat.seg[i_tile], obj_id)
                 res, psf_res, psf_orig_res = do_ngmix_metacal(
@@ -1657,6 +1636,9 @@ def prepare_postage_stamps(
 ):
     """Gather one object's epoch stamps, dropping epochs its defects spoil.
 
+    @sc [decision:preparation.categorical_registration]
+    Categorical inputs are already on each epoch's native extraction grid.
+
     @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut] epoch-cut-on-defect-mask
     An epoch is dropped when more than ``EPOCH_MASKED_FRACTION_CUT`` of its
     stamp lies in :func:`defect_mask`, the set :func:`prepare_ngmix_weights`
@@ -1665,10 +1647,9 @@ def prepare_postage_stamps(
     that ``DEFECT_WEIGHTING`` zero-weights or interpolates are not counted.
 
     @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
-    The tile VIGNET's -1e30 markers on other objects' segmentation
-    footprints (:func:`split_tile_markers`) are the epoch's neighbour mask
-    (``stamp.neighbours``), not defects: every epoch shares the tile VIGNET,
-    so counting them would drop every epoch of a blended object.
+    Foreign nonzero segmentation footprints, sampled upstream on each
+    exposure grid, are the epoch's neighbour mask (``stamp.neighbours``),
+    not defects. Counting neighbours would reject blended objects.
 
     @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.defect_fill] off-tile-pixels-are-defects
     Beyond the tile's edge the epoch holds the object's own light, cut off by
@@ -1751,31 +1732,21 @@ def prepare_postage_stamps(
         if not sigma_mad(gal_vign_sub_bkg) > 0:
             continue
 
-        tile_vign = (
-            np.copy(tile_cat.vign[i_tile])
-            if tile_cat.vign is not None
-            else None
-        )
-        if stamp.megacam_flip and tile_vign is not None:
-            tile_vign = Ngmix.MegaCamFlip(tile_vign, int(ccd_n))
-
-        # Coadd-frame segmentation stamp for this object, MegaCam-flipped to
-        # match the (flipped) galaxy stamp so the overlay stays registered.
-        # The SAME coadd seg rides every epoch (shapepipe#776: no reprojection).
-        tile_seg = (
-            np.copy(tile_cat.seg[i_tile])
-            if getattr(tile_cat, "seg", None) is not None
-            else None
-        )
-        if stamp.megacam_flip and tile_seg is not None:
-            tile_seg = Ngmix.MegaCamFlip(tile_seg, int(ccd_n))
-
+        # All categories share the image stamp's native extraction grid.
+        # Read them before constructing defects, cuts or footprint diagnostics.
+        epoch = gal_obj[expccd_name]
+        required = ("SEG_VIGNET", "NEIGHBOUR", "OFF_TILE")
+        if any(name not in epoch for name in required):
+            raise ValueError(
+                "Exposure-grid categories are missing; rerun vignetmaker with"
+                " the tile segmentation and current detection catalogue"
+            )
+        tile_seg, neighbour, off_tile = (np.asarray(epoch[name]) for name in required)
+        if any(array.shape != gal_vign.shape for array in (tile_seg, neighbour, off_tile)):
+            raise ValueError("Exposure categories must have the image stamp shape")
+        if neighbour.dtype != bool or off_tile.dtype != bool:
+            raise ValueError("NEIGHBOUR and OFF_TILE must be boolean maps")
         flag_vign = flag_obj[expccd_name]['VIGNET']
-        # Off-tile pixels are defects (off-tile-pixels-are-defects); the
-        # other -1e30 markers are neighbours (neighbour-markers-are-not-defects).
-        neighbour, off_tile = split_tile_markers(
-            tile_vign, np.shape(gal_vign), tile_seg, obj_id
-        )
         weight_vign = np.where(off_tile, 0, weight_obj[expccd_name]['VIGNET'])
         bkg_rms_vign = (
             bkg_rms_obj[expccd_name]['VIGNET']
@@ -1853,7 +1824,6 @@ def prepare_postage_stamps(
 def split_tile_markers(tile_vign, shape, seg=None, object_number=None):
     """Split the tile VIGNET's -1e30 markers into neighbour and off-tile.
 
-    @sc [decision:shape_measurement.blend_handling,decision:shape_measurement.defect_fill] off-tile-is-marked-border-rows-and-columns
     SExtractor writes -1e30 into the tile VIGNET on stamp pixels beyond the
     tile's edge and, under MASK_TYPE CORRECT, on every above-threshold pixel
     that is not the object's own pre-CLEAN footprint. A stamp clipped by the
@@ -1861,7 +1831,6 @@ def split_tile_markers(tile_vign, shape, seg=None, object_number=None):
     the off-tile pixels are the union of the runs of entirely -1e30 rows and
     columns that start at a stamp border.
 
-    @sc [decision:shape_measurement.blend_handling] neighbours-are-other-footprints
     The other markers also fall on pixels no other object owns: detections
     smaller than DETECT_MINAREA (noise peaks, catalogued nowhere) and
     fragments CLEAN merged into the object itself, which the segmentation
@@ -2071,8 +2040,7 @@ def central_seg_label(seg):
     (``obj_id``), which is plumbed straight through: segmentation labels ARE
     the NUMBERs of the same SE run, so ``obj_id`` names the central footprint
     directly (shapepipe#776). This helper reads the centre pixel only as a
-    registration cross-check — a few-pixel coadd-vs-epoch overlay offset can
-    put a NEIGHBOUR's label on the centre pixel, which is exactly why the
+    label diagnostic: a neighbour can occupy the centre pixel, so the
     centre pixel must NOT define the central object (trusting it there would
     invert the uberseg mask). See :meth:`Ngmix._check_central_seg_label`.
 
@@ -2084,7 +2052,7 @@ def central_seg_label(seg):
     Returns
     -------
     int
-        Label at the centre pixel — the central object's segmentation id.
+        Segmentation label at the centre pixel.
 
     Raises
     ------
@@ -2166,14 +2134,13 @@ def uberseg_mask(seg, object_number, dilate_neighbour=0):
     object_number : int
         Segmentation label of the central object — its SExtractor ``NUMBER``
         (``obj_id``), authoritative because seg labels are the NUMBERs of the
-        same SE run. Not the centre-pixel label, which a few-pixel coadd-vs-
-        epoch offset can steal for a neighbour and so invert this mask.
+        same detection run, including any catalogue join. A neighbour can
+        occupy the centre pixel, so its label cannot define the target.
     dilate_neighbour : int, optional
         Enlarge the mask by this many binary-dilation iterations of the
         neighbour footprints (4-connected, ~one pixel per iteration) on top of
-        the Voronoi partition, to absorb the few-pixel coadd-vs-epoch
-        registration offset the coadd-seg overlay accepts (shapepipe#776,
-        decision on seg source). ``0`` (the default) is the pure Sheldon
+        the Voronoi partition on the registered exposure-grid labels.
+        ``0`` (the default) is the pure Sheldon
         UberSeg mask. The dilation only ever adds pixels, so over-masking a
         boundary pixel costs a little central-object S/N but never leaks
         neighbour flux into the fit.
@@ -2428,8 +2395,8 @@ def prepare_ngmix_weights(
     no raw defect value may reach it.
 
     @sc [decision:shape_measurement.blend_handling] noisefill-fills-markers
-    Under ``"noisefill"`` the ``neighbour`` pixels (the tile VIGNET's -1e30
-    neighbour markers) get weight 0 and noise. Their light is gone, so they
+    Under ``"noisefill"`` the ``neighbour`` pixels (registered foreign nonzero
+    segmentation footprints) get weight 0 and noise. Their light is gone, so they
     neither support the interpolant nor receive it.
 
     @sc [decision:shape_measurement.blend_handling] uberseg-ignores-markers
@@ -2535,8 +2502,7 @@ def prepare_ngmix_weights(
         raise ValueError(
             "blend_handling='uberseg' requires a segmentation map and the"
             + " central object_number; none reached prepare_ngmix_weights."
-            + " The tile catalogue's SEG_VIGNET column carries the map (see"
-            + " CosmoStat/shapepipe#776)."
+            + " The image vignette store must carry registered SEG_VIGNET."
         )
 
     defect = defect_mask(weight, flag, bkg_rms)

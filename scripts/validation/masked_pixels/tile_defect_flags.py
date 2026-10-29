@@ -11,7 +11,8 @@ Run inside the ShapePipe container on a compute allocation, with PYTHONPATH=src:
         --plot scripts/validation/masked_pixels/tile_defect_flags-TILE.png
 
 All stores open read-only; nothing is written beneath an input directory.
-SEXCAT must carry the committed workflow's SEG_VIGNET column. Omit
+SEXCAT must carry SEG_VIGNET and image epochs must carry native-grid
+SEG_VIGNET, NEIGHBOUR and OFF_TILE categories. Omit
 --background only for already background-subtracted images; omit --rms when the run
 used stamp-estimated RMS. Pass the production blend/fill choices explicitly.
 The output contains every tile row, including unavailable PSFs, zero-kept-
@@ -37,7 +38,7 @@ import numpy as np
 from sqlitedict import SqliteDict
 
 from shapepipe.modules.ngmix_package.ngmix import (
-    EPOCH_INTERPOLATED_DEFECT_RADIUS, Ngmix, Tile_cat, centre_distance,
+    EPOCH_INTERPOLATED_DEFECT_RADIUS, Postage_stamp, Tile_cat, centre_distance,
     prepare_postage_stamps,
 )
 
@@ -102,13 +103,14 @@ def measure(args):
                 continue
             flags = vignet.flag_vign_cat[key]
             data["n_candidate"][i] = len(psf)
-            if footprint.any() and not data["footprint_clipped"][i]:
-                bits = 0
-                for name in psf:
-                    own = Ngmix.MegaCamFlip(footprint, int(name.split("-")[1]))
-                    values = np.asarray(flags[name]["VIGNET"])[own]
-                    bits |= int(np.bitwise_or.reduce(values.astype(np.int64)))
-                data["precut_imaflags_iso"][i] = bits
+            precut = Postage_stamp()
+            for name in psf:
+                epoch_seg = gal[name]["SEG_VIGNET"]
+                precut.record_footprint_defects(
+                    flags[name]["VIGNET"], np.zeros(epoch_seg.shape, bool),
+                    epoch_seg, obj_id,
+                )
+            data["precut_imaflags_iso"][i] = precut.imaflags_iso
             # Reuse the fetched flag row when the production preparation reads
             # it; no second SQLite fetch is needed for the pre-cut comparison.
             per_object = SimpleNamespace(**(vars(vignet) | {

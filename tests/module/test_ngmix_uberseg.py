@@ -313,7 +313,7 @@ def test_check_central_seg_label_matching_number_is_silent(tmp_path):
 
 
 def test_check_central_seg_label_offset_centre_warns_but_proceeds(tmp_path):
-    """A neighbour's label on the centre pixel (registration offset) warns but
+    """A neighbour's label on the tile barycentre logs a diagnostic but
     does not raise, as long as obj_id's footprint is present somewhere."""
     ngmix, log = _make_ngmix(tmp_path)
     seg, centre, _ = two_object_seg()
@@ -321,7 +321,7 @@ def test_check_central_seg_label_offset_centre_warns_but_proceeds(tmp_path):
     # has its footprint elsewhere on the stamp.
     seg[centre] = 2
     ngmix._check_central_seg_label(seg, obj_id=1)
-    assert any("registration offset" in m for m in log.messages)
+    assert any("tile barycentre" in m for m in log.messages)
 
 
 def test_check_central_seg_label_missing_number_raises(tmp_path):

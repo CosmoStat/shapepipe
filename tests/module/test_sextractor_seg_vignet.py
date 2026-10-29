@@ -152,7 +152,8 @@ def test_seg_vignet_replaces_the_double_positions(tmp_path):
         imhead = hdul["LDAC_IMHEAD"].data.copy()
     _, after = _add(paths)
     kept = [name for name in before.names if name not in DBL]
-    assert after.names == kept + ["SEG_VIGNET"]
+    assert after.names == kept + ["SEG_VIGNET", "SEG_LABEL"]
+    npt.assert_array_equal(after["SEG_LABEL"], before["NUMBER"])
     for name in kept:
         npt.assert_array_equal(after[name], before[name])
     with fits.open(paths["sexcat"]) as hdul:
@@ -335,6 +336,7 @@ def test_runner_seg_vignet_carries_the_final_number(tmp_path, monkeypatch):
     old_number = np.array([CROWD[i][0] for i in paired])
     new_number = np.array([CROWD[i][3] for i in paired])
     npt.assert_array_equal(data["NUMBER"], new_number)
+    npt.assert_array_equal(data["SEG_LABEL"], old_number)
     seg = data["SEG_VIGNET"]
     assert "X_IMAGE_DBL" not in data.names
     centre = CROWD_STAMP // 2
@@ -359,6 +361,7 @@ def test_runner_seg_vignet_without_a_join_keeps_sextractor_numbers(
     stamps are the check image's, labelled with SExtractor's NUMBER."""
     data = _run_runner(tmp_path, monkeypatch, match=False)
     npt.assert_array_equal(data["NUMBER"], [o[0] for o in CROWD])
+    npt.assert_array_equal(data["SEG_LABEL"], data["NUMBER"])
     npt.assert_array_equal(data["SEG_VIGNET"], _old_stamps())
 
 
@@ -447,5 +450,5 @@ def test_seg_vignet_stays_out_of_the_final_catalogue(tmp_path):
     names = list(
         make_cat.read_sextractor_data(str(tmp_path / "sexcat-001-001.fits"))
     )
-    assert "VIGNET" not in names and "SEG_VIGNET" not in names
+    assert not {"VIGNET", "SEG_VIGNET", "SEG_LABEL"}.intersection(names)
     assert "NUMBER" in names
