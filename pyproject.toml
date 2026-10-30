@@ -22,6 +22,7 @@ dependencies = [
     "canfar",
     "cs_util>=0.2.1",
     "galsim>=2.8",
+    "hats>=0.11.1",
     "h5py",
     "healsparse",
     "hpgeom",

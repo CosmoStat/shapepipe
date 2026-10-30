@@ -71,3 +71,4 @@ analyses:
       tile_universe: excluded_by_rule
       seam_realization: closure
       pixel_completeness: wait_for_all
+      row_partitioning: own_position
