@@ -472,8 +472,8 @@ analyses:
           never reject a tile: warn and record; no cut is applied in the
           pipeline, and whether the catalogue consumer cuts on
           external_paired_fraction (or catalogue_match in tile_make_cat.json)
-          remains undecided. Hard rejection and an additive unpaired allowance
-          both reject sparse edge tiles whose losses are external-only (058.220:
+          remains undecided (CosmoStat/sp_validation#444). Hard rejection and
+          an additive unpaired allowance both reject sparse edge tiles whose losses are external-only (058.220:
           71 external-only of 845 against an allowance of 66.9); zero-weight or
           spatial exemptions would hide the losses the published counts expose.
           The warning threshold is max(20, 0.02 N + 50), without the 50 if
