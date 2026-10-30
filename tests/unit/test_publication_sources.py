@@ -28,6 +28,8 @@ def test_missing_manifest_blocks_until_abandoned(tmp_path, kind, column, manifes
         module.finished_sources(7, kind, listing, tmp_path / "products", tmp_path)
     (tmp_path / "abandoned.txt").write_text("222.333 # failed permanently\n")
     assert module.finished_sources(7, kind, listing, tmp_path / "products", tmp_path) == ["123.456"]
+    (tmp_path / "abandoned.txt").write_text("123.456\n222.333\n")
+    assert module.finished_sources(7, kind, listing, tmp_path / "products", tmp_path) == []
 
 
 def test_duplicate_list_entry_is_rejected(tmp_path):

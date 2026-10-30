@@ -52,8 +52,10 @@ def build_maps(pixel, source_list, products_dir, run_dir, output, sha, mask):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pixel', type=int, required=True)
-    for arg in ('source-list', 'products-dir', 'run-dir', 'output', 'mask'):
+    for arg in ('source-list', 'products-dir', 'run-dir', 'output'):
         parser.add_argument('--' + arg, type=Path, required=True)
+    parser.add_argument('--mask', type=Path, action='append', required=True,
+                        help='Configured mask file; repeat for every mask')
     parser.add_argument('--sha', required=True)
     args = parser.parse_args()
     build_maps(args.pixel, args.source_list, args.products_dir, args.run_dir,

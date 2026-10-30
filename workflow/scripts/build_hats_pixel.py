@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build one fixed-order HATS pixel from a run's durable products.
 
-The source list is the planning output, not a directory scan. The mask is read
-only to compute its SHA-256; pass the actual configured external mask file.
+The source list is the planning output, not a directory scan. Pass every
+configured external mask file; each is read only to compute its SHA-256.
 """
 
 import argparse
@@ -27,19 +27,25 @@ HATS_ORDER = 5
 
 
 def metadata(sha, mask):
-    """Return provenance, hashing the external mask without copying it.
+    """Return provenance, hashing each external mask without copying it.
 
     @sc [label:provenance] code-sha-in-file
-    Every output carries the ShapePipe code SHA and the path and SHA-256 of the
-    external mask. tests/unit/test_publication_pixel.py reads them back.
+    Every output carries the ShapePipe code SHA and the paths and SHA-256s of
+    the external masks. tests/unit/test_publication_pixel.py reads them back.
     """
     if not sha:
         raise ValueError("ShapePipe code SHA is required")
-    digest = hashlib.sha256()
-    with Path(mask).open('rb') as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b''):
-            digest.update(block)
-    return {"SPSHA": sha, "MASKPATH": str(mask), "MASKSHA": digest.hexdigest()}
+    masks = [mask] if isinstance(mask, (str, Path)) else list(mask)
+    if not masks:
+        raise ValueError('At least one configured mask is required')
+    records = []
+    for path in masks:
+        digest = hashlib.sha256()
+        with Path(path).open('rb') as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b''):
+                digest.update(block)
+        records.append({'path': str(path), 'sha256': digest.hexdigest()})
+    return {'SPSHA': sha, 'MASKS': json.dumps(records, separators=(',', ':'))}
 
 
 def write_once(path, writer):
@@ -65,7 +71,13 @@ def _array_table(data):
     for name in data.dtype.names:
         values = data[name]
         values = values.astype(values.dtype.newbyteorder('='), copy=False)
-        columns[name] = pa.array(values if values.ndim == 1 else values.tolist(), from_pandas=False)
+        if values.ndim == 1:
+            columns[name] = pa.array(values, from_pandas=False)
+        else:
+            element_type = pa.from_numpy_dtype(values.dtype)
+            for _ in values.shape[1:]:
+                element_type = pa.list_(element_type)
+            columns[name] = pa.array(values.tolist(), type=element_type, from_pandas=False)
     return pa.table(columns)
 
 
@@ -152,8 +164,10 @@ def main():
     build = sub.add_parser('build')
     build.add_argument('--pixel', type=int, required=True)
     build.add_argument('--kind', choices=['tiles', 'stars'], required=True)
-    for arg in ('source-list', 'products-dir', 'run-dir', 'output', 'mask'):
+    for arg in ('source-list', 'products-dir', 'run-dir', 'output'):
         build.add_argument('--' + arg, type=Path, required=True)
+    build.add_argument('--mask', type=Path, action='append', required=True,
+                       help='Configured mask file; repeat for every mask')
     build.add_argument('--sha', required=True)
     build.add_argument('--param-file', type=Path)
     build.add_argument('--schema-from', type=Path)

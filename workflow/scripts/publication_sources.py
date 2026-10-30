@@ -25,8 +25,8 @@ def finished_sources(pixel, kind, source_list, products_dir, run_dir):
     """Return succeeded units, refusing publication while any unit is pending.
 
     Tiles use the durable tile_make_cat verdict; star catalogues use
-    exp_persist and maps use exp_maps. Abandonment takes precedence over a
-    missing manifest, never over a success manifest.
+    exp_persist and maps use exp_maps. Abandonment takes precedence even
+    when a success manifest exists.
     """
     columns = {"tiles": "tile_id", "stars": "exp_id", "maps": "exp_id"}
     if kind not in columns:
@@ -47,6 +47,8 @@ def finished_sources(pixel, kind, source_list, products_dir, run_dir):
     products = Path(products_dir)
     succeeded, blocked = [], []
     for unit in units:
+        if unit in abandoned:
+            continue
         if kind == "tiles":
             manifest = products / "tiles" / unit[:2] / unit / "tile_make_cat.json"
         else:
@@ -54,7 +56,7 @@ def finished_sources(pixel, kind, source_list, products_dir, run_dir):
             manifest = products / "exp" / unit[:2] / unit / "manifests" / f"{stage}.json"
         if manifest.is_file():
             succeeded.append(unit)
-        elif unit not in abandoned:
+        else:
             blocked.append(unit)
     if blocked:
         raise RuntimeError(f"Pixel {pixel} blocked by {kind}: {', '.join(blocked)}")
