@@ -66,6 +66,21 @@ Anything other than `run`, `report`, `container`, `cancel` passes straight throu
 snakemake with the workflow's profile and state dir — the direct command path for
 `sp --unlock`, `sp --dag`, `sp exp_psf ...`.
 
+## Run-2 publication planning
+
+`python workflow/scripts/tile_universe.py DR6.txt tiles.txt` writes the sorted catalogue tile list.
+The workflow refuses excluded data tiles at parse time rather than silently changing the requested campaign; image simulations are not subject to the survey cut.
+
+`pixel_lists.py` builds the `pixel,tile_id` and `pixel,exp_id` CSV files from that list, the workflow's SQLite run index and a CSV of exposure caps (`exp_id,ra,dec,radius_deg`, degrees).
+The caller must supply caps enclosing each exposure's complete pointing, including ear CCDs and stars; this repository does not yet derive or validate those caps from exposure WCS headers.
+Do not use the exposure list for publication until that input is established.
+
+`claims.py initial` reproduces the full-sky 40:60 example, and `claims.py closure` lists the tiles and exposures for one owner.
+The example assigns all 192 order-2 cells, so there are no unclaimed cells left to pull; `claims.py propose` only applies to a partially claimed file.
+The 243 duplicate runs reported for the example used sampled image footprints; conservative 0.4° tile caps yield 328 on the same tiles and ownership.
+A claim is a commit to the shared claims file: push it before using the cell, and treat a rejected push as the lock.
+After a rejection, pull and recompute the proposal; the script never runs git.
+
 ## Image simulations
 
 The same workflow runs the SKiLLS image simulations used to measure the shear
