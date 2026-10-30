@@ -24,7 +24,12 @@ def ensure_dir(client, uri):
     parent = uri.rsplit('/', 1)[0]
     if parent != uri:
         ensure_dir(client, parent)
-    client.mkdir(uri)
+    try:
+        client.mkdir(uri)
+    except FileExistsError:
+        # Another pixel publisher may have created the shared container.
+        if not exists(client, uri):
+            raise
 
 
 def verify(client, local, uri):

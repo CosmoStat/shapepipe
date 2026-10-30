@@ -82,6 +82,48 @@ def test_partition_list_from_listing_excludes_partial_and_local(tmp_path):
     assert rows == [{'Norder': '5', 'Npix': '1'}]
 
 
+def test_publish_chains_build_upload_index_and_maps(tmp_path, monkeypatch):
+    import publish_pixel
+
+    client = FakeClient()
+    claims = tmp_path / 'claims.yaml'
+    claims.write_text('order: 2\ncells:\n  0: nibi\n')
+    args = SimpleNamespace(pixel=1, cluster='nibi', claims=claims,
+                           output=tmp_path / 'out', root='vos:root',
+                           tile_list='tiles', exposure_list='exposures',
+                           products_dir='products', run_dir='run', sha='abc', mask=['mask'],
+                           galaxy_schema_from=None, star_schema_from=None)
+
+    def build(pixel, kind, source, products, run, output, sha, mask, schema_from=None):
+        path = output / 'dataset/Norder=5/Dir=0/Npix=1.parquet'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(kind.encode())
+        return path
+
+    def metadata(root, sample, kind, name):
+        root = Path(root)
+        (root / 'dataset').mkdir()
+        (root / 'properties').write_text(kind)
+        (root / 'dataset/_common_metadata').write_text(kind)
+
+    def maps(pixel, source, products, run, output, sha, mask):
+        paths = {}
+        for name in ('npoint', 'ntaken', 'nexp', 'nflagged'):
+            path = output / name / 'Npix=1.hsp'
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(name)
+            paths[name] = path
+        return paths
+
+    monkeypatch.setattr(publish_pixel, 'build_pixel', build)
+    monkeypatch.setattr(publish_pixel, 'write_catalogue_metadata', metadata)
+    monkeypatch.setattr(publish_pixel, 'build_maps', maps)
+    publish_pixel.publish(client, args)
+    for name in ('galaxies', 'stars'):
+        assert b'5,1' in client.files[f'vos:root/{name}/partition_info.csv']
+    assert client.files['vos:root/maps/nexp/Npix=1.hsp'] == b'nexp'
+
+
 def test_owner_rejects_other_and_duplicate_claims(tmp_path):
     from publish_pixel import require_owner
     claims = tmp_path / 'claims.yaml'

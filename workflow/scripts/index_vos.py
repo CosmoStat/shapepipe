@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Rebuild a HATS partition list from VOSpace's published leaf listing."""
 
+import argparse
 import csv
 import re
 import tempfile
@@ -47,3 +48,15 @@ def reindex(client, root):
             writer.writerows((5, pixel) for pixel in pixels)
         client.copy(str(path), root.rstrip('/') + '/partition_info.csv', send_md5=True)
     return pixels
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('root', help='VOSpace catalogue root')
+    args = parser.parse_args()
+    from vos import Client
+    reindex(Client(), args.root)
+
+
+if __name__ == '__main__':
+    main()

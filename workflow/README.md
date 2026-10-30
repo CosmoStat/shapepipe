@@ -89,6 +89,9 @@ Run it with `--help` for the explicit planning lists, product paths, masks, code
 Supply `--galaxy-schema-from` or `--star-schema-from` when all sources for that catalogue are abandoned and an empty pixel needs a schema.
 The root and CADC credentials must already be available; each pixel must have a single owner and publisher.
 The partition list is the only mutable file, and concurrent rebuilds can temporarily omit a newly uploaded pixel until the next rebuild.
+Run `python workflow/scripts/index_vos.py <catalogue-root>` to rebuild it independently.
+The uploader checks CADC's size and MD5 immediately; if the properties lag the transfer, verification fails rather than treating the file as published.
+A failed publication can leave local outputs or remote temporary nodes and must be inspected before retrying; the build and upload steps refuse existing final paths.
 
 A collaborator with a CADC proxy certificate can open a catalogue over HTTPS using lsdb and a serializable client factory:
 
