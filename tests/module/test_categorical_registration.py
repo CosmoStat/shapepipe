@@ -174,6 +174,82 @@ def _prepare(epoch, tw, ew, obj_id, tile_seg, weight=None, flag=None):
     )
 
 
+@pytest.mark.parametrize("category", ["SEG_VIGNET", "NEIGHBOUR", "OFF_TILE"])
+def test_missing_epoch_category_raises(category):
+    tw, ew = _wcs(), _wcs()
+    shape, centre = (51, 51), [42, 40]
+    epoch = dict(VIGNET=np.random.default_rng(3).normal(size=shape), INT_POS=centre)
+    epoch.update(register_categories(_segmentation(), tw, ew, centre, shape, 101))
+    del epoch[category]
+    with pytest.raises(ValueError, match="Exposure-grid categories are missing"):
+        _prepare(epoch, tw, ew, 101, np.zeros(shape, np.int32))
+
+
+@pytest.mark.parametrize("category", ["SEG_VIGNET", "NEIGHBOUR", "OFF_TILE"])
+def test_misshapen_epoch_category_raises(category):
+    tw, ew = _wcs(), _wcs()
+    shape, centre = (51, 51), [42, 40]
+    epoch = dict(VIGNET=np.random.default_rng(3).normal(size=shape), INT_POS=centre)
+    epoch.update(register_categories(_segmentation(), tw, ew, centre, shape, 101))
+    epoch[category] = epoch[category][:-1]
+    with pytest.raises(ValueError, match="Exposure categories must have the image stamp shape"):
+        _prepare(epoch, tw, ew, 101, np.zeros(shape, np.int32))
+
+
+@pytest.mark.parametrize("category", ["NEIGHBOUR", "OFF_TILE"])
+@pytest.mark.parametrize("dtype", [np.int8, np.float32])
+def test_nonboolean_epoch_category_raises(category, dtype):
+    tw, ew = _wcs(), _wcs()
+    shape, centre = (51, 51), [42, 40]
+    epoch = dict(VIGNET=np.random.default_rng(3).normal(size=shape), INT_POS=centre)
+    epoch.update(register_categories(_segmentation(), tw, ew, centre, shape, 101))
+    epoch[category] = epoch[category].astype(dtype)
+    with pytest.raises(ValueError, match="NEIGHBOUR and OFF_TILE must be boolean maps"):
+        _prepare(epoch, tw, ew, 101, np.zeros(shape, np.int32))
+
+
+def test_sexcat_without_seg_label_raises(tmp_path):
+    cat = tmp_path / "cat.fits"
+    columns = [
+        fits.Column(name="NUMBER", format="J", array=[101]),
+        fits.Column(name="N_EPOCH", format="J", array=[1]),
+        fits.Column(name="XWIN_WORLD", format="D", array=[188.0]),
+        fits.Column(name="YWIN_WORLD", format="D", array=[30.7]),
+    ]
+    fits.HDUList([
+        fits.PrimaryHDU(), fits.BinTableHDU(),
+        fits.BinTableHDU.from_columns(columns),
+    ]).writeto(cat)
+    maker = VignetMaker(
+        str(cat), "SPHE", ["XWIN_WORLD", "YWIN_WORLD"], str(tmp_path),
+        "-188-307", SimpleNamespace(info=lambda msg: None),
+    )
+    with pytest.raises(ValueError, match="Exposure categories require SEG_LABEL; rerun tile detection"):
+        maker._get_stamp_me([], "image")
+
+
+def test_three_input_multi_epoch_config_raises(tmp_path, monkeypatch):
+    from shapepipe.modules import vignetmaker_runner as runner
+
+    values = dict(
+        MASKING=False, STAMP_SIZE=51, COORD="SPHE", MODE="MULTI-EPOCH",
+        POSITION_PARAMS=["XWIN_WORLD", "YWIN_WORLD"], ME_IMAGE_EXP_DIR=str(tmp_path),
+        ME_IMAGE_EXP_RUNNERS=["split_exp_runner"], ME_IMAGE_PATTERN=["image"],
+    )
+    config = SimpleNamespace(**{
+        accessor: lambda section, key: values[key]
+        for accessor in ("getboolean", "getint", "get", "getlist", "getexpanded")
+    })
+    monkeypatch.setattr(runner.vm, "VignetMaker", lambda **kw: SimpleNamespace(process_me=lambda *a: None))
+    monkeypatch.setattr(runner, "get_exp_output_dirs", lambda *a: [])
+    with pytest.raises(ValueError, match="MULTI-EPOCH requires the tile segmentation check image as fourth input"):
+        runner.vignetmaker_runner(
+            ["sexcat.fits", "headers.sqlite", "exp_numbers.txt"],
+            {"output": str(tmp_path)}, "-188-307", config,
+            "VIGNETMAKER_RUNNER", SimpleNamespace(info=lambda msg: None),
+        )
+
+
 def test_ngmix_consumes_registered_maps_without_flipping(monkeypatch):
     seg, tw, ew = _segmentation(), _wcs(), _wcs((40.37, 42.61), 181.2, True)
     centre, shape = np.array([42, 40]), (51, 51)
