@@ -156,6 +156,29 @@ def test_star_partition_and_unlisted_pixel(patch, monkeypatch):
         builder.build_pixel(pixels[0], 'stars', listing, products, root, root / 'other', 'abc', mask)
 
 
+@pytest.mark.parametrize('dtype', ['S6', 'U6'])
+def test_star_exp_id_utf8_preserves_leading_zero(tmp_path, monkeypatch, dtype):
+    import pyarrow as pa
+    import merge_star_cat
+
+    exp = '012345'
+    manifest = tmp_path / 'exp' / exp[:2] / exp / 'manifests' / 'exp_persist.json'
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(json.dumps({'tar': 'unused'}))
+    data = np.array([(exp, 2, 0), (exp, 2, 1)],
+                    dtype=[('EXP_ID', dtype), ('CCD_NB', 'i4'),
+                           ('SOURCE_ORDINAL', 'i8')])
+    monkeypatch.setattr(merge_star_cat, 'read_exposure', lambda *args: data)
+    rows = builder._star_rows(tmp_path, exp)
+    path = tmp_path / 'stars.parquet'
+    pq.write_table(rows, path)
+    result = pq.read_table(path)
+    assert result.schema.field('EXP_ID').type == pa.string()
+    assert result['EXP_ID'].to_pylist() == [exp, exp]
+    assert len(set(zip(*(result[name].to_pylist() for name in
+                         ('EXP_ID', 'CCD_NB', 'SOURCE_ORDINAL'))))) == 2
+
+
 def test_stars_read_persisted_tar(tmp_path):
     import io
     import json

@@ -86,19 +86,10 @@ def _star_rows(products, exp):
     record = json.loads(manifest.read_text())
     data = merge_star_cat.read_exposure(exp, Path(record['tar']))
     table = _array_table(data)
-    # The planning branch adds these to read_exposure. Until rebased, derive
-    # the same key from the per-CCD contiguous rows it returns.
-    if 'EXP_ID' not in table.column_names:
-        table = table.append_column('EXP_ID', pa.array([exp] * len(data)))
-    if 'SOURCE_ORDINAL' not in table.column_names:
-        ccd = data['CCD_NB']
-        ordinal = np.empty(len(data), dtype=np.int64)
-        counts = {}
-        for i, value in enumerate(ccd):
-            key = int(value)
-            ordinal[i] = counts.get(key, 0)
-            counts[key] = ordinal[i] + 1
-        table = table.append_column('SOURCE_ORDINAL', pa.array(ordinal))
+    # read_exposure supplies EXP_ID as fixed-width bytes; publish it as UTF-8
+    # text so leading zeros survive and readers get strings.
+    index = table.schema.get_field_index('EXP_ID')
+    table = table.set_column(index, 'EXP_ID', table['EXP_ID'].cast(pa.string()))
     return table
 
 
