@@ -445,7 +445,9 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   `exposures/<exp>` — the rho/tau statistics input. It reads the members
   straight out of the per-exposure tars (`tarfile`; unpacking ~800k files to
   merge them would defeat the tar's whole purpose), keeps their native dtypes,
-  and stores `CCD_NB` as an int. sp_validation opens the flat FITS
+  and stores `CCD_NB` as an int. Every row also carries the ASCII exposure ID
+  `EXP_ID` and zero-based `SOURCE_ORDINAL` within the CCD, including when
+  the merge reads older validation files without those columns. sp_validation opens the flat FITS
   name, `full_starcat-0000000.fits`; its readers move to this file under
   [sp_validation#340](https://github.com/CosmoStat/sp_validation/issues/340),
   the same migration that retires the `patches/` key on the tile side. The rule

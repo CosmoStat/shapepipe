@@ -8,6 +8,7 @@ next merge must refresh that exposure's dataset.
 
 import importlib.util
 import json
+import logging
 import sqlite3
 import subprocess
 import sys
@@ -55,6 +56,66 @@ def _validation(path, value):
         path, overwrite=True)
 
 
+def test_validation_writer_emits_star_keys(monkeypatch, tmp_path):
+    from shapepipe.modules.psfex_interp_package import psfex_interp as mod
+
+    saved = {}
+
+    class Output:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def save_as_fits(self, data, **kwargs):
+            saved.update(data)
+
+    monkeypatch.setattr(mod.file_io, "FITSCatalogue", Output)
+    monkeypatch.setattr(mod, "_hsm_columns", lambda *args: {})
+    writer = mod.PSFExInterpolator.__new__(mod.PSFExInterpolator)
+    writer._output_path_validation = str(tmp_path / "validation_psf")
+    writer._img_number = "-02605805-12"
+    writer._galcat_path = "input.fits"
+    writer.psf_shapes = writer.star_shapes = None
+    writer._write_output_validation({"NUMBER": np.array([9, 20])},
+                                    {"SOURCE_NUMBER": [1, 2]})
+    assert list(saved["EXP_ID"]) == ["02605805", "02605805"]
+    assert list(saved["CCD_NB"]) == [12, 12]
+    assert list(saved["SOURCE_ORDINAL"]) == [0, 1]
+
+
+def test_star_key_unique(tmp_path):
+    """Persist and merge two exposures, with two CCDs each, including leading zeros."""
+    all_rows = []
+    sources = []
+    for exp in ("02605805", "2605806"):
+        store = tmp_path / "scratch" / exp
+        for ccd in (3, 12):
+            src = (store / "output" / persist.RUN_NAME / "psfex_interp_runner"
+                   / "output" / f"validation_psf-{exp}-{ccd}.fits")
+            _validation(src, 0.25)
+            sources.append([str(src)])
+        dest = tmp_path / "exp" / exp[:2] / exp / "psf"
+        manifest = dest.parent / "manifests" / "exp_persist.json"
+        _run("persist_exp", "--exp-dir", store, "--exp", exp, "--dest", dest,
+             "--manifest", manifest)
+        all_rows.append(merge.read_exposure(exp, dest / f"{exp}.tar"))
+    rows = np.concatenate(all_rows)
+    assert {"EXP_ID", "CCD_NB", "SOURCE_ORDINAL"} <= set(rows.dtype.names)
+    keys = [(exp.decode(), int(ccd), int(ordinal)) for exp, ccd, ordinal in
+            zip(rows["EXP_ID"], rows["CCD_NB"], rows["SOURCE_ORDINAL"])]
+    assert len(keys) == len(set(keys)) == 8
+    assert set(keys) == {(exp, ccd, ordinal) for exp in ("02605805", "2605806")
+                         for ccd in (3, 12) for ordinal in (0, 1)}
+
+    from shapepipe.modules.merge_starcat_package.merge_starcat import MergeStarCatPSFEX
+    MergeStarCatPSFEX(sources, str(tmp_path), logging.getLogger(__name__)).process()
+    with fits.open(tmp_path / "full_starcat-0000000.fits") as hdul:
+        flat = hdul[1].data
+        assert len(flat) == len(keys)
+        flat_keys = {(str(exp).strip(), int(ccd), int(ordinal)) for exp, ccd, ordinal
+                     in zip(flat["EXP_ID"], flat["CCD_NB"], flat["SOURCE_ORDINAL"])}
+    assert flat_keys == set(keys)
+
+
 def test_refit_with_equal_sizes_refreshes_the_exposure(tmp_path):
     store = tmp_path / "scratch" / EXP
     src = (store / "output" / persist.RUN_NAME / "psfex_interp_runner"
@@ -92,3 +153,6 @@ def test_refit_with_equal_sizes_refreshes_the_exposure(tmp_path):
     with h5py.File(out) as f:
         rows = f[f"exposures/{EXP}"][:]
     np.testing.assert_allclose(rows["X"], [0.75, 0.75])
+    assert list(rows["EXP_ID"]) == [EXP.encode()] * 2
+    assert list(rows["CCD_NB"]) == [3, 3]
+    assert list(rows["SOURCE_ORDINAL"]) == [0, 1]
