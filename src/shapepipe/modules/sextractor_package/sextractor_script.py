@@ -76,7 +76,7 @@ def seg_vignet_column(seg_vignets):
     return fits.Column(
         name="SEG_VIGNET",
         format=f"{ny * nx}J",
-        array=seg_vignets.astype(np.int32, copy=False).reshape(n_obj, -1),
+        array=seg_vignets.astype(np.int32, copy=False).reshape(n_obj, ny * nx),
         dim=f"({nx},{ny})",
     )
 
@@ -193,7 +193,8 @@ def add_seg_vignet(cat_path, seg_path, w_log=None):
     ).writeto(cat_path, overwrite=True)
     if w_log:
         centre = size // 2
-        own = np.mean(seg_vignets[:, centre, centre] == data["NUMBER"])
+        own = (np.mean(seg_vignets[:, centre, centre] == data["NUMBER"])
+               if len(col) else np.nan)
         w_log.info(
             f"SEG_VIGNET cut from {seg_path} for {len(col)} objects;"
             + f" centre label = NUMBER for {own:.4f}"
@@ -430,7 +431,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size, w_log=None):
     # (laid out as FITSCatalogue.add_col lays it out), then the EPOCH HDUs.
     new = fits.BinTableHDU.from_columns(
         objects.data.columns + fits.ColDefs([column("N_EPOCH", n_epoch)]),
-        name="LDAC_OBJECTS",
+        header=objects.header, name="LDAC_OBJECTS",
     )
     fits.HDUList(
         [new if h is objects else h for h in hdus] + epochs
