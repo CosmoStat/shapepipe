@@ -2,6 +2,7 @@
 """Write immutable publication files to VOSpace using an injected vos client."""
 
 import hashlib
+import time
 from pathlib import Path
 from uuid import uuid4
 
@@ -33,15 +34,25 @@ def ensure_dir(client, uri):
 
 
 def verify(client, local, uri):
-    """Require the remote size and MD5 to match the local file."""
+    """Require matching size and MD5, allowing bounded CADC property lag.
+
+    Re-read the node up to 13 times, with at most 60 seconds of retry waits.
+    A persistent mismatch still fails closed; no final name is exposed before
+    the temporary node verifies. Hash the local file only once per call.
+    """
     digest = hashlib.md5()  # VOSpace exposes MD5 for transfer verification.
     with Path(local).open('rb') as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b''):
             digest.update(chunk)
-    props = client.get_node(uri, force=True).props
-    remote_md5 = str(props.get('MD5') or '').lower().removeprefix('md5:')
-    if int(props.get('length') or 0) != Path(local).stat().st_size or remote_md5 != digest.hexdigest():
-        raise ValueError(f'VOSpace size or MD5 mismatch: {uri}')
+    length, md5 = Path(local).stat().st_size, digest.hexdigest()
+    for attempt in range(13):
+        props = client.get_node(uri, force=True).props
+        remote_md5 = str(props.get('MD5') or '').lower().removeprefix('md5:')
+        if int(props.get('length') or 0) == length and remote_md5 == md5:
+            return
+        if attempt < 12:
+            time.sleep(5)
+    raise ValueError(f'VOSpace size or MD5 mismatch: {uri}')
 
 
 def upload_once(client, local, uri):

@@ -90,7 +90,8 @@ Supply `--galaxy-schema-from` or `--star-schema-from` when all sources for that 
 The root and CADC credentials must already be available; each pixel must have a single owner and publisher.
 The partition list is the only mutable file, and concurrent rebuilds can temporarily omit a newly uploaded pixel until the next rebuild.
 Run `python workflow/scripts/index_vos.py <catalogue-root>` to rebuild it independently.
-The uploader checks CADC's size and MD5 immediately; if the properties lag the transfer, verification fails rather than treating the file as published.
+The uploader checks CADC's size and MD5 before and after the temporary-node move, re-reading lagging properties with up to 60 seconds of retry waits.
+A persistent mismatch fails rather than treating the file as published.
 A failed publication can leave local outputs or remote temporary nodes and must be inspected before retrying; the build and upload steps refuse existing final paths.
 
 A collaborator with a CADC proxy certificate can open a catalogue over HTTPS using lsdb and a serializable client factory:

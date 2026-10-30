@@ -14,6 +14,12 @@ from index_vos import reindex  # noqa: E402
 from publish_vos import upload_once  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def no_verification_wait(monkeypatch):
+    """Keep bounded retry tests fast without weakening their assertions."""
+    monkeypatch.setattr('publish_vos.time.sleep', lambda seconds: None)
+
+
 class NotFound(Exception):
     pass
 
@@ -66,6 +72,44 @@ def test_md5_mismatch_never_exposes_final(tmp_path):
     local.write_bytes(b'contents')
     with pytest.raises(ValueError, match='MD5'):
         upload_once(client, local, 'vos:root/Npix=1.parquet')
+    assert 'vos:root/Npix=1.parquet' not in client.files
+
+
+def test_property_lag_before_and_after_move(tmp_path, monkeypatch):
+    class DelayedClient(FakeClient):
+        def __init__(self):
+            super().__init__()
+            self.reads = {}
+
+        def get_node(self, uri, force=False):
+            node = super().get_node(uri, force=force)
+            if uri in self.files:
+                self.reads[uri] = self.reads.get(uri, 0) + 1
+                if self.reads[uri] <= 2:
+                    return SimpleNamespace(props={'length': 0, 'MD5': ''})
+            return node
+
+    sleeps = []
+    monkeypatch.setattr('publish_vos.time.sleep', sleeps.append)
+    client = DelayedClient()
+    local = tmp_path / 'pixel'
+    local.write_bytes(b'contents')
+    upload_once(client, local, 'vos:root/Npix=1.parquet')
+    assert client.files == {'vos:root/Npix=1.parquet': b'contents'}
+    assert sleeps == [5, 5, 5, 5]
+    assert sorted(client.reads.values()) == [3, 3]
+
+
+def test_property_lag_is_bounded(tmp_path, monkeypatch):
+    sleeps = []
+    monkeypatch.setattr('publish_vos.time.sleep', sleeps.append)
+    client = FakeClient()
+    client.bad_md5 = True
+    local = tmp_path / 'pixel'
+    local.write_bytes(b'contents')
+    with pytest.raises(ValueError, match='MD5'):
+        upload_once(client, local, 'vos:root/Npix=1.parquet')
+    assert sleeps == [5] * 12
     assert 'vos:root/Npix=1.parquet' not in client.files
 
 
