@@ -92,6 +92,44 @@ ID_OBJ_MAX = -1
     assert log.count("all 3 objects failed the metacal fit (0 fitted)") == 1
 
 
+@pytest.mark.parametrize("store", ["galaxy_psf", "image"])
+def test_empty_preflight_stops_at_first_populated_entry(tmp_path, monkeypatch, store):
+    """A populated entry disproves all-empty without reading later payloads.
+
+    Scanning every large epoch payload in every chunk stalls on shared NFS.
+    A poisoned later payload makes an unnecessary read fail deterministically.
+    """
+    import importlib
+    import sqlite3
+
+    runner = importlib.import_module("shapepipe.modules.ngmix_runner")
+    epoch = {"exp-1": {"VIGNET": np.ones((5, 5))}}
+    paths = {}
+    for name in ("image", "galaxy_psf"):
+        paths[name] = str(tmp_path / f"{name}.sqlite")
+        with SqliteDict(paths[name]) as db:
+            db["a"] = epoch
+            db["z"] = epoch
+            db.commit()
+    with sqlite3.connect(paths[store]) as db:
+        db.execute("UPDATE unnamed SET value=? WHERE key='z'", (b"unneeded payload",))
+
+    class ReachesFitting(Exception):
+        pass
+
+    def start_fitting(*args, **kwargs):
+        raise ReachesFitting
+
+    monkeypatch.setattr(runner, "Ngmix", start_fitting)
+    with pytest.raises(ReachesFitting):
+        runner.ngmix_runner(
+            ["sexcat.fits", paths["image"], "background.sqlite",
+             paths["galaxy_psf"], "weight.sqlite", "flag.sqlite", "headers.sqlite"],
+            {"output": str(tmp_path)}, "-001-001", _runner_config(),
+            "NGMIX_RUNNER", _RecordingLogger(),
+        )
+
+
 class _RecordingLogger:
     """Minimal logger that records messages passed to warning/error/info."""
 
