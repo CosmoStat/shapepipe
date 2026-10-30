@@ -2471,10 +2471,11 @@ analyses:
         rationale: >-
           A pixel's tile list is every tile whose 0.4 deg enclosing cap
           intersects it (exposures: those used by the listed tiles), fixed before
-          processing. The pixel is built when every listed source has a
-          terminal state in the run index. A source that failed after its
-          retries contributes no rows, as per_unit_completeness already
-          keeps a failed unit out. The file is written once.
+          processing. The pixel is built when every listed source has its
+          final success manifest in the product store or the operator has
+          named it in abandoned.txt. Abandoned sources contribute no rows;
+          all other missing manifests block publication. The file is written
+          once.
           Values: TILE_CAP_DEG = 0.4.
         default: wait_for_all
         options:
