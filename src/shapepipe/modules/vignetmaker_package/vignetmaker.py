@@ -623,6 +623,14 @@ class VignetMaker(object):
 
         Main function to create the stamps in the multi-epoch case.
 
+        @sc [label:coupling] registered-zero-object-store
+        Zero-object catalogues retain SEG_LABEL and empty EPOCH HDUs.
+        Image-store creation still reads the tile's full-size segmentation
+        check image with WCS; an empty catalogue doesn't waive that input.
+        Their stores have zero object keys, not a dummy category-bearing row.
+        On populated image epochs, SEG_VIGNET is int32 and NEIGHBOUR/OFF_TILE
+        are boolean arrays with the image stamp's shape.
+
         Parameters
         ----------
         image_dirs : list

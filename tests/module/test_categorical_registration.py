@@ -208,7 +208,8 @@ def test_nonboolean_epoch_category_raises(category, dtype):
         _prepare(epoch, tw, ew, 101, np.zeros(shape, np.int32))
 
 
-def test_sexcat_without_seg_label_raises(tmp_path):
+@pytest.mark.parametrize("n_objects", [0, 1])
+def test_sexcat_without_seg_label_raises(tmp_path, n_objects):
     cat = tmp_path / "cat.fits"
     columns = [
         fits.Column(name="NUMBER", format="J", array=[101]),
@@ -220,6 +221,9 @@ def test_sexcat_without_seg_label_raises(tmp_path):
         fits.PrimaryHDU(), fits.BinTableHDU(),
         fits.BinTableHDU.from_columns(columns),
     ]).writeto(cat)
+    if n_objects == 0:
+        with fits.open(cat, mode="update") as hdus:
+            hdus[2].data = hdus[2].data[:0]
     maker = VignetMaker(
         str(cat), "SPHE", ["XWIN_WORLD", "YWIN_WORLD"], str(tmp_path),
         "-188-307", SimpleNamespace(info=lambda msg: None),
@@ -358,8 +362,10 @@ def test_simulation_example_produces_registration_labels():
     assert "SEGMENTATION" in config.get("SEXTRACTOR_RUNNER", "CHECKIMAGE")
 
 
+@pytest.mark.parametrize("empty_tile", [False, True])
 @pytest.mark.parametrize("gaia_fk5", [False, True])
-def test_vignetmaker_writes_joined_categories_with_image_grid(tmp_path, gaia_fk5):
+def test_vignetmaker_writes_joined_categories_with_image_grid(
+        tmp_path, gaia_fk5, empty_tile):
     seg, tw, ew = _segmentation(), _wcs(), _wcs((40.37, 42.61), 1.7, True)
     if gaia_fk5:
         ew.wcs.radesys, ew.wcs.equinox = "FK5", 2000.0
@@ -389,6 +395,13 @@ def test_vignetmaker_writes_joined_categories_with_image_grid(tmp_path, gaia_fk5
             ),
         ]
     ).writeto(cat)
+    if empty_tile:
+        # A zero-row tile has no category-bearing epoch entries, not a fake
+        # object with zero-filled maps. Keep both the column and HDU schemas.
+        with fits.open(cat, mode="update") as hdus:
+            for hdu in hdus[2:]:
+                hdu.data = hdu.data[:0]
+        raw[:] = 0
     seg_path, image_path = (
         tmp_path / "segmentation.fits",
         tmp_path / "image-2254827-27.fits",
@@ -417,7 +430,20 @@ def test_vignetmaker_writes_joined_categories_with_image_grid(tmp_path, gaia_fk5
     with SqliteDict(
         str(tmp_path / "image_vignet-188-307.sqlite"), flag="r"
     ) as db:
+        if empty_tile:
+            assert len(db) == 0
+            # Empty catalogues don't waive the fourth-input contract.
+            seg_path.unlink()
+            with pytest.raises(FileNotFoundError):
+                maker.process_me(
+                    [[str(tmp_path)]], ["image"], str(headers), 25, str(seg_path)
+                )
+            return
         epoch = db["101"]["2254827-27"]
+    for name, dtype in [("SEG_VIGNET", np.int32), ("NEIGHBOUR", bool),
+                        ("OFF_TILE", bool)]:
+        assert epoch[name].shape == epoch["VIGNET"].shape == (51, 51)
+        assert epoch[name].dtype == np.dtype(dtype)
     stamps, ip, offset = get_stamps(image, np.array([[42.34, 40.27]]), 25)
     npt.assert_array_equal(epoch["VIGNET"], stamps[0])
     npt.assert_array_equal(epoch["INT_POS"], ip[0])
