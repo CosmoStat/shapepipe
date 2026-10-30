@@ -107,7 +107,38 @@ def test_star_partition_and_unlisted_pixel(patch, monkeypatch):
         builder.build_pixel(pixels[0], 'stars', listing, products, root, root / 'other', 'abc', mask)
 
 
-def test_maps_match_sum_and_provenance(tmp_path):
+def test_stars_read_persisted_tar(tmp_path):
+    import io
+    import json
+    import tarfile
+    from astropy.io import fits
+    import merge_star_cat
+
+    products = tmp_path / 'products'
+    base = products / 'exp/12/123456'
+    (base / 'psf').mkdir(parents=True)
+    (base / 'manifests').mkdir()
+    tar_path = base / 'psf/123456.tar'
+    with tarfile.open(tar_path, 'w') as tar:
+        for ccd in (2, 5):
+            columns = [fits.Column(name=name, format='D', array=[10., 11.])
+                       for name in merge_star_cat.COLUMNS]
+            data = fits.HDUList([fits.PrimaryHDU(), fits.ImageHDU(),
+                                 fits.BinTableHDU.from_columns(columns)])
+            buf = io.BytesIO()
+            data.writeto(buf)
+            raw = buf.getvalue()
+            info = tarfile.TarInfo(f'validation_psf-123456-{ccd}.fits')
+            info.size = len(raw)
+            tar.addfile(info, io.BytesIO(raw))
+    (base / 'manifests/exp_persist.json').write_text(json.dumps({'tar': str(tar_path)}))
+    rows = builder._star_rows(products, '123456')
+    assert rows['EXP_ID'].to_pylist() == ['123456'] * 4
+    assert rows['CCD_NB'].to_pylist() == [2, 2, 5, 5]
+    assert rows['SOURCE_ORDINAL'].to_pylist() == [0, 1, 0, 1]
+
+
+def test_maps_match_sum_and_provenance(tmp_path, monkeypatch):
     products = tmp_path / 'products'
     mask = tmp_path / 'mask.hsp'
     mask.write_bytes(b'mask')
@@ -125,12 +156,20 @@ def test_maps_match_sum_and_provenance(tmp_path):
         frag = hsp.HealSparseMap.make_empty(128, 131072, np.uint16)
         frag[children] = np.array(values, dtype=np.uint16)
         frag.write(str(d / 'maps' / f'maps-{exp}.hsp'))
-    expected = {'npoint': [2, 2], 'ntaken': [1, 2], 'nexp': [2, 1], 'nflagged': [5, 5]}
+    import merge_exposure_maps as merge
+    monkeypatch.setattr(merge.build_index, 'campaign_exposures', lambda *args: ['123', '124'])
+    merged = {name: tmp_path / f'{name}.hsp' for name in ('npoint', 'ntaken', 'nexp', 'nflagged')}
+    monkeypatch.setattr(sys, 'argv', ['merge_exposure_maps.py', '--products-dir', str(products),
+                                     '--tile-list', 'unused', '--index-db', 'unused',
+                                     *sum(([f'--{name}', str(path)] for name, path in merged.items()), [])])
+    merge.main()
     for i, p in enumerate([pixel1, pixel2]):
         result = maps.build_maps(p, listing, products, tmp_path, tmp_path / 'out', 'abc123', mask)
         for name, path in result.items():
             m = hsp.HealSparseMap.read(str(path))
-            assert m.get_values_pix(children[i]) == expected[name][i]
+            whole = hsp.HealSparseMap.read(str(merged[name]))
+            assert m.get_values_pix(children[i]) == whole.get_values_pix(children[i])
+            assert set(m.valid_pixels) <= {int(children[i])}
             assert m.metadata['SPSHA'] == 'abc123'
             assert m.metadata['MASKPATH'] == str(mask)
             assert m.metadata['MASKSHA'] == hashlib.sha256(mask.read_bytes()).hexdigest()
