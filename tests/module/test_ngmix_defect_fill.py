@@ -852,7 +852,7 @@ def test_neighbour_markers_near_the_centre_keep_every_epoch():
     Failure mode: the markers are written into the flag stamp and counted as
     defects, so every epoch (they all share the tile VIGNET) is dropped by
     the veto or the fraction cut and the object loses its shape
-    (neighbour-markers-are-not-defects).
+    (neighbour-footprints-are-not-defects).
     """
     small = _tile_with_neighbour()
     # Large, but short of the stamp border: no row or column is entirely
@@ -925,7 +925,7 @@ def test_noisefill_fills_exactly_the_marked_pixels():
     value and its weight.
 
     Failure mode: the neighbour markers are dropped with the flags, so
-    noisefill no longer removes neighbour light (noisefill-fills-markers).
+    noisefill retains neighbour light (noisefill-fills-footprints).
     """
     tile = _tile_with_neighbour()
     stamp, epochs, _ = _marker_stamp(tile)
@@ -949,7 +949,7 @@ def test_uberseg_leaves_the_marked_pixels_raw():
 
     Failure mode: the markers reach the defect set or the fill, so uberseg
     noise-fills the neighbour's light instead of leaving it to the seg-based
-    weight (uberseg-ignores-markers).
+    weight (uberseg-weights-footprints).
     """
     tile = _tile_with_neighbour()
     stamp, _, _ = _marker_stamp(tile)

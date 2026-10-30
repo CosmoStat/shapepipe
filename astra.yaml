@@ -452,7 +452,7 @@ analyses:
         rationale: >-
           Both options run ShapePipe's tile SExtractor, so data and image
           simulations share one detection and measurement path: windowed
-          positions, VIGNET neighbour markers and every SExtractor column.
+          positions, segmentation labels and every SExtractor column.
           In real data each detection is then paired with its mutual nearest
           neighbour within 1 px in Gwyn's UNIONS per-tile catalogue and takes
           its NUMBER, so shape, photometry and photo-z catalogues share one
@@ -972,10 +972,28 @@ analyses:
           versus (-0.044,-0.010) px with FK5-to-ICRS conversion. All remaining
           frame mismatches raise. A flip alone cannot register independent
           pixel grids and centroids.
+          On tile 188.307 the resolved paired sample has a response-only
+          m-like shift of -1.9e-3 ± 0.9e-3 and an additive-like mean shift
+          consistent with zero; unknown true shear prevents an absolute
+          calibration claim.
+          Values:
+          cfis/config_tile_PiViVi_psfex.ini#VIGNETMAKER_RUNNER.FILE_PATTERN = sexcat, log_exp_headers, exp_numbers, segmentation;
+          cfis/config_tile_PiViVi_mccd.ini#VIGNETMAKER_RUNNER.FILE_PATTERN = sexcat, log_exp_headers, exp_numbers, segmentation;
+          cfis_image_sims/config_tile_PiViVi_fake.ini#VIGNETMAKER_RUNNER.FILE_PATTERN = sexcat, log_exp_headers, exp_numbers, segmentation;
+          config_tile_PiViVi_canfar_sx.ini#VIGNETMAKER_RUNNER_RUN_2.FILE_PATTERN = sexcat, log_exp_headers, exp_numbers, segmentation;
+          cfis/config_tile_Sx.ini#SEXTRACTOR_RUNNER.SEG_VIGNET = ${SP_SEG_VIGNET:-False};
+          sextractor_script.py::add_seg_vignet.seg_label_column = SEG_LABEL.
         default: native_grid_nearest
         options:
           native_grid_nearest:
             label: Full tile categories projected to native exposure centres
+          flip_only_overlay:
+            label: Flip the tile stamp without registering independent grids
+            excluded: true
+            excluded_reason: >-
+              Independent tile/exposure centroids differ by median 0.56 px
+              and P95 1.1 px on 188.307, with residual rotations up to 1.8°.
+              A CCD flip leaves that measured misregistration in the masks.
       stamp_positioning_and_padding:
         label: Nearest-pixel stamp extraction with zero padding
         rationale: >-
@@ -1734,12 +1752,15 @@ analyses:
         default: uberseg
         options:
           noisefill:
-            label: Noise-fill the marked neighbour pixels (BLEND_HANDLING = noisefill)
+            label: Noise-fill foreign segmentation footprints
             description: >-
               Foreign nonzero segmentation footprints on the exposure grid
               get weight 0 and noise. The neighbour's unsegmented wings retain
               their weight and light, leaving residual neighbour contamination
               (Jarvis et al. 2016).
+              The foreign-footprint definition's shape effect is unmeasured;
+              it adds pixels for 2,456 objects on tile 188.307 relative to
+              the flip-only marker-supported definition.
             insights: [mask_uberseg_neighbour_bias]
           uberseg:
             label: UberSeg, weight-only

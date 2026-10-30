@@ -1646,7 +1646,7 @@ def prepare_postage_stamps(
     defect near the object. The quarter-turn copies of interpolated pixels
     that ``DEFECT_WEIGHTING`` zero-weights or interpolates are not counted.
 
-    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
+    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-footprints-are-not-defects
     Foreign nonzero segmentation footprints, sampled upstream on each
     exposure grid, are the epoch's neighbour mask (``stamp.neighbours``),
     not defects. Counting neighbours would reject blended objects.
@@ -1822,7 +1822,9 @@ def prepare_postage_stamps(
     return stamp
 
 def split_tile_markers(tile_vign, shape, seg=None, object_number=None):
-    """Split the tile VIGNET's -1e30 markers into neighbour and off-tile.
+    """Supply the flip-only mutant fixture; production does not call this.
+
+    Split the tile VIGNET's -1e30 markers into neighbour and off-tile.
 
     SExtractor writes -1e30 into the tile VIGNET on stamp pixels beyond the
     tile's edge and, under MASK_TYPE CORRECT, on every above-threshold pixel
@@ -2379,7 +2381,7 @@ def prepare_ngmix_weights(
     Every stamp pixel falls in one of four classes. A clean pixel keeps its
     light and its weight. A pixel whose light is replaced by noise keeps
     neither: a defect that is not interpolated, or under ``"noisefill"`` a
-    marked neighbour pixel. An interpolated pixel takes the interpolant, at
+    foreign-footprint pixel. An interpolated pixel takes the interpolant, at
     the weight ``defect_weighting`` gives it. A pixel whose light stays at
     zero weight is a hole in the likelihood only: under ``"fourfold_zero"``
     the quarter-turn copies of the interpolated defects, under ``"uberseg"``
@@ -2394,13 +2396,13 @@ def prepare_ngmix_weights(
     background RMS. Metacal shears the whole image whatever the weights, so
     no raw defect value may reach it.
 
-    @sc [decision:shape_measurement.blend_handling] noisefill-fills-markers
+    @sc [decision:shape_measurement.blend_handling] noisefill-fills-footprints
     Under ``"noisefill"`` the ``neighbour`` pixels (registered foreign nonzero
     segmentation footprints) get weight 0 and noise. Their light is gone, so they
     neither support the interpolant nor receive it.
 
-    @sc [decision:shape_measurement.blend_handling] uberseg-ignores-markers
-    Under ``"uberseg"`` the markers are ignored: the pixels of
+    @sc [decision:shape_measurement.blend_handling] uberseg-weights-footprints
+    Under ``"uberseg"`` the foreign footprints seed the partition: the pixels of
     :func:`uberseg_mask` get weight 0 and keep their light, which is real
     sky that metacal shears with the target and which supports the
     interpolant.
@@ -2507,8 +2509,8 @@ def prepare_ngmix_weights(
 
     defect = defect_mask(weight, flag, bkg_rms)
     no_pixel = np.zeros_like(defect)
-    # Neighbour pixels whose light noisefill replaces (noisefill-fills-markers)
-    # or whose weight uberseg zeroes (uberseg-ignores-markers).
+    # Neighbour pixels whose light noisefill replaces (noisefill-fills-footprints)
+    # or whose weight uberseg zeroes (uberseg-weights-footprints).
     removed_neighbour, neighbour_side = no_pixel, no_pixel
     if blend_handling == "noisefill" and neighbour is not None:
         removed_neighbour = np.asarray(neighbour, dtype=bool)

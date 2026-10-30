@@ -117,12 +117,11 @@ def ngmix_runner(
     else:
         centroid_source = "wcs"
 
-    # Neighbour treatment: "noisefill" (default) zero-weights and noise-fills
-    # the pixels marked -1e30 in the tile VIGNET on other objects'
-    # segmentation footprints (split_tile_markers); "uberseg" ignores those
-    # markers, zeroes the weight of every
-    # pixel closer to a neighbour than to the central object, from the
-    # segmentation map, and leaves its image raw. Defect pixels (flagged,
+    # Neighbour treatment uses full-tile categories registered on each native
+    # exposure grid. "noisefill" (default) zero-weights and noise-fills every
+    # foreign nonzero segmentation footprint; "uberseg" zeroes the weight of
+    # every pixel closer to a neighbour than to the central object, from the
+    # registered segmentation map, and leaves its image raw. Defect pixels (flagged,
     # zero-weight, invalid-RMS or off-tile) are zero-weighted and filled the
     # same way under both, and the epoch cuts are fixed; see
     # prepare_postage_stamps and prepare_ngmix_weights.

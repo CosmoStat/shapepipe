@@ -154,6 +154,8 @@ def add_seg_vignet(cat_path, seg_path, w_log=None):
     vignetmaker can register the full segmentation, beyond VIGNET's support.
     Every other HDU and column is kept.
 
+    @sc [decision:preparation.categorical_registration]
+
     Parameters
     ----------
     cat_path : str
@@ -185,10 +187,11 @@ def add_seg_vignet(cat_path, seg_path, w_log=None):
     seg_vignets = cut_stamps(fits.getdata(seg_path), col, row, size, 0)
     kept = [c for c in objects.columns.columns
             if c.name not in DOUBLE_POSITIONS]
+    seg_label_column = "SEG_LABEL"
     new = fits.BinTableHDU.from_columns(
         kept + [
             seg_vignet_column(seg_vignets),
-            fits.Column(name="SEG_LABEL", format="J", array=data["NUMBER"]),
+            fits.Column(name=seg_label_column, format="J", array=data["NUMBER"]),
         ],
         header=objects.header,
         name="LDAC_OBJECTS",
