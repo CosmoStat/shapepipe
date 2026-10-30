@@ -308,12 +308,12 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   healsparse maps and QUERIED once per object: the `mask_query` module writes a
   `MASK_EXT` column onto each CCD's detection catalogue (inside `exp_psf`), and
   `make_cat` writes one `MASK_<band>` column per band onto the final catalogue
-  (inside `tile_make_cat`). Neither is cut on in the pipeline: instrument flags
-  mark corrupted measurements and are the only masks that reject anything here,
-  while the healsparse masks are location flags and every decision about them is
-  downstream. On exposures the query ships off — `MASK_PATHS` is commented out,
-  making `mask_query` a no-op pass-through — so turning it on is a config edit,
-  not a chain edit. Map paths are config, not
+  (inside `tile_make_cat`). Instrument flags mark corrupted measurements and
+  reject objects here; the healsparse masks are location flags, and decisions
+  about them are downstream, with one exception: PSF-star selection rejects
+  candidates on the UNIONS manual mask (bit 8, `MASK_EXT == 0`), because
+  extended objects such as M33 otherwise enter the PSF model itself. The final
+  catalogue's `MASK_<band>` columns are never cut on. Map paths are config, not
   code, so regenerated products cost a config edit. Nothing is fetched from a
   catalogue server, staged, or rasterized, which is why the old
   `star_catalogue` / `exp_star_cat` / `exp_mask` rules and their cache root are
@@ -340,9 +340,10 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
     --fragment "$products/exp/${exp:0:2}/$exp/maps/maps-$exp.hsp" \
     --manifest "$products/exp/${exp:0:2}/$exp/manifests/exp_maps.json"
   ```
-- **External masks are wired, on the tile side only (data runs).** `inputs.masks`
-  is a third input root beside tiles and exposures, set per machine in the
-  `machines:` table, exported as `$SP_INPUT_MASKS` and
+- **External masks are wired.** `inputs.masks` is a third input root beside
+  tiles and exposures, set per machine in the `machines:` table, required for
+  data runs and for any run that selects PSF stars (`psf_model` psfex or mccd,
+  simulations included), exported as `$SP_INPUT_MASKS` and
   pointing at the UNIONS DR6 ugriz bit ladder: one boolean healsparse map per
   bit, nside 131072, `True` = masked. `config_tile_Mc.ini` names all 11 of them
   in `MASK_EXT_PATHS` under a `<flag value>_<name>` label, so `make_cat`

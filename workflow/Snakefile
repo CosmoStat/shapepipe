@@ -83,15 +83,6 @@ if _unresolved:
         f"$variable for machine={MACHINE!r}, "
         f"input_type={INPUT_TYPE!r}: {', '.join(_unresolved)}. Set them in "
         f"your run config (SP_RUN_CONFIG).")
-# The external masks are a data-only input: config_tile_Mc.ini's
-# MASK_EXT_PATHS reads $SP_INPUT_MASKS, and the sims Mc.ini carries no mask
-# block. Checked here rather than in run_config.REQUIRED because it depends on
-# input_type.
-if INPUT_TYPE == "data" and not config.get("inputs", {}).get("masks"):
-    raise WorkflowError(
-        f"inputs.masks is unset for machine={MACHINE!r}, input_type='data': "
-        "the tile chain queries the UNIONS sky-fixed masks (MASK_EXT_PATHS in "
-        "config/cfis/config_tile_Mc.ini). Set it in the run config.")
 
 # The image every job runs in: this user's sandbox, else their cached SIF,
 # else the run config's `container:`. Checked at parse time, since an empty
@@ -127,6 +118,36 @@ PSF_DICT = config.get("psf_dict") or ""
 if PSF_MODEL == "fake" and not PSF_DICT:
     raise WorkflowError("psf_model=fake needs `psf_dict:` (the simulation's "
                         "pickled PSF dictionary) in the run config.")
+
+def mask_users(input_type, psf_model):
+    """Name the chains that query the UNIONS sky-fixed masks ($SP_INPUT_MASKS).
+
+    Data tiles query them per band (MASK_EXT_PATHS in config_tile_Mc.ini; the
+    sims Mc.ini has no mask block). Every exposure chain that selects PSF stars
+    vetoes candidates on the manual mask (MASK_PATHS in config_exp_psfex.ini and
+    config_exp_mccd.ini, which the simulations share through symlinks, together
+    with star_selection.setools). Only psf_model=fake runs neither.
+    """
+    users = []
+    if input_type == "data":
+        users.append("the tile chain (MASK_EXT_PATHS in config_tile_Mc.ini)")
+    if psf_model != "fake":
+        users.append(f"PSF-star selection (MASK_PATHS in config_exp_{psf_model}.ini)")
+    return users
+
+
+def refuse_missing_masks(users, masks, where):
+    """Refuse a run whose chains query the masks when inputs.masks is unset."""
+    if users and not masks:
+        raise WorkflowError(
+            f"inputs.masks is unset for {where}: {' and '.join(users)} "
+            "query the UNIONS sky-fixed masks. Set it in the run config.")
+
+
+MASK_USERS = mask_users(INPUT_TYPE, PSF_MODEL)
+refuse_missing_masks(
+    MASK_USERS, config.get("inputs", {}).get("masks"),
+    f"machine={MACHINE!r}, input_type={INPUT_TYPE!r}, psf_model={PSF_MODEL!r}")
 
 # How images reach the run (exported as SP_RETRIEVE for the Git/Gie configs):
 # `symlink` to a local mirror, or `vos` download. Sims are always local.
@@ -1073,7 +1094,7 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
     ]
     if PSF_DICT:
         lines.append(f"export PSF_DICT='{PSF_DICT}'")
-    if INPUT_TYPE == "data":
+    if MASK_USERS:
         lines.append(f"export SP_INPUT_MASKS='{INPUTS['masks']}'")
     if forest:
         lines.append(f"export SP_EXP='{forest}'")
