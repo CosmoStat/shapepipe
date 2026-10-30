@@ -8,6 +8,18 @@ import csv
 from pathlib import Path
 
 
+def check_exposure_pixels(source_list, exposure, pixels):
+    """Reject an exposure's rows or map coverage outside its planned pixels."""
+    with Path(source_list).open(newline="") as stream:
+        reader = csv.DictReader(stream)
+        if reader.fieldnames is None or not {"pixel", "exp_id"} <= set(reader.fieldnames):
+            raise ValueError(f"Invalid exposure list: {source_list}")
+        allowed = {int(row['pixel']) for row in reader if row['exp_id'] == exposure}
+    missing = set(map(int, pixels)) - allowed
+    if missing:
+        raise ValueError(f"Exposure {exposure} has data in unlisted pixel {min(missing)}")
+
+
 # @sc [decision:survey_publication.pixel_completeness]
 def finished_sources(pixel, kind, source_list, products_dir, run_dir):
     """Return succeeded units, refusing publication while any unit is pending.
