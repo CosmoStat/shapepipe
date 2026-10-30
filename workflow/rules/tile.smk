@@ -102,7 +102,9 @@ def tile_local(tile):
     147 of 176 D-state samples are in NFS RPC. Staging WCS avoids those
     per-read round trips, with a measured ~1.8x gain for ngmix.
 
-    Copy WCS unconditionally to a temporary name, then rename it atomically.
+    @sc [label:custody] wcs-staging-temp-unique-across-pid-namespaces
+    Reserve each WCS temporary name with mktemp: concurrent containers can
+    share the same shell PID. Copy WCS there, then rename it atomically.
     A symlink would still read NFS; cp -u could preserve a truncated file with
     a newer mtime. Concurrent group members can safely publish identical
     copies: an open reader keeps its inode. tile_merge_headers is upstream,
@@ -134,10 +136,11 @@ mkdir -p "$SP_VIGNET_OUT" "$SP_WCS_DIR" || {{
 # the WCS store -- see the docstring. Copy to a temp name and rename, because
 # `cp` is not atomic and the eight chunks share this destination.
 sp_wcs_src="$SP_RUN/output/run_sp_tile_Mh_exp/merge_headers_runner/output/log_exp_headers{tile_num}.sqlite"
-cp "$sp_wcs_src" "$SP_WCS_DIR/.log_exp_headers.$$" && \
-mv -f "$SP_WCS_DIR/.log_exp_headers.$$" \
+sp_wcs_tmp=$(mktemp "$SP_WCS_DIR/.log_exp_headers.XXXXXXXXXX") || exit 1
+cp "$sp_wcs_src" "$sp_wcs_tmp" && \
+mv -f "$sp_wcs_tmp" \
       "$SP_WCS_DIR/log_exp_headers{tile_num}.sqlite" || {{
-  rm -f "$SP_WCS_DIR/.log_exp_headers.$$"
+  rm -f "$sp_wcs_tmp"
   echo "tile_shape: could not stage the WCS store." >&2
   echo "  source: $sp_wcs_src" >&2
   echo "  dest:   $SP_WCS_DIR" >&2
