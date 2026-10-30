@@ -1,11 +1,4 @@
-"""Build order-5 tile and exposure candidate lists from enclosing caps.
-
-Exposure caps are supplied as CSV columns exp_id,ra,dec,radius_deg, in degrees.
-The run index supplies the tile-to-exposure association; every associated
-exposure must have exactly one cap. Caps must enclose the complete pointing,
-including ear CCDs and stars. The caller is responsible for deriving them from
-the exposure's WCS footprints, not from the associated tile centres.
-"""
+"""Build order-5 tile and exposure candidate lists from the run index."""
 
 import argparse
 import csv
@@ -50,24 +43,32 @@ def tile_pairs(tiles):
             yield int(pixel), tile
 
 
-def exposure_pairs(tiles, db, caps):
-    """List pixel/exposure pairs for all exposures associated with tiles."""
-    tile_set = set(tiles)
+def tile_exposure_index(tiles, db):
+    """Require prepared, nonempty and consistent incidence for every tile."""
+    requested = set(tiles)
     with sqlite3.connect(f'file:{Path(db).resolve()}?mode=ro', uri=True) as conn:
-        exposures = {exp for tile, exp in conn.execute('SELECT tile_id, exp_id FROM tile_exposures') if tile in tile_set}
-    values = {}
-    with open(caps, newline='') as f:
-        for row in csv.DictReader(f):
-            exp = row['exp_id']
-            if exp in values:
-                raise ValueError(f'duplicate exposure cap: {exp}')
-            values[exp] = tuple(float(row[k]) for k in ('ra', 'dec', 'radius_deg'))
-    missing = exposures - values.keys()
+        ready = dict(conn.execute('SELECT tile_id, n_exp FROM tiles'))
+        edges = {t: set() for t in requested}
+        for tile, exp in conn.execute('SELECT tile_id, exp_id FROM tile_exposures'):
+            if tile in edges:
+                edges[tile].add(exp)
+    missing = sorted(t for t in requested if t not in ready or not edges[t]
+                     or ready[t] != len(edges[t]))
     if missing:
-        raise ValueError(f'missing exposure caps: {sorted(missing)[:20]}')
-    for exp in sorted(exposures):
-        for pixel in cap_pixels(*values[exp]):
-            yield int(pixel), exp
+        raise ValueError(f'missing or incomplete tile exposure associations: {missing}')
+    return edges
+
+
+def exposure_pairs(tile_pixel_pairs, db):
+    """Union each listed tile's exposures into its pixels.
+
+    @sc [decision:survey_publication.pixel_completeness,label:invariant] exposure-list-covers-stars
+    Every star row must land in a pixel listing its exposure: a star belongs
+    to a tile using that exposure, and that tile's cap covers the row.
+    """
+    pairs = list(tile_pixel_pairs)
+    edges = tile_exposure_index((tile for _, tile in pairs), db)
+    return {(pixel, exp) for pixel, tile in pairs for exp in edges[tile]}
 
 
 def write_pairs(path, column, pairs):
@@ -82,14 +83,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--tiles', required=True, type=Path)
     parser.add_argument('--index', required=True, type=Path)
-    parser.add_argument('--exposure-caps', required=True, type=Path)
     parser.add_argument('--pixel-tiles', required=True, type=Path)
     parser.add_argument('--pixel-exposures', required=True, type=Path)
     args = parser.parse_args()
     tiles = read_tiles(args.tiles)
-    # Compute both before writing either, so missing caps do not leave a partial pair.
+    # Compute both before writing either, so incomplete incidence cannot publish lists.
     tp = list(tile_pairs(tiles))
-    ep = list(exposure_pairs(tiles, args.index, args.exposure_caps))
+    ep = list(exposure_pairs(tp, args.index))
     write_pairs(args.pixel_tiles, 'tile_id', tp)
     write_pairs(args.pixel_exposures, 'exp_id', ep)
 

@@ -2470,7 +2470,7 @@ analyses:
         label: A pixel publishes once every source in its list has finished
         rationale: >-
           A pixel's tile list is every tile whose 0.4 deg enclosing cap
-          intersects it (exposures: their pointing caps), fixed before
+          intersects it (exposures: those used by the listed tiles), fixed before
           processing. The pixel is built when every listed source has a
           terminal state in the run index. A source that failed after its
           retries contributes no rows, as per_unit_completeness already

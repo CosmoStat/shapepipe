@@ -7,7 +7,6 @@ rejection. This script does not run git.
 
 import argparse
 import csv
-import sqlite3
 from collections import Counter
 from pathlib import Path
 
@@ -16,7 +15,7 @@ import numpy as np
 import yaml
 from scipy.spatial import cKDTree
 
-from pixel_lists import tile_centre
+from pixel_lists import tile_centre, tile_exposure_index
 from tile_universe import read_tiles, validate_tiles
 
 
@@ -53,8 +52,10 @@ def load_claims(path):
     return cells
 
 
-def initial(tiles):
+def initial(tiles, fraction=0.6):
     """Reproduce the block-first 40:60 split in two-way/analyze.py."""
+    if not 0 < fraction <= 1:
+        raise ValueError("fraction must be in (0, 1]")
     counts, block = Counter(), Counter()
     for tile in validate_tiles(tiles):
         ra, dec = tile_centre(tile)
@@ -80,7 +81,8 @@ def initial(tiles):
     own.update({seeds[0]: 0, seeds[1]: 1})
     totals = [sum(counts[c] for c in south) + counts[seeds[0]], counts[seeds[1]]]
     free = north - set(seeds)
-    while free:
+    target = fraction * sum(counts.values())
+    while free and sum(totals) < target:
         i = min(range(2), key=lambda j: (totals[j] / (.4, .6)[j], j))
         region = [c for c in sorted(north) if own.get(c) == i]
         front = free.intersection(set().union(*(neighbours[c] for c in region)))
@@ -91,6 +93,8 @@ def initial(tiles):
         own[c] = i
         totals[i] += counts[c]
         free.remove(c)
+    if fraction < 1:
+        return {k: ('nibi', 'fir')[v] for k, v in own.items()}
     used = np.array(sorted(own))
     missing = np.array([p for p in range(192) if p not in own])
     if len(missing):
@@ -130,22 +134,22 @@ def closure(cells, cluster, pixel_tiles, pixel_exposures, index):
             if owner == cluster:
                 result.add(row[field])
         return result
-    tiles = select(pixel_tiles, 'tile_id')
+    tiles = set(validate_tiles(select(pixel_tiles, 'tile_id')))
     exps = select(pixel_exposures, 'exp_id')
-    with sqlite3.connect(f'file:{Path(index).resolve()}?mode=ro', uri=True) as conn:
-        exps.update(e for t, e in conn.execute('SELECT tile_id, exp_id FROM tile_exposures') if t in tiles)
+    edges = tile_exposure_index(tiles, index)
+    exps.update(e for values in edges.values() for e in values)
     return sorted(tiles), sorted(exps)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
-    p = commands.add_parser('initial'); p.add_argument('--tiles', required=True); p.add_argument('--output', required=True)
+    p = commands.add_parser('initial'); p.add_argument('--tiles', required=True); p.add_argument('--output', required=True); p.add_argument('--fraction', type=float, default=0.6)
     p = commands.add_parser('propose'); p.add_argument('--claims', required=True); p.add_argument('--cluster', choices=('nibi', 'fir'), required=True)
     p = commands.add_parser('closure'); p.add_argument('--claims', required=True); p.add_argument('--cluster', choices=('nibi', 'fir'), required=True); p.add_argument('--pixel-tiles', required=True); p.add_argument('--pixel-exposures', required=True); p.add_argument('--index', required=True); p.add_argument('--tiles-out', required=True); p.add_argument('--exposures-out', required=True)
     args = parser.parse_args()
     if args.command == 'initial':
-        Path(args.output).write_text(yaml.safe_dump({'order': 2, 'cells': initial(read_tiles(args.tiles))}, sort_keys=True))
+        Path(args.output).write_text(yaml.safe_dump({'order': 2, 'cells': initial(read_tiles(args.tiles), args.fraction)}, sort_keys=True))
     elif args.command == 'propose':
         print(propose(load_claims(args.claims), args.cluster))
     else:
