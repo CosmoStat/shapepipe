@@ -2407,3 +2407,99 @@ analyses:
             quote:
               exact: 's + 2σs > 0.0003'
             location: { page: 5 }
+
+  # ═════════════════════════════════════════════════════════════════════════
+  survey_publication:
+    description: >-
+      The survey products: per-tile catalogues and per-exposure stars and maps
+      partitioned into fixed order-5 HEALPix pixels and published as HATS
+      (catalogues) and HEALSparse (maps), built on Nibi and Fir from one
+      rule-defined tile list.
+    inputs:
+      - id: tile_final_cat_published
+        type: data
+        source: catalogue_assembly tile_final_cat, exposure star catalogues and map fragments
+    outputs:
+      - id: survey_hats
+        type: data
+        format: parquet
+        description: >-
+          The v2.0 galaxy and PSF-validation star HATS catalogues and the
+          npoint, ntaken, nexp and nflagged HEALSparse maps, one file per
+          order-5 pixel.
+        inputs: [tile_final_cat_published]
+        decisions: [tile_universe, seam_realization, pixel_completeness, row_partitioning]
+    decisions:
+      tile_universe:
+        label: Dateline-redundant and polar-cap tiles are not in the catalogue
+        rationale: >-
+          The run-2 tile list excludes two sets by rule, applied where tiles
+          are planned rather than in any per-cluster skip file. For tile x.y,
+          dec = y/2 - 90; excluded when y >= 345 (Dec >= 82.5 deg, the image
+          does not cover the tile) or x >= 720 cos(dec) (nominal centre at or
+          past RA 360 deg, sky held by the RA~0 tiles). On the 23,114-tile DR6
+          list this removes the 181 cap and 32 dateline tiles of #969 plus 16
+          dateline tiles that straddle 360 deg (576k duplicate rows in run 1),
+          leaving 22,885.
+          Values: CAP_Y_MIN = 345.
+        default: excluded_by_rule
+        options:
+          excluded_by_rule:
+            label: Both sets removed from the tile list by a rule on the tile ID
+          cut_to_own_ra:
+            label: Keep dateline tiles, rows cut to their own RA range
+            excluded: true
+            excluded_reason: Needs code and recovers no sky the RA~0 tiles lack.
+      seam_realization:
+        label: Closure; a pixel's rows come from its owner's own runs
+        rationale: >-
+          Each cluster processes every tile and exposure whose footprint
+          touches one of its pixels and publishes only rows in its pixels.
+          A seam tile is computed on two clusters; each published row comes
+          from the run of its pixel's owner. Run 1 already mixes cluster
+          realizations between neighbouring tiles. The catalogue is built on
+          Nibi and Fir, which share one seam.
+        default: closure
+        options:
+          closure:
+            label: Owner recomputes every source touching its pixels
+          fragment_exchange:
+            label: One run per tile; seam rows exchanged between clusters
+            description: Not implemented.
+      pixel_completeness:
+        label: A pixel publishes once every source in its list has finished
+        rationale: >-
+          A pixel's tile list is every tile whose 0.4 deg enclosing cap
+          intersects it (exposures: those used by the listed tiles), fixed before
+          processing. The pixel is built when every listed source has its
+          final success manifest in the product store or the operator has
+          named it in abandoned.txt. Abandoned sources contribute no rows;
+          all other missing manifests block publication. The file is written
+          once.
+          Values: TILE_CAP_DEG = 0.4.
+        default: wait_for_all
+        options:
+          wait_for_all:
+            label: Build when every listed source has finished
+          publish_partial:
+            label: Publish early, replace as sources finish
+            excluded: true
+            excluded_reason: Readers would get a pixel whose rows change under them.
+      row_partitioning:
+        label: Each row goes to the order-5 pixel of its own position
+        rationale: >-
+          A row's pixel is _healpix_29 >> 48, computed from its own
+          XWIN_WORLD/YWIN_WORLD (galaxies) or star position, never from its
+          tile. Tile overlaps are kept (tile_overlap_handling), so an overlap
+          object appears once per tile, each copy in the pixel where it lies.
+          Values: HATS_ORDER = 5.
+        default: own_position
+        options:
+          own_position:
+            label: Pixel of the row's own position
+          tile_centre:
+            label: Whole tile in the pixel of its centre
+            excluded: true
+            excluded_reason: >-
+              13.6% of rows land outside their pixel; strict HATS validation
+              passes but cone searches silently miss them.

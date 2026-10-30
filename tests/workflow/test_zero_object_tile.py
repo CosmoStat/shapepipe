@@ -21,7 +21,7 @@ def test_zero_object_tile_dag_partition_through_publication(tmp_path, monkeypatc
     campaign = Campaign(tmp_path / "campaign", "data", "psfex")
     campaign.config["ngmix_chunks"] = 16  # Fir's configured static fan-out
     campaign.write_config()
-    tile = "124.456"  # one exposure in the campaign fixture
+    tile = "124.220"  # one exposure in the campaign fixture
     run = campaign.run_dir / "tiles" / tile[:2] / tile
     local = tmp_path / "node-local"
     local.mkdir()

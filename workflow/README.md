@@ -66,6 +66,59 @@ Anything other than `run`, `report`, `container`, `cancel` passes straight throu
 snakemake with the workflow's profile and state dir — the direct command path for
 `sp --unlock`, `sp --dag`, `sp exp_psf ...`.
 
+## Run-2 publication planning
+
+`python workflow/scripts/tile_universe.py DR6.txt tiles.txt` writes the sorted catalogue tile list.
+The workflow refuses excluded data tiles at parse time rather than silently changing the requested campaign; image simulations are not subject to the survey cut.
+
+`pixel_lists.py` builds the `pixel,tile_id` and `pixel,exp_id` CSV files from that list and the workflow's prepared SQLite run index.
+Each pixel's exposure list is the union of exposures used by its listed tiles; missing or inconsistent tile associations are rejected.
+
+`claims.py initial` claims 60% of included tiles by default, leaving cells for `claims.py propose`.
+Use `--fraction 1` to reproduce the full-sky 40:60 example; `claims.py closure` lists the tiles and exposures for one owner.
+The 243 duplicate runs reported for the example used sampled image footprints; conservative 0.4° tile caps yield 328 on the same tiles and full ownership.
+At the default fraction, 32 cells are claimed and the same cap calculation yields 67 duplicate runs between the currently claimed owners.
+A claim is a commit to the shared claims file: push it before using the cell, and treat a rejected push as the lock.
+After a rejection, pull and recompute the proposal; the script never runs git.
+
+## Publishing owned survey pixels
+
+`workflow/scripts/publish_pixel.py` builds one order-5 pixel's galaxy and star catalogues and four maps, uploads each file, and rebuilds the catalogue partition lists from VOSpace.
+It refuses a pixel whose order-2 parent is not assigned to the supplied cluster in `claims.yaml`.
+Run it with `--help` for the explicit planning lists, product paths, masks, code SHA, and VOSpace root.
+Supply `--galaxy-schema-from` or `--star-schema-from` when all sources for that catalogue are abandoned and an empty pixel needs a schema.
+The root and CADC credentials must already be available; each pixel must have a single owner and publisher.
+The partition list is the only mutable file, and concurrent rebuilds can temporarily omit a newly uploaded pixel until the next rebuild.
+Run `python workflow/scripts/index_vos.py <catalogue-root>` to rebuild it independently.
+The uploader checks CADC's size and MD5 before and after the temporary-node move, re-reading lagging properties with up to 60 seconds of retry waits.
+A persistent mismatch fails rather than treating the file as published.
+A failed publication can leave local outputs or remote temporary nodes and must be inspected before retrying; the build and upload steps refuse existing final paths.
+
+A collaborator with a CADC proxy certificate can open a catalogue over HTTPS using lsdb and a serializable client factory:
+
+```python
+import ssl
+import aiohttp
+import lsdb
+from upath import UPath
+
+async def cadc_client(loop=None, certfile=None, **kwargs):
+    context = ssl.create_default_context()
+    context.load_cert_chain(certfile)
+    return aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=context), **kwargs)
+
+root = UPath(
+    'https://ws-cadc.canfar.net/vault/files/cfis/weak_lensing/ShapePipe/v2.0/galaxies',
+    get_client=cadc_client,
+    client_kwargs={'certfile': '/path/to/cadcproxy.pem'},
+)
+cat = lsdb.read_hats(root, columns=['XWIN_WORLD', 'YWIN_WORLD'])
+```
+
+Use the deployed CADC files endpoint for the release if it differs from this example.
+The proxy needs access to the catalogue, and distributed workers need access to the certificate and client factory.
+The catalogue omits an aggregate row count while it grows, so `len(cat)` is unavailable.
+
 ## Image simulations
 
 The same workflow runs the SKiLLS image simulations used to measure the shear
@@ -430,7 +483,9 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
   `exposures/<exp>` — the rho/tau statistics input. It reads the members
   straight out of the per-exposure tars (`tarfile`; unpacking ~800k files to
   merge them would defeat the tar's whole purpose), keeps their native dtypes,
-  and stores `CCD_NB` as an int. sp_validation opens the flat FITS
+  and stores `CCD_NB` as an int. Every row also carries the ASCII exposure ID
+  `EXP_ID` and zero-based `SOURCE_ORDINAL` within the CCD, including when
+  the merge reads older validation files without those columns. sp_validation opens the flat FITS
   name, `full_starcat-0000000.fits`; its readers move to this file under
   [sp_validation#340](https://github.com/CosmoStat/sp_validation/issues/340),
   the same migration that retires the `patches/` key on the tile side. The rule
