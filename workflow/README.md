@@ -81,6 +81,40 @@ At the default fraction, 32 cells are claimed and the same cap calculation yield
 A claim is a commit to the shared claims file: push it before using the cell, and treat a rejected push as the lock.
 After a rejection, pull and recompute the proposal; the script never runs git.
 
+## Publishing owned survey pixels
+
+`workflow/scripts/publish_pixel.py` builds one order-5 pixel's galaxy and star catalogues and four maps, uploads each file, and rebuilds the catalogue partition lists from VOSpace.
+It refuses a pixel whose order-2 parent is not assigned to the supplied cluster in `claims.yaml`.
+Run it with `--help` for the explicit planning lists, product paths, masks, code SHA, and VOSpace root.
+Supply `--galaxy-schema-from` or `--star-schema-from` when all sources for that catalogue are abandoned and an empty pixel needs a schema.
+The root and CADC credentials must already be available; each pixel must have a single owner and publisher.
+The partition list is the only mutable file, and concurrent rebuilds can temporarily omit a newly uploaded pixel until the next rebuild.
+
+A collaborator with a CADC proxy certificate can open a catalogue over HTTPS using lsdb and a serializable client factory:
+
+```python
+import ssl
+import aiohttp
+import lsdb
+from upath import UPath
+
+async def cadc_client(loop=None, certfile=None, **kwargs):
+    context = ssl.create_default_context()
+    context.load_cert_chain(certfile)
+    return aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=context), **kwargs)
+
+root = UPath(
+    'https://ws-cadc.canfar.net/vault/files/cfis/weak_lensing/ShapePipe/v2.0/galaxies',
+    get_client=cadc_client,
+    client_kwargs={'certfile': '/path/to/cadcproxy.pem'},
+)
+cat = lsdb.read_hats(root, columns=['XWIN_WORLD', 'YWIN_WORLD'])
+```
+
+Use the deployed CADC files endpoint for the release if it differs from this example.
+The proxy needs access to the catalogue, and distributed workers need access to the certificate and client factory.
+The catalogue omits an aggregate row count while it grows, so `len(cat)` is unavailable.
+
 ## Image simulations
 
 The same workflow runs the SKiLLS image simulations used to measure the shear
