@@ -40,7 +40,11 @@ def _run(kind="inside", seg_kind="valid", megacam_flip=True):
             flag[25, 25] = 64
         epochs[f"210000{i}-20"] = (flag, np.ones(seg.shape))
     vignet, tile, psf, gal = _fake_inputs(epochs)
-    tile.seg = None if seg_kind == "missing" else seg[None]
+    tile.seg = seg[None]
+    for name, epoch in gal.items():
+        epoch["SEG_VIGNET"] = Ngmix.MegaCamFlip(seg, int(name.split("-")[1]))
+        if seg_kind == "missing":
+            del epoch["SEG_VIGNET"]
     return prepare_postage_stamps(
         vignet, 1, 0, tile, bkg_sub=False, psf_obj=psf, gal_obj=gal,
     )
@@ -66,11 +70,16 @@ def test_footprint_flags_only_count_kept_epochs(kind, expected, flip):
     assert diagnostics["n_epoch_interp"] == (0 if kind == "clean" else 2)
 
 
-@pytest.mark.parametrize("seg_kind", ["missing", "empty", "clipped"])
+@pytest.mark.parametrize("seg_kind", ["empty", "clipped"])
 def test_unknown_or_incomplete_footprint_is_not_clean(seg_kind):
     diagnostics = _run(seg_kind=seg_kind).defect_diagnostics()
     assert diagnostics["imaflags_iso"] == -1
     assert diagnostics["n_epoch_interp_iso"] == -1
+
+
+def test_missing_exposure_categories_require_reextraction():
+    with pytest.raises(ValueError, match="Exposure-grid categories"):
+        _run(seg_kind="missing")
 
 
 @pytest.mark.parametrize("value", [np.nan, np.inf, -1, 1.5, float(2**63)])

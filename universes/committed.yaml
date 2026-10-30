@@ -34,6 +34,7 @@ analyses:
       epoch_provenance_from_tile_history: history_parse
       object_position_columns: xwin_windowed
       stamp_positioning_and_padding: round_and_zero_pad
+      categorical_registration: native_grid_nearest
   star_selection_psf:
     decisions:
       star_selection_box: locus_scaled_box
@@ -54,7 +55,6 @@ analyses:
       psf_epoch_averaging: galaxy_weight_sum
       galaxy_pixel_weights: rms_vignet_weights
       psf_likelihood_noise: psf_noise_1em5
-      megacam_ccd_flip: megapipe_flip
       defect_fill: interpolate
       defect_flagging: footprint_or_and_interp_epochs
       blend_handling: uberseg

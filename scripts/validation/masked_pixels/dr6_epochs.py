@@ -4,17 +4,15 @@ and find epochs with each kind of defect.
 Inputs:
   * one MegaCam exposure with its weight and flag maps (vos:cfis/pitcairn,
     vos:cfis/weights, vos:cfis/flags), e.g. 2086786p.fits.fz;
-  * the DR6 tile catalogue with VIGNET (-1e30 neighbour and off-tile
-    markers) and SEG_VIGNET columns, as read_ext_sexcat writes it from
-    CFIS.<tile>.r.cat and CFIS.<tile>.r.seg.fits.fz
-    (sexcat-<xxx>-<yyy>.fits).
+  * the tile catalogue with SEG_LABEL and its matching full segmentation
+    check image in the same directory (sexcat-<xxx>-<yyy>.fits and
+    segmentation-<xxx>-<yyy>.fits).
 
 The epoch stamps are cut as vignetmaker does: 51x51 around the rounded
 pixel of the object's (XWIN_WORLD, YWIN_WORLD) in the CCD's own WCS, CCDs
-numbered as split_exp names them (HDU index - 1). The tile VIGNET and seg
-stamp are MegaCam-flipped onto the epoch and split into neighbour and
-off-tile pixels (split_tile_markers); the off-tile pixels get zero weight,
-as prepare_postage_stamps gives them. The background is a sigma-clipped
+numbered as split_exp names them (HDU index - 1). Full tile categories are
+sampled on each native exposure grid with register_categories; off-tile
+pixels get zero weight as in prepare_postage_stamps. The background is a sigma-clipped
 median over the clean pixels of a 257x257 box around the object, and the
 background RMS is constant over the stamp; the pipeline takes both from
 SExtractor's maps instead. Only the survey flag and weight maps mark
@@ -37,11 +35,10 @@ from astropy.wcs import WCS
 from scipy.ndimage import find_objects, label
 
 from shapepipe.modules.ngmix_package.ngmix import (
-    Ngmix,
     defect_mask,
-    split_tile_markers,
 )
-from shapepipe.modules.vignetmaker_package.vignetmaker import get_stamps
+from shapepipe.modules.vignetmaker_package.vignetmaker import get_stamps, register_categories
+from shapepipe.modules.sextractor_package.match_catalogue import relabel
 
 RAD = 25
 N = 2 * RAD + 1
@@ -52,9 +49,13 @@ BOX = 128
 def read_tile(sexcat):
     with fitsio.FITS(sexcat) as f:
         hdu = [h for h in f if h.get_extname() == "LDAC_OBJECTS"][0]
-        return hdu.read(columns=["NUMBER", "XWIN_WORLD", "YWIN_WORLD",
-                                 "MAG_AUTO", "FLUX_RADIUS", "VIGNET",
-                                 "SEG_VIGNET"])
+        data = hdu.read(columns=["NUMBER", "XWIN_WORLD", "YWIN_WORLD",
+                                 "MAG_AUTO", "FLUX_RADIUS", "SEG_LABEL"])
+    seg_path = sexcat.replace("sexcat-", "segmentation-")
+    tile = {name: data[name] for name in data.dtype.names}
+    tile["segmentation"] = relabel(fits.getdata(seg_path), data["SEG_LABEL"], data["NUMBER"])
+    tile["wcs"] = WCS(fits.getheader(seg_path))
+    return tile
 
 
 def tile_name(sexcat):
@@ -75,11 +76,10 @@ def ccd_positions(hdus, ra, dec):
     return out
 
 
-def tile_overlay(tile, i, ccd):
-    tile_vign = Ngmix.MegaCamFlip(np.copy(tile["VIGNET"][i]), ccd)
-    seg = Ngmix.MegaCamFlip(np.copy(tile["SEG_VIGNET"][i]), ccd)
-    neighbour, off_tile = split_tile_markers(tile_vign, (N, N))
-    return seg.astype(np.int32), neighbour, off_tile
+def epoch_categories(tile, i, epoch_wcs, int_pos):
+    maps = register_categories(tile["segmentation"], tile["wcs"], epoch_wcs,
+                               int_pos, (N, N), tile["NUMBER"][i])
+    return maps["SEG_VIGNET"], maps["NEIGHBOUR"], maps["OFF_TILE"]
 
 
 def components(defect, flag, off_tile):
@@ -119,7 +119,7 @@ def cut(hdus, ext, pos, tile, i):
     good = (wgt[box] > 0) & (flg[box] == 0)
     _, bkg, rms = sigma_clipped_stats(img[box][good], sigma=3.0)
     stamps["gal"] = stamps["gal"] - bkg
-    seg, neighbour, off_tile = tile_overlay(tile, i, ccd)
+    seg, neighbour, off_tile = epoch_categories(tile, i, WCS(hdus[0][ext].header), int_pos[0])
     stamps["weight"][off_tile] = 0
     stamps.update(
         bkg_rms=np.full((N, N), rms), seg=seg, neighbour=neighbour,
@@ -138,8 +138,8 @@ def scan(hdus, tile):
             continue
         wgt = get_stamps(hdus[1][ext].data, pos, RAD)[0]
         flg = get_stamps(hdus[2][ext].data, pos, RAD)[0].astype(np.int32)
-        for i, w, f in zip(rows, wgt, flg):
-            seg, neighbour, off_tile = tile_overlay(tile, i, ext - 1)
+        for i, w, f, centre in zip(rows, wgt, flg, np.round(pos).astype(int)):
+            seg, neighbour, off_tile = epoch_categories(tile, i, WCS(hdus[0][ext].header), centre)
             w[off_tile] = 0
             defect = defect_mask(w, f)
             if not defect.any():

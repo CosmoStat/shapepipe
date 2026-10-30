@@ -60,6 +60,11 @@ def ngmix_runner(
     and writes the same empty-catalogue product if every object ends up
     skipped. Either way, campaign completeness checks see one catalogue per
     tile.
+
+    @sc [label:operations] empty-preflight-short-circuits
+    Each all-empty check reads entries only until the first populated one.
+    Every chunk shares the stores, so a full payload scan per chunk turns
+    the preflight into repeated random I/O over the entire tile.
     """
     # Read config file entries
 
@@ -117,12 +122,11 @@ def ngmix_runner(
     else:
         centroid_source = "wcs"
 
-    # Neighbour treatment: "noisefill" (default) zero-weights and noise-fills
-    # the pixels marked -1e30 in the tile VIGNET on other objects'
-    # segmentation footprints (split_tile_markers); "uberseg" ignores those
-    # markers, zeroes the weight of every
-    # pixel closer to a neighbour than to the central object, from the
-    # segmentation map, and leaves its image raw. Defect pixels (flagged,
+    # Neighbour treatment uses full-tile categories registered on each native
+    # exposure grid. "noisefill" (default) zero-weights and noise-fills every
+    # foreign nonzero segmentation footprint; "uberseg" zeroes the weight of
+    # every pixel closer to a neighbour than to the central object, from the
+    # registered segmentation map, and leaves its image raw. Defect pixels (flagged,
     # zero-weight, invalid-RMS or off-tile) are zero-weighted and filled the
     # same way under both, and the epoch cuts are fixed; see
     # prepare_postage_stamps and prepare_ngmix_weights.
@@ -170,10 +174,12 @@ def ngmix_runner(
     # crash that occurs when large numbers of numpy arrays are allocated then freed.
     psf_idx = 3 if bkg_sub else 2
     psf_vignet_path = input_file_list[psf_idx]
-    with SqliteDict(psf_vignet_path) as db:
+    # One populated entry disproves all-empty. Short-circuit before reading
+    # the remaining large payloads: every ngmix chunk shares these stores.
+    with SqliteDict(psf_vignet_path, flag="r") as db:
         psf_keys = list(db.keys())
-        n_empty_psf = sum(1 for k in psf_keys if len(db[k]) == 0)
-    if psf_keys and n_empty_psf == len(psf_keys):
+        all_empty_psf = all(len(db[k]) == 0 for k in psf_keys)
+    if psf_keys and all_empty_psf:
         w_log.warning(
             f"All {len(psf_keys)} PSF vignet entries are empty in "
             f"{psf_vignet_path} — no PSF coverage for this tile. Skipping ngmix."
@@ -185,10 +191,10 @@ def ngmix_runner(
 
     # Check that image vignets are not all empty before initialising ngmix
     image_vignet_path = input_file_list[1]
-    with SqliteDict(image_vignet_path) as db:
+    with SqliteDict(image_vignet_path, flag="r") as db:
         keys = list(db.keys())
-        n_empty = sum(1 for k in keys if db[k] == "empty")
-    if keys and n_empty == len(keys):
+        all_empty = all(db[k] == "empty" for k in keys)
+    if keys and all_empty:
         w_log.warning(
             f"All {len(keys)} image vignets are 'empty' in {image_vignet_path} "
             "— no valid CCD coverage for this tile. Skipping ngmix."

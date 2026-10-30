@@ -4,6 +4,9 @@ tile_vignets' prelude runs ngmix_range before the modules, so planning alone
 does not exercise the empty-tile path (Fir tile 177.257).
 Execute that writer and every scheduled reader from the resolved job params,
 then feed their exported bounds to the real module-to-publication regression.
+That fixture runs the four-input vignetmaker runner with a full-size all-zero
+segmentation.fits carrying the tile WCS, as written by zero-detection SExtractor;
+ngmix consumes the resulting zero-key registered stores with bounds (2, 1).
 """
 
 import json
