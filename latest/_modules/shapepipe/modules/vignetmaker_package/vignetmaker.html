@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="26 Oct, 2026"/>
+    <meta name="docbuild:last-update" content="30 Oct, 2026"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -898,6 +898,8 @@
                     <span class="o">+</span> <span class="sa">f</span><span class="s2">" HDU #</span><span class="si">{</span><span class="n">hdu_index</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_id</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>  <span class="c1"># A valid zero-object tile has empty EPOCH HDUs.</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">"EXP_NAME list is empty in file </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_galcat_path</span><span class="si">}</span><span class="s2">"</span>     
                     <span class="o">+</span> <span class="sa">f</span><span class="s2">" HDU #</span><span class="si">{</span><span class="n">hdu_index</span><span class="si">}</span><span class="s2">"</span>                                      
@@ -1231,7 +1233,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 26 Oct, 2026.
+  Last updated on 30 Oct, 2026.
   <br/>
 </p>
   </div>

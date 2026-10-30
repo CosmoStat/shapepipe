@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="26 Oct, 2026"/>
+    <meta name="docbuild:last-update" content="30 Oct, 2026"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -625,7 +625,7 @@
     <span class="k">return</span> <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s2">"SEG_VIGNET"</span><span class="p">,</span>
         <span class="nb">format</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ny</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">nx</span><span class="si">}</span><span class="s2">J"</span><span class="p">,</span>
-        <span class="n">array</span><span class="o">=</span><span class="n">seg_vignets</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_obj</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">array</span><span class="o">=</span><span class="n">seg_vignets</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_obj</span><span class="p">,</span> <span class="n">ny</span> <span class="o">*</span> <span class="n">nx</span><span class="p">),</span>
         <span class="n">dim</span><span class="o">=</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">nx</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">ny</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
     <span class="p">)</span></div>
 
@@ -751,7 +751,8 @@
     <span class="p">)</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">w_log</span><span class="p">:</span>
         <span class="n">centre</span> <span class="o">=</span> <span class="n">size</span> <span class="o">//</span> <span class="mi">2</span>
-        <span class="n">own</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">seg_vignets</span><span class="p">[:,</span> <span class="n">centre</span><span class="p">,</span> <span class="n">centre</span><span class="p">]</span> <span class="o">==</span> <span class="n">data</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
+        <span class="n">own</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">seg_vignets</span><span class="p">[:,</span> <span class="n">centre</span><span class="p">,</span> <span class="n">centre</span><span class="p">]</span> <span class="o">==</span> <span class="n">data</span><span class="p">[</span><span class="s2">"NUMBER"</span><span class="p">])</span>
+               <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
         <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"SEG_VIGNET cut from </span><span class="si">{</span><span class="n">seg_path</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects;"</span>
             <span class="o">+</span> <span class="sa">f</span><span class="s2">" centre label = NUMBER for </span><span class="si">{</span><span class="n">own</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span>
@@ -997,7 +998,7 @@
     <span class="c1"># (laid out as FITSCatalogue.add_col lays it out), then the EPOCH HDUs.</span>
     <span class="n">new</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="o">.</span><span class="n">from_columns</span><span class="p">(</span>
         <span class="n">objects</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="o">+</span> <span class="n">fits</span><span class="o">.</span><span class="n">ColDefs</span><span class="p">([</span><span class="n">column</span><span class="p">(</span><span class="s2">"N_EPOCH"</span><span class="p">,</span> <span class="n">n_epoch</span><span class="p">)]),</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">"LDAC_OBJECTS"</span><span class="p">,</span>
+        <span class="n">header</span><span class="o">=</span><span class="n">objects</span><span class="o">.</span><span class="n">header</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"LDAC_OBJECTS"</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">(</span>
         <span class="p">[</span><span class="n">new</span> <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="n">objects</span> <span class="k">else</span> <span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hdus</span><span class="p">]</span> <span class="o">+</span> <span class="n">epochs</span>
@@ -1443,7 +1444,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 26 Oct, 2026.
+  Last updated on 30 Oct, 2026.
   <br/>
 </p>
   </div>

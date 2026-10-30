@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="26 Oct, 2026"/>
+    <meta name="docbuild:last-update" content="30 Oct, 2026"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -936,7 +936,7 @@
         <span class="c1"># A low match fraction can be valid (e.g. missing PSFs). Warn but</span>
         <span class="c1"># continue; unmatched detections retain their pre-filled sentinels.</span>
         <span class="c1"># Completeness gates reject premature or incomplete merges.</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ngmix_n_epoch</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_size_target</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_size_target</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ngmix_n_epoch</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_size_target</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
             <span class="n">warning</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"Merged shape catalogue </span><span class="si">{</span><span class="n">ngmix_cat_path</span><span class="si">}</span><span class="s2"> contains only "</span>
                 <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ngmix_n_epoch</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cat_size_target</span><span class="si">}</span><span class="s2"> target "</span>
@@ -1213,7 +1213,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">epoch_slots</span><span class="p">:</span>
             <span class="n">n_slots</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">elif</span> <span class="n">n_epoch_slots</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">n_slots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_final_cat</span><span class="p">[</span><span class="s2">"N_EPOCH"</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">n_slots</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_final_cat</span><span class="p">[</span><span class="s2">"N_EPOCH"</span><span class="p">],</span> <span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">n_slots</span> <span class="o">=</span> <span class="n">n_epoch_slots</span>
 
@@ -1342,7 +1342,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 26 Oct, 2026.
+  Last updated on 30 Oct, 2026.
   <br/>
 </p>
   </div>

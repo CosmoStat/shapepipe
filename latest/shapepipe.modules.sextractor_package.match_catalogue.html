@@ -60,7 +60,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="26 Oct, 2026"/>
+    <meta name="docbuild:last-update" content="30 Oct, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -561,6 +561,7 @@
             </div>
             <nav aria-label="Page">
                 <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.read_match_record"><code class="docutils literal notranslate"><span class="pre">read_match_record()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.mutual_nearest"><code class="docutils literal notranslate"><span class="pre">mutual_nearest()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.relabel"><code class="docutils literal notranslate"><span class="pre">relabel()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.match_catalogue"><code class="docutils literal notranslate"><span class="pre">match_catalogue()</span></code></a></li>
@@ -593,6 +594,12 @@ SExtractor columns) stays SExtractor’s own.</p>
 <dd class="field-odd"><p>Cail Daley</p>
 </dd>
 </dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.match_catalogue.read_match_record">
+<span class="sig-name descname"><span class="pre">read_match_record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/match_catalogue.html#read_match_record"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.match_catalogue.read_match_record" title="Link to this definition">#</a></dt>
+<dd><p>Read join diagnostics, or None for a catalogue with no external join.</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.match_catalogue.mutual_nearest">
 <span class="sig-name descname"><span class="pre">mutual_nearest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/match_catalogue.html#mutual_nearest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.match_catalogue.mutual_nearest" title="Link to this definition">#</a></dt>
@@ -643,7 +650,7 @@ leaves the catalogue</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="shapepipe.modules.sextractor_package.match_catalogue.match_catalogue">
-<span class="sig-name descname"><span class="pre">match_catalogue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_fraction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.98</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerated_unpaired</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">external_unpaired_allowance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/match_catalogue.html#match_catalogue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.match_catalogue.match_catalogue" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">match_catalogue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_fraction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.98</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerated_unpaired</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/sextractor_package/match_catalogue.html#match_catalogue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.sextractor_package.match_catalogue.match_catalogue" title="Link to this definition">#</a></dt>
 <dd><p>Take membership and <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> from an external catalogue.</p>
 <p>Each SExtractor row is paired with its mutual nearest neighbour in the
 external catalogue (<code class="docutils literal notranslate"><span class="pre">X_IMAGE</span></code>, <code class="docutils literal notranslate"><span class="pre">Y_IMAGE</span></code>, same image grid) within
@@ -662,15 +669,11 @@ galaxy, a bright star’s halo). On different pixels (a DR5 image against
 the DR6 catalogue) only ~95% pair. The guard is there to catch that: the
 SExtractor-side guard stops when unpaired detections exceed both
 <code class="docutils literal notranslate"><span class="pre">(1</span> <span class="pre">-</span> <span class="pre">min_fraction)</span></code> of that side and <code class="docutils literal notranslate"><span class="pre">tolerated_unpaired</span></code>.
-External-only losses instead get an additive local deblending allowance
-on top of the fractional budget (and retain the absolute tolerance).
-Sparse DR6 edge tiles can lose dozens of children in one bright-star
-halo while almost every detection pairs; those losses do not scale with
-the tile’s total population. This is an empirical allowance, not an
-independent-object confidence bound. It weakens sensitivity to modest
-external-side detection-config losses on sparse tiles, but does not
-relax the SExtractor-side check for other pixels. With no pairs there
-is no evidence for a local loss, so no additive allowance is granted.</p>
+External-only losses never reject a tile: warn above max(20, 0.02 N +
+50) (without the 50 when no pairs exist).
+Record every tile’s counts, external paired fraction and warning budget
+in LDAC_OBJECTS headers for publication in the make-cat manifest, so
+analysts can cut downstream. Sparse edge losses need not scale with N.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -678,19 +681,18 @@ is no evidence for a local loss, so no additive allowance is granted.</p>
 <li><p><strong>ext_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Path to the external ASCII catalogue in SExtractor format, with
 <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>, <code class="docutils literal notranslate"><span class="pre">X_IMAGE</span></code> and <code class="docutils literal notranslate"><span class="pre">Y_IMAGE</span></code></p></li>
 <li><p><strong>radius</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>, </em><em>optional</em>) – Largest separation of a pair, in pixels; default 1</p></li>
-<li><p><strong>min_fraction</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>, </em><em>optional</em>) – Baseline paired fraction on each side; default 0.98. External-only
-losses additionally receive <code class="docutils literal notranslate"><span class="pre">external_unpaired_allowance</span></code>.</p></li>
-<li><p><strong>tolerated_unpaired</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Number of unpaired rows on either side accepted whatever the
+<li><p><strong>min_fraction</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>, </em><em>optional</em>) – Minimum SExtractor paired fraction; default 0.98.</p></li>
+<li><p><strong>tolerated_unpaired</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Number of unpaired SExtractor rows accepted whatever the
 fraction; default 20</p></li>
 <li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.15)"><em>logging.Logger</em></a><em>, </em><em>optional</em>) – Pipeline logger</p></li>
-<li><p><strong>external_unpaired_allowance</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) – Additive external-only loss budget, in objects; default 50. Only
-applied when at least one pair exists; zero restores the old guard.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">n_sextractor</span></code>, <code class="docutils literal notranslate"><span class="pre">n_external</span></code>, <code class="docutils literal notranslate"><span class="pre">n_paired</span></code>, <code class="docutils literal notranslate"><span class="pre">n_dropped</span></code>
 (SExtractor rows without a partner) and <code class="docutils literal notranslate"><span class="pre">n_external_only</span></code>
-(external objects without a SExtractor row)</p>
+(external objects without a SExtractor row), plus
+<code class="docutils literal notranslate"><span class="pre">external_paired_fraction</span></code> (zero for an empty external catalogue)
+and <code class="docutils literal notranslate"><span class="pre">external_warning_budget</span></code></p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)">dict</a></p>
@@ -699,8 +701,7 @@ applied when at least one pair exists; zero restores the old guard.</p></li>
 <dd class="field-even"><ul class="simple">
 <li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If the external <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> repeats or is not an integer in
 <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">MAX_NUMBER]</span></code>, or if unpaired rows exceed the absolute tolerance
-and the side’s loss budget: fractional only for SExtractor,
-fractional plus the local allowance for the external catalogue</p></li>
+and the SExtractor fractional loss budget</p></li>
 <li><p><strong>&#64;sc</strong><strong> [</strong><strong>decision:detection.tile_detection</strong><strong>]</strong> – </p></li>
 </ul>
 </dd>
@@ -756,6 +757,7 @@ fractional plus the local allowance for the external catalogue</p></li>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.read_match_record"><code class="docutils literal notranslate"><span class="pre">read_match_record()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.mutual_nearest"><code class="docutils literal notranslate"><span class="pre">mutual_nearest()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.relabel"><code class="docutils literal notranslate"><span class="pre">relabel()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.sextractor_package.match_catalogue.match_catalogue"><code class="docutils literal notranslate"><span class="pre">match_catalogue()</span></code></a></li>
@@ -792,7 +794,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 26 Oct, 2026.
+  Last updated on 30 Oct, 2026.
   <br/>
 </p>
   </div>
