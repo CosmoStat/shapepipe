@@ -44,8 +44,11 @@ ngmix_range = _load()
 def assert_tiles(ranges, n_obj, n_chunks):
     """Assert the partition invariant, in the form each failure mode takes."""
     assert len(ranges) == n_chunks
-    assert ranges[0][0] == 1
-    assert ranges[-1][1] == n_obj
+    if n_obj:
+        assert ranges[0][0] == 1
+        assert ranges[-1][1] == n_obj
+    else:
+        assert ranges == [(2, 1)] * n_chunks
     for (lo, hi), (prev_lo, prev_hi) in zip(ranges[1:], ranges):
         assert lo == prev_hi + 1
         assert hi >= lo - 1, "an empty range is (hi + 1, hi), never narrower"
@@ -64,7 +67,7 @@ def assert_tiles(ranges, n_obj, n_chunks):
 
 @settings(deadline=None)
 @given(
-    n_obj=st.integers(min_value=1, max_value=400),
+    n_obj=st.integers(min_value=0, max_value=400),
     n_chunks=st.integers(min_value=1, max_value=16),
     data=st.data(),
 )
@@ -82,7 +85,7 @@ def test_ranges_tile_the_catalogue(n_obj, n_chunks, data):
 
 @settings(deadline=None)
 @given(
-    n_obj=st.integers(min_value=1, max_value=60),
+    n_obj=st.integers(min_value=0, max_value=60),
     n_chunks=st.integers(min_value=1, max_value=8),
     data=st.data(),
 )
@@ -116,7 +119,7 @@ def _roundtrip(epochs, n_chunks):
 
 @settings(deadline=None)
 @given(
-    n_obj=st.integers(min_value=1, max_value=200),
+    n_obj=st.integers(min_value=0, max_value=200),
     n_chunks=st.integers(min_value=1, max_value=12),
     data=st.data(),
 )
@@ -190,10 +193,13 @@ def test_fewer_objects_than_chunks_pads_with_empty_ranges():
     assert_tiles(ngmix_range.row_ranges([2, 5, 1], 6), 3, 6)
 
 
-def test_zero_objects_is_fatal():
-    """No split is meaningful, and (1, 0) is ngmix's unbounded sentinel."""
-    with pytest.raises(ValueError, match="zero objects"):
-        ngmix_range.row_ranges([], 8)
+@pytest.mark.parametrize("n_chunks", [1, 8, 16])
+def test_zero_objects_preserves_configured_empty_chunks(n_chunks):
+    """All scheduled readers get a bounded empty range and can write products."""
+    doc = _roundtrip([], n_chunks)
+    assert doc["n_obj"] == 0 and doc["n_chunks"] == n_chunks
+    ranges = [ngmix_range.chunk_range(doc, k) for k in range(1, n_chunks + 1)]
+    assert_tiles(ranges, 0, n_chunks)
 
 
 def test_zero_chunks_is_fatal():

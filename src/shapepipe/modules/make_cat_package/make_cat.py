@@ -364,7 +364,7 @@ class SaveCatalogue:
         # A low match fraction can be valid (e.g. missing PSFs). Warn but
         # continue; unmatched detections retain their pre-filled sentinels.
         # Completeness gates reject premature or incomplete merges.
-        if len(ngmix_n_epoch) / self._cat_size_target < 0.1:
+        if self._cat_size_target and len(ngmix_n_epoch) / self._cat_size_target < 0.1:
             warning = (
                 f"Merged shape catalogue {ngmix_cat_path} contains only "
                 f"{len(ngmix_n_epoch)} of {self._cat_size_target} target "
@@ -638,7 +638,7 @@ class SaveCatalogue:
         if not epoch_slots:
             n_slots = 0
         elif n_epoch_slots is None:
-            n_slots = np.max(self._final_cat["N_EPOCH"]) + 1
+            n_slots = int(np.max(self._final_cat["N_EPOCH"], initial=0)) + 1
         else:
             n_slots = n_epoch_slots
 

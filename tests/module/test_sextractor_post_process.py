@@ -118,6 +118,15 @@ def test_post_process_scans_all_ccds_despite_tile_id_key(tmp_path):
     )
     cat_path = tmp_path / "sexcat.fits"
     _write_sex_ldac(cat_path, exp_names, positions)
+    from shapepipe.modules.sextractor_package.match_catalogue import (
+        MATCH_HEADER, read_match_record,
+    )
+    record = dict(n_sextractor=2, n_external=3, n_paired=2, n_dropped=0,
+                  n_external_only=1, external_paired_fraction=2 / 3,
+                  external_warning_budget=50.06)
+    with fits.open(cat_path, mode="update") as hdus:
+        for name, key in MATCH_HEADER.items():
+            hdus["LDAC_OBJECTS"].header[key] = record[name]
 
     sextractor_script.make_post_process(
         str(cat_path),
@@ -126,6 +135,7 @@ def test_post_process_scans_all_ccds_despite_tile_id_key(tmp_path):
         ["0", str(CCD_NPIX), "0", str(CCD_NPIX)],
     )
 
+    assert read_match_record(cat_path) == record
     with fits.open(cat_path) as hdu_list:
         n_epoch = hdu_list["LDAC_OBJECTS"].data["N_EPOCH"]
         ccd_n = {

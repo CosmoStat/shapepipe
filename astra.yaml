@@ -470,23 +470,25 @@ analyses:
           no shape. The join needs the tile image to be the catalogue's
           release: on the DR5 image of a tile only ~95% of detections pair.
           Unpaired detections still stop the run beyond both 2% and 20
-          objects, preserving the check for other pixels. External-only
-          losses stop beyond both 20 objects and 2% of the external count
-          plus an additive 50-object allowance (only when pairs exist).
-          Four production edge tiles have 49, 59, 55 and 101 external-only
-          objects among 1680-2861 objects, concentrated in bright-star
-          halos/spikes at normal positive weight; only 0-3 detections lack
-          partners and paired positions agree to 7e-5 px. Local correlated
-          deblending losses do not scale with total tile population. The
-          allowance is empirical, rounded above the largest observed excess
-          over 2% (44 objects), not a binomial confidence bound. It weakens
-          sensitivity to modest external-side detection-config losses on
-          sparse tiles; there are too few uncensored sparse tiles to
-          calibrate a false-rejection rate. A zero-weight exemption would
-          not explain these losses, and spatial exemptions would add mask
-          and clustering choices. Only the acceptance gate changes: no
-          external-only object gains a shape and every previously accepted
-          catalogue retains identical membership and measurements.
+          objects, preserving the check for other pixels. External-only losses
+          never reject a tile: warn and record; no cut is applied in the
+          pipeline, and whether the catalogue consumer cuts on
+          external_paired_fraction (or catalogue_match in tile_make_cat.json)
+          remains undecided (CosmoStat/sp_validation#444). Hard rejection and
+          an additive unpaired allowance both reject sparse edge tiles whose losses are external-only (058.220:
+          71 external-only of 845 against an allowance of 66.9); zero-weight or
+          spatial exemptions would hide the losses the published counts expose.
+          The warning threshold is max(20, 0.02 N + 50), without the 50 if
+          no pairs exist; it is independent of the SExtractor guard settings.
+          Sparse edge tiles 058.220 and 207.238 exceed it,
+          despite almost every detection pairing. Local correlated
+          deblending losses need not scale with tile population.
+          Every joined tile records the five match counts, external paired
+          fraction and warning budget in its detection catalogue headers,
+          then in tile_detect and the published tile_make_cat.json manifest
+          beside final_cat. Join its unit (RRR.DDD) as a float to TILE_ID in
+          the final catalogue to select the population downstream.
+          No external-only object gains a shape.
           PSF stars come from the exposure-level
           SExtractor run in both options. Image simulations, which have no
           UNIONS catalogue, keep SExtractor's own NUMBER.
@@ -495,7 +497,7 @@ analyses:
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_RADIUS = 1.0;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_MIN_FRACTION = 0.98;
           config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_TOLERATED_UNPAIRED = 20;
-          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_EXTERNAL_UNPAIRED_ALLOWANCE = 50.
+          config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_EXTERNAL_UNPAIRED_ALLOWANCE = absent.
         default: unions_catalogue
         options:
           unions_catalogue:
