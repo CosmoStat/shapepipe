@@ -225,7 +225,6 @@ ngmix_chunks: 8
 # interpolate.
 # defect_fill: noise
 
-# Node-local tile store (vignets, WCS). Unset: the profile's /local/scratch
-# bind (nibi NVMe, candide node /tmp). Dense image-sim campaigns on candide
-# want a shared directory instead.
+# Tile store (vignets, WCS). Unset: the profile's /local/scratch bind (nibi
+# node NVMe; candide a shared NFS directory, see profiles/candide/config.yaml).
 # tile_store_root: /n23data1/<user>/shapepipe/tilestore

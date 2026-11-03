@@ -133,11 +133,11 @@ catalogue as a data campaign, written by the same `final_cat_merge` rule:
 `config/cfis_image_sims/final_cat.param` and the tile count as the file's
 `n_tiles` attribute (there is no `n_tiles_final.txt`).
 
-On candide, the node-local tile store (bound from the node's 31 GB `/tmp`) does not
-hold several dense image-sim tiles at once. Set `tile_store_root:` in the run
-config to a shared directory; `sp run` binds it to `/local/scratch` for that
-campaign. The store names carry a per-campaign hash, so all branches can share one
-root.
+On candide, the tile store is not node-local: the profile binds a shared NFS
+directory to `/local/scratch`, never the node's `/tmp`. To use another directory,
+set `tile_store_root:` in the run config; `sp run` binds it to `/local/scratch`
+for that campaign. The store names carry a per-campaign hash, so all branches can
+share one root.
 
 ## The container image
 
