@@ -130,6 +130,9 @@ fi
 # --directory moves state, not data: data paths are absolute, and the Snakefile
 # resolves its own configfile.
 STATE_DIR="${SP_STATE_DIR:-${RUN_DIR}-state}"
+# candide: /automnt/<disk> is absent on the node that owns the disk; /<disk> is
+# reachable everywhere.
+STATE_DIR="${STATE_DIR#/automnt}"
 [ "$NEEDS_CAMPAIGN" = 0 ] || mkdir -p "$STATE_DIR"
 
 # --- the launch code snapshot ----------------------------------------------
@@ -174,31 +177,6 @@ if not n:
     sys.exit("sp: no --env PYTHONPATH= found in the profile's apptainer-args; "
              "the snapshot would run against the live checkout's src/")
 f.write_text(text)
-PY
-
-  # Move the tile store by rewriting the bind source, not tile_local()'s params:
-  # params changes invalidate finished tiles (workflow/CONTRACTS). This bind is
-  # not a rerun trigger. Append it if the profile has no X:/local/scratch bind.
-  # See workflow/config.yaml for tile_store_root's capacity/latency trade-off.
-  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$(cfg tile_store_root)" <<'PY'
-import os, pathlib, re, sys
-f, root = pathlib.Path(sys.argv[1]), sys.argv[2]
-if root:
-    root = str(root)
-    if not os.path.isabs(root):
-        sys.exit(f"sp: tile_store_root must be an absolute path, got {root!r}")
-    os.makedirs(root, exist_ok=True)
-    bind = f"--bind {root}:/local/scratch"
-    text, n = re.subn(r'--bind \S+:/local/scratch(?=[\s"])', lambda m: bind,
-                      f.read_text(), count=1)
-    if not n:
-        text, n = re.subn(r'(apptainer-args:\s*"[^"]*)"',
-                          lambda m: m.group(1) + " " + bind + '"', text, count=1)
-    if not n:
-        sys.exit("sp: tile_store_root is set but the profile has no quoted "
-                 "apptainer-args to bind it with")
-    f.write_text(text)
-    print(f"sp: tile store root {root} (bound to /local/scratch)", file=sys.stderr)
 PY
 
   python - "$SNAPSHOT/snapshot.json" "$REPO" <<'PY'
@@ -252,7 +230,8 @@ sm() {
   SP_PHASE="${SP_PHASE:-passthrough}" \
     snakemake --snakefile "$root/workflow/Snakefile" \
               --profile "$root/profiles/$PROFILE" \
-              --directory "$STATE_DIR" "$@"
+              --directory "$STATE_DIR" \
+              --slurm-logdir "$STATE_DIR/slurm_logs" "$@"
 }
 
 cmd="${1:-}"

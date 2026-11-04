@@ -10,24 +10,9 @@ default-resources:
   runtime: 120                   # minutes
   slurm_account: cusers
   slurm_partition: "comp,pscomp"
-  # A node hosting a data disk mounts it at /nXXdata and has no /automnt/nXXdata;
-  # every other node reaches it through the /nXXdata -> /automnt/nXXdata symlink.
-  # Snakemake resolves the state dir to the /automnt form and puts its Slurm logs
-  # there, so a job on the node hosting the state dir dies at start (exit 0:53)
-  # with no log. Campaign state normally sits on /n17data, hence n17. State on
-  # another disk moves the problem to that disk's node: see workflow/README.md.
-  slurm_extra: "'--exclude=n17'"
 software-deployment-method: [apptainer]
-# tile.smk's /local/scratch (the tile store, ~5.6 GB per real-data tile) is
-# bound to a shared NFS directory. candide has no /local; node /tmp (~29 GB,
-# shared by every job on the node) must not be used; and the writable per-job
-# /scratch/$USER/$SLURM_JOB_ID cannot be named here (literal paths only, see
-# profiles/nibi/config.yaml; --cleanenv drops SLURM_JOB_ID). The source dir
-# must exist. Cost: ngmix reads the store over NFS. A run can move it with
-# tile_store_root (workflow/config.yaml). Stores left by killed jobs are only
-# swept after a day by a later tile job; check this dir after failed campaigns.
 # PYTHONPATH names a checkout's src/; workflow/bin/sp rewrites the launch copy.
-apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/n17data/mkilbing/astro/repositories/github/shapepipe/src --bind /home,/automnt,/n17data,/n23data1,/n09data --bind /n23data1/mkilbing/shapepipe/tilestore:/local/scratch"
+apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/n17data/mkilbing/astro/repositories/github/shapepipe/src --bind /home,/automnt,/n17data,/n23data1,/n09data"
 latency-wait: 60                 # NFS: wait for outputs to appear after a job
 keep-going: true                 # a failed job poisons only its cone; siblings run on
 # Retry transient node failures, including measured process-slot exhaustion
@@ -40,16 +25,15 @@ show-failed-logs: true
 printshellcmds: true
 rerun-triggers: [mtime, params, code, software-env]
 # @sc [label:coupling] candide-group-slurm-extra
-# tile_shape's rule-level slurm_extra replaces the profile default. On candide
-# it carries only the node exclusion: the tile store is on NFS, so tile.smk's
-# --tmp floor would just keep the group off the TmpDisk=0 nodes. Set it
-# identically on all four member rules: a group's string resources must agree.
+# tile.smk's --tmp floor selects nodes by Slurm's configured TmpDisk, which is 0
+# on nodes that do have /scratch. Clear it on all four tile_shape member rules:
+# a group's string resources must agree.
 set-resources:
   tile_vignets:
-    slurm_extra: "'--exclude=n17'"
+    slurm_extra: "''"
   tile_ngmix:
-    slurm_extra: "'--exclude=n17'"
+    slurm_extra: "''"
   tile_merge_cats:
-    slurm_extra: "'--exclude=n17'"
+    slurm_extra: "''"
   tile_make_cat:
-    slurm_extra: "'--exclude=n17'"
+    slurm_extra: "''"

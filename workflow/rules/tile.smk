@@ -92,7 +92,7 @@ def tile_local(tile):
     Derive a literal path from the tile wildcard and LOCAL_TAG (the run-dir
     hash), so concurrent campaigns over the same tile do not share a store.
     See profiles/nibi/config.yaml's /local bind note for container path handling
-    and bin/sp's tile_store_root handling for the host-side bind.
+    and the Snakefile's tile_store_root handling for the per-job bind.
     On nibi the container's /tmp is RAM-backed, so these stores go on the
     /local/scratch bind instead.
 

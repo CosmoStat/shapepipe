@@ -133,17 +133,19 @@ catalogue as a data campaign, written by the same `final_cat_merge` rule:
 `config/cfis_image_sims/final_cat.param` and the tile count as the file's
 `n_tiles` attribute (there is no `n_tiles_final.txt`).
 
-On candide, the tile store is not node-local: the profile binds a shared NFS
-directory to `/local/scratch`, never the node's `/tmp`. To use another directory,
-set `tile_store_root:` in the run config; `sp run` binds it to `/local/scratch`
-for that campaign. The store names carry a per-campaign hash, so all branches can
-share one root.
+The tile store holds one tile's vignets and WCS for the length of its `tile_shape`
+job, so it wants the fastest disk the job's node has, and `tile_store_root` in the
+`machines:` table names it. On candide that's `/scratch/%u/%j`, the directory Slurm
+creates on the node's own disk for each job and deletes when the job ends. Never
+use `/tmp` on candide: it is ~30 GB shared by everyone on the node.
 
-Also on candide, a job cannot start on the node that hosts its state directory
-(`SP_STATE_DIR`, default `<run_dir>-state`): Slurm reports exit `0:53` and writes
-no log. The profile excludes n17 because state normally sits on `/n17data`. A
-campaign with state on, say, `/n23data1` must add `--exclude=n23` to the profile's
-`slurm_extra` entries, or move its state directory to another disk.
+On candide, write paths as `/nXXdataN/...`, never `/automnt/nXXdataN/...`: the
+`/automnt` form does not exist on the node that owns that disk. `sp` keeps the state
+directory and Slurm logs in the plain form, which is what lets jobs run on the node
+holding their own campaign.
+
+Don't exclude candide nodes from the profile without a reproducible failure of a
+pinned job on that node.
 
 ## The container image
 
