@@ -140,9 +140,9 @@ creates on the node's own disk for each job and deletes when the job ends. Never
 use `/tmp` on candide: it is ~30 GB shared by everyone on the node.
 
 On candide, write paths as `/nXXdataN/...`, never `/automnt/nXXdataN/...`: the
-`/automnt` form does not exist on the node that owns that disk. `sp` keeps the state
-directory and Slurm logs in the plain form, which is what lets jobs run on the node
-holding their own campaign.
+`/automnt` form does not exist on the node that owns that disk. The Snakefile spells
+Snakemake's working directory in the plain form, so jobs can run on the node holding
+their own campaign.
 
 Don't exclude candide nodes from the profile without a reproducible failure of a
 pinned job on that node.
