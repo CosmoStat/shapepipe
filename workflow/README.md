@@ -186,11 +186,19 @@ catalogue as a data campaign, written by the same `final_cat_merge` rule:
 `config/cfis_image_sims/final_cat.param` and the tile count as the file's
 `n_tiles` attribute (there is no `n_tiles_final.txt`).
 
-On candide, the node-local tile store (bound from the node's 31 GB `/tmp`) does not
-hold several dense image-sim tiles at once. Set `tile_store_root:` in the run
-config to a shared directory; `sp run` binds it to `/local/scratch` for that
-campaign. The store names carry a per-campaign hash, so all branches can share one
-root.
+The tile store holds one tile's vignets and WCS for the length of its `tile_shape`
+job, so it wants the fastest disk the job's node has, and `tile_store_root` in the
+`machines:` table names it. On candide that's `/scratch/%u/%j`, the directory Slurm
+creates on the node's own disk for each job and deletes when the job ends. Never
+use `/tmp` on candide: it is ~30 GB shared by everyone on the node.
+
+On candide, write paths as `/nXXdataN/...`, never `/automnt/nXXdataN/...`: the
+`/automnt` form does not exist on the node that owns that disk. The Snakefile spells
+Snakemake's working directory in the plain form, so jobs can run on the node holding
+their own campaign.
+
+Don't exclude candide nodes from the profile without a reproducible failure of a
+pinned job on that node.
 
 ## The container image
 

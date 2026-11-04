@@ -98,12 +98,14 @@ machines:
     base_dir: /n17data/UNIONS/WL
     data:
       retrieve: vos
+      tile_store_root: /scratch/%u/%j
       inputs:
         masks: $base_dir/masks/dr6-2026-08
         catalogues: vos:cfis/tiles_DR6
       container: /n17data/cdaley/containers/shapepipe_develop-runtime-20260718.sif
     image_sims:
       retrieve: symlink
+      tile_store_root: /scratch/%u/%j
       inputs:
         # $run is the branch dir (e.g. 1p2z_grid_1), so a run config
         # picks the grid by setting `run:` alone.
@@ -225,7 +227,8 @@ ngmix_chunks: 8
 # interpolate.
 # defect_fill: noise
 
-# Node-local tile store (vignets, WCS). Unset: the profile's /local/scratch
-# bind (nibi NVMe, candide node /tmp). Dense image-sim campaigns on candide
-# want a shared directory instead.
-# tile_store_root: /n23data1/<user>/shapepipe/tilestore
+# Tile store (vignets, WCS): intermediates of one tile_shape job, deleted when it
+# ends. tile_store_root is the directory bound to /local/scratch in that job, set
+# per machine in machines:; %u and %j are the user and Slurm job id. candide uses
+# Slurm's per-job directory on each node's own disk. Unset (nibi): the profile's
+# /local bind. A literal directory also works, for example to compare disks.
