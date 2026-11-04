@@ -84,10 +84,11 @@ if _unresolved:
         f"input_type={INPUT_TYPE!r}: {', '.join(_unresolved)}. Set them in "
         f"your run config (SP_RUN_CONFIG).")
 
-# Every job parses this file on its node, inside its allocation, so a store on
-# per-job disk can be bound here. A login shell's XDG_CACHE_HOME may name a
-# node-local directory other nodes cannot create.
+# A login shell's XDG_CACHE_HOME may name a node-local directory other nodes
+# cannot create, and jobs inherit the launch's environment.
 os.environ.pop("XDG_CACHE_HOME", None)
+# Every job parses this file on its node, inside its allocation, so a store on
+# per-job disk can be bound here.
 _tile_store = config.get("tile_store_root")
 if _tile_store and ("%j" not in _tile_store or "SLURM_JOB_ID" in os.environ):
     _tile_store = (_tile_store.replace("%u", os.environ.get("USER", ""))

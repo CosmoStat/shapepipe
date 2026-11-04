@@ -11,6 +11,15 @@ default-resources:
   slurm_account: cusers
   slurm_partition: "comp,pscomp"
 software-deployment-method: [apptainer]
+# Everything but source-cache, whose path would be the launch's and may be
+# node-local; the Snakefile drops XDG_CACHE_HOME so jobs derive their own.
+shared-fs-usage:
+  - persistence
+  - input-output
+  - software-deployment
+  - sources
+  - storage-local-copies
+  - software-deployment-cache
 # PYTHONPATH names a checkout's src/; workflow/bin/sp rewrites the launch copy.
 apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/n17data/mkilbing/astro/repositories/github/shapepipe/src --bind /home,/automnt,/n17data,/n23data1,/n09data"
 latency-wait: 60                 # NFS: wait for outputs to appear after a job
