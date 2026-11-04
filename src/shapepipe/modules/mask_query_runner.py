@@ -30,9 +30,8 @@ def mask_query_runner(
 
     @sc [decision:masking.psf_star_mask_veto,label:scope] mask-query-carries-not-cuts
     Without MASK_PATHS the catalogue passes through with no MASK_EXT column;
-    with it, MASK_EXT is carried for measurement and nothing here removes a
-    star. The PSF-star veto is a setools edit (``MASK_EXT == 0`` beside
-    IMAFLAGS_ISO), not a change here.
+    with it, MASK_EXT is written and nothing here removes a star. The PSF-star
+    veto is the ``MASK_EXT == 0`` cut in star_selection.setools.
 
     """
     sexcat_path = input_file_list[0]

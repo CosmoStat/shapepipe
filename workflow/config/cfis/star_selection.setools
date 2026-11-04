@@ -1,15 +1,15 @@
 ## SETools configuration file for star/galaxy separation based on size/mag properties
 ##
-## The mask cut is IMAFLAGS_ISO == 0: instrument flags identify corrupted
-## pixels, while sky-fixed external masks identify locations rather than
-## unusable measurements. PSF outlier rejection handles location-dependent
-## contamination without an external-mask veto.
+## PSF-star candidates are rejected on instrument flags (IMAFLAGS_ISO, corrupted
+## pixels) and on the UNIONS manual mask (MASK_EXT, written by mask_query from
+## its MASK_PATHS). Outlier rejection copes with crowded star fields, but not
+## where compact extended sources outnumber stars on a CCD (M33's HII regions
+## and clusters): they shift the stellar locus and enter the PSF model. The
+## manual mask covers those objects.
 ##
-## To veto external masks, enable the desired maps in mask_query's MASK_PATHS
-## and add MASK_EXT == 0 beside each IMAFLAGS_ISO line below. MASK_PATHS ships
-## commented out, so mask_query is a pass-through and writes no MASK_EXT.
-## SETools has no bitwise operators; select mask bits in MASK_PATHS.
-
+## MASK_EXT exists only when mask_query's MASK_PATHS is set; dropping the map
+## means dropping the MASK_EXT lines below. SETools has no bitwise operators;
+## select mask bits in MASK_PATHS.
 # @sc [decision:masking.psf_star_mask_veto,decision:star_selection_psf.star_selection_box]
 [MASK:preselect]
 
@@ -22,6 +22,7 @@ FWHM_WORLD < 1.5 / 3600
 FLAGS == 0
 
 IMAFLAGS_ISO == 0
+MASK_EXT == 0
 NO_SAVE
 
 # @sc [decision:masking.psf_star_mask_veto]
@@ -31,6 +32,7 @@ NO_SAVE
 FLAGS == 0
 
 IMAFLAGS_ISO == 0
+MASK_EXT == 0
 NO_SAVE
 
 
@@ -46,6 +48,7 @@ FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 3 * locus_width(FWHM_IMAGE{preselect
 FLAGS == 0
 # @sc [decision:masking.pixel_mask_source]
 IMAFLAGS_ISO == 0
+MASK_EXT == 0
 
 [MASK:fwhm_mag_cut]
 FWHM_IMAGE > 0
