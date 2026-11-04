@@ -9,13 +9,14 @@ default-resources:
   mem_mb: 2000
   runtime: 120                   # minutes
   slurm_account: cusers
-  # comp nodes have TmpDisk=0, so the tile_shape group (--tmp, see tile.smk's
-  # TILE_SLURM_EXTRA) lands on pscomp; everything else may use either.
   slurm_partition: "comp,pscomp"
-  # n09/n17/n36 follow sp_validation's candide exclusions; n23 has measured
-  # SLURM job failures (sp_validation commit 2b40c99); n34/n35 must not get
-  # ShapePipe jobs (n34's /tmp filled with orphaned tile stores).
-  slurm_extra: "'--exclude=n09,n17,n23,n34,n35,n36'"
+  # A node hosting a data disk mounts it at /nXXdata and has no /automnt/nXXdata;
+  # every other node reaches it through the /nXXdata -> /automnt/nXXdata symlink.
+  # Snakemake resolves the state dir to the /automnt form and puts its Slurm logs
+  # there, so a job on the node hosting the state dir dies at start (exit 0:53)
+  # with no log. Campaign state normally sits on /n17data, hence n17. State on
+  # another disk moves the problem to that disk's node: see workflow/README.md.
+  slurm_extra: "'--exclude=n17'"
 software-deployment-method: [apptainer]
 # tile.smk's /local/scratch (the tile store, ~5.6 GB per real-data tile) is
 # bound to a shared NFS directory. candide has no /local; node /tmp (~29 GB,
@@ -39,16 +40,16 @@ show-failed-logs: true
 printshellcmds: true
 rerun-triggers: [mtime, params, code, software-env]
 # @sc [label:coupling] candide-group-slurm-extra
-# tile_shape's rule-level slurm_extra replaces the profile default. Set both
-# the --tmp floor and node exclusions identically on all four member rules:
-# a group's string resources must agree. Leave rule threads and attempt-scaled
-# memory intact.
+# tile_shape's rule-level slurm_extra replaces the profile default. On candide
+# it carries only the node exclusion: the tile store is on NFS, so tile.smk's
+# --tmp floor would just keep the group off the TmpDisk=0 nodes. Set it
+# identically on all four member rules: a group's string resources must agree.
 set-resources:
   tile_vignets:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
+    slurm_extra: "'--exclude=n17'"
   tile_ngmix:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
+    slurm_extra: "'--exclude=n17'"
   tile_merge_cats:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
+    slurm_extra: "'--exclude=n17'"
   tile_make_cat:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
+    slurm_extra: "'--exclude=n17'"

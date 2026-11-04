@@ -139,6 +139,12 @@ set `tile_store_root:` in the run config; `sp run` binds it to `/local/scratch`
 for that campaign. The store names carry a per-campaign hash, so all branches can
 share one root.
 
+Also on candide, a job cannot start on the node that hosts its state directory
+(`SP_STATE_DIR`, default `<run_dir>-state`): Slurm reports exit `0:53` and writes
+no log. The profile excludes n17 because state normally sits on `/n17data`. A
+campaign with state on, say, `/n23data1` must add `--exclude=n23` to the profile's
+`slurm_extra` entries, or move its state directory to another disk.
+
 ## The container image
 
 `sp container` owns which image the jobs run inside. Two layers, and the second
