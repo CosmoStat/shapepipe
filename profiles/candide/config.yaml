@@ -2,6 +2,9 @@
 # `SP_PROFILE=candide workflow/bin/sp run`. Mirrors profiles/nibi/config.yaml;
 # only the cluster facts differ, and each is stated where it is set.
 executor: slurm
+# Relative, so it joins the plain-spelled working directory the Snakefile sets
+# rather than resolving to /automnt/<disk>, absent on the node owning the disk.
+slurm-logdir: .snakemake/slurm_logs
 # candide is a shared ~25-node cluster: cap concurrent submissions well below
 # what nibi takes.
 jobs: 150

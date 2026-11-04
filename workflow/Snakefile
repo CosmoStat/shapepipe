@@ -86,7 +86,8 @@ if _unresolved:
 
 # candide: Snakemake resolves its working directory to /automnt/<disk>, which is
 # absent on the node owning the disk, while /<disk> is reachable everywhere. The
-# Slurm executor uses this value for the job's working directory and its log.
+# Slurm executor uses this value for the job's working directory, and for its log
+# through the profile's relative slurm-logdir.
 workflow._workdir_init = workflow._workdir_init.removeprefix("/automnt")
 
 # A login shell's XDG_CACHE_HOME may name a node-local directory other nodes
