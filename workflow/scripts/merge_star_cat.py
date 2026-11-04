@@ -81,7 +81,7 @@ COLUMNS = ("X", "Y", "RA", "DEC",
 # exposure datasets can have incompatible structured dtypes at concatenation.
 OPTIONAL = {"MAG": np.float32, "SNR": np.float32, "ACCEPTED": np.int32}
 CCD_COLUMN = "CCD_NB"
-ALL_COLUMNS = COLUMNS + tuple(OPTIONAL) + (CCD_COLUMN,)
+ALL_COLUMNS = COLUMNS + tuple(OPTIONAL) + (CCD_COLUMN, "EXP_ID", "SOURCE_ORDINAL")
 
 
 def ccd_number(member_name: str) -> int:
@@ -159,6 +159,9 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
     retained archive's contents changes its source stamp, which can refresh this
     exposure even when its validation members are unchanged.
 
+    Reconstruct row keys from archive names and row order for older members;
+    reject duplicate CCD members rather than silently producing duplicate keys.
+
     @sc [label:schema] star-merge-unscaled-required-columns
     Required validation_psf columns must be unscaled: the allocation takes its
     dtypes from ``ColDefs.dtype``, which ignores TSCAL/TZERO, so a scaled column
@@ -177,6 +180,21 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
         if not names:
             sys.exit(f"merge_star_cat: {tar_path} holds no {MEMBER_PATTERN}")
 
+        ccds = [ccd_number(name) for name in names]
+        for name in names:
+            member_exp = Path(name).name.removesuffix(".fits").removeprefix(
+                "validation_psf-").rsplit("-", 1)[0]
+            if member_exp != exp:
+                raise ValueError(f"merge_star_cat: {name}: expected exposure {exp!r}")
+        if len(ccds) != len(set(ccds)):
+            raise ValueError(f"merge_star_cat: {tar_path}: duplicate CCD members")
+        try:
+            exp_bytes = exp.encode("ascii")
+        except UnicodeEncodeError as exc:
+            raise ValueError(f"invalid exposure ID {exp!r}") from exc
+        if not exp_bytes or len(exp_bytes) > 64:
+            raise ValueError(f"invalid exposure ID {exp!r}")
+
         # --- pass 1: row counts and dtypes, from headers alone --------------
         counts, dtypes, n_total = [], None, 0
         for name in names:
@@ -192,7 +210,8 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
         fields = [(c, dtypes[c]) for c in COLUMNS]
         # See OPTIONAL for the cross-exposure dtype contract.
         fields += list(OPTIONAL.items())
-        fields += [(CCD_COLUMN, np.int32)]
+        fields += [(CCD_COLUMN, np.int32), ("EXP_ID", "S64"),
+                   ("SOURCE_ORDINAL", np.int64)]
         data = np.empty(n_total, dtype=np.dtype(fields))
 
         # --- pass 2: fill ---------------------------------------------------
@@ -209,6 +228,8 @@ def read_exposure(exp: str, tar_path: Path) -> np.ndarray:
                     # See the module's per-member optional-column contract.
                     data[col][sl] = rows[col] if col in have else 0
                 data[CCD_COLUMN][sl] = ccd_number(name)
+                data["EXP_ID"][sl] = exp_bytes
+                data["SOURCE_ORDINAL"][sl] = np.arange(n_rows, dtype=np.int64)
             at += n_rows
 
     if at != n_total:

@@ -241,6 +241,16 @@ def test_missing_run_fails_during_parse(campaign, resolve_dag):
             pytest.fail("a campaign without run: must fail at parse time")
 
 
+def test_excluded_dateline_tile_is_refused_during_parse(tmp_path, resolve_dag):
+    """A data batch cannot plan a tile excluded from the catalogue."""
+    campaign = Campaign(tmp_path / "campaign", "data", "psfex")
+    with campaign.tile_list.open("a") as f:
+        f.write("579.253\n")
+    with pytest.raises(ValueError, match="579.253"):
+        with resolve_dag(campaign):
+            pass
+
+
 def test_mccd_is_refused_during_parse(tmp_path, resolve_dag):
     """MCCD products are unreadable to persistence and the star merge."""
     campaign = Campaign(tmp_path / "campaign", "data", "mccd")

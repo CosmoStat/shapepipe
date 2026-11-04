@@ -66,3 +66,8 @@ analyses:
       star_galaxy_classification: deferred_downstream
       tile_overlap_handling: no_dedup_in_pipeline
       failure_sentinels: sentinel_values
+  survey_publication:
+    decisions:
+      tile_universe: excluded_by_rule
+      seam_realization: closure
+      pixel_completeness: wait_for_all
