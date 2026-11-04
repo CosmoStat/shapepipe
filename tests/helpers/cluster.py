@@ -53,14 +53,14 @@ def srun(args, *, partition="comp", time_limit="00:30:00", cpus=4, extra=None):
     cpus : int
         ``--cpus-per-task``.
     extra : list of str, optional
-        Extra ``srun`` flags (e.g. ``["--exclude", "n09,n17,n36"]``).
+        Extra ``srun`` flags (e.g. ``["--nodelist", "n24"]``).
     """
     cmd = [
         "srun",
         f"--partition={partition}",
         f"--time={time_limit}",
         f"--cpus-per-task={cpus}",
-        *(extra or ["--exclude", "n09,n17,n36"]),
+        *(extra or []),
         *args,
     ]
     return subprocess.run(cmd, check=True, text=True, capture_output=True)
