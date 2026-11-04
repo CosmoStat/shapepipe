@@ -50,6 +50,32 @@ recognise passes straight through to snakemake with the right profile and state
 directory, which is the escape hatch for `sp --unlock`, `sp --dag` or
 `sp exp_psf ...`.
 
+## Exposure-grid categories
+
+Tile detection writes `SEG_LABEL`, the segmentation check-image label before the catalogue join, alongside `SEG_VIGNET`.
+The join changes `NUMBER` and the tile segmentation stamps but retains `SEG_LABEL`.
+The multi-epoch vignetmaker takes `segmentation` as its fourth positional input, after `sexcat`, `log_exp_headers` and `exp_numbers`.
+It maps the full segmentation labels to catalogue `NUMBER`s; detections absent from the joined catalogue have label −1 and sky has label 0.
+
+Each `image_vignet` epoch entry contains three categorical arrays with the image stamp's shape: `SEG_VIGNET` (int32), `NEIGHBOUR` (bool) and `OFF_TILE` (bool).
+The native stamp's `INT_POS` defines every exposure pixel centre; `OFFSET` retains the same subpixel centroid remainder as the image extraction.
+Vignetmaker maps those zero-based centres through the exposure WCS and the tile WCS, then samples the nearest tile cell with `floor(x + 0.5)` on each axis, including upward half-cell ties.
+No image, detector flag, weight, background or RMS stamp is resampled.
+A nearest cell outside the full tile rectangle sets `OFF_TILE`; it is not sky or a neighbour.
+
+Both blend handlings use the full registered segmentation, including cells beyond the original tile VIGNET support.
+`NEIGHBOUR` marks every foreign nonzero segmentation label, including −1.
+`noisefill` replaces light on that full neighbour footprint, independently of the tile VIGNET's intensity markers.
+`uberseg` recomputes the nearest-segment Voronoi partition on the exposure-grid labels before applying its configured dilation.
+Ngmix reads these arrays before its defect mask, masked-fraction cut, central veto and footprint diagnostics; it applies no CCD flip to them.
+The tile-grid `SEG_VIGNET` still supplies the catalogue-level `neighbour_flag`.
+`SEG_LABEL` and both tile stamp columns are omitted from final catalogues when stamp removal is enabled.
+There are no additional product files or final-catalogue columns.
+
+Image vignette stores without registered categories fail with an instruction to rerun vignetmaker.
+Detection catalogues without `SEG_LABEL` require tile detection and the join to run with the matching segmentation check image.
+Use a single code revision and this input contract across a campaign, including calibration simulations; image and categorical products from different extractions must not be mixed.
+
 ## The two static invocations
 
 The exposure job set is *derived from data the run itself produces* — a tile's

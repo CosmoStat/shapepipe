@@ -148,9 +148,13 @@ def add_seg_vignet(cat_path, seg_path, w_log=None):
     ``NUMBER``, is cut on the grid of each object's VIGNET, centred where
     SExtractor centres VIGNET (:func:`vignet_centre` of ``X_IMAGE_DBL`` /
     ``Y_IMAGE_DBL``, :func:`cut_stamps`), and written, int32 and 0 off the image, as
-    ``SEG_VIGNET`` in ``LDAC_OBJECTS``, which ngmix's UberSeg blend handling
-    reads. The double positions (:func:`seg_vignet_param_file`) are dropped;
-    every other HDU and column is kept.
+    ``SEG_VIGNET`` in ``LDAC_OBJECTS`` for tile-level neighbour diagnostics.
+    The double positions (:func:`seg_vignet_param_file`) are dropped;
+    ``SEG_LABEL`` retains the check-image label through catalogue joins so
+    vignetmaker can register the full segmentation, beyond VIGNET's support.
+    Every other HDU and column is kept.
+
+    @sc [decision:preparation.categorical_registration]
 
     Parameters
     ----------
@@ -183,8 +187,12 @@ def add_seg_vignet(cat_path, seg_path, w_log=None):
     seg_vignets = cut_stamps(fits.getdata(seg_path), col, row, size, 0)
     kept = [c for c in objects.columns.columns
             if c.name not in DOUBLE_POSITIONS]
+    seg_label_column = "SEG_LABEL"
     new = fits.BinTableHDU.from_columns(
-        kept + [seg_vignet_column(seg_vignets)],
+        kept + [
+            seg_vignet_column(seg_vignets),
+            fits.Column(name=seg_label_column, format="J", array=data["NUMBER"]),
+        ],
         header=objects.header,
         name="LDAC_OBJECTS",
     )
