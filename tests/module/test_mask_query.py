@@ -317,7 +317,7 @@ def test_empty_coverage_raises_clearly(tmp_path):
 def test_mask_query_no_maps_is_noop(tmp_path):
     """No MASK_PATHS means a strict pass-through, not a zero column.
 
-    The shipped configs comment MASK_PATHS out, so this is the DEFAULT path.
+    The image-sims configs carry no MASK_PATHS, so this is their path.
     mask_query stays in the MODULE chain either way — setools reads its output
     — so the no-op has to publish a file, and that file must be identical to
     its input with no MASK_EXT column at all (the gating make_cat gives

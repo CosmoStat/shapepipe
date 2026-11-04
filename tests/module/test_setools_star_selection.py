@@ -37,6 +37,7 @@ def test_star_selection_preselects_on_angular_fwhm(tmp_path):
             ("MAG_AUTO", "f8"),
             ("FLAGS", "i4"),
             ("IMAFLAGS_ISO", "i4"),
+            ("MASK_EXT", "i4"),
             ("X_IMAGE", "f8"),
             ("Y_IMAGE", "f8"),
         ],
@@ -66,3 +67,60 @@ def test_star_selection_preselects_on_angular_fwhm(tmp_path):
     ).round(6) or abs(
         float(stats["Mean star fwhm selected (arcsec)"]) - 0.75
     ) < 0.02
+
+
+def _run(catalogue, tmp_path):
+    tools = SETools(catalogue, str(tmp_path), "-test", str(CONFIG), cat_file=False)
+    try:
+        tools.process(_NullLogger())
+    finally:
+        tools._config_file.close()
+    return tools.mask["star_selection"]
+
+
+def _crowded_ccd(mask_ext):
+    """30 stars at 0.75" and 60 compact extended sources at 1.05".
+
+    The extended sources outnumber the stars, as M33's HII regions and clusters
+    do on its CCDs, and sit inside the preselection's FWHM range.
+    """
+    rng = np.random.default_rng(2)
+    n_star, n_ext = 30, 60
+    fwhm_arcsec = np.r_[np.full(n_star, 0.75), np.full(n_ext, 1.05)]
+    pixel_scale = rng.uniform(0.185, 0.188, fwhm_arcsec.size)
+    fwhm_image = fwhm_arcsec / pixel_scale + rng.uniform(-0.05, 0.05, fwhm_arcsec.size)
+    catalogue = np.zeros(
+        fwhm_image.size,
+        dtype=[
+            ("FWHM_IMAGE", "f8"),
+            ("FWHM_WORLD", "f8"),
+            ("MAG_AUTO", "f8"),
+            ("FLAGS", "i4"),
+            ("IMAFLAGS_ISO", "i4"),
+            ("MASK_EXT", "i4"),
+            ("X_IMAGE", "f8"),
+            ("Y_IMAGE", "f8"),
+        ],
+    )
+    catalogue["FWHM_IMAGE"] = fwhm_image
+    catalogue["FWHM_WORLD"] = fwhm_image * pixel_scale / 3600.0
+    catalogue["MAG_AUTO"] = rng.uniform(19.0, 20.5, fwhm_image.size)
+    catalogue["X_IMAGE"] = rng.uniform(0, 2048, fwhm_image.size)
+    catalogue["Y_IMAGE"] = rng.uniform(0, 4612, fwhm_image.size)
+    catalogue["MASK_EXT"][n_star:] = mask_ext
+    return catalogue, np.arange(fwhm_image.size) < n_star
+
+
+def test_extended_sources_capture_the_locus_without_the_manual_mask(tmp_path):
+    """Outlier rejection alone selects the extended sources, not the stars."""
+    catalogue, is_star = _crowded_ccd(mask_ext=0)
+    selected = _run(catalogue, tmp_path)
+    assert selected[~is_star].all()
+    assert not selected[is_star].any()
+
+
+def test_manual_mask_restores_the_stellar_locus(tmp_path):
+    """MASK_EXT != 0 keeps extended sources out of the locus and the sample."""
+    catalogue, is_star = _crowded_ccd(mask_ext=1)
+    selected = _run(catalogue, tmp_path)
+    np.testing.assert_array_equal(selected, is_star)
