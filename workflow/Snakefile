@@ -84,11 +84,13 @@ if _unresolved:
         f"input_type={INPUT_TYPE!r}: {', '.join(_unresolved)}. Set them in "
         f"your run config (SP_RUN_CONFIG).")
 
-# candide: Snakemake resolves its working directory to /automnt/<disk>, which is
-# absent on the node owning the disk, while /<disk> is reachable everywhere. The
-# Slurm executor uses this value for the job's working directory, and for its log
-# through the profile's relative slurm-logdir.
+# candide: the working directory resolves to /automnt/<disk>, which is absent on
+# the node owning the disk, while /<disk> is reachable everywhere. The head process
+# derives the paths it hands to jobs from it (their working directory, Slurm log
+# and wait-for files), so spell it in the plain form before any of them is made.
 workflow._workdir_init = workflow._workdir_init.removeprefix("/automnt")
+_getcwd = os.getcwd
+os.getcwd = lambda: _getcwd().removeprefix("/automnt")
 
 # A login shell's XDG_CACHE_HOME may name a node-local directory other nodes
 # cannot create, and jobs inherit the launch's environment.
