@@ -88,9 +88,9 @@ if _unresolved:
 # the node owning the disk, while /<disk> is reachable everywhere. The head process
 # derives the paths it hands to jobs from it (their working directory, Slurm log
 # and wait-for files), so spell it in the plain form before any of them is made.
-workflow._workdir_init = workflow._workdir_init.removeprefix("/automnt")
-_getcwd = os.getcwd
-os.getcwd = lambda: _getcwd().removeprefix("/automnt")
+if MACHINE == "candide":
+    workflow._workdir_init = workflow._workdir_init.removeprefix("/automnt")
+    os.getcwd = lambda getcwd=os.getcwd: getcwd().removeprefix("/automnt")
 
 # A login shell's XDG_CACHE_HOME may name a node-local directory other nodes
 # cannot create, and jobs inherit the launch's environment.
