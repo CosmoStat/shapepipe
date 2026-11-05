@@ -1,0 +1,45 @@
+{
+  "command": "scripts/validation/masked_pixels/d0_prevalence.py --inputs /scratch/cdaley/veto-survey/prevalence_checks.json --survey /scratch/cdaley/veto-survey/prevalence.npz --out /scratch/cdaley/veto-d0/188.307.json --nproc 2",
+  "inputs": {
+    "sexcat": "/scratch/cdaley/defectflag-check/run/188307/work/tiles/18/188.307/output/run_sp_tile_Sx/sextractor_runner/output/sexcat-188-307.fits",
+    "image": "/scratch/cdaley/defectflag-check/run/188307/epoch-output/run_sp_epoch_vignets/vignetmaker_runner/output/image_vignet-188-307.sqlite",
+    "flag": "/scratch/cdaley/defectflag-check/run/188307/epoch-output/run_sp_epoch_vignets/vignetmaker_runner/output/flag_vignet-188-307.sqlite",
+    "weight": "/scratch/cdaley/defectflag-check/run/188307/epoch-output/run_sp_epoch_vignets/vignetmaker_runner/output/weight_vignet-188-307.sqlite",
+    "psf": "/scratch/cdaley/defectflag-check/run/188307/tile-store/sp-c9b3bf5e-188.307/output/run_sp_tile_PiViVi/psfex_interp_runner/output/galaxy_psf-188-307.sqlite",
+    "headers": "/scratch/cdaley/defectflag-check/run/188307/tile-store/sp-c9b3bf5e-188.307/wcs/log_exp_headers-188-307.sqlite",
+    "out": "/scratch/cdaley/defectflag-check/188.307",
+    "background": "/scratch/cdaley/defectflag-check/run/188307/epoch-output/run_sp_epoch_vignets/vignetmaker_runner/output/background_vignet-188-307.sqlite",
+    "rms": "/scratch/cdaley/defectflag-check/run/188307/epoch-output/run_sp_epoch_vignets/vignetmaker_runner/output/background_rms_vignet-188-307.sqlite",
+    "nflagged": "/project/6001537/cdaley/sp-products/smk-g17-int/nflagged_smk-g17-int.hsp",
+    "plot": "/scratch/cdaley/defectflag-check/188.307.png",
+    "blend_handling": "uberseg",
+    "defect_fill": "interpolate",
+    "plot_only": false,
+    "cache_stores": true
+  },
+  "git_sha": "942ce56ba1a14978fe99fb1fb475f774a047fb6a",
+  "objects": 36051,
+  "objects_empty": 0,
+  "objects_border": 633,
+  "epoch_cuts": {
+    "considered": 120421,
+    "masked_fraction": 5122,
+    "footprint_defect": 1791
+  },
+  "eligible_edge_cases": {
+    "eligible": 115299,
+    "empty": 0,
+    "border": 2028,
+    "border_rejected": 316
+  },
+  "considered_empty": 0,
+  "considered_border": 2121,
+  "eligible_epochs": 115299,
+  "kept_epochs": 113508,
+  "epoch_loss_fraction": 0.01553352587620014,
+  "survey_d0_rejected": 1550,
+  "survey_d0_loss_fraction": 0.01344330826806824,
+  "survey_policy_differences": 251,
+  "raw_overlap_mismatches": 0,
+  "objects_emptied": 407
+}

@@ -15,7 +15,7 @@ from pathlib import Path
 FIELDS = (
     "considered",
     "masked_fraction",
-    "central_veto",
+    "footprint_defect",
     "failed",
     "objects_emptied",
 )
@@ -28,7 +28,7 @@ def validate_counts(counts):
     if any(type(v) is not int or v < 0 for v in counts.values()):
         raise ValueError("epoch cuts must be non-negative integers")
     if (
-        sum(counts[k] for k in ("masked_fraction", "central_veto", "failed"))
+        sum(counts[k] for k in ("masked_fraction", "footprint_defect", "failed"))
         > counts["considered"]
     ):
         raise ValueError("epoch cuts exceed epochs considered")
@@ -83,7 +83,7 @@ def aggregate_chunks(chunks, n_chunks):
         str(k): validate_counts(chunks[str(k)]) for k in range(1, n_chunks + 1)
     }
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "n_chunks": n_chunks,
         "chunks": chunks,
         "totals": {

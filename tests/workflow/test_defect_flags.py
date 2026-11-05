@@ -22,7 +22,9 @@ def test_committed_detection_supplies_defect_flag_footprint(
     clean object into an unknown-footprint (-1) object. The SExtractor runner
     column-writing behavior is covered by test_sextractor_seg_vignet.
     """
-    from shapepipe.modules.ngmix_package.ngmix import Postage_stamp, Tile_cat
+    from shapepipe.modules.ngmix_package.ngmix import (
+        Postage_stamp, Tile_cat, footprint_defect_vetoes,
+    )
     from tests.module.test_ngmix_uberseg import _write_tile_cat
 
     campaign = Campaign(tmp_path / "campaign", input_type, "psfex")
@@ -48,3 +50,9 @@ def test_committed_detection_supplies_defect_flag_footprint(
         None if tile.seg is None else tile.seg[0], tile.obj_id[0],
     )
     assert stamp.imaflags_iso == stamp.n_epoch_interp_iso == 0
+    assert not footprint_defect_vetoes(
+        np.zeros((5, 5), dtype=bool), tile.seg[0], tile.obj_id[0],
+    )
+    assert footprint_defect_vetoes(
+        tile.seg[0] == tile.obj_id[0], tile.seg[0], tile.obj_id[0],
+    )

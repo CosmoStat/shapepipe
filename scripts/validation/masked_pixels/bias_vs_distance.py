@@ -108,11 +108,10 @@ def plot(out_path, *in_paths):
 
     from figstyle import AQUA, BLUE, INK, INK2, ORANGE, VIOLET
     from shapepipe.modules.ngmix_package.ngmix import (
-        EPOCH_CENTRAL_DEFECT_RADIUS as RN,
-        EPOCH_INTERPOLATED_DEFECT_RADIUS as RI,
         EPOCH_MASKED_FRACTION_CUT as FRAC_CUT,
     )
 
+    RI, RN = 7, 13  # per-fixture recovery reference distances
     rows = [r for path in in_paths for r in json.load(open(path))]
     grid, fail, bad_ink = "#e4e3df", "#f6e3dc", "#a8462a"
     GOLD = "#c49a1c"
@@ -139,8 +138,8 @@ def plot(out_path, *in_paths):
             ax.axhspan(b, 1e4, color=fail, zorder=0, lw=0)
             ax.axhline(b, color=bad_ink, lw=0.9, zorder=1)
             for r, txt, ha, dx in (
-                    (RI, f"interpolated\nveto {RI:g} px", "right", -0.2),
-                    (RN, f"noise-fill\nveto {RN:g} px", "left", 0.2)):
+                    (RI, f"interpolated\nreference {RI:g} px", "right", -0.2),
+                    (RN, f"noise-fill\nreference {RN:g} px", "left", 0.2)):
                 ax.axvline(r, color=INK2, ls=":", lw=1.3, zorder=1)
                 if i == 0:
                     ax.text(r + dx, 8e2, txt, color=INK2, fontsize=8.5,
