@@ -18,15 +18,15 @@
     "tile_find_exposures": "e5961ea8239e6218e692aa7f050d2059cb80c7435e31d5efd010a33c40edd2cc",
     "tile_get_catalogue": "4c49dc5a03f585be2711e7a342d7bb8fa4502e6972a600630455cf879a1ca8a4",
     "tile_get_images": "ea85a50c01ef76cbb76c69b16cf46e34d1e8f71ef90a6ed0aea106ca4ffbdfdb",
-    "tile_make_cat": "67a9a0410f20c291025b34439c467ea85af49cd91f2ca5dfe96b504dbd8137af",
+    "tile_make_cat": "81ac2549eda503a92b292115d543225efcbf6f5b43f58e1eade3069c2af5aefd",
     "tile_merge_cats": "2b24ccc7f1ac180d38fe49da35972ee52073a63ab504a3e85bb34393a32e2777",
     "tile_merge_headers": "5f0fead525d5e99dd77b1bbccf4f097d8e8e5806dfa3108e815d34cf206ee35a",
-    "tile_ngmix": "84db71f898471dad1230c8c79aa0ea04c9aaf5972c000a674980d005e8f72cb5",
+    "tile_ngmix": "3b3e81bcc86fffa72f71c4404931f9ca8a009ea36cfa201c2b8069e4b59da834",
     "tile_uncompress": "97cce231346e5b3ff38142ba3553cc84df264b1bd09a8277a66df089e53ac29b",
-    "tile_vignets": "52f7210b35c809036fc7b3b82078067b21032d4926d22af8e4ea6899c41adf91"
+    "tile_vignets": "1134148383805881145e134c697cbc67833c45222e6598cc3e8de6c23ee2ffbb"
   },
   "schema": 1,
-  "sha256": "7c811b7be60903e296791bd5b7fd9cc4e5833512b9b5caf84c469ca3296510ff",
+  "sha256": "054d357224cda26aef38d106d5b2674f74d3d632d694ebfd5fc88c68ba3d934a",
   "unit_pre": {
     "exp_get_images": "dac6685a207dae3ea81d296ce53e9ba75d4636cf1f81e6399f2dda452680c992",
     "exp_psf": "87fc8ea1153a709ab7ba56542cfacc041f5f8b7f6cf2f38a9bc9d8004d1cecb4",

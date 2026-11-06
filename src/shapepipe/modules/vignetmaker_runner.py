@@ -142,8 +142,13 @@ def vignetmaker_runner(
                 )
             f_wcs_path = input_file_list[1]
 
-            # Process inputs
-            vm_inst.process_me(image_dirs, image_pattern, f_wcs_path, radius)
+            if len(input_file_list) != 4:
+                raise ValueError(
+                    "MULTI-EPOCH requires the tile segmentation check image as"
+                    " fourth input; append segmentation/.fits to FILE_PATTERN/FILE_EXT"
+                )
+            vm_inst.process_me(image_dirs, image_pattern, f_wcs_path, radius,
+                               input_file_list[3])
 
         else:
 

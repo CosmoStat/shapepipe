@@ -38,7 +38,14 @@ def sextractor_runner(
     module_config_sec,
     w_log,
 ):
-    """Define The SExtractor Runner."""
+    """Define the SExtractor runner.
+
+    @sc [label:coupling] zero-detection-segmentation-input
+    SExtractor writes the requested check images even with no detections:
+    SEGMENTATION is a full-size all-zero label image with the tile WCS,
+    not an absent or zero-axis file. The cut/join/post-processing keep it
+    for the four-input multi-epoch vignetmaker.
+    """
     # Set the SExtractor executable name
     if config.has_option(module_config_sec, "EXEC_PATH"):
         exec_path = config.getexpanded(module_config_sec, "EXEC_PATH")
