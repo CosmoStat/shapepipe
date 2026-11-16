@@ -118,9 +118,12 @@ if _kind == "none":
 container: _image
 
 # `fake` is the image-simulation true PSF: no exposure PSF fit; the tile's
-# galaxy_psf comes from `psf_dict` via fake_interp_runner (read by the
-# configs as ${SP_PSF}_interp_runner). Sims with stars may use psfex. mccd is
-# a valid chain but refused by refuse_unpersistable_psf below.
+# galaxy_psf comes from fake_interp_runner (read by the configs as
+# ${SP_PSF}_interp_runner), given either `psfex_models:` (a directory of PSFEx
+# models <ME_DOT_PSF_PATTERN>-<exp>-<ccd>.psf, evaluated at each object's
+# position on each epoch as psfex_interp does on data) or, without it,
+# `psf_dict:` (one PSF stamp per exposure and CCD). Sims with stars may use
+# psfex. mccd is a valid chain but refused by refuse_unpersistable_psf below.
 PSF_MODELS = {"psfex", "mccd", "fake"}
 PSF_MODEL = config.get("psf_model", "psfex")
 if PSF_MODEL not in PSF_MODELS:
@@ -131,10 +134,12 @@ if PSF_MODEL == "fake" and INPUT_TYPE != "image_sims":
     raise WorkflowError(
         "psf_model=fake is the image-simulation true PSF; it needs "
         "input_type=image_sims.")
-PSF_DICT = config.get("psf_dict") or ""
-if PSF_MODEL == "fake" and not PSF_DICT:
-    raise WorkflowError("psf_model=fake needs `psf_dict:` (the simulation's "
-                        "pickled PSF dictionary) in the run config.")
+PSFEX_MODELS = config.get("psfex_models") or ""
+PSF_DICT = "" if PSFEX_MODELS else config.get("psf_dict") or ""
+if PSF_MODEL == "fake" and not (PSF_DICT or PSFEX_MODELS):
+    raise WorkflowError("psf_model=fake needs `psfex_models:` (the simulation's "
+                        "PSFEx models) or `psf_dict:` (its pickled PSF "
+                        "dictionary) in the run config.")
 
 # How images reach the run (exported as SP_RETRIEVE for the Git/Gie configs):
 # `symlink` to a local mirror, or `vos` download. Sims are always local.
@@ -1316,8 +1321,9 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
             f'ln -s "$SP_EXP_STORE/{unit}" "$SP_RUN/output"; fi')
     # Unchanged text for the tile side: unit_pre is a params rerun trigger.
     lines.append('mkdir -p "$SP_RUN/output" "$SP_RUN/manifests" "$SP_RUN/logs"')
-    if PSF_DICT:
+    if PSF_MODEL == "fake":
         lines.append(f"export PSF_DICT='{PSF_DICT}'")
+        lines.append(f"export PSFEX_MODELS='{PSFEX_MODELS}'")
     if INPUT_TYPE == "data":
         lines.append(f"export SP_INPUT_MASKS='{INPUTS['masks']}'")
     if forest:

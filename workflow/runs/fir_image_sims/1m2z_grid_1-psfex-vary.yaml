@@ -1,0 +1,10 @@
+# Shear branch 1m2z of the Fir image simulations, PSF rung grid_1-psfex-vary
+# (real PSFEx model at each galaxy; MultiBand_ImSim unions/config*.yaml). As 1m2z_grid_1.yaml, with
+# this rung's true PSF.
+machine: fir
+input_type: image_sims
+run: 1m2z_grid_1-psfex-vary
+psfex_models: /scratch/cdaley/imsim/sims/grid_1-psfex-vary_shared/psfex
+ngmix_chunks: 16
+clean: false
+clean_tiles: false
