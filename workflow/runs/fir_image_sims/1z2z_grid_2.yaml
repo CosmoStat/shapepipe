@@ -1,11 +1,11 @@
 # Shear branch 1z2z of image-simulation run 2 (150 survey-interior tiles around
 # 253.246). Paths from machines.fir in workflow/config.yaml; run 2 has its own
-# PSF dictionary. Settings as the v2 data campaigns; intermediates are kept
-# for diagnostics until the branch is measured.
+# PSF dictionary. Settings as the v2 data campaigns; exposure and tile stores
+# are reclaimed (final catalogues are all the measurement reads).
 machine: fir
 input_type: image_sims
 run: 1z2z_grid_2
 psf_dict: /scratch/cdaley/imsim/sims/psf_dict_grid_2.pickle
 ngmix_chunks: 16
-clean: false
-clean_tiles: false
+clean: true
+clean_tiles: true
