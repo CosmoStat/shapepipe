@@ -1,0 +1,11 @@
+# Shear branch 1p2z of the Fir image simulations, blended rung skills_1-blended
+# (SKiLLS galaxies at their own positions and TRILEGAL stars; MultiBand_ImSim
+# unions/config_blended.yaml). The PSF is fitted by PSFEx to the simulated
+# stars, as on the data.
+machine: fir
+input_type: image_sims
+run: 1p2z_skills_1-blended
+psf_model: psfex
+ngmix_chunks: 16
+clean: false
+clean_tiles: false

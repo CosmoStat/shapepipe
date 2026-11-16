@@ -36,7 +36,7 @@ blend_handling: uberseg
 #   taking its NUMBER (needs the DR6 tile image); `sextractor` keeps
 #   SExtractor's own (required for image_sims)
 # - psf_model: allowed are `psfex` (default), `mccd`; `fake` (image_sims only,
-#   PSF read from psf_dict)
+#   the simulation's true PSF, from psfex_models or psf_dict)
 input_types:
   data:
     # @sc [decision:detection.tile_detection]
@@ -68,7 +68,10 @@ input_types:
 #   carries the bit table. Required for input_type: data.
 # - inputs.catalogues: UNIONS per-tile catalogues, a local directory
 #   (symlinked in) or a vos: URL (tile_detection: unions_catalogue)
-# - psf_dict: simulation PSF stamps (psf_model: fake)
+# - psf_dict: simulation PSF stamps, one per exposure and CCD (psf_model: fake)
+# - psfex_models: a directory of the simulation's PSFEx models, one per
+#   exposure and CCD, evaluated at each object (psf_model: fake; used in place
+#   of psf_dict when given)
 # - outputs.run_dir: (scratch) run directory, where tmp files will be stored
 # - outputs.products_dir: path to final products (default run_dir; one root
 #   needs clean: false and clean_tiles: false)
