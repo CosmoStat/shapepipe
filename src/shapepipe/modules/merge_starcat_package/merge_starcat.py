@@ -8,6 +8,7 @@ to create tiles.
 
 """
 
+import os
 import re
 
 import numpy as np
@@ -655,6 +656,9 @@ class MergeStarCatPSFEX(object):
         # is the widest CCD number in the campaign, which pass 1 already knows.
         width = max((len(self._ccd_nb(n)) for n in names), default=1)
         data["CCD_NB"] = np.empty(n_total, dtype=f"U{width}")
+        data["EXP_ID"] = np.empty(n_total, dtype="U64")
+        data["SOURCE_ORDINAL"] = np.empty(n_total, dtype=np.int64)
+        seen_keys = set()
 
         # --- pass 2: fill ---------------------------------------------------
         at = 0
@@ -675,7 +679,18 @@ class MergeStarCatPSFEX(object):
                 # Use this file's schema: zero-fill only the files
                 # that actually lack the column.
                 data[out][sl] = data_j[col] if col in have else 0
-            data["CCD_NB"][sl] = self._ccd_nb(name[0])
+            ccd = self._ccd_nb(name[0])
+            basename = os.path.basename(name[0])
+            exp = basename.removesuffix(".fits").removeprefix("validation_psf-").rsplit("-", 1)[0]
+            if not exp or len(exp) > 64 or not exp.isascii():
+                raise ValueError(f"invalid exposure ID in {basename!r}")
+            key = (exp, int(ccd))
+            if key in seen_keys:
+                raise ValueError(f"duplicate exposure/CCD member: {key}")
+            seen_keys.add(key)
+            data["CCD_NB"][sl] = ccd
+            data["EXP_ID"][sl] = exp
+            data["SOURCE_ORDINAL"][sl] = np.arange(n_rows, dtype=np.int64)
 
             at += n_rows
             starcat_j.close()

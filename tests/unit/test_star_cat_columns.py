@@ -1,4 +1,4 @@
-"""The star catalogue's 22 columns are defined twice, and must not drift.
+"""The star catalogue's columns are defined twice, and must not drift.
 
 Two writers emit a full_starcat, for two consumers that have to agree about it:
 
@@ -70,7 +70,7 @@ def writers():
     module_columns = (
         tuple(out for out, _ in MergeStarCatPSFEX._COLUMNS)
         + tuple(out for out, _ in MergeStarCatPSFEX._OPTIONAL)
-        + ("CCD_NB",)
+        + ("CCD_NB", "EXP_ID", "SOURCE_ORDINAL")
     )
     return module_columns, tuple(workflow.ALL_COLUMNS)
 
@@ -81,15 +81,15 @@ def test_column_names_and_order_agree(writers):
     assert workflow_columns == module_columns
 
 
-def test_twenty_two_columns(writers):
+def test_twenty_four_columns(writers):
     """The count is itself the documented contract (README)."""
     module_columns, workflow_columns = writers
-    assert len(module_columns) == 22
-    assert len(workflow_columns) == 22
+    assert len(module_columns) == 24
+    assert len(workflow_columns) == 24
 
 
-def test_ccd_nb_is_last(writers):
-    """CCD_NB is appended per input file rather than read from one, in both."""
+def test_key_columns_are_last(writers):
+    """Both writers append the exposure, CCD and per-CCD row key."""
     module_columns, workflow_columns = writers
-    assert module_columns[-1] == "CCD_NB"
-    assert workflow_columns[-1] == "CCD_NB"
+    assert module_columns[-3:] == ("CCD_NB", "EXP_ID", "SOURCE_ORDINAL")
+    assert workflow_columns[-3:] == module_columns[-3:]

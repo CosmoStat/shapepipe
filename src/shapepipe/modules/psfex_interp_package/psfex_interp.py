@@ -763,6 +763,13 @@ class PSFExInterpolator(object):
 
         Save computed PSFs and stars to fits file.
 
+        @sc [label:schema] star-key-unique
+        Each row carries the exposure ID, CCD and zero-based ordinal within
+        that CCD, so their tuple is unique. Exposure IDs remain strings to
+        preserve leading zeros. Both merges reconstruct these fields for older
+        files; test_star_key_unique checks the merged rows and
+        test_validation_writer_emits_star_keys checks the emitter.
+
         @sc [label:schema] psfex-validation-hsm-columns
         Writes ``_hsm_columns`` for both ``PSF`` and ``STAR`` — the exact
         ``HSM_*`` set ``MergeStarCatPSFEX.process`` reads without fallback;
@@ -787,6 +794,15 @@ class PSFExInterpolator(object):
             **_hsm_columns(self.star_shapes, "STAR"),
         }
         data = {**data, **star_dict}
+
+        # The runner's file number is -<exposure>-<CCD>.
+        exp, ccd = self._img_number.lstrip("-").rsplit("-", 1)
+        if not exp or not ccd.isdigit():
+            raise ValueError(f"invalid exposure/CCD identifier: {self._img_number!r}")
+        n_rows = len(data["NUMBER"])
+        data["EXP_ID"] = np.full(n_rows, exp)
+        data["CCD_NB"] = np.full(n_rows, int(ccd), dtype=np.int32)
+        data["SOURCE_ORDINAL"] = np.arange(n_rows, dtype=np.int64)
 
         data["ACCEPTED"] = np.ones_like(data["NUMBER"], dtype="int16")
         star_used = psfex_cat_dict.pop("SOURCE_NUMBER")
