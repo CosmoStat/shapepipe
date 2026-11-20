@@ -89,3 +89,41 @@ def test_root_guard_runs_on_the_raw_flags():
     compute phase, and the prepare parse should already refuse."""
     assert _called('refuse_one_root_cleaners(PRODUCTS_DIR, RUN_DIR, '
                    'flag(config.get("clean")),')
+
+
+# --- masks: every chain that queries them needs inputs.masks -------------------
+
+@pytest.mark.parametrize(
+    "input_type, psf_model, n_users",
+    [("data", "psfex", 2), ("data", "mccd", 2),
+     ("image_sims", "psfex", 1), ("image_sims", "mccd", 1),
+     ("image_sims", "fake", 0)],
+)
+def test_mask_users(input_type, psf_model, n_users):
+    assert len(_lift("mask_users")(input_type, psf_model)) == n_users
+
+
+def test_sims_with_stars_without_masks_are_refused():
+    users = _lift("mask_users")("image_sims", "psfex")
+    with pytest.raises(WorkflowError) as exc:
+        _lift("refuse_missing_masks")(users, None, "here")
+    assert "config_exp_psfex.ini" in str(exc.value)
+
+
+def test_fake_psf_sims_need_no_masks():
+    users = _lift("mask_users")("image_sims", "fake")
+    _lift("refuse_missing_masks")(users, None, "here")
+
+
+def test_sims_share_the_masked_star_selection():
+    """The reason sims with stars need masks: they run the data star selection."""
+    sims = REPO_ROOT / "workflow/config/cfis_image_sims"
+    data = REPO_ROOT / "workflow/config/cfis"
+    for name in ("star_selection.setools", "config_exp_psfex.ini", "config_exp_mccd.ini"):
+        assert (sims / name).resolve() == (data / name).resolve(), name
+    assert "MASK_EXT == 0" in (data / "star_selection.setools").read_text()
+
+
+def test_mask_guard_runs_on_the_parsed_run():
+    assert _called("MASK_USERS = mask_users(INPUT_TYPE, PSF_MODEL)")
+    assert _called("refuse_missing_masks(")

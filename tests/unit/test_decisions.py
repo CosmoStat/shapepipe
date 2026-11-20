@@ -630,10 +630,17 @@ def test_repository_decisions_have_sites_and_all_values_match():
         ),
         (
             "workflow/config/cfis/star_selection.setools",
-            "[MASK:star_selection]\n",
-            "[MASK:star_selection]\nMASK_EXT == 0\n",
+            "IMAFLAGS_ISO == 0\nMASK_EXT == 0\n\n[MASK:fwhm_mag_cut]",
+            "IMAFLAGS_ISO == 0\n\n[MASK:fwhm_mag_cut]",
             "masking.psf_star_mask_veto",
             "MASK_EXT",
+        ),
+        (
+            "workflow/config/cfis/config_exp_mccd.ini",
+            "\nMASK_PATHS = ",
+            "\n; MASK_PATHS = ",
+            "masking.psf_star_mask_veto",
+            "MASK_PATHS",
         ),
         (
             "workflow/config/cfis/default_tile.sex",

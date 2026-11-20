@@ -214,7 +214,7 @@ consumed by *querying them at object positions*, never by rasterizing them onto
 pixels. Two modules do the querying, from the same shared lookup
 (`shapepipe.utilities.mask_query`): `mask_query` runs between `sextractor` and
 `setools` on the single-exposure single-CCD catalogues and writes one integer
-`MASK_EXT` column (0 = clean), recording the star-body map (bit 2) against every
+`MASK_EXT` column (0 = clean), recording the manual mask (bit 8) against every
 detection; `make_cat` writes one
 `MASK_<band>` column per band onto the final tile catalogue, carrying the map
 value verbatim so downstream selections choose their own cuts. Map paths and
@@ -228,16 +228,16 @@ these are the only masks that reject anything inside the pipeline. The
 sits, not that its pixels are broken, so what to do about one is an analysis
 decision and is made downstream.
 
-**Nothing in the pipeline cuts on the queried columns**, and on exposures the
-query ships off entirely: `MASK_PATHS` is commented out, which makes
-`mask_query` a strict no-op that passes the catalogue through with no
-`MASK_EXT` column (the module stays in the chain, so enabling it is
-uncommenting one line). `star_selection.setools` rejects on `IMAFLAGS_ISO == 0`
-and nothing else, deliberately starting from outlier rejection alone, and the
-final catalogue's `MASK_<band>` columns are written unfiltered. `MASK_EXT` is
-the configurable pickup if outlier rejection proves insufficient: add
-`MASK_EXT == 0` beside each `IMAFLAGS_ISO == 0`, one line per mask block, as
-that file's header documents.
+**One queried mask cuts inside the pipeline: the manual mask, on PSF stars.**
+`star_selection.setools` rejects candidates with `IMAFLAGS_ISO != 0` or
+`MASK_EXT != 0`. Outlier rejection handles crowded star fields on its own, but
+where compact extended sources outnumber stars on a CCD (the HII regions and
+clusters of M33) they pass selection and inflate the PSF model, so the manual
+mask, which covers those objects, keeps them out of the PSF fit
+([#993](https://github.com/CosmoStat/shapepipe/issues/993)). The final
+catalogue's `MASK_<band>` columns are written unfiltered. Without `MASK_PATHS`,
+`mask_query` is a strict no-op that writes no `MASK_EXT` column, so dropping
+the map means dropping the `MASK_EXT` lines in `star_selection.setools` too.
 
 No internet access is needed at any point, and there is no reference star
 catalogue to download.
