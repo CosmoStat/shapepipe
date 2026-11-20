@@ -369,7 +369,9 @@ profiles/nibi/config.yaml  SLURM executor; apptainer SDM; per-user jobs cap; kee
 - **Tile epoch-cut diagnostics survive cleaning.**
   `tile_ngmix` completeness checks capture PR #922's five counters before each chunk's temporary directory goes away.
   `tile_make_cat` sums all configured chunks and publishes `tile_make_cat.json` beside the tile's persistent `final_cat`.
-  Its `epoch_cuts` field contains `schema_version`, `n_chunks`, per-chunk `chunks`, and tile `totals` for `considered`, `masked_fraction`, `central_veto`, `failed`, and `objects_emptied`.
+  Its `epoch_cuts` field contains `schema_version: 2`, `n_chunks`, per-chunk `chunks`, and tile `totals` for `considered`, `masked_fraction`, `footprint_defect`, `failed`, and `objects_emptied`.
+  `footprint_defect` counts epochs rejected for a defect on the object's own ISO footprint (D0), or an unavailable footprint.
+  Schema-1 records do not satisfy this completeness contract; regenerate the affected chunks and manifests.
   Counts are sequential veto counts, not independent cut incidences; `objects_emptied` counts objects whose considered epochs were all removed before fitting.
   Missing, malformed, or duplicate summaries fail completeness rather than becoming zeros.
   `clean_tile` validates the durable count record before touching scratch, so `clean_tiles: true` needs no module-log retention override.

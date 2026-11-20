@@ -9,9 +9,8 @@ background RMS. Under ``DEFECT_FILL = "noise"`` every defect takes
 noise. Under uberseg, pixels on the neighbour side only lose their
 weight, and their image values stay raw. The per-epoch cuts in
 :func:`prepare_postage_stamps` act on the same defect set: the
-masked-fraction cut counts it, and the central-defect veto drops an epoch
-with a defect near the stamp centre, at the radius of the fill that defect
-gets. The tile VIGNET's -1e30 neighbour markers are not defects: noisefill
+masked-fraction cut counts it, and the footprint cut rejects any overlap
+with the object's own ISO footprint, independent of fill. The tile VIGNET's -1e30 neighbour markers are not defects: noisefill
 zero-weights and noise-fills them, uberseg ignores them, and the epoch cuts
 never count them.
 """
@@ -37,8 +36,6 @@ from shapepipe.modules.ngmix_package.defect_interpolation import (
 )
 from shapepipe.modules.ngmix_package.ngmix import (
     DEFECT_WEIGHTINGS,
-    EPOCH_CENTRAL_DEFECT_RADIUS,
-    EPOCH_INTERPOLATED_DEFECT_RADIUS,
     EPOCH_MASKED_FRACTION_CUT,
     Ngmix,
     defect_mask,
@@ -256,7 +253,9 @@ def _fake_inputs(epochs):
         },
     )
     tile_cat = SimpleNamespace(
-        vign=None, seg=None, ra=np.array([RA]), dec=np.array([DEC])
+        vign=None, seg=(ngmix_module.centre_distance((N_STAMP, N_STAMP))
+                        <= 6).astype(np.int32)[None],
+        ra=np.array([RA]), dec=np.array([DEC])
     )
     return vignet, tile_cat, psf_obj, gal_obj
 
@@ -324,17 +323,15 @@ def test_epoch_cut_counts_the_defect_set():
     assert _surviving(epochs) == ["2100001-10", "2100002-11"]
 
 
-# --- prepare_postage_stamps: the central-defect veto -----------------------
+# --- prepare_postage_stamps: the footprint-touch cut -----------------------
 
 def _veto_epochs():
-    """A clean epoch and five with one defect each, all far below the
-    fraction cut: a column at EPOCH_INTERPOLATED_DEFECT_RADIUS, a column one
-    pixel inside it, a single pixel at 9 px (all interpolated), and a 5-px
-    bleed (noise-filled) at the interpolated radius and at
-    EPOCH_CENTRAL_DEFECT_RADIUS."""
+    """Defects beside and on a 6-px footprint, below the fraction cut.
+
+    The columns and pixel interpolate; the 5-px bleeds take noise.
+    """
     centre = N_STAMP // 2
-    ri = int(EPOCH_INTERPOLATED_DEFECT_RADIUS)
-    rn = int(EPOCH_CENTRAL_DEFECT_RADIUS)
+    ri, rn = 7, 13
     clean = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
     ones = np.ones((N_STAMP, N_STAMP))
     column_at, column_inside, pixel, wide_at, wide_far = (
@@ -343,7 +340,7 @@ def _veto_epochs():
     column_at[:, centre + ri] = 1
     column_inside[:, centre + ri - 1] = 1
     pixel[centre, centre + 9] = 1
-    wide_at[:, centre + ri:centre + ri + 5] = 1
+    wide_at[:, centre + ri - 1:centre + ri + 4] = 1
     wide_far[:, centre + rn:centre + rn + 5] = 1
     return {
         "2100001-10": (clean, ones),
@@ -355,33 +352,17 @@ def _veto_epochs():
     }
 
 
-def test_the_veto_radius_follows_the_fill():
-    """An interpolated defect drops the epoch inside
-    EPOCH_INTERPOLATED_DEFECT_RADIUS, a noise-filled one inside
-    EPOCH_CENTRAL_DEFECT_RADIUS; a defect at its radius is kept.
-
-    Failure modes: the veto is skipped, so a filled hole in the object's
-    light enters the fit; the interpolated radius is applied to noise-filled
-    pixels (a wide hole next to the object survives), or not applied at all
-    (a 9-px pixel is dropped); the boundary is inclusive
-    (veto-radius-follows-the-fill).
-    """
+def test_footprint_touch_rejects_both_fills():
+    """Both fills reject overlap; adjacent defects and distant ones survive."""
     assert _surviving(_veto_epochs()) == [
         "2100001-10", "2100002-11", "2100004-13", "2100006-15"
     ]
 
 
-def test_under_noise_fill_every_defect_is_vetoed_at_the_noise_radius():
-    """With nothing interpolated, the column at 7 px and the pixel at 9 px
-    are noise-filled, so they drop their epochs as the 5-px bleed at 7 px
-    does; only the defect at EPOCH_CENTRAL_DEFECT_RADIUS is kept.
-
-    Failure mode: the veto reads a defect-mask-only interpolated set while
-    the fill noise-fills it, keeping noise-filled holes 7 px from the object
-    (veto-radius-follows-the-fill, fill-option).
-    """
+def test_footprint_cut_is_independent_of_fill():
+    """Noise-only filling selects the same epochs as interpolation."""
     assert _surviving(_veto_epochs(), defect_fill="noise") == [
-        "2100001-10", "2100006-15"
+        "2100001-10", "2100002-11", "2100004-13", "2100006-15"
     ]
 
 
@@ -427,7 +408,7 @@ def test_process_logs_the_epoch_cut_tally(tmp_path, monkeypatch):
     """One tile, four objects; the end-of-tile line counts each cut's drops.
 
     * object 1: clean, 18-column edge band, defect 3 px from the centre -> one
-      epoch each for considered, masked_fraction, central_veto; survives.
+      epoch each for considered, masked_fraction, footprint_defect; survives.
     * object 2: edge band and central defect -> both epochs dropped; emptied.
     * object 3: one all-zero stamp, skipped before the cuts -> not considered,
       and not emptied by the cuts.
@@ -479,7 +460,10 @@ def test_process_logs_the_epoch_cut_tally(tmp_path, monkeypatch):
     )
     tile_cat = SimpleNamespace(
         obj_id=np.array([1, 2, 3, 4]), ra=np.full(4, RA), dec=np.full(4, DEC),
-        vign=None, seg=None, flux=None,
+        vign=None, seg=np.stack([
+            (ngmix_module.centre_distance((N_STAMP, N_STAMP)) <= 6) * i
+            for i in (1, 2, 3, 4)
+        ]), flux=None,
     )
 
     paths = [tmp_path / f"{name}.sqlite" for name in
@@ -511,7 +495,7 @@ def test_process_logs_the_epoch_cut_tally(tmp_path, monkeypatch):
         (k, int(v)) for k, v in re.findall(r"(\w+)=(\d+)", lines[0])
     )
     assert tally == dict(
-        considered=5, masked_fraction=2, central_veto=2, failed=0,
+        considered=5, masked_fraction=2, footprint_defect=2, failed=0,
         objects_emptied=1,
     ), lines[0]
 
@@ -764,9 +748,9 @@ def test_defect_diagnostics_summarise_the_kept_epochs():
     )
     assert stamp.defect_diagnostics() == {
         "n_epoch_interp": 2,
-        "imaflags_iso": -1, "n_epoch_interp_iso": -1,
-        "min_dist_interp": float(EPOCH_INTERPOLATED_DEFECT_RADIUS),
-        "min_dist_noisefill": float(EPOCH_CENTRAL_DEFECT_RADIUS),
+        "imaflags_iso": 0, "n_epoch_interp_iso": 0,
+        "min_dist_interp": 7.0,
+        "min_dist_noisefill": 13.0,
     }
     clean = {"2100001-10": _veto_epochs()["2100001-10"]}
     vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(clean)
@@ -775,7 +759,7 @@ def test_defect_diagnostics_summarise_the_kept_epochs():
         psf_obj=psf_obj, gal_obj=gal_obj,
     )
     assert stamp.defect_diagnostics() == {
-        "imaflags_iso": -1, "n_epoch_interp_iso": -1,
+        "imaflags_iso": 0, "n_epoch_interp_iso": 0,
         "n_epoch_interp": 0, "min_dist_interp": -1.0,
         "min_dist_noisefill": -1.0,
     }
@@ -785,7 +769,7 @@ def test_defect_diagnostics_summarise_the_kept_epochs():
 #
 # The tile VIGNET carries -1e30 on the footprints of other detections. Every
 # epoch shares that tile stamp, so a marker counted as a defect would drop
-# every epoch of an object with a neighbour inside the veto radius. The
+# every epoch of an object whose stamp contains that neighbour. The
 # markers are their own per-epoch mask (``stamp.neighbours``): noisefill
 # zero-weights and noise-fills them, uberseg ignores them, and the epoch cuts
 # never read them.
@@ -814,6 +798,8 @@ def _marker_stamp(tile, epochs=None, **kwargs):
         epochs = {name: (clean.copy(), ones) for name in _MARKER_EPOCH_NAMES}
     vignet, tile_cat, psf_obj, gal_obj = _fake_inputs(epochs)
     tile_cat.vign = tile[np.newaxis]
+    _, off_tile = split_tile_markers(tile, tile.shape)
+    tile_cat.seg[0][(tile == _MARKER) & ~off_tile] = 2
     stamp = prepare_postage_stamps(
         vignet, 1, 0, tile_cat, bkg_sub=False,
         psf_obj=psf_obj, gal_obj=gal_obj, **kwargs,
@@ -827,7 +813,7 @@ def _expected_neighbours(tile, name):
 
 def test_neighbour_markers_near_the_centre_keep_every_epoch():
     """A neighbour footprint 3 px from the centre, and one covering 41% of
-    the stamp, drop no epoch: the masked-fraction cut and the central veto
+    the stamp, drop no epoch: the masked-fraction and footprint cuts
     count no marker.
 
     Failure mode: the markers are written into the flag stamp and counted as
@@ -846,7 +832,7 @@ def test_neighbour_markers_near_the_centre_keep_every_epoch():
         assert len(stamp.gals) == len(_MARKER_EPOCH_NAMES)
         assert stamp.epoch_cuts["considered"] == len(_MARKER_EPOCH_NAMES)
         assert stamp.epoch_cuts["masked_fraction"] == 0
-        assert stamp.epoch_cuts["central_veto"] == 0
+        assert stamp.epoch_cuts["footprint_defect"] == 0
 
 
 def test_neighbour_markers_are_their_own_per_epoch_mask():
@@ -872,7 +858,7 @@ def test_a_flagged_column_near_the_centre_is_still_vetoed():
     column 3 px from the centre is still dropped, and only that epoch.
 
     Failure mode: handling the markers apart also exempts real defects from
-    the central veto.
+    the footprint cut.
     """
     clean = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
     ones = np.ones((N_STAMP, N_STAMP))
@@ -888,7 +874,7 @@ def test_a_flagged_column_near_the_centre_is_still_vetoed():
     assert sorted(names[id(f)] for f in stamp.flags) == [
         "2100001-10", "2100003-11"
     ]
-    assert stamp.epoch_cuts["central_veto"] == 1
+    assert stamp.epoch_cuts["footprint_defect"] == 1
     assert stamp.epoch_cuts["masked_fraction"] == 0
 
 
@@ -1144,34 +1130,27 @@ def test_object_three_px_from_the_tile_edge_is_dropped():
     assert len(stamp.gals) == 0
     assert stamp.epoch_cuts["considered"] == len(_MARKER_EPOCH_NAMES)
     assert (
-        stamp.epoch_cuts["masked_fraction"] + stamp.epoch_cuts["central_veto"]
+        stamp.epoch_cuts["masked_fraction"] + stamp.epoch_cuts["footprint_defect"]
         == len(_MARKER_EPOCH_NAMES)
     )
 
 
-def test_the_central_veto_sees_off_tile_pixels(monkeypatch):
-    """An off-tile band at EPOCH_CENTRAL_DEFECT_RADIUS from the object passes
-    the central veto; one 9 px away is noise-filled inside it and vetoed.
+def test_footprint_cut_sees_off_tile_pixels(monkeypatch):
+    """An off-tile band rejects exactly when it overlaps the footprint.
 
-    Every off-tile band within reach of the veto also exceeds the 10%
-    fraction cut (this one is 17 columns, 1/3 of the stamp), so the fraction
-    cut is lifted here to isolate the veto, which is what keeps an edge
-    object's epochs safe if the fraction cut is ever relaxed.
-
-    Failure mode: the central veto does not read the off-tile set.
+    Lift the fraction cut to isolate footprint rejection.
     """
     monkeypatch.setattr(ngmix_module, "EPOCH_MASKED_FRACTION_CUT", 1.0)
     sky = np.random.default_rng(5).normal(0.0, 1.0, (N_STAMP, N_STAMP))
     far, near = sky.copy(), sky.copy()
-    rn = int(EPOCH_CENTRAL_DEFECT_RADIUS)
-    far[:, :_CENTRE - rn + 1] = _MARKER
-    near[:, :_CENTRE - 8] = _MARKER
+    far[:, :_CENTRE - 6] = _MARKER
+    near[:, :_CENTRE - 5] = _MARKER
     assert (near == _MARKER).mean() > EPOCH_MASKED_FRACTION_CUT
     kept, _, _ = _marker_stamp(far)
     assert len(kept.gals) == len(_MARKER_EPOCH_NAMES)
     vetoed, _, _ = _marker_stamp(near)
     assert len(vetoed.gals) == 0
-    assert vetoed.epoch_cuts["central_veto"] == len(_MARKER_EPOCH_NAMES)
+    assert vetoed.epoch_cuts["footprint_defect"] == len(_MARKER_EPOCH_NAMES)
 
 
 def test_corner_off_tile_region_and_border_neighbour_are_classified():
@@ -1368,18 +1347,11 @@ def test_noisefill_interpolation_does_not_read_removed_neighbour_light():
     assert out[pix] > 1000.0
 
 
-def test_a_column_beside_a_noisefill_neighbour_is_vetoed_as_noise_filled():
-    """A column 8 px from the centre is interpolated, and kept, unless a
-    marked neighbour lies against it. Under noisefill the neighbour's light
-    is removed, so the column's rows that end on the neighbour cannot be
-    interpolated; the fill noise-fills them, and the veto drops the epoch at
-    the noise-fill radius. Under uberseg the neighbour's light stays and
-    supports the interpolant, so the epoch is kept.
+def test_column_outside_footprint_is_kept_beside_noisefill_neighbour():
+    """A column outside the footprint survives both neighbour handlings.
 
-    Failure mode: the veto decides which pixels are interpolated from the
-    defect mask alone, so it keeps the epoch at the 7-px radius while the
-    fill noise-fills pixels 8 px from the object, inside the radius that
-    noise fill needs.
+    Rows ending on a noisefill neighbour take noise; under uberseg they
+    interpolate. Neither fill changes the footprint overlap.
     """
     column = np.zeros((N_STAMP, N_STAMP), dtype=np.int32)
     column[:, _CENTRE + 8] = 1
@@ -1390,14 +1362,14 @@ def test_a_column_beside_a_noisefill_neighbour_is_vetoed_as_noise_filled():
     tile[_CENTRE - 3:_CENTRE + 4, _CENTRE + 9:_CENTRE + 14] = _MARKER
     for tile_vign, blend_handling, kept in (
         (sky, "noisefill", 1),
-        (tile, "noisefill", 0),
+        (tile, "noisefill", 1),
         (tile, "uberseg", 1),
     ):
         stamp, _, _ = _marker_stamp(
             tile_vign, epochs, blend_handling=blend_handling,
         )
         assert len(stamp.gals) == kept
-        assert stamp.epoch_cuts["central_veto"] == 1 - kept
+        assert stamp.epoch_cuts["footprint_defect"] == 1 - kept
 
     # The fill agrees: under noisefill only the rows clear of the neighbour
     # are interpolated (their quarter turns lose weight too); the rows
