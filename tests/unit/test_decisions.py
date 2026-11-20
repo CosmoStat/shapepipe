@@ -614,6 +614,35 @@ def test_repository_decisions_have_sites_and_all_values_match():
 @pytest.mark.parametrize(
     "path, pattern, replacement, decision, ref_fragment",
     [
+        *[
+            (
+                path,
+                "FILE_PATTERN = sexcat, log_exp_headers, exp_numbers, segmentation",
+                "FILE_PATTERN = sexcat, log_exp_headers, exp_numbers",
+                "preparation.categorical_registration",
+                "FILE_PATTERN",
+            )
+            for path in (
+                "workflow/config/cfis/config_tile_PiViVi_psfex.ini",
+                "workflow/config/cfis/config_tile_PiViVi_mccd.ini",
+                "workflow/config/cfis_image_sims/config_tile_PiViVi_fake.ini",
+                "example/cfis_image_sims/config_tile_PiViVi_canfar_sx.ini",
+            )
+        ],
+        (
+            "workflow/config/cfis/config_tile_Sx.ini",
+            "SEG_VIGNET = ${SP_SEG_VIGNET:-False}",
+            "SEG_VIGNET = False",
+            "preparation.categorical_registration",
+            "SEG_VIGNET",
+        ),
+        (
+            "src/shapepipe/modules/sextractor_package/sextractor_script.py",
+            'seg_label_column = "SEG_LABEL"',
+            'seg_label_column = "NUMBER"',
+            "preparation.categorical_registration",
+            "seg_label_column",
+        ),
         (
             "workflow/config/cfis/config_tile_Sx.ini",
             "WEIGHT_IMAGE = True",
