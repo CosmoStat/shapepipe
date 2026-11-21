@@ -1,0 +1,10 @@
+# Shear branch 1m2z of rung grid_2-nomask: run 2's simulation on 25 tiles with
+# October ingredients (MultiBand_ImSim unions-october, unions/config_grid2_nomask.yaml).
+# Settings as 1m2z_grid_2.yaml, with this rung's PSF dictionary.
+machine: fir
+input_type: image_sims
+run: 1m2z_grid_2-nomask
+psf_dict: /scratch/cdaley/imsim/sims/psf_dict_grid_2-nomask.pickle
+ngmix_chunks: 16
+clean: true
+clean_tiles: true
