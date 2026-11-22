@@ -235,6 +235,44 @@ def _hsm_columns(shapes, obj):
     return out
 
 
+def psfex_monomials(groups, degrees):
+    """Exponents of PSFEx's polynomial terms, in its basis order.
+
+    PSFEx enumerates terms as an odometer over the context dimensions in
+    ``PSFVAR_KEYS`` order: the first dimension's exponent is raised while its
+    group's degree budget allows, otherwise it is reset to zero and the next
+    dimension is raised. For one group of (x, y) at degree 2 this is
+    1, x, x², y, xy, y².
+
+    Parameters
+    ----------
+    groups : list of int
+        1-based group of each context dimension (``POLGRPn``)
+    degrees : list of int
+        Degree of each group (``POLDEGn``)
+
+    Returns
+    -------
+    numpy.ndarray
+        ``(n_terms, n_dim)`` exponents
+
+    """
+    budget = list(degrees)
+    expo = [0] * len(groups)
+    terms = [tuple(expo)]
+    while True:
+        for dim, grp in enumerate(groups):
+            if budget[grp - 1] > 0:
+                expo[dim] += 1
+                budget[grp - 1] -= 1
+                break
+            budget[grp - 1] += expo[dim]
+            expo[dim] = 0
+        else:
+            return np.array(terms)
+        terms.append(tuple(expo))
+
+
 class PSFExInterpolator(object):
     """The PSFEx Interpolator Class.
 
@@ -277,6 +315,7 @@ class PSFExInterpolator(object):
         get_shapes=True,
         star_thresh=20,
         chi2_thresh=2,
+        default_colour=None,
     ):
 
         # Path to PSFEx output file
@@ -303,6 +342,10 @@ class PSFExInterpolator(object):
 
         self._chi2_thresh = chi2_thresh
 
+        # Colour at which a colour-dependent model is evaluated for objects
+        # whose catalogue carries no GI_COLOR (galaxies)
+        self._default_colour = default_colour
+
         # Logging
         self._w_log = w_log
 
@@ -318,6 +361,7 @@ class PSFExInterpolator(object):
         else:
             self._pos_params = None
         self.gal_pos = None
+        self.gal_colour = None
         self.interp_PSFs = None
 
         self._img_number = img_number
@@ -392,6 +436,8 @@ class PSFExInterpolator(object):
                     )
                 ]
             )
+            if "GI_COLOR" in galcat.get_data().dtype.names:
+                self.gal_colour = np.array(galcat.get_data()["GI_COLOR"])
             self._w_log.info(
                 f"Read {self.gal_pos.shape[0]} positions from galaxy catalog"
             )
@@ -408,7 +454,7 @@ class PSFExInterpolator(object):
             raise KeyError(pos_param_err)
         galcat.close()
 
-    def interpsfex(self, dotpsfpath, pos):
+    def interpsfex(self, dotpsfpath, pos, colour=None):
         """Interpolate PSFEx.
 
         Use PSFEx generated model to perform spatial PSF interpolation.
@@ -424,6 +470,9 @@ class PSFExInterpolator(object):
             Path to ``.psf`` file (PSFEx output)
         pos : numpy.ndarray
             Positions where the PSF model should be evaluated
+        colour : numpy.ndarray, optional
+            Colour of each object, for a model with a colour context
+            (``PSFVAR_KEYS`` beyond position); defaults to ``default_colour``
 
         Returns
         -------
@@ -454,42 +503,35 @@ class PSFExInterpolator(object):
             return BAD_CHI2
 
         PSF_basis = np.array(PSF_model.data)[0][0]
-        try:
-            deg = PSF_model.header["POLDEG1"]
-        except KeyError:
+        hdr = PSF_model.header
+        n_dim = hdr.get("POLNAXIS", 0)
+        if n_dim == 0:
             # constant PSF model
             return PSF_basis[0, :, :]
 
-        # scale coordinates
-        x_interp, x_scale = (
-            PSF_model.header["POLZERO1"],
-            PSF_model.header["POLSCAL1"],
-        )
-        y_interp, y_scale = (
-            PSF_model.header["POLZERO2"],
-            PSF_model.header["POLSCAL2"],
-        )
-        xs, ys = (pos[:, 0] - x_interp) / x_scale, (
-            pos[:, 1] - y_interp
-        ) / y_scale
-
-        # compute polynomial coefficients
-        coeffs = np.array([[x**idx for idx in range(deg + 1)] for x in xs])
-        cross_coeffs = np.array(
+        # context per object: position, then any further PSFVAR_KEYS (a
+        # colour is evaluated at each object's value, or at the configured
+        # default colour where the catalogue has none)
+        context = [pos[:, 0], pos[:, 1]]
+        for idx in range(2, n_dim):
+            if colour is None:
+                if self._default_colour is None:
+                    raise ValueError(
+                        f"{dotpsfpath} has a colour context; set DEFAULT_COLOUR"
+                    )
+                colour = np.full(len(pos), self._default_colour)
+            context.append(np.asarray(colour, dtype=float))
+        context = np.column_stack(
             [
-                np.concatenate(
-                    [
-                        [
-                            (x**idx_j) * (y**idx_i)
-                            for idx_j in range(deg - idx_i + 1)
-                        ]
-                        for idx_i in range(1, deg + 1)
-                    ]
-                )
-                for x, y in zip(xs, ys)
+                (context[idx] - hdr[f"POLZERO{idx + 1}"]) / hdr[f"POLSCAL{idx + 1}"]
+                for idx in range(n_dim)
             ]
         )
-        coeffs = np.hstack((coeffs, cross_coeffs))
+        expo = psfex_monomials(
+            [hdr[f"POLGRP{idx + 1}"] for idx in range(n_dim)],
+            [hdr[f"POLDEG{grp + 1}"] for grp in range(hdr["POLNGRP"])],
+        )
+        coeffs = np.prod(context[:, None, :] ** expo[None], axis=2)
 
         # compute interpolated PSF
         PSFs = np.array(
@@ -517,6 +559,7 @@ class PSFExInterpolator(object):
         self.interp_PSFs = self.interpsfex(
             self._dotpsf_path,
             self.gal_pos,
+            self.gal_colour,
         )
 
     def _get_psfshapes(self, wcs_list=None):
