@@ -2,7 +2,7 @@ id: baseline_run1
 description: >-
   Run 1 of ShapePipe v2 as it ran, the pipeline behind run1-snap3 and the
   v2.0.0 catalogue: 22,901 DR6 tiles in 969 campaigns on Nibi and Fir,
-  17-27 Oct 2026, from ten integration/smk-g17..g19 commits (61b6255f for
+  10-27 Oct 2026, from ten integration/smk-g17..g19 commits (61b6255f for
   11,767 tiles, then 7f68451e, aad8cbce, 5df1e79c, de2b00f5, a169b3dc,
   ab4c2934, 255d4392, ba0d7032, 84e842dd), each run on the image
   shapepipe-develop-240b37e4.sif with the run config blend_handling uberseg,

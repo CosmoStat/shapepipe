@@ -97,13 +97,14 @@ inputs:
   - id: tile_list
     label: Run-1 tile list
     type: data
-    source: run1-snap3 MANIFEST.json tiles (22,901 ids); a subset of auxdir/CFIS/tiles_202604/tiles_r.txt (23,114)
+    source: auxdir/CFIS/tiles_202604/tiles_r.txt (22,901 ids; run1-snap3 MANIFEST.json tiles)
     description: >-
-      The 22,901 DR6 tiles run 1 processed, cut into HEALPix nside-4 cells
-      and batches of about 25 tiles: 16,123 ran on Nibi and 6,778 on Fir
-      (fir-tiles.txt in the Fir production kit). The exposure list is not an
-      input: tile_find_exposures reads it from the tile headers. Which rule
-      dropped the other 213 tiles of tiles_r.txt is not recorded.
+      The 22,901 DR6 tiles run 1 processed: the 23,114 r-band DR6 tiles less
+      32 dateline duplicates and 181 tiles at Dec >= 82.5 (#969). Cut into
+      HEALPix nside-4 cells and batches of about 25 tiles, 16,123 ran on
+      Nibi and 6,778 on Fir (fir-tiles.txt in the Fir production kit). The
+      exposure list is not an input: tile_find_exposures reads it from the
+      tile headers.
   - id: healsparse_masks
     label: DR6 sky-fixed mask ladder (dr6-2026-09-29)
     type: data
@@ -1150,11 +1151,9 @@ analyses:
         rationale: >-
           PSFEx tabulates the model at one MegaCam pixel (0.187") per model
           pixel, the published choice not to oversample (Guinot+22). Below
-          about 0.55" seeing the PSF FWHM is under three pixels and a
-          native-pixel model is undersampled: on the September 2022
-          sub-0.55" nights stars come out up to 4% larger than the model,
-          and the PSF-leakage slope in T_PSF disappears when those stars are
-          removed (shapepipe#989). Oversampling by 2 doubles the model stamp
+          about 0.5" seeing (2.7 px FWHM) a native-pixel model is
+          undersampled, and on run 1's sharpest exposures stars come out up
+          to 4% larger than the model (#956, #989). Oversampling by 2 doubles the model stamp
           (PSF_SIZE 101 for the same 9.5") and needs the consumers to
           render the model back onto native pixels (psf_rendering), so the
           two change together; the ShapePipe patch testbed on Fir runs this
@@ -1173,22 +1172,24 @@ analyses:
               Needs PSF_SIZE 101 and psfex_interp rendering onto native
               pixels; not implemented in the committed chain.
           auto:
-            label: PSF_SAMPLING 0, PSFEx chooses from the seeing
+            label: PSF_SAMPLING 0, PSFEx's automatic sampling
             description: >-
-              Per-CCD sampling; every consumer must then read the sampling
-              from the model header.
+              With SAMPLE_AUTOSELECT N, PSFEx assumes a nominal 6 px FWHM and
+              picks 1.28 px, coarser than native (#989).
       psf_chromaticity:
         label: Achromatic PSF model
         rationale: >-
-          [HARDCODED] The PSFEx model varies only with position on the CCD
-          (PSFVAR_KEYS XWIN_IMAGE,YWIN_IMAGE): it carries no colour term, so
-          a galaxy is deconvolved with the PSF of the stars that trained the
-          model, whatever its colour. The r-band PSF is chromatic: on
+          The PSFEx model varies only with position on the CCD (PSFVAR_KEYS
+          XWIN_IMAGE,YWIN_IMAGE): it carries no colour term, so a galaxy is
+          deconvolved with the PSF of the stars that trained the model,
+          whatever its colour. The r-band PSF is chromatic: on
           colour-purified run-1 PSF stars, star-minus-model size falls 0.69%
-          per magnitude of g−i at fixed r, and PSF stars (median g−i 1.3 to
-          2.1) are redder than the lensing galaxies (0.9 to 1.3), so the
-          model is too large for galaxies by about 0.0–0.3%, part of the
-          0.5% size excess (shapepipe#956). DES Y6 fits a PSF linear in g−i
+          per magnitude of g−i at fixed r (UNIONS star-selection study, Nov
+          2026, not yet in an issue). PSF stars (median g−i 1.3 to 2.1) are
+          redder than the lensing galaxies (0.9 to 1.3), so the 0.5% model
+          size excess measured on faint stars (#956) is largely colour, and
+          what is left at galaxy colours is uncertain until a colour-aware
+          model or star simulations with SEDs measure it. DES Y6 fits a PSF linear in g−i
           per CCD and evaluates it at the galaxy's colour. No choice was
           made here: PSFEx was taken as it comes, and ShapePipe's exposure
           catalogues carry no colours to add a term with.
@@ -2602,8 +2603,6 @@ analyses:
         from: ../catalogue_assembly.tile_final_cat
       - id: star_catalogue
         from: ../catalogue_assembly.star_catalogue
-      - id: coverage_maps
-        from: ../masking.exposure_maps
     outputs:
       - id: comprehensive_catalogue
         type: data
@@ -2622,12 +2621,14 @@ analyses:
           calibrated e1, e2, weight w_des and tomographic bin: v2.0.0
           catalogs/calibrated/ (HATS), with the response and additive bias
           in catalogs/response.json.
-        inputs: [merged_catalogue, coverage_maps]
+        inputs: [comprehensive_catalogue]
       - id: psf_star_catalogues
         type: data
         format: parquet
         description: >-
           The PSF catalogue (5,565,959 stars) and the star catalogue
           (11,194,784 stars, by EXPOSURE): v2.0.0 catalogs/psf/ and
-          catalogs/stars/.
-        inputs: [star_catalogue]
+          catalogs/stars/. The PSF catalogue is extracted from the merged
+          shape catalogue, the star catalogue from the stacked validation
+          catalogues.
+        inputs: [star_catalogue, merged_catalogue]
