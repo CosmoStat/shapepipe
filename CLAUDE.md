@@ -143,7 +143,12 @@ where the change lives — and *scientific* decisions in `astra.yaml`, below.
 consequential scientific choice embedded in the code and committed configs,
 with its rationale, alternatives and selected default. `universes/committed.yaml`
 pins the option the committed configuration selects for every decision.
-`@sc [decision:<id>]` tags live at implementing code/config sites; optional
+Each catalogue version or trial is a universe beside it, pinning the options
+that version ran: `universes/baseline_run1.yaml` is run 1, the pipeline behind
+the v2.0.0 catalogue. The record's root `inputs:` are the survey data the
+pipeline reads (DR6 tiles, exposures, tile catalogues, masks, the image), and
+its sub-analyses run in data order, wired by `from:`, from masking to the
+release. `@sc [decision:<id>]` tags live at implementing code/config sites; optional
 `Values:` sentences assert committed values within those tagged sites. The
 rationale stays in ASTRA, while local `@sc` contracts hold site-specific
 constraints. `tests/unit/test_decisions.py` checks tag syntax, bidirectional

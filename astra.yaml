@@ -53,28 +53,108 @@ tags: [shapepipe, weak-lensing, unions, codebase-record]
 container: ghcr.io/cosmostat/shapepipe:develop
 
 inputs:
-  - id: tile_images
+  - id: dr6_tile_stacks
+    label: DR6 r-band tile stacks
     type: data
-    source: CFIS/UNIONS r-band MegaPipe tile stacks and single-exposure image/weight/flag triplets (workflow/config.yaml)
+    source: vos:cfis/tiles_DR6/CFIS.<xxx.yyy>.r.fits and CFIS.<xxx.yyy>.r.weight.fits.fz
     description: >-
-      Tiles and the exposures that built them; each exposure carries its
-      instrument flag image.
+      The MegaPipe DR6 r-band coadd of each 0.5° CFIS tile and its weight
+      map: 400 MB image (10k × 10k float32) and a median 126 MB weight per
+      tile, about 12 TB for run 1's 22,901 tiles. Galaxies are detected and
+      measured on these, and their primary-header HISTORY cards list the
+      exposures each stack was built from, which is where the exposure list
+      comes from. Read by tile_get_images (config_tile_Git.ini), then
+      tile_uncompress, tile_find_exposures and tile_detect. Version: "DR6",
+      nothing finer. Fir fetched each file with vcp and recorded its SHA-256
+      after the fetch (INPUTS.json of each batch); Nibi symlinked a local
+      mirror (/project/def-mjhudson/unions-wl/tiles), whose agreement with
+      CADC is not recorded. No file is checked against an upstream checksum.
+  - id: unions_tile_catalogues
+    label: UNIONS DR6 tile catalogues
+    type: data
+    source: vos:cfis/tiles_DR6/CFIS.<xxx.yyy>.r.cat
+    description: >-
+      MegaPipe's SExtractor catalogue of each DR6 tile (median 7.3 MB; about
+      0.17 TB for run 1). tile_detect joins ShapePipe's own detections to it
+      by mutual nearest neighbour within 1 px and takes its NUMBER, so
+      TILE_UNIQUE_ID and the PhotoPipe join (TILE_ID, NUMBER) = (tile, SeqNr)
+      come from it, and detections with no partner are dropped
+      (detection.tile_detection). Read by tile_get_catalogue
+      (config_tile_Gic.ini) into MATCH_CATALOGUE (config_tile_Sx.ini).
+  - id: dr6_exposures
+    label: DR6 exposures, weights and flag images
+    type: data
+    source: vos:cfis/pitcairn/<expid>p.fits.fz, vos:cfis/weights/<expid>p.weight.fits.fz, vos:cfis/flags/<expid>p.flag.fits.fz
+    description: >-
+      The Elixir-processed 40-CCD MegaCam exposures behind each tile, with
+      their weight maps and instrument flag images: medians 339 MB, 15 MB and
+      16 MB per exposure, 16,872 exposures and about 6.3 TB in run 1. The
+      PSF is modelled on them and ngmix fits their postage stamps; the flag
+      image is the only mask that reaches pixels (masking.pixel_mask_source).
+      Read by exp_get_images (config_exp_Gie.ini), exp_split
+      (config_exp_Sp.ini), exp_psf, exp_maps and tile_vignets. Fir fetched
+      them from CADC; Nibi symlinked /project/def-mjhudson/unions-wl/exposures.
+  - id: tile_list
+    label: Run-1 tile list
+    type: data
+    source: run1-snap3 MANIFEST.json tiles (22,901 ids); a subset of auxdir/CFIS/tiles_202604/tiles_r.txt (23,114)
+    description: >-
+      The 22,901 DR6 tiles run 1 processed, cut into HEALPix nside-4 cells
+      and batches of about 25 tiles: 16,123 ran on Nibi and 6,778 on Fir
+      (fir-tiles.txt in the Fir production kit). The exposure list is not an
+      input: tile_find_exposures reads it from the tile headers. Which rule
+      dropped the other 213 tiles of tiles_r.txt is not recorded.
   - id: healsparse_masks
+    label: DR6 sky-fixed mask ladder (dr6-2026-09-29)
     type: data
-    source: UNIONS healsparse mask products (e.g. mask_ugriz_nside131072_n4.hsp)
+    source: vos:cfis/weak_lensing/ShapePipe/masks/ (ladder dr6-2026-09-29; Fir copy /project/def-waerbeke/cdaley/fir-assets/masks/dr6-2026-09-29/)
     description: >-
-      Sky-fixed mask maps, built outside ShapePipe and queried at object
-      positions; how they are used is the masking sub-analysis.
+      Eleven boolean healsparse maps (nside 131072, True = masked), one per
+      bit of the UNIONS mask: 1 and 2 star halos, 4 star bodies, 8 manual,
+      1024 MaxiMask, and 16, 32, 64, 128, 256, 2048 for no u, g, r, i,
+      Subaru z or Pan-STARRS z data. Made by the mask group (Mike Hudson) and
+      declared final on 29 Sep 2026. make_cat queries them at each object's
+      XWIN_WORLD/YWIN_WORLD into MASK_<bit>_<name> columns
+      (config_tile_Mc.ini MASK_EXT_PATHS); nothing in ShapePipe cuts on them
+      (masking.sky_mask_application). Every Fir batch records the same
+      SHA-256s (ASSETS.json); a re-query of these maps on 14 tiles from every
+      commit and both sites matches the catalogue's mask columns exactly.
+  - id: container_image
+    label: ShapePipe runtime image
+    type: data
+    source: shapepipe-develop-240b37e4.sif, sha256 94a791efd3de4eb585e95b5bb5c014f7ae3f5d3771bb46b41dffa4728ab43032
+    description: >-
+      The Apptainer image that supplies SExtractor, PSFEx and the Python
+      stack (816 MB, built from develop 240b37e4 on 28 Sep 2026). Run 1 ran
+      each campaign's own ShapePipe source on top of it through PYTHONPATH,
+      so the binaries and libraries are this image's and the code is the
+      campaign's commit (universes/baseline_run1.yaml). Fir verified the
+      SHA-256 before every batch; Nibi is inferred to have used the same
+      file, from which Fir's copy was made.
 
 outputs:
+  - id: psf_models
+    from: star_selection_psf.psf_model
+  - id: tile_detections
+    from: detection.tile_sexcat
+  - id: shapes
+    from: shape_measurement.ngmix_cat
   - id: final_cat
     type: data
     format: hdf5
     description: >-
-      Per-tile shear catalogue family, the terminal science product
-      (make_cat_runner).
-    inputs: [tile_images, healsparse_masks]
+      The shear catalogue: every tile's final_cat merged across campaigns.
+      Run 1's is run1-snap3/final_cat_latest.hdf5 (449 GB, 772,677,301
+      objects on 22,901 tiles; vos:cfis/weak_lensing/ShapePipe/v2.x/run1-snap3/,
+      Fir data/v2.x/run1-snap3/). The decisions here act across the chain.
+    inputs: [dr6_tile_stacks, dr6_exposures, unions_tile_catalogues, healsparse_masks, tile_list, container_image]
     decisions: [per_unit_completeness, postage_stamp_size, photometric_zeropoint]
+  - id: star_catalogue
+    from: catalogue_assembly.star_catalogue
+  - id: coverage_maps
+    from: masking.exposure_maps
+  - id: calibrated_catalogue
+    from: release.calibrated_catalogue
 
 decisions:
 
@@ -215,11 +295,9 @@ analyses:
       stage cuts on.
     inputs:
       - id: exposure_flags
-        type: data
-        source: per-CCD instrument flag images split from each exposure (exp_split family)
+        from: ../dr6_exposures
       - id: sky_masks
-        type: data
-        source: UNIONS healsparse mask maps
+        from: ../healsparse_masks
     outputs:
       - id: masked_measurement_inputs
         type: data
@@ -429,14 +507,15 @@ analyses:
       values.
     inputs:
       - id: tile_stack
-        type: data
-        source: MegaPipe r-band tile stack + weight (uncompressed, merged headers)
+        from: ../dr6_tile_stacks
+      - id: tile_catalogue
+        from: ../unions_tile_catalogues
     outputs:
       - id: tile_sexcat
         type: data
         format: fits
         description: Per-tile SExtractor LDAC catalogue with per-epoch CCD membership.
-        inputs: [tile_stack]
+        inputs: [tile_stack, tile_catalogue]
         decisions:
           [tile_detection, detection_threshold_policy, deblending_policy,
            background_model,
@@ -842,158 +921,13 @@ analyses:
             location: { page: 5 }
 
   # ═════════════════════════════════════════════════════════════════════════
-  preparation:
-    description: >-
-      How exposures, astrometry, epoch lists and stamps are prepared before
-      anything is measured.
-    inputs:
-      - id: exposure_files
-        type: data
-        source: delivered CFIS exposure triplets (image/weight/flag MEF) + tile stacks
-    outputs:
-      - id: epoch_stamps
-        type: data
-        format: sqlite
-        description: Per-object multi-epoch vignets + per-CCD WCS log feeding ngmix.
-        inputs: [exposure_files]
-        decisions:
-          [astrometric_solution_source, ccd_split_extent,
-           epoch_provenance_from_tile_history, object_position_columns,
-           stamp_positioning_and_padding]
-    decisions:
-      astrometric_solution_source:
-        label: Astrometry taken verbatim from delivered per-CCD headers
-        rationale: >-
-          split_exp builds WCS(header) from each delivered CCD header, and
-          merge_headers stores these per-tile. Every committed world-to-pixel
-          step on exposures uses that solution: epoch membership,
-          multi-epoch stamp placement and OFFSET, tile-side PSF interpolation
-          positions, and the per-epoch ngmix Jacobian. [HARDCODED] No
-          astrometric re-derivation or refinement exists. A re-fit would shift
-          stamp centres and Jacobians and could change epoch membership.
-        default: delivered_headers
-        options:
-          delivered_headers:
-            label: WCS(header) verbatim, stored at split time
-            insights: [guinot22_gaia_astrometry]
-          astrometric_refit:
-            label: Joint astrometric re-solution
-            description: Not implemented.
-      ccd_split_extent:
-        label: All 40 MegaCam HDUs split and carried as candidate epochs
-        rationale: >-
-          Any HDU count other than N_HDU raises; every CCD is a candidate
-          epoch wherever the WCS lands it.
-          Values:
-          SPLIT_EXP_RUNNER.N_HDU = 40.
-        default: all_40_hdus
-        options:
-          all_40_hdus:
-            label: 40 HDUs, hard-fail on any other count
-            insights: [guinot22_forty_chips]
-          exclude_ccd_subset:
-            label: Exclude a subset of CCDs as epochs
-            description: Not implemented.
-      epoch_provenance_from_tile_history:
-        label: Epoch sets parsed from tile FITS HISTORY cards
-        rationale: >-
-          The tile's primary-header HISTORY cards are its exposure list, and
-          two readers parse the same cards. find_exposures takes the file name
-          in column COLNUM, strips the extension and deduplicates. EXP_PREFIX
-          is blank, so 2243881p keeps its p. This list decides which exposures
-          are retrieved, split and merged into the tile's WCS log.
-          make_post_process re-parses the HISTORY copied into the catalogue
-          (the digits before an optional p) and builds the EPOCH HDUs and
-          N_EPOCH that the stamps and ngmix use. It raises if a HISTORY
-          exposure is missing from the WCS log. A tile whose header or HISTORY
-          cannot be read fails; it never gets an empty exposure list.
-          Values:
-          FIND_EXPOSURES_RUNNER.COLNUM = 3.
-        default: history_parse
-        options:
-          history_parse:
-            label: HISTORY column 3, no prefix stripped, deduplicated
-      object_position_columns:
-        label: Windowed centroids (XWIN/YWIN) define every position
-        rationale: >-
-          PSF interpolation sites, tile and multi-epoch stamp centres, epoch
-          membership and the catalogue position all use the tile SExtractor
-          run's windowed centroid, in data and image simulations alike: in pixels
-          for tile stamps and exposure-side PSF validation, in world
-          coordinates for tile-side PSF interpolation and multi-epoch stamps.
-          Windowed, isophotal and model centroids differ systematically for
-          blends and asymmetric galaxies, and the centroid feeds the position
-          seed and the centroid prior.
-          Values:
-          config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS =
-          XWIN_WORLD,YWIN_WORLD;
-          VIGNETMAKER_RUNNER.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD;
-          VIGNETMAKER_RUNNER.COORD = SPHE;
-          config_exp_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS =
-          XWIN_IMAGE,YWIN_IMAGE.
-        default: xwin_windowed
-        options:
-          xwin_windowed:
-            label: Windowed centroids everywhere
-          isophotal_barycentre:
-            label: Isophotal barycentre (X_IMAGE/Y_IMAGE)
-            excluded: true
-            excluded_reason: >-
-              Noisier than the windowed centroid and pulled by asymmetric or
-              deblend-clipped footprints; on the DR6 image of tile 186.307
-              it sits 0.16 px (median) and 1.6 px (p99) from it for
-              20 < MAG_AUTO < 24.5, and the image simulations measure the
-              windowed one.
-      stamp_positioning_and_padding:
-        label: Nearest-pixel stamp extraction with zero padding
-        rationale: >-
-          [HARDCODED] stamps are cut around the pixel nearest the object's
-          position, with no sub-pixel interpolation; the sub-pixel remainder
-          is stored as the stamp's OFFSET, which ngmix uses as the Jacobian
-          origin (shape_measurement.centroid_source), so extraction and
-          centroid prior share one rounding. Multi-epoch stamps map the tile
-          world coordinate through the stored per-CCD WCS. Stamps overrunning
-          an image edge are kept, zero-filled outside the image; a stamp
-          centre that rounds outside the image raises and fails the vignet
-          run for the whole tile.
-        default: round_and_zero_pad
-        options:
-          round_and_zero_pad:
-            label: Nearest-pixel extraction, zero padding, no edge rejection
-    prior_insights:
-      guinot22_gaia_astrometry:
-        claim: >-
-          The astrometric solution the analysis relies on is the upstream
-          MegaPipe/Gaia DR2 calibration, accurate to within 20 mas; no
-          astrometric re-fit inside the pipeline is described.
-        created_at: "2022-04-01T00:00:00Z"
-        evidence:
-          - id: ev_guinot22_astrometry
-            doi: "10.48550/arXiv.2204.04798"
-            quote:
-              exact: 'An astrometric calibration within 20 mas was achieved using the Gaia DR2 observations'
-            location: { page: 2 }
-      guinot22_forty_chips:
-        claim: >-
-          Star selection and PSF modelling are carried out independently on
-          each of the 40 MegaCam chips, with no chip excluded.
-        created_at: "2022-04-01T00:00:00Z"
-        evidence:
-          - id: ev_guinot22_forty_chips
-            doi: "10.48550/arXiv.2204.04798"
-            quote:
-              exact: 'is performed independently on each of the 40 chips that constitute the MegaCAM'
-            location: { page: 3 }
-
-  # ═════════════════════════════════════════════════════════════════════════
   star_selection_psf:
     description: >-
       Which objects constrain the PSF, the PSF model itself, and which CCD
       models are good enough to use.
     inputs:
       - id: exposure_sexcat
-        type: data
-        source: per-CCD exposure SExtractor catalogues (default_exp.sex run)
+        from: ../masking.masked_measurement_inputs
     outputs:
       - id: psf_model
         type: data
@@ -1005,7 +939,8 @@ analyses:
         decisions:
           [star_selection_box, psf_train_validation_split,
            psfex_candidate_vetting, psf_modelling_software,
-           psf_model_complexity, psf_acceptance_thresholds]
+           psf_model_complexity, psf_sampling, psf_chromaticity,
+           psf_rendering, psf_acceptance_thresholds]
     decisions:
       star_selection_box:
         label: Stellar-locus selection, magnitude window and FWHM window scaled to the locus
@@ -1186,7 +1121,7 @@ analyses:
         label: PSFEx pixel basis with degree-2 spatial variation per CCD
         rationale: >-
           A pixel basis with polynomial variation in XWIN/YWIN, fit per CCD
-          at native sampling. PSF_ACCURACY is the fractional accuracy PSFEx
+          (its sampling is psf_sampling). PSF_ACCURACY is the fractional accuracy PSFEx
           assumes for PSF pixel values; per the PSFEx documentation it enters
           the fit weights, and so how closely the model follows bright stars.
           Model flexibility trades overfitting against PSF leakage, the
@@ -1200,7 +1135,6 @@ analyses:
           PSF_ACCURACY = 0.01;
           BASIS_NUMBER = 20;
           PSFVAR_DEGREES = 2;
-          PSF_SAMPLING = 1;
           PSFVAR_KEYS = XWIN_IMAGE,YWIN_IMAGE;
           PSFVAR_GROUPS = 1,1;
           MEF_TYPE = INDEPENDENT.
@@ -1208,10 +1142,86 @@ analyses:
         options:
           pixel_basis_deg2_per_ccd:
             label: PIXEL basis, degree 2, per CCD
-            insights: [guinot22_psf_no_oversampling]
           deg3:
             label: Degree-3 spatial variation
             description: Needs more stars per CCD than the acceptance gate guarantees.
+      psf_sampling:
+        label: PSFEx model sampled on the native pixel grid
+        rationale: >-
+          PSFEx tabulates the model at one MegaCam pixel (0.187") per model
+          pixel, the published choice not to oversample (Guinot+22). Below
+          about 0.55" seeing the PSF FWHM is under three pixels and a
+          native-pixel model is undersampled: on the September 2022
+          sub-0.55" nights stars come out up to 4% larger than the model,
+          and the PSF-leakage slope in T_PSF disappears when those stars are
+          removed (shapepipe#989). Oversampling by 2 doubles the model stamp
+          (PSF_SIZE 101 for the same 9.5") and needs the consumers to
+          render the model back onto native pixels (psf_rendering), so the
+          two change together; the ShapePipe patch testbed on Fir runs this
+          variant. No study supports native sampling at the sharpest
+          seeing.
+          Values:
+          PSF_SAMPLING = 1.
+        default: native
+        options:
+          native:
+            label: One model pixel per image pixel
+            insights: [guinot22_psf_no_oversampling]
+          oversampled_2:
+            label: PSF_SAMPLING 0.5, two model pixels per image pixel
+            description: >-
+              Needs PSF_SIZE 101 and psfex_interp rendering onto native
+              pixels; not implemented in the committed chain.
+          auto:
+            label: PSF_SAMPLING 0, PSFEx chooses from the seeing
+            description: >-
+              Per-CCD sampling; every consumer must then read the sampling
+              from the model header.
+      psf_chromaticity:
+        label: Achromatic PSF model
+        rationale: >-
+          [HARDCODED] The PSFEx model varies only with position on the CCD
+          (PSFVAR_KEYS XWIN_IMAGE,YWIN_IMAGE): it carries no colour term, so
+          a galaxy is deconvolved with the PSF of the stars that trained the
+          model, whatever its colour. The r-band PSF is chromatic: on
+          colour-purified run-1 PSF stars, star-minus-model size falls 0.69%
+          per magnitude of g−i at fixed r, and PSF stars (median g−i 1.3 to
+          2.1) are redder than the lensing galaxies (0.9 to 1.3), so the
+          model is too large for galaxies by about 0.0–0.3%, part of the
+          0.5% size excess (shapepipe#956). DES Y6 fits a PSF linear in g−i
+          per CCD and evaluates it at the galaxy's colour. No choice was
+          made here: PSFEx was taken as it comes, and ShapePipe's exposure
+          catalogues carry no colours to add a term with.
+        default: achromatic
+        options:
+          achromatic:
+            label: Position-only variation, no colour term
+          colour_linear:
+            label: PSF linear in g−i per CCD, evaluated at the galaxy colour
+            description: >-
+              Needs star and galaxy colours (PhotoPipe) inside the exposure
+              chain; not implemented.
+      psf_rendering:
+        label: Interpolated PSF taken as the model's centred stamp
+        rationale: >-
+          [HARDCODED] psfex_interp evaluates the model's polynomial at the
+          object's CCD position and returns the sum of the basis images,
+          centred on the stamp, at the model's own sampling. It neither
+          shifts the model to the object's sub-pixel phase nor resamples it
+          onto image pixels, so the PSF ngmix deconvolves with has the
+          centring of the model, not of the object, and this holds only
+          because psf_sampling is native. No study of the phase convention
+          exists; the ShapePipe patch testbed runs a phase-rendered variant
+          on Fir.
+        default: centred_model_stamp
+        options:
+          centred_model_stamp:
+            label: Basis sum at model sampling, centred
+          object_phase_native_pixels:
+            label: Rendered onto image pixels at the object's sub-pixel phase
+            description: >-
+              Required by an oversampled model; not implemented in the
+              committed chain.
       psf_acceptance_thresholds:
         label: Per-CCD PSF-model quality gate
         rationale: >-
@@ -1347,14 +1357,160 @@ analyses:
             location: { page: 5 }
 
   # ═════════════════════════════════════════════════════════════════════════
+  preparation:
+    description: >-
+      How exposures, astrometry, epoch lists and stamps are prepared before
+      anything is measured.
+    inputs:
+      - id: exposure_files
+        from: ../dr6_exposures
+      - id: tile_sexcat
+        from: ../detection.tile_sexcat
+      - id: psf_model
+        from: ../star_selection_psf.psf_model
+    outputs:
+      - id: epoch_stamps
+        type: data
+        format: sqlite
+        description: Per-object multi-epoch vignets + per-CCD WCS log feeding ngmix.
+        inputs: [exposure_files, tile_sexcat, psf_model]
+        decisions:
+          [astrometric_solution_source, ccd_split_extent,
+           epoch_provenance_from_tile_history, object_position_columns,
+           stamp_positioning_and_padding]
+    decisions:
+      astrometric_solution_source:
+        label: Astrometry taken verbatim from delivered per-CCD headers
+        rationale: >-
+          split_exp builds WCS(header) from each delivered CCD header, and
+          merge_headers stores these per-tile. Every committed world-to-pixel
+          step on exposures uses that solution: epoch membership,
+          multi-epoch stamp placement and OFFSET, tile-side PSF interpolation
+          positions, and the per-epoch ngmix Jacobian. [HARDCODED] No
+          astrometric re-derivation or refinement exists. A re-fit would shift
+          stamp centres and Jacobians and could change epoch membership.
+        default: delivered_headers
+        options:
+          delivered_headers:
+            label: WCS(header) verbatim, stored at split time
+            insights: [guinot22_gaia_astrometry]
+          astrometric_refit:
+            label: Joint astrometric re-solution
+            description: Not implemented.
+      ccd_split_extent:
+        label: All 40 MegaCam HDUs split and carried as candidate epochs
+        rationale: >-
+          Any HDU count other than N_HDU raises; every CCD is a candidate
+          epoch wherever the WCS lands it.
+          Values:
+          SPLIT_EXP_RUNNER.N_HDU = 40.
+        default: all_40_hdus
+        options:
+          all_40_hdus:
+            label: 40 HDUs, hard-fail on any other count
+            insights: [guinot22_forty_chips]
+          exclude_ccd_subset:
+            label: Exclude a subset of CCDs as epochs
+            description: Not implemented.
+      epoch_provenance_from_tile_history:
+        label: Epoch sets parsed from tile FITS HISTORY cards
+        rationale: >-
+          The tile's primary-header HISTORY cards are its exposure list, and
+          two readers parse the same cards. find_exposures takes the file name
+          in column COLNUM, strips the extension and deduplicates. EXP_PREFIX
+          is blank, so 2243881p keeps its p. This list decides which exposures
+          are retrieved, split and merged into the tile's WCS log.
+          make_post_process re-parses the HISTORY copied into the catalogue
+          (the digits before an optional p) and builds the EPOCH HDUs and
+          N_EPOCH that the stamps and ngmix use. It raises if a HISTORY
+          exposure is missing from the WCS log. A tile whose header or HISTORY
+          cannot be read fails; it never gets an empty exposure list.
+          Values:
+          FIND_EXPOSURES_RUNNER.COLNUM = 3.
+        default: history_parse
+        options:
+          history_parse:
+            label: HISTORY column 3, no prefix stripped, deduplicated
+      object_position_columns:
+        label: Windowed centroids (XWIN/YWIN) define every position
+        rationale: >-
+          PSF interpolation sites, tile and multi-epoch stamp centres, epoch
+          membership and the catalogue position all use the tile SExtractor
+          run's windowed centroid, in data and image simulations alike: in pixels
+          for tile stamps and exposure-side PSF validation, in world
+          coordinates for tile-side PSF interpolation and multi-epoch stamps.
+          Windowed, isophotal and model centroids differ systematically for
+          blends and asymmetric galaxies, and the centroid feeds the position
+          seed and the centroid prior.
+          Values:
+          config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS =
+          XWIN_WORLD,YWIN_WORLD;
+          VIGNETMAKER_RUNNER.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD;
+          VIGNETMAKER_RUNNER.COORD = SPHE;
+          config_exp_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS =
+          XWIN_IMAGE,YWIN_IMAGE.
+        default: xwin_windowed
+        options:
+          xwin_windowed:
+            label: Windowed centroids everywhere
+          isophotal_barycentre:
+            label: Isophotal barycentre (X_IMAGE/Y_IMAGE)
+            excluded: true
+            excluded_reason: >-
+              Noisier than the windowed centroid and pulled by asymmetric or
+              deblend-clipped footprints; on the DR6 image of tile 186.307
+              it sits 0.16 px (median) and 1.6 px (p99) from it for
+              20 < MAG_AUTO < 24.5, and the image simulations measure the
+              windowed one.
+      stamp_positioning_and_padding:
+        label: Nearest-pixel stamp extraction with zero padding
+        rationale: >-
+          [HARDCODED] stamps are cut around the pixel nearest the object's
+          position, with no sub-pixel interpolation; the sub-pixel remainder
+          is stored as the stamp's OFFSET, which ngmix uses as the Jacobian
+          origin (shape_measurement.centroid_source), so extraction and
+          centroid prior share one rounding. Multi-epoch stamps map the tile
+          world coordinate through the stored per-CCD WCS. Stamps overrunning
+          an image edge are kept, zero-filled outside the image; a stamp
+          centre that rounds outside the image raises and fails the vignet
+          run for the whole tile.
+        default: round_and_zero_pad
+        options:
+          round_and_zero_pad:
+            label: Nearest-pixel extraction, zero padding, no edge rejection
+    prior_insights:
+      guinot22_gaia_astrometry:
+        claim: >-
+          The astrometric solution the analysis relies on is the upstream
+          MegaPipe/Gaia DR2 calibration, accurate to within 20 mas; no
+          astrometric re-fit inside the pipeline is described.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_astrometry
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'An astrometric calibration within 20 mas was achieved using the Gaia DR2 observations'
+            location: { page: 2 }
+      guinot22_forty_chips:
+        claim: >-
+          Star selection and PSF modelling are carried out independently on
+          each of the 40 MegaCam chips, with no chip excluded.
+        created_at: "2022-04-01T00:00:00Z"
+        evidence:
+          - id: ev_guinot22_forty_chips
+            doi: "10.48550/arXiv.2204.04798"
+            quote:
+              exact: 'is performed independently on each of the 40 chips that constitute the MegaCAM'
+            location: { page: 3 }
+
+  # ═════════════════════════════════════════════════════════════════════════
   shape_measurement:
     description: >-
       Joint multi-epoch ngmix Gaussian fits with metacalibration. Most
       choices are fixed in code, so silent defaults concentrate here.
     inputs:
       - id: vignets
-        type: data
-        source: multi-epoch galaxy, weight, flag, background and background-RMS vignets + interpolated PSFs
+        from: ../preparation.epoch_stamps
     outputs:
       - id: ngmix_cat
         type: data
@@ -2307,17 +2463,37 @@ analyses:
       detection catalogue and PSF quantities.
     inputs:
       - id: ngmix_chunks
-        type: data
-        source: per-tile ngmix catalogue chunks + tile sexcat + PSF diagnostics
+        from: ../shape_measurement.ngmix_cat
+      - id: tile_sexcat
+        from: ../detection.tile_sexcat
+      - id: mask_columns
+        from: ../masking.masked_measurement_inputs
+      - id: psf_model
+        from: ../star_selection_psf.psf_model
     outputs:
       - id: tile_final_cat
         type: data
         format: hdf5
-        description: The assembled per-tile science catalogue (final_cat family).
-        inputs: [ngmix_chunks]
+        description: >-
+          The assembled per-tile science catalogue (final_cat family),
+          written by tile_make_cat to products_dir/tiles/<shard>/<tile>/.
+          final_cat_merge stacks a campaign's tiles into
+          final_cat_<run>.hdf5, and the cross-campaign build (sp_latest.py)
+          into final_cat_latest.hdf5 (the root final_cat).
+        inputs: [ngmix_chunks, tile_sexcat, mask_columns, psf_model]
         decisions:
           [star_galaxy_classification, tile_overlap_handling,
            failure_sentinels]
+      - id: star_catalogue
+        type: data
+        format: hdf5
+        description: >-
+          Every exposure's psfex_interp validation catalogue (held-out and
+          training stars, star and PSF-model moments per CCD), stacked by
+          star_cat_merge. Run 1's is run1-snap3/full_starcat_latest.hdf5
+          (1.7 GB, 11,194,784 stars), released as v2.0.0 catalogs/stars/ and
+          catalogs/psf/.
+        inputs: [psf_model]
     decisions:
       star_galaxy_classification:
         label: Star/galaxy separation deferred out of the pipeline
@@ -2407,3 +2583,51 @@ analyses:
             quote:
               exact: 's + 2σs > 0.0003'
             location: { page: 5 }
+
+  # ═════════════════════════════════════════════════════════════════════════
+  release:
+    description: >-
+      From ShapePipe's merged catalogue to the v2.0.0 release
+      (vos:cfis/weak_lensing/ShapePipe/v2.x/v2.0.0/, README.md there): the
+      cross-campaign snapshot run1-snap3, then sp_validation's selection,
+      metacal response and weights, the PhotoPipe join and the HATS
+      catalogues. ShapePipe makes none of these choices, so this record
+      holds none of their decisions: the selection cuts (size, S/N, flags,
+      mask bits 4, 8, 64 and 1024) are in catalogs/config_mask.yaml and the
+      recipe in provenance/calibrated_recipe.yaml, and their record is
+      sp_validation's (branch assay/decision-record). They are here so the
+      chain reads to its end.
+    inputs:
+      - id: merged_catalogue
+        from: ../catalogue_assembly.tile_final_cat
+      - id: star_catalogue
+        from: ../catalogue_assembly.star_catalogue
+      - id: coverage_maps
+        from: ../masking.exposure_maps
+    outputs:
+      - id: comprehensive_catalogue
+        type: data
+        format: parquet
+        description: >-
+          Every run-1 object (772,677,301) with every ShapePipe column and
+          the PhotoPipe DR6 photometry and photo-z, joined on
+          (TILE_ID, NUMBER): v2.0.0 catalogs/comprehensive/, HATS at
+          HEALPix order 5.
+        inputs: [merged_catalogue]
+      - id: calibrated_catalogue
+        type: data
+        format: parquet
+        description: >-
+          The calibrated cosmic-shear sample, 191,016,178 galaxies with
+          calibrated e1, e2, weight w_des and tomographic bin: v2.0.0
+          catalogs/calibrated/ (HATS), with the response and additive bias
+          in catalogs/response.json.
+        inputs: [merged_catalogue, coverage_maps]
+      - id: psf_star_catalogues
+        type: data
+        format: parquet
+        description: >-
+          The PSF catalogue (5,565,959 stars) and the star catalogue
+          (11,194,784 stars, by EXPOSURE): v2.0.0 catalogs/psf/ and
+          catalogs/stars/.
+        inputs: [star_catalogue]

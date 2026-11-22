@@ -41,6 +41,9 @@ analyses:
       psfex_candidate_vetting: builtin_defaults
       psf_modelling_software: psfex
       psf_model_complexity: pixel_basis_deg2_per_ccd
+      psf_sampling: native
+      psf_chromaticity: achromatic
+      psf_rendering: centred_model_stamp
       psf_acceptance_thresholds: stars22_chi2_2
   shape_measurement:
     decisions:
