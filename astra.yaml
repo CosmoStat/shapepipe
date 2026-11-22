@@ -126,15 +126,17 @@ decisions:
       Every stamp width is 51 px (about 9.5 arcsec): the tile VIGNET (cut
       by the tile SExtractor run), the multi-epoch vignetmaker stamps
       ngmix fits, the exposure SExtractor VIGNET PSFEx trains on, and the
-      PSFEx model stamp. Only the first two are coupled: ngmix lays the tile
-      VIGNET's -1e30 neighbour markers over each epoch stamp pixel for pixel,
-      so they must be the same size. The stamp truncates the wings of large
-      galaxies. No rationale for 51 px is recorded.
+      native PSF stamp psfex_interp renders from the PSFEx model (101 model
+      pixels at 0.5-pixel sampling, the same 50.5 native pixels). Only the
+      first two are coupled: ngmix lays the tile VIGNET's -1e30 neighbour
+      markers over each epoch stamp pixel for pixel, so they must be the same
+      size. The stamp truncates the wings of
+      large galaxies. No rationale for 51 px is recorded.
       Values:
       default_noimaflags.param#VIGNET = 51;
       default.param#VIGNET = 51;
       VIGNETMAKER_RUNNER.STAMP_SIZE = 51;
-      PSF_SIZE = 51.
+      PSF_SIZE = 101.
     default: px_51
     options:
       px_51:
@@ -1168,7 +1170,15 @@ analyses:
         label: PSFEx pixel basis with degree-2 spatial variation per CCD
         rationale: >-
           A pixel basis with polynomial variation in XWIN/YWIN, fit per CCD
-          at native sampling. PSF_ACCURACY is the fractional accuracy PSFEx
+          at half-pixel sampling (PSF_SAMPLING 0.5, a 101-pixel model spanning
+          the same 50.5 native pixels as a 51-pixel native model). At native
+          sampling, exposures sharper than about 0.5 arcsec (1.8% of v2
+          validation exposures) keep a coherent star-minus-PSF g1 residual
+          (-4.0e-3 on 2780860, against -0.2e-3 on a 0.70 arcsec control);
+          half-pixel sampling with phase-matched validation stamps brings it
+          to consistent with zero (shapepipe#989). Guinot+22 chose not to
+          over-sample. Consumers read native-pixel stamps whatever the
+          sampling (psf_stamp_rendering). PSF_ACCURACY is the fractional accuracy PSFEx
           assumes for PSF pixel values; per the PSFEx documentation it enters
           the fit weights, and so how closely the model follows bright stars.
           Model flexibility trades overfitting against PSF leakage, the
@@ -1182,7 +1192,7 @@ analyses:
           PSF_ACCURACY = 0.01;
           BASIS_NUMBER = 20;
           PSFVAR_DEGREES = 2;
-          PSF_SAMPLING = 1;
+          PSF_SAMPLING = 0.5;
           PSFVAR_KEYS = XWIN_IMAGE,YWIN_IMAGE;
           PSFVAR_GROUPS = 1,1;
           MEF_TYPE = INDEPENDENT.
@@ -1256,9 +1266,9 @@ analyses:
           centre, a sub-pixel offset from the ngmix centroid prior (sigma
           1 px); its effect on shear is unmeasured.
           Values:
-          config_exp_psfex.ini#PSFEX_INTERP_RUNNER.STAMP_PHASE = False;
-          config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.STAMP_PHASE = False.
-        default: centred
+          config_exp_psfex.ini#PSFEX_INTERP_RUNNER.STAMP_PHASE = True;
+          config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.STAMP_PHASE = True.
+        default: stamp_phase
         options:
           centred:
             label: PSF centred on the native stamp
