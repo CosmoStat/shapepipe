@@ -35,6 +35,9 @@ def psfex_interp_runner(
     get_shapes = config.getboolean(module_config_sec, "GET_SHAPES")
     star_thresh = config.getint(module_config_sec, "STAR_THRESH")
     chi2_thresh = config.getint(module_config_sec, "CHI2_THRESH")
+    stamp_phase = config.has_option(
+        module_config_sec, "STAMP_PHASE"
+    ) and config.getboolean(module_config_sec, "STAMP_PHASE")
 
     # Run in CLASSIC mode
     if mode == "CLASSIC":
@@ -53,6 +56,7 @@ def psfex_interp_runner(
             get_shapes,
             star_thresh,
             chi2_thresh,
+            stamp_phase,
         )
 
         # Process inputs
@@ -104,6 +108,7 @@ def psfex_interp_runner(
             get_shapes,
             star_thresh,
             chi2_thresh,
+            stamp_phase,
         )
 
         # Process inputs multi-epoch
@@ -126,6 +131,7 @@ def psfex_interp_runner(
             get_shapes,
             star_thresh,
             chi2_thresh,
+            stamp_phase,
         )
 
         # Process inputs validation
