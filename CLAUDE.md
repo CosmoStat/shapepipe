@@ -158,6 +158,11 @@ an implementation site, run `python -m tests.helpers.decisions <path>[:<line>]`;
 your branch touches and whether their record changed (CI posts this list on
 every PR). The format is ASTRA.
 
+**Snakemake runs production.** The Snakemake workflow in `workflow/` keeps
+running production while `lc` (Lightcone's command line, which runs the recipes
+`astra.yaml` declares) reproduces its outputs stage by stage. Snakemake is
+retired only once `lc` has been shown to do everything it does.
+
 `uvx astra-tools@0.2.17 guide` is the briefing and
 `uvx astra-tools@0.2.17 spec` the field reference. The file's header states
 its conventions, including `[HARDCODED]` and `[LINT]`.
