@@ -6,7 +6,7 @@
 
 # @sc [decision:star_selection_psf.psf_model_complexity]
 BASIS_TYPE      PIXEL           # NONE, PIXEL, GAUSS-LAGUERRE or FILE
-BASIS_NUMBER    20              # Basis number or parameter
+BASIS_NUMBER    40              # Basis number or parameter
 
 BASIS_NAME      basis.fits      # Basis filename (FITS data-cube)
 BASIS_SCALE     1.0             # Gauss-Laguerre beta parameter
