@@ -140,6 +140,8 @@ outputs:
     from: detection.tile_sexcat
   - id: shapes
     from: shape_measurement.ngmix_cat
+  - id: tile_catalogues
+    from: catalogue_assembly.tile_final_cat
   - id: final_cat
     type: data
     format: hdf5
@@ -148,7 +150,7 @@ outputs:
       Run 1's is run1-snap3/final_cat_latest.hdf5 (449 GB, 772,677,301
       objects on 22,901 tiles; vos:cfis/weak_lensing/ShapePipe/v2.x/run1-snap3/,
       Fir data/v2.x/run1-snap3/). The decisions here act across the chain.
-    inputs: [dr6_tile_stacks, dr6_exposures, unions_tile_catalogues, healsparse_masks, tile_list, container_image]
+    inputs: [tile_catalogues, tile_list, container_image]
     decisions: [per_unit_completeness, postage_stamp_size, photometric_zeropoint]
   - id: star_catalogue
     from: catalogue_assembly.star_catalogue
@@ -156,6 +158,48 @@ outputs:
     from: masking.exposure_maps
   - id: calibrated_catalogue
     from: release.calibrated_catalogue
+  # The diagnostics each decision is judged by. They are made per universe on
+  # a patch of DR6 by the ShapePipe patch testbed (27 south-cap tiles chosen
+  # to span sharp and typical seeing), and are not yet bound here.
+  - id: psf_residuals
+    label: PSF model residuals on reserve stars
+    type: figure
+    format: png
+    description: >-
+      Star-minus-model size and ellipticity on the 20% reserve stars held
+      out of the PSFEx fit, against flux, seeing, g−i colour and position on
+      the CCD. Judges star selection, PSF sampling, chromaticity and model
+      complexity.
+    inputs: [star_catalogue]
+  - id: rho_tau_statistics
+    label: ρ and τ statistics
+    type: figure
+    format: png
+    description: >-
+      The ρ statistics of PSF-model residuals and the τ correlations of
+      galaxy shapes with them, the additive PSF systematics the shear
+      inherits. Run 1's all-survey values are in the v2.0.0 data vector
+      (data_vector/SP_v2.0_tomo.sacc).
+    inputs: [star_catalogue, final_cat]
+  - id: galaxy_sample
+    label: Selected galaxies
+    type: table
+    format: csv
+    description: >-
+      The number, size and S/N distribution of galaxies with a shape
+      measurement, per tile: what a change to detection, masking or
+      shape measurement does to the sample.
+    inputs: [final_cat]
+  - id: shape_shifts
+    label: Shape shifts against the baseline
+    type: figure
+    format: png
+    description: >-
+      Object-matched differences in calibrated shape and PSF quantities
+      between this universe and baseline_run1, with the metacal response,
+      against S/N and size. In baseline_run1 it is the reproduction check
+      against run1-snap3.
+    inputs: [final_cat]
 
 decisions:
 
