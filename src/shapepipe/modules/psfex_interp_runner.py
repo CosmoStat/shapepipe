@@ -35,6 +35,13 @@ def psfex_interp_runner(
     get_shapes = config.getboolean(module_config_sec, "GET_SHAPES")
     star_thresh = config.getint(module_config_sec, "STAR_THRESH")
     chi2_thresh = config.getint(module_config_sec, "CHI2_THRESH")
+    # Colour at which a colour-dependent PSF model is evaluated for objects
+    # without their own (galaxies); needed only for such a model
+    default_colour = (
+        config.getfloat(module_config_sec, "DEFAULT_COLOUR")
+        if config.has_option(module_config_sec, "DEFAULT_COLOUR")
+        else None
+    )
 
     # Run in CLASSIC mode
     if mode == "CLASSIC":
@@ -53,6 +60,7 @@ def psfex_interp_runner(
             get_shapes,
             star_thresh,
             chi2_thresh,
+            default_colour,
         )
 
         # Process inputs
@@ -104,6 +112,7 @@ def psfex_interp_runner(
             get_shapes,
             star_thresh,
             chi2_thresh,
+            default_colour,
         )
 
         # Process inputs multi-epoch
@@ -126,6 +135,7 @@ def psfex_interp_runner(
             get_shapes,
             star_thresh,
             chi2_thresh,
+            default_colour,
         )
 
         # Process inputs validation

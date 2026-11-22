@@ -94,6 +94,7 @@ COMPLETENESS = {
             "sextractor_runner":   dict(expect=120),
             "mask_query_runner":   dict(expect=40),
             "setools_runner":      dict(expect=80, subpath="rand_split"),
+            "star_colour_runner":   dict(expect=80),
             "psfex_runner":         dict(expect=80),
             "psfex_interp_runner":  dict(expect=40, warn=True),
         },
