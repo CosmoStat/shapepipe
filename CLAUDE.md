@@ -181,7 +181,10 @@ what the pipeline measures, amend `astra.yaml` (or the stage's
 rationale, options, Values and site tags), pin the selected option in the
 `committed` universe of `astra.yaml`, and say so in the PR description.
 `tests/unit/test_decisions.py` runs in CI; a scientific change that breaks its
-site/value checks or leaves the record stale is unfinished. Before committing:
+site/value checks or leaves the record stale is unfinished. Other module tests
+(e.g. `tests/module/test_ngmix_defect_fill.py`) also read `astra.yaml`, so run
+the full suite (`pytest --ignore=tests/science`) inside the container after
+restructuring the ASTRA spec, not only `test_decisions.py`. Before committing:
 
 ```bash
 uvx --prerelease allow astra-tools@0.3.0rc4 validate --verify-evidence

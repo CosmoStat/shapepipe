@@ -163,7 +163,7 @@ outputs:
       The Apptainer image that supplies SExtractor, PSFEx and the Python stack (816 MB, built
       from develop 240b37e4 on 28 Sep 2026). Run 1 ran each campaign's own ShapePipe source
       on top of it through PYTHONPATH, so the binaries and libraries are this image's and
-      the code is the campaign's commit (universes/baseline_run1.yaml). Fir verified the SHA-256
+      the code is the campaign's commit (universes.baseline_run1). Fir verified the SHA-256
       before every batch; Nibi is inferred to have used the same file, from which Fir's copy
       was made.
     recipe:
@@ -319,7 +319,7 @@ universes:
       fourfold_zero. The ten commits make the same choice on every decision here. They differ
       only in the N_EPOCH definition of the 237 smk-g17 tiles (rewritten afterwards to the
       PSF-validated count), the tile pairing guard (no tile lost) and older coverage-map fragments
-      (rebuilt). The baseline differs from develop (universes/committed.yaml) in one decision:
+      (rebuilt). The baseline differs from develop (universes.committed) in one decision:
       run 1 predates the per-detection defect columns (shape_measurement.defect_flagging,
       #973). Develop also writes per-branch metacal shape errors (#1003), a column change
       outside the record.

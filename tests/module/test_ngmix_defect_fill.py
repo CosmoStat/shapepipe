@@ -171,14 +171,14 @@ def test_committed_blend_handling_fills_defects():
     fill, so the record claims a fill the default campaign does not run
     (raw defects, which astra excludes, reaching metacal).
     """
-    import yaml
+    from tests.helpers.decisions import _resolve_universe, load_yaml
 
     repo = Path(__file__).resolve().parents[2]
-    universe = yaml.safe_load((repo / "universes" / "committed.yaml").read_text())
-    decisions = universe["analyses"]["shape_measurement"]["decisions"]
-    blend_handling = decisions["blend_handling"]
+    record = load_yaml(repo / "astra.yaml")
+    decisions = _resolve_universe(record["universes"], "committed")
+    blend_handling = decisions["shape_measurement.blend_handling"]
     assert blend_handling in ngmix_module.BLEND_HANDLINGS
-    workflow = yaml.safe_load((repo / "workflow" / "config.yaml").read_text())
+    workflow = load_yaml(repo / "workflow" / "config.yaml")
     assert workflow["blend_handling"] == blend_handling
 
     n = 21
