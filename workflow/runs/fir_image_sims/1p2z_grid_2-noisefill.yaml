@@ -1,0 +1,12 @@
+# Shear branch 1p2z of rung grid_2-noisefill: run 2's simulation on 25 tiles with
+# one ingredient changed (MultiBand_ImSim unions-october, unions/config_grid2_noisefill.yaml).
+# Settings as 1p2z_grid_2.yaml, with this rung's PSF dictionary.
+machine: fir
+input_type: image_sims
+run: 1p2z_grid_2-noisefill
+psf_dict: /scratch/cdaley/imsim/sims/psf_dict_grid_2-noisefill.pickle
+ngmix_chunks: 16
+clean: true
+clean_tiles: true
+blend_handling: noisefill
+defect_fill: noise
