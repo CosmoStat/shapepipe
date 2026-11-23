@@ -342,34 +342,52 @@ analyses:
               corrupted, so acting on them is an analysis decision.
               Rasterising would bake one mask version into every shape.
       psf_star_mask_veto:
-        label: PSF-star candidates rejected on instrument flags only
+        label: PSF-star candidates rejected on instrument flags and the manual mask
         rationale: >-
-          Of the masks, star selection cuts only on IMAFLAGS_ISO. mask_query sits
-          between SExtractor and setools in the exposure chain; when
-          MASK_PATHS names maps it writes MASK_EXT (0 clean, nonzero flagged,
-          off-coverage clean) onto each CCD's catalogue. MASK_PATHS ships
-          commented out, so the module passes catalogues through without
-          MASK_EXT. The intended map is the UNIONS star-body product (bit 2);
-          halo bits 0 and 1 are left out because halos say nothing about
-          whether a star is a good PSF sample.
+          Star selection cuts on IMAFLAGS_ISO and on MASK_EXT from the UNIONS
+          manual mask (bit 8: large galaxies, globular clusters and other
+          extended objects). mask_query sits between SExtractor and setools in
+          the exposure chain and writes MASK_EXT (0 clean, nonzero flagged,
+          off-coverage clean) onto each CCD's catalogue. Outlier rejection
+          alone copes with crowded star fields: in run 1, M13, M92 and the
+          Draco and Ursa Minor dwarf spheroidals are 3-15x overdense in PSF
+          stars with no oversized candidates, and normal-size stars fit the
+          model as well as the surrounding field does. It fails where compact
+          extended sources outnumber stars on a CCD. Inside 0.15 deg of M33,
+          24% of selected PSF stars are more than 1.2x the PSF size, and
+          normal-size stars come out 2.4% smaller than the PSF model, so the
+          contaminants inflate the model itself. That region carries most of
+          the first-bin rho-statistics variance and flips the sign of the
+          fitted leakage coefficients. The manual mask removes 1,024 of the
+          1,025 oversized candidates within 1 deg of M33 and every radius
+          where the model is biased. It costs 0.5% of PSF stars survey-wide
+          (CosmoStat/shapepipe#993). Halo bits 0 and 1 stay out because a
+          star inside another star's halo is not thereby a bad PSF sample.
           Values:
           MASK:star_selection.IMAFLAGS_ISO = "== 0";
           MASK:preselect.IMAFLAGS_ISO = "== 0";
           MASK:flag.IMAFLAGS_ISO = "== 0";
-          MASK:star_selection.MASK_EXT = absent;
-          MASK:preselect.MASK_EXT = absent;
-          MASK:flag.MASK_EXT = absent.
-        default: instrument_flags_only
+          MASK:star_selection.MASK_EXT = "== 0";
+          MASK:preselect.MASK_EXT = "== 0";
+          MASK:flag.MASK_EXT = "== 0";
+          config_exp_psfex.ini#MASK_QUERY_RUNNER.MASK_PATHS = $SP_INPUT_MASKS/mask_ugriz_nside131072_n8.hsp;
+          config_exp_mccd.ini#MASK_QUERY_RUNNER.MASK_PATHS = $SP_INPUT_MASKS/mask_ugriz_nside131072_n8.hsp.
+        default: manual_mask_veto
         options:
+          manual_mask_veto:
+            label: IMAFLAGS_ISO == 0 and MASK_EXT == 0 on the manual mask (bit 8)
           instrument_flags_only:
             label: IMAFLAGS_ISO == 0; no sky map queried
-          star_body_veto:
-            label: Also reject candidates on the star-body map (MASK_EXT == 0)
             description: >-
-              Set MASK_PATHS to the star-body map and add MASK_EXT == 0 beside
-              each IMAFLAGS_ISO cut in star_selection.setools (one line per
-              mask block). Querying without the cut records MASK_EXT and
-              changes no star.
+              Leaves outlier rejection to handle every sky-fixed contaminant.
+              Run 1 ran this way; M33's HII regions and clusters entered the
+              PSF model.
+          star_body_veto:
+            label: Also reject candidates on the star-body map (bit 2)
+            description: >-
+              Add the star-body map to MASK_PATHS. It flags 12.3% of run-1 PSF
+              stars, because it masks star bodies, the objects star selection
+              is meant to keep.
           star_body_and_halo_veto:
             label: Also reject candidates inside star halos
             excluded: true

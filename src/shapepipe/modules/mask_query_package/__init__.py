@@ -24,8 +24,9 @@ zero-weights flagged pixels and drops epochs that lose too many.
 **Healsparse masks** are sky-fixed LOCATION flags — a star halo, a manual
 region, a band with no data. They say where an object is, not that its pixels
 are broken, so what to do about one is an analysis decision. They are queried
-into columns and every rejection happens downstream: ``MASK_EXT`` here,
-``MASK_<band>`` in ``make_cat``. Nothing in the pipeline cuts on either.
+into columns: ``MASK_EXT`` here, ``MASK_<band>`` in ``make_cat``. The one
+in-pipeline cut on them is PSF-star selection, which rejects candidates with
+``MASK_EXT != 0``; the ``MASK_<band>`` columns are never cut on.
 
 Description
 ===========
@@ -48,24 +49,16 @@ The single column exists because ``setools`` expressions support only
 ``< > <= >= == !=`` — no bitwise operators — so any bit selection has to happen
 here, leaving the config a plain test for zero.
 
-Off by default, and a no-op when off
-====================================
+A no-op without maps
+====================
 
-``MASK_PATHS`` ships COMMENTED OUT. With no maps configured the module is a
-strict no-op: the catalogue is copied through unchanged, with no ``MASK_EXT``
-column at all — the same gating ``make_cat`` gives ``MASK_EXT_PATHS``. It stays
-in the ``MODULE`` chain either way, so enabling the query is uncommenting one
-line and never editing the chain.
-
-Even with maps configured, nothing cuts on the result. The PSF star selection
-deliberately starts from outlier rejection alone, rejecting only on the
-instrument flags, and ``MASK_EXT`` is the configurable pickup if that proves
-insufficient. Writing the column without cutting on it is what lets the effect
-of a mask on the star sample be *measured* before it is imposed.
-
-That pickup is one line: add ``MASK_EXT == 0`` beside each
-``IMAFLAGS_ISO == 0`` in ``star_selection.setools``. The escape hatch is
-deliberate, and that file's header says so.
+With no ``MASK_PATHS`` the module is a strict no-op: the catalogue is copied
+through unchanged, with no ``MASK_EXT`` column at all — the same gating
+``make_cat`` gives ``MASK_EXT_PATHS``. It stays in the ``MODULE`` chain either
+way. The shipped data configs name the UNIONS manual mask (bit 8), and
+``star_selection.setools`` rejects ``MASK_EXT != 0`` in its ``preselect``,
+``flag`` and ``star_selection`` blocks; a config without the map must drop those
+lines too, because ``setools`` cannot cut on a missing column.
 
 The lookup itself lives in :mod:`shapepipe.utilities.mask_query`, shared with
 ``make_cat``'s per-band ``MASK_<band>`` columns, so the healsparse primitive is
@@ -74,12 +67,14 @@ written once. That module's docstring documents the off-coverage convention.
 What gets queried is deliberately narrow
 ========================================
 
-``MASK_PATHS`` is a *list of maps to record against each PSF-star candidate*,
-not a list of every mask that exists. The committed configs name exactly one
-map — the UNIONS star-body product (bit 2). Halo bits 0 and 1 are excluded on
-purpose: halos flag objects for the final catalogue, they say nothing about
-whether a star is a good PSF sample (mask-force telecon, 2026-07-21). MaxiMask
-is not queried here either.
+``MASK_PATHS`` is a *list of maps that veto PSF-star candidates*, not a list
+of every mask that exists. The committed configs name exactly one map — the
+UNIONS manual mask (bit 8), which covers large galaxies, globular clusters and
+other extended objects. Halo bits 0 and 1 are excluded on purpose: halos flag
+objects for the final catalogue, they say nothing about whether a star is a
+good PSF sample (mask-force telecon, 2026-07-21). The star-body map (bit 2) is
+excluded because it flags the stars themselves. MaxiMask is not queried here
+either.
 
 Widening it costs a config edit and no code — add a path. That is why the
 contract is a path list rather than a bit mask: the UNIONS products are one
