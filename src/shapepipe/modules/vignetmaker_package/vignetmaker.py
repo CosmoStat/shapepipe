@@ -11,6 +11,9 @@ import os
 
 import numpy as np
 from astropy.wcs import WCS
+from astropy.wcs.utils import wcs_to_celestial_frame
+from astropy.coordinates import FK5
+from astropy.io import fits
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
@@ -83,6 +86,120 @@ def get_stamps(image, positions, rad):
     )
 
     return stamps, int_pos, offsets
+
+
+def normalise_registration_wcs(tile_wcs, epoch_wcs, epoch_header=None):
+    """Validate a common numerical celestial frame for categorical sampling.
+
+    @sc [decision:preparation.categorical_registration]
+    An exposure in FK5/J2000 with a case-insensitive ``gaia`` token in its
+    header's ``ASTCAT`` has ICRS numerical coordinates. Normalize that WCS's
+    frame metadata on a copy, without transforming coordinates or changing
+    the input WCS/header. Tokens are delimited by non-alphanumeric characters.
+    All other exposures retain their declared frame. The resulting exposure
+    and tile celestial frames, including equinox where applicable, must be
+    equivalent; an unsupported or mismatched frame raises ``ValueError``.
+
+    Parameters
+    ----------
+    tile_wcs, epoch_wcs : astropy.wcs.WCS
+        Tile and native exposure coordinate systems.
+    epoch_header : mapping, optional
+        Exposure header carrying the astrometric reference catalogue ASTCAT.
+
+    Returns
+    -------
+    astropy.wcs.WCS
+        The exposure WCS in the validated common numerical frame.
+    """
+    tile_frame = wcs_to_celestial_frame(tile_wcs)
+    epoch_frame = wcs_to_celestial_frame(epoch_wcs)
+    astcat = str((epoch_header or {}).get("ASTCAT", "")).casefold()
+    gaia_reference = "gaia" in re.split(r"[^a-z0-9]+", astcat)
+    if (
+        isinstance(epoch_frame, FK5)
+        and epoch_frame.equinox.jyear == 2000.0
+        and gaia_reference
+    ):
+        # On 188.307, 500 compact centroids give median residuals
+        # (+0.006, +0.003) px with common ICRS numbers, versus
+        # (-0.044, -0.010) px after FK5->ICRS conversion (PR #985 review).
+        # ASTCAT identifies these Gaia-referenced solutions as numerical ICRS.
+        epoch_wcs = epoch_wcs.deepcopy()
+        epoch_wcs.wcs.radesys = "ICRS"
+        epoch_wcs.wcs.equinox = np.nan
+        epoch_wcs.wcs.set()
+        epoch_frame = wcs_to_celestial_frame(epoch_wcs)
+    if not tile_frame.is_equivalent_frame(epoch_frame):
+        raise ValueError(
+            "Categorical registration requires equivalent celestial frames: "
+            f"tile={tile_frame!r}, exposure={epoch_frame!r}; only Gaia ASTCAT "
+            "FK5/J2000 exposure metadata may be normalized to ICRS"
+        )
+    return epoch_wcs
+
+
+def register_categories(
+    segmentation, tile_wcs, epoch_wcs, int_pos, shape, object_number,
+    epoch_header=None,
+):
+    """Sample tile categories at native exposure-stamp pixel centres.
+
+    @sc [decision:preparation.categorical_registration]
+    WCS coordinates are zero-based pixel centres.
+    ``int_pos`` is [row, col].
+    Nearest-neighbour sampling uses ``floor(x + 0.5)`` (ties go upward).
+    Segmentation, neighbours and the tile rectangle have full-tile support.
+    A neighbour is any nonzero label other than ``object_number``, including
+    -1 for a detection absent from the joined catalogue.
+    Noisefill uses this full neighbour footprint; UberSeg recomputes its
+    nearest-segment partition on the registered labels.
+    Neither images nor detector masks are resampled.
+    :func:`normalise_registration_wcs` validates the celestial-frame contract
+    before numerical coordinates pass between the WCSs.
+
+    Parameters
+    ----------
+    segmentation : numpy.ndarray
+        Full tile segmentation with catalogue NUMBER labels (0 sky, -1
+        detections absent from the joined catalogue).
+    tile_wcs, epoch_wcs : astropy.wcs.WCS
+        Independent tile and native exposure coordinate systems.
+    int_pos : array_like
+        Rounded exposure extraction centre in [row, col] order.
+    shape : tuple
+        Exposure stamp shape.
+    object_number : int
+        Target's catalogue NUMBER.
+    epoch_header : mapping, optional
+        Exposure header for the Gaia/FK5-J2000 frame-normalisation rule.
+
+    Returns
+    -------
+    dict
+        Exposure-grid ``SEG_VIGNET``, ``NEIGHBOUR`` and ``OFF_TILE`` maps.
+    """
+    epoch_wcs = normalise_registration_wcs(tile_wcs, epoch_wcs, epoch_header)
+    row, col = np.indices(shape, dtype=float)
+    xy = np.stack(
+        (col - shape[1] // 2 + int_pos[1], row - shape[0] // 2 + int_pos[0]),
+        axis=-1,
+    )
+    world = epoch_wcs.all_pix2world(xy.reshape(-1, 2), 0)
+    tile_xy = tile_wcs.all_world2pix(world, 0).reshape(*shape, 2)
+    if not np.isfinite(tile_xy).all():
+        raise ValueError(
+            "Non-finite tile coordinates in categorical registration"
+        )
+    x, y = np.floor(tile_xy + 0.5).astype(np.int64).transpose(2, 0, 1)
+    inside = (
+        (x >= 0) & (x < segmentation.shape[1])
+        & (y >= 0) & (y < segmentation.shape[0])
+    )
+    seg = np.zeros(shape, dtype=np.int32)
+    seg[inside] = segmentation[y[inside], x[inside]]
+    neighbour = (seg != 0) & (seg != object_number)
+    return dict(SEG_VIGNET=seg, NEIGHBOUR=neighbour, OFF_TILE=~inside)
 
 
 class VignetMaker(object):
@@ -319,6 +436,20 @@ class VignetMaker(object):
 
         all_id = np.copy(cat.get_data()["NUMBER"])
         n_epoch = np.copy(cat.get_data()["N_EPOCH"])
+        categories = None
+        if image_pattern == "image":
+            from shapepipe.modules.sextractor_package.match_catalogue import relabel
+
+            data = cat.get_data()
+            if "SEG_LABEL" not in data.dtype.names:
+                raise ValueError("Exposure categories require SEG_LABEL; "
+                                 "rerun tile detection")
+            tile_seg = relabel(
+                fits.getdata(self._segmentation_path),
+                data["SEG_LABEL"], data["NUMBER"],
+            )
+            tile_wcs = WCS(fits.getheader(self._segmentation_path))
+            categories = {}
 
         list_ext_name = cat.get_ext_name()
         hdu_ind = [
@@ -370,7 +501,15 @@ class VignetMaker(object):
                 ind_obj = np.where(cat.get_data(hdu_index)["CCD_N"] == ccd)[0]
                 obj_id = all_id[ind_obj]
 
-                wcs_file = self._f_wcs_file[exp_name][ccd]["WCS"]
+                ccd_info = self._f_wcs_file[exp_name][ccd]
+                wcs_file = ccd_info["WCS"]
+                if categories is not None:
+                    header = ccd_info.get("header")
+                    if isinstance(header, str):
+                        header = fits.Header.fromstring(header)
+                    wcs_file = normalise_registration_wcs(
+                        tile_wcs, wcs_file, header
+                    )
                 pos = np.array(
                     wcs_file.all_world2pix(
                         self._pos[:, 1][ind_obj],
@@ -383,6 +522,14 @@ class VignetMaker(object):
                 tmp_vign, tmp_int_pos, tmp_offset = self._get_stamp(
                     img_path, pos - 1, self._rad
                 )
+
+                if categories is not None:
+                    for number, centre in zip(obj_id, tmp_int_pos):
+                        maps = register_categories(
+                            tile_seg, tile_wcs, wcs_file, centre,
+                            tmp_vign.shape[1:], int(number),
+                        )
+                        categories[int(number), f"{exp_name}-{ccd}"] = maps
 
                 if array_vign is None:
                     array_vign = np.copy(tmp_vign)
@@ -458,6 +605,10 @@ class VignetMaker(object):
                     output_dict[id_tmp][index]["INT_POS"] = final_list[j][4][
                         where_res[0]
                     ]
+                    if categories is not None:
+                        output_dict[id_tmp][index].update(
+                            categories[int(id_tmp), index]
+                        )
                     counter += 1
 
             if counter == 0:
@@ -465,10 +616,20 @@ class VignetMaker(object):
 
         return output_dict
 
-    def process_me(self, image_dirs, image_pattern, f_wcs_path, rad):
+    def process_me(
+        self, image_dirs, image_pattern, f_wcs_path, rad, segmentation_path
+    ):
         """Process Multi-Epoch.
 
         Main function to create the stamps in the multi-epoch case.
+
+        @sc [label:coupling] registered-zero-object-store
+        Zero-object catalogues retain SEG_LABEL and empty EPOCH HDUs.
+        Image-store creation still reads the tile's full-size segmentation
+        check image with WCS; an empty catalogue doesn't waive that input.
+        Their stores have zero object keys, not a dummy category-bearing row.
+        On populated image epochs, SEG_VIGNET is int32 and NEIGHBOUR/OFF_TILE
+        are boolean arrays with the image stamp's shape.
 
         Parameters
         ----------
@@ -482,10 +643,14 @@ class VignetMaker(object):
             Path to the log file containing the WCS for each CCDs
         rad : int
             Radius of the stamp, must be an odd integer
+        segmentation_path : str
+            Full tile segmentation check image with the tile WCS.
+            Image epoch entries receive native-grid categorical maps.
 
         """
         self._f_wcs_file = SqliteDict(f_wcs_path)
         self._rad = rad
+        self._segmentation_path = segmentation_path
 
         for idx in range(len(image_pattern)):
 
