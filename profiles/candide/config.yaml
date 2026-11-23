@@ -2,6 +2,9 @@
 # `SP_PROFILE=candide workflow/bin/sp run`. Mirrors profiles/nibi/config.yaml;
 # only the cluster facts differ, and each is stated where it is set.
 executor: slurm
+# Relative, so it joins the plain-spelled working directory the Snakefile sets
+# rather than resolving to /automnt/<disk>, absent on the node owning the disk.
+slurm-logdir: .snakemake/slurm_logs
 # candide is a shared ~25-node cluster: cap concurrent submissions well below
 # what nibi takes.
 jobs: 150
@@ -9,24 +12,19 @@ default-resources:
   mem_mb: 2000
   runtime: 120                   # minutes
   slurm_account: cusers
-  # comp nodes have TmpDisk=0, so the tile_shape group (--tmp, see tile.smk's
-  # TILE_SLURM_EXTRA) lands on pscomp; everything else may use either.
   slurm_partition: "comp,pscomp"
-  # n09/n17/n36 follow sp_validation's candide exclusions; n23 has measured
-  # SLURM job failures (sp_validation commit 2b40c99); n34/n35 must not get
-  # ShapePipe jobs (n34's /tmp filled with orphaned tile stores).
-  slurm_extra: "'--exclude=n09,n17,n23,n34,n35,n36'"
 software-deployment-method: [apptainer]
-# tile.smk's /local/scratch (the tile store, ~5.6 GB per real-data tile) is
-# bound to a shared NFS directory. candide has no /local; node /tmp (~29 GB,
-# shared by every job on the node) must not be used; and the writable per-job
-# /scratch/$USER/$SLURM_JOB_ID cannot be named here (literal paths only, see
-# profiles/nibi/config.yaml; --cleanenv drops SLURM_JOB_ID). The source dir
-# must exist. Cost: ngmix reads the store over NFS. A run can move it with
-# tile_store_root (workflow/config.yaml). Stores left by killed jobs are only
-# swept after a day by a later tile job; check this dir after failed campaigns.
+# Everything but source-cache, whose path would be the launch's and may be
+# node-local; the Snakefile drops XDG_CACHE_HOME so jobs derive their own.
+shared-fs-usage:
+  - persistence
+  - input-output
+  - software-deployment
+  - sources
+  - storage-local-copies
+  - software-deployment-cache
 # PYTHONPATH names a checkout's src/; workflow/bin/sp rewrites the launch copy.
-apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/n17data/mkilbing/astro/repositories/github/shapepipe/src --bind /home,/automnt,/n17data,/n23data1,/n09data --bind /n23data1/mkilbing/shapepipe/tilestore:/local/scratch"
+apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/n17data/mkilbing/astro/repositories/github/shapepipe/src --bind /home,/automnt,/n17data,/n23data1,/n09data"
 latency-wait: 60                 # NFS: wait for outputs to appear after a job
 keep-going: true                 # a failed job poisons only its cone; siblings run on
 # Retry transient node failures, including measured process-slot exhaustion
@@ -39,16 +37,15 @@ show-failed-logs: true
 printshellcmds: true
 rerun-triggers: [mtime, params, code, software-env]
 # @sc [label:coupling] candide-group-slurm-extra
-# tile_shape's rule-level slurm_extra replaces the profile default. Set both
-# the --tmp floor and node exclusions identically on all four member rules:
-# a group's string resources must agree. Leave rule threads and attempt-scaled
-# memory intact.
+# tile.smk's --tmp floor selects nodes by Slurm's configured TmpDisk, which is 0
+# on nodes that do have /scratch. Clear it on all four tile_shape member rules:
+# a group's string resources must agree.
 set-resources:
   tile_vignets:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
+    slurm_extra: "''"
   tile_ngmix:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
+    slurm_extra: "''"
   tile_merge_cats:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
+    slurm_extra: "''"
   tile_make_cat:
-    slurm_extra: "'--tmp=16000 --exclude=n09,n17,n23,n34,n35,n36'"
+    slurm_extra: "''"

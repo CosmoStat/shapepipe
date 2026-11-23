@@ -176,31 +176,6 @@ if not n:
 f.write_text(text)
 PY
 
-  # Move the tile store by rewriting the bind source, not tile_local()'s params:
-  # params changes invalidate finished tiles (workflow/CONTRACTS). This bind is
-  # not a rerun trigger. Append it if the profile has no X:/local/scratch bind.
-  # See workflow/config.yaml for tile_store_root's capacity/latency trade-off.
-  python - "$SNAPSHOT/profiles/$PROFILE/config.yaml" "$(cfg tile_store_root)" <<'PY'
-import os, pathlib, re, sys
-f, root = pathlib.Path(sys.argv[1]), sys.argv[2]
-if root:
-    root = str(root)
-    if not os.path.isabs(root):
-        sys.exit(f"sp: tile_store_root must be an absolute path, got {root!r}")
-    os.makedirs(root, exist_ok=True)
-    bind = f"--bind {root}:/local/scratch"
-    text, n = re.subn(r'--bind \S+:/local/scratch(?=[\s"])', lambda m: bind,
-                      f.read_text(), count=1)
-    if not n:
-        text, n = re.subn(r'(apptainer-args:\s*"[^"]*)"',
-                          lambda m: m.group(1) + " " + bind + '"', text, count=1)
-    if not n:
-        sys.exit("sp: tile_store_root is set but the profile has no quoted "
-                 "apptainer-args to bind it with")
-    f.write_text(text)
-    print(f"sp: tile store root {root} (bound to /local/scratch)", file=sys.stderr)
-PY
-
   python - "$SNAPSHOT/snapshot.json" "$REPO" <<'PY'
 import json, pathlib, subprocess, sys, time
 out, repo = pathlib.Path(sys.argv[1]), sys.argv[2]
