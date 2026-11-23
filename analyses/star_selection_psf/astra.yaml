@@ -1,0 +1,359 @@
+spec_version: 0.1.0
+label: Star selection and PSF modelling
+description: >-
+  Which objects constrain the PSF, the PSF model itself, and which CCD models are good enough
+  to use.
+analyses:
+  masking:
+    path: ../masking
+outputs:
+  psf_model:
+    type: data
+    format: psf
+    description: >-
+      Per-CCD PSF models and the PSFs interpolated at object positions, with HSM shape diagnostics.
+    inputs:
+    - masking.masked_measurement_inputs
+    decisions:
+    - star_selection_box
+    - psf_train_validation_split
+    - psfex_candidate_vetting
+    - psf_modelling_software
+    - psf_model_complexity
+    - psf_sampling
+    - psf_chromaticity
+    - psf_rendering
+    - psf_acceptance_thresholds
+    recipe:
+      command: shapepipe_run -c ../../workflow/config/cfis/config_exp_psfex.ini --out {output}
+decisions:
+  star_selection_box:
+    label: Stellar-locus selection, magnitude window and FWHM window scaled to the locus
+    rationale: >-
+      Stars are objects with FLAGS == 0 and IMAFLAGS_ISO == 0 in a MAG_AUTO window whose FWHM_IMAGE
+      lies within 3 locus widths of the stellar-locus peak of a looser, size-limited preselection
+      (FWHM_WORLD 0.3-1.5 arcsec, angular bounds from each exposure's WCS). mode() is the
+      peak of a Gaussian kernel density estimate of the preselection FWHM, and locus_width()
+      is that peak's full width at half maximum as a Gaussian sigma, with the kernel removed
+      in quadrature. The box scales with the locus because the locus width varies from 0.06
+      to 0.26 px per CCD with seeing and focal-plane position, so a fixed box cuts broad corner
+      loci (2114045p CCD 35 keeps 39 of 63 bright locus stars at +-0.2 px, 63 at 3 sigma)
+      and is loose on sharp ones. k = 3 is where widening stops adding mostly stars: against
+      the size-independent MU_MAX - MAG_AUTO star sequence (18-20.5 mag, 79 CCDs), objects
+      added between 2.5 and 3 sigma are 59% (0.53 arcsec seeing) and 71% (0.69 arcsec) stars,
+      and between 3 and 3.5 sigma 28% and 65%. At k = 3, 98.9% and 89.1% of locus stars are
+      kept with 2.7% and 5.6% non-stars, against 95.6%, 80.9%, 1.7% and 3.0% for the fixed
+      +-0.2 px box. The [HARDCODED] 0.1 px kernel bandwidth is close to the median locus width
+      (0.08 px at 0.53 arcsec, 0.10 px at 0.69 arcsec) and is not tied to each CCD's width:
+      a wider kernel on a broad locus pulls the peak and the width into the galaxies, and
+      a tied bandwidth moved box edges by up to 4.5 px when the preselection bounds shifted
+      slightly on 0.69 arcsec CCDs. Measured widths make the box edges noisier than a fixed
+      half-width (bootstrap 0.03-0.05 px, against 0.01 px), still below the locus width. Below
+      20 objects the centre is the median and the width the normalised MAD; with none both
+      are -1, which selects nothing. Where galaxies capture the peak (2254826p CCD 35), no
+      box recovers the stars; the logged locus width flags it (0.32 px, against 0.06-0.26
+      px elsewhere). PSFEx's own selection is off; see psfex_candidate_vetting for what PSFEx
+      may still apply. Values: MASK:star_selection.FLAGS = "== 0"; MASK:preselect.FLAGS =
+      "== 0"; MASK:star_selection.IMAFLAGS_ISO = "== 0"; MASK:preselect.IMAFLAGS_ISO = "==
+      0"; MASK:star_selection.MAG_AUTO = ["> 18.", "< 22."]; MASK:star_selection.FWHM_IMAGE
+      = ["<= mode(FWHM_IMAGE{preselect}) + 3 * locus_width(FWHM_IMAGE{preselect})", ">= mode(FWHM_IMAGE{preselect})
+      - 3 * locus_width(FWHM_IMAGE{preselect})"]; MASK:preselect.MAG_AUTO = ["> 0", "< 21"];
+      MASK:preselect.FWHM_WORLD = ["> 0.3 / 3600", "< 1.5 / 3600"]; PLOT:fwhm_field.SCATTER
+      = "FWHM_WORLD{star_selection}*3600"; LOCUS_BANDWIDTH = 0.1; LOCUS_WIDTH_FLOOR = 0.02;
+      LOCUS_MIN_SIZE = 20; SAMPLE_AUTOSELECT = N.
+    options:
+      locus_scaled_box:
+        label: Box +-3 locus widths about the locus peak, mag 18-22
+      mode_centred_box:
+        label: Fixed box +-0.2 px (0.04 arcsec) about the FWHM mode, mag 18-22
+        insights:
+        - guinot22_star_box
+      size_mag_locus_fit:
+        label: Fitted size-magnitude stellar locus
+        description: Not implemented.
+      psfex_autoselect:
+        label: PSFEx SAMPLE_AUTOSELECT vetting on top
+        insights:
+        - guinot22_psfex_preselection_off
+        excluded: >-
+          Disabled because the pipeline does its own star selection (Guinot+22); PSFEx's other
+          SAMPLE_* cuts still apply (psfex_candidate_vetting).
+  psf_train_validation_split:
+    label: Seeded 80/20 star split, model fit vs held-out validation
+    rationale: >-
+      The 80% sample fits the PSFEx model and feeds the tile multi-epoch interpolation; the
+      20% sample is the independent residual diagnostic (psfex_interp VALIDATION mode). The
+      split trades training stars per CCD, which interacts with the acceptance gate, against
+      an independent residual test. The permutation is seeded from the digits of the unit's
+      file number, so a CCD gets the same split on every run. Values: RAND_SPLIT:star_split.RATIO
+      = 20; PSFEX_RUNNER.FILE_PATTERN = star_split_ratio_80; PSFEX_INTERP_RUNNER.FILE_PATTERN
+      = star_split_ratio_80,star_split_ratio_20,psfex_cat; PSFEX_INTERP_RUNNER.ME_DOT_PSF_PATTERN
+      = star_split_ratio_80.
+    options:
+      split_80_20_seeded:
+        label: 80% train / 20% validation, seeded from the file number
+        insights:
+        - guinot22_star_split
+      split_80_20_unseeded:
+        label: Same split from an unseeded random draw
+        excluded: Makes the PSF star sample, and every shape downstream of it, irreproducible
+          run-to-run.
+      no_holdout:
+        label: All stars in the model, no held-out diagnostic
+        excluded: Loses the independent residual and rho-statistic input.
+  psfex_candidate_vetting:
+    label: PSFEx built-in candidate cuts, unpinned
+    rationale: >-
+      default.psfex sets SAMPLE_AUTOSELECT N (compiled default Y) and omits every other SAMPLE_*
+      key, so [HARDCODED] PSFEx's compiled defaults govern them and can change with its version.
+      psfex -dd (PSFEx 3.21.1, develop-runtime image) gives SAMPLE_FWHMRANGE 2.0,10.0, SAMPLE_VARIABILITY
+      0.2, SAMPLE_MINSN 20, SAMPLE_MAXELLIP 0.3, SAMPLE_FLAGMASK 0x00fe, SAMPLE_WFLAGMASK
+      0x0000 and SAMPLE_IMAFLAGMASK 0x0. Per the PSFEx source (not re-read here), MINSN, MAXELLIP,
+      FLAGMASK, FWHMRANGE and VARIABILITY still cut candidates with autoselect off; SETools
+      cuts neither S/N nor ellipticity, so MINSN and MAXELLIP can reject stars it kept. BADPIXEL_FILTER
+      N and PSF_RECENTER N, also compiled defaults, leave flagged star vignets unfiltered
+      and candidates unrecentred. Compiled-in values admit no `= value` assertion, so the
+      anchors assert only that each SAMPLE_* key is absent; open issue #919 would pin them
+      in default.psfex. Values: SAMPLE_AUTOSELECT = N; BADPIXEL_FILTER = N; PSF_RECENTER =
+      N; SAMPLE_FWHMRANGE = absent; SAMPLE_VARIABILITY = absent; SAMPLE_MINSN = absent; SAMPLE_MAXELLIP
+      = absent; SAMPLE_FLAGMASK = absent; SAMPLE_WFLAGMASK = absent; SAMPLE_IMAFLAGMASK =
+      absent.
+    options:
+      builtin_defaults:
+        label: PSFEx 3.21.1 built-in SAMPLE_* values, no bad-pixel filter
+      pinned_explicit:
+        label: Write the SAMPLE_* values explicitly into default.psfex
+  psf_modelling_software:
+    label: PSF model, PSFEx per CCD or MCCD over the focal plane
+    rationale: >-
+      psf_model in workflow/config.yaml's input_types: table selects the exposure and tile
+      config pair and is exported as SP_PSF to the tile interpolation. The committed value
+      is psfex, which fits each split CCD independently (image sims default to fake, the true
+      PSF with no exposure fit). MCCD (Liaudat+2021) fits one hybrid local+global model per
+      exposure over the focal plane. Its ShapePipe chain exists and matches PSFEx's up to
+      the model: SExtractor reads the split image, weight and instrument flag, then mask_query,
+      then setools. However, the Snakefile refuses psf_model=mccd at parse time, because exp_persist
+      and star_cat_merge read only PSFEx products. Choosing MCCD therefore needs MCCD-aware
+      persistence and star-catalogue merging first. Values: INSTANCE.N_COMP_LOC = 8; INSTANCE.D_COMP_GLOB
+      = 8; INSTANCE.FP_GEOMETRY = CFIS; INSTANCE.RMSE_THRESH = 1.25; INPUTS.MIN_N_STARS =
+      20; FIT.LOC_MODEL = hybrid; config_exp_mccd.ini#EXECUTION.MODULE = sextractor_runner,mask_query_runner,setools_runner,mccd_preprocessing_runner,mccd_fit_val_runner,merge_starcat_runner,mccd_plots_runner;
+      SEXTRACTOR_RUNNER.INPUT_DIR = $SP_RUN/output/run_sp_exp_Sp/split_exp_runner/output;
+      SEXTRACTOR_RUNNER.FILE_PATTERN = image,weight,flag; SEXTRACTOR_RUNNER.FLAG_IMAGE = True.
+    options:
+      psfex:
+        label: PSFEx, independent per-CCD models
+        insights:
+        - guinot22_psfex_software
+        - farrens22_two_psf_methods
+      mccd_focal_plane:
+        label: MCCD hybrid local+global focal-plane model
+        description: >-
+          Refused by workflow/Snakefile (refuse_unpersistable_psf) until persistence and star-catalogue
+          merging read MCCD products.
+        insights:
+        - farrens22_two_psf_methods
+  psf_model_complexity:
+    label: PSFEx pixel basis with degree-2 spatial variation per CCD
+    rationale: >-
+      A pixel basis with polynomial variation in XWIN/YWIN, fit per CCD (its sampling is psf_sampling).
+      PSF_ACCURACY is the fractional accuracy PSFEx assumes for PSF pixel values; per the
+      PSFEx documentation it enters the fit weights, and so how closely the model follows
+      bright stars. Model flexibility trades overfitting against PSF leakage, the dominant
+      additive systematic in cosmic shear. A more flexible model must be supported by the
+      surviving training stars and checked on held-out residuals under the acceptance gate;
+      successful optimisation alone does not establish a usable PSF. Stock values; no rationale
+      recorded. Values: BASIS_TYPE = PIXEL; PSF_ACCURACY = 0.01; BASIS_NUMBER = 20; PSFVAR_DEGREES
+      = 2; PSFVAR_KEYS = XWIN_IMAGE,YWIN_IMAGE; PSFVAR_GROUPS = 1,1; MEF_TYPE = INDEPENDENT.
+    options:
+      pixel_basis_deg2_per_ccd:
+        label: PIXEL basis, degree 2, per CCD
+      deg3:
+        label: Degree-3 spatial variation
+        description: Needs more stars per CCD than the acceptance gate guarantees.
+  psf_sampling:
+    label: PSFEx model sampled on the native pixel grid
+    rationale: >-
+      PSFEx tabulates the model at one MegaCam pixel (0.187") per model pixel, the published
+      choice not to oversample (Guinot+22). Below about 0.5" seeing (2.7 px FWHM) a native-pixel
+      model is undersampled, and on run 1's sharpest exposures stars come out up to 4% larger
+      than the model (#956, #989). Oversampling by 2 doubles the model stamp (PSF_SIZE 101
+      for the same 9.5") and needs the consumers to render the model back onto native pixels
+      (psf_rendering), so the two change together; the ShapePipe patch testbed on Fir runs
+      this variant. No study supports native sampling at the sharpest seeing. Values: PSF_SAMPLING
+      = 1.
+    options:
+      native:
+        label: One model pixel per image pixel
+        insights:
+        - guinot22_psf_no_oversampling
+      oversampled_2:
+        label: PSF_SAMPLING 0.5, two model pixels per image pixel
+        description: >-
+          Needs PSF_SIZE 101 and psfex_interp rendering onto native pixels; not implemented
+          in the committed chain.
+      auto:
+        label: PSF_SAMPLING 0, PSFEx's automatic sampling
+        description: >-
+          With SAMPLE_AUTOSELECT N, PSFEx assumes a nominal 6 px FWHM and picks 1.28 px, coarser
+          than native (#989).
+  psf_chromaticity:
+    label: Achromatic PSF model
+    rationale: >-
+      The PSFEx model varies only with position on the CCD (PSFVAR_KEYS XWIN_IMAGE,YWIN_IMAGE):
+      it carries no colour term, so a galaxy is deconvolved with the PSF of the stars that
+      trained the model, whatever its colour. The r-band PSF is chromatic: on colour-purified
+      run-1 PSF stars, star-minus-model size falls 0.69% per magnitude of g−i at fixed r (UNIONS
+      star-selection study, Nov 2026, not yet in an issue). PSF stars (median g−i 1.3 to 2.1)
+      are redder than the lensing galaxies (0.9 to 1.3), so the 0.5% model size excess measured
+      on faint stars (#956) is largely colour, and what is left at galaxy colours is uncertain
+      until a colour-aware model or star simulations with SEDs measure it. DES Y6 fits a PSF
+      linear in g−i per CCD and evaluates it at the galaxy's colour. No choice was made here:
+      PSFEx was taken as it comes, and ShapePipe's exposure catalogues carry no colours to
+      add a term with.
+    options:
+      achromatic:
+        label: Position-only variation, no colour term
+      colour_linear:
+        label: PSF linear in g−i per CCD, evaluated at the galaxy colour
+        description: Needs star and galaxy colours (PhotoPipe) inside the exposure chain;
+          not implemented.
+  psf_rendering:
+    label: Interpolated PSF taken as the model's centred stamp
+    rationale: >-
+      [HARDCODED] psfex_interp evaluates the model's polynomial at the object's CCD position
+      and returns the sum of the basis images, centred on the stamp, at the model's own sampling.
+      It neither shifts the model to the object's sub-pixel phase nor resamples it onto image
+      pixels, so the PSF ngmix deconvolves with has the centring of the model, not of the
+      object, and this holds only because psf_sampling is native. No study of the phase convention
+      exists; the ShapePipe patch testbed runs a phase-rendered variant on Fir.
+    options:
+      centred_model_stamp:
+        label: Basis sum at model sampling, centred
+      object_phase_native_pixels:
+        label: Rendered onto image pixels at the object's sub-pixel phase
+        description: Required by an oversampled model; not implemented in the committed chain.
+  psf_acceptance_thresholds:
+    label: Per-CCD PSF-model quality gate
+    rationale: >-
+      A CCD whose model has ACCEPTED < STAR_THRESH or CHI2 > CHI2_THRESH is not interpolated
+      on either the validation or multi-epoch pass. ACCEPTED counts stars that survive PSFEx's
+      own sample cuts; PSFEx fits the 80% training split, so STAR_THRESH applies the published
+      22-star floor to that accepted count. In the science path the CCD's epoch is dropped
+      for every object on it, and an object left with no epoch has no shape. The final catalogue's
+      N_EPOCH counts the epochs with an interpolated PSF (for psfex, those passing this gate;
+      for mccd, those with a model). Only this count is written as N_EPOCH: one column avoids
+      downstream cuts on the geometric count by mistake. PSF-gate rejections are studied per
+      CCD in validation output and the exposure maps (#887), rather than per object. The pipeline
+      has no minimum-epoch floor: NGMIX_N_EPOCH records what survived and epoch-count cuts
+      happen downstream. Guinot+22 discards the CCD from PSF estimation rather than gating
+      at interpolation. Values: config_exp_psfex.ini#PSFEX_INTERP_RUNNER.STAR_THRESH = 22;
+      config_exp_psfex.ini#PSFEX_INTERP_RUNNER.CHI2_THRESH = 2; config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.STAR_THRESH
+      = 22; config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.CHI2_THRESH = 2.
+    options:
+      stars22_chi2_2:
+        label: '>= 22 stars and chi2 <= 2 on both passes'
+        insights:
+        - des_psf_blacklist_local
+        - guinot22_star_floor_22_local
+      stars20_science_path:
+        label: '>= 20 stars on the science path'
+        excluded: >-
+          A 20-star science-path threshold would pass models with 20 or 21 PSFEx-accepted
+          training stars, below the 22-star floor retained on the validation path.
+      des_25:
+        label: DES Y3 threshold (25 stars)
+        excluded: CFIS CCDs are smaller than DECam's; the floor is survey-specific.
+prior_insights:
+  des_psf_blacklist_local:
+    claim: >-
+      DES Y3 blacklists any CCD with fewer than 25 stars surviving outlier rejection in the
+      PSF fit.
+    evidence:
+    - doi: 10.48550/arXiv.2011.03409
+      quote:
+        exact: fewer than 25 stars survived the outlier rejection
+      location:
+        value: page=10
+  guinot22_star_floor_22_local:
+    claim: >-
+      The published ShapePipe/UNIONS analysis discards a CCD from the PSF estimation when
+      fewer than 22 stars are selected on it.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: >-
+          The dashed line represents the cut at 22 stars/CCD below which the CCD is discarded
+          for the PSF estimation.
+      location:
+        value: page=4
+  guinot22_star_box:
+    claim: >-
+      The published star selection keeps objects whose FWHM lies within 0.04 arcsec of the
+      mode of a size preselection, restricted to the magnitude range 18 < r < 22.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: >-
+          From this pre-selection we keep objects for which the FWHM is within 0.04 arcsec
+          of the mode. In addition to these size cuts, we only use star candidates in the
+          magnitude range 18 < r < 22.
+      location:
+        value: page=4
+  guinot22_star_split:
+    claim: >-
+      The published analysis randomly splits the star sample in two, 80% building the PSF
+      model and 20% held out for the validation tests.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: >-
+          To be able to perform these tests properly, our star sample has been randomly divided
+          in two:
+      location:
+        value: page=7
+  guinot22_psfex_preselection_off:
+    claim: >-
+      PSFEx's internal pre-selection is disabled because the pipeline does its own star selection;
+      the PSF is fit on the entire star sample.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: >-
+          Since we carry out our own star selection (see Sect. 4.1), we disable the internal
+          PSFEx pre-selection, and the PSF is thus obtained using the entire star sample.
+      location:
+        value: page=4
+  guinot22_psfex_software:
+    claim: >-
+      The published UNIONS shear catalogue uses PSFEx for PSF modelling, with MCCD named as
+      upcoming rather than current work.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: We make use of the PSFEx software package
+      location:
+        value: page=4
+  farrens22_two_psf_methods:
+    claim: >-
+      ShapePipe ships two PSF modelling methods, PSFEx and MCCD, either or both of which may
+      be run and used for the galaxy shape measurement.
+    evidence:
+    - doi: 10.48550/arXiv.2206.14689
+      quote:
+        exact: >-
+          ShapePipe allows either or both methods to be run and subsequently used for the
+          galaxy shape measurement.
+      location:
+        value: page=3
+  guinot22_psf_no_oversampling:
+    claim: >-
+      The PSFEx parametrisation is tabulated in the paper (pixel basis, degree-2 spatial variation),
+      with the deliberate choice not to over-sample the PSF models.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: >-
+          The PSFEx parameters we used are presented in Table 1. We have chosen not to over-sample
+          the PSF models.
+      location:
+        value: page=5

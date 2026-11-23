@@ -139,33 +139,34 @@ where the change lives — and *scientific* decisions in `astra.yaml`, below.
 
 ## Scientific decisions live in `astra.yaml`
 
-`astra.yaml` at the repo root is the pipeline's decision record: every
-consequential scientific choice embedded in the code and committed configs,
-with its rationale, alternatives and selected default. `universes/committed.yaml`
-pins the option the committed configuration selects for every decision.
-Each catalogue version or trial is a universe beside it, pinning the options
-that version ran: `universes/baseline_run1.yaml` is run 1, the pipeline behind
-the v2.0.0 catalogue. The record's root `inputs:` are the survey data the
-pipeline reads (DR6 tiles, exposures, tile catalogues, masks, the image), and
-its sub-analyses run in data order, wired by `from:`, from masking to the
-release. `@sc [decision:<id>]` tags live at implementing code/config sites; optional
-`Values:` sentences assert committed values within those tagged sites. The
-rationale stays in ASTRA, while local `@sc` contracts hold site-specific
-constraints. `tests/unit/test_decisions.py` checks tag syntax, bidirectional
-decision/site coverage, values, and test `decision` markers. To inspect tags at
-an implementation site, run `python -m tests.helpers.decisions <path>[:<line>]`;
-`--decision <id>` lists its sites, and `--diff origin/develop` the decisions
-your branch touches and whether their record changed (CI posts this list on
-every PR). The format is ASTRA.
+`astra.yaml` at the repo root is the pipeline's ASTRA 0.1 decision record:
+every consequential scientific choice embedded in the code and committed
+configs, with its rationale, alternatives and evidence. Its `universes:` map
+pins `baseline_run1` (run 1, the pipeline behind `run1-snap3` and v2.0.0) and
+`committed` (current `develop`, derived from `baseline_run1`). Committed files
+(`auxdir/CFIS/tiles_202604/tiles_r.txt`, `workflow/config.yaml`) are root
+`inputs:`, external survey products (DR6 tiles, exposures, tile catalogues,
+masks, runtime image) are root fetch `outputs:`, and six sub-analyses in
+`analyses/<stage>/astra.yaml` run in data order from `masking` through
+`catalogue_assembly`, ending at `final_cat`, `star_catalogue` and
+`coverage_maps`. `@sc [decision:<id>]` tags live at implementing code/config
+sites; optional `Values:` sentences assert committed values within those tagged
+sites. The rationale stays in ASTRA, while local `@sc` contracts hold
+site-specific constraints. `tests/unit/test_decisions.py` checks tag syntax,
+bidirectional decision/site coverage, values, and test `decision` markers. To
+inspect tags at an implementation site, run
+`python -m tests.helpers.decisions <path>[:<line>]`; `--decision <id>` lists
+its sites, and `--diff origin/develop` the decisions your branch touches and
+whether their record changed (CI posts this list on every PR).
 
 **Snakemake runs production.** The Snakemake workflow in `workflow/` keeps
 running production while `lc` (Lightcone's command line, which runs the recipes
 `astra.yaml` declares) reproduces its outputs stage by stage. Snakemake is
 retired only once `lc` has been shown to do everything it does.
 
-`uvx astra-tools@0.2.17 guide` is the briefing and
-`uvx astra-tools@0.2.17 spec` the field reference. The file's header states
-its conventions, including `[HARDCODED]` and `[LINT]`.
+`uvx --prerelease allow astra-tools@0.3.0rc4 guide` is the briefing and
+`uvx --prerelease allow astra-tools@0.3.0rc4 spec` the field reference. The
+file's header states its conventions, including `[HARDCODED]` and `[LINT]`.
 
 Membership test: a different defensible choice would change which objects enter
 the shear catalogue, or the numbers attached to them. Detection thresholds,
@@ -175,12 +176,13 @@ allocation, failure reporting, provenance) is out; it lives in the PR and in the
 PRD, CosmoStat/shapepipe#848.
 
 **A scientific change is not finished until the record is.** When a change moves
-what the pipeline measures, amend `astra.yaml` in the same PR (add the decision,
-or edit its rationale, options, Values and site tags), pin the selected option
-in `universes/committed.yaml`, and say so in the PR description.
+what the pipeline measures, amend `astra.yaml` (or the stage's
+`analyses/<stage>/astra.yaml`) in the same PR (add the decision, or edit its
+rationale, options, Values and site tags), pin the selected option in the
+`committed` universe of `astra.yaml`, and say so in the PR description.
 `tests/unit/test_decisions.py` runs in CI; a scientific change that breaks its
 site/value checks or leaves the record stale is unfinished. Before committing:
 
 ```bash
-uvx astra-tools@0.2.17 validate
+uvx --prerelease allow astra-tools@0.3.0rc4 validate --verify-evidence
 ```

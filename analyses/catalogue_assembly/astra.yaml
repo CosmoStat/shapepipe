@@ -1,0 +1,117 @@
+spec_version: 0.1.0
+label: Per-tile and star catalogue assembly
+description: >-
+  The per-tile science catalogue: shape chunks merged and joined to the detection catalogue
+  and PSF quantities.
+analyses:
+  shape_measurement:
+    path: ../shape_measurement
+  detection:
+    path: ../detection
+  masking:
+    path: ../masking
+  star_selection_psf:
+    path: ../star_selection_psf
+outputs:
+  tile_final_cat:
+    type: data
+    format: hdf5
+    description: >-
+      The assembled per-tile science catalogue (final_cat family), written by tile_make_cat
+      to products_dir/tiles/<shard>/<tile>/. final_cat_merge stacks a campaign's tiles into
+      final_cat_<run>.hdf5, and the cross-campaign build (sp_latest.py) into final_cat_latest.hdf5
+      (the root final_cat).
+    inputs:
+    - shape_measurement.ngmix_cat
+    - detection.tile_sexcat
+    - masking.masked_measurement_inputs
+    - star_selection_psf.psf_model
+    decisions:
+    - star_galaxy_classification
+    - tile_overlap_handling
+    - failure_sentinels
+    recipe:
+      command: shapepipe_run -c ../../workflow/config/cfis/config_tile_Mc.ini --out {output}
+  star_catalogue:
+    type: data
+    format: hdf5
+    description: >-
+      Every exposure's psfex_interp validation catalogue (held-out and training stars, star
+      and PSF-model moments per CCD), stacked by star_cat_merge. Run 1's is run1-snap3/full_starcat_latest.hdf5
+      (1.7 GB, 11,194,784 stars), released as v2.0.0 catalogs/stars/ and catalogs/psf/.
+    inputs:
+    - star_selection_psf.psf_model
+    recipe:
+      command: python ../../workflow/scripts/merge_star_cats.py --out {output}
+decisions:
+  star_galaxy_classification:
+    label: Star/galaxy separation deferred out of the pipeline
+    rationale: >-
+      [HARDCODED] ShapePipe does no star/galaxy classification: make_cat keeps every detection,
+      and the catalogue carries no classification column. Separation happens downstream, in
+      sp_validation's size-based selection. The spread-model classifier Guinot+22 used (guinot22_spread_model_cut)
+      is removed from the pipeline.
+    options:
+      deferred_downstream:
+        label: No in-pipeline classification; catalogue ships all objects
+      spread_model_inline:
+        label: spread_model classification in make_cat
+        insights:
+        - guinot22_spread_model_cut
+        excluded: >-
+          It did not work reliably when last run, and it separates stars from galaxies worse
+          than the downstream classification.
+  tile_overlap_handling:
+    label: Tile-overlap duplicates neither removed nor flagged
+    rationale: >-
+      Adjacent tiles overlap, and the UNIONS per-tile catalogue spans the whole tile image,
+      so an object in an overlap is measured once in each tile. [HARDCODED] make_cat keeps
+      every row and adds TILE_ID and TILE_UNIQUE_ID (tile_id * 10**6 + NUMBER). The second
+      is unique per tile row, so an overlap object gets a different ID in each tile. No config
+      key deduplicates or flags overlap rows. sp_validation removes the duplicates by keeping
+      each object only inside its own tile's nominal box (classification_galaxy_overlap_ra_dec,
+      from TILE_ID and XWIN_WORLD/YWIN_WORLD).
+    options:
+      no_dedup_in_pipeline:
+        label: Ship overlap duplicates; sp_validation cuts each tile to its nominal box
+      overlap_flagging:
+        label: Flag overlap objects in the catalogue
+        description: Not implemented.
+      nearest_tile_centre:
+        label: Keep each object only in its nearest tile
+        excluded: >-
+          Not needed in the pipeline: the cut needs only each object's TILE_ID and position,
+          and sp_validation applies it downstream. Leaving it out keeps every tile-catalogue
+          row in the shape catalogue.
+  failure_sentinels:
+    label: Objects without shape measurements kept, with sentinel values
+    rationale: >-
+      [HARDCODED] detections with no ngmix row (no surviving epoch, or an exception during
+      the fit) stay in the catalogue with sentinels: sizes, fluxes and magnitudes 0, flux
+      and magnitude errors -1, ellipticities and their errors -10, size errors 1e30, NGMIX_N_EPOCH
+      0. Their flag columns carry ngmix's own LM_FUNC_NOTFINITE bit (2**12; FLAGS_<SHEAR>
+      and NGMIX_MCAL_FLAGS) and NGMIX_MCAL_TYPES_FAIL is 5, as for a metacal type that reports
+      success without a finite shear, so the MCAL_FLAGS == 0 and MCAL_TYPES_FAIL == 0 cut
+      rejects them; NGMIX_N_EPOCH == 0 tells them apart from fitted objects.
+    options:
+      sentinel_values:
+        label: Keep with sentinels (flags LM_FUNC_NOTFINITE, e -10, T_ERR 1e30)
+      drop_unmatched:
+        label: Drop objects without shapes
+        excluded: Loses the photometry-only population and hides attrition.
+prior_insights:
+  guinot22_spread_model_cut:
+    claim: >-
+      The published analysis selects galaxies inside the pipeline with the spread model, at
+      s + 2 sigma_s > 0.0003 together with s > 0 and 20 < MAG_AUTO < 26.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: 'We then use the spread model to make the selection presented below:'
+      location:
+        value: page=5
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: s + 2σs > 0.0003
+      location:
+        value: page=5

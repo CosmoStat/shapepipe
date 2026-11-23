@@ -93,6 +93,41 @@ def load_yaml(path):
     return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
 
 
+def load_record(path, _visited=None):
+    """Load an ASTRA record, expanding local ``path``-declared sub-analyses."""
+
+    target = Path(path)
+    if target.is_dir():
+        target = target / "astra.yaml"
+    resolved = target.resolve()
+    visited = set() if _visited is None else set(_visited)
+    if resolved in visited:
+        return {}
+    visited.add(resolved)
+    doc = load_yaml(target)
+    if not isinstance(doc, dict):
+        return {}
+    analyses = doc.get("analyses")
+    if isinstance(analyses, dict):
+        expanded = {}
+        parent_dir = target.parent.resolve()
+        for name, entry in analyses.items():
+            if isinstance(entry, dict) and "path" in entry and "url" not in entry:
+                child = (parent_dir / entry["path"] / "astra.yaml").resolve()
+                if (
+                    child not in visited
+                    and child.is_file()
+                    and child.parent.is_relative_to(parent_dir)
+                ):
+                    expanded[name] = load_record(child, visited)
+                else:
+                    expanded[name] = entry
+            else:
+                expanded[name] = entry
+        doc = {**doc, "analyses": expanded}
+    return doc
+
+
 ABSENT = "absent"
 _NO_SETTING = object()
 _TAG_LINE = re.compile(r"^\s*@sc(?:\s+\[([^\]]*)\])?(?:\s+(\S+))?\s*$")
@@ -770,11 +805,14 @@ def _decisions(document, location=""):
     scope = document if isinstance(document, dict) else {}
     result = {}
     for decision_id, definition in (scope.get("decisions") or {}).items():
-        key = (
-            f"{location}.decisions.{decision_id}"
-            if location
-            else f"decisions.{decision_id}"
-        )
+        if "." in decision_id and not location:
+            parts = decision_id.split(".")
+            prefix = ".".join(f"analyses.{p}" for p in parts[:-1])
+            key = f"{prefix}.decisions.{parts[-1]}"
+        elif location:
+            key = f"{location}.decisions.{decision_id}"
+        else:
+            key = f"decisions.{decision_id}"
         result[key] = definition
     for analysis_id, analysis in (scope.get("analyses") or {}).items():
         child = (
@@ -785,6 +823,26 @@ def _decisions(document, location=""):
         if isinstance(analysis, dict):
             result.update(_decisions(analysis, child))
     return result
+
+
+def _resolve_universe(universes, name, _seen=None):
+    """Resolve a universe's effective decision map, following ``derived_from``."""
+
+    seen = set() if _seen is None else set(_seen)
+    if name in seen or name not in universes:
+        return {}
+    seen.add(name)
+    entry = universes[name] or {}
+    if "analysis" in entry and "universe" in entry:
+        return None
+    decisions = {}
+    base = entry.get("derived_from")
+    if base:
+        base_decisions = _resolve_universe(universes, base, seen)
+        if base_decisions:
+            decisions.update(base_decisions)
+    decisions.update(entry.get("decisions") or {})
+    return decisions
 
 
 def _iter_decision_defs(document, prefix=""):
@@ -1309,7 +1367,7 @@ def repository_errors(root):
     """Run the bidirectional tag/value and marker checks for a repository."""
 
     root = Path(root)
-    record = load_yaml(root / "astra.yaml")
+    record = load_record(root)
     tags, errors = scan_tags(root)
     markers, marker_parse_errors = decision_markers(root)
     errors = list(errors)
@@ -1317,6 +1375,14 @@ def repository_errors(root):
     errors.extend(value_errors(root, record, tags))
     errors.extend(marker_parse_errors)
     errors.extend(decision_marker_errors(markers, record))
+    universes = record.get("universes") or {}
+    for uname in sorted(universes):
+        resolved = _resolve_universe(universes, uname)
+        if resolved is not None:
+            errors.extend(
+                f"universes.{uname}.{err}"
+                for err in universe_errors(record, {"decisions": resolved})
+            )
     universe_path = root / "universes" / "committed.yaml"
     if universe_path.is_file():
         errors.extend(universe_errors(record, load_yaml(universe_path)))
@@ -1509,7 +1575,26 @@ def _decisions_at(root, revision):
         text = _git(root, "show", f"{revision}:astra.yaml")
     except subprocess.CalledProcessError:
         return {}
-    return dict(_iter_decision_defs(yaml.safe_load(text)))
+    doc = yaml.safe_load(text)
+    if isinstance(doc, dict) and isinstance(doc.get("analyses"), dict):
+        expanded = {}
+        for name, entry in doc["analyses"].items():
+            if (
+                isinstance(entry, dict)
+                and "path" in entry
+                and "url" not in entry
+                and not entry["path"].startswith("..")
+            ):
+                rel = f"{entry['path'].rstrip('/')}/astra.yaml"
+                try:
+                    sub_text = _git(root, "show", f"{revision}:{rel}")
+                    expanded[name] = yaml.safe_load(sub_text)
+                except subprocess.CalledProcessError:
+                    expanded[name] = entry
+            else:
+                expanded[name] = entry
+        doc = {**doc, "analyses": expanded}
+    return dict(_iter_decision_defs(doc))
 
 
 def diff_report(root, base):
@@ -1580,7 +1665,7 @@ def main(argv=None):
         except subprocess.CalledProcessError as error:
             sys.exit(f"{' '.join(error.cmd)}: {error.stderr.strip()}")
         return 0
-    record = load_yaml(root / "astra.yaml")
+    record = load_record(root)
     tags, errors = scan_tags(root)
     if args.decision:
         _print_decision_sites(record, tags, args.decision)

@@ -10,6 +10,7 @@ from tests.helpers.decisions import (
     decision_markers,
     forbid_rules,
     import_violations,
+    load_record,
     load_yaml,
     main,
     repository_errors,
@@ -656,7 +657,7 @@ def test_real_record_catches_gate_and_absence_drift(
 ):
     """Real-record mutations of gates and absences must break Values checks."""
 
-    record = load_yaml(REPO_ROOT / "astra.yaml")
+    record = load_record(REPO_ROOT)
     tags, parse_errors = scan_tags(REPO_ROOT)
     assert parse_errors == []
     for relative in {tag.path for tag in tags}:
