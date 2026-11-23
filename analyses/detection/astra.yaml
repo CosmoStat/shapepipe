@@ -1,0 +1,325 @@
+spec_version: 0.1.0
+label: Object detection
+description: >-
+  Object detection on r-band tiles (the galaxy sample) and on single-exposure CCDs (PSF-star
+  candidates), both by ShapePipe's own SExtractor runs. The tile run follows the MegaPipe
+  parameters of Gwyn's UNIONS tile catalogue, and in committed data its detections are joined
+  to that catalogue (tile_detection); exposures keep ShapePipe's stock values.
+analyses:
+  root:
+    path: ../..
+outputs:
+  tile_sexcat:
+    type: data
+    format: fits
+    description: Per-tile SExtractor LDAC catalogue with per-epoch CCD membership.
+    inputs:
+    - root.dr6_tile_stacks
+    - root.unions_tile_catalogues
+    decisions:
+    - tile_detection
+    - detection_threshold_policy
+    - deblending_policy
+    - background_model
+    - weight_map_usage
+    - zero_weight_interpolation
+    - detection_source_mode
+    - epoch_membership_ccd_bounds
+    - photometry_parameters
+    - spurious_detection_cleaning
+    - blend_photometry_mask_type
+    - saturation_level
+    recipe:
+      command: shapepipe_run -c ../../workflow/config/cfis/config_tile_Sx.ini --out {output}
+decisions:
+  tile_detection:
+    label: Object list and NUMBER of the tile galaxy sample
+    rationale: >-
+      Both options run ShapePipe's tile SExtractor, so data and image simulations share one
+      detection and measurement path: windowed positions, VIGNET neighbour markers and every
+      SExtractor column. In real data each detection is then paired with its mutual nearest
+      neighbour within 1 px in Gwyn's UNIONS per-tile catalogue and takes its NUMBER, so shape,
+      photometry and photo-z catalogues share one object list and one ID (TILE_UNIQUE_ID);
+      unpaired detections leave the catalogue. The catalogue is MegaPipe's SExtractor run
+      on the same DR6 image with the configuration of default_tile.sex (detection_threshold_policy),
+      so pairs agree to 4e-5 px at the median. On tile 186.307 every one of the 41,201 detections
+      pairs; over eight DR6 tiles spanning a rich cluster, a bright star's halo, low latitude
+      and the survey edge, at least 99.7% of detections and 99.2% of catalogue objects pair.
+      The catalogue objects with no detection (0-0.7%, mostly fainter than MAG_AUTO 24.5)
+      are deblended children that ShapePipe's SExtractor leaves merged, concentrated around
+      very large objects; they have photometry but no shape. The join needs the tile image
+      to be the catalogue's release: on the DR5 image of a tile only ~95% of detections pair.
+      Unpaired detections still stop the run beyond both 2% and 20 objects, preserving the
+      check for other pixels. External-only losses never reject a tile: warn and record; no
+      cut is applied in the pipeline, and whether the catalogue consumer cuts on external_paired_fraction
+      (or catalogue_match in tile_make_cat.json) remains undecided (CosmoStat/sp_validation#444).
+      Hard rejection and an additive unpaired allowance both reject sparse edge tiles whose
+      losses are external-only (058.220: 71 external-only of 845 against an allowance of 66.9);
+      zero-weight or spatial exemptions would hide the losses the published counts expose.
+      The warning threshold is max(20, 0.02 N + 50), without the 50 if no pairs exist; it
+      is independent of the SExtractor guard settings. Sparse edge tiles 058.220 and 207.238
+      exceed it, despite almost every detection pairing. Local correlated deblending losses
+      need not scale with tile population. Every joined tile records the five match counts,
+      external paired fraction and warning budget in its detection catalogue headers, then
+      in tile_detect and the published tile_make_cat.json manifest beside final_cat. Join
+      its unit (RRR.DDD) as a float to TILE_ID in the final catalogue to select the population
+      downstream. No external-only object gains a shape. PSF stars come from the exposure-level
+      SExtractor run in both options. Image simulations, which have no UNIONS catalogue, keep
+      SExtractor's own NUMBER. Values: input_types.data.tile_detection = unions_catalogue;
+      config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_RADIUS = 1.0; config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_MIN_FRACTION
+      = 0.98; config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_TOLERATED_UNPAIRED = 20; config_tile_Sx.ini#SEXTRACTOR_RUNNER.MATCH_EXTERNAL_UNPAIRED_ALLOWANCE
+      = absent.
+    options:
+      unions_catalogue:
+        label: Tile SExtractor joined to Gwyn's UNIONS per-tile catalogue
+      sextractor:
+        label: Tile SExtractor with its own NUMBER
+  detection_threshold_policy:
+    label: Detection significance, minimum area, matched filter
+    rationale: >-
+      Tile SExtractor uses the MegaPipe tile-catalogue threshold, minimum area and filter,
+      so that its galaxy sample reproduces the UNIONS catalogue whose NUMBER committed data
+      adopts (tile_detection). Run on the DR6 image of tile 186.307, it reproduces the DR6
+      catalogue to 99.89% completeness and 100% purity with identical segmentation pixels;
+      the 45 misses are faint deblended children of bright parents (#929). The pixel stack
+      (MEMORY_PIXSTACK) holds the largest object on every tested tile, a bright star's halo
+      included, so no object is truncated. Unexplained: on tiles with such a large object
+      (a cD galaxy, a bright star's halo) MAG_AUTO and FLUX_RADIUS differ from the catalogue
+      by more than 1% for 2-11% of objects, most of them past the large object in SExtractor's
+      scan order, and on one low-latitude tile for 2% of objects spread over the tile. The
+      catalogue's run must differ in a setting not recorded here (memory, version); shapes
+      use ShapePipe's measurements and photometry the catalogue's, so for those objects the
+      two differ. This validates the configuration on data pixels, not detection on simulated
+      images. The 7x7 Gaussian of FWHM 3 px is near the CFIS average seeing of 0.65 arcsec
+      (about 3.5 px at 0.187 arcsec/px). Exposures only feed star selection and keep stock
+      values with the 3x3 FWHM 2 px kernel. The tiles differ from Guinot+22 in all three.
+      Values: config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_SEX_FILE = $SP_CONFIG/default_tile.sex;
+      default_tile.sex#DETECT_THRESH = 1.0; default_tile.sex#ANALYSIS_THRESH = 1.0; default_tile.sex#DETECT_MINAREA
+      = 3; default_tile.sex#FILTER = Y; default_tile.sex#MEMORY_PIXSTACK = 3000000; config_tile_Sx.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE
+      = $SP_CONFIG/gauss_3.0_7x7.conv; config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_SEX_FILE
+      = $SP_CONFIG/default_exp.sex; default_exp.sex#DETECT_THRESH = 1.5; default_exp.sex#ANALYSIS_THRESH
+      = 1.5; default_exp.sex#DETECT_MINAREA = 5; default_exp.sex#FILTER = Y; config_exp_psfex.ini#SEXTRACTOR_RUNNER.DOT_CONV_FILE
+      = $SP_CONFIG/default.conv.
+    options:
+      megapipe_tiles:
+        label: MegaPipe values on tiles; stock values on exposures
+        insights:
+        - guinot22_cfis_seeing
+      stock_tiles:
+        label: Stock ShapePipe values on tiles (1.5 sigma, minarea 5, FWHM 2 px)
+        insights:
+        - guinot22_sextractor_params
+        excluded: >-
+          Triggers spuriously on about 10% of grid-placed Sersic galaxies in image simulations,
+          and does not match the MegaPipe tile catalogue.
+  deblending_policy:
+    label: Deblending contrast
+    rationale: >-
+      Tiles use the MegaPipe DEBLEND_MINCONT; exposures use a lower one, the value Guinot+22
+      lists. Both share DEBLEND_NTHRESH. Contrast sets object count, centroids, and blend
+      contamination in shapes; matching image simulations must preserve the stage-specific
+      settings. Values: default_tile.sex#DEBLEND_MINCONT = 0.002; default_exp.sex#DEBLEND_MINCONT
+      = 0.001; default_tile.sex#DEBLEND_NTHRESH = 32; default_exp.sex#DEBLEND_NTHRESH = 32.
+    options:
+      megapipe_tiles:
+        label: MINCONT 0.002 tiles / 0.001 exposures
+        insights:
+        - guinot22_sextractor_params
+      mincont_5em4_tiles:
+        label: MINCONT 0.0005 on tiles
+        excluded: >-
+          Part of the stock tile parameter set rejected in favour of the MegaPipe values (see
+          detection_threshold_policy).
+  background_model:
+    label: Background estimation and photometric background
+    rationale: >-
+      Both passes use SExtractor AUTO backgrounds: tiles with the MegaPipe mesh and filter
+      sizes and a LOCAL photometric background, exposures with a finer mesh and a GLOBAL one.
+      ngmix subtracts the exposure BACKGROUND map from each epoch and weights its pixels by
+      BACKGROUND_RMS (shape_measurement.galaxy_pixel_weights). The header background path
+      is off. Residual sky offsets propagate into thresholds, fluxes, completeness and shapes.
+      Values: default_tile.sex#BACK_TYPE = AUTO; default_tile.sex#BACK_SIZE = 512; default_tile.sex#BACK_FILTERSIZE
+      = 9; default_tile.sex#BACKPHOTO_TYPE = LOCAL; BACKPHOTO_THICK = 30; default_exp.sex#BACK_TYPE
+      = AUTO; default_exp.sex#BACK_SIZE = 64; default_exp.sex#BACK_FILTERSIZE = 3; default_exp.sex#BACKPHOTO_TYPE
+      = GLOBAL; config_exp_psfex.ini#SEXTRACTOR_RUNNER.BKG_FROM_HEADER = False; config_tile_Sx.ini#SEXTRACTOR_RUNNER.BKG_FROM_HEADER
+      = False.
+    options:
+      auto_megapipe_tiles:
+        label: AUTO everywhere; MegaPipe mesh and LOCAL photometry on tiles
+      manual_zero_tiles:
+        label: Tile background fixed to 0, trusting the stack subtraction
+        excluded: >-
+          Part of the stock tile parameter set rejected in favour of the MegaPipe values (see
+          detection_threshold_policy).
+  weight_map_usage:
+    label: Weight map as inverse variance for detection
+    rationale: >-
+      MAP_WEIGHT on both passes (SExtractor default NONE): the per-pixel variance sets the
+      effective SNR and so the detection set. RESCALE_WEIGHTS and WEIGHT_GAIN keep their SExtractor
+      defaults. Guinot+22 keeps every non-tabulated parameter at its default, which would
+      mean no weight map. Values: default_tile.sex#WEIGHT_TYPE = MAP_WEIGHT; default_exp.sex#WEIGHT_TYPE
+      = MAP_WEIGHT; default_tile.sex#RESCALE_WEIGHTS = Y; default_exp.sex#RESCALE_WEIGHTS
+      = Y; default_tile.sex#WEIGHT_GAIN = Y; default_exp.sex#WEIGHT_GAIN = Y; config_tile_Sx.ini#SEXTRACTOR_RUNNER.WEIGHT_IMAGE
+      = True; config_exp_psfex.ini#SEXTRACTOR_RUNNER.WEIGHT_IMAGE = True.
+    options:
+      map_weight:
+        label: MAP_WEIGHT
+      no_weight:
+        label: No weight map (SExtractor default)
+        insights:
+        - guinot22_sextractor_params
+  zero_weight_interpolation:
+    label: Interpolation across zero-weight pixels
+    rationale: >-
+      INTERP_TYPE ALL on both passes (SExtractor default NONE): SExtractor invents flux across
+      zero-weight pixels, changing detections and photometry near masked regions. Matching
+      image simulations must use the same interpolation operator; this is not a calibrated
+      pixel repair. Values: default_tile.sex#INTERP_TYPE = ALL; default_exp.sex#INTERP_TYPE
+      = ALL; default_tile.sex#INTERP_MAXXLAG = 16; default_tile.sex#INTERP_MAXYLAG = 16; default_exp.sex#INTERP_MAXXLAG
+      = 16; default_exp.sex#INTERP_MAXYLAG = 16.
+    options:
+      interp_all:
+        label: INTERP_TYPE ALL
+      no_interpolation:
+        label: INTERP_TYPE NONE
+  spurious_detection_cleaning:
+    label: Cleaning of spurious detections
+    rationale: >-
+      CLEAN on both passes deletes detections consistent with being wings of a brighter neighbour,
+      a post-deblend change to the object list. Keep the same cleaning prescription in matching
+      image simulations. Values: default_tile.sex#CLEAN_PARAM = 1.0; default_exp.sex#CLEAN_PARAM
+      = 1.0; default_tile.sex#CLEAN = Y; default_exp.sex#CLEAN = Y.
+    options:
+      clean_1:
+        label: CLEAN Y, CLEAN_PARAM 1.0
+  blend_photometry_mask_type:
+    label: Neighbour pixels in blend photometry
+    rationale: >-
+      MASK_TYPE CORRECT on both passes replaces neighbour pixels by their mirror across the
+      object centre during photometry, changing blend fluxes and windowed moments. This SExtractor
+      photometry choice is separate from ngmix's neighbour-pixel weighting decision. Values:
+      default_tile.sex#MASK_TYPE = CORRECT; default_exp.sex#MASK_TYPE = CORRECT.
+    options:
+      correct:
+        label: MASK_TYPE CORRECT
+      blank:
+        label: MASK_TYPE BLANK
+  saturation_level:
+    label: Saturation level read from each image's header
+    rationale: >-
+      Each SExtractor pass takes the image's saturation level from its SATURATE header card
+      and sets FLAGS bit 4 on objects with saturated pixels. Neither .sex file sets SATUR_LEVEL,
+      so where the card is absent SExtractor falls back to its built-in level (50000 ADU per
+      its documentation). Delivered exposures carry the card (every CCD of 2114045p: 65535)
+      and split_exp keeps each CCD's header; a sampled tile (CFIS.186.307) has 9558.7. The
+      PSF-star masks require FLAGS == 0, so the level can remove bright stars from the PSF
+      sample. Changing the card or pinning a fixed level requires checking the resulting bright-star
+      selection. Values: default_exp.sex#SATUR_KEY = SATURATE; default_tile.sex#SATUR_KEY
+      = SATURATE; MASK:star_selection.FLAGS = "== 0"; MASK:preselect.FLAGS = "== 0"; MASK:flag.FLAGS
+      = "== 0"; default_tile.sex#SATUR_LEVEL = absent; default_exp.sex#SATUR_LEVEL = absent.
+    options:
+      header_saturate:
+        label: SATURATE header card; SExtractor default level where absent
+      fixed_level:
+        label: Fixed SATUR_LEVEL set in the .sex files
+  photometry_parameters:
+    label: Kron and aperture photometry definitions
+    rationale: >-
+      Stock Kron, aperture and flux-fraction settings; no rationale recorded. On the exposure
+      pass MAG_AUTO is the axis of the star-selection magnitude windows and FLUX_AUTO is PSFEx's
+      photometric normalisation, so a different Kron factor moves stars across those cuts.
+      The reported apertures and flux-fraction measurements must match the simulated catalogue
+      they are compared with. Values: default_tile.sex#PHOT_AUTOPARAMS = 2.5,3.5; default_exp.sex#PHOT_AUTOPARAMS
+      = 2.5,3.5; default_tile.sex#PHOT_APERTURES = 5; default_exp.sex#PHOT_APERTURES = 5;
+      default_tile.sex#PHOT_FLUXFRAC = 0.5; default_exp.sex#PHOT_FLUXFRAC = 0.5; PHOTFLUX_KEY
+      = FLUX_AUTO.
+    options:
+      kron_25_35:
+        label: Kron 2.5/3.5, aperture 5 px, FLUXFRAC 0.5
+  detection_source_mode:
+    label: Single-image, unflagged detection on the r-band tile
+    rationale: >-
+      No detection image, no flag image, and the default_noimaflags.param column list: tiles
+      have no instrument flag image and no detection coadd exists, so detection sees every
+      tile pixel and the tile catalogue carries no IMAFLAGS_ISO; final_cat.param, the merge's
+      exact allow-list, does not request it. Without a detection image sextractor_runner calls
+      SExtractor in single-image mode, which on tile 186.307 reproduces the UNIONS catalogue's
+      MAG_AUTO to 0.01 mag for all but 0.03% of objects. Dual-image mode with the same image
+      twice is not equivalent: it changes the background, MAG_AUTO and FLUX_RADIUS of a fifth
+      of the objects (#936). Values: SEXTRACTOR_RUNNER.DETECTION_IMAGE = False; SEXTRACTOR_RUNNER.FLAG_IMAGE
+      = False.
+    options:
+      sx_nomask_single_image:
+        label: Unflagged single-image r-band detection
+        insights:
+        - guinot22_stacked_detection
+      masked_tile:
+        label: Detection on a tile masked by rasterised sky masks
+        description: Not implemented; no tile pixel mask exists (see masking.pixel_mask_source).
+      dual_image_coadd:
+        label: Dual-image mode with a detection coadd
+        description: Not implemented; no UNIONS detection coadd exists.
+  epoch_membership_ccd_bounds:
+    label: Which exposure CCDs an object belongs to (N_EPOCH)
+    rationale: >-
+      `all_world2pix(..., 0)` returns 0-based pixels, and the strict test accepts `33 < x
+      < 2080`. In 1-based FITS coordinates this is x=35 through x=2080 inclusive: it trims
+      DATASEC columns 33 and 34 but admits its upper endpoint, column 2080. [HARDCODED] The
+      comparisons are strict in make_post_process; CCD_SIZE sets only the bounds. A WCS inversion
+      failure skips that CCD, lowering N_EPOCH, which caps how many exposures enter each galaxy's
+      multi-epoch fit. This geometric count remains internal; the final catalogue's N_EPOCH
+      counts only epochs with a validated PSF. Image simulations' CCDs are trimmed to 2048x4612
+      with no overscan, so their bounds are 0 < x < 2047, 0 < y < 4611 (input_types.image_sims
+      ccd_size, exported as SP_CCD_SIZE): under the data bounds an object at 2048 < x < 2080
+      gains an epoch on pixels that do not exist, and one at x < 33 loses a real one. Values:
+      SEXTRACTOR_RUNNER.CCD_SIZE = ${SP_CCD_SIZE:-33,2080,1,4612}; input_types.image_sims.ccd_size
+      = 0,2047,0,4611; SEXTRACTOR_RUNNER.MAKE_POST_PROCESS = True.
+    options:
+      trimmed_bounds_33_2080:
+        label: x in (33,2080), y in (1,4612), strict
+      inclusive_bounds:
+        label: Same bounds, inclusive
+        description: Not implemented; make_post_process uses strict comparisons.
+prior_insights:
+  guinot22_sextractor_params:
+    claim: >-
+      The published tile detection uses DETECT_THRESH 1.5, DETECT_MINAREA 10, the default
+      3x3 filter and DEBLEND_MINCONT 0.001, with every other SExtractor parameter at its default.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: >-
+          Table 2. SExtractor parametrisation. All other parameters are kept to their default
+          values.
+      location:
+        value: page=5
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: DEBLEND_MINCONT 0.001
+      location:
+        value: page=5
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: DETECT_MINAREA 10
+      location:
+        value: page=5
+  guinot22_cfis_seeing:
+    claim: CFIS r-band data have an average seeing of 0.65 arcsec.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: is taking r-band data with an average seeing of 0.65 arcsec
+      location:
+        value: page=1
+  guinot22_stacked_detection:
+    claim: >-
+      Source extraction in the published analysis is performed on the stacked tile images,
+      for signal-to-noise and because artefacts are suppressed relative to single exposures.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: >-
+          We do the extraction on stacked images which provide a better signal-to-noise ratio,
+          and most artifacts have a reduced amplitude with respect to single exposures
+      location:
+        value: page=5

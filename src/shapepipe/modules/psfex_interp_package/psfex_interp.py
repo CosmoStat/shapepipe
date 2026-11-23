@@ -413,6 +413,8 @@ class PSFExInterpolator(object):
 
         Use PSFEx generated model to perform spatial PSF interpolation.
 
+        @sc [decision:star_selection_psf.psf_rendering]
+
         @sc [decision:star_selection_psf.psf_acceptance_thresholds,label:gate] psf-gate-path-specific-output
         Validation logs a rejected gate and skips writing validation output;
         the multi-epoch science path logs the same sentinel and skips that CCD

@@ -1,0 +1,130 @@
+spec_version: 0.1.0
+label: Multi-epoch stamp preparation
+description: >-
+  How exposures, astrometry, epoch lists and stamps are prepared before anything is measured.
+analyses:
+  root:
+    path: ../..
+  detection:
+    path: ../detection
+  star_selection_psf:
+    path: ../star_selection_psf
+outputs:
+  epoch_stamps:
+    type: data
+    format: sqlite
+    description: Per-object multi-epoch vignets + per-CCD WCS log feeding ngmix.
+    inputs:
+    - root.dr6_exposures
+    - detection.tile_sexcat
+    - star_selection_psf.psf_model
+    decisions:
+    - astrometric_solution_source
+    - ccd_split_extent
+    - epoch_provenance_from_tile_history
+    - object_position_columns
+    - stamp_positioning_and_padding
+    recipe:
+      command: shapepipe_run -c ../../workflow/config/cfis/config_tile_PiViVi_psfex.ini --out
+        {output}
+decisions:
+  astrometric_solution_source:
+    label: Astrometry taken verbatim from delivered per-CCD headers
+    rationale: >-
+      split_exp builds WCS(header) from each delivered CCD header, and merge_headers stores
+      these per-tile. Every committed world-to-pixel step on exposures uses that solution:
+      epoch membership, multi-epoch stamp placement and OFFSET, tile-side PSF interpolation
+      positions, and the per-epoch ngmix Jacobian. [HARDCODED] No astrometric re-derivation
+      or refinement exists. A re-fit would shift stamp centres and Jacobians and could change
+      epoch membership.
+    options:
+      delivered_headers:
+        label: WCS(header) verbatim, stored at split time
+        insights:
+        - guinot22_gaia_astrometry
+      astrometric_refit:
+        label: Joint astrometric re-solution
+        description: Not implemented.
+  ccd_split_extent:
+    label: All 40 MegaCam HDUs split and carried as candidate epochs
+    rationale: >-
+      Any HDU count other than N_HDU raises; every CCD is a candidate epoch wherever the WCS
+      lands it. Values: SPLIT_EXP_RUNNER.N_HDU = 40.
+    options:
+      all_40_hdus:
+        label: 40 HDUs, hard-fail on any other count
+        insights:
+        - guinot22_forty_chips
+      exclude_ccd_subset:
+        label: Exclude a subset of CCDs as epochs
+        description: Not implemented.
+  epoch_provenance_from_tile_history:
+    label: Epoch sets parsed from tile FITS HISTORY cards
+    rationale: >-
+      The tile's primary-header HISTORY cards are its exposure list, and two readers parse
+      the same cards. find_exposures takes the file name in column COLNUM, strips the extension
+      and deduplicates. EXP_PREFIX is blank, so 2243881p keeps its p. This list decides which
+      exposures are retrieved, split and merged into the tile's WCS log. make_post_process
+      re-parses the HISTORY copied into the catalogue (the digits before an optional p) and
+      builds the EPOCH HDUs and N_EPOCH that the stamps and ngmix use. It raises if a HISTORY
+      exposure is missing from the WCS log. A tile whose header or HISTORY cannot be read
+      fails; it never gets an empty exposure list. Values: FIND_EXPOSURES_RUNNER.COLNUM =
+      3.
+    options:
+      history_parse:
+        label: HISTORY column 3, no prefix stripped, deduplicated
+  object_position_columns:
+    label: Windowed centroids (XWIN/YWIN) define every position
+    rationale: >-
+      PSF interpolation sites, tile and multi-epoch stamp centres, epoch membership and the
+      catalogue position all use the tile SExtractor run's windowed centroid, in data and
+      image simulations alike: in pixels for tile stamps and exposure-side PSF validation,
+      in world coordinates for tile-side PSF interpolation and multi-epoch stamps. Windowed,
+      isophotal and model centroids differ systematically for blends and asymmetric galaxies,
+      and the centroid feeds the position seed and the centroid prior. Values: config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS
+      = XWIN_WORLD,YWIN_WORLD; VIGNETMAKER_RUNNER.POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD;
+      VIGNETMAKER_RUNNER.COORD = SPHE; config_exp_psfex.ini#PSFEX_INTERP_RUNNER.POSITION_PARAMS
+      = XWIN_IMAGE,YWIN_IMAGE.
+    options:
+      xwin_windowed:
+        label: Windowed centroids everywhere
+      isophotal_barycentre:
+        label: Isophotal barycentre (X_IMAGE/Y_IMAGE)
+        excluded: >-
+          Noisier than the windowed centroid and pulled by asymmetric or deblend-clipped footprints;
+          on the DR6 image of tile 186.307 it sits 0.16 px (median) and 1.6 px (p99) from
+          it for 20 < MAG_AUTO < 24.5, and the image simulations measure the windowed one.
+  stamp_positioning_and_padding:
+    label: Nearest-pixel stamp extraction with zero padding
+    rationale: >-
+      [HARDCODED] stamps are cut around the pixel nearest the object's position, with no sub-pixel
+      interpolation; the sub-pixel remainder is stored as the stamp's OFFSET, which ngmix
+      uses as the Jacobian origin (shape_measurement.centroid_source), so extraction and centroid
+      prior share one rounding. Multi-epoch stamps map the tile world coordinate through the
+      stored per-CCD WCS. Stamps overrunning an image edge are kept, zero-filled outside the
+      image; a stamp centre that rounds outside the image raises and fails the vignet run
+      for the whole tile.
+    options:
+      round_and_zero_pad:
+        label: Nearest-pixel extraction, zero padding, no edge rejection
+prior_insights:
+  guinot22_gaia_astrometry:
+    claim: >-
+      The astrometric solution the analysis relies on is the upstream MegaPipe/Gaia DR2 calibration,
+      accurate to within 20 mas; no astrometric re-fit inside the pipeline is described.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: An astrometric calibration within 20 mas was achieved using the Gaia DR2 observations
+      location:
+        value: page=2
+  guinot22_forty_chips:
+    claim: >-
+      Star selection and PSF modelling are carried out independently on each of the 40 MegaCam
+      chips, with no chip excluded.
+    evidence:
+    - doi: 10.48550/arXiv.2204.04798
+      quote:
+        exact: is performed independently on each of the 40 chips that constitute the MegaCAM
+      location:
+        value: page=3

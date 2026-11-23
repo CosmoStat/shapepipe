@@ -1,0 +1,181 @@
+spec_version: 0.1.0
+label: Masking and coverage maps
+description: >-
+  Which external masks reach the measurement, and where. The instrument flag image delivered
+  with each exposure is the only one that reaches pixels. Sky-fixed masks (star halos and
+  bodies, manual regions, missing bands) are healsparse maps built and designed outside ShapePipe,
+  which only queries them at object positions into catalogue columns that no stage cuts on.
+analyses:
+  root:
+    path: ../..
+outputs:
+  masked_measurement_inputs:
+    type: data
+    format: fits
+    description: >-
+      Exposure detection catalogues carrying IMAFLAGS_ISO (and MASK_EXT when maps are configured),
+      the flag stamps ngmix reads, and the final catalogue's MASK_<flag value>_<name> columns.
+    inputs:
+    - root.dr6_exposures
+    - root.healsparse_masks
+    decisions:
+    - pixel_mask_source
+    - psf_star_mask_veto
+    - sky_mask_application
+    recipe:
+      command: shapepipe_run -c ../../workflow/config/cfis/config_exp_psfex.ini --out {output}
+  exposure_maps:
+    type: data
+    format: hsp
+    description: >-
+      npoint_<run>.hsp, ntaken_<run>.hsp, nexp_<run>.hsp and nflagged_<run>.hsp at the mask
+      ladder's resolution: filled main-array pointings, all CCD DATASEC exposures, validated-PSF
+      CCD exposures, and flagged CCD pixel centres of validated CCDs per sky pixel. Products;
+      nothing in the workflow reads them.
+    inputs:
+    - root.dr6_exposures
+    decisions:
+    - pointing_square
+    - nexp_map_valid_psf_ccds
+    - defect_map_from_flags
+    recipe:
+      command: python ../../workflow/scripts/make_exposure_maps.py --out {output}
+decisions:
+  pointing_square:
+    label: Filled main-array pointing coverage, excluding ears
+    rationale: >-
+      npoint is deliberately smooth pointing coverage, the v2 counterpart of v1.X's npoint3
+      >= 3 cut. CCD tiling, gaps, ears and dithers produce patterned imaging-area counts instead.
+      The convex hull of DATASEC outer corners (half a pixel beyond pixel centres) of present
+      CCDs 0–35 is computed in a tangent plane about the exposure centre, mapped back to RA/Dec,
+      and rasterized by sky-pixel centre inclusion. CCDs 36–39 are ears outside the main 4x9
+      array and are excluded. Every fragment contributes regardless of PSF success; gaps are
+      filled.
+    options:
+      main_array_hull:
+        label: Convex hull of present CCDs 0–35, gaps filled and ears excluded
+      ccd_tiling:
+        label: Individual CCD DATASEC footprints including gaps and ears
+        excluded: Measures taken imaging area (ntaken), not smooth pointing coverage.
+  nexp_map_valid_psf_ccds:
+    label: The exposure count covers only CCDs with a valid PSF model
+    rationale: >-
+      exp_maps takes the CCDs whose validation_psf catalogue exp_persist packed (psfex_interp
+      writes it only when the fit succeeds) and marks the sky pixels whose centres lie inside
+      each CCD's corner polygon. The CCDs of one exposure do not overlap, so summing fragments
+      counts exposures that can contribute a PSF-corrected epoch. ntaken counts all present
+      CCD DATASEC footprints, ears included, without the PSF requirement; ntaken - nexp measures
+      epochs lost to CCD-level PSF failure at each pixel. Both use centre-in-polygon inclusion
+      and count each exposure once even at overlapping footprint edges.
+    options:
+      valid_psf_ccds:
+        label: Count exposures whose CCD has a valid PSF model
+      all_ccds:
+        label: Use all CCD coverage for nexp rather than separately in ntaken
+        excluded: >-
+          Counts epochs that cannot contribute a shape, overstating depth exactly where the
+          PSF fit failed.
+  defect_map_from_flags:
+    label: Instrument flags counted per sky pixel, inside the imaging area
+    rationale: >-
+      The per-CCD flag images otherwise never leave the pixel domain, so a footprint built
+      from CCD corners would include defective pixels. exp_maps bins the centre of every nonzero-flag
+      pixel inside DATASEC into the sky pixel it falls in, and nflagged sums the counts over
+      exposures (~74 MegaCam pixels per sky pixel). The overscan border (flag 3, 3.6% of a
+      split) lies outside DATASEC and outside the coverage polygon. On exposures 2603236/2603237
+      the remaining flags are 0.28% of the imaging pixels; any-touch rasterization of them
+      masks 2.2% of the sky, because single-pixel columns and cosmics widen to 1.6", so the
+      map keeps the count and leaves the threshold to the consumer (nflagged > 0 is the any-touch
+      mask).
+    options:
+      count_flagged_pixels:
+        label: Count flagged CCD pixels per sky pixel, summed over exposures
+      any_touch_boolean:
+        label: Boolean mask of every sky pixel a flagged pixel touches
+        excluded: >-
+          Widens one-pixel defects to the 1.6" sky pixel and loses how much of each sky pixel
+          is flagged; recoverable from the count as nflagged > 0.
+  pixel_mask_source:
+    label: Of the external masks, only the instrument flag image reaches pixels
+    rationale: >-
+      On exposures SExtractor reads the split flag image, producing IMAFLAGS_ISO, which the
+      PSF star selection requires to be zero. The multi-epoch vignet run cuts flag stamps
+      from the same image; ngmix gives flagged pixels weight 0 and drops epochs more than
+      10% flagged (shape_measurement.defect_fill, shape_measurement.epoch_masked_fraction_cut).
+      Tiles have no flag image, and ShapePipe's tile SExtractor run requests no IMAFLAGS_ISO
+      (detection.detection_source_mode). Neighbour pixels are masked separately, from the
+      -1e30 markers SExtractor writes into the tile VIGNET and the coadd segmentation map
+      (shape_measurement.blend_handling). Sky-fixed masks never touch pixels: a star halo
+      changes no stamp. Values: config_exp_psfex.ini#SEXTRACTOR_RUNNER.FLAG_IMAGE = True;
+      VIGNETMAKER_RUNNER.ME_IMAGE_PATTERN = flag, image, weight, background, background_rms.
+    options:
+      instrument_flags_only:
+        label: Instrument flags gate pixels; sky masks stay at catalogue level
+      rasterised_sky_masks:
+        label: Rasterise healsparse masks into the pixel flags
+        insights:
+        - farrens22_pipeline_masks
+        excluded: >-
+          Sky-fixed masks say where an object sits, not that its pixels are corrupted, so
+          acting on them is an analysis decision. Rasterising would bake one mask version
+          into every shape.
+  psf_star_mask_veto:
+    label: PSF-star candidates rejected on instrument flags only
+    rationale: >-
+      Of the masks, star selection cuts only on IMAFLAGS_ISO. mask_query sits between SExtractor
+      and setools in the exposure chain; when MASK_PATHS names maps it writes MASK_EXT (0
+      clean, nonzero flagged, off-coverage clean) onto each CCD's catalogue. MASK_PATHS ships
+      commented out, so the module passes catalogues through without MASK_EXT. The intended
+      map is the UNIONS star-body product (bit 2); halo bits 0 and 1 are left out because
+      halos say nothing about whether a star is a good PSF sample. Values: MASK:star_selection.IMAFLAGS_ISO
+      = "== 0"; MASK:preselect.IMAFLAGS_ISO = "== 0"; MASK:flag.IMAFLAGS_ISO = "== 0"; MASK:star_selection.MASK_EXT
+      = absent; MASK:preselect.MASK_EXT = absent; MASK:flag.MASK_EXT = absent.
+    options:
+      instrument_flags_only:
+        label: IMAFLAGS_ISO == 0; no sky map queried
+      star_body_veto:
+        label: Also reject candidates on the star-body map (MASK_EXT == 0)
+        description: >-
+          Set MASK_PATHS to the star-body map and add MASK_EXT == 0 beside each IMAFLAGS_ISO
+          cut in star_selection.setools (one line per mask block). Querying without the cut
+          records MASK_EXT and changes no star.
+      star_body_and_halo_veto:
+        label: Also reject candidates inside star halos
+        excluded: >-
+          Halos flag objects for the final catalogue; a star inside another star's halo is
+          not thereby a bad PSF sample.
+  sky_mask_application:
+    label: Sky masks written as catalogue columns; any cut is downstream
+    rationale: >-
+      The final catalogue ships every detected object. MASK_EXT_PATHS lists label:path pairs,
+      and make_cat queries each healsparse map at the object's windowed position and writes
+      the map value verbatim into a MASK_<label> column; an object off coverage gets the map's
+      sentinel (False for boolean maps, reading as unmasked; typically -1 for integer maps).
+      The committed config names the UNIONS band-combined ugriz mask ladder, one boolean map
+      per bit (nside 131072, True = masked), labelled <flag value>_<name>: eleven columns,
+      MASK_1_Faint_star_halos to MASK_2048_z2, matched line for line in final_cat.param. The
+      flag value is the one in the map's file name; the names are the ones sp_validation uses
+      for the same bits. ShapePipe makes no mask choice and cuts on none of them; which columns
+      to cut on is decided downstream, in sp_validation.
+    options:
+      deferred_downstream:
+        label: No mask columns; all objects shipped
+      catalogue_columns:
+        label: Per-bit MASK_<label> columns from MASK_EXT_PATHS, no cut
+      pipeline_cut:
+        label: Drop masked objects inside the pipeline
+        excluded: >-
+          Location flags are analysis decisions; a pipeline cut would fix one mask version
+          into the catalogue.
+prior_insights:
+  farrens22_pipeline_masks:
+    claim: >-
+      The published ShapePipe pipeline generated its own masks, including Messier objects
+      and CCD borders, and applied them to the images; the current pipeline applies no sky-fixed
+      mask to pixels.
+    evidence:
+    - doi: 10.48550/arXiv.2206.14689
+      quote:
+        exact: Messier objects, and border regions.
+      location:
+        value: page=2
