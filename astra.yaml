@@ -470,12 +470,15 @@ analyses:
           Unpaired detections still stop the run beyond both 2% and 20
           objects, preserving the check for other pixels. External-only losses
           never reject a tile: warn and record; no cut is applied in the
-          pipeline, and whether the catalogue consumer cuts on
-          external_paired_fraction (or catalogue_match in tile_make_cat.json)
-          remains undecided (CosmoStat/sp_validation#444). Hard rejection and
-          an additive unpaired allowance both reject sparse edge tiles whose losses are external-only (058.220:
-          71 external-only of 845 against an allowance of 66.9); zero-weight or
-          spatial exemptions would hide the losses the published counts expose.
+          pipeline. The catalogue consumer keeps external_paired_fraction
+          diagnostic-only, with no additional tile cut: the mask_v2.0
+          selection (N_EPOCH >= 2) retains no galaxies on the sampled tiles
+          below 98% pairing (CosmoStat/sp_validation#446;
+          docs/catalogue-match-selection.md in sp_validation). Hard rejection
+          and an additive unpaired allowance both reject sparse edge tiles
+          whose losses are external-only (058.220: 71 external-only of 845
+          against an allowance of 66.9); zero-weight or spatial exemptions
+          would hide the losses the published counts expose.
           The warning threshold is max(20, 0.02 N + 50), without the 50 if
           no pairs exist; it is independent of the SExtractor guard settings.
           Sparse edge tiles 058.220 and 207.238 exceed it,
