@@ -1,0 +1,35 @@
+# Snakemake profile for the Fir cluster (Digital Research Alliance).
+#
+# Used inside one batch job under snakemake's local executor, as
+# workflow/runs/fir_image_sims/run_branch.sbatch launches it (`sp run ...
+# --executor local --cores N --resources mem_mb=M`); the slurm settings below
+# are then unused.
+#
+# apptainer-args: --cleanenv isolates the host env; OMP_NUM_THREADS=1 and
+# MALLOC_ARENA_MAX=2 as on nibi; the PYTHONPATH pin is rewritten by `sp run` to
+# the campaign's code snapshot (bin/sp, "the launch code snapshot"), so the
+# image supplies only the dependency stack; --home is the one per-user value.
+# /project and /scratch are bound whole (/project/rrg-kyi is a symlink into
+# /project/<gid>); /localscratch holds the run dir and the tile store, which
+# the run config's `tile_store_root` binds to /local/scratch.
+
+executor: slurm
+jobs: 500
+
+default-resources:
+  mem_mb: 2000
+  runtime: 120                   # minutes
+  slurm_account: rrg-kyi_cpu
+
+software-deployment-method: [apptainer]
+apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/scratch/cdaley/imsim/wt-sp-7690/src --home /home/cdaley --bind /project --bind /scratch --bind /localscratch"
+
+latency-wait: 60
+keep-going: true
+rerun-incomplete: true
+show-failed-logs: true
+printshellcmds: true
+
+# As profiles/nibi: the v9 default minus `input` (reclamation needs the
+# tile->exposure edge to be conditional; tile.smk's tile_finished explains).
+rerun-triggers: [mtime, params, code, software-env]

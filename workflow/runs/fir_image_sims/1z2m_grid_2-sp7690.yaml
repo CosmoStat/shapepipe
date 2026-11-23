@@ -1,0 +1,11 @@
+# Shear branch 1z2m of rung grid_2-sp7690: run 2's simulation on 25 tiles
+# (MultiBand_ImSim unions-october, unions/config_grid2_sp7690.yaml) through
+# ShapePipe 7690e78f. Launch with run_branch.sbatch, which states the
+# node-local outputs.run_dir and tile_store_root.
+machine: fir
+input_type: image_sims
+run: 1z2m_grid_2-sp7690
+psf_dict: /scratch/cdaley/imsim/sims/psf_dict_grid_2-sp7690.pickle
+ngmix_chunks: 16
+clean: true
+clean_tiles: true

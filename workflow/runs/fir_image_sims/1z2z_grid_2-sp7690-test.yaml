@@ -1,0 +1,12 @@
+# One tile (253.246) of run 2's shear branch 1z2z, read from run 2's own images.
+machine: fir
+input_type: image_sims
+run: 1z2z_grid_2-sp7690-test
+tile_list: /scratch/cdaley/imsim/wt-sp-7690/workflow/runs/fir_image_sims/tile_253.246.txt
+inputs:
+  tiles: /scratch/cdaley/imsim/sims/1z2z_grid_2/images/SP_tiles
+  exposures: /scratch/cdaley/imsim/sims/1z2z_grid_2/images/SP_exp
+psf_dict: /scratch/cdaley/imsim/sims/psf_dict_grid_2.pickle
+ngmix_chunks: 16
+clean: true
+clean_tiles: true

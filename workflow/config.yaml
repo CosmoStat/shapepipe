@@ -37,7 +37,7 @@ input_types:
     # @sc [decision:star_selection_psf.psf_modelling_software]
     psf_model: fake
 
-# Entries per machine (SP_PROFILE, default nibi; implemented: nibi, candide)
+# Entries per machine (SP_PROFILE, default nibi; implemented: nibi, candide, fir)
 # and input_type. A run config may instead state `machine:`, which must
 # then agree with SP_PROFILE.
 # - base_dir
@@ -90,6 +90,24 @@ machines:
       # of an exposure PSF fit.
       psf_dict: /home/hervas/fhervas/workdir_skills/input/psf_files/Full_psf_dict.pickle 
       container: /n17data/cdaley/containers/shapepipe_im_sims-runtime.sif
+
+  fir:
+    base_dir: /scratch/cdaley/imsim
+    image_sims:
+      # One simulation per shear branch: $run is the branch dir
+      # (e.g. 1p2z_grid_2-sp7690), which holds its own tile list.
+      tile_list: $base_dir/sims/$run/tiles.txt
+      retrieve: symlink
+      inputs:
+        tiles: $base_dir/sims/$run/images/SP_tiles
+        exposures: $base_dir/sims/$run/images/SP_exp
+      # outputs.run_dir is node-local: run_branch.sbatch states it.
+      outputs:
+        products_dir: $base_dir/products/$run
+        index_db: $base_dir/products/$run/index/run_index.sqlite
+      # Built FROM the ShapePipe develop image: the same dependency stack
+      # (ngmix 2.4.1, galsim 2.8.5, source-extractor), plus sp_validation.
+      container: /project/rrg-kyi/cdaley/unions/containers/sp_validation-develop.sif
 
 # OPTIONAL per-exposure retention: what to carry onto the persistent root ON TOP
 # OF the star catalogue's own inputs, before the scratch store goes
