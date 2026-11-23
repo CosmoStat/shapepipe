@@ -109,6 +109,25 @@ layer (`scripts/sh/run_job_sp_canfar_v2.0.bash`, `job_sp_canfar_v2.0.bash`,
 `job_list_help.bash`, `functions.sh`) stays — it is version-free, and
 sp_validation's image-simulation workflow calls it.
 
+**Workflow traps.**
+- A stage's product count is checked against its `expect` in
+  `workflow/scripts/completeness.py`; change both together. That script also
+  carries per-stage captures: `tile_detect`'s catalogue-match record is read
+  only when exactly one `sexcat*.fits` exists, and is skipped without error
+  otherwise.
+- Bash reads `workflow/bin/sp` while it runs. While jobs run from a checkout,
+  write a new version beside it and `mv` it into place; never edit it in place.
+- `tile_ngmix` chunk directories are Snakemake `temp()` outputs; their logs are
+  copied to `<tile>/logs/modules/<run name>/`. Production reclaims each
+  finished tile's scratch store (`clean_tile.py`) and each exposure's split
+  products (`clean_exposure.py`), so stamp-level checks on a real tile need a
+  private rebuild; `scripts/validation/masked_pixels/tile_defect_flags.md`
+  ("Reproduction") is a worked example.
+- The PSF validation catalogues (`validation_psf-*`, merged into
+  `full_starcat_<run>.hdf5`) hold only the 20% hold-out stars, with the model
+  fitted to the other 80% interpolated at them. Their `ACCEPTED` column carries
+  no information (#980).
+
 ## Development workflow
 
 **This codebase is yours.** Redesign what you touch into the shape it would have had if the change had been assumed from the start; don't staple onto a design that no longer fits. Push small, checked changes straight to `develop` and watch them in production. Better to break `develop`, notice quickly and fix it than never to have made the change. Open a PR when a human needs to think the change through: a new interface, a change in a scientific quantity, anything a collaborator runs by hand. Leave what you write clear enough that a person can run it by hand.
@@ -152,6 +171,12 @@ an implementation site, run `python -m tests.helpers.decisions <path>[:<line>]`;
 `--decision <id>` lists its sites, and `--diff origin/develop` the decisions
 your branch touches and whether their record changed (CI posts this list on
 every PR). The format is ASTRA.
+
+In Python, a tag goes in the docstring of the module, class or function it
+governs, or in a comment directly above a module-level statement; a `# @sc`
+comment inside a function body has no site and fails the test. In configs, the
+tag comment must not break the file's format (a SExtractor `.conv` needs
+`CONV` on line 1), so run the real tool after tagging.
 
 `uvx astra-tools@0.2.17 guide` is the briefing and
 `uvx astra-tools@0.2.17 spec` the field reference. The file's header states
