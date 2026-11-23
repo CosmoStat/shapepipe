@@ -130,7 +130,7 @@ wheels = [
 
 [[package]]
 name = "astropy"
-version = "8.0.2"
+version = "8.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "astropy-iers-data" },
@@ -139,11 +139,11 @@ dependencies = [
     { name = "pyerfa" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/95/57/02089e6da0fc00846d309034ad74e13ebcadc67b1c5cef397ae0597473fa/astropy-8.0.2.tar.gz", hash = "sha256:e6af35823099ad6a40b57dbe5ff845f577374ea131925c9fa4b49eeab06c5310", size = 7178167, upload-time = "2026-10-15T21:44:45.383Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/4a/38a84e2a73cffab7469c46daf044edd48a1ed5dfaf084f016fe7df52cf2b/astropy-8.0.3.tar.gz", hash = "sha256:ac61e25a291a45c1611e7d21cee42bd93484febafe3bc62ecb90d2f56aba9e3f", size = 7199272, upload-time = "2026-11-17T22:41:59.732Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/1a/0944850807ebddc690eb77dc07e8dbf7865c7dcdd86bcb81d2ff133e4e38/astropy-8.0.2-cp311-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:d0e63e0011cc984426c478da8601fe177975fe4cb0b2a059ee88d26d60a0890f", size = 10405557, upload-time = "2026-10-15T21:44:29.516Z" },
-    { url = "https://files.pythonhosted.org/packages/42/c2/0e9849f6591dd113a1f217e061a9be1de766819bc076c7c7c8cb24851432/astropy-8.0.2-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:000d6998bcf4f097257b3776f29f1dafde0967bf1b091edbad95df564eee4eea", size = 10419022, upload-time = "2026-10-15T21:44:32.115Z" },
-    { url = "https://files.pythonhosted.org/packages/5d/2a/1d84743c8be16846f8fbdc21b0af6f8ed1cff1db02026e19a4bf0cd3a87a/astropy-8.0.2-cp311-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:f462b80fe16e0603e813efd1098d4d6d94a487e64f95e2d9699e46b641577f8b", size = 10373480, upload-time = "2026-10-15T21:44:34.825Z" },
+    { url = "https://files.pythonhosted.org/packages/80/ab/6b1d8906859bd79a9927423f006250b45e096070dc0e9d0c32523785822f/astropy-8.0.3-cp311-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:817043eec088715251c935a913c81cebe06e7937d7b3eea1ff3844839641836c", size = 10408624, upload-time = "2026-11-17T22:41:43.717Z" },
+    { url = "https://files.pythonhosted.org/packages/67/f4/8bf2d9d66da3f5fb15e8f1df588dbcd981932e99b3681b95222b177ae03a/astropy-8.0.3-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9ca5ea49d7146fdbf53bb9052a01362f33314a102d8af412874c14e935a7e9ee", size = 10420869, upload-time = "2026-11-17T22:41:46.64Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/27/5f736c910430839275fc680aa716d795d774f9e59654c7cbdf605ef5ed8b/astropy-8.0.3-cp311-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:c96ba9c2522511808a1e844113fde109e0fb274f4e286d81fd064957053fdc1f", size = 10378459, upload-time = "2026-11-17T22:41:49.703Z" },
 ]
 
 [[package]]
@@ -3769,7 +3769,7 @@ name = "terminado"
 version = "0.18.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess", marker = "os_name != 'nt'" },
+    { name = "ptyprocess" },
     { name = "tornado" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8a/11/965c6fd8e5cc254f1fe142d547387da17a8ebfd75a3455f637c663fb38a0/terminado-0.18.1.tar.gz", hash = "sha256:de09f2c4b85de4765f7714688fff57d3e75bad1f909b589fde880460c753fd2e", size = 32701, upload-time = "2024-03-12T14:34:39.026Z" }
