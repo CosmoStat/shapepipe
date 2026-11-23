@@ -7,5 +7,5 @@ input_type: image_sims
 run: 1z2m_skills_1-blended
 psf_model: psfex
 ngmix_chunks: 16
-clean: false
-clean_tiles: false
+clean: true
+clean_tiles: true

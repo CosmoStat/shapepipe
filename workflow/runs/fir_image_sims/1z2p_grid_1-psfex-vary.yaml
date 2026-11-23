@@ -6,5 +6,5 @@ input_type: image_sims
 run: 1z2p_grid_1-psfex-vary
 psfex_models: /scratch/cdaley/imsim/sims/grid_1-psfex-vary_shared/psfex
 ngmix_chunks: 16
-clean: false
-clean_tiles: false
+clean: true
+clean_tiles: true
