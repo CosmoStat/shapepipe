@@ -44,11 +44,11 @@ class Campaign:
         """Write exposure lists, prepared manifests, and campaign history."""
         self.root.mkdir(parents=True, exist_ok=True)
         self.ready = {
-            "123.456": ("2243881", "2243882"),
-            "124.456": ("2243882",),
+            "123.220": ("2243881", "2243882"),
+            "124.220": ("2243882",),
         }
         self.exposures = ("2243881", "2243882")
-        self.unready = "125.456"
+        self.unready = "125.220"
         self.outside = "126.456"
         self.ignored = "127.456"
         self.run_dir = self.root / "scratch" / self.name

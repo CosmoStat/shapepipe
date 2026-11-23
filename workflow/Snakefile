@@ -225,8 +225,11 @@ if PHASE not in ("prepare", "compute", "passthrough"):
 
 # Deduplicate while preserving order, matching build_index.campaign_tiles so
 # merge fingerprints and job-time discovery count the same tiles.
-with open(config["tile_list"]) as f:
-    TILES = list(dict.fromkeys(ln.strip() for ln in f if ln.strip()))
+from tile_universe import read_tiles, validate_tiles
+
+TILES = read_tiles(config["tile_list"])
+if config.get("input_type", "data") != "image_sims":
+    validate_tiles(TILES)
 
 # --- ngmix scatter (D4) ----------------------------------------------------
 # Native directive: `--set-scatter ngmix=N` overrides it, N=1 degenerates to one
