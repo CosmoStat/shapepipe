@@ -47,23 +47,13 @@ DEFECT_FILLS = ("interpolate", "noise")
 # @sc [decision:shape_measurement.defect_fill]
 DEFECT_FILL = "interpolate"
 
-# The epoch cuts (see :func:`prepare_postage_stamps`). Calibration outputs,
-# not options: an epoch is dropped when more than EPOCH_MASKED_FRACTION_CUT
-# of its stamp is in :func:`defect_mask`, or when a noise-filled
-# (interpolated) defect pixel lies closer than EPOCH_CENTRAL_DEFECT_RADIUS
-# (EPOCH_INTERPOLATED_DEFECT_RADIUS) pixels to the stamp centre (see
-# :func:`central_defect_vetoes`). The central veto is the bias control: defects
-# outside it bias nothing measured up to 58% of the stamp. The noise-fill
-# radius is set by the largest galaxy tested (0.7" through a 0.9" PSF), the
-# interpolated radius by 3-px bleeds on the same galaxy. The 10% fraction
-# cut matches DES Y3/Y6 and guards against real-data effects the simulations
-# do not model, at the cost of about 5% of epochs on a real tile.
+# The epoch cuts (see :func:`prepare_postage_stamps`) reject stamps with
+# more than 10% defects or a defect on the object's own ISO footprint (D0).
+# Both interpolated and noise-filled defects count; neighbours do not.
+# The fraction cut matches DES Y3/Y6 and guards against real-data effects
+# the simulations do not model.
 # @sc [decision:shape_measurement.epoch_masked_fraction_cut]
 EPOCH_MASKED_FRACTION_CUT = 0.10
-# @sc [decision:shape_measurement.central_defect_veto]
-EPOCH_CENTRAL_DEFECT_RADIUS = 13
-# @sc [decision:shape_measurement.central_defect_veto]
-EPOCH_INTERPOLATED_DEFECT_RADIUS = 7
 
 # @sc [decision:shape_measurement.metacal_scheme]
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
@@ -594,7 +584,8 @@ class Tile_cat():
         Path to the tile SExtractor catalogue. Its optional ``SEG_VIGNET``
         column, one integer coadd segmentation stamp per object on the grid
         of its ``VIGNET``, becomes ``self.seg``, which defines the neighbours
-        under both blend handlings; without it ``self.seg`` is ``None``.
+        under both blend handlings. Without it ``self.seg`` is ``None``;
+        D0 cannot admit an epoch, and uberseg raises before the object loop.
     row_min, row_max : int, optional
         First and last catalogue row of the chunk (1-based, inclusive; see
         :func:`chunk_rows`). The default, ``-1``, is unbounded, so the whole
@@ -697,7 +688,7 @@ class Postage_stamp():
         # position seed (see :func:`position_seed`).
         self.ccd = None
         self.epoch_cuts = Counter(
-            considered=0, masked_fraction=0, central_veto=0
+            considered=0, masked_fraction=0, footprint_defect=0
         )
         # The exposure-CCD name of each kept epoch, for the log.
         self.epoch_names = []
@@ -724,8 +715,9 @@ class Postage_stamp():
         ``min_dist_interp`` (``min_dist_noisefill``) is the smallest distance
         in pixels from the stamp centre to an interpolated (noise-filled)
         defect pixel (:func:`centre_distance`). A distance is -1 when no
-        kept epoch has such a pixel. They read only masks, so splitting a
-        catalogue on them selects on nothing shear-responsive.
+        kept epoch has such a pixel. These detector-mask diagnostics are
+        conditional on the footprint-based epoch selection; downstream cuts
+        on them also need selection calibration.
 
         Parameters
         ----------
@@ -752,7 +744,7 @@ class Postage_stamp():
         @sc [decision:shape_measurement.defect_flagging,label:schema] footprint-defect-flags
         ``imaflags_iso`` is the bitwise OR of all instrument bits in the
         exposure flag stamp on ``seg == obj_id``, OR'ed across epochs kept
-        after the masked-fraction cut and central veto. ``seg`` is the coadd
+        after the masked-fraction and footprint cuts. ``seg`` is the coadd
         SEG_VIGNET, already MegaCam-flipped to the epoch frame; it is not an
         exposure detection or a reprojected isophote. ``n_epoch_interp_iso``
         counts kept epochs with any interpolated defect on that footprint.
@@ -763,6 +755,9 @@ class Postage_stamp():
         any stamp edge makes both quantities -1 (unknown/incomplete), not
         clean; this sentinel persists across epochs. Never-fit rows in the
         final catalogue carry 0, as do the other count diagnostics.
+        Under D0, complete kept footprints have zero defect hits; clipped
+        footprints retain the unknown sentinel. Stamp-wide diagnostics still
+        describe off-footprint defects for stricter downstream cuts.
         These diagnostics do not change the fit or impose a catalogue cut.
 
         Parameters
@@ -773,7 +768,7 @@ class Postage_stamp():
             Non-finite, fractional, negative or int64-overflow values on
             the footprint raise ValueError rather than silently losing bits.
         interpolated : numpy.ndarray of bool
-            Interpolated defects, as used by the fill and central veto.
+            Interpolated defects, as used by the fill.
         seg : numpy.ndarray or None
             Coadd segmentation stamp in the epoch's orientation.
         obj_id : int
@@ -1457,7 +1452,7 @@ class Ngmix(object):
         id_last = -1
         count_batch = 0
         epoch_cuts = Counter(
-            considered=0, masked_fraction=0, central_veto=0, failed=0
+            considered=0, masked_fraction=0, footprint_defect=0, failed=0
         )
         n_emptied = 0
         saved_batch_cumul = 0
@@ -1627,7 +1622,7 @@ class Ngmix(object):
             "epoch cuts:"
             + f" considered={epoch_cuts['considered']}"
             + f" masked_fraction={epoch_cuts['masked_fraction']}"
-            + f" central_veto={epoch_cuts['central_veto']}"
+            + f" footprint_defect={epoch_cuts['footprint_defect']}"
             + f" failed={epoch_cuts['failed']}"
             + f" objects_emptied={n_emptied}"
         )
@@ -1657,20 +1652,21 @@ def prepare_postage_stamps(
 ):
     """Gather one object's epoch stamps, dropping epochs its defects spoil.
 
-    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut] epoch-cut-on-defect-mask
+    @sc [decision:shape_measurement.footprint_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut] epoch-cut-on-defect-mask
     An epoch is dropped when more than ``EPOCH_MASKED_FRACTION_CUT`` of its
     stamp lies in :func:`defect_mask`, the set :func:`prepare_ngmix_weights`
-    zero-weights and fills, or when :func:`central_defect_vetoes` finds a
-    defect near the object. The quarter-turn copies of interpolated pixels
-    that ``DEFECT_WEIGHTING`` zero-weights or interpolates are not counted.
+    zero-weights and fills, or when :func:`footprint_defect_vetoes` finds a
+    defect on the object's ISO footprint or an unavailable footprint.
+    The quarter-turn copies of interpolated pixels that ``DEFECT_WEIGHTING``
+    zero-weights or interpolates are not counted.
 
-    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
+    @sc [decision:shape_measurement.footprint_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.blend_handling] neighbour-markers-are-not-defects
     The tile VIGNET's -1e30 markers on other objects' segmentation
     footprints (:func:`split_tile_markers`) are the epoch's neighbour mask
     (``stamp.neighbours``), not defects: every epoch shares the tile VIGNET,
     so counting them would drop every epoch of a blended object.
 
-    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.defect_fill] off-tile-pixels-are-defects
+    @sc [decision:shape_measurement.footprint_defect_veto,decision:shape_measurement.epoch_masked_fraction_cut,decision:shape_measurement.defect_fill] off-tile-pixels-are-defects
     Beyond the tile's edge the epoch holds the object's own light, cut off by
     the tile, so those pixels get zero exposure weight and join the defect
     set under every ``blend_handling``. On a 51-px stamp an object within
@@ -1691,13 +1687,12 @@ def prepare_postage_stamps(
     psf_obj, gal_obj : dict, optional
         The object's PSF and galaxy vignet dicts, if already read.
     blend_handling : {"noisefill", "uberseg"}, optional
-        The neighbour treatment :func:`prepare_ngmix_weights` will apply,
-        which decides which defects it can interpolate and so their veto
-        radius; the default is ``"noisefill"``.
+        The neighbour treatment :func:`prepare_ngmix_weights` will apply;
+        the default is ``"noisefill"``.
     defect_fill : str, optional
         One of ``DEFECT_FILLS``, which with ``blend_handling`` decides the
-        interpolated defects and so their veto radius; the default is
-        ``DEFECT_FILL``.
+        interpolated defects; the default is ``DEFECT_FILL``.
+        The footprint cut is independent of the fill.
 
     Returns
     -------
@@ -1787,12 +1782,12 @@ def prepare_postage_stamps(
         if defect.mean() > EPOCH_MASKED_FRACTION_CUT:
             stamp.epoch_cuts["masked_fraction"] += 1
             continue
+        if footprint_defect_vetoes(defect, tile_seg, obj_id):
+            stamp.epoch_cuts["footprint_defect"] += 1
+            continue
         interpolated = interpolated_defects(
             defect, neighbour, blend_handling, defect_fill
         )
-        if central_defect_vetoes(defect, interpolated):
-            stamp.epoch_cuts["central_veto"] += 1
-            continue
         stamp.record_defects(defect, interpolated)
         stamp.record_footprint_defects(flag_vign, interpolated, tile_seg, obj_id)
 
@@ -2253,9 +2248,9 @@ def interpolated_defects(defect, neighbour, blend_handling,
     :func:`interpolable_defects` are. There, under ``"noisefill"`` the
     neighbour pixels' light is replaced, so they neither support the
     interpolant nor are interpolated (``removed=neighbour``); under
-    ``"uberseg"`` their light stays and supports it. The epoch cuts
-    (:func:`central_defect_vetoes`) and the defect diagnostics read the
-    same set, so each pixel is vetoed at the radius of the fill it gets.
+    ``"uberseg"`` their light stays and supports it. The image preparation
+    and the defect diagnostics use this same interpolation set.
+    The footprint cut reads the entire defect set, independent of fill.
 
     Parameters
     ----------
@@ -2291,42 +2286,43 @@ def interpolated_defects(defect, neighbour, blend_handling,
     return interpolable_defects(defect, removed)
 
 
-def central_defect_vetoes(defect, interpolated):
-    """Whether a defect near the stamp centre drops the epoch.
+def footprint_defect_vetoes(defect, seg, object_number):
+    """Whether a defect touches the object's own ISO footprint (D0).
 
-    @sc [decision:shape_measurement.central_defect_veto,decision:shape_measurement.defect_fill] veto-radius-follows-the-fill
-    The epoch is dropped when an interpolated defect pixel lies closer than
-    ``EPOCH_INTERPOLATED_DEFECT_RADIUS`` to the stamp centre, or a
-    noise-filled one closer than ``EPOCH_CENTRAL_DEFECT_RADIUS``: the
-    smallest radii at which the defects kept recover shear within
-    |m| < 1% and |c| < 5e-4. ``interpolated`` is the set
-    :func:`prepare_ngmix_weights` interpolates, so each pixel is vetoed at
-    the radius of the fill it gets; under ``DEFECT_FILL = "noise"`` that set
-    is empty and every defect is vetoed at ``EPOCH_CENTRAL_DEFECT_RADIUS``.
-    The veto reads only masks, so it selects
-    on nothing that responds to shear. Calibration: astra decision
-    ``shape_measurement.central_defect_veto``; guarded by
-    ``tests/science/test_defect_recovery.py``.
+    @sc [decision:shape_measurement.footprint_defect_veto] defect-touches-footprint
+    Reject any overlap of the raw defect mask with ``seg == object_number``,
+    counting both interpolated and noise-filled defects without dilation.
+    A border-touching footprint is tested within the stamp. A missing or
+    empty footprint is rejected because its overlap cannot be established.
+    Segmentation and defects must share the epoch stamp's orientation.
 
     Parameters
     ----------
     defect : numpy.ndarray of bool
         Defect mask of one epoch stamp (:func:`defect_mask`).
-    interpolated : numpy.ndarray of bool
-        The defect pixels that are interpolated
-        (:func:`interpolated_defects`); the rest are noise-filled.
+    seg : numpy.ndarray or None
+        Coadd segmentation stamp, flipped into the epoch orientation.
+    object_number : int
+        Object's SExtractor ``NUMBER``.
 
     Returns
     -------
     bool
         ``True`` if the epoch should be dropped.
+
+    Raises
+    ------
+    ValueError
+        If the segmentation and defect stamps have different shapes.
     """
-    radius = np.where(
-        interpolated,
-        EPOCH_INTERPOLATED_DEFECT_RADIUS,
-        EPOCH_CENTRAL_DEFECT_RADIUS,
-    )
-    return bool(np.any(defect & (centre_distance(defect.shape) < radius)))
+    if seg is None:
+        return True
+    if np.shape(seg) != np.shape(defect):
+        raise ValueError(
+            "Segmentation and defect stamps must have the same shape"
+        )
+    footprint = np.asarray(seg) == object_number
+    return bool(not footprint.any() or np.any(defect & footprint))
 
 
 def centre_distance(shape):

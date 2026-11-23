@@ -29,7 +29,7 @@ def _run(kind="inside", seg_kind="valid", megacam_flip=True):
             flag = Ngmix.MegaCamFlip(flag, ccd)
             weight = Ngmix.MegaCamFlip(weight, ccd)
         epochs[f"210000{i}-{ccd}"] = (flag, weight)
-    # A centrally vetoed epoch and a fraction-cut epoch carry otherwise
+    # A footprint-rejected epoch and a fraction-cut epoch carry otherwise
     # unique bits on the footprint. Neither may contribute.
     for i, fraction in enumerate((False, True), start=3):
         flag = np.zeros(seg.shape, dtype=np.float32)
@@ -49,28 +49,52 @@ def _run(kind="inside", seg_kind="valid", megacam_flip=True):
 @pytest.mark.decision("shape_measurement.defect_flagging")
 @pytest.mark.parametrize("flip", [True, False])
 @pytest.mark.parametrize("kind, expected", [
-    ("inside", (1028, 2)), ("outside", (0, 0)),
-    ("clean", (0, 0)), ("zero_weight", (0, 2)),
+    ("inside", (0, 0)), ("outside", (0, 0)),
+    ("clean", (0, 0)), ("zero_weight", (0, 0)),
 ])
 def test_footprint_flags_only_count_kept_epochs(kind, expected, flip):
-    """Keep bit identities across epochs, ignore outside/vetoed defects.
+    """Reject footprint hits and retain off-footprint defect diagnostics.
 
-    The final clean epoch must not overwrite the OR of earlier epochs.
-    A zero-weight pixel has no instrument bit but counts if interpolated.
+    Both flipped and unflipped epochs use their own registered footprint.
     """
     stamp = _run(kind, megacam_flip=flip)
-    assert len(stamp.flags) == 3
+    assert len(stamp.flags) == (1 if kind in ("inside", "zero_weight") else 3)
     diagnostics = stamp.defect_diagnostics()
     assert (diagnostics["imaflags_iso"],
             diagnostics["n_epoch_interp_iso"]) == expected
-    assert diagnostics["n_epoch_interp"] == (0 if kind == "clean" else 2)
+    assert diagnostics["n_epoch_interp"] == (2 if kind == "outside" else 0)
 
 
-@pytest.mark.parametrize("seg_kind", ["missing", "empty", "clipped"])
-def test_unknown_or_incomplete_footprint_is_not_clean(seg_kind):
-    diagnostics = _run(seg_kind=seg_kind).defect_diagnostics()
+@pytest.mark.parametrize("seg_kind", ["missing", "empty"])
+def test_unavailable_footprint_rejects_all_epochs(seg_kind):
+    stamp = _run(seg_kind=seg_kind)
+    assert not stamp.flags
+    assert stamp.epoch_cuts == dict(
+        considered=5, masked_fraction=1, footprint_defect=4,
+    )
+
+
+def test_clipped_footprint_is_tested_but_diagnostics_stay_unknown():
+    stamp = _run(seg_kind="clipped")
+    assert len(stamp.flags) == 1
+    diagnostics = stamp.defect_diagnostics()
     assert diagnostics["imaflags_iso"] == -1
     assert diagnostics["n_epoch_interp_iso"] == -1
+
+
+def test_footprint_record_preserves_bits_and_interpolated_epoch_counts():
+    """The record API retains OR and sentinel semantics for downstream use."""
+    from shapepipe.modules.ngmix_package.ngmix import Postage_stamp
+
+    stamp = Postage_stamp()
+    seg = np.zeros((9, 9), dtype=np.int32)
+    seg[4, 4] = 17
+    for bit in (4, 1024, 0):
+        flag = np.zeros_like(seg)
+        flag[4, 4] = bit
+        stamp.record_footprint_defects(flag, flag != 0, seg, 17)
+    assert stamp.imaflags_iso == 1028
+    assert stamp.n_epoch_interp_iso == 2
 
 
 @pytest.mark.parametrize("value", [np.nan, np.inf, -1, 1.5, float(2**63)])
