@@ -87,7 +87,11 @@ rule exp_psf:
     log:
         f"{EXP_DIR}/logs/exp_psf.json"
     params:
-        pre = lambda wc: unit_pre("exp_psf", wc.exp),
+        pre = lambda wc: unit_pre(
+            "exp_psf", wc.exp,
+            env=({"SP_PSFEX_CONFIG": PSFEX_CONFIG}
+                 if PSF_MODEL == "psfex" and PSFEX_CONFIG != "default.psfex"
+                 else None)),
         script_hash = SCRIPT_HASH
     threads: 2 if PSF_MODEL == "mccd" else 8
     retries: 2

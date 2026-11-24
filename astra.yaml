@@ -134,7 +134,7 @@ decisions:
       default_noimaflags.param#VIGNET = 51;
       default.param#VIGNET = 51;
       VIGNETMAKER_RUNNER.STAMP_SIZE = 51;
-      PSF_SIZE = 73.
+      PSF_SIZE = 51.
     default: px_51
     options:
       px_51:
@@ -1184,23 +1184,24 @@ analyses:
               persistence and star-catalogue merging read MCCD products.
             insights: [farrens22_two_psf_methods]
       psf_model_complexity:
-        label: PSFEx pixel basis with degree-2 spatial variation per CCD at 0.7-pixel sampling
+        label: PSFEx pixel basis with degree-2 spatial variation per CCD (1.0 default, 0.7 named Run-2 config)
         rationale: >-
-          A pixel basis with polynomial variation in XWIN/YWIN, fit per CCD
-          at 0.7-pixel sampling (PSF_SAMPLING = 0.7, PSF_SIZE = 73,73, spanning
-          the same 51-pixel native stamp). Unit sampling leaves a -0.66% mean
-          size residual and a -4e-3 g1 residual below 0.5" seeing (shapepipe#989),
-          while exact 0.5-pixel sampling decouples into four subgrids that
-          overfit sparse high-latitude CCDs (22-45 stars/CCD). Non-commensurate
-          0.7-pixel sampling couples adjacent model pixels through Lanczos-3,
-          eliminating the Nyquist checkerboard mode while removing the size and
-          sharp-seeing residuals.
+          A pixel basis with polynomial variation in XWIN/YWIN, fit per CCD.
+          The committed default (default.psfex: PSF_SAMPLING = 1, PSF_SIZE = 51)
+          preserves Run 1 reproducibility; a named Run-2 config
+          (default_0p7.psfex: PSF_SAMPLING = 0.7, PSF_SIZE = 73, selected via
+          psfex_config in the workflow run config) oversamples the model while
+          spanning the same 51-pixel native stamp. Unit sampling leaves a -0.77%
+          centred size bias at 0.55-0.65" seeing and a -3.9e-3 g1 residual below
+          0.5" seeing (shapepipe#989); 0.5-pixel sampling degrades PSF recovery
+          on sparse high-latitude CCDs; 0.7 sits at an empirical zero-crossing
+          of the centred-render size bias across seeings and star counts.
           Values:
           BASIS_TYPE = PIXEL;
           PSF_ACCURACY = 0.01;
           BASIS_NUMBER = 20;
           PSFVAR_DEGREES = 2;
-          PSF_SAMPLING = 0.7;
+          PSF_SAMPLING = 1 (default.psfex) or 0.7 (default_0p7.psfex);
           PSFVAR_KEYS = XWIN_IMAGE,YWIN_IMAGE;
           PSFVAR_GROUPS = 1,1;
           MEF_TYPE = INDEPENDENT.
@@ -1274,14 +1275,14 @@ analyses:
           centre, a sub-pixel offset from the ngmix centroid prior (sigma
           1 px); its effect on shear is unmeasured.
           Values:
-          config_exp_psfex.ini#PSFEX_INTERP_RUNNER.STAMP_PHASE = True;
+          config_exp_psfex.ini#PSFEX_INTERP_RUNNER.STAMP_PHASE = False;
           config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.STAMP_PHASE = False.
-        default: validation_phase_galaxy_centred
+        default: centred
         options:
           centred:
-            label: PSF centred on the native stamp on both paths
+            label: PSF centred on the native stamp on both paths (validates the exact galaxy-path PSF)
           validation_phase_galaxy_centred:
-            label: Validation PSFs at star VIGNET phase; galaxy PSFs centred for multi-epoch ngmix registration
+            label: Validation PSFs at star VIGNET phase (PSFEx diagnostic); galaxy PSFs centred
           stamp_phase:
             label: PSF at the sub-pixel phase of the star VIGNET or galaxy stamp
     prior_insights:

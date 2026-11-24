@@ -225,6 +225,11 @@ ngmix_chunks: 8
 # interpolate.
 # defect_fill: noise
 
+# PSFEx configuration file under workflow/config/<chain>/ (exp_psf).
+# Unset: default.psfex (Run 1: PSF_SAMPLING 1.0, PSF_SIZE 51,51).
+# Set default_0p7.psfex for Run 2 (PSF_SAMPLING 0.7, PSF_SIZE 73,73).
+# psfex_config: default_0p7.psfex
+
 # Tile store (vignets, WCS). Unset: the profile's /local/scratch bind (nibi
 # node NVMe; candide a shared NFS directory, see profiles/candide/config.yaml).
 # tile_store_root: /n23data1/<user>/shapepipe/tilestore

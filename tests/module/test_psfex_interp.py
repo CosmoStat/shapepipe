@@ -386,3 +386,47 @@ def test_sextractor_vignet_offsets_round_the_barycentre():
     npt.assert_allclose(
         sextractor_vignet_offsets(pos, barycentre), [[0.52, 0.0]]
     )
+
+
+def test_psfex_config_switch_preserves_run1_default_and_exposes_0p7(monkeypatch):
+    """Default config reproduces Run 1 (default.psfex, centred validation);
+    SP_PSFEX_CONFIG selects default_0p7.psfex for Run 2."""
+    from pathlib import Path
+    from shapepipe.pipeline.config import CustomParser
+
+    config_dir = (
+        Path(__file__).resolve().parents[2] / "workflow" / "config" / "cfis"
+    )
+    assert (config_dir / "default.psfex").is_file()
+    assert (config_dir / "default_0p7.psfex").is_file()
+
+    def _psfex_kv(path):
+        out = {}
+        for line in path.read_text().splitlines():
+            line = line.split("#", 1)[0].strip()
+            if line:
+                k, *v = line.split()
+                if v:
+                    out[k] = v[0]
+        return out
+
+    kv_run1 = _psfex_kv(config_dir / "default.psfex")
+    kv_run2 = _psfex_kv(config_dir / "default_0p7.psfex")
+    assert float(kv_run1["PSF_SAMPLING"]) == 1.0
+    assert kv_run1["PSF_SIZE"] == "51,51"
+    assert float(kv_run2["PSF_SAMPLING"]) == 0.7
+    assert kv_run2["PSF_SIZE"] == "73,73"
+
+    parser = CustomParser()
+    parser.read(config_dir / "config_exp_psfex.ini")
+    monkeypatch.setenv("SP_CONFIG", str(config_dir))
+    monkeypatch.delenv("SP_PSFEX_CONFIG", raising=False)
+    assert parser.getexpanded("PSFEX_RUNNER", "DOT_PSFEX_FILE") == str(
+        config_dir / "default.psfex"
+    )
+    assert parser.getboolean("PSFEX_INTERP_RUNNER", "STAMP_PHASE") is False
+
+    monkeypatch.setenv("SP_PSFEX_CONFIG", "default_0p7.psfex")
+    assert parser.getexpanded("PSFEX_RUNNER", "DOT_PSFEX_FILE") == str(
+        config_dir / "default_0p7.psfex"
+    )
