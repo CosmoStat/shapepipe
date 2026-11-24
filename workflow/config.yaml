@@ -68,6 +68,10 @@ input_types:
 #   table; PSF-star selection vetoes the manual mask (bit 8) through MASK_PATHS
 #   in the exposure configs, which the simulations share. Required unless
 #   input_type: image_sims with psf_model: fake (mask_users in the Snakefile).
+# - inputs.star_colours (optional): FITS table of RA, DEC, GI (dereddened
+#   g−i) and REMOVE (PSF-star purity verdict), one row per object, read by
+#   star_colour_runner to drop impure PSF training stars and give each star
+#   GI_COLOR. Unset, the star splits pass through unchanged.
 # - inputs.catalogues: UNIONS per-tile catalogues, a local directory
 #   (symlinked in) or a vos: URL (tile_detection: unions_catalogue)
 # - psf_dict: simulation PSF stamps (psf_model: fake)

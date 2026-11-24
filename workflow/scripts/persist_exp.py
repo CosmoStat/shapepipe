@@ -70,11 +70,13 @@ PRODUCTS = {
         "the selection cuts rejected and why; the split samples have already "
         "lost the rejects."),
     "star_train": (
-        "star_split_ratio_80-*.fits", 19_900_000,
-        "the 80% TRAINING sample, the stars PSFEx actually fitted. Rows "
-        "duplicate star_selection."),
+        "rand_split/star_split_ratio_80-*.fits", 19_900_000,
+        "setools' 80% TRAINING sample. PSFEx fits it less the stars the "
+        "star_colour verdict rejects (star_colour_runner rewrites it under the "
+        "same name, so the pattern names setools' copy). Rows duplicate "
+        "star_selection."),
     "star_test": (
-        "star_split_ratio_20-*.fits", 7_100_000,
+        "rand_split/star_split_ratio_20-*.fits", 7_100_000,
         "the 20% VALIDATION sample — the positions psf_validation's rows "
         "correspond to. Rows duplicate star_selection."),
     "star_stats": (

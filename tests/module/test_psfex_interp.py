@@ -255,6 +255,10 @@ def _write_dotpsf(path, basis, sampling):
         ]
     )
     header = table.header
+    header["POLNAXIS"] = 2
+    header["POLNGRP"] = 1
+    header["POLGRP1"] = 1
+    header["POLGRP2"] = 1
     header["POLNAME1"] = "XWIN_IMAGE"
     header["POLNAME2"] = "YWIN_IMAGE"
     header["POLZERO1"], header["POLSCAL1"] = 1000.0, 2000.0
