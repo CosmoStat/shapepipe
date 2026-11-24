@@ -232,15 +232,23 @@ if BLEND_HANDLING not in run_config.BLEND_HANDLINGS:
         f"Invalid blend_handling={BLEND_HANDLING!r}; expected one of "
         f"{sorted(run_config.BLEND_HANDLINGS)}.")
 
-# The committed inis read SP_SEG_VIGNET and SP_BLEND_HANDLING with the modules'
-# own defaults, and only tile.smk's blend_env exports them (SP_BLEND_HANDLING
-# under uberseg, the workflow's default). Drop any copy the
-# launching shell carries, bare or as the APPTAINERENV_/SINGULARITYENV_ forms
-# that survive --cleanenv, so a job inherits none: the slurm executor submits
-# with --export=ALL from this process's environment, and each job re-parses
-# this file before its shell runs.
+# PSFEx config file under CONFIG_DIR (default.psfex = Run 1 unit sampling;
+# default_0p7.psfex = Run 2 0.7-pixel sampling). Exported to exp_psf as
+# SP_PSFEX_CONFIG only when non-default so Run-1 params stay unchanged.
+PSFEX_CONFIG = config.get("psfex_config") or "default.psfex"
+if PSF_MODEL == "psfex" and not (CONFIG_DIR / PSFEX_CONFIG).is_file():
+    raise WorkflowError(
+        f"Invalid psfex_config={PSFEX_CONFIG!r}: "
+        f"{CONFIG_DIR / PSFEX_CONFIG} does not exist.")
+
+# The committed inis read SP_SEG_VIGNET, SP_BLEND_HANDLING and SP_PSFEX_CONFIG
+# with the modules' own defaults, and only the owning rules export them. Drop
+# any copy the launching shell carries, bare or as the
+# APPTAINERENV_/SINGULARITYENV_ forms that survive --cleanenv, so a job
+# inherits none: the slurm executor submits with --export=ALL from this
+# process's environment, and each job re-parses this file before its shell runs.
 for _prefix in ("", "APPTAINERENV_", "SINGULARITYENV_"):
-    for _name in ("SP_SEG_VIGNET", "SP_BLEND_HANDLING"):
+    for _name in ("SP_SEG_VIGNET", "SP_BLEND_HANDLING", "SP_PSFEX_CONFIG"):
         os.environ.pop(_prefix + _name, None)
 
 # SP_PHASE is set by bin/sp and NOWHERE else: `prepare`/`compute` on the two

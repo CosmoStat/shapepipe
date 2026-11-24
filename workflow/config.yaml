@@ -234,6 +234,11 @@ ngmix_chunks: 8
 # interpolate.
 # defect_fill: noise
 
+# PSFEx configuration file under workflow/config/<chain>/ (exp_psf).
+# Unset: default.psfex (Run 1: PSF_SAMPLING 1.0, PSF_SIZE 51,51).
+# Set default_0p7.psfex for Run 2 (PSF_SAMPLING 0.7, PSF_SIZE 73,73).
+# psfex_config: default_0p7.psfex
+
 # Tile store (vignets, WCS): intermediates of one tile_shape job, deleted when it
 # ends. tile_store_root is the directory bound to /local/scratch in that job, set
 # per machine in machines:; %u and %j are the user and Slurm job id. candide uses
