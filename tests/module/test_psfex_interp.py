@@ -311,7 +311,7 @@ def test_unit_sampling_centred_returns_raw_grid(tmp_path):
 
 
 @pytest.mark.decision("star_selection_psf.psf_stamp_rendering")
-@pytest.mark.parametrize("sampling, n_model", [(0.5, 101), (1.0, 51)])
+@pytest.mark.parametrize("sampling, n_model", [(0.5, 101), (0.7, 73), (1.0, 51)])
 @pytest.mark.parametrize("offset", [(0.0, 0.0), (0.3, -0.45)])
 def test_native_stamp_matches_analytic_rendering(
     tmp_path, sampling, n_model, offset
@@ -338,7 +338,7 @@ def test_native_stamp_matches_analytic_rendering(
 
     assert stamp.shape == (51, 51)
     npt.assert_allclose(stamp.sum(), truth.sum(), rtol=1e-3)
-    tol = 5e-5 if offset == (0.0, 0.0) else 5e-3
+    tol = 5e-5 if (offset == (0.0, 0.0) and sampling in (0.5, 1.0)) else 5e-3
     got, want = _hsm(stamp), _hsm(truth)
     npt.assert_allclose(
         got.moments_sigma, want.moments_sigma, rtol=tol
@@ -356,7 +356,7 @@ def test_native_stamp_matches_analytic_rendering(
 
 
 @pytest.mark.decision("star_selection_psf.psf_stamp_rendering")
-@pytest.mark.parametrize("sampling, n_model", [(0.5, 101), (1.0, 51)])
+@pytest.mark.parametrize("sampling, n_model", [(0.5, 101), (0.7, 73), (1.0, 51)])
 def test_phase_moves_centroid_by_offset(sampling, n_model):
     """A phase offset moves the stamp centroid by that offset.
 

@@ -42,7 +42,7 @@ analyses:
       psf_modelling_software: psfex
       psf_model_complexity: pixel_basis_deg2_per_ccd
       psf_acceptance_thresholds: stars22_chi2_2
-      psf_stamp_rendering: centred
+      psf_stamp_rendering: validation_phase_galaxy_centred
   shape_measurement:
     decisions:
       ngmix_seed_mode: position_seed
