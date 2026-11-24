@@ -5,7 +5,8 @@ Module runner for ``star_colour``: between ``setools_runner`` and
 give every star a ``GI_COLOR`` for a colour-dependent PSF model.
 
 Config ([STAR_COLOUR_RUNNER]):
-    COLOUR_CATALOGUE  FITS table with RA, DEC, the colour and the rejection flag
+    COLOUR_CATALOGUE  FITS table with RA, DEC, the colour and the rejection flag;
+                      empty, the module passes the splits through unchanged
     COLOUR_COLUMN     colour column name (default GI)
     REJECT_COLUMN     rejection column name (default REMOVE)
     MATCH_RADIUS      arcsec (default 0.5)
@@ -15,6 +16,7 @@ Config ([STAR_COLOUR_RUNNER]):
 """
 
 import os
+import shutil
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.star_colour_package.star_colour import StarColour
@@ -39,13 +41,20 @@ def star_colour_runner(
     def opt(key, default):
         return config.getexpanded(module_config_sec, key) if config.has_option(module_config_sec, key) else default
 
+    train, reserve = input_file_list
+    out = run_dirs["output"]
+    catalogue = opt("COLOUR_CATALOGUE", "")
+    if not catalogue:
+        for path in (train, reserve):
+            shutil.copy(path, f"{out}/{os.path.basename(path)}")
+        w_log.info("star_colour: no COLOUR_CATALOGUE, splits passed through")
+        return None, None
+
     sc = StarColour(
-        config.getexpanded(module_config_sec, "COLOUR_CATALOGUE"),
+        catalogue,
         colour_col=opt("COLOUR_COLUMN", "GI"),
         reject_col=opt("REJECT_COLUMN", "REMOVE"),
         radius_arcsec=float(opt("MATCH_RADIUS", 0.5)),
     )
-    train, reserve = input_file_list
-    out = run_dirs["output"]
     sc.process(train, reserve, f"{out}/{os.path.basename(train)}", f"{out}/{os.path.basename(reserve)}", w_log)
     return None, None

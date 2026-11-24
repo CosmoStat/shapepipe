@@ -242,8 +242,14 @@ class PersistExpMachine(RuleBasedStateMachine):
                 continue
             assert f["product"] in entries, (
                 f"{f['name']} labelled {f['product']!r}, not in the keep list")
-            assert fnmatch.fnmatch(f["name"], persist.resolve(f["product"])), (
+            # tar members are flat; a glob may name a subdirectory
+            # (rand_split/...), so the member matches its filename part and
+            # the source path matches the whole glob
+            glob = persist.resolve(f["product"])
+            assert fnmatch.fnmatch(f["name"], Path(glob).name), (
                 f"{f['name']} does not match {f['product']!r}'s glob")
+            assert Path(f["src"]).match(glob), (
+                f"{f['src']} does not match {f['product']!r}'s glob")
             assert Path(f["src"]).exists()
             assert f["bytes"] == Path(f["src"]).stat().st_size
 

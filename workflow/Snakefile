@@ -1075,6 +1075,9 @@ def unit_pre(stage, unit, *, exp_name=None, forest=None, env=None,
         lines.append(f"export PSF_DICT='{PSF_DICT}'")
     if INPUT_TYPE == "data":
         lines.append(f"export SP_INPUT_MASKS='{INPUTS['masks']}'")
+    # PSF-star colours and purity verdict (star_colour_runner); empty, the
+    # runner passes the star splits through unchanged
+    lines.append(f"export SP_STAR_COLOURS='{INPUTS.get('star_colours') or ''}'")
     if forest:
         lines.append(f"export SP_EXP='{forest}'")
     for k, v in (env or {}).items():
