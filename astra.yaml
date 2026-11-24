@@ -1005,7 +1005,8 @@ analyses:
         decisions:
           [star_selection_box, psf_train_validation_split,
            psfex_candidate_vetting, psf_modelling_software,
-           psf_model_complexity, psf_acceptance_thresholds]
+           psf_model_complexity, psf_colour_purification,
+           psf_acceptance_thresholds]
     decisions:
       star_selection_box:
         label: Stellar-locus selection, magnitude window and FWHM window scaled to the locus
@@ -1194,7 +1195,14 @@ analyses:
           must be supported by the surviving training stars and checked on
           held-out residuals under the acceptance gate; successful optimisation
           alone does not establish a usable PSF.
-          Stock values; no rationale recorded.
+          The model is achromatic although the r-band PSF is not (star size
+          falls 0.69% per magnitude of g−i at fixed magnitude). A per-CCD
+          colour term (PSFVAR_KEYS XWIN_IMAGE,YWIN_IMAGE,GI_COLOR, groups
+          1,1,2, degrees 2,1) was tested on 80 exposures: it over-corrects the
+          slope (to +0.08 %/mag), leaves the model 0.38% too large at
+          g−i = 1.1 against 0.05% achromatic, and raises the reserve
+          ellipticity residual scatter by 6% (pando
+          unions/star-selection-as-close-to-des).
           Values:
           BASIS_TYPE = PIXEL;
           PSF_ACCURACY = 0.01;
@@ -1207,11 +1215,45 @@ analyses:
         default: pixel_basis_deg2_per_ccd
         options:
           pixel_basis_deg2_per_ccd:
-            label: PIXEL basis, degree 2, per CCD
+            label: PIXEL basis, degree 2, per CCD, achromatic
             insights: [guinot22_psf_no_oversampling]
+          pixel_basis_deg2_gi1_per_ccd:
+            label: PIXEL basis, degree 2 in position times degree 1 in g−i, per CCD
+            description: >-
+              Branch feat/psfex-colour-term. Over-corrects the colour slope and
+              adds model noise on 80 test exposures.
           deg3:
             label: Degree-3 spatial variation
             description: Needs more stars per CCD than the acceptance gate guarantees.
+      psf_colour_purification:
+        label: External g−i and purity verdict for PSF stars; galaxies at g−i = 1.1
+        rationale: >-
+          Each PSF star is matched within MATCH_RADIUS to an external
+          per-object catalogue (SP_STAR_COLOURS: dereddened PhotoPipe GAaP
+          g−i and a purity verdict from a Gaia-seeded stellar locus with
+          unWISE W1). Training stars the verdict rejects (off the locus in
+          i−W1, Gaia-extended, or g−i outside [0, 3.5]) are dropped, as DES
+          Y6 drops non-stellar Gaia matches; the 20% reserve is kept whole so
+          its residuals compare with an achromatic run. Stars without g−i get
+          their CCD's median. Galaxies are evaluated at DEFAULT_COLOUR, DES
+          Y6's median galaxy colour, which its image simulations show costs
+          Δm = (0.04 ± 2.0)×10⁻³ against per-galaxy colours (Yamamoto et al.
+          2025).
+          With the achromatic model, GI_COLOR is carried but unused, and
+          DEFAULT_COLOUR matters only for a colour-dependent model. On 80
+          exposures purification moves the reserve residual at g−i = 1.1 from
+          −0.13% to −0.05% (0.08–0.10% in every seeing quartile).
+          Values:
+          config_exp_psfex.ini#STAR_COLOUR_RUNNER.MATCH_RADIUS = 0.5;
+          config_exp_psfex.ini#PSFEX_INTERP_RUNNER.DEFAULT_COLOUR = 1.1;
+          config_tile_PiViVi_psfex.ini#PSFEX_INTERP_RUNNER.DEFAULT_COLOUR = 1.1.
+        default: purify_and_colour
+        options:
+          purify_and_colour:
+            label: Drop rejected training stars, colour every star, galaxies at 1.1
+          per_galaxy_colour:
+            label: Evaluate each galaxy at its own g−i
+            description: Needs PhotoPipe colours in the tile chain; DES found no measurable gain.
       psf_acceptance_thresholds:
         label: Per-CCD PSF-model quality gate
         rationale: >-
