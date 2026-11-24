@@ -111,11 +111,13 @@ sp_validation's image-simulation workflow calls it.
 
 ## Development workflow
 
+**This codebase is yours.** Redesign what you touch into the shape it would have had if the change had been assumed from the start; don't staple onto a design that no longer fits. Push small, checked changes straight to `develop` and watch them in production. Better to break `develop`, notice quickly and fix it than never to have made the change. Open a PR when a human needs to think the change through: a new interface, a change in a scientific quantity, anything a collaborator runs by hand. Leave what you write clear enough that a person can run it by hand.
+
 **We are in rapid iteration.** Changes that require re-running the pipeline are fine; a PR that changes science defaults (detection parameters, cuts, module options) does not need a completed rerun to be accepted — state what we expect the rerun to show, and do the rerun when it comes up.
 
 
-- **`develop` is the integration branch** — open PRs against it. `main` /
-  `master` are release branches.
+- **`develop` is the integration branch**: direct pushes and PRs both land there.
+  `main` / `master` are release branches.
 - **Tests** run with `pytest`. CI runs them *inside the image*, so the suite
   exercises exactly what ships — run them the same way, in the container.
 - **CI** (`.github/workflows/deploy-image.yml`): every PR and push builds the

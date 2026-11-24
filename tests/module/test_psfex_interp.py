@@ -13,6 +13,8 @@ from hypothesis import strategies as st
 from shapepipe.pipeline import file_io
 from shapepipe.modules.psfex_interp_package.psfex_interp import (
     PSFExInterpolator,
+    native_psf_stamps,
+    sextractor_vignet_offsets,
 )
 
 
@@ -206,3 +208,181 @@ def test_write_output_uses_hsm_grammar_and_routes_size_to_T(
     # ... and the size column is T = 2 sigma^2 (sigma_to_T), not raw sigma.
     npt.assert_allclose(data["HSM_T_PSF"], 2.0 * interp.psf_shapes[:, 2] ** 2)
     assert not np.allclose(data["HSM_T_PSF"], interp.psf_shapes[:, 2])
+
+
+# --- Native-pixel rendering of PSFEx models (shapepipe#989) ----------------
+
+# An undersampled effective PSF: a sheared Gaussian of sigma 1.1 px (FWHM
+# 2.6 px, about 0.48 arcsec on MegaCam) convolved with the native pixel.
+_EPSF = galsim.Convolve(
+    galsim.Gaussian(sigma=1.1).shear(g1=0.06, g2=-0.03), galsim.Pixel(1.0)
+)
+
+
+def _native_epsf(offset=(0.0, 0.0), n=51):
+    """The effective PSF sampled at native pixel centres: the analytic stamp."""
+    return _EPSF.drawImage(
+        nx=n, ny=n, scale=1.0, method="no_pixel", offset=offset
+    ).array
+
+
+def _model_grid(sampling, n_model):
+    """A PSFEx-style model grid: point samples of the effective PSF.
+
+    Samples are ``sampling`` native pixels apart, centred on index
+    ``n_model // 2``, in native-pixel units (a unit-flux star's value per
+    native pixel), so the grid sums to about ``1 / sampling**2``.
+    """
+    return (
+        _EPSF.drawImage(
+            nx=n_model, ny=n_model, scale=sampling, method="no_pixel"
+        ).array
+        / sampling**2
+    )
+
+
+def _write_dotpsf(path, basis, sampling):
+    """Write a minimal degree-2 PSFEx ``.psf`` file with the given basis."""
+    nbasis, ny, nx = basis.shape
+    table = fits.BinTableHDU.from_columns(
+        [
+            fits.Column(
+                name="PSF_MASK",
+                format=f"{basis.size}E",
+                dim=f"({nx}, {ny}, {nbasis})",
+                array=basis[None].astype(np.float32),
+            )
+        ]
+    )
+    header = table.header
+    header["POLNAME1"] = "XWIN_IMAGE"
+    header["POLNAME2"] = "YWIN_IMAGE"
+    header["POLZERO1"], header["POLSCAL1"] = 1000.0, 2000.0
+    header["POLZERO2"], header["POLSCAL2"] = 2000.0, 4000.0
+    header["POLDEG1"] = 2
+    header["PSF_SAMP"] = sampling
+    header["ACCEPTED"] = 100
+    header["CHI2"] = 1.0
+    fits.HDUList([fits.PrimaryHDU(), table]).writeto(path)
+
+
+def _interpolator(tmp_path):
+    cat_path = tmp_path / "galaxies.fits"
+    _write_galaxy_catalogue(cat_path, XWIN_IMAGE=[1.0], YWIN_IMAGE=[1.0])
+    return PSFExInterpolator(
+        dotpsf_path=None,
+        galcat_path=str(cat_path),
+        output_path=str(tmp_path),
+        img_number="001",
+        w_log=SimpleNamespace(info=lambda message: None),
+        pos_params=["XWIN_IMAGE", "YWIN_IMAGE"],
+    )
+
+
+def _hsm(stamp):
+    return galsim.hsm.FindAdaptiveMom(galsim.Image(stamp, scale=1.0))
+
+
+@pytest.mark.decision("star_selection_psf.psf_stamp_rendering")
+def test_unit_sampling_centred_returns_raw_grid(tmp_path):
+    """At PSF_SAMP = 1 with centred stamps, interpsfex returns the raw grid.
+
+    Bit for bit: the basis combination is the native stamp, untouched.
+    """
+    rng = np.random.default_rng(1)
+    basis = rng.normal(size=(6, 51, 51)).astype(np.float32)
+    dotpsf = tmp_path / "unit.psf"
+    _write_dotpsf(dotpsf, basis, 1.0)
+    pos = np.array([[100.0, 200.0], [1500.5, 3000.25]])
+
+    psfs = _interpolator(tmp_path).interpsfex(str(dotpsf), pos)
+
+    xs = (pos[:, 0] - 1000.0) / 2000.0
+    ys = (pos[:, 1] - 2000.0) / 4000.0
+    coeffs = np.column_stack(
+        [np.ones_like(xs), xs, xs**2, ys, xs * ys, ys**2]
+    )
+    raw = np.array(
+        [np.sum([c * b for c, b in zip(row, basis)], axis=0) for row in coeffs]
+    )
+    assert psfs.shape == (2, 51, 51)
+    assert np.array_equal(psfs, raw)
+    assert native_psf_stamps(raw, 1.0) is raw
+
+
+@pytest.mark.decision("star_selection_psf.psf_stamp_rendering")
+@pytest.mark.parametrize("sampling, n_model", [(0.5, 101), (0.7, 73), (1.0, 51)])
+@pytest.mark.parametrize("offset", [(0.0, 0.0), (0.3, -0.45)])
+def test_native_stamp_matches_analytic_rendering(
+    tmp_path, sampling, n_model, offset
+):
+    """The native stamp of a model matches the effective PSF drawn natively.
+
+    The model grid goes through a ``.psf`` file and ``interpsfex``; its
+    native stamp keeps the native-pixel normalisation and matches the
+    analytic native rendering at the same offset in HSM size, shape and
+    centroid. Centred, the match is exact to 3e-5. Off-centre, Lanczos-3
+    interpolation of point samples errs by up to 4e-3 in size and 2e-3 in
+    shape (0.6e-2 px in centroid); a PSFEx model carries no such error,
+    since PSFEx fits its grid through this same resampling.
+    """
+    basis = np.zeros((6, n_model, n_model))
+    basis[0] = _model_grid(sampling, n_model)
+    dotpsf = tmp_path / "model.psf"
+    _write_dotpsf(dotpsf, basis, sampling)
+
+    stamp = _interpolator(tmp_path).interpsfex(
+        str(dotpsf), np.array([[1000.0, 2000.0]]), np.array([offset])
+    )[0]
+    truth = _native_epsf(offset)
+
+    assert stamp.shape == (51, 51)
+    npt.assert_allclose(stamp.sum(), truth.sum(), rtol=1e-3)
+    tol = 5e-5 if (offset == (0.0, 0.0) and sampling in (0.5, 1.0)) else 5e-3
+    got, want = _hsm(stamp), _hsm(truth)
+    npt.assert_allclose(
+        got.moments_sigma, want.moments_sigma, rtol=tol
+    )
+    npt.assert_allclose(
+        [got.observed_shape.g1, got.observed_shape.g2],
+        [want.observed_shape.g1, want.observed_shape.g2],
+        atol=tol / 2,
+    )
+    npt.assert_allclose(
+        [got.moments_centroid.x, got.moments_centroid.y],
+        [want.moments_centroid.x, want.moments_centroid.y],
+        atol=2 * tol,
+    )
+
+
+@pytest.mark.decision("star_selection_psf.psf_stamp_rendering")
+@pytest.mark.parametrize("sampling, n_model", [(0.5, 101), (0.7, 73), (1.0, 51)])
+def test_phase_moves_centroid_by_offset(sampling, n_model):
+    """A phase offset moves the stamp centroid by that offset.
+
+    To the Lanczos-3 interpolation error (under 1e-2 px); a sign or
+    convention error would be off by up to a pixel.
+    """
+    model = _model_grid(sampling, n_model)[None]
+    offsets = np.array([[0.0, 0.0], [0.4, -0.25], [-0.5, 0.5]])
+    stamps = native_psf_stamps(
+        np.repeat(model, len(offsets), axis=0), sampling, offsets
+    )
+    centre = _hsm(stamps[0]).moments_centroid
+    for stamp, (dx, dy) in zip(stamps[1:], offsets[1:]):
+        shift = _hsm(stamp).moments_centroid - centre
+        npt.assert_allclose([shift.x, shift.y], [dx, dy], atol=1e-2)
+
+
+def test_sextractor_vignet_offsets_round_the_barycentre():
+    """The VIGNET centre pixel comes from X_IMAGE, not XWIN_IMAGE.
+
+    X_IMAGE = 10.49 rounds (0-indexed, ``int(mx + 0.49999)``) to pixel 9;
+    XWIN_IMAGE = 10.52 would round to 10. The offset of XWIN from the
+    VIGNET centre is therefore 10.52 - 1 - 9 = 0.52 px.
+    """
+    pos = np.array([[10.52, 20.0]])
+    barycentre = np.array([[10.49, 20.2]])
+    npt.assert_allclose(
+        sextractor_vignet_offsets(pos, barycentre), [[0.52, 0.0]]
+    )

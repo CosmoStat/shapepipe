@@ -14,13 +14,13 @@ NEWBASIS_TYPE   NONE            # Create new basis: NONE, PCA_INDEPENDENT
                                 # or PCA_COMMON
 NEWBASIS_NUMBER 8               # Number of new basis vectors
 # @sc [decision:star_selection_psf.psf_model_complexity]
-PSF_SAMPLING    1.              # Sampling step in pixel units (0.0 = auto)
+PSF_SAMPLING    0.7             # Sampling step in pixel units (0.0 = auto)
 
 PSF_PIXELSIZE   1.0             # Effective pixel size in pixel step units
 # @sc [decision:star_selection_psf.psf_model_complexity]
 PSF_ACCURACY    0.01            # Accuracy to expect from PSF "pixel" values
 # @sc [decision:postage_stamp_size]
-PSF_SIZE        51,51           # Image size of the PSF model
+PSF_SIZE        73,73           # Image size of the PSF model
 # @sc [decision:star_selection_psf.psfex_candidate_vetting]
 PSF_RECENTER    N               # Allow recentering of PSF-candidates Y/N ?
 # @sc [decision:star_selection_psf.psf_model_complexity]

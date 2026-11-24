@@ -32,6 +32,117 @@ BAD_CHI2 = "Fail_chi2"
 FILE_NOT_FOUND = "File_not_found"
 
 
+def _lanczos3(x):
+    """Lanczos-3 kernel, as PSFEx's ``INTERPF`` (``vignet.h``)."""
+    return np.where(np.abs(x) < 3, np.sinc(x) * np.sinc(x / 3), 0.0)
+
+
+def _resample_matrix(n_model, n_native, sampling, offset):
+    """Separable Lanczos-3 resampling matrix, native rows x model columns.
+
+    Native pixel ``j`` sits at model coordinate
+    ``n_model // 2 + (j - n_native // 2 - offset) / sampling``; each row holds
+    the Lanczos-3 weights of the model pixels around it, normalised to unit
+    sum as PSFEx's ``vignet_resample`` does.
+    """
+    native = np.arange(n_native) - n_native // 2 - offset
+    model_pos = n_model // 2 + native / sampling
+    weights = _lanczos3(model_pos[:, None] - np.arange(n_model)[None, :])
+    return weights / weights.sum(axis=1, keepdims=True)
+
+
+def native_psf_stamps(psfs, sampling, offsets=None):
+    """Native-Pixel PSF Stamps.
+
+    Render PSFEx model stamps on the native pixel grid.
+
+    @sc [decision:star_selection_psf.psf_stamp_rendering]
+    A PSFEx model (``PSF_MASK`` combined over its basis) is a grid of the
+    effective (pixel-convolved) PSF, ``sampling`` native pixels apart,
+    centred on grid index ``n // 2``, with values in native-pixel units: the
+    grid sums to about ``1 / sampling**2``. PSFEx fits that grid by resampling
+    it onto each training star's vignet (``psf_refine``, ``vignet_resample``),
+    so the image of a star the model predicts is that resampling. This
+    function applies it with PSFEx's kernel and conventions: separable
+    Lanczos-3, weights normalised to unit sum per output pixel, the model
+    centre ``n_model // 2`` placed on the native stamp centre
+    ``n_native // 2`` shifted by ``offset``. A native stamp therefore carries
+    the model's flux in native pixels (about 1), and no pixel response is
+    applied: the model already is the effective PSF.
+
+    The native stamp is ``n_native x n_native`` with ``n_native`` the odd
+    integer ``int(n_model * sampling) | 1``: 51 for a 51-pixel model at unit
+    sampling and for a 101-pixel model at sampling 0.5.
+
+    At ``sampling == 1`` with no offsets the model grid already is the native
+    stamp and is returned unchanged.
+
+    Parameters
+    ----------
+    psfs : numpy.ndarray
+        Model-grid stamps, ``(N, n_model, n_model)``.
+    sampling : float
+        Model pixel size in native pixels (the ``.psf`` ``PSF_SAMP``).
+    offsets : numpy.ndarray, optional
+        ``(N, 2)`` sub-pixel ``(dx, dy)`` of each PSF centre from the native
+        stamp centre, in native pixels. ``None`` centres every stamp.
+
+    Returns
+    -------
+    numpy.ndarray
+        Native stamps, ``(N, n_native, n_native)``.
+
+    """
+    if sampling == 1 and offsets is None:
+        return psfs
+
+    n_model = psfs.shape[-1]
+    n_native = int(n_model * sampling) | 1
+    if offsets is None:
+        offsets = np.zeros((len(psfs), 2))
+
+    stamps = np.empty((len(psfs), n_native, n_native))
+    for idx, (psf, (dx, dy)) in enumerate(zip(psfs, offsets)):
+        kx = _resample_matrix(n_model, n_native, sampling, dx)
+        ky = _resample_matrix(n_model, n_native, sampling, dy)
+        stamps[idx] = ky @ psf @ kx.T
+    return stamps
+
+
+def sextractor_vignet_offsets(pos, barycentre):
+    """SExtractor VIGNET Offsets.
+
+    Sub-pixel offset of each position from the centre of its SExtractor
+    ``VIGNET``.
+
+    SExtractor cuts ``VIGNET`` around the 0-indexed pixel
+    ``int(mx + 0.49999)``, where ``mx = X_IMAGE - 1`` is the isophotal
+    barycentre, and places that pixel at stamp index ``w // 2``. The
+    windowed centroid ``XWIN_IMAGE`` can round to a different pixel than
+    ``X_IMAGE``, so the offset is measured from the ``X_IMAGE`` pixel.
+    Measured on SExtractor 2.25 VIGNETs (shapepipe#989): this convention
+    places the HSM centroid of 268 bright stars within 0.03 px of
+    ``XWIN_IMAGE``, while rounding ``XWIN_IMAGE`` misplaces 28 of them by a
+    whole pixel.
+
+    Parameters
+    ----------
+    pos : numpy.ndarray
+        ``(N, 2)`` 1-indexed image positions the PSF is evaluated at
+        (``XWIN_IMAGE``, ``YWIN_IMAGE``).
+    barycentre : numpy.ndarray
+        ``(N, 2)`` 1-indexed ``X_IMAGE``, ``Y_IMAGE``.
+
+    Returns
+    -------
+    numpy.ndarray
+        ``(N, 2)`` ``(dx, dy)`` offsets in pixels.
+
+    """
+    centre_pixel = np.floor(barycentre - 1 + 0.49999)
+    return pos - 1 - centre_pixel
+
+
 def local_wcs_list(wcs, positions):
     """Local WCS List.
 
@@ -263,6 +374,10 @@ class PSFExInterpolator(object):
         Threshold of stars under which the PSF is not interpolated
     thresh_chi2 : int
         Threshold for chi squared
+    stamp_phase : bool
+        If ``True``, render each PSF at the sub-pixel phase of the stamp it is
+        compared with or fitted against, rather than centred; see
+        :meth:`_stamp_offsets` and :meth:`process_me`
 
     """
 
@@ -277,6 +392,7 @@ class PSFExInterpolator(object):
         get_shapes=True,
         star_thresh=20,
         chi2_thresh=2,
+        stamp_phase=False,
     ):
 
         # Path to PSFEx output file
@@ -302,6 +418,8 @@ class PSFExInterpolator(object):
         self._star_thresh = star_thresh
 
         self._chi2_thresh = chi2_thresh
+
+        self._stamp_phase = stamp_phase
 
         # Logging
         self._w_log = w_log
@@ -408,10 +526,12 @@ class PSFExInterpolator(object):
             raise KeyError(pos_param_err)
         galcat.close()
 
-    def interpsfex(self, dotpsfpath, pos):
+    def interpsfex(self, dotpsfpath, pos, offsets=None):
         """Interpolate PSFEx.
 
-        Use PSFEx generated model to perform spatial PSF interpolation.
+        Use PSFEx generated model to perform spatial PSF interpolation, and
+        return the PSFs as native-pixel stamps whatever the model's sampling
+        (``PSF_SAMP``); see :func:`native_psf_stamps`.
 
         @sc [decision:star_selection_psf.psf_acceptance_thresholds,label:gate] psf-gate-path-specific-output
         Validation logs a rejected gate and skips writing validation output;
@@ -424,12 +544,14 @@ class PSFExInterpolator(object):
             Path to ``.psf`` file (PSFEx output)
         pos : numpy.ndarray
             Positions where the PSF model should be evaluated
+        offsets : numpy.ndarray, optional
+            ``(N, 2)`` sub-pixel ``(dx, dy)`` of each PSF centre from its
+            stamp centre; ``None`` centres every stamp
 
         Returns
         -------
         numpy.ndarray
-            Array of PSFs, each row is the PSF image at the corresponding position
-            requested
+            Array of native-pixel PSF stamps, one per requested position
 
         """
         if not os.path.exists(dotpsfpath):
@@ -454,11 +576,13 @@ class PSFExInterpolator(object):
             return BAD_CHI2
 
         PSF_basis = np.array(PSF_model.data)[0][0]
+        sampling = PSF_model.header["PSF_SAMP"]
         try:
             deg = PSF_model.header["POLDEG1"]
         except KeyError:
             # constant PSF model
-            return PSF_basis[0, :, :]
+            PSFs = np.repeat(PSF_basis[:1], len(pos), axis=0)
+            return native_psf_stamps(PSFs, sampling, offsets)
 
         # scale coordinates
         x_interp, x_scale = (
@@ -505,7 +629,7 @@ class PSFExInterpolator(object):
             ]
         )
 
-        return PSFs
+        return native_psf_stamps(PSFs, sampling, offsets)
 
     def _interpolate(self):
         """Interpolate.
@@ -517,7 +641,34 @@ class PSFExInterpolator(object):
         self.interp_PSFs = self.interpsfex(
             self._dotpsf_path,
             self.gal_pos,
+            self._stamp_offsets() if self._stamp_phase else None,
         )
+
+    def _stamp_offsets(self):
+        """Stamp Offsets.
+
+        Sub-pixel offsets of the catalogue positions from the centres of the
+        catalogue's SExtractor ``VIGNET`` stamps, which are what the PSF is
+        compared with on the single-exposure paths: validation measures star
+        ``VIGNET`` and PSF with HSM side by side, each with the local WCS at
+        the star's ``XWIN_IMAGE``. Rendered at that offset, the PSF stamp is
+        the model's image of the star as sampled in its ``VIGNET``, which is
+        also how PSFEx maps its model onto a training star. The positions must
+        be 1-indexed image coordinates (``XWIN_IMAGE``, ``YWIN_IMAGE``); see
+        :func:`sextractor_vignet_offsets`.
+
+        Returns
+        -------
+        numpy.ndarray
+            ``(N, 2)`` ``(dx, dy)`` offsets in pixels.
+
+        """
+        galcat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
+        galcat.open()
+        data = galcat.get_data()
+        barycentre = np.column_stack((data["X_IMAGE"], data["Y_IMAGE"]))
+        galcat.close()
+        return sextractor_vignet_offsets(self.gal_pos, barycentre)
 
     def _get_psfshapes(self, wcs_list=None):
         """Get PSF Shapes.
@@ -818,6 +969,25 @@ class PSFExInterpolator(object):
 
         Process multi-epoc PSF interpolation.
 
+        With ``stamp_phase``, each epoch's PSF is rendered at the sub-pixel
+        offset of the object from the centre of that epoch's galaxy stamp.
+        The vignetmaker cuts the stamp around ``numpy.round`` of the object's
+        0-indexed exposure position, projected from the same
+        ``POSITION_PARAMS`` through the same exposure WCS
+        (:func:`shapepipe.modules.vignetmaker_package.vignetmaker.get_stamps`),
+        so the offset is ``gal_pos - round(gal_pos)``: the vignette's
+        ``OFFSET``, in ``(x, y)`` order. The PSF stamp is then the model's
+        image of a point source at the object's centroid, sampled on the
+        galaxy stamp's pixel grid. ngmix metacal turns both stamps into
+        ``InterpolatedImage`` profiles centred on their stamp centres and
+        divides one by the other, so for a point-like galaxy the
+        deconvolution is exact at every sampling and the deconvolved galaxy
+        sits at the stamp centre, a sub-pixel distance from the ngmix
+        centroid prior, which is placed at the ``OFFSET``
+        (``centroid_source="wcs"``). With centred PSFs the deconvolved galaxy
+        sits at the ``OFFSET``, and the aliased high frequencies of an
+        undersampled PSF do not match the galaxy's.
+
         Parameters
         ----------
         dot_psf_dirs : list
@@ -967,6 +1137,7 @@ class PSFExInterpolator(object):
                 self.interp_PSFs = self.interpsfex(
                     dot_psf_path,
                     gal_pos,
+                    gal_pos - np.round(gal_pos) if self._stamp_phase else None,
                 )
 
                 if (
