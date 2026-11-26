@@ -8,6 +8,7 @@ tile_list: /scratch/cdaley/imsim/sims/1m2z_skills_2-blended/tiles.txt
 inputs:
   tiles: /scratch/cdaley/imsim/sims/1m2z_skills_2-blended/images/SP_tiles
   exposures: /scratch/cdaley/imsim/sims/1m2z_skills_2-blended/images/SP_exp
+  masks: /project/rrg-kyi/cdaley/unions/analyses/psf-leakage-v2-refit/inputs
 psf_model: psfex
 psfex_config: default_0p7.psfex
 ngmix_chunks: 16
