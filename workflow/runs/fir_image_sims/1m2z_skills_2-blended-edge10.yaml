@@ -1,0 +1,16 @@
+# Shear branch 1m2z of skills_2-blended (25 tiles), edge (3bce22db) with default.psfex
+# (PSF_SAMPLING 1.0) to isolate #1012 (0.7) from #985 (native-grid neighbour masks).
+machine: fir
+input_type: image_sims
+base_dir: /project/rrg-kyi/cdaley/unions/analyses/image-sims
+run: 1m2z_skills_2-blended-edge10
+tile_list: /scratch/cdaley/imsim/sims/1m2z_skills_2-blended/tiles.txt
+inputs:
+  tiles: /scratch/cdaley/imsim/sims/1m2z_skills_2-blended/images/SP_tiles
+  exposures: /scratch/cdaley/imsim/sims/1m2z_skills_2-blended/images/SP_exp
+  masks: /project/rrg-kyi/cdaley/unions/analyses/psf-leakage-v2-refit/inputs
+psf_model: psfex
+psfex_config: default.psfex
+ngmix_chunks: 16
+clean: true
+clean_tiles: true
