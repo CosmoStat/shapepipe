@@ -118,7 +118,7 @@ machines:
       container: /n17data/cdaley/containers/shapepipe_im_sims-runtime.sif
 
   fir:
-    base_dir: /scratch/cdaley/imsim
+    base_dir: /project/rrg-kyi/cdaley/unions/analyses/image-sims
     image_sims:
       # One simulation per shear branch: $run is the branch dir
       # (e.g. 1p2z_grid_1), which holds its own tile list.
