@@ -1,0 +1,13 @@
+machine: fir
+input_type: image_sims
+base_dir: /project/rrg-kyi/cdaley/unions/analyses/image-sims
+run: 1z2m_skills_2-blended100-truepsf
+tile_list: /project/rrg-kyi/cdaley/unions/analyses/image-sims/sims/1z2m_skills_2-blended100/tiles.txt
+inputs:
+  tiles: /project/rrg-kyi/cdaley/unions/analyses/image-sims/sims/1z2m_skills_2-blended100/images/SP_tiles
+  exposures: /project/rrg-kyi/cdaley/unions/analyses/image-sims/sims/1z2m_skills_2-blended100/images/SP_exp
+psf_model: fake
+psfex_models: /project/rrg-kyi/cdaley/unions/analyses/image-sims/sims/skills_2-blended100_shared/psfex
+ngmix_chunks: 16
+clean: true
+clean_tiles: true

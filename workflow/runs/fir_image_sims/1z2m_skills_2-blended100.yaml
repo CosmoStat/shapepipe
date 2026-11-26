@@ -1,0 +1,8 @@
+machine: fir
+input_type: image_sims
+base_dir: /project/rrg-kyi/cdaley/unions/analyses/image-sims
+run: 1z2m_skills_2-blended100
+psf_model: psfex
+ngmix_chunks: 16
+clean: true
+clean_tiles: true

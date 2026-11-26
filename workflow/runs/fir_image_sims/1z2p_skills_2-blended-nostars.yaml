@@ -1,0 +1,9 @@
+machine: fir
+input_type: image_sims
+base_dir: /project/rrg-kyi/cdaley/unions/analyses/image-sims
+run: 1z2p_skills_2-blended-nostars
+psf_model: fake
+psfex_models: /project/rrg-kyi/cdaley/unions/analyses/image-sims/sims/skills_2-blended-nostars_shared/psfex
+ngmix_chunks: 16
+clean: true
+clean_tiles: true

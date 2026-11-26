@@ -1,0 +1,9 @@
+machine: fir
+input_type: image_sims
+base_dir: /project/rrg-kyi/cdaley/unions/analyses/image-sims
+run: 1z2m_grid_2-skillsflux
+psf_model: fake
+psf_dict: /project/rrg-kyi/cdaley/unions/analyses/image-sims/sims/psf_dict_grid_2-skillsflux.pickle
+ngmix_chunks: 16
+clean: true
+clean_tiles: true
