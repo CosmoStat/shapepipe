@@ -1,0 +1,10 @@
+# Shear branch 1p2z of the Fir image simulations (machines.fir in
+# workflow/config.yaml holds the paths). Settings as the v2 data campaigns
+# (blend_handling, defect_* and ngmix_chunks at their v2 values); per-tile and
+# per-exposure intermediates are kept for diagnostics.
+machine: fir
+input_type: image_sims
+run: 1p2z_grid_1
+ngmix_chunks: 16
+clean: false
+clean_tiles: false

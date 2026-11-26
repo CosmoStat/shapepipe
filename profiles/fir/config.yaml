@@ -1,0 +1,42 @@
+# Snakemake profile for the Fir cluster (Digital Research Alliance).
+#
+# Two modes, both launched by workflow/bin/sp:
+#   * `sp run --in-allocation` (the usual one on Fir): every job runs on the
+#     node of the allocation sp is called from, under snakemake's local
+#     executor; bin/sp's "one allocation" block owns that mode. The executor
+#     and slurm settings below are then unused.
+#   * `sp run`: one SLURM job per rule instance on account rrg-kyi_cpu.
+#
+# Fir nodes: 192 cores, ~750 GiB, 7.8 TB node-local NVMe at /localscratch
+# ($SLURM_TMPDIR is /localscratch/<user>.<jobid>.0). Inside an allocation
+# bin/sp puts the tile store and the exposure stores under $SLURM_TMPDIR, so
+# the container binds /localscratch; the static `/local/scratch` bind of the
+# nibi profile is replaced by bin/sp's tile-store bind.
+#
+# apptainer-args: --cleanenv isolates the host env; OMP_NUM_THREADS=1 and
+# MALLOC_ARENA_MAX=2 as on nibi; the PYTHONPATH pin is rewritten by `sp run` to
+# the campaign's code snapshot (bin/sp, "the launch code snapshot"), so the
+# image supplies only the dependency stack; --home is the one per-user value.
+# /project and /scratch are bound whole: /project/rrg-kyi is a symlink into
+# /project/<gid>.
+
+executor: slurm
+jobs: 500
+
+default-resources:
+  mem_mb: 2000
+  runtime: 120                   # minutes
+  slurm_account: rrg-kyi_cpu
+
+software-deployment-method: [apptainer]
+apptainer-args: "--cleanenv --env OMP_NUM_THREADS=1 --env MALLOC_ARENA_MAX=2 --env PYTHONPATH=/scratch/cdaley/imsim/sp-fir/src --home /home/cdaley --bind /project --bind /scratch --bind /localscratch"
+
+latency-wait: 60
+keep-going: true
+rerun-incomplete: true
+show-failed-logs: true
+printshellcmds: true
+
+# As profiles/nibi: the v9 default minus `input` (reclamation needs the
+# tile->exposure edge to be conditional; tile.smk's tile_finished explains).
+rerun-triggers: [mtime, params, code, software-env]
